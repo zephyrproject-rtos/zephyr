@@ -3,6 +3,9 @@ family:
   series:
   - name: am6x
     socs:
+    - name: am6232
+      cpuclusters:
+      - name: m4
     - name: am6234
       cpuclusters:
       - name: m4

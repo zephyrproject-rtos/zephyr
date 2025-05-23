@@ -7,6 +7,7 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
+      - ophelia4ev/nrf54l15/cpuapp
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3

@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Intel TCO Watchdog driver binding
+description: Intel TCO Watchdog
 
 compatible: "intel,tco-wdt"
 

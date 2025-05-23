@@ -136,33 +136,35 @@ static void *usb_test_enable(void)
 	err = usbd_add_descriptor(&test_usbd, &test_sn);
 	zassert_equal(err, 0, "Failed to initialize descriptor (%d)", err);
 
-	if (usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
 		err = usbd_add_configuration(&test_usbd, USBD_SPEED_HS, &test_hs_config);
-		zassert_equal(err, 0, "Failed to add configuration (%d)");
+		zassert_equal(err, 0, "Failed to add configuration (%d)", err);
 	}
 
 	err = usbd_add_configuration(&test_usbd, USBD_SPEED_FS, &test_fs_config);
-	zassert_equal(err, 0, "Failed to add configuration (%d)");
+	zassert_equal(err, 0, "Failed to add configuration (%d)", err);
 
-	if (usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
 		err = usbd_register_all_classes(&test_usbd, USBD_SPEED_HS, 1, NULL);
-		zassert_equal(err, 0, "Failed to unregister all instances(%d)");
+		zassert_equal(err, 0, "Failed to unregister all instances(%d)", err);
 
 		err = usbd_unregister_all_classes(&test_usbd, USBD_SPEED_HS, 1);
-		zassert_equal(err, 0, "Failed to unregister all instances(%d)");
+		zassert_equal(err, 0, "Failed to unregister all instances(%d)", err);
 
 		err = usbd_register_class(&test_usbd, "loopback_0", USBD_SPEED_HS, 1);
-		zassert_equal(err, 0, "Failed to register loopback_0 class (%d)");
+		zassert_equal(err, 0, "Failed to register loopback_0 class (%d)", err);
 	}
 
 	err = usbd_register_all_classes(&test_usbd, USBD_SPEED_FS, 1, NULL);
-	zassert_equal(err, 0, "Failed to unregister all instances(%d)");
+	zassert_equal(err, 0, "Failed to unregister all instances(%d)", err);
 
 	err = usbd_unregister_all_classes(&test_usbd, USBD_SPEED_FS, 1);
-	zassert_equal(err, 0, "Failed to unregister all instances(%d)");
+	zassert_equal(err, 0, "Failed to unregister all instances(%d)", err);
 
 	err = usbd_register_class(&test_usbd, "loopback_0", USBD_SPEED_FS, 1);
-	zassert_equal(err, 0, "Failed to register loopback_0 class (%d)");
+	zassert_equal(err, 0, "Failed to register loopback_0 class (%d)", err);
 
 	err = usbd_init(&test_usbd);
 	zassert_equal(err, 0, "Failed to initialize device support");

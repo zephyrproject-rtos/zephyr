@@ -62,4 +62,6 @@ config RTC_CLK_CAL_CYCLES
 	    If the crystal could not start, it will be switched to internal RC.
 endmenu
 
+rsource "Kconfig.ulp"
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32

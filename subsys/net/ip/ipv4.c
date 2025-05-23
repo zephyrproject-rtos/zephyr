@@ -343,6 +343,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 
 	if (!net_pkt_filter_ip_recv_ok(pkt)) {
 		/* drop the packet */
+		net_stats_update_filter_rx_ipv4_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 
@@ -382,6 +383,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	NET_DBG("IPv4 packet received from %s to %s",
 		net_sprint_ipv4_addr(&hdr->src),
 		net_sprint_ipv4_addr(&hdr->dst));
+
+	ip.ipv4 = hdr;
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
+		if (net_conn_raw_ip_input(pkt, &ip, hdr->proto) == NET_DROP) {
+			goto drop;
+		}
+	}
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
@@ -439,8 +448,6 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 	if (verdict == NET_DROP) {
 		goto drop;
 	}
-
-	ip.ipv4 = hdr;
 
 	verdict = net_conn_input(pkt, &ip, hdr->proto, &proto_hdr);
 	if (verdict != NET_DROP) {

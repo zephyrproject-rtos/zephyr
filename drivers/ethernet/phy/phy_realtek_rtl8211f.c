@@ -241,24 +241,24 @@ static int phy_rt_rtl8211f_get_link(const struct device *dev,
 				>> PHY_RT_RTL8211F_PHYSR_LINKSPEED_SHIFT) {
 		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_100M:
 			if (duplex) {
-				new_state.speed = LINK_FULL_100BASE_T;
+				new_state.speed = LINK_FULL_100BASE;
 			} else {
-				new_state.speed = LINK_HALF_100BASE_T;
+				new_state.speed = LINK_HALF_100BASE;
 			}
 			break;
 		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_1000M:
 			if (duplex) {
-				new_state.speed = LINK_FULL_1000BASE_T;
+				new_state.speed = LINK_FULL_1000BASE;
 			} else {
-				new_state.speed = LINK_HALF_1000BASE_T;
+				new_state.speed = LINK_HALF_1000BASE;
 			}
 			break;
 		case PHY_RT_RTL8211F_PHYSR_LINKSPEED_10M:
 		default:
 			if (duplex) {
-				new_state.speed = LINK_FULL_10BASE_T;
+				new_state.speed = LINK_FULL_10BASE;
 			} else {
-				new_state.speed = LINK_HALF_10BASE_T;
+				new_state.speed = LINK_HALF_10BASE;
 			}
 			break;
 	}
@@ -318,29 +318,29 @@ static int phy_rt_rtl8211f_cfg_link(const struct device *dev,
 	}
 
 	/* Setup advertising register */
-	if (speeds & LINK_FULL_100BASE_T) {
+	if (speeds & LINK_FULL_100BASE) {
 		anar |= MII_ADVERTISE_100_FULL;
 	} else {
 		anar &= ~MII_ADVERTISE_100_FULL;
 	}
-	if (speeds & LINK_HALF_100BASE_T) {
+	if (speeds & LINK_HALF_100BASE) {
 		anar |= MII_ADVERTISE_100_HALF;
 	} else {
 		anar &= ~MII_ADVERTISE_100_HALF;
 	}
-	if (speeds & LINK_FULL_10BASE_T) {
+	if (speeds & LINK_FULL_10BASE) {
 		anar |= MII_ADVERTISE_10_FULL;
 	} else {
 		anar &= ~MII_ADVERTISE_10_FULL;
 	}
-	if (speeds & LINK_HALF_10BASE_T) {
+	if (speeds & LINK_HALF_10BASE) {
 		anar |= MII_ADVERTISE_10_HALF;
 	} else {
 		anar &= ~MII_ADVERTISE_10_HALF;
 	}
 
 	/* Setup 1000Base-T control register */
-	if (speeds & LINK_FULL_1000BASE_T) {
+	if (speeds & LINK_FULL_1000BASE) {
 		gbcr |= MII_ADVERTISE_1000_FULL;
 	} else {
 		gbcr &= ~MII_ADVERTISE_1000_FULL;

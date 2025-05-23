@@ -50,55 +50,15 @@ For more information about the K22F SoC and FRDM-K22F board:
 Supported Features
 ==================
 
-The frdm_k22f board configuration supports the hardware features listed
-below.  For additional features not yet supported, please also refer to the
-:zephyr:board:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
-NXP prioritizes enabling the superset board with NXP's Full Platform Support for
-Zephyr.  Therefore, the frdm_k64f board may have additional features
-already supported, which can also be re-used on this frdm_k22f board:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| SENSOR    | off-chip   | fxos8700 polling;                   |
-|           |            | fxos8700 trigger                    |
-+-----------+------------+-------------------------------------+
-| RNGA      | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| FTFE      | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
+.. note::
 
-The default configuration can be found in the defconfig file:
-
-:zephyr_file:`boards/nxp/frdm_k22f/frdm_k22f_defconfig`
-
-Other hardware features are not currently supported by the port.
+   For additional features not yet supported, please also refer to the
+   :zephyr:board:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
+   NXP prioritizes enabling the superset board with NXP's Full Platform Support for
+   Zephyr.  Therefore, the frdm_k64f board may have additional features
+   already supported, which can also be re-used on this frdm_k22f board.
 
 Connections and IOs
 ===================
@@ -167,6 +127,8 @@ Only USB device function is supported in Zephyr at the moment.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -276,6 +238,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v2.0.0 *****
    Hello World! frdm_k22f
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _FRDM-K22F Website:
    https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/mcu-boards/nxp-freedom-development-platform-for-kinetis-k22-mcus:FRDM-K22F

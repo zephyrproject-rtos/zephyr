@@ -22,7 +22,6 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_DHCPV4_INITIAL_DELAY_MAX
 	int "Maximum time out for initial discover request"
-	depends on NET_DHCPV4
 	default 10
 	range 2 10
 	help
@@ -31,7 +30,6 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 
 config NET_DHCPV4_OPTION_CALLBACKS
 	bool "Option callbacks"
-	depends on NET_DHCPV4
 	help
 	  If set, custom callbacks for arbitrary DHCP options
 	  can be added. These can be used to support otherwise
@@ -39,7 +37,7 @@ config NET_DHCPV4_OPTION_CALLBACKS
 
 config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 	int "Maximum number of requested options"
-	depends on NET_DHCPV4 && NET_DHCPV4_OPTION_CALLBACKS
+	depends on NET_DHCPV4_OPTION_CALLBACKS
 	default 10
 	range 3 $(UINT8_MAX)
 	help
@@ -49,7 +47,6 @@ config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 
 config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
 	bool "Encapsulated vendor specific option callbacks"
-	depends on NET_DHCPV4
 	select NET_DHCPV4_OPTION_CALLBACKS
 	help
 	  If set, custom callbacks for encapsulated vendor-specific
@@ -57,7 +54,6 @@ config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
 
 config NET_DHCPV4_ACCEPT_UNICAST
 	bool "Accept unicast DHCPv4 traffic"
-	depends on NET_DHCPV4
 	default y
 	help
 	  If set, the network stack will accept unicast DHCPv4 responses from
@@ -65,7 +61,6 @@ config NET_DHCPV4_ACCEPT_UNICAST
 
 config NET_DHCPV4_VENDOR_CLASS_IDENTIFIER
 	bool "Send vendor class identifier in DHCPv4 request"
-	depends on NET_DHCPV4
 	help
 	  If set, the network stack will include the specified string in the
 	  DHCPv4 vendor class identifier option in the DHCPv4 request.
@@ -93,6 +88,13 @@ config NET_DHCPV4_OPTION_DNS_ADDRESS
 	help
 	  If this option is set, then the DNS server can be set from the
 	  DHCPv4 option.
+
+config NET_DHCPV4_OPTION_PRINT_IGNORED
+	bool "Print information about ignored options"
+	help
+	  If this option is set, then we print information about options that we
+	  received and ignored. If this is not set, then we print these as unknown
+	  options.
 
 endif # NET_DHCPV4
 

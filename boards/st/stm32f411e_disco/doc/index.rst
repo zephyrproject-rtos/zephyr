@@ -59,29 +59,7 @@ More information about STM32F411VE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f411e_disco board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32f411e_disco/stm32f411e_disco_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -116,6 +94,8 @@ assigned to UART2. Default settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32F411E-DISCO Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
 

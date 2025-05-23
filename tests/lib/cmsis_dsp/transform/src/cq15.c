@@ -7,6 +7,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
+#include <zephyr/test_toolchain.h>
 #include <stdlib.h>
 #include <arm_math.h>
 #include <arm_const_structs.h>

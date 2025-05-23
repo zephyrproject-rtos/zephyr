@@ -28,8 +28,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define RTMR_REG ((RTOSTMR_Type *)DT_INST_REG_ADDR(0))
 
-#define SLWTMR_REG                                                                                 \
-	((RTOSTMR_Type *)(DT_REG_ADDR(DT_COMPAT_GET_ANY_STATUS_OKAY(realtek_rts5912_slwtimer))))
+#define SLWTMR_REG ((RTOSTMR_Type *)(DT_REG_ADDR(DT_NODELABEL(slwtmr0))))
 
 #define SSCON_REG ((SYSTEM_Type *)(DT_REG_ADDR(DT_NODELABEL(sccon))))
 
@@ -39,8 +38,9 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define MAX_TICKS ((k_ticks_t)(RTMR_COUNTER_MAX / CYCLES_PER_TICK) - 1)
 
-#define RTMR_ADJUST_LIMIT  2
-#define RTMR_ADJUST_CYCLES 1
+/* Adjust cycle count programmed into timer for HW restart latency */
+#define RTMR_ADJUST_LIMIT  8
+#define RTMR_ADJUST_CYCLES 7
 
 static struct k_spinlock lock;
 static uint32_t accumulated_cycles;
@@ -73,6 +73,8 @@ static void rtmr_isr(const void *arg)
 	int32_t ticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	RTMR_REG->INTSTS = RTOSTMR_INTSTS_STS_Msk;
 
 	rtmr_restart(RTMR_COUNTER_MAX * CYCLES_PER_TICK);
 
@@ -134,7 +136,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	partial_cycles = CYCLES_PER_TICK - (accumulated_cycles % CYCLES_PER_TICK);
 	previous_cnt = full_cycles + partial_cycles;
-
+	/* adjust for up to one 32KHz cycle startup time */
 	temp = previous_cnt;
 	if (temp > RTMR_ADJUST_LIMIT) {
 		temp -= RTMR_ADJUST_CYCLES;
@@ -220,6 +222,8 @@ void arch_busy_wait(uint32_t n_usec)
 static int sys_clock_driver_init(void)
 {
 	/* Enable RTMR clock power */
+	RTMR_REG->INTSTS = RTOSTMR_INTSTS_STS_Msk;
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 
 	SYSTEM_Type *sys_reg = RTS5912_SCCON_REG_BASE;
 

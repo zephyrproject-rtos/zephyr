@@ -55,6 +55,8 @@ Arm Cortex-M implementation variants.
 +---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
 |                                 | HW-assisted stack limit checking  |        N        |   N     |   N    |    N      |    N   |Y [#f2]_ |     Y      |   Y        |
 +---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
+|                                 | Privileged Execute Never          |        N        |   N     |   N    |    N      |    N   |    N    |     N      |   Y [#f3]_ |
++---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
 | HW-assisted null-pointer        |                                   |                 |         |        |           |        |         |            |            |
 | dereference detection           |                                   |        N        |   N     |   Y    |    Y      |    Y   |    Y    |     Y      |   Y        |
 +---------------------------------+-----------------------------------+-----------------+---------+--------+-----------+--------+---------+------------+------------+
@@ -86,6 +88,7 @@ Notes
 
 .. [#f1] SysTick is optional in Cortex-M1
 .. [#f2] Stack limit checking only in Secure builds in Cortex-M23
+.. [#f3] https://developer.arm.com/documentation/107655/100/RTOS-and-Secure-software-design-considerations/Secure-software-development-design-considerations/Security-and-privilege-combination/Using-PXN-bit?lang=en
 
 OS features
 ***********

@@ -17,11 +17,13 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 reset=True, tool_opt=None, force=False, recover=False,
-                 suit_starter=False, ext_mem_config_file=None):
+                 erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
+                 force=False, recover=False, suit_starter=False,
+                 ext_mem_config_file=None):
 
-        super().__init__(cfg, family, softreset, pinreset, dev_id, erase, reset,
-                         tool_opt, force, recover)
+        super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
+                         erase_mode, ext_erase_mode, reset, tool_opt, force,
+                         recover)
 
         self.suit_starter = suit_starter
         self.ext_mem_config_file = ext_mem_config_file
@@ -34,6 +36,15 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         return 'nrfutil'
 
     @classmethod
+    def capabilities(cls):
+        return NrfBinaryRunner._capabilities(mult_dev_ids=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return NrfBinaryRunner._dev_id_help() + \
+               '''.\n This option can be specified multiple times'''
+
+    @classmethod
     def tool_opt_help(cls) -> str:
         return 'Additional options for nrfutil, e.g. "--log-level"'
 
@@ -41,9 +52,10 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
                                    args.pinreset, args.dev_id, erase=args.erase,
-                                   reset=args.reset,
-                                   tool_opt=args.tool_opt, force=args.force,
-                                   recover=args.recover,
+                                   erase_mode=args.erase_mode,
+                                   ext_erase_mode=args.ext_erase_mode,
+                                   reset=args.reset, tool_opt=args.tool_opt,
+                                   force=args.force, recover=args.recover,
                                    suit_starter=args.suit_manifest_starter,
                                    ext_mem_config_file=args.ext_mem_config_file)
 
@@ -56,7 +68,6 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')
-
 
     def _exec(self, args):
         jout_all = []
@@ -85,6 +96,8 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                         raise subprocess.CalledProcessError(
                             jout['data']['error']['code'], cmd
                         )
+        if p.returncode != 0:
+            raise subprocess.CalledProcessError(p.returncode, cmd)
 
         return jout_all
 
@@ -106,6 +119,12 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         op['operationId'] = f'{self._op_id}'
         self._op_id += 1
         self._ops.append(op)
+
+    def _format_dev_ids(self):
+        if isinstance(self.dev_id, list):
+            return ','.join(self.dev_id)
+        else:
+            return self.dev_id
 
     def _append_batch(self, op, json_file):
         _op = op['operation']
@@ -151,7 +170,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
             precmd = ['--x-ext-mem-config-file', self.ext_mem_config_file]
 
         self._exec(precmd + ['x-execute-batch', '--batch-path', f'{json_file}',
-                             '--serial-number', f'{self.dev_id}'])
+                             '--serial-number', self._format_dev_ids()])
 
     def do_exec_op(self, op, force=False):
         self.logger.debug(f'Executing op: {op}')

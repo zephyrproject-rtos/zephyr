@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PINCTRL
@@ -34,12 +35,17 @@ config PINCTRL_DYNAMIC
 	  peripheral at early boot stages depending on a certain input.
 
 source "drivers/pinctrl/Kconfig.b91"
+source "drivers/pinctrl/Kconfig.bflb"
 source "drivers/pinctrl/Kconfig.ambiq"
+source "drivers/pinctrl/Kconfig.arm_mps2"
+source "drivers/pinctrl/Kconfig.arm_mps3"
+source "drivers/pinctrl/Kconfig.arm_v2m_beetle"
 source "drivers/pinctrl/Kconfig.gd32"
 source "drivers/pinctrl/Kconfig.it8xxx2"
 source "drivers/pinctrl/Kconfig.npcx"
 source "drivers/pinctrl/Kconfig.numicro"
 source "drivers/pinctrl/Kconfig.nrf"
+source "drivers/pinctrl/Kconfig.mspm0"
 source "drivers/pinctrl/Kconfig.rpi_pico"
 source "drivers/pinctrl/Kconfig.sam"
 source "drivers/pinctrl/Kconfig.sam0"
@@ -73,6 +79,8 @@ source "drivers/pinctrl/Kconfig.mec5"
 source "drivers/pinctrl/Kconfig.wch_afio"
 source "drivers/pinctrl/Kconfig.sy1xx"
 source "drivers/pinctrl/Kconfig.realtek_rts5912"
+source "drivers/pinctrl/Kconfig.wch_20x_30x_afio"
+source "drivers/pinctrl/Kconfig.wch_00x_afio"
 
 rsource "renesas/Kconfig"
 

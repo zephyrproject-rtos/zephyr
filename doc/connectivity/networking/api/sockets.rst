@@ -23,7 +23,7 @@ compatible API implementation for Zephyr:
   names like ``close()``, which may be part of libc or other POSIX
   compatibility libraries.
   If enabled by :kconfig:option:`CONFIG_POSIX_API`, it will also
-  expose native POSIX names.
+  expose POSIX compatible APIs.
 
 BSD Sockets compatible API is enabled using :kconfig:option:`CONFIG_NET_SOCKETS`
 config option and implements the following operations: ``socket()``, ``close()``,
@@ -56,6 +56,41 @@ among sockets, files, special devices (like stdin/stdout), etc. Internally,
 there is a table mapping file descriptors to internal object pointers.
 The file descriptor table is used by the BSD Sockets API even if the rest
 of the POSIX subsystem (filesystem, stdin/stdout) is not enabled.
+
+Zephyr supports multiple types of BSD sockets, the following table summarizes
+what socket types are available:
+
++--------------+-------------+------------------+---------------------------------------------------------------------------+
+| Family       | Type        | Protocol         | Description                                                               |
++==============+=============+==================+===========================================================================+
+| AF_INET |br| | SOCK_DGRAM  | IPPROTO_UDP      | Enabled if :kconfig:option:`CONFIG_NET_UDP` is set. |br|                  |
+| AF_INET6     |             |                  | Allows to send and receive UDP datagrams.                                 |
+|              |             +------------------+---------------------------------------------------------------------------+
+|              |             | IPPROTO_DTLS_1_x | Enabled if :kconfig:option:`CONFIG_NET_SOCKETS_ENABLE_DTLS` is set. |br|  |
+|              |             |                  | Allows to send and receive DTLS datagrams.                                |
+|              +-------------+------------------+---------------------------------------------------------------------------+
+|              | SOCK_STREAM | IPPROTO_TCP      | Enabled if :kconfig:option:`CONFIG_NET_TCP` is set. |br|                  |
+|              |             |                  | Allows to send and receive TCP data stream.                               |
+|              |             +------------------+---------------------------------------------------------------------------+
+|              |             | IPPROTO_TLS_1_x  | Enabled if :kconfig:option:`CONFIG_NET_SOCKETS_SOCKOPT_TLS` is set. |br|  |
+|              |             |                  | Allows to send and receive TLS data stream.                               |
+|              +-------------+------------------+---------------------------------------------------------------------------+
+|              | SOCK_RAW    | IPPROTO_IP |br|  | Enabled if :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW` is set. |br|     |
+|              |             | <proto>          | Allows to send and receive IPv4/IPv6 datagrams. |br|                      |
+|              |             |                  | Packets are filtered by L4 protocol specified.                            |
+|              |             |                  | IPPROTO_IP is a wildcard protocol to receive all IP datagrams.            |
++--------------+-------------+------------------+---------------------------------------------------------------------------+
+| AF_PACKET    | SOCK_DGRAM  | ETH_P_ALL |br|   | Enabled if :kconfig:option:`CONFIG_NET_SOCKETS_PACKET_DGRAM` is set. |br| |
+|              |             | <proto>          | Allows to send and receive packets without L2 header. |br|                |
+|              |             |                  | Packets are filtered by L3 protocol specified.                            |
+|              |             |                  | ETH_P_ALL is a wildcard protocol to receive all packets.                  |
+|              +-------------+------------------+---------------------------------------------------------------------------+
+|              | SOCK_RAW    | ETH_P_ALL        | Enabled if :kconfig:option:`CONFIG_NET_SOCKETS_PACKET` is set. |br|       |
+|              |             |                  | Allows to send and receive packets with L2 header included.               |
++--------------+-------------+------------------+---------------------------------------------------------------------------+
+| AF_CAN       | SOCK_RAW    | CAN_RAW          | Enabled if :kconfig:option:`CONFIG_NET_SOCKETS_CAN` is set. |br|          |
+|              |             |                  | Allows to send and receive CAN packets.                                   |
++--------------+-------------+------------------+---------------------------------------------------------------------------+
 
 See :zephyr:code-sample:`sockets-echo-server` and :zephyr:code-sample:`sockets-echo-client`
 sample applications to learn how to create a simple server or client BSD socket based
@@ -93,7 +128,7 @@ socket options.
 The following TLS credential types can be registered in the system:
 
 - ``TLS_CREDENTIAL_CA_CERTIFICATE``
-- ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+- ``TLS_CREDENTIAL_PUBLIC_CERTIFICATE``
 - ``TLS_CREDENTIAL_PRIVATE_KEY``
 - ``TLS_CREDENTIAL_PSK``
 - ``TLS_CREDENTIAL_PSK_ID``

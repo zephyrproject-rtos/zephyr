@@ -1,0 +1,9 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_SY1XX
+	bool "Sensry SY1XX I2C driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_I2C_ENABLED
+	help
+	  Enable Sensry SY1xx SOC Family I2C driver.

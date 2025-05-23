@@ -57,3 +57,5 @@ tests:
   drivers.pwm.max31790.build:
     platform_allow: nucleo_f429zi
     extra_args: DTC_OVERLAY_FILE=max31790.overlay
+  drivers.pwm.rts5912.build:
+    platform_allow: rts5912_evb

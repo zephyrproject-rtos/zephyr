@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
-
 &pinctrl {
-	sci2_default: sci2_default {
+	spi1_default: spi1_default {
 		group1 {
-			/* tx */
-			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 2)>;
-			drive-strength = "medium";
-		};
-		group2 {
-			/* rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 1)>;
+			/* MOSI MISO RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 1,  9)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 10)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 11)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 12)>;
 		};
 	};
 };

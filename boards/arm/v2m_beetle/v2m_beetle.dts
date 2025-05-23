@@ -74,6 +74,8 @@
 			interrupts = <0 3>;
 			clocks = <&sysclk &syscon>;
 			current-speed = <115200>;
+			pinctrl-0 = <&uart0_default>;
+			pinctrl-names = "default";
 		};
 
 		uart1: uart@40005000 {
@@ -82,6 +84,8 @@
 			interrupts = <2 3>;
 			clocks = <&sysclk &syscon>;
 			current-speed = <115200>;
+			pinctrl-0 = <&uart1_default>;
+			pinctrl-names = "default";
 		};
 
 		wdog0: wdog@40008000 {
@@ -131,9 +135,15 @@
 			reg = <0x4001f000 0x1000>;
 			#clock-cells = <0>;
 		};
+
+		pinctrl: pinctrl {
+			compatible = "arm,mps3-pinctrl";
+			status = "okay";
+		};
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+#include "v2m_beetle-pinctrl.dtsi"

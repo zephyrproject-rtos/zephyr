@@ -54,7 +54,7 @@ ZTEST(console_switching, test_write)
 		/* verify that text[j] was written to dev[j] */
 		TC_PRINT("wrote '%s' to %s\n", buf, name[j]);
 
-		zassert_equal(ret[1], strlen(text[j]), "Only wrote %zu/%zu bytes of '%s'",
+		zassert_equal(ret[1], strlen(text[j]), "Only wrote %d/%zu bytes of '%s'",
 			      ret[1], strlen(text[j]), text[j]);
 		zassert_equal(0, strcmp(text[j], buf), "Strings '%s' and '%s' do not match",
 			      text[j], buf);
@@ -90,7 +90,7 @@ ZTEST(console_switching, test_read)
 		/* verify that text[j] was written to dev[j] */
 		TC_PRINT("read '%s' from %s\n", buf, name[j]);
 
-		zassert_equal(ret[1], strlen(text[j]), "Only put %zu/%zu bytes of '%s'",
+		zassert_equal(ret[1], strlen(text[j]), "Only put %d/%zu bytes of '%s'",
 			      ret[1], strlen(text[j]), text[j]);
 		zassert_equal(0, strcmp(text[j], buf), "Strings '%s' and '%s' do not match",
 			      text[j], buf);

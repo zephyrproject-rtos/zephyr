@@ -1,4 +1,4 @@
-description: STM32 G0 flash controller
+description: STM32G0 flash controller
 
 compatible: "st,stm32g0-flash-controller"
 

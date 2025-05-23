@@ -29,12 +29,20 @@
 /* MSGINTR */
 #define NETC_MSGINTR_CHANNEL 0
 
+#if DT_IRQ_HAS_IDX(DT_NODELABEL(netc), 0)
+#define NETC_MSGINTR_IRQ DT_IRQN_BY_IDX(DT_NODELABEL(netc), 0)
+#endif
+
 #if (CONFIG_ETH_NXP_IMX_MSGINTR == 1)
-#define NETC_MSGINTR     MSGINTR1
+#define NETC_MSGINTR MSGINTR1
+#ifndef NETC_MSGINTR_IRQ
 #define NETC_MSGINTR_IRQ MSGINTR1_IRQn
+#endif
 #elif (CONFIG_ETH_NXP_IMX_MSGINTR == 2)
-#define NETC_MSGINTR     MSGINTR2
+#define NETC_MSGINTR MSGINTR2
+#ifndef NETC_MSGINTR_IRQ
 #define NETC_MSGINTR_IRQ MSGINTR2_IRQn
+#endif
 #else
 #error "Current CONFIG_ETH_NXP_IMX_MSGINTR not support"
 #endif
@@ -94,7 +102,6 @@ struct netc_eth_data {
 	uint8_t mac_addr[6];
 	/* TX */
 	struct k_mutex tx_mutex;
-	netc_tx_frame_info_t tx_info;
 	uint8_t *tx_buff;
 	volatile bool tx_done;
 	/* RX */

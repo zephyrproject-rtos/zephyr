@@ -9,12 +9,30 @@ config JSON_LIBRARY
 	  Build a minimal JSON parsing/encoding library. Used by sample
 	  applications such as the NATS client.
 
+config JSON_LIBRARY_FP_SUPPORT
+	bool "Floating point support in JSON library"
+	depends on JSON_LIBRARY
+	select CBPRINTF_FP_SUPPORT
+	select REQUIRES_FULL_LIBC
+	help
+	  Build the JSON library with support for floating point types.
+
+	  Requires a libc implementation with support for floating point
+	  functions: strtof(), strtod(), isnan() and isinf().
+
 config RING_BUFFER
 	bool "Ring buffers"
 	help
-	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
-	  buffers manage their own buffer memory and can store arbitrary data.
-	  For optimal performance, use buffer sizes that are a power of 2.
+	  Provide highly efficient ring buffer management for arbitrary data.
+	  Some facilities such as kernel pipes are built on top of this.
+	  May be used directly e.g. when the pipe overhead is unnecessary.
+
+config RING_BUFFER_LARGE
+	bool "Allow large ring buffer sizes"
+	depends on RING_BUFFER
+	help
+	  Increase maximum buffer size from 32KB to 2GB. When this is enabled,
+	  all struct ring_buf instances become 12 bytes bigger.
 
 config NOTIFY
 	bool "Asynchronous Notifications"
@@ -56,5 +74,11 @@ config UTF8
 	help
 	  Enable the utf8 API. The API implements functions to specifically
 	  handle UTF-8 encoded strings.
+
+config COBS
+	bool "Consistent overhead byte stuffing"
+	select NET_BUF
+	help
+	  Enable consistent overhead byte stuffing
 
 endmenu

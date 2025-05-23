@@ -164,7 +164,7 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
-#if defined(CONFIG_NUCLEI_ECLIC) || defined(CONFIG_NRFX_CLIC)
+#if defined(CONFIG_CLIC) || defined(CONFIG_NRFX_CLIC)
 void riscv_clic_irq_set_pending(uint32_t irq);
 static inline void trigger_irq(int irq)
 {
@@ -211,8 +211,17 @@ static inline void trigger_irq(int irq)
 	z_vim_arm_enter_irq(irq);
 }
 
+#elif defined(CONFIG_RX)
+#define IR_BASE_ADDRESS DT_REG_ADDR_BY_NAME(DT_NODELABEL(icu), IR)
+static inline void trigger_irq(int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "attempting to trigger invalid IRQ (%u)", irq);
+	__ASSERT(irq >= CONFIG_GEN_IRQ_START_VECTOR, "attempting to trigger reserved IRQ (%u)",
+		 irq);
+	WRITE_BIT(REG(IR_BASE_ADDRESS + irq), 0, true);
+}
+
 #else
-/* So far, Nios II does not support this */
 #define NO_TRIGGER_FROM_SW
 #endif
 

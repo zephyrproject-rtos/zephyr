@@ -47,23 +47,25 @@ struct dap_context {
 
 static struct dap_context dap_ctx[1];
 
+#define CMSIS_DAP_PACKET_MIN_SIZE 64
+
 BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_PROBE_VENDOR) <=
-	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     MIN(CMSIS_DAP_PACKET_MIN_SIZE - 2, UINT8_MAX - 2),
 	     "PROBE_VENDOR string is too long.");
 BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_PROBE_NAME) <=
-	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     MIN(CMSIS_DAP_PACKET_MIN_SIZE - 2, UINT8_MAX - 2),
 	     "PROBE_NAME string is too long.");
 BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_BOARD_VENDOR) <=
-	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     MIN(CMSIS_DAP_PACKET_MIN_SIZE - 2, UINT8_MAX - 2),
 	     "BOARD_VENDOR string is too long.");
 BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_BOARD_NAME) <=
-	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     MIN(CMSIS_DAP_PACKET_MIN_SIZE - 2, UINT8_MAX - 2),
 	     "BOARD_NAME string is too long.");
 BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_DEVICE_VENDOR) <=
-	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     MIN(CMSIS_DAP_PACKET_MIN_SIZE - 2, UINT8_MAX - 2),
 	     "DEVICE_VENDOR string is too long.");
 BUILD_ASSERT(sizeof(CONFIG_CMSIS_DAP_DEVICE_NAME) <=
-	     MIN(CONFIG_CMSIS_DAP_PACKET_SIZE - 2, UINT8_MAX - 2),
+	     MIN(CMSIS_DAP_PACKET_MIN_SIZE - 2, UINT8_MAX - 2),
 	     "DEVICE_NAME string is too long.");
 
 /* Get DAP Information */
@@ -1037,6 +1039,12 @@ uint32_t dap_execute_cmd(const uint8_t *request,
 	return dap_process_cmd(&dap_ctx[0], request, response);
 }
 
+void dap_update_pkt_size(const uint16_t pkt_size)
+{
+	dap_ctx[0].pkt_size = pkt_size;
+	LOG_INF("New packet size %u", dap_ctx[0].pkt_size);
+}
+
 int dap_setup(const struct device *const dev)
 {
 	dap_ctx[0].swdp_dev = (void *)dev;
@@ -1047,7 +1055,7 @@ int dap_setup(const struct device *const dev)
 	}
 
 	/* Default settings */
-	dap_ctx[0].pkt_size = CONFIG_CMSIS_DAP_PACKET_SIZE;
+	dap_ctx[0].pkt_size = CMSIS_DAP_PACKET_MIN_SIZE;
 	dap_ctx[0].debug_port = 0U;
 	dap_ctx[0].transfer.idle_cycles = 0U;
 	dap_ctx[0].transfer.retry_count = 100U;

@@ -8,7 +8,7 @@
 #include <atmel/samd21.dtsi>
 #include <atmel/samx2xx18.dtsi>
 #include "arduino_nano_33_iot-pinctrl.dtsi"
-#include "arduino_nano_r3_connector.dtsi"
+#include "arduino_nano_connector.dtsi"
 
 / {
 	model = "Arduino Nano 33 IOT";

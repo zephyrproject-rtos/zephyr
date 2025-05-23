@@ -75,4 +75,13 @@
 			nxp,analog-mode;
 		};
 	};
+
+	pinmux_sctimer: pinmux_sctimer {
+		group0 {
+			pinmux = <SCT0_IN0_PIO0_0>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };

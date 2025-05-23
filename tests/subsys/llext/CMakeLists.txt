@@ -25,6 +25,7 @@ set(ext_names
 	threads_kernel_objects
 	export_dependent
 	export_dependency
+	align
 )
 
 if(CONFIG_ARM)
@@ -68,6 +69,11 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)
   )
 endif()
 
+get_property(TOPT GLOBAL PROPERTY TOPT)
+get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+set_ifndef(  TOPT "${COMPILER_TOPT}")
+set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
+
 if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM AND NOT CONFIG_RISCV)
   # Manually fix the pre_located extension's text address at a multiple of 4
   get_target_property(pre_located_target pre_located_ext lib_target)
@@ -77,7 +83,7 @@ if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM AND NOT CONFIG_RISCV)
     POST_BUILD
     COMMAND ${CMAKE_C_COMPILER}
     ${LLEXT_APPEND_FLAGS}
-    -Wl,-r -Wl,-Ttext=0xbada110c -nostdlib -nodefaultlibs -nostartfiles
+    -Wl,-r ${TOPT}text=0xbada110c -nostdlib -nodefaultlibs -nostartfiles
     $<TARGET_OBJECTS:${pre_located_target}> -o ${pre_located_file}
   )
 endif()
@@ -89,5 +95,15 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
   )
   generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
     ${ZEPHYR_BINARY_DIR}/include/generated/riscv_edge_case_cb_type.inc
+  )
+endif()
+
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV)
+  add_llext_target(riscv_edge_case_non_paired_hi20_lo12_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
+    SOURCES ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12.c ${PROJECT_SOURCE_DIR}/src/riscv_edge_case_non_paired_hi20_lo12_trigger.S
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/riscv_edge_case_non_paired_hi20_lo12.inc
   )
 endif()

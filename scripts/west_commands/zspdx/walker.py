@@ -77,12 +77,12 @@ class Walker:
 
         purl = None
         # This is designed to match repository with the following url pattern:
-        # '<protocol><base_url>/<namespace>/<package>
-        COMMON_GIT_URL_REGEX=r'((git@|http(s)?:\/\/)(?P<base_url>[\w\.@]+)(\/|:))(?P<namespace>[\w,\-,\_]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
+        # '<protocol><type>/<namespace>/<package>
+        COMMON_GIT_URL_REGEX=r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
 
         match = re.fullmatch(COMMON_GIT_URL_REGEX, url)
         if match:
-            purl = f'pkg:{match.group("base_url")}/{match.group("namespace")}/{match.group("package")}'
+            purl = f'pkg:{match.group("type")}/{match.group("namespace")}/{match.group("package")}'
 
         if purl and (version or len(version) > 0):
             purl += f'@{version}'

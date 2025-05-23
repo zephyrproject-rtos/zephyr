@@ -8,8 +8,6 @@
  * https://www.st.com/resource/en/datasheet/lsm6dsv16x.pdf
  */
 
-#define DT_DRV_COMPAT st_lsm6dsv16x
-
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
@@ -180,10 +178,6 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
-
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
 		if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
@@ -341,7 +335,7 @@ static void lsm6dsv16x_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 static int lsm6dsv16x_ibi_cb(struct i3c_device_desc *target,
 			  struct i3c_ibi_payload *payload)
 {
@@ -446,7 +440,7 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (ON_I3C_BUS(cfg)) {
 		if (I3C_INT_PIN(cfg)) {
 			/* Enable INT Pins when using I3C */

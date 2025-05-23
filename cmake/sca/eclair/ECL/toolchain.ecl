@@ -50,8 +50,8 @@ Variables\";
 -config=STD.emptinit,behavior={c18,GCC,specified}
 -doc_end
 -doc_begin="See Chapter \"6.19 Structures with No Members\" of "GCC_MANUAL"."
--config=STD.emptrecd,behavior={c99,GCC,specified}
--config=STD.emptrecd,behavior={c18,GCC,specified}
+-config=STD.anonstct,behavior={c99,GCC,specified}
+-config=STD.anonstct,behavior={c18,GCC,specified}
 -doc_end
 -doc="See Chapter \"6.18 Arrays of Length Zero\" of "GCC_MANUAL"."
 -config=STD.arayzero,behavior={c99,GCC,specified}

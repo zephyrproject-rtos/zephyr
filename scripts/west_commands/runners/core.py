@@ -268,6 +268,9 @@ class RunnerCaps:
       connected to a single computer, in order to select which one will be used
       with the command provided.
 
+    - mult_dev_ids: whether the runner supports multiple device identifiers
+      for a single operation, allowing for bulk flashing of devices.
+
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
       must honor the --dt-flash option.
@@ -305,6 +308,7 @@ class RunnerCaps:
 
     commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
     dev_id: bool = False
+    mult_dev_ids: bool = False
     flash_addr: bool = False
     erase: bool = False
     reset: bool = False
@@ -316,6 +320,8 @@ class RunnerCaps:
                        # to allow other commands to use the rtt address
 
     def __post_init__(self):
+        if self.mult_dev_ids and not self.dev_id:
+            raise RuntimeError('dev_id must be set along mult_dev_ids')
         if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
             raise ValueError(f'{self.commands=} contains invalid command')
 
@@ -333,6 +339,7 @@ class FileType(Enum):
     HEX = 1
     BIN = 2
     ELF = 3
+    MOT = 4
 
 
 class RunnerConfig(NamedTuple):
@@ -349,6 +356,7 @@ class RunnerConfig(NamedTuple):
     hex_file: str | None         # zephyr.hex path, or None
     bin_file: str | None         # zephyr.bin path, or None
     uf2_file: str | None         # zephyr.uf2 path, or None
+    mot_file: str | None         # zephyr.mot path
     file: str | None             # binary file path (provided by the user), or None
     file_type: FileType | None = FileType.OTHER  # binary file type
     gdb: str | None = None       # path to a usable gdb
@@ -543,7 +551,9 @@ class ZephyrBinaryRunner(abc.ABC):
         caps = cls.capabilities()
 
         if caps.dev_id:
+            action = 'append' if caps.mult_dev_ids else 'store'
             parser.add_argument('-i', '--dev-id',
+                                action=action,
                                 dest='dev_id',
                                 help=cls.dev_id_help())
         else:
@@ -573,6 +583,7 @@ class ZephyrBinaryRunner(abc.ABC):
             parser.add_argument('--elf-file', help=argparse.SUPPRESS)
             parser.add_argument('--hex-file', help=argparse.SUPPRESS)
             parser.add_argument('--bin-file', help=argparse.SUPPRESS)
+            parser.add_argument('--mot-file', help=argparse.SUPPRESS)
         else:
             parser.add_argument('--elf-file',
                                 metavar='FILE',
@@ -591,6 +602,12 @@ class ZephyrBinaryRunner(abc.ABC):
                                 action=(partial(depr_action, cls=cls,
                                                 replacement='-f/--file') if caps.file else None),
                                 help='path to zephyr.bin'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
+            parser.add_argument('--mot-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.mot'
                                 if not caps.file else 'Deprecated, use -f/--file instead.')
 
         parser.add_argument('--erase', '--no-erase', nargs=0,
@@ -710,6 +727,12 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             return build_conf['CONFIG_FLASH_BASE_ADDRESS']
 
+    @staticmethod
+    def sram_address_from_build_conf(build_conf: BuildConfiguration):
+        '''return CONFIG_SRAM_BASE_ADDRESS.
+        '''
+        return build_conf['CONFIG_SRAM_BASE_ADDRESS']
+
     def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
 
@@ -749,10 +772,13 @@ class ZephyrBinaryRunner(abc.ABC):
     @classmethod
     def dev_id_help(cls) -> str:
         ''' Get the ArgParse help text for the --dev-id option.'''
-        return '''Device identifier. Use it to select
+        help = '''Device identifier. Use it to select
                   which debugger, device, node or instance to
                   target when multiple ones are available or
                   connected.'''
+        addendum = '''\nThis option can be present multiple times.''' if \
+                   cls.capabilities().mult_dev_ids else ''
+        return help + addendum
 
     @classmethod
     def extload_help(cls) -> str:
@@ -955,4 +981,4 @@ class ZephyrBinaryRunner(abc.ABC):
                 elif key.fileobj == sock:
                     resp = sock.recv(2048)
                     if resp:
-                        print(resp.decode())
+                        print(resp.decode(), end='')

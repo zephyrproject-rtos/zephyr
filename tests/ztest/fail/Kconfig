@@ -31,8 +31,10 @@ config TEST_ERROR_STRING
 	string
 	default "ERROR: cannot fail in test phase 'after()', bailing" if ZTEST_FAIL_TEST_ASSERT_AFTER
 	default "ERROR: cannot fail in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSERT_TEARDOWN
-	default "ERROR: cannot skip in test phase 'after()', bailing" if ZTEST_FAIL_TEST_ASSUME_AFTER
-	default "ERROR: cannot skip in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSUME_TEARDOWN
+	default "ERROR: cannot skip in test phase 'after()', bailing" if ZTEST_FAIL_TEST_ASSUME_AFTER && !ZTEST_FAIL_ON_ASSUME
+	default "ERROR: cannot skip in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSUME_TEARDOWN && !ZTEST_FAIL_ON_ASSUME
+	default "ERROR: cannot fail in test phase 'after()', bailing" if ZTEST_FAIL_TEST_ASSUME_AFTER && ZTEST_FAIL_ON_ASSUME
+	default "ERROR: cannot fail in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSUME_TEARDOWN && ZTEST_FAIL_ON_ASSUME
 	default "ERROR: cannot pass in test phase 'after()', bailing" if ZTEST_FAIL_TEST_PASS_AFTER
 	default "ERROR: cannot pass in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_PASS_TEARDOWN
 	default "Assumption failed at " if ZTEST_FAIL_TEST_UNEXPECTED_ASSUME

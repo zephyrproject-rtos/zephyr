@@ -247,6 +247,30 @@ int usbh_req_clear_sfs_rwup(struct usb_device *const udev)
 			      NULL);
 }
 
+int usbh_req_set_sfs_halt(struct usb_device *const udev, const uint8_t ep)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_RECIPIENT_ENDPOINT;
+	const uint8_t bRequest = USB_SREQ_SET_FEATURE;
+	const uint16_t wValue = USB_SFS_ENDPOINT_HALT;
+	const uint16_t wIndex = ep;
+
+	return usbh_req_setup(udev,
+			      bmRequestType, bRequest, wValue, wIndex, 0,
+			      NULL);
+}
+
+int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_RECIPIENT_ENDPOINT;
+	const uint8_t bRequest = USB_SREQ_CLEAR_FEATURE;
+	const uint16_t wValue = USB_SFS_ENDPOINT_HALT;
+	const uint16_t wIndex = ep;
+
+	return usbh_req_setup(udev,
+			      bmRequestType, bRequest, wValue, wIndex, 0,
+			      NULL);
+}
+
 int usbh_req_set_hcfs_ppwr(struct usb_device *const udev,
 			   const uint8_t port)
 {

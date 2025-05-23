@@ -6,7 +6,6 @@
 
 import argparse
 import collections
-from email.utils import parseaddr
 from itertools import takewhile
 import json
 import logging
@@ -76,10 +75,46 @@ def get_files(filter=None, paths=None):
     out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
     files = out.splitlines()
     for file in list(files):
-        if not os.path.isfile(os.path.join(GIT_TOP, file)):
+        if not (GIT_TOP / file).exists():
             # Drop submodule directories from the list.
             files.remove(file)
     return files
+
+def get_module_setting_root(root, settings_file):
+    """
+    Parse the Zephyr module generated settings file given by 'settings_file'
+    and return all root settings defined by 'root'.
+    """
+    # Invoke the script directly using the Python executable since this is
+    # not a module nor a pip-installed Python utility
+    root_paths = []
+
+    if os.path.exists(settings_file):
+        with open(settings_file, 'r') as fp_setting_file:
+            content = fp_setting_file.read()
+
+        lines = content.strip().split('\n')
+        for line in lines:
+            root = root.upper()
+            if line.startswith(f'"{root}_ROOT":'):
+                _, root_path = line.split(":", 1)
+                root_paths.append(Path(root_path.strip('"')))
+    return root_paths
+
+def get_vendor_prefixes(path, errfn = print) -> set[str]:
+    vendor_prefixes = set()
+    with open(path) as fp:
+        for line in fp.readlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            try:
+                vendor, _ = line.split("\t", 2)
+                vendor_prefixes.add(vendor)
+            except ValueError:
+                errfn(f"Invalid line in {path}:\"{line}\".")
+                errfn("Did you forget the tab character?")
+    return vendor_prefixes
 
 class FmtdFailure(Failure):
     def __init__(
@@ -121,19 +156,21 @@ class ComplianceTest:
       Link to documentation related to what's being tested
 
     path_hint:
-      The path the test runs itself in. This is just informative and used in
-      the message that gets printed when running the test.
+      The path the test runs itself in. By default it uses the magic string
+      "<git-top>" which refers to the top-level repository directory.
 
-      There are two magic strings that can be used instead of a path:
-      - The magic string "<zephyr-base>" can be used to refer to the
-      environment variable ZEPHYR_BASE or, when missing, the calculated base of
-      the zephyr tree
-      - The magic string "<git-top>" refers to the top-level repository
-      directory. This avoids running 'git' to find the top-level directory
-      before main() runs (class variable assignments run when the 'class ...'
-      statement runs). That avoids swallowing errors, because main() reports
-      them to GitHub
+      This avoids running 'git' to find the top-level directory before main()
+      runs (class variable assignments run when the 'class ...' statement
+      runs). That avoids swallowing errors, because main() reports them to
+      GitHub.
+
+      Subclasses may override the default with a specific path or one of the
+      magic strings below:
+      - "<zephyr-base>" can be used to refer to the environment variable
+        ZEPHYR_BASE or, when missing, the calculated base of the zephyr tree.
     """
+    path_hint = "<git-top>"
+
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
         # This is necessary because Failure can be subclassed, but since it is
@@ -205,11 +242,10 @@ class CheckPatch(ComplianceTest):
     """
     name = "Checkpatch"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
-    path_hint = "<git-top>"
 
     def run(self):
-        checkpatch = os.path.join(ZEPHYR_BASE, 'scripts', 'checkpatch.pl')
-        if not os.path.exists(checkpatch):
+        checkpatch = ZEPHYR_BASE / 'scripts' / 'checkpatch.pl'
+        if not checkpatch.exists():
             self.skip(f'{checkpatch} not found')
 
         # check for Perl installation on Windows
@@ -264,7 +300,6 @@ class BoardYmlCheck(ComplianceTest):
     """
     name = "BoardYml"
     doc = "Check the board.yml file format"
-    path_hint = "<zephyr-base>"
 
     def check_board_file(self, file, vendor_prefixes):
         """Validate a single board file."""
@@ -279,20 +314,19 @@ class BoardYmlCheck(ComplianceTest):
                                           desc=desc)
 
     def run(self):
-        vendor_prefixes = ["others"]
-        with open(os.path.join(ZEPHYR_BASE, "dts", "bindings", "vendor-prefixes.txt")) as fp:
-            for line in fp.readlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                try:
-                    vendor, _ = line.split("\t", 2)
-                    vendor_prefixes.append(vendor)
-                except ValueError:
-                    self.error(f"Invalid line in vendor-prefixes.txt:\"{line}\".")
-                    self.error("Did you forget the tab character?")
+        path = resolve_path_hint(self.path_hint)
 
-        path = Path(ZEPHYR_BASE)
+        vendor_prefixes = {"others"}
+        # add vendor prefixes from the main zephyr repo
+        vendor_prefixes |= get_vendor_prefixes(ZEPHYR_BASE / "dts" / "bindings" / "vendor-prefixes.txt", self.error)
+
+        # add vendor prefixes from the current repo
+        dts_roots = get_module_setting_root('dts', path / "zephyr" / "module.yml")
+        for dts_root in dts_roots:
+            vendor_prefix_file = dts_root / "dts" / "bindings" / "vendor-prefixes.txt"
+            if vendor_prefix_file.exists():
+                vendor_prefixes |= get_vendor_prefixes(vendor_prefix_file, self.error)
+
         for file in path.glob("**/board.yml"):
             self.check_board_file(file, vendor_prefixes)
 
@@ -303,7 +337,6 @@ class ClangFormatCheck(ComplianceTest):
     """
     name = "ClangFormat"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#clang-format for more details."
-    path_hint = "<git-top>"
 
     def run(self):
         exe = f"clang-format-diff.{'exe' if platform.system() == 'Windows' else 'py'}"
@@ -345,7 +378,6 @@ class DevicetreeBindingsCheck(ComplianceTest):
     """
     name = "DevicetreeBindings"
     doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
-    path_hint = "<zephyr-base>"
 
     def run(self, full=True):
         dts_bindings = self.parse_dt_bindings()
@@ -382,7 +414,6 @@ class KconfigCheck(ComplianceTest):
     """
     name = "Kconfig"
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
-    path_hint = "<zephyr-base>"
 
     # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
     FILENAME = "Kconfig"
@@ -412,8 +443,7 @@ class KconfigCheck(ComplianceTest):
         """
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
-        zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
-                                          "zephyr_module.py")
+        zephyr_module_path = ZEPHYR_BASE / "scripts" / "zephyr_module.py"
         cmd = [sys.executable, zephyr_module_path,
                '--kconfig-out', modules_file,
                '--sysbuild-kconfig-out', sysbuild_modules_file,
@@ -424,9 +454,9 @@ class KconfigCheck(ComplianceTest):
         except subprocess.CalledProcessError as ex:
             self.error(ex.output.decode("utf-8"))
 
-        modules_dir = ZEPHYR_BASE + '/modules'
+        modules_dir = ZEPHYR_BASE / 'modules'
         modules = [name for name in os.listdir(modules_dir) if
-                   os.path.exists(os.path.join(modules_dir, name, 'Kconfig'))]
+                   modules_dir / name / 'Kconfig']
 
         with open(modules_file, 'r') as fp_module_file:
             content = fp_module_file.read()
@@ -435,30 +465,9 @@ class KconfigCheck(ComplianceTest):
             for module in modules:
                 fp_module_file.write("ZEPHYR_{}_KCONFIG = {}\n".format(
                     re.sub('[^a-zA-Z0-9]', '_', module).upper(),
-                    modules_dir + '/' + module + '/Kconfig'
+                    modules_dir / module / 'Kconfig'
                 ))
             fp_module_file.write(content)
-
-    def get_module_setting_root(self, root, settings_file):
-        """
-        Parse the Zephyr module generated settings file given by 'settings_file'
-        and return all root settings defined by 'root'.
-        """
-        # Invoke the script directly using the Python executable since this is
-        # not a module nor a pip-installed Python utility
-        root_paths = []
-
-        if os.path.exists(settings_file):
-            with open(settings_file, 'r') as fp_setting_file:
-                content = fp_setting_file.read()
-
-            lines = content.strip().split('\n')
-            for line in lines:
-                root = root.upper()
-                if line.startswith(f'"{root}_ROOT":'):
-                    _, root_path = line.split(":", 1)
-                    root_paths.append(Path(root_path.strip('"')))
-        return root_paths
 
     def get_kconfig_dts(self, kconfig_dts_file, settings_file):
         """
@@ -469,12 +478,11 @@ class KconfigCheck(ComplianceTest):
         """
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
-        zephyr_drv_kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "dts",
-                                               "gen_driver_kconfig_dts.py")
+        zephyr_drv_kconfig_path = ZEPHYR_BASE / "scripts" / "dts" / "gen_driver_kconfig_dts.py"
         binding_paths = []
-        binding_paths.append(os.path.join(ZEPHYR_BASE, "dts", "bindings"))
+        binding_paths.append(ZEPHYR_BASE / "dts" / "bindings")
 
-        dts_root_paths = self.get_module_setting_root('dts', settings_file)
+        dts_root_paths = get_module_setting_root('dts', settings_file)
         for p in dts_root_paths:
             binding_paths.append(p / "dts" / "bindings")
 
@@ -507,10 +515,10 @@ class KconfigCheck(ComplianceTest):
         kconfig_sysbuild_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.sysbuild')
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'boards', 'Kconfig.defconfig')
 
-        board_roots = self.get_module_setting_root('board', settings_file)
-        board_roots.insert(0, Path(ZEPHYR_BASE))
-        soc_roots = self.get_module_setting_root('soc', settings_file)
-        soc_roots.insert(0, Path(ZEPHYR_BASE))
+        board_roots = get_module_setting_root('board', settings_file)
+        board_roots.insert(0, ZEPHYR_BASE)
+        soc_roots = get_module_setting_root('soc', settings_file)
+        soc_roots.insert(0, ZEPHYR_BASE)
         root_args = argparse.Namespace(**{'board_roots': board_roots,
                                           'soc_roots': soc_roots, 'board': None,
                                           'board_dir': []})
@@ -573,7 +581,7 @@ class KconfigCheck(ComplianceTest):
 
         kconfig_file = os.path.join(kconfig_dir, 'arch', 'Kconfig')
 
-        root_args = argparse.Namespace(**{'arch_roots': [Path(ZEPHYR_BASE)], 'arch': None})
+        root_args = argparse.Namespace(**{'arch_roots': [ZEPHYR_BASE], 'arch': None})
         v2_archs = list_hardware.find_v2_archs(root_args)
 
         with open(kconfig_file, 'w') as fp:
@@ -587,20 +595,20 @@ class KconfigCheck(ComplianceTest):
         """
         # Put the Kconfiglib path first to make sure no local Kconfiglib version is
         # used
-        kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "kconfig")
-        if not os.path.exists(kconfig_path):
+        kconfig_path = ZEPHYR_BASE / "scripts" / "kconfig"
+        if not kconfig_path.exists():
             self.error(kconfig_path + " not found")
 
         kconfiglib_dir = tempfile.mkdtemp(prefix="kconfiglib_")
 
-        sys.path.insert(0, kconfig_path)
+        sys.path.insert(0, str(kconfig_path))
         # Import globally so that e.g. kconfiglib.Symbol can be referenced in
         # tests
         global kconfiglib
         import kconfiglib
 
         # Look up Kconfig files relative to ZEPHYR_BASE
-        os.environ["srctree"] = ZEPHYR_BASE
+        os.environ["srctree"] = str(ZEPHYR_BASE)
 
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
@@ -705,6 +713,8 @@ class KconfigCheck(ComplianceTest):
 
         disallowed_symbols = {
             "PINCTRL": "Drivers requiring PINCTRL must SELECT it instead.",
+            "BOARD_EARLY_INIT_HOOK": "Boards requiring hooks must SELECT them instead.",
+            "BOARD_LATE_INIT_HOOK": "Boards requiring hooks must SELECT them instead.",
         }
 
         disallowed_regex = "(" + "|".join(disallowed_symbols.keys()) + ")$"
@@ -880,7 +890,7 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
             self.failure(f"Undefined Kconfig symbols:\n\n {undef_ref_warnings}")
 
     def check_soc_name_sync(self, kconf):
-        root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
+        root_args = argparse.Namespace(**{'soc_roots': [ZEPHYR_BASE]})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
         soc_names = {soc.name for soc in v2_systems.get_socs()}
@@ -949,7 +959,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         grep_stdout = git("grep", "--line-number", "-I", "--null",
                           "--perl-regexp", regex, "--", ":!/doc/releases",
                           ":!/doc/security/vulnerabilities.rst",
-                          cwd=Path(GIT_TOP))
+                          cwd=GIT_TOP)
 
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
@@ -961,7 +971,8 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                 sym_name = sym_name[len(self.CONFIG_):]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
                    sym_name not in self.UNDEF_KCONFIG_ALLOWLIST and \
-                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms):
+                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms) \
+                   and not sym_name.startswith("BOARD_REVISION_"):
 
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
@@ -1014,6 +1025,7 @@ flagged.
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
+        "BOOT_FIRMWARE_LOADER_BOOT_MODE", # Used in sysbuild for MCUboot configuration
         "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
@@ -1060,8 +1072,10 @@ flagged.
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",
+        "IAR_DATA_INIT",
         "IAR_LIBCPP",
         "IAR_SEMIHOSTING",
+        "IAR_ZEPHYR_INIT",
         "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS", # Used in ICMsg tests for intercompatibility
                                                       # with older versions of the ICMsg.
         "LIBGCC_RTLIB",
@@ -1076,12 +1090,15 @@ flagged.
         "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
         "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
                                         # itself.
+        "MCUBOOT_LOG_LEVEL_DBG",
         "MCUBOOT_LOG_LEVEL_INF",
         "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot
                                         # config,
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
         "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
+        "MCUX_HW_DEVICE_CORE", # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
+                               # It is a variable used by MCUX SDK CMake.
         "MISSING",
         "MODULES",
         "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
@@ -1100,6 +1117,8 @@ flagged.
         "SEL",
         "SHIFT",
         "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
+        "SINGLE_APPLICATION_SLOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
+        "SOC_SDKNG_UNSUPPORTED", # Used in modules/hal_nxp/mcux/CMakeLists.txt
         "SOC_SERIES_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
         "SOME_BOOL",
@@ -1145,6 +1164,7 @@ class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     defined only in a module.
     """
     name = "KconfigBasicNoModules"
+    path_hint = "<zephyr-base>"
 
     def get_modules(self, modules_file, sysbuild_modules_file, settings_file):
         with open(modules_file, 'w') as fp_module_file:
@@ -1182,6 +1202,9 @@ class SysbuildKconfigCheck(KconfigCheck):
     UNDEF_KCONFIG_ALLOWLIST = {
         # zephyr-keep-sorted-start re(^\s+")
         "FOO",
+        "MY_IMAGE", # Used in sysbuild documentation as example
+        "OTHER_APP_IMAGE_NAME", # Used in sysbuild documentation as example
+        "OTHER_APP_IMAGE_PATH", # Used in sysbuild documentation as example
         "SECOND_SAMPLE", # Used in sysbuild documentation
         "SUIT_ENVELOPE", # Used by nRF runners to program provisioning data
         "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data
@@ -1208,6 +1231,7 @@ class SysbuildKconfigBasicNoModulesCheck(SysbuildKconfigCheck, KconfigBasicNoMod
     but defined only in a module.
     """
     name = "SysbuildKconfigBasicNoModules"
+    path_hint = "<zephyr-base>"
 
 
 class Nits(ComplianceTest):
@@ -1217,7 +1241,6 @@ class Nits(ComplianceTest):
     """
     name = "Nits"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#coding-style for more details."
-    path_hint = "<git-top>"
 
     def run(self):
         # Loop through added/modified files
@@ -1241,7 +1264,7 @@ class Nits(ComplianceTest):
     def check_kconfig_header(self, fname):
         # Checks for a spammy copy-pasted header format
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             contents = f.read()
 
         # 'Kconfig - yada yada' has a copy-pasted redundant filename at the
@@ -1267,7 +1290,7 @@ failure.
         # Checks for 'source "$(ZEPHYR_BASE)/Kconfig[.zephyr]"', which can be
         # be simplified to 'source "Kconfig[.zephyr]"'
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             # Look for e.g. rsource as well, for completeness
             match = re.search(
                 r'^\s*(?:o|r|or)?source\s*"\$\(?ZEPHYR_BASE\)?/(Kconfig(?:\.zephyr)?)"',
@@ -1282,7 +1305,7 @@ and all 'source's are relative to it.""".format(match.group(1), fname))
     def check_redundant_document_separator(self, fname):
         # Looks for redundant '...' document separators in bindings
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             if re.search(r"^\.\.\.", f.read(), re.MULTILINE):
                 self.failure(f"""\
 Redundant '...' document separator in {fname}. Binding YAML files are never
@@ -1291,7 +1314,7 @@ concatenated together, so no document separators are needed.""")
     def check_source_file(self, fname):
         # Generic nits related to various source files
 
-        with open(os.path.join(GIT_TOP, fname), encoding="utf-8") as f:
+        with open(GIT_TOP / fname, encoding="utf-8") as f:
             contents = f.read()
 
         if not contents.endswith("\n"):
@@ -1311,7 +1334,6 @@ class GitDiffCheck(ComplianceTest):
     """
     name = "GitDiffCheck"
     doc = "Git conflict markers and whitespace errors are not allowed in added changes"
-    path_hint = "<git-top>"
 
     def run(self):
         offending_lines = []
@@ -1322,7 +1344,7 @@ class GitDiffCheck(ComplianceTest):
         for shaidx in get_shas(COMMIT_RANGE):
             # Ignore non-zero return status code
             # Reason: `git diff --check` sets the return code to the number of offending lines
-            diff = git("diff", f"{shaidx}^!", "--check", ignore_non_zero=True)
+            diff = git("diff", f"{shaidx}^!", "--check", "--", ":!*.diff", ":!*.patch", ignore_non_zero=True)
 
             lines = p.findall(diff)
             lines = map(lambda x: f"{shaidx}: {x}", lines)
@@ -1339,7 +1361,6 @@ class GitLint(ComplianceTest):
     """
     name = "Gitlint"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
-    path_hint = "<git-top>"
 
     def run(self):
         # By default gitlint looks for .gitlint configuration only in
@@ -1362,7 +1383,6 @@ class PyLint(ComplianceTest):
     """
     name = "Pylint"
     doc = "See https://www.pylint.org/ for more details"
-    path_hint = "<git-top>"
 
     def run(self):
         # Path to pylint configuration file
@@ -1437,50 +1457,46 @@ class Identity(ComplianceTest):
     """
     name = "Identity"
     doc = "See https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-guidelines for more details"
-    # git rev-list and git log don't depend on the current (sub)directory
-    # unless explicited
-    path_hint = "<git-top>"
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
-            commit = git("log", "--decorate=short", "--no-use-mailmap", "-n 1", shaidx)
-            signed = []
-            author = ""
-            sha = ""
-            parsed_addr = None
-            for line in commit.split("\n"):
-                match = re.search(r"^commit\s([^\s]*)", line)
-                if match:
-                    sha = match.group(1)
-                match = re.search(r"^Author:\s(.*)", line)
-                if match:
-                    author = match.group(1)
-                    parsed_addr = parseaddr(author)
-                match = re.search(r"signed-off-by:\s(.*)", line, re.IGNORECASE)
-                if match:
-                    signed.append(match.group(1))
+            commit_info = git('show', '-s', '--format=%an%n%ae%n%b', shaidx).split('\n', 2)
 
-            error1 = f"{sha}: author email ({author}) needs to match one of " \
-                     f"the signed-off-by entries."
-            error2 = f"{sha}: author email ({author}) does not follow the " \
-                     f"syntax: First Last <email>."
-            error3 = f"{sha}: author email ({author}) must be a real email " \
-                     f"and cannot end in @users.noreply.github.com"
-            failure = None
-            if author not in signed:
-                failure = error1
+            failures = []
 
-            if not parsed_addr or len(parsed_addr[0].split(" ")) < 2:
-                if not failure:
+            if len(commit_info) == 2:
+                failures.append(f'{shaidx}: Empty commit message body')
+                auth_name, auth_email = commit_info
+                body = ''
+            elif len(commit_info) == 3:
+                auth_name, auth_email, body = commit_info
+            else:
+                self.failure(f'Unable to parse commit message for {shaidx}')
 
-                    failure = error2
-                else:
-                    failure = failure + "\n" + error2
-            elif parsed_addr[1].endswith("@users.noreply.github.com"):
-                failure = error3
+            match_signoff = re.search(r"signed-off-by:\s(.*)", body,
+                                      re.IGNORECASE)
+            detailed_match = re.search(rf"signed-off-by:\s({re.escape(auth_name)}) <({re.escape(auth_email)})>",
+                                       body,
+                                       re.IGNORECASE)
 
-            if failure:
-                self.failure(failure)
+            if auth_email.endswith("@users.noreply.github.com"):
+                failures.append(f"{shaidx}: author email ({auth_email}) must "
+                                "be a real email and cannot end in "
+                                "@users.noreply.github.com")
+
+            if not match_signoff:
+                failures.append(f'{shaidx}: Missing signed-off-by line')
+            elif not detailed_match:
+                signoff = match_signoff.group(0)
+                failures.append(f"{shaidx}: Signed-off-by line ({signoff}) "
+                                "does not follow the syntax: First "
+                                "Last <email>.")
+            elif (auth_name, auth_email) != detailed_match.groups():
+                failures.append(f"{shaidx}: author email ({auth_email}) needs "
+                                "to match one of the signed-off-by entries.")
+
+            if failures:
+                self.failure('\n'.join(failures))
 
 
 class BinaryFiles(ComplianceTest):
@@ -1489,7 +1505,6 @@ class BinaryFiles(ComplianceTest):
     """
     name = "BinaryFiles"
     doc = "No binary files allowed."
-    path_hint = "<git-top>"
 
     def run(self):
         BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/")
@@ -1512,14 +1527,13 @@ class ImageSize(ComplianceTest):
     """
     name = "ImageSize"
     doc = "Check the size of image files."
-    path_hint = "<git-top>"
 
     def run(self):
         SIZE_LIMIT = 250 << 10
         BOARD_SIZE_LIMIT = 100 << 10
 
         for file in get_files(filter="d"):
-            full_path = os.path.join(GIT_TOP, file)
+            full_path = GIT_TOP / file
             mime_type = magic.from_file(full_path, mime=True)
 
             if not mime_type.startswith("image/"):
@@ -1542,7 +1556,6 @@ class MaintainersFormat(ComplianceTest):
     """
     name = "MaintainersFormat"
     doc = "Check that MAINTAINERS file parses correctly."
-    path_hint = "<git-top>"
 
     def run(self):
         MAINTAINERS_FILES = ["MAINTAINERS.yml", "MAINTAINERS.yaml"]
@@ -1562,7 +1575,6 @@ class ModulesMaintainers(ComplianceTest):
     """
     name = "ModulesMaintainers"
     doc = "Check that all modules have a MAINTAINERS entry."
-    path_hint = "<git-top>"
 
     def run(self):
         MAINTAINERS_FILES = ["MAINTAINERS.yml", "MAINTAINERS.yaml"]
@@ -1597,10 +1609,9 @@ class YAMLLint(ComplianceTest):
     """
     name = "YAMLLint"
     doc = "Check YAML files with YAMLLint."
-    path_hint = "<git-top>"
 
     def run(self):
-        config_file = os.path.join(ZEPHYR_BASE, ".yamllint")
+        config_file = ZEPHYR_BASE / ".yamllint"
 
         for file in get_files(filter="d"):
             if Path(file).suffix not in ['.yaml', '.yml']:
@@ -1628,7 +1639,6 @@ class SphinxLint(ComplianceTest):
 
     name = "SphinxLint"
     doc = "Check Sphinx/reStructuredText files with sphinx-lint."
-    path_hint = "<git-top>"
 
     # Checkers added/removed to sphinx-lint's default set
     DISABLE_CHECKERS = ["horizontal-tab", "missing-space-before-default-role"]
@@ -1670,7 +1680,6 @@ class KeepSorted(ComplianceTest):
     """
     name = "KeepSorted"
     doc = "Check for blocks of code or config that should be kept sorted."
-    path_hint = "<git-top>"
 
     MARKER = "zephyr-keep-sorted"
 
@@ -1766,11 +1775,10 @@ class Ruff(ComplianceTest):
     """
     name = "Ruff"
     doc = "Check python files with ruff."
-    path_hint = "<git-top>"
 
     def run(self):
         for file in get_files(filter="d"):
-            if not file.endswith(".py"):
+            if not file.endswith((".py", ".pyi")):
                 continue
 
             try:
@@ -1814,7 +1822,6 @@ class TextEncoding(ComplianceTest):
     """
     name = "TextEncoding"
     doc = "Check the encoding of text files."
-    path_hint = "<git-top>"
 
     ALLOWED_CHARSETS = ["us-ascii", "utf-8"]
 
@@ -1822,7 +1829,7 @@ class TextEncoding(ComplianceTest):
         m = magic.Magic(mime=True, mime_encoding=True)
 
         for file in get_files(filter="d"):
-            full_path = os.path.join(GIT_TOP, file)
+            full_path = GIT_TOP / file
             mime_type = m.from_file(full_path)
 
             if not mime_type.startswith("text/"):
@@ -1932,11 +1939,12 @@ def _main(args):
 
         # Propagate this decision to child processes.
         os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+    ZEPHYR_BASE = Path(ZEPHYR_BASE)
 
     # The absolute path of the top-level git directory. Initialize it here so
     # that issues running Git can be reported to GitHub.
     global GIT_TOP
-    GIT_TOP = git("rev-parse", "--show-toplevel")
+    GIT_TOP = Path(git("rev-parse", "--show-toplevel"))
 
     # The commit range passed in --commit, e.g. "HEAD~3"
     global COMMIT_RANGE

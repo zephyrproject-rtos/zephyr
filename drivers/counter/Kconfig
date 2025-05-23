@@ -42,6 +42,8 @@ source "drivers/counter/Kconfig.nrfx"
 
 source "drivers/counter/Kconfig.imx_epit"
 
+source "drivers/counter/Kconfig.ite_it8xxx2"
+
 source "drivers/counter/Kconfig.stm32_rtc"
 
 source "drivers/counter/Kconfig.stm32_timer"
@@ -68,7 +70,7 @@ source "drivers/counter/Kconfig.mcux_lptmr"
 
 source "drivers/counter/Kconfig.maxim_ds3231"
 
-source "drivers/counter/Kconfig.native_posix"
+source "drivers/counter/Kconfig.native_sim"
 
 source "drivers/counter/Kconfig.nxp_pit"
 
@@ -105,5 +107,15 @@ source "drivers/counter/Kconfig.nxp_mrt"
 source "drivers/counter/Kconfig.renesas_ra"
 
 source "drivers/counter/Kconfig.renesas_rz"
+
+source "drivers/counter/Kconfig.rts5912_slwtmr"
+
+source "drivers/counter/Kconfig.rts5912"
+
+source "drivers/counter/Kconfig.neorv32"
+
+source "drivers/counter/Kconfig.max32_wut"
+
+source "drivers/counter/Kconfig.cc23x0_rtc"
 
 endif # COUNTER

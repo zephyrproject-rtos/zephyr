@@ -7,6 +7,7 @@
 /*
  * Copyright (c) 2016 Intel Corporation
  * Copyright (c) 2021 Nordic Semiconductor
+ * Copyright (c) 2025 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -389,6 +390,11 @@ __net_socket struct net_context {
 			 * Only allowed for SOCK_DGRAM type sockets.
 			 */
 			uint8_t ipv4_mcast_ifindex;
+		};
+		/** Flag to enable/disable multicast loop */
+		union {
+			bool ipv6_mcast_loop;  /**< IPv6 multicast loop */
+			bool ipv4_mcast_loop;  /**< IPv4 multicast loop */
 		};
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
 
@@ -838,6 +844,38 @@ static inline void net_context_set_ipv4_mcast_ttl(struct net_context *context,
 	context->ipv4_mcast_ttl = ttl;
 }
 
+#if defined(CONFIG_NET_IPV4)
+/**
+ * @brief Get IPv4 multicast loop value for this context.
+ *
+ * @details This function returns the IPv4 multicast loop value
+ *	    that is set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv4 multicast loop value
+ */
+static inline bool net_context_get_ipv4_mcast_loop(struct net_context *context)
+{
+	return context->options.ipv4_mcast_loop;
+}
+
+/**
+ * @brief Set IPv4 multicast loop value for this context.
+ *
+ * @details This function sets the IPv4 multicast loop value for
+ *	    this context.
+ *
+ * @param context Network context.
+ * @param ipv4_mcast_loop IPv4 multicast loop value.
+ */
+static inline void net_context_set_ipv4_mcast_loop(struct net_context *context,
+						   bool ipv4_mcast_loop)
+{
+	context->options.ipv4_mcast_loop = ipv4_mcast_loop;
+}
+#endif
+
 /**
  * @brief Get IPv6 hop limit value for this context.
  *
@@ -896,6 +934,40 @@ static inline void net_context_set_ipv6_mcast_hop_limit(struct net_context *cont
 {
 	context->ipv6_mcast_hop_limit = hop_limit;
 }
+
+#if defined(CONFIG_NET_IPV6)
+
+/**
+ * @brief Get IPv6 multicast loop value for this context.
+ *
+ * @details This function returns the IPv6 multicast loop value
+ *          that is set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv6 multicast loop value
+ */
+static inline bool net_context_get_ipv6_mcast_loop(struct net_context *context)
+{
+	return context->options.ipv6_mcast_loop;
+}
+
+/**
+ * @brief Set IPv6 multicast loop value for this context.
+ *
+ * @details This function sets the IPv6 multicast loop value for
+ *          this context.
+ *
+ * @param context Network context.
+ * @param ipv6_mcast_loop IPv6 multicast loop value.
+ */
+static inline void net_context_set_ipv6_mcast_loop(struct net_context *context,
+						   bool ipv6_mcast_loop)
+{
+	context->options.ipv6_mcast_loop = ipv6_mcast_loop;
+}
+
+#endif
 
 /**
  * @brief Enable or disable socks proxy support for this context.
@@ -1199,7 +1271,7 @@ int net_context_send(struct net_context *context,
  * @param dst_addr Destination address.
  * @param addrlen Length of the address.
  * @param cb Caller-supplied callback function.
- * @param timeout Currently this value is not used.
+ * @param timeout Timeout for the send attempt.
  * @param user_data Caller-supplied user data.
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
@@ -1325,6 +1397,8 @@ enum net_context_option {
 	NET_OPT_MCAST_IFINDEX     = 19, /**< IPv6 multicast output network interface index */
 	NET_OPT_MTU               = 20, /**< IPv4 socket path MTU */
 	NET_OPT_LOCAL_PORT_RANGE  = 21, /**< Clamp local port range */
+	NET_OPT_IPV6_MCAST_LOOP	  = 22, /**< IPV6 multicast loop */
+	NET_OPT_IPV4_MCAST_LOOP	  = 23, /**< IPV4 multicast loop */
 };
 
 /**

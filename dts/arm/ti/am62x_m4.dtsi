@@ -9,6 +9,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 
@@ -39,7 +40,7 @@
 		#clock-cells = <0>;
 	};
 
-	mbox0: mailbox0@29000000 {
+	mbox0: mailbox@29000000 {
 		compatible = "ti,omap-mailbox";
 		reg = <0x29000000 0x200>;
 		interrupts = <50 4>;
@@ -65,9 +66,19 @@
 		status = "disabled";
 	};
 
+	i2c0: i2c@4900000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x04900000 0x100>;
+		interrupts = <17 4>;
+		interrupt-parent = <&nvic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	gpio0: gpio@4201010 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x4201010 0x100>;
+		reg = <0x4201000 0x100>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;

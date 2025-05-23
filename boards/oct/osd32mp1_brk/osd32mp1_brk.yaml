@@ -1,0 +1,22 @@
+identifier: osd32mp1_brk
+name: OSD32MP1-BRK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - shell
+testing:
+  ignore_tags:
+    - cmsis_rtos_v2
+    - net
+    - mpu
+    - crypto
+    - aes
+    - cmm
+    - LED
+    - nfc
+ram: 256
+flash: 64
+vendor: oct

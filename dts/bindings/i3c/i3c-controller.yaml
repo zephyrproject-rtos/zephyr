@@ -30,3 +30,11 @@ properties:
       and there are I2C devices attached to the bus, look at the Legacy
       Virtual Register (LVR) of all connected I2C devices to determine
       the maximum allowed frequency.
+
+  primary-controller-da:
+    type: int
+    description: |
+      This is the self assigned dynamic address of the I3C controller. This
+      is the address is used to communicate with itself after a handoff by
+      a secondary controller. This is only used if the controller is a primary
+      controller.

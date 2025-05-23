@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    GPIO pins exposing on Arduino MKR headers.
+    GPIO pins exposed on Arduino MKR headers.
 
     The Arduino MKR layout provides two headers on both edges of the board.
 

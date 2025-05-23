@@ -147,31 +147,28 @@ static const struct linear_range charger_current_range = LINEAR_RANGE_INIT(32000
 static const uint16_t discharge_limits[] = {84U, 415U};
 
 /* Linear range for vbusin current limit */
-static const struct linear_range vbus_current_ranges[] = {
-	LINEAR_RANGE_INIT(100000, 0, 1U, 1U), LINEAR_RANGE_INIT(500000, 100000, 5U, 15U)};
+static const struct linear_range vbus_current_range = LINEAR_RANGE_INIT(100000, 100000, 1U, 15U);
 
 static void calc_temp(const struct npm1300_charger_config *const config, uint16_t code,
 		      struct sensor_value *valp)
 {
-	/* Ref: Datasheet Figure 42: Battery temperature (Kelvin) */
-	float log_result = log((1024.f / (float)code) - 1);
+	/* Ref: PS v1.2 Section 7.1.4: Battery temperature (Kelvin) */
+	float log_result = logf((1024.f / (float)code) - 1);
 	float inv_temp_k = (1.f / 298.15f) - (log_result / (float)config->thermistor_beta);
 
 	float temp = (1.f / inv_temp_k) - 273.15f;
 
-	valp->val1 = (int32_t)temp;
-	valp->val2 = (int32_t)(fmodf(temp, 1.f) * 1000000.f);
+	(void)sensor_value_from_float(valp, temp);
 }
 
 static void calc_dietemp(const struct npm1300_charger_config *const config, uint16_t code,
 			 struct sensor_value *valp)
 {
-	/* Ref: Datasheet Figure 36: Die temperature (Celsius) */
+	/* Ref: PS v1.2 Section 7.1.4: Die temperature (Celsius) */
 	int32_t temp =
 		DIETEMP_OFFSET_MDEGC - (((int32_t)code * DIETEMP_FACTOR_MUL) / DIETEMP_FACTOR_DIV);
 
-	valp->val1 = temp / 1000;
-	valp->val2 = (temp % 1000) * 1000;
+	(void)sensor_value_from_milli(valp, temp);
 }
 
 static uint32_t calc_ntc_res(const struct npm1300_charger_config *const config, int32_t temp_mdegc)
@@ -193,29 +190,46 @@ static uint16_t adc_get_res(uint8_t msb, uint8_t lsb, uint16_t lsb_shift)
 static void calc_current(const struct npm1300_charger_config *const config,
 			 struct npm1300_charger_data *const data, struct sensor_value *valp)
 {
-	int32_t full_scale_ma;
-	int32_t current;
+	int32_t full_scale_ua;
+	int32_t current_ua;
 
+	/* Largest value of discharge limit and charge limit is 1A.
+	 * We can therefore guarantee that multiplying the uA by 1000 does not overflow.
+	 *    1000 * 1'000'000 uA < 2**31
+	 *             1000000000 < 2147483648
+	 */
 	switch (data->ibat_stat) {
 	case IBAT_STAT_DISCHARGE:
-		full_scale_ma = config->dischg_limit_microamp / 893;
+		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.12 */
+		full_scale_ua = -(1000 * config->dischg_limit_microamp) / 893;
 		break;
 	case IBAT_STAT_CHARGE_TRICKLE:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_COOL:
 	/* Fallthrough */
 	case IBAT_STAT_CHARGE_NORMAL:
-		full_scale_ma = -config->current_microamp / 800;
+		/* Ref: PS v1.2 Section 7.1.7: Full scale multiplied by 1.25 */
+		full_scale_ua = (1000 * config->current_microamp) / 800;
 		break;
 	default:
-		full_scale_ma = 0;
+		full_scale_ua = 0;
 		break;
 	}
 
-	current = (data->current * full_scale_ma) / 1024;
+	/* Largest possible value for data->current is 1023
+	 * Limits for full_scale_ua are -1'119'820 and 1'000'000
+	 *    1023 * -1119820 > -2**31
+	 *        -1145575860 > -2147483648
+	 *     1023 * 1000000 < 2**31
+	 *         1023000000 < 2147483648
+	 */
+	__ASSERT_NO_MSG(data->current <= 1023);
+	__ASSERT_NO_MSG(full_scale_ua <= 1000000);
+	__ASSERT_NO_MSG(full_scale_ua >= -1119820);
 
-	valp->val1 = current / 1000;
-	valp->val2 = (current % 1000) * 1000;
+	current_ua = (data->current * full_scale_ua) / 1024;
+
+	(void)sensor_value_from_micro(valp, current_ua);
 }
 
 int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -223,13 +237,10 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 {
 	const struct npm1300_charger_config *const config = dev->config;
 	struct npm1300_charger_data *const data = dev->data;
-	int32_t tmp;
 
 	switch ((uint32_t)chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
-		tmp = data->voltage * 5000 / 1024;
-		valp->val1 = tmp / 1000;
-		valp->val2 = (tmp % 1000) * 1000;
+		(void)sensor_value_from_milli(valp, (int32_t)data->voltage * 5000 / 1024);
 		break;
 	case SENSOR_CHAN_GAUGE_TEMP:
 		if (config->thermistor_idx == 0) {
@@ -249,12 +260,10 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 		valp->val2 = 0;
 		break;
 	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
-		valp->val1 = config->current_microamp / 1000000;
-		valp->val2 = config->current_microamp % 1000000;
+		(void)sensor_value_from_micro(valp, config->current_microamp);
 		break;
 	case SENSOR_CHAN_GAUGE_MAX_LOAD_CURRENT:
-		valp->val1 = config->dischg_limit_microamp / 1000000;
-		valp->val2 = config->dischg_limit_microamp % 1000000;
+		(void)sensor_value_from_micro(valp, config->dischg_limit_microamp);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		calc_dietemp(config, data->dietemp, valp);
@@ -399,15 +408,12 @@ static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channe
 
 		if (data == 0U) {
 			/* No charger connected */
-			val->val1 = 0;
-			val->val2 = 0;
+			(void)sensor_value_from_micro(val, 0);
 		} else if ((data & DETECT_HI_MASK) != 0U) {
 			/* CC1 or CC2 indicate 1.5A or 3A capability */
-			val->val1 = DETECT_HI_CURRENT / 1000000;
-			val->val2 = DETECT_HI_CURRENT % 1000000;
+			(void)sensor_value_from_micro(val, DETECT_HI_CURRENT);
 		} else {
-			val->val1 = DETECT_LO_CURRENT / 1000000;
-			val->val2 = DETECT_LO_CURRENT % 1000000;
+			(void)sensor_value_from_micro(val, DETECT_LO_CURRENT);
 		}
 
 		return 0;
@@ -478,9 +484,7 @@ static int npm1300_charger_attr_set(const struct device *dev, enum sensor_channe
 		int32_t current = (val->val1 * 1000000) + val->val2;
 		uint16_t idx;
 
-		ret = linear_range_group_get_win_index(vbus_current_ranges,
-						       ARRAY_SIZE(vbus_current_ranges), current,
-						       current, &idx);
+		ret = linear_range_get_win_index(&vbus_current_range, current, current, &idx);
 
 		if (ret == -EINVAL) {
 			return ret;
@@ -573,9 +577,8 @@ int npm1300_charger_init(const struct device *dev)
 	}
 
 	/* Configure vbus current limit */
-	ret = linear_range_group_get_win_index(vbus_current_ranges, ARRAY_SIZE(vbus_current_ranges),
-					       config->vbus_limit_microamp,
-					       config->vbus_limit_microamp, &idx);
+	ret = linear_range_get_win_index(&vbus_current_range, config->vbus_limit_microamp,
+					 config->vbus_limit_microamp, &idx);
 	if (ret == -EINVAL) {
 		return ret;
 	}

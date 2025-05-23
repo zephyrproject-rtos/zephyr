@@ -1259,6 +1259,7 @@ void arch_spin_relax(void);
 /**
  * @defgroup arch-stackwalk Architecture-specific Stack Walk APIs
  * @ingroup arch-interface
+ * @brief Architecture-specific Stack Walk APIs
  *
  * To add API support to an architecture, `arch_stack_walk()` should be implemented and a non-user
  * configurable Kconfig `ARCH_HAS_STACKWALK` that is default to `y` should be created in the

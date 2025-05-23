@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i2c/i2c_nrfx_twim.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -33,6 +34,29 @@ struct i2c_nrfx_twim_data {
 	volatile nrfx_err_t res;
 };
 
+int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t timeout)
+{
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	int ret;
+
+	ret = k_sem_take(&dev_data->transfer_sync, timeout);
+
+	if (ret == 0) {
+		(void)pm_device_runtime_get(dev);
+	}
+
+	return ret;
+}
+
+void i2c_nrfx_twim_exclusive_access_release(const struct device *dev)
+{
+	struct i2c_nrfx_twim_data *dev_data = dev->data;
+
+	(void)pm_device_runtime_put(dev);
+
+	k_sem_give(&dev_data->transfer_sync);
+}
+
 static int i2c_nrfx_twim_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
 				  uint8_t num_msgs, uint16_t addr)
@@ -46,12 +70,10 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	uint8_t *buf;
 	uint16_t buf_len;
 
-	k_sem_take(&dev_data->transfer_sync, K_FOREVER);
+	(void)i2c_nrfx_twim_exclusive_access_acquire(dev, K_FOREVER);
 
 	/* Dummy take on completion_sync sem to be sure that it is empty */
 	k_sem_take(&dev_data->completion_sync, K_NO_WAIT);
-
-	(void)pm_device_runtime_get(dev);
 
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
@@ -164,9 +186,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		msg_buf_used = 0;
 	}
 
-	(void)pm_device_runtime_put(dev);
-
-	k_sem_give(&dev_data->transfer_sync);
+	i2c_nrfx_twim_exclusive_access_release(dev);
 
 	return ret;
 }

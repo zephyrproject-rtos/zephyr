@@ -63,13 +63,13 @@ void arch_dcache_disable(void)
 {
 	uint32_t val;
 
+	L1C_CleanInvalidateDCacheAll();
+
 	val = __get_SCTLR();
 	val &= ~SCTLR_C_Msk;
 	barrier_dsync_fence_full();
 	__set_SCTLR(val);
 	barrier_isync_fence_full();
-
-	arch_dcache_flush_and_invd_all();
 }
 
 int arch_dcache_flush_all(void)
@@ -208,7 +208,13 @@ int arch_icache_flush_range(void *start_addr, size_t size)
 
 int arch_icache_invd_range(void *start_addr, size_t size)
 {
-	return -ENOTSUP;
+	/* Cortex A/R do have the ICIMVAU operation to selectively invalidate
+	 * the instruction cache, but not currently supported by CMSIS.
+	 * For now, invalidate the entire cache.
+	 */
+	L1C_InvalidateICacheAll();
+
+	return 0;
 }
 
 int arch_icache_flush_and_invd_range(void *start_addr, size_t size)

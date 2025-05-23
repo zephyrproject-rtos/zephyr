@@ -25,7 +25,7 @@ the host and associates the application with a SPI bus to use.
 
 See :zephyr_file:`boards/nrf51dk_nrf51822.overlay
 <samples/bluetooth/hci_spi/boards/nrf51dk_nrf51822.overlay>` in this sample
-directory for an example overlay for the :ref:`nrf51dk_nrf51822` board.
+directory for an example overlay for the :zephyr:board:`nrf51dk` board.
 
 You can then build this application and flash it onto your board in
 the usual way; see :ref:`boards` for board-specific building and

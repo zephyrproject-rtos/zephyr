@@ -491,11 +491,10 @@ static int fxls8974_init(const struct device *dev)
 			return -EIO;
 		}
 
-		if (data->whoami == WHOAMI_ID_FXLS8974) {
-			LOG_DBG("Device ID 0x%x, FXLS8974", data->whoami);
-		} else {
+		if (data->whoami != WHOAMI_ID_FXLS8964 &&
+		data->whoami != WHOAMI_ID_FXLS8974) {
 			LOG_ERR("Unknown Device ID 0x%x", data->whoami);
-			return -EIO;
+			return -ENXIO;
 		}
 
 		if (fxls8974_get_active(dev, &regVal)) {

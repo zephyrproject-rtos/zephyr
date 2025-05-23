@@ -240,9 +240,23 @@
 			reg = <0x40170000 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
-			channel-count = <16>;
 			channel-available-mask = <0x3fe007f>;
 			status = "disabled";
+		};
+
+		dac_global: dac_global@40171000 {
+			compatible = "renesas,ra-dac-global";
+			reg = <0x40171000 0x10c4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			has-davrefcr;
+
+			dac0: dac@0 {
+				compatible = "renesas,ra-dac";
+				#io-channel-cells = <1>;
+				reg = <0>;
+				status = "disabled";
+			};
 		};
 
 		iic0: iic0@4009f000 {
@@ -497,6 +511,12 @@
 			status = "disabled";
 		};
 
+		wdt: wdt@40083400 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40083400 0x200>;
+			clocks = <&pclkb 0 0>;
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {

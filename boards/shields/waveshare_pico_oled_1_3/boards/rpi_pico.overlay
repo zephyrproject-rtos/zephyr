@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2c1_default: i2c1_default {
+		waveshare_pico_oled_1_3_group1 {
+			pinmux = <I2C1_SDA_P6>, <I2C1_SCL_P7>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

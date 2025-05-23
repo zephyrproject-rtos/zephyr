@@ -16,27 +16,7 @@ More information about STM32H750 can be found here:
 Supported Features
 ==================
 
-The current Zephyr YD-STM32H750VB board supports the following features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/vcc-gnd/yd_stm32h750vb/yd_stm32h750vb_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -61,6 +41,8 @@ is driven by the PLL clock at 480MHz. PLL clock is feed by a 25MHz high speed ex
 
 Flashing
 ========
+
+.. zephyr:board-supported-runners::
 
 There are 2 main entry points for flashing STM32H750VB SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional

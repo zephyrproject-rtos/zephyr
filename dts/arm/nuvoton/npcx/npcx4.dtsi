@@ -515,6 +515,13 @@
 			#size-cells = <0>;
 			instance-id = <0x20>;
 		};
+
+		ramlock0: ramlock@4000c02e {
+			compatible = "syscon";
+			reg = <0x4000c02e 0x153>;
+			reg-io-width = <1>;
+			status = "disabled";
+		};
 	};
 
 	soc-if {

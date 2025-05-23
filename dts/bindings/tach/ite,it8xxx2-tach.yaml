@@ -1,7 +1,7 @@
 # Copyright (c) 2021 ITE Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ITE, it8xxx2 Tachometer node
+description: ITE IT8xxx2 Tachometer
 
 compatible: "ite,it8xxx2-tach"
 

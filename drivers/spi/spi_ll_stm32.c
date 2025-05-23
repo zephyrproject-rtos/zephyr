@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <soc.h>
 #include <stm32_ll_spi.h>
 #include <errno.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -30,16 +31,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
-
-#ifdef CONFIG_DCACHE
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif /* CONFIG_DCACHE */
-
-#ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
-#elif defined(CONFIG_CACHE_MANAGEMENT)
 #include <zephyr/arch/cache.h>
-#endif /* CONFIG_NOCACHE_MEMORY */
 
 #include "spi_ll_stm32.h"
 
@@ -175,7 +169,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		/* if tx buff is null, then sends NOP on the line. */
 		dummy_rx_tx_buffer = 0;
 #if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
-		arch_dcache_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
+		sys_cache_data_flush_range((void *)&dummy_rx_tx_buffer, sizeof(uint32_t));
 #endif /* SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED */
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
@@ -1082,7 +1076,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 }
 
 #ifdef CONFIG_DCACHE
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+static bool buf_in_nocache(uintptr_t buf __maybe_unused, size_t len_bytes __maybe_unused)
 {
 	bool buf_within_nocache = false;
 
@@ -1095,9 +1089,11 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#ifdef CONFIG_MEM_ATTR
 	/* Check if buffer is in nocache memory region defined in DT */
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+#endif /* CONFIG_MEM_ATTR */
 
 	return buf_within_nocache;
 }

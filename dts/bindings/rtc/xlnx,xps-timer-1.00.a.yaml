@@ -1,4 +1,4 @@
-description: Xilinx AXI Timer IP node
+description: Xilinx AXI Timer IP
 
 compatible: "xlnx,xps-timer-1.00.a"
 

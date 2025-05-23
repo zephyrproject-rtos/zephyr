@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-        ST STM32F4 family ADC
+        STM32F4 ADC
+
         This compatible stands for all ADC blocks similar to the one on STM32F4,
         like F2, F7 or L1.
 

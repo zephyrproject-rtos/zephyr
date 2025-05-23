@@ -6,33 +6,39 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
-#include <string.h>
 #include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/kernel.h>
+
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net_buf.h>
-
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/l2cap.h>
-
-#define LOG_DBG_ENABLED IS_ENABLED(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "buf_view.h"
 #include "hci_core.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "keys.h"
 
-#include <zephyr/logging/log.h>
+#define LOG_DBG_ENABLED IS_ENABLED(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
 LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 #define LE_CHAN_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
@@ -2417,6 +2423,10 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && conn->type == BT_CONN_TYPE_BR) {
+		return bt_l2cap_br_chan_recv_complete(chan);
+	}
+
 	if (conn->type != BT_CONN_TYPE_LE) {
 		return -ENOTSUP;
 	}
@@ -2450,7 +2460,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 {
 	int err;
 
-	LOG_DBG("chan %p len %zu", chan, buf->len);
+	LOG_DBG("chan %p len %u", chan, buf->len);
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 	__ASSERT_NO_MSG(atomic_get(&chan->rx.credits) == 0);
@@ -2492,7 +2502,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	/* Store received segments in user_data */
 	memcpy(net_buf_user_data(chan->_sdu), &seg, sizeof(seg));
 
-	LOG_DBG("chan %p seg %d len %zu", chan, seg, buf->len);
+	LOG_DBG("chan %p seg %d len %u", chan, seg, buf->len);
 
 	/* Append received segment to SDU */
 	len = net_buf_append_bytes(chan->_sdu, buf->len, buf->data, K_NO_WAIT,
@@ -3288,7 +3298,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	LOG_DBG("chan %p buf %p len %zu", chan, buf, buf->len);
+	LOG_DBG("chan %p buf %p len %u", chan, buf, buf->len);
 
 	if (buf->ref != 1) {
 		LOG_WRN("Expecting 1 ref, got %d", buf->ref);

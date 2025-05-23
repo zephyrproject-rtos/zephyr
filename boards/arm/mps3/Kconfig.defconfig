@@ -1,5 +1,5 @@
 # Copyright (c) 2018-2021 Linaro Limited
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_MPS3_CORSTONE300_AN547 || BOARD_MPS3_CORSTONE300_AN552 || BOARD_MPS3_CORSTONE300_FVP || BOARD_MPS3_CORSTONE310_AN555 || BOARD_MPS3_CORSTONE310_FVP
@@ -18,5 +18,15 @@ config UART_INTERRUPT_DRIVEN
 	default y
 
 endif # SERIAL
+
+if ROMSTART_RELOCATION_ROM && (BOARD_MPS3_CORSTONE310_AN555 || BOARD_MPS3_CORSTONE310_FVP)
+
+config ROMSTART_REGION_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,itcm)
+
+config ROMSTART_REGION_SIZE
+	default $(dt_nodelabel_reg_size_hex,itcm,0,k)
+
+endif
 
 endif

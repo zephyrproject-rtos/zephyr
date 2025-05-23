@@ -46,6 +46,7 @@ void sys_trace_thread_pend(struct k_thread *thread);
 void sys_trace_isr_enter(void);
 void sys_trace_isr_exit(void);
 void sys_trace_idle(void);
+void sys_trace_idle_exit(void);
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
 
@@ -351,7 +352,7 @@ void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_ca
 
 #define sys_port_trace_k_heap_init(heap)
 #define sys_port_trace_k_heap_aligned_alloc_enter(heap, timeout)
-#define sys_port_trace_k_heap_aligned_alloc_blocking(heap, timeout)
+#define sys_port_trace_k_heap_alloc_helper_blocking(heap, timeout)
 #define sys_port_trace_k_heap_aligned_alloc_exit(heap, timeout, ret)
 #define sys_port_trace_k_heap_alloc_enter(heap, timeout)
 #define sys_port_trace_k_heap_alloc_exit(heap, timeout, ret)

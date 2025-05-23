@@ -84,42 +84,7 @@ Nucleo H745ZI-Q provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h745zi_q board configuration supports the following hardware
-features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| RTC         | on-chip    | counter                             |
-+-------------+------------+-------------------------------------+
-| I2C         | on-chip    | i2c                                 |
-+-------------+------------+-------------------------------------+
-| PWM         | on-chip    | pwm                                 |
-+-------------+------------+-------------------------------------+
-| ETHERNET    | on-chip    | ethernet                            |
-+-------------+------------+-------------------------------------+
-| RNG         | on-chip    | True Random number generator        |
-+-------------+------------+-------------------------------------+
-| USB OTG FS  | on-chip    | USB device                          |
-+-------------+------------+-------------------------------------+
-| SPI         | on-chip    | spi                                 |
-+-------------+------------+-------------------------------------+
-| FDCAN       | on-chip    | CAN-FD Control Area Network         |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/st/nucleo_h745zi_q/nucleo_h745zi_q_stm32h745xx_m7_defconfig` and
-:zephyr_file:`boards/st/nucleo_h745zi_q/nucleo_h745zi_q_stm32h745xx_m4_defconfig`
+.. zephyr:board-supported-hw::
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
@@ -167,6 +132,8 @@ two cores. This is done in 3 ways:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo H745ZI-Q board includes an ST-LINK/V3 embedded debug tool interface.
 

@@ -260,7 +260,7 @@
 
 		xspi1: spi@47001400 {
 			compatible = "st,stm32-xspi";
-			reg = <0x47001400 0x400>;
+			reg = <0x47001400 0x400>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <78 0>;
 			clock-names = "xspix", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB4, 20U)>,

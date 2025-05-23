@@ -151,6 +151,13 @@
 			 * The minimum residency and exit latency is
 			 * managed by sl_power_manager on S2 devices.
 			 */
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+			};
 		};
 
 		power-states {
@@ -184,7 +191,7 @@
 		cmu: clock@50008000 {
 			compatible = "silabs,series-clock";
 			reg = <0x50008000 0x4000>;
-			interrupts = <52 0>;
+			interrupts = <52 2>;
 			interrupt-names = "cmu";
 			status = "okay";
 			#clock-cells = <2>;
@@ -222,7 +229,7 @@
 			#clock-cells = <0>;
 			compatible = "silabs,series2-lfxo";
 			reg = <0x50020000 0x4000>;
-			interrupts = <27 0>;
+			interrupts = <27 2>;
 			interrupt-names = "lfxo";
 			clock-frequency = <32768>;
 			ctune = <63>;
@@ -235,7 +242,7 @@
 			#clock-cells = <0>;
 			compatible = "silabs,series2-lfrco";
 			reg = <0x50024000 0x4000>;
-			interrupts = <28 0>;
+			interrupts = <28 2>;
 			interrupt-names = "lfrco";
 			clock-frequency = <32768>;
 		};
@@ -244,7 +251,7 @@
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			reg = <0x50028000 0x4000>;
-			interrupts = <29 0>;
+			interrupts = <29 2>;
 			interrupt-names = "ulfrco";
 			clock-frequency = <1000>;
 		};
@@ -257,9 +264,9 @@
 		};
 
 		msc: flash-controller@50030000 {
-			compatible = "silabs,gecko-flash-controller";
+			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x4000>;
-			interrupts = <55 0>;
+			interrupts = <55 2>;
 			interrupt-names = "msc";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -274,22 +281,14 @@
 		gpio: gpio@5003c000 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x5003C000 0x440>;
-			interrupts = <31 0>, <30 0>;
+			interrupts = <31 2>, <30 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 			clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			gpioa: gpio@5003c000 {
-				compatible = "silabs,gecko-gpio-port";
-				reg = <0x5003C000 0x30>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				status = "disabled";
-			};
-
-			gpiob: gpio@5003c030 {
+			gpioa: gpio@5003c030 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C030 0x30>;
 				gpio-controller;
@@ -297,7 +296,7 @@
 				status = "disabled";
 			};
 
-			gpioc: gpio@5003c060 {
+			gpiob: gpio@5003c060 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C060 0x30>;
 				gpio-controller;
@@ -305,9 +304,17 @@
 				status = "disabled";
 			};
 
-			gpiod: gpio@5003c090 {
+			gpioc: gpio@5003c090 {
 				compatible = "silabs,gecko-gpio-port";
 				reg = <0x5003C090 0x30>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@5003c0c0 {
+				compatible = "silabs,gecko-gpio-port";
+				reg = <0x5003C0C0 0x30>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				status = "disabled";
@@ -326,14 +333,14 @@
 			interrupts = <26 0>;
 			interrupt-names = "ldma";
 			#dma-cells = <1>;
-			dma_channels = <8>;
+			dma-channels = <8>;
 			status = "disabled";
 		};
 
 		usart0: usart@5005c000 {
 			compatible = "silabs,usart-uart";
 			reg = <0x5005C000 0x400>;
-			interrupts = <16 0>, <17 0>;
+			interrupts = <16 2>, <17 2>;
 			interrupt-names = "rx", "tx";
 			clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
 			status = "disabled";
@@ -342,7 +349,7 @@
 		usart1: usart@50060000 {
 			compatible = "silabs,usart-uart";
 			reg = <0x50060000 0x400>;
-			interrupts = <18 0>, <19 0>;
+			interrupts = <18 2>, <19 2>;
 			interrupt-names = "rx", "tx";
 			clocks = <&cmu CLOCK_USART1 CLOCK_BRANCH_PCLK>;
 			status = "disabled";
@@ -351,7 +358,7 @@
 		burtc0: burtc@50064000 {
 			compatible = "silabs,gecko-burtc";
 			reg = <0x50064000 0x4000>;
-			interrupts = <23 0>;
+			interrupts = <23 2>;
 			interrupt-names = "burtc";
 			clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 			status = "disabled";
@@ -361,7 +368,7 @@
 			compatible = "silabs,gecko-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x5a010000 0x4000>;
-			interrupts = <32 0>;
+			interrupts = <32 2>;
 			interrupt-names = "i2c0";
 			clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;
 			#address-cells = <1>;
@@ -373,7 +380,7 @@
 			compatible = "silabs,gecko-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x50068000 0x4000>;
-			interrupts = <33 0>;
+			interrupts = <33 2>;
 			interrupt-names = "i2c1";
 			clocks = <&cmu CLOCK_I2C1 CLOCK_BRANCH_PCLK>;
 			#address-cells = <1>;
@@ -384,7 +391,7 @@
 		dcdc: dcdc@50094000 {
 			compatible = "silabs,series2-dcdc";
 			reg = <0x50094000 0x4000>;
-			interrupts = <8 0>;
+			interrupts = <8 2>;
 			interrupt-names = "dcdc";
 			status = "disabled";
 		};
@@ -392,7 +399,7 @@
 		eusart0: eusart@5a040000 {
 			compatible = "silabs,eusart-spi";
 			reg = <0x5A040000 0x4000>;
-			interrupts = <20 0>, <21 0>;
+			interrupts = <20 2>, <21 2>;
 			interrupt-names = "rx", "tx";
 			clocks = <&cmu CLOCK_EUSART0 CLOCK_BRANCH_EUSART0CLK>;
 			status = "disabled";
@@ -401,7 +408,7 @@
 		eusart1: eusart@500b4000 {
 			compatible = "silabs,eusart-spi";
 			reg = <0x500B4000 0x4000>;
-			interrupts = <68 0>, <69 0>;
+			interrupts = <68 2>, <69 2>;
 			interrupt-names = "rx", "tx";
 			clocks = <&cmu CLOCK_EUSART1 CLOCK_BRANCH_EM01GRPCCLK>;
 			status = "disabled";
@@ -410,7 +417,7 @@
 		rtcc0: rtcc@58000000 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x4000>;
-			interrupts = <15 0>;
+			interrupts = <15 2>;
 			interrupt-names = "rtcc";
 			clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
 			clock-frequency = <32768>;
@@ -422,7 +429,7 @@
 			compatible = "silabs,gecko-wdog";
 			reg = <0x58018000 0x4000>;
 			peripheral-id = <0>;
-			interrupts = <49 0>;
+			interrupts = <49 2>;
 			interrupt-names = "wdog0";
 			clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
 			status = "disabled";
@@ -431,7 +438,7 @@
 		adc0: adc@5a004000 {
 			compatible = "silabs,gecko-iadc";
 			reg = <0x5a004000 0x4000>;
-			interrupts = <54 0>;
+			interrupts = <54 2>;
 			interrupt-names = "iadc0";
 			clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
 			status = "disabled";
@@ -441,7 +448,7 @@
 		acmp0: acmp@5a008000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a008000 0x4000>;
-			interrupts = <48 0>;
+			interrupts = <48 2>;
 			clocks = <&cmu CLOCK_ACMP0 CLOCK_BRANCH_EM01GRPACLK>;
 			status = "disabled";
 		};
@@ -452,25 +459,6 @@
 			interrupts = <0 3>, <1 3>, <2 3>;
 			interrupt-names = "SETAMPERHOST", "SEMBRX", "SEMBTX";
 			status = "disabled";
-		};
-
-		radio: radio@b0000000 {
-			compatible = "silabs,series2-radio";
-			reg = <0xb0000000 0x1000000>;
-			interrupts = <36 0>, <37 0>, <38 0>, <39 0>, <40 0>, <41 0>,
-				     <42 0>, <43 0>, <44 0>, <45 0>, <46 0>, <47 0>;
-			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "protimer",
-					  "rac_rsm", "rac_seq", "rdmailbox", "rfsense", "synth",
-					  "prortc";
-			pa-initial-power-dbm = <10>;
-			pa-ramp-time-us = <2>;
-			pa-voltage-mv = <3300>;
-			pa-2p4ghz = "highest";
-
-			bt_hci_silabs: bt_hci_silabs {
-				compatible = "silabs,bt-hci-efr32";
-				status = "disabled";
-			};
 		};
 	};
 

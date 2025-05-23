@@ -21,31 +21,8 @@ to the microcontroller.
 
 Supported Features
 ==================
-The Zephyr MikroE Clicker 2 configuration supports the following hardware features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in
-:zephyr_file:`boards/mikroe/clicker_2/mikroe_clicker_2_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -59,6 +36,9 @@ For connections on the edge connectors, please refer to `Clicker 2 for STM32 Use
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 Applications for the ``mikroe_clicker_2`` board configuration can
 be built and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

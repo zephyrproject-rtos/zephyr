@@ -5,8 +5,9 @@ config UDC_NXP_EHCI
 	bool "NXP MCUX USB EHCI Device controller driver"
 	default y
 	depends on DT_HAS_NXP_EHCI_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	select PINCTRL
-	select NOCACHE_MEMORY if HAS_MCUX_CACHE && CPU_HAS_DCACHE
+	select NOCACHE_MEMORY if CPU_HAS_DCACHE
 	imply UDC_BUF_FORCE_NOCACHE
 	imply UDC_WORKQUEUE
 	help
@@ -16,6 +17,7 @@ config UDC_NXP_IP3511
 	bool "NXP MCUX USB IP3511 Device controller driver"
 	default y
 	depends on DT_HAS_NXP_LPCIP3511_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	select PINCTRL
 	imply UDC_WORKQUEUE
 	help

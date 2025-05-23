@@ -24,7 +24,8 @@
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
 #include <zephyr/dt-bindings/sensor/apds9253.h>
-#include <zephyr/dt-bindings/sensor/tmp116.h>
+#include <zephyr/dt-bindings/sensor/tmp11x.h>
+#include <zephyr/dt-bindings/sensor/tmp114.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -177,9 +178,10 @@ test_i2c_ms5607: ms5607@17 {
 	reg = <0x17>;
 };
 
-test_i2c_ms5837: ms5837@18 {
-	compatible = "meas,ms5837";
+test_i2c_ms5837_02ba: ms5837@18 {
+	compatible = "meas,ms5837-02ba";
 	reg = <0x18>;
+	status = "okay";
 };
 
 test_i2c_jc42: jc42@19 {
@@ -476,11 +478,11 @@ test_i2c_tmp112: tmp112@46 {
 	reg = <0x46>;
 };
 
-test_i2c_tmp116: tmp116@47 {
-	compatible = "ti,tmp116";
+test_i2c_tmp11x: tmp11x@47 {
+	compatible = "ti,tmp11x";
 	reg = <0x47>;
-	odr = <TMP116_DT_ODR_125_MS>;
-	oversampling = <TMP116_DT_OVERSAMPLING_32>;
+	odr = <TMP11X_DT_ODR_125_MS>;
+	oversampling = <TMP11X_DT_OVERSAMPLING_32>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {
@@ -516,6 +518,25 @@ test_i2c_iis2iclx: iis2iclx@4c {
 	int-pin = <1>;
 	range = <IIS2ICLX_DT_FS_2G>;
 	odr = <IIS2ICLX_DT_ODR_833Hz>;
+};
+
+test_i2c_itds_2533020201601: wsen_itds_2533020201601@4e {
+	compatible = "we,wsen-itds-2533020201601";
+	reg = <0x4e>;
+	events-interrupt-gpios = <&test_gpio 0 0>;
+	drdy-interrupt-gpios = <&test_gpio 0 0>;
+	odr = "400";
+	tap-threshold = <0>, <0>, <6>;
+	tap-latency = < 5 >;
+	tap-shock = < 2 >;
+	tap-quiet = < 1 >;
+	tap-mode = < 1 >;
+	freefall-duration = < 6 >;
+	freefall-threshold = < 10 >;
+	delta-duration = < 1 >;
+	delta-threshold = < 4 >;
+	op-mode = "high-perf";
+	power-mode = "normal";
 };
 
 test_i2c_max17055: max17055@4f {
@@ -820,7 +841,7 @@ test_i2c_mc3419: mc3419@75 {
 };
 
 test_i2c_ltrf216a0: ltrf216a@76 {
-	compatible = "ltr,f216a";
+	compatible = "liteon,ltrf216a";
 	reg = <0x76>;
 };
 
@@ -1008,7 +1029,7 @@ test_i2c_lis2dux12: lis2dux12@8a {
 	int2-gpios = <&test_gpio 0 0>;
 	range = <LIS2DUX12_DT_FS_16G>;
 	odr = <LIS2DUX12_DT_ODR_100Hz>;
-	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE>;
 	status = "okay";
 };
 
@@ -1029,6 +1050,7 @@ test_i2c_nct75: test_i2c_nct75@8c {
 test_i2c_tmp114: tmp114@8d {
 	compatible = "ti,tmp114";
 	reg = <0x8d>;
+	odr = <TMP114_DT_ODR_250_MS>;
 };
 
 test_i2c_ina226: ina226@8e {
@@ -1224,7 +1246,7 @@ test_i2c_lis2duxs12: lis2duxs12@a7 {
 	int2-gpios = <&test_gpio 0 0>;
 	range = <LIS2DUX12_DT_FS_16G>;
 	odr = <LIS2DUX12_DT_ODR_100Hz>;
-	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE>;
 	status = "okay";
 };
 
@@ -1250,4 +1272,52 @@ test_i2c_xbr818: xbr818@aa {
 	reg = <0xaa>;
 	int-gpios = <&test_gpio 0 0>;
 	i2c-en-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_veml6031: veml6031@ab {
+	compatible = "vishay,veml6031";
+	reg = <0xab>;
+};
+
+test_i2c_bmm350: bmm350@ac {
+	compatible = "bosch,bmm350";
+	reg = <0xac>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ltr329: ltr329@ad {
+	compatible = "liteon,ltr329";
+	reg = <0xad>;
+};
+
+test_i2c_ms5837_30ba: ms5837@ae {
+	compatible = "meas,ms5837-30ba";
+	reg = <0xae>;
+	status = "okay";
+};
+
+test_i2c_icp201xx: icp201xx@af {
+	compatible = "invensense,icp201xx";
+	reg = <0xaf>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
+
+test_i2c_paj7620: paj7620@b0 {
+	compatible = "pixart,paj7620";
+	reg = <0xb0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_icm45686: icm45686@b1 {
+	compatible = "invensense,icm45686";
+	reg = <0xb1>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_rm3100: rm3100@b2 {
+	compatible = "pni,rm3100";
+	reg = <0xb2>;
+	int-gpios = <&test_gpio 0 0>;
 };

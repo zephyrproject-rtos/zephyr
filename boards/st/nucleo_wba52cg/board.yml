@@ -1,6 +1,0 @@
-board:
-  name: nucleo_wba52cg
-  full_name: Nucleo WBA52CG
-  vendor: st
-  socs:
-    - name: stm32wba52xx

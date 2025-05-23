@@ -147,6 +147,7 @@ static int i2c_npcx_port_recover_bus(const struct device *dev)
 static int i2c_npcx_target_register(const struct device *dev,
 				  struct i2c_target_config *target_cfg)
 {
+	int ret;
 	const struct i2c_npcx_port_config *const config = dev->config;
 
 	if (!target_cfg) {
@@ -158,12 +159,21 @@ static int i2c_npcx_target_register(const struct device *dev,
 		return -EIO;
 	}
 
-	return npcx_i2c_ctrl_target_register(config->i2c_ctrl, target_cfg, config->port);
+	/* Lock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_lock(config->i2c_ctrl);
+
+	ret = npcx_i2c_ctrl_target_register(config->i2c_ctrl, target_cfg, config->port);
+
+	/* Unlock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_unlock(config->i2c_ctrl);
+
+	return ret;
 }
 
 static int i2c_npcx_target_unregister(const struct device *dev,
 				     struct i2c_target_config *target_cfg)
 {
+	int ret;
 	const struct i2c_npcx_port_config *const config = dev->config;
 
 	if (config->i2c_ctrl == NULL) {
@@ -171,7 +181,15 @@ static int i2c_npcx_target_unregister(const struct device *dev,
 		return -EIO;
 	}
 
-	return npcx_i2c_ctrl_target_unregister(config->i2c_ctrl, target_cfg, config->port);
+	/* Lock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_lock(config->i2c_ctrl);
+
+	ret = npcx_i2c_ctrl_target_unregister(config->i2c_ctrl, target_cfg, config->port);
+
+	/* Unlock mutex of i2c/smb controller */
+	npcx_i2c_ctrl_mutex_unlock(config->i2c_ctrl);
+
+	return ret;
 }
 #endif
 

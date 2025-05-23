@@ -622,9 +622,9 @@ void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 #else /* CONFIG_BT_CTLR_PHY && CONFIG_BT_CTLR_PHY_CODED */
 #define PHY (PHY_1M)
 #endif /* CONFIG_BT_CTLR_PHY && CONFIG_BT_CTLR_PHY_CODED */
-	*max_tx_octets = LL_LENGTH_OCTETS_RX_MAX;
+	*max_tx_octets = LL_LENGTH_OCTETS_TX_MAX;
 	*max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
-	*max_tx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY);
+	*max_tx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY);
 	*max_rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY);
 #undef PHY
 }
@@ -706,6 +706,12 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 {
 	struct ll_conn *conn;
 
+#if defined(CONFIG_BT_CTLR_ISO)
+	if (IS_CIS_HANDLE(handle) || IS_SYNC_ISO_HANDLE(handle) || IS_ADV_ISO_HANDLE(handle)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_CTLR_ISO */
+
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
@@ -725,6 +731,12 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *apto)
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 {
 	struct ll_conn *conn;
+
+#if defined(CONFIG_BT_CTLR_ISO)
+	if (IS_CIS_HANDLE(handle) || IS_SYNC_ISO_HANDLE(handle) || IS_ADV_ISO_HANDLE(handle)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_CTLR_ISO */
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -2095,9 +2107,9 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 	mic_size = 0U;
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
-	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
+	time_incoming = (LL_LENGTH_OCTETS_TX_MAX << 3) *
 			1000000UL / tx_rate;
-	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy,
+	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_TX_MAX, mic_size, phy,
 				  phy_flags) +
 			PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) +
 			(EVENT_IFS_US << 1);
@@ -2227,8 +2239,8 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	uint16_t conn_interval_unit_old;
 	uint16_t conn_interval_unit_new;
 	uint32_t ticks_win_offset = 0U;
-	uint16_t conn_interval_old_us;
-	uint16_t conn_interval_new_us;
+	uint32_t conn_interval_old_us;
+	uint32_t conn_interval_new_us;
 	uint32_t ticks_slot_overhead;
 	uint16_t conn_interval_old;
 	uint16_t conn_interval_new;
@@ -2250,18 +2262,6 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 
 	ticks_at_expire = conn->llcp.prep.ticks_at_expire;
-
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-	/* restore to normal prepare */
-	if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
-		uint32_t ticks_prepare_to_start =
-			MAX(conn->ull.ticks_active_to_start, conn->ull.ticks_preempt_to_start);
-
-		conn->ull.ticks_prepare_to_start &= ~XON_BITMASK;
-
-		ticks_at_expire -= (conn->ull.ticks_prepare_to_start - ticks_prepare_to_start);
-	}
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_tx_ready_delay_get(lll->phy_tx,
@@ -2353,10 +2353,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 	/* calculate the offset */
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead =
-			MAX(conn->ull.ticks_active_to_start,
-			    conn->ull.ticks_prepare_to_start);
-
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -2365,6 +2362,14 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	switch (lll->role) {
 #if defined(CONFIG_BT_PERIPHERAL)
 	case BT_HCI_ROLE_PERIPHERAL:
+		/* Since LLL prepare doesn't get to run, accumulate window widening here */
+		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+							  (conn->llcp.prep.lazy + 1);
+		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+			lll->periph.window_widening_prepare_us =
+				lll->periph.window_widening_max_us;
+		}
+
 		lll->periph.window_widening_prepare_us -=
 			lll->periph.window_widening_periodic_us * instant_latency;
 
@@ -2501,7 +2506,7 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	tx_time = MIN(conn->lll.dle.default_tx_time,
-		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
+		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, phy_select));
 #else /* !CONFIG_BT_CTLR_PHY */
 	tx_time = PDU_DC_MAX_US(conn->lll.dle.default_tx_octets, phy_select);
 #endif /* !CONFIG_BT_CTLR_PHY */
@@ -2744,7 +2749,7 @@ static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	uint32_t sync_remainder_us;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint32_t start_us;
 	uint32_t ret;
 	uint8_t id;

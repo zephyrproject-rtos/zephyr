@@ -99,4 +99,4 @@ config WS2812_STRIP_RPI_PICO_PIO
 	select PICOSDK_USE_PIO
 	help
 	  Enable driver for WS2812 (and compatibles) LED strip using
-	  the RaspberryPi Pico's PIO.
+	  the Raspberry Pi Pico's PIO.

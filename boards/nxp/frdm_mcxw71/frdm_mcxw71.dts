@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -30,6 +30,7 @@
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
 		zephyr,uart-mcumgr = &lpuart0;
+		zephyr,bt-c2h-uart = &lpuart0;
 	};
 
 	user_led {
@@ -56,7 +57,7 @@
 		compatible = "gpio-keys";
 		user_button_0: button_0 {
 			label = "User SW2";
-			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};
@@ -64,6 +65,10 @@
 };
 
 &vref {
+	status = "okay";
+};
+
+&gpiob {
 	status = "okay";
 };
 
@@ -89,6 +94,12 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+
+	accelerometer: accelerometer@19 {
+		status = "okay";
+		compatible = "nxp,fxls8974";
+		reg = <0x19>;
+	};
 };
 
 &lpspi1 {
@@ -124,17 +135,19 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		/* The MCUBoot swap-move algorithm uses the last 2 sectors
-		 * of the primary slot0 for swap status and move.
+
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
 		 */
 		boot_partition: partition@0 {
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
 		slot0_partition: partition@10000 {
-			reg = <0x10000 (DT_SIZE_K(416) + DT_SIZE_K(16))>;
+			reg = <0x10000 DT_SIZE_K(424)>;
 		};
-		slot1_partition: partition@7C000 {
-			reg = <0x7C000 DT_SIZE_K(416)>;
+		slot1_partition: partition@7A000 {
+			reg = <0x7A000 DT_SIZE_K(424)>;
 		};
 		storage_partition: partition@E4000 {
 			reg = <0xE4000 DT_SIZE_K(112)>;

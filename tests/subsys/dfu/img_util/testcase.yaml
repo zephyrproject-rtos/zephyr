@@ -4,7 +4,7 @@ common:
     - native_sim
     - native_sim/native/64
   integration_platforms:
-    - nrf52840dk/nrf52840
+    - native_sim
 tests:
   dfu.image_util:
     tags: dfu_image_util

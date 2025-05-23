@@ -1,4 +1,4 @@
-description: ESP32 Family flash controller
+description: ESP32 flash controller
 
 compatible: "espressif,esp32-flash-controller"
 

@@ -23,53 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The samd21_xpro board configuration supports the following hardware
-features:
-
-.. list-table::
-    :header-rows: 1
-
-    * - Interface
-      - Controller
-      - Driver / Component
-    * - NVIC
-      - on-chip
-      - nested vector interrupt controller
-    * - Flash
-      - on-chip
-      - Can be used with LittleFS to store files
-    * - SYSTICK
-      - on-chip
-      - systick
-    * - WDT
-      - on-chip
-      - Watchdog
-    * - ADC
-      - on-chip
-      - Analog to Digital Converter
-    * - GPIO
-      - on-chip
-      - I/O ports
-    * - PWM
-      - on-chip
-      - Pulse Width Modulation
-    * - USART
-      - on-chip
-      - Serial ports
-    * - I2C
-      - on-chip
-      - I2C ports
-    * - SPI
-      - on-chip
-      - Serial Peripheral Interface ports
-    * - USB
-      - on-chip
-      - Universal Serial Bus device ports
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samd21_xpro/samd21_xpro_defconfig`.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -133,6 +87,8 @@ SERCOM5 is connected to an 8 megabit SPI flash.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The SAM D21 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMD21 chip and is supported by

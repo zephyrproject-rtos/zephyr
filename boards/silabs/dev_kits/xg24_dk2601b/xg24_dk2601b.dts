@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32mg24b310f1536im48.dtsi>
+#include <silabs/xg24/efr32mg24b310f1536im48.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include "xg24_dk2601b-pinctrl.dtsi"
@@ -73,6 +73,12 @@
 
 &cpu0 {
 	clock-frequency = <78000000>;
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	swo-ref-frequency = <DT_FREQ_M(78)>;
 };
 
 &hfxo {

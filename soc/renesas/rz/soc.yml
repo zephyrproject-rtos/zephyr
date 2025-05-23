@@ -1,8 +1,38 @@
 family:
   - name: renesas_rz
     series:
+      - name: rza2m
+        socs:
+          - name: r7s921053vcbg
+      - name: rza3ul
+        socs:
+          - name: r9a07g063u02gbg
+      - name: rzg2l
+        socs:
+          - name: r9a07g044l23gbg
+            cpuclusters:
+              - name: cm33
+          - name: r9a07g044c22gbg
+            cpuclusters:
+              - name: cm33
       - name: rzg3s
         socs:
           - name: r9a08g045s33gbg
             cpuclusters:
               - name: cm33
+      - name: rzv2l
+        socs:
+          - name: r9a07g054l23gbg
+            cpuclusters:
+              - name: cm33
+      - name: rzn2l
+        socs:
+          - name: r9a07g084m04gbg
+      - name: rzt2l
+        socs:
+          - name: r9a07g074m04gbg
+      - name: rzt2m
+        socs:
+          - name: r9a07g075m24gbg
+            cpuclusters:
+              - name: cr520

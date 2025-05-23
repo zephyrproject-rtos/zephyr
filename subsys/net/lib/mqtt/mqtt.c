@@ -46,8 +46,7 @@ void event_notify(struct mqtt_client *client, const struct mqtt_evt *evt)
 	}
 }
 
-static void client_disconnect(struct mqtt_client *client, int result,
-			      bool notify)
+void mqtt_client_disconnect(struct mqtt_client *client, int result, bool notify)
 {
 	int err_code;
 
@@ -105,9 +104,61 @@ static int client_connect(struct mqtt_client *client)
 	return 0;
 
 error:
-	client_disconnect(client, err_code, false);
+	mqtt_client_disconnect(client, err_code, false);
 	return err_code;
 }
+
+static int client_write(struct mqtt_client *client, const uint8_t *data,
+			uint32_t datalen);
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static void disconnect_5_0_notify(struct mqtt_client *client, int err)
+{
+	struct mqtt_disconnect_param param = { };
+	struct buf_ctx packet;
+
+	/* Parser might've set custom failure reason, in such case skip generic
+	 * mapping from errno to reason code.
+	 */
+	if (client->internal.disconnect_reason != MQTT_DISCONNECT_NORMAL) {
+		param.reason_code = client->internal.disconnect_reason;
+	} else {
+		switch (err) {
+		case ECONNREFUSED:
+		case ENOTCONN:
+			/* Connection rejected/closed, skip disconnect. */
+			return;
+		case EINVAL:
+			param.reason_code = MQTT_DISCONNECT_MALFORMED_PACKET;
+			break;
+		case EBADMSG:
+			param.reason_code = MQTT_DISCONNECT_PROTOCOL_ERROR;
+			break;
+		case ENOMEM:
+			param.reason_code = MQTT_DISCONNECT_PACKET_TOO_LARGE;
+			break;
+		default:
+			param.reason_code = MQTT_DISCONNECT_UNSPECIFIED_ERROR;
+			break;
+		}
+	}
+
+	tx_buf_init(client, &packet);
+
+	if (disconnect_encode(client, &param, &packet) < 0) {
+		return;
+	}
+
+	(void)client_write(client, packet.cur, packet.end - packet.cur);
+}
+#else
+static void disconnect_5_0_notify(struct mqtt_client *client, int err)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(err);
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
 
 static int client_read(struct mqtt_client *client)
 {
@@ -119,7 +170,12 @@ static int client_read(struct mqtt_client *client)
 
 	err_code = mqtt_handle_rx(client);
 	if (err_code < 0) {
-		client_disconnect(client, err_code, true);
+		if (mqtt_is_version_5_0(client)) {
+			/* Best effort send, if it fails just shut the connection. */
+			disconnect_5_0_notify(client, -err_code);
+		}
+
+		mqtt_client_disconnect(client, err_code, true);
 	}
 
 	return err_code;
@@ -136,7 +192,7 @@ static int client_write(struct mqtt_client *client, const uint8_t *data,
 	if (err_code < 0) {
 		NET_ERR("Transport write failed, err_code = %d, "
 			 "closing connection", err_code);
-		client_disconnect(client, err_code, true);
+		mqtt_client_disconnect(client, err_code, true);
 		return err_code;
 	}
 
@@ -157,7 +213,7 @@ static int client_write_msg(struct mqtt_client *client,
 	if (err_code < 0) {
 		NET_ERR("Transport write failed, err_code = %d, "
 			 "closing connection", err_code);
-		client_disconnect(client, err_code, true);
+		mqtt_client_disconnect(client, err_code, true);
 		return err_code;
 	}
 
@@ -176,7 +232,8 @@ void mqtt_client_init(struct mqtt_client *client)
 	MQTT_STATE_INIT(client);
 	mqtt_mutex_init(client);
 
-	client->protocol_version = MQTT_VERSION_3_1_1;
+	client->protocol_version = IS_ENABLED(CONFIG_MQTT_VERSION_5_0) ?
+				   MQTT_VERSION_5_0 : MQTT_VERSION_3_1_1;
 	client->clean_session = MQTT_CLEAN_SESSION;
 	client->keepalive = MQTT_KEEPALIVE;
 }
@@ -261,7 +318,7 @@ int mqtt_publish(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_encode(param, &packet);
+	err_code = publish_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -308,7 +365,7 @@ int mqtt_publish_qos1_ack(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_ack_encode(param, &packet);
+	err_code = publish_ack_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -345,7 +402,7 @@ int mqtt_publish_qos2_receive(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_receive_encode(param, &packet);
+	err_code = publish_receive_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -382,7 +439,7 @@ int mqtt_publish_qos2_release(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_release_encode(param, &packet);
+	err_code = publish_release_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -419,7 +476,7 @@ int mqtt_publish_qos2_complete(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = publish_complete_encode(param, &packet);
+	err_code = publish_complete_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -438,7 +495,8 @@ error:
 	return err_code;
 }
 
-int mqtt_disconnect(struct mqtt_client *client)
+int mqtt_disconnect(struct mqtt_client *client,
+		    const struct mqtt_disconnect_param *param)
 {
 	int err_code;
 	struct buf_ctx packet;
@@ -454,7 +512,7 @@ int mqtt_disconnect(struct mqtt_client *client)
 		goto error;
 	}
 
-	err_code = disconnect_encode(&packet);
+	err_code = disconnect_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -464,7 +522,7 @@ int mqtt_disconnect(struct mqtt_client *client)
 		goto error;
 	}
 
-	client_disconnect(client, 0, true);
+	mqtt_client_disconnect(client, 0, true);
 
 error:
 	mqtt_mutex_unlock(client);
@@ -494,7 +552,7 @@ int mqtt_subscribe(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = subscribe_encode(param, &packet);
+	err_code = subscribe_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -528,7 +586,7 @@ int mqtt_unsubscribe(struct mqtt_client *client,
 		goto error;
 	}
 
-	err_code = unsubscribe_encode(param, &packet);
+	err_code = unsubscribe_encode(client, param, &packet);
 	if (err_code < 0) {
 		goto error;
 	}
@@ -576,6 +634,58 @@ error:
 	return err_code;
 }
 
+#if defined(CONFIG_MQTT_VERSION_5_0)
+static int verify_auth_state(const struct mqtt_client *client)
+{
+	/* Enhanced authentication is only allowed when connecting at MQTT
+	 * level (before CONNACK is received).
+	 */
+	if (MQTT_HAS_STATE(client, MQTT_STATE_TCP_CONNECTED) &&
+	    !MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED)) {
+		return 0;
+	}
+
+	/* Return generic protocol error */
+	return -EPROTO;
+}
+
+int mqtt_auth(struct mqtt_client *client, const struct mqtt_auth_param *param)
+{
+	int err_code;
+	struct buf_ctx packet;
+
+	NULL_PARAM_CHECK(client);
+	NULL_PARAM_CHECK(param);
+
+	mqtt_mutex_lock(client);
+
+	if (!mqtt_is_version_5_0(client)) {
+		NET_ERR("Auth packet only supported in MQTT 5.0");
+		err_code = -ENOTSUP;
+		goto error;
+	}
+
+	tx_buf_init(client, &packet);
+
+	err_code = verify_auth_state(client);
+	if (err_code < 0) {
+		goto error;
+	}
+
+	err_code = auth_encode(param, &packet);
+	if (err_code < 0) {
+		goto error;
+	}
+
+	err_code = client_write(client, packet.cur, packet.end - packet.cur);
+
+error:
+	mqtt_mutex_unlock(client);
+
+	return err_code;
+}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
 int mqtt_abort(struct mqtt_client *client)
 {
 	NULL_PARAM_CHECK(client);
@@ -583,7 +693,7 @@ int mqtt_abort(struct mqtt_client *client)
 	mqtt_mutex_lock(client);
 
 	if (client->internal.state != MQTT_STATE_IDLE) {
-		client_disconnect(client, -ECONNABORTED, true);
+		mqtt_client_disconnect(client, -ECONNABORTED, true);
 	}
 
 	mqtt_mutex_unlock(client);
@@ -685,7 +795,7 @@ static int read_publish_payload(struct mqtt_client *client, void *buffer,
 			ret = -ENOTCONN;
 		}
 
-		client_disconnect(client, ret, true);
+		mqtt_client_disconnect(client, ret, true);
 		goto exit;
 	}
 

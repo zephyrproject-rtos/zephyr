@@ -30,38 +30,7 @@ More information about STM32WB09KEV can be found here:
 Supported Features
 ==================
 
-The Zephyr ``nucleo_wb09ke`` board target supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | internal flash memory               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | counter, pwm                        |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy                |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/nucleo_wb09ke/nucleo_wb09ke_defconfig`
+.. zephyr:board-supported-hw::
 
 Bluetooh support
 ----------------
@@ -93,6 +62,8 @@ For more details, please refer to the `Nucleo WB09KE board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Nucleo WB09KE board includes an ST-LINK-V3EC embedded debug tool interface.
 
@@ -149,6 +120,15 @@ You can debug an application in the usual way.  Here is an example for the
    :board: nucleo_wb09ke
    :maybe-skip-config:
    :goals: debug
+
+.. warning::
+   Application debugging on this board uses the pyOCD runner, which requires an additional pack
+   to be installed beforehand. This can be performed using the following commands:
+
+   .. code-block:: console
+
+      $ pyocd pack update
+      $ pyocd pack install stm32wb0
 
 .. _`Nucleo WB09KE webpage`:
    https://www.st.com/en/evaluation-tools/nucleo-wb09ke.html

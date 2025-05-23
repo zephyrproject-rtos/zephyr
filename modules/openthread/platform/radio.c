@@ -15,7 +15,7 @@
 #define LOG_MODULE_NAME net_otPlat_radio
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL);
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -156,11 +156,6 @@ static void set_pending_event(enum pending_events event)
 static void reset_pending_event(enum pending_events event)
 {
 	atomic_clear_bit(pending_events, event);
-}
-
-static inline void clear_pending_events(void)
-{
-	atomic_clear(pending_events);
 }
 
 void energy_detected(const struct device *dev, int16_t max_ed)
@@ -1177,7 +1172,7 @@ otError otPlatRadioClearSrcMatchShortEntry(otInstance *aInstance,
 
 	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
 				 &config) != 0) {
-		return OT_ERROR_NO_BUFS;
+		return OT_ERROR_NO_ADDRESS;
 	}
 
 	return OT_ERROR_NONE;
@@ -1196,7 +1191,7 @@ otError otPlatRadioClearSrcMatchExtEntry(otInstance *aInstance,
 
 	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
 				 &config) != 0) {
-		return OT_ERROR_NO_BUFS;
+		return OT_ERROR_NO_ADDRESS;
 	}
 
 	return OT_ERROR_NONE;

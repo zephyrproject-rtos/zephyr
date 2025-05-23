@@ -5,9 +5,6 @@ common:
   depends_on: netif
   timeout: 600
   min_ram: 21
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   net.dns.resolve:
     extra_configs:
@@ -18,3 +15,9 @@ tests:
   net.dns.resolve.no_ipv6:
     extra_args: CONF_FILE=prj-no-ipv6.conf
     min_ram: 16
+  net.mdns.resolve:
+    extra_configs:
+      - CONFIG_MDNS_RESOLVER=y
+      - CONFIG_MDNS_RESPONDER=n
+      - CONFIG_NET_IPV6_MLD=y
+      - CONFIG_NET_IPV4_IGMP=y

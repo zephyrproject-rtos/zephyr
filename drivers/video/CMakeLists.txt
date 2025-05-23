@@ -3,9 +3,12 @@
 zephyr_library()
 
 zephyr_library_sources(video_common.c)
+zephyr_library_sources(video_ctrls.c)
+zephyr_library_sources(video_device.c)
 
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_CSI	video_mcux_csi.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX video_mcux_mipi_csi2rx.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_SHELL video_shell.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_SW_GENERATOR	video_sw_generator.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MT9M114	mt9m114.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_OV7725	ov7725.c)
@@ -18,3 +21,6 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_ESP32		video_esp32_dvp.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_SDMA	video_mcux_smartdma.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_IMAGER	video_emul_imager.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_RX	video_emul_rx.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_IMX335	imx335.c)
+
+zephyr_linker_sources(DATA_SECTIONS video.ld)

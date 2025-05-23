@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	renesas_parallel_graphics_connector: parallel-graphics-connector {
+		compatible = "renesas,ra-parallel-graphics-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<1 0 &ioport4 4 0>,	/* DISP_BLEN */
+				<2 0 &ioport5 11 0>,	/* IIC_SDA */
+				<3 0 &ioport5 10 0>,	/* DISP_INT */
+				<4 0 &ioport5 12 0>,	/* IIC_SCL */
+				<6 0 &ioporta 1 0>;	/* DISP_RST */
+	};
+};
+
+&port_irq3 {
+	interrupts = <90 1>;
+	status = "okay";
+};
+
+&pinctrl {
+	glcdc_default: glcdc_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_GLCDC, 8, 5)>, /* LCDC_TCON0 */
+				<RA_PSEL(RA_PSEL_GLCDC, 8, 7)>, /* LCDC_TCON1 */
+				<RA_PSEL(RA_PSEL_GLCDC, 5, 13)>, /* LCDC_TCON2 */
+				<RA_PSEL(RA_PSEL_GLCDC, 5, 15)>, /* LCDC_TCON3 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 14)>, /* LCDC_DATA00 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 15)>, /* LCDC_DATA01 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 10)>, /* LCDC_DATA02 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 11)>, /* LCDC_DATA03 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 12)>, /* LCDC_DATA04 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 13)>, /* LCDC_DATA05 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 4)>, /* LCDC_DATA06 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 3)>, /* LCDC_DATA07 */
+				<RA_PSEL(RA_PSEL_GLCDC, 9, 2)>, /* LCDC_DATA08 */
+				<RA_PSEL(RA_PSEL_GLCDC, 2, 7)>, /* LCDC_DATA09 */
+				<RA_PSEL(RA_PSEL_GLCDC, 7, 11)>, /* LCDC_DATA10 */
+				<RA_PSEL(RA_PSEL_GLCDC, 7, 12)>, /* LCDC_DATA11 */
+				<RA_PSEL(RA_PSEL_GLCDC, 7, 13)>, /* LCDC_DATA12 */
+				<RA_PSEL(RA_PSEL_GLCDC, 7, 14)>, /* LCDC_DATA13 */
+				<RA_PSEL(RA_PSEL_GLCDC, 7, 15)>, /* LCDC_DATA14 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 7)>, /* LCDC_DATA15 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 6)>, /* LCDC_DATA16 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 5)>, /* LCDC_DATA17 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 1)>, /* LCDC_DATA18 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 4)>, /* LCDC_DATA19 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 3)>, /* LCDC_DATA20 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 2)>, /* LCDC_DATA21 */
+				<RA_PSEL(RA_PSEL_GLCDC, 11, 0)>, /* LCDC_DATA22 */
+				<RA_PSEL(RA_PSEL_GLCDC, 7, 7)>, /* LCDC_DATA23 */
+				<RA_PSEL(RA_PSEL_GLCDC, 8, 6)>, /* LCDC_CLK */
+				<RA_PSEL(RA_PSEL_GLCDC, 5, 14)>; /* LCDC_EXTCLK */
+		};
+	};
+
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
+				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+			drive-strength = "medium";
+		};
+	};
+};
+
+&zephyr_lcdif {
+	pinctrl-0 = <&glcdc_default>;
+	pinctrl-names = "default";
+	output-pin-hsync = "TCON_PIN_1";
+	output-pin-vsync = "TCON_PIN_0";
+	output-pin-de = "TCON_PIN_2";
+};
+
+&iic1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_K(100)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};

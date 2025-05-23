@@ -41,50 +41,13 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h747i_disco board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet  (*)                       |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| IPM       | on-chip    | virtual mailbox based on HSEM       |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | MIPI DSI Host with shield (MP1166)  |
-|           |            | st_b_lcd40_dsi1_mb1166              |
-+-----------+------------+-------------------------------------+
-
-(*) From UM2411 Rev 4:
+.. note:
+   From UM2411 Rev 4:
    With the default setting, the Ethernet feature is not working because of
    a conflict between ETH_MDC and SAI4_D1 of the MEMs digital microphone.
    Make sure you have SB8 closed and SB21 open to get Ethernet working.
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration per core can be found in the defconfig files:
-:zephyr_file:`boards/st/stm32h747i_disco/stm32h747i_disco_stm32h747xx_m7_defconfig` and
-:zephyr_file:`boards/st/stm32h747i_disco/stm32h747i_disco_stm32h747xx_m4_defconfig`
 
 Pin Mapping
 ===========
@@ -191,6 +154,8 @@ two cores. This is done in 3 ways:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H747I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
 

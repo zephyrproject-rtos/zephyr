@@ -18,6 +18,7 @@ tests:
       - frdm_k22f             # tcn75a
       - robokit1              # ntc_thermistor
       - adi_eval_adin1110ebz  # adt7420
+      - frdm_rw612            # p3t1755
     extra_args:
       - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i2c
       - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i2c
@@ -34,6 +35,7 @@ tests:
         - "Temperature is [0-9|.]+°C"
     integration_platforms:
       - frdm_mcxn947/mcxn947/cpu0 # p3t1755
+      - frdm_mcxa153              # p3t1755
     depends_on:
       - i3c
     filter: dt_alias_exists("ambient-temp0")

@@ -46,9 +46,9 @@
 
 	SECTION_DATA_PROLOGUE(symbol_to_keep,,)
 	{
-		__symbol_to_keep_start = .;
+		PLACE_SYMBOL_HERE(__symbol_to_keep_start);
 		KEEP(*(SORT(.symbol_to_keep*)));
-		__symbol_to_keep_end = .;
+		PLACE_SYMBOL_HERE(__symbol_to_keep_end);
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	ITERABLE_SECTION_ROM(shell, Z_LINK_ITERABLE_SUBALIGN)

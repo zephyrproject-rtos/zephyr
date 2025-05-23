@@ -43,7 +43,6 @@
 
 		adc@4005c000 {
 			interrupts = <20 1>;
-			channel-count = <8>;
 			channel-available-mask = <0x1a0670>;
 		};
 
@@ -237,4 +236,8 @@
 
 &pwm3 {
 	clocks = <&pclkd MSTPD 5>;
+};
+
+&dac_global {
+	has-davrefcr;
 };

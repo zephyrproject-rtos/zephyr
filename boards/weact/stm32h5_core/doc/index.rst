@@ -69,43 +69,7 @@ More information about STM32H562RG can be found here:
 Supported Features
 ==================
 
-The Zephyr ``weact_stm32h5_core`` board supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CAN/CANFD | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | Real Time Clock                     |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi bus                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c bus                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB full-speed host/device bus      |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration per core can be found in the defconfig file:
-:zephyr_file:`boards/weact/stm32h5_core/weact_stm32h5_core_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -136,6 +100,8 @@ Virtual COM port interface. Default communication settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The ``weact_stm32h5_core`` board facilitates firmware flashing via the USB DFU
 bootloader. This method simplifies the process of updating images, although

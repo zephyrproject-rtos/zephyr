@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_M55M1X
+
+rsource "Kconfig.defconfig.m55m1*"
+
+endif # SOC_SERIES_M55M1X

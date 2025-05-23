@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Microchip PolarFire SoC GPIO node
+description: Microchip PolarFire SoC GPIO
 
 compatible: "microchip,mpfs-gpio"
 

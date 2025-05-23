@@ -17,23 +17,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimex_stm32_p405 board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -200,6 +184,9 @@ which can be set as high as 168 MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The OLIMEX-STM32-P405 board does not include an embedded debug tool
 interface. You will need to use ST tools or an external JTAG probe.
 In the following examples a ST-Link V2 USB dongle is used.

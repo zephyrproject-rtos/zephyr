@@ -38,6 +38,8 @@ NSI_COVERAGE?=--coverage
 NSI_LOCALIZE_OPTIONS?=
 NSI_BUILD_OPTIONS?=${NSI_ARCH} ${NSI_COVERAGE}
 NSI_LINK_OPTIONS?=${NSI_ARCH} ${NSI_COVERAGE}
+NSI_BUILD_C_OPTIONS?=
+NSI_BUILD_CXX_OPTIONS?=
 #  Extra source files to be built in the runner context
 NSI_EXTRA_SRCS?=
 #  Extra include directories to be used while building in the runner context
@@ -48,6 +50,8 @@ NSI_EXTRA_LIBS?=
 SHELL?=bash
 #  Compiler
 NSI_CC?=gcc
+NSI_CXX?=g++
+NSI_LINKER?=${NSI_CC}
 #  Archive program (it is unlikely you'll need to change this)
 NSI_AR?=ar
 #  Objcopy program (it is unlikely you'll need to change this)
@@ -64,8 +68,10 @@ NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTE
 
 NO_PIE_CO:=-fno-pie -fno-pic
 DEPENDFLAGS:=-MMD -MP
-CFLAGS:=${NSI_DEBUG} ${NSI_WARNINGS} ${NSI_OPT} ${NO_PIE_CO} -DNSI_N_CPUS=${NSI_N_CPUS} \
-  -ffunction-sections -fdata-sections ${DEPENDFLAGS} -std=c11 ${NSI_BUILD_OPTIONS}
+COMMON_BUILD_FLAGS:=-DNSI_RUNNER_BUILD ${NSI_DEBUG} ${NSI_WARNINGS} ${NSI_OPT} ${NO_PIE_CO} \
+  -DNSI_N_CPUS=${NSI_N_CPUS} -ffunction-sections -fdata-sections ${DEPENDFLAGS} ${NSI_BUILD_OPTIONS}
+CFLAGS:=-std=c11 ${COMMON_BUILD_FLAGS} ${NSI_BUILD_C_OPTIONS}
+CXXFLAGS:=${COMMON_BUILD_FLAGS} ${NSI_BUILD_CXX_OPTIONS}
 FINALLINK_FLAGS:=${NO_PIE_CO} -no-pie  ${NSI_WARNINGS} \
   -Wl,--gc-sections -ldl -pthread \
   ${NSI_LINK_OPTIONS} -lm
@@ -89,7 +95,7 @@ ifdef NSI_NATIVE
   INCLUDES+=-I${NSI_PATH}native/src/include/
 endif
 
-EXTRA_OBJS:=$(abspath $(addprefix $(NSI_BUILD_PATH)/,$(sort ${NSI_EXTRA_SRCS:%.c=%.o})))
+EXTRA_OBJS:=$(abspath $(addprefix $(NSI_BUILD_PATH)/,$(sort $(patsubst %.c,%.o,${NSI_EXTRA_SRCS:%.cpp=%.c}))))
 OBJS:=$(abspath $(addprefix $(NSI_BUILD_PATH)/,${SRCS:${NSI_PATH}%.c=%.o})) ${EXTRA_OBJS}
 
 DEPENDFILES:=$(addsuffix .d,$(basename ${OBJS}))
@@ -105,6 +111,11 @@ ${NSI_BUILD_PATH}:
 ${NSI_BUILD_PATH}/%.o: /%.c ${NSI_PATH}Makefile ${NSI_CONFIG_FILE}
 	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 	${NSI_CC} ${NSI_CPPFLAGS} ${INCLUDES} ${CFLAGS} -c $< -o $@
+
+#Extra C++ sources build:
+${NSI_BUILD_PATH}/%.o: /%.cpp ${NSI_PATH}Makefile ${NSI_CONFIG_FILE}
+	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
+	${NSI_CXX} ${NSI_CPPFLAGS} ${INCLUDES} ${CXXFLAGS} -c $< -o $@
 
 ${NSI_BUILD_PATH}/%.o: ${NSI_PATH}/%.c ${NSI_PATH}Makefile ${NSI_CONFIG_FILE}
 	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
@@ -128,7 +139,7 @@ ${NSI_BUILD_PATH}/%.loc_cpusw.o: /% ${NSI_CONFIG_FILE}
 
 ${NSI_EXE}: ${NSI_BUILD_PATH}/${RUNNER_LIB} ${LOCALIZED_EMBSW} ${NSI_EXTRA_LIBS} \
  ${NSI_BUILD_PATH}/linker_script.ld
-	${NSI_CC} -Wl,--whole-archive ${LOCALIZED_EMBSW} ${NSI_BUILD_PATH}/${RUNNER_LIB} \
+	${NSI_LINKER} -Wl,--whole-archive ${LOCALIZED_EMBSW} ${NSI_BUILD_PATH}/${RUNNER_LIB} \
 	  ${NSI_EXTRA_LIBS} -Wl,--no-whole-archive \
 	  -o $@ ${FINALLINK_FLAGS} -T ${NSI_BUILD_PATH}/linker_script.ld
 

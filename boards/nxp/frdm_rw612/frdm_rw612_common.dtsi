@@ -5,6 +5,7 @@
  */
 
 #include "frdm_rw612-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "nxp,frdm_rw612";
@@ -15,6 +16,8 @@
 		usart-0 = &flexcomm3;
 		i2c-0 = &flexcomm2;
 		pwm-0 = &sctimer;
+		sw0 = &user_button_0;
+		ambient-temp0 = &p3t1755;
 	};
 
 	chosen {
@@ -30,8 +33,27 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_1 {
-			gpios = <&hsgpio0 12 0>;
+			gpios = <&hsgpio0 12 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "User SW2";
+			gpios = <&hsgpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
+		};
+	};
+
+	nxp_lcd_pmod_connector: lcd-pmod-connector {
+		compatible = "nxp,lcd-pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xfffffff0>;
+		gpio-map-pass-thru = <0 0xf>;
+		gpio-map = <10  0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
+			   <12  0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
 	};
 };
 
@@ -53,6 +75,14 @@
 
 &hsgpio0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio0>;
+	pinctrl-names = "default";
+};
+
+&hsgpio1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio1>;
+	pinctrl-names = "default";
 };
 
 &flexspi {
@@ -79,24 +109,25 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 2 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
+				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@323000 {
+			slot1_partition: partition@320000 {
 				label = "image-1";
-				reg = <0x00323000 DT_SIZE_M(3)>;
+				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@623000 {
+			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
+				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 			};
 		};
 	};
@@ -175,6 +206,7 @@
 &os_timer {
 	status = "okay";
 	wakeup-source;
+	deep-sleep-counter = <&rtc_highres>;
 };
 
 &systick {
@@ -195,7 +227,18 @@
 	pinctrl-names = "default";
 };
 
+/* RTC is the wakeup source for PM modes 3,4 */
+&rtc_highres {
+	status = "okay";
+	wakeup-source;
+};
+
 &nbu {
+	status = "okay";
+	wakeup-source;
+};
+
+&imu {
 	status = "okay";
 	wakeup-source;
 };
@@ -227,4 +270,20 @@ arduino_i2c: &flexcomm2 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
 	pinctrl-names = "default";
+
+	p3t1755: p3t1755@48 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48>;
+		status = "okay";
+	};
+};
+
+zephyr_mipi_dbi_spi: &lcdic {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lcdic>;
+	pinctrl-names = "default";
+};
+
+nxp_pmod_touch_panel_i2c: &arduino_i2c {
+	status = "okay";
 };

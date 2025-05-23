@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Brett Witherspoon
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI CC13xx / CC26xx I2C node
+description: TI CC13xx / CC26xx I2C
 
 compatible: "ti,cc13xx-cc26xx-i2c"
 

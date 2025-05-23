@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Main PLL node binding for low-, medium-, high- and XL-density STM32F1 devices.
+  STM32F1 Main PLL for low-, medium-, high- and XL-density devices.
 
   Takes one of 'clk_hse', 'clk_hse / 2' (when 'xtpre' is set) or 'clk_hsi / 2'
   as input clock.

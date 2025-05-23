@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon CAT1 DMA node
+description: Infineon CAT1 DMA
 
 compatible: "infineon,cat1-dma"
 

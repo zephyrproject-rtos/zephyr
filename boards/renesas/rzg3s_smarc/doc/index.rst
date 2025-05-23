@@ -48,38 +48,22 @@ The Renesas RZ/G3S MPU documentation can be found at `RZ/G3S Group Website`_
 
 	RZ/G3S block diagram (Credit: Renesas Electronics Corporation)
 
+Multi-OS processing
+*******************
+
+The RZ/G3S-EVKIT allows different applications to be executed in RZ/G3S SoC. With its multi-core architecture,
+each core can operate independently to perform customized tasks or exchange data using the OpenAMP framework.
+Please see :zephyr:code-sample:`rz-openamp-linux-zephyr` sample for reference.
+
 Supported Features
 ==================
 
-The ``rzg3s_smarc/r9a08g045s33gbg/cm33`` board target supports the ARM Cortex-M33 System Core without FPU
-and the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | arch/arm                            |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| GTM       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| INTC      | on-chip    | external interrupt controller       |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock control                       |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 RZ/G3S-EVKIT is designed to start different systems on different cores.
 It uses Yocto as the build system to build Linux system and boot loaders

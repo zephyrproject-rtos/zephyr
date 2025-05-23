@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 Tokita, Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &dma {
+	status = "okay";
+};

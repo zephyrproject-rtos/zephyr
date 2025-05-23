@@ -22,7 +22,7 @@
 #include "usb.h"
 #endif
 
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
 #include <cmsis_core.h>
 
@@ -151,14 +151,15 @@ __weak void clock_init(void)
 	/* Set PERIPH_CLK MUX to PERIPH_CLK2 */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x1);
 
-	/* Setting the VDD_SOC value.
-	 */
+#if CONFIG_ADJUST_DCDC
+	/* Setting the VDD_SOC value */
 	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
 	/* Waiting for DCDC_STS_DC_OK bit is asserted */
 	while (DCDC_REG0_STS_DC_OK_MASK !=
 			(DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
 		;
 	}
+#endif
 
 #ifdef CONFIG_INIT_ARM_PLL
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
@@ -209,8 +210,9 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
-	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 720M */
-	CLOCK_SetDiv(kCLOCK_LpspiDiv, 7); /* Set SPI divider to 8 */
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
+	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 */
+	CLOCK_SetDiv(kCLOCK_LpspiDiv, 0); /* Set SPI divider to 1 */
 #endif
 
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
@@ -365,7 +367,7 @@ void soc_reset_hook(void)
 
 #if defined(FLEXRAM_RUNTIME_BANKS_USED)
 	/* Configure flexram if not running from RAM */
-	memc_flexram_dt_partition();
+	flexram_dt_partition();
 #endif
 }
 #endif

@@ -147,62 +147,7 @@ More information about STM32H573 can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32H573I_DK board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | PWM                                 |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | Real Time Clock                     |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c bus                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi bus                             |
-+-----------+------------+-------------------------------------+
-| OCTOSPI   | on-chip    | octospi                             |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | can bus                             |
-+-----------+------------+-------------------------------------+
-| AES       | on-chip    | crypto                              |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB full-speed host/device bus      |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | rtc                                 |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/stm32h573i_dk/stm32h573i_dk_defconfig`
-  - :zephyr_file:`boards/st/stm32h573i_dk/stm32h573i_dk.dts`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -235,9 +180,21 @@ Serial Port
 STM32H573I-DK Discovery board has 3 U(S)ARTs. The Zephyr console output is
 assigned to USART1. Default settings are 115200 8N1.
 
+TFT LCD screen and touch panel
+------------------------------
+
+The TFT LCD screen and touch panel are supported for the STM32H573I-DK Discovery board.
+They can be tested using :zephyr:code-sample:`lvgl` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: stm32h573i_dk
+   :goals: build
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H573I-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 

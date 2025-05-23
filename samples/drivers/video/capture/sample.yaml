@@ -10,6 +10,7 @@ tests:
       - platform:mimxrt1064_evk:SHIELD="dvp_fpc24_mt9m114;rk043fn66hs_ctg"
       - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
       - platform:mimxrt1170_evk@B/mimxrt1176/cm7:SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
+      - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD="dvp_20pin_ov7670;lcd_par_s035_8080"
     extra_configs:
       - CONFIG_TEST=y
       - CONFIG_FPU=y
@@ -28,9 +29,28 @@ tests:
       - mimxrt1064_evk
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk@B/mimxrt1176/cm7
+      - frdm_mcxn947/mcxn947/cpu0
       - mm_swiftio
       - esp32s3_eye/esp32s3/procpu
     depends_on: video
     integration_platforms:
       - mimxrt1064_evk
       - mimxrt1170_evk/mimxrt1176/cm7
+  sample.video.capture.shell:
+    tags:
+      - video
+      - samples
+      - shell
+    extra_configs:
+      - CONFIG_VIDEO_SHELL=y
+      - CONFIG_FPU=y
+      - CONFIG_DISPLAY=n
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Letting the user control the device with the video shell"
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64

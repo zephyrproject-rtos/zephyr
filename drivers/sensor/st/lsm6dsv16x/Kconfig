@@ -4,13 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LSM6DSV16X
-	bool "LSM6DSV16X I3C/I2C/SPI accelerometer and gyroscope Chip"
+	bool "LSM6DSV16X/LSM6DSV32X I3C/I2C/SPI accelerometer and gyroscope chip"
 	default y
-	depends on DT_HAS_ST_LSM6DSV16X_ENABLED
+	depends on DT_HAS_ST_LSM6DSV16X_ENABLED || DT_HAS_ST_LSM6DSV32X_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i2c)
-	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i2c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i3c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),spi) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSV16X
 	select RTIO_WORKQ if SENSOR_ASYNC_API
@@ -44,7 +47,10 @@ config LSM6DSV16X_TRIGGER_GLOBAL_THREAD
 	depends on GPIO || I3C
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios) ||\
-		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c)
+		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int1-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int2-gpios) ||\
+		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i3c)
 	select LSM6DSV16X_TRIGGER
 
 config LSM6DSV16X_TRIGGER_OWN_THREAD
@@ -52,7 +58,10 @@ config LSM6DSV16X_TRIGGER_OWN_THREAD
 	depends on GPIO || I3C
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios) ||\
-		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c)
+		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int1-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int2-gpios) ||\
+		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i3c)
 	select LSM6DSV16X_TRIGGER
 
 endchoice

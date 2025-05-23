@@ -8,8 +8,8 @@ identifier: lpcxpresso55s28
 name: NXP LPCXpresso55S28
 type: mcu
 arch: arm
-ram: 64
-flash: 256
+ram: 192
+flash: 512
 toolchain:
   - zephyr
   - gnuarmemb

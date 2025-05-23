@@ -1,0 +1,8 @@
+sample:
+  name: Generic Stepper Sample
+tests:
+  sample.drivers.stepper.generic:
+    harness: stepper
+    tags: stepper
+    platform_allow: nucleo_g071rb
+    depends_on: gpio input

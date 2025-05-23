@@ -1,0 +1,6 @@
+board:
+  name: rza3ul_smarc
+  full_name: RZ/A3UL SMARC Evaluation Board Kit
+  vendor: renesas
+  socs:
+  - name: r9a07g063u02gbg

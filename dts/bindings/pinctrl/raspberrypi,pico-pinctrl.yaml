@@ -2,10 +2,12 @@
 # Copyright (c) 2021 Yonatan Schachter
 # SPDX-License-Identifier: Apache-2.0
 
+title: Raspberry Pi Pico Pin Controller
+
 description: |
-    The RPi Pico pin controller is a node responsible for controlling
-    pin function selection and pin properties, such as routing a UART0 Rx
-    to pin 1 and enabling the pullup resistor on that pin.
+    Singleton node responsible for controlling pin function selection and pin
+    properties, such as routing a UART0 Rx to pin 1 and enabling the pullup
+    resistor on that pin.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:
@@ -138,5 +140,62 @@ child-binding:
               selected peripheral signal.
           - 2 (RP2_GPIO_OVERRIDE_LOW) - disable output.
           - 3 (RP2_GPIO_OVERRIDE_HIGH) - enable output.
+
+          The default value is 0, as this is the power on reset value.
+      raspberrypi,out-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override output for a pin.
+
+          - 0 (RP2_GPIO_OVERRIDE_NORMAL) - drive output from selected
+              peripheral signal.
+          - 1 (RP2_GPIO_OVERRIDE_INVERT) - drive output from inverse of
+              selected peripheral signal.
+          - 2 (RP2_GPIO_OVERRIDE_LOW) - drive output low.
+          - 3 (RP2_GPIO_OVERRIDE_HIGH) - drive output high.
+
+          The default value is 0, as this is the power on reset value.
+      raspberrypi,in-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override input for a pin.
+
+          - 0 (RP2_GPIO_OVERRIDE_NORMAL) - drive input from selected
+              pin.
+          - 1 (RP2_GPIO_OVERRIDE_INVERT) - drive input from inverse of
+              selected pin.
+          - 2 (RP2_GPIO_OVERRIDE_LOW) - drive input low.
+          - 3 (RP2_GPIO_OVERRIDE_HIGH) - drive input high.
+
+          The default value is 0, as this is the power on reset value.
+      raspberrypi,irq-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override interrupt signal for a pin.
+
+          - 0 (RP2_GPIO_OVERRIDE_NORMAL) - drive interrupt signal to selected
+              peripheral.
+          - 1 (RP2_GPIO_OVERRIDE_INVERT) - drive interrupt signal from inverse to
+              selected peripheral.
+          - 2 (RP2_GPIO_OVERRIDE_LOW) - drive interrupt signal low.
+          - 3 (RP2_GPIO_OVERRIDE_HIGH) - drive interrupt signal high.
 
           The default value is 0, as this is the power on reset value.

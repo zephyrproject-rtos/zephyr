@@ -11,6 +11,9 @@ if SOC_FAMILY_STM32
 # can override the defaults given here
 rsource "*/Kconfig.defconfig"
 
+config CACHE_STM32
+	default y if EXTERNAL_CACHE
+
 config CLOCK_CONTROL
 	default y
 
@@ -22,6 +25,13 @@ DT_STM32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_RCC_PATH),clock-fre
 
 DT_ST_PRESCALER := st,prescaler
 DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_XSPI := st,stm32-xspi
+
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_XSPI))
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
@@ -63,15 +73,16 @@ config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
 
-config PHY_INIT_PRIORITY
-	default 81
-	depends on NET_L2_ETHERNET && ETH_DRIVER
-
 # Get flash configuration for NS image from dts flash partition
 config USE_DT_CODE_PARTITION
 	default y if TRUSTED_EXECUTION_NONSECURE
 
 config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
+		if $(DT_FLASH_PARENT_IS_XSPI)
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 endif # SOC_FAMILY_STM32

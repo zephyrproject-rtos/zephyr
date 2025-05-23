@@ -20,7 +20,7 @@
 #ifndef BOARDS_POSIX_NRF_BSIM_CMDLINE_H
 #define BOARDS_POSIX_NRF_BSIM_CMDLINE_H
 
-#include "../../native_posix/cmdline_common.h"
+#include "../../../native/src/include/nsi_cmdline.h"
 
 #ifdef __cplusplus
 extern "C" {

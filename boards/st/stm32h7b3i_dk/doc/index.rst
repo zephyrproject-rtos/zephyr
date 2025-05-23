@@ -94,42 +94,7 @@ More information about STM32H7B3 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h7b3i_dk board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| OSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| LTDC      | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-| CANFD     | on-chip    | can                                 |
-+-----------+------------+-------------------------------------+
-
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32h7b3i_dk/stm32h7b3i_dk_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -188,6 +153,8 @@ default communication settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H7B3I Discovery kit includes an STLINK-V3E embedded debug tool interface.
 

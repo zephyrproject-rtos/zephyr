@@ -47,54 +47,7 @@ More information about STM32L151x can be found in the `STM32L1x reference manual
 Supported Features
 ==================
 
-The Zephyr stm32l1_disco and stm32l152c_disco board configurations support
-the following hardware features:
-
-.. list-table:: Supported hardware
-   :header-rows: 1
-
-   * - Interface
-     - Controller
-     - Driver/component
-   * - NVIC
-     - on-chip
-     - nested vector interrupt controller
-   * - UART
-     - on-chip
-     - serial port-polling
-       serial port-interrupt
-   * - PINMUX
-     - on-chip
-     - pinmux
-   * - GPIO
-     - on-chip
-     - gpio
-   * - CLOCK
-     - on-chip
-     - reset and clock control
-   * - FLASH
-     - on-chip
-     - flash memory
-   * - EEPROM
-     - on-chip
-     - eeprom
-   * - WATCHDOG
-     - on-chip
-     - window watchdog
-   * - I2C
-     - on-chip
-     - i2c
-   * - SPI
-     - on-chip
-     - spi
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The configuration of stm32l1_disco can be found in
-:zephyr_file:`boards/st/stm32l1_disco/stm32l1_disco_defconfig`
-
-Configuration of stm32l152c_disco can be found in
-:zephyr_file:`boards/st/stm32l1_disco/stm32l152c_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -130,6 +83,8 @@ For more details please refer to `STM32L1DISCOVERY board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32L1DISCOVERY and STM32L152CDISCOVERY boards include an ST-LINK/V2 embedded debug tool interface.
 

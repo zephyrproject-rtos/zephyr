@@ -1,0 +1,14 @@
+# Copyright (C) 2025 Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI DAC161S997 16-bit 1 channel SPI DAC for 4-20 mA loops
+
+compatible: "ti,dac161s997"
+
+include: [dac-controller.yaml, spi-device.yaml]
+
+properties:
+  errb-gpios:
+    type: phandle-array
+    description: |
+      DAC error signal output. If set a callback can be set to read what caused the error.

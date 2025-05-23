@@ -3,17 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-test_gpio_stepper: test_gpio_stepper {
-	compatible = "zephyr,gpio-stepper";
-	status = "okay";
-	micro-step-res = <1>;
-	gpios = <&test_gpio 0 0>,
-		<&test_gpio 0 0>,
-		<&test_gpio 0 0>,
-		<&test_gpio 0 0>;
-};
+/****************************************
+ *  PLEASE KEEP ALPHABETICALLY SORTED   *
+ ***************************************/
 
-test_tmc2209: tmc2209_motor {
+adi_tmc2209: adi_tmc2209 {
 	compatible = "adi,tmc2209";
 	status = "okay";
 	micro-step-res = <1>;
@@ -25,9 +19,22 @@ test_tmc2209: tmc2209_motor {
 	counter = <&counter0>;
 };
 
-drv8424: drv8424 {
+allegro_a4979: allegro_a4979 {
 	status = "okay";
-	compatible = "ti,drv8424";
+	compatible = "allegro,a4979";
+	micro-step-res = <1>;
+	reset-gpios = <&test_gpio 0 0>;
+	dir-gpios = <&test_gpio 0 0>;
+	step-gpios = <&test_gpio 0 0>;
+	en-gpios = <&test_gpio 0 0>;
+	m0-gpios = <&test_gpio 0 0>;
+	m1-gpios = <&test_gpio 0 0>;
+	counter = <&counter0>;
+};
+
+ti_drv84xx: ti_drv84xx {
+	status = "okay";
+	compatible = "ti,drv84xx";
 
 	dir-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;
@@ -36,4 +43,14 @@ drv8424: drv8424 {
 	m0-gpios = <&test_gpio 0 0>;
 	m1-gpios = <&test_gpio 0 0>;
 	counter = <&counter0>;
+};
+
+zephyr_gpio_stepper: zephyr_gpio_stepper {
+	compatible = "zephyr,gpio-stepper";
+	status = "okay";
+	micro-step-res = <1>;
+	gpios = <&test_gpio 0 0>,
+		<&test_gpio 0 0>,
+		<&test_gpio 0 0>,
+		<&test_gpio 0 0>;
 };

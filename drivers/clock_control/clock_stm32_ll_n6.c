@@ -38,6 +38,9 @@
 #define z_apb5_prescaler(v) LL_RCC_APB5_DIV_ ## v
 #define apb5_prescaler(v) z_apb5_prescaler(v)
 
+#define z_timg_prescaler(v) LL_RCC_TIM_PRESCALER_ ## v
+#define timg_prescaler(v) z_timg_prescaler(v)
+
 #define PLL1_ID		1
 #define PLL2_ID		2
 #define PLL3_ID		3
@@ -156,10 +159,21 @@ static uint32_t get_sysclk_frequency(void)
 static int enabled_clock(uint32_t src_clk)
 {
 	if ((src_clk == STM32_SRC_SYSCLK) ||
+	    (src_clk == STM32_SRC_HCLK1) ||
+	    (src_clk == STM32_SRC_HCLK2) ||
+	    (src_clk == STM32_SRC_HCLK3) ||
+	    (src_clk == STM32_SRC_HCLK4) ||
+	    (src_clk == STM32_SRC_HCLK5) ||
+	    (src_clk == STM32_SRC_PCLK1) ||
+	    (src_clk == STM32_SRC_PCLK2) ||
+	    (src_clk == STM32_SRC_PCLK4) ||
+	    (src_clk == STM32_SRC_PCLK5) ||
+	    (src_clk == STM32_SRC_TIMG) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI) && IS_ENABLED(STM32_HSI_ENABLED)) ||
+	    ((src_clk == STM32_SRC_HSI_DIV) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL1) && IS_ENABLED(STM32_PLL1_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL2) && IS_ENABLED(STM32_PLL2_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3) && IS_ENABLED(STM32_PLL3_ENABLED)) ||
@@ -191,14 +205,13 @@ static int enabled_clock(uint32_t src_clk)
 	return -ENOTSUP;
 }
 
-static inline int stm32_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
 	ARG_UNUSED(dev);
 
-	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
 		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
@@ -214,14 +227,13 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+static int stm32_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 
 	ARG_UNUSED(dev);
 
-	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
 		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
@@ -237,9 +249,9 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_configure(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						void *data)
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system,
+					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	int err;
@@ -278,6 +290,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	case STM32_SRC_SYSCLK:
 		*rate = get_sysclk_frequency();
 		break;
+	case STM32_SRC_HCLK1:
+	case STM32_SRC_HCLK2:
+	case STM32_SRC_HCLK3:
+	case STM32_SRC_HCLK4:
+	case STM32_SRC_HCLK5:
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
 	case STM32_CLOCK_BUS_AHB3:
@@ -285,17 +302,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	case STM32_CLOCK_BUS_AHB5:
 		*rate = ahb_clock;
 		break;
+	case STM32_SRC_PCLK1:
 	case STM32_CLOCK_BUS_APB1:
 	case STM32_CLOCK_BUS_APB1_2:
 		*rate = get_bus_clock(ahb_clock, STM32_APB1_PRESCALER);
 		break;
+	case STM32_SRC_PCLK2:
 	case STM32_CLOCK_BUS_APB2:
 		*rate = get_bus_clock(ahb_clock, STM32_APB2_PRESCALER);
 		break;
+	case STM32_SRC_PCLK4:
 	case STM32_CLOCK_BUS_APB4:
 	case STM32_CLOCK_BUS_APB4_2:
 		*rate = get_bus_clock(ahb_clock, STM32_APB4_PRESCALER);
 		break;
+	case STM32_SRC_PCLK5:
 	case STM32_CLOCK_BUS_APB5:
 		*rate = get_bus_clock(ahb_clock, STM32_APB5_PRESCALER);
 		break;
@@ -317,6 +338,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 #if defined(STM32_HSI_ENABLED)
 	case STM32_SRC_HSI:
 		*rate = STM32_HSI_FREQ;
+		break;
+	case STM32_SRC_HSI_DIV:
+		*rate = STM32_HSI_FREQ / STM32_HSI_DIVISOR;
 		break;
 #endif /* STM32_HSI_ENABLED */
 	case STM32_SRC_PLL1:
@@ -436,6 +460,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = get_icout_frequency(LL_RCC_IC20_GetSource(), STM32_IC20_DIV);
 		break;
 #endif /* STM32_IC20_ENABLED */
+	case STM32_SRC_TIMG:
+		*rate = sys_clock / STM32_TIMG_PRESCALER;
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -447,10 +474,36 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	return 0;
 }
 
+static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
+								clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+
+	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == true) {
+		/* Gated clocks */
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
+		    == pclken->enr) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	} else {
+		/* Domain clock sources */
+		if (enabled_clock(pclken->bus) == 0) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	}
+}
+
 static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
+	.get_status = stm32_clock_control_get_status,
 	.configure = stm32_clock_control_configure,
 };
 
@@ -899,6 +952,9 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetAPB2Prescaler(apb2_prescaler(STM32_APB2_PRESCALER));
 	LL_RCC_SetAPB4Prescaler(apb4_prescaler(STM32_APB4_PRESCALER));
 	LL_RCC_SetAPB5Prescaler(apb5_prescaler(STM32_APB5_PRESCALER));
+
+	/* Set TIMG presclar */
+	LL_RCC_SetTIMPrescaler(timg_prescaler(STM32_TIMG_PRESCALER));
 
 	if (IS_ENABLED(STM32_CKPER_ENABLED)) {
 		LL_MISC_EnableClock(LL_PER);

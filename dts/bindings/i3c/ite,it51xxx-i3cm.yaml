@@ -1,0 +1,78 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: IT51XXX I3CM controller
+
+compatible: "ite,it51xxx-i3cm"
+
+include: [i3c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  io-channel:
+    required: true
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      The it51xxx chip features four i3c io channels and two i3c cotroller
+      (i3cm) engines. This property allows the i3cm engine to select the
+      desired i3c io channel. To ensure proper i3c functionality, make sure
+      that multiple controllers (including the i3cm controller and i3cs
+      target engines) are not assigned the same io channel.
+
+  i3c-pp-duty-cycle:
+    default: 50
+    type: int
+    description: |
+      The duty cycle of push-pull frequency(unit in percentage).
+
+  i3c-od-scl-hz:
+    required: true
+    type: int
+    description: |
+      The open-drain frequency for the i3c controller.
+
+  i3c-scl-hddat:
+    type: int
+    description: |
+      i3c data hold time(0 by default). The time is calculated as:
+      t_hddat = (i3c-scl-hddat + 1) * 20.8ns. The range of i3c-scl-hddat is
+      [63:0].
+
+  i3c-scl-tcas:
+    type: int
+    description: |
+      i3c clock after start condition(1 by default). The time is calculated as:
+      t_cas = (i3c-scl-tcas + 1) * 20.8ns. The maximum value is 255.
+
+  i3c-scl-tcbs:
+    type: int
+    description: |
+      i3c clock before stop condition(0 by default). The time is calculated as:
+      t_cbs = (i3c-scl-tcbs + 1) * 20.8ns. The maximum value is 255.
+
+  i3c-scl-tcasr:
+    type: int
+    description: |
+      i3c clock after repeated start condition(1 by default). The time is
+      calculated as: t_casr = (i3c-scl-tcasr + 1) * 20.8ns. The maximum value
+      is 255.
+
+  i3c-scl-tcbsr:
+    type: int
+    description: |
+      i3c clock before repeated start condition(0 by default). The time is
+      calculated as: t_cbsr = (i3c-scl-tcbsr + 1) * 20.8ns. The maximum value
+      is 255.
+
+  i2c-scl-hddat:
+    type: int
+    description: |
+      i2c data hold time(0 by default). The time is calculated as:
+      t_hddat = (i2c-scl-hddat + 1) * 20.8ns. The range of i3c-scl-hddat is
+      [65535:0].

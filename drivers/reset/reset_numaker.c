@@ -11,11 +11,16 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/reset.h>
 
+#if defined(CONFIG_SOC_SERIES_M55M1X)
+#define NUMAKER_RESET_IP_OFFSET(id) (((id) >> 20UL) & 0xfffUL)
+#define NUMAKER_RESET_IP_BIT(id)    (id & 0x000fffffUL)
+#else
 /* Reset controller module IPRST offset */
 #define NUMAKER_RESET_IPRST0_OFFSET (8UL)
 #define NUMAKER_RESET_IP_OFFSET(id) (NUMAKER_RESET_IPRST0_OFFSET + (((id) >> 24UL) & 0xffUL))
 /* Reset controller module configuration bit */
 #define NUMAKER_RESET_IP_BIT(id)    (id & 0x00ffffffUL)
+#endif
 
 struct reset_numaker_config {
 	uint32_t base;

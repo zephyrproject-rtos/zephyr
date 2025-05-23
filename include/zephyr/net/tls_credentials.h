@@ -36,11 +36,15 @@ enum tls_credential_type {
 	 */
 	TLS_CREDENTIAL_CA_CERTIFICATE,
 
-	/** A public server certificate. Use this to register your own server
+	/** A public client or server certificate. Use this to register your own
 	 *  certificate. Should be registered together with a corresponding
 	 *  private key. Used with certificate-based ciphersuites.
 	 */
-	TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
+
+	/** @deprecated Use TLS_CREDENTIAL_PUBLIC_CERTIFICATE instead.
+	 */
+	TLS_CREDENTIAL_SERVER_CERTIFICATE = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 
 	/** Private key. Should be registered together with a corresponding
 	 *  public certificate. Used with certificate-based ciphersuites.
@@ -64,7 +68,7 @@ enum tls_credential_type {
  * in the system.
  *
  * @note Some TLS credentials come in pairs:
- *    - TLS_CREDENTIAL_SERVER_CERTIFICATE with TLS_CREDENTIAL_PRIVATE_KEY,
+ *    - TLS_CREDENTIAL_PUBLIC_CERTIFICATE with TLS_CREDENTIAL_PRIVATE_KEY,
  *    - TLS_CREDENTIAL_PSK with TLS_CREDENTIAL_PSK_ID.
  *    Such pairs of credentials must be assigned the same secure tag to be
  *    correctly handled in the system.

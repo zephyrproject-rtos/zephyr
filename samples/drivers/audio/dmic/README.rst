@@ -17,8 +17,8 @@ Requirements
 
 The device to be used by the sample is specified by defining a devicetree node
 label named ``dmic_dev``.
-The sample has been tested on :ref:`nrf52840dk_nrf52840` (nrf52840dk/nrf52840)
-and :ref:`nrf5340dk_nrf5340` (nrf5340dk/nrf5340/cpuapp), and provides overlay
+The sample has been tested on :zephyr:board:`nrf52840dk` (nrf52840dk/nrf52840)
+and :zephyr:board:`nrf5340dk` (nrf5340dk/nrf5340/cpuapp), and provides overlay
 files for both of these boards.
 
 Building and Running

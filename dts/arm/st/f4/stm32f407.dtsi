@@ -10,17 +10,29 @@
 	soc {
 		compatible = "st,stm32f407", "st,stm32f4", "simple-bus";
 
-		mac: ethernet@40028000 {
-			compatible = "st,stm32-ethernet";
+		ethernet@40028000 {
 			reg = <0x40028000 0x8000>;
-			interrupts = <61 0>;
-			clock-names = "stmmaceth", "mac-clk-tx",
-				      "mac-clk-rx", "mac-clk-ptp";
-			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
-				 <&rcc STM32_CLOCK(AHB1, 26U)>,
-				 <&rcc STM32_CLOCK(AHB1, 27U)>,
-				 <&rcc STM32_CLOCK(AHB1, 28U)>;
-			status = "disabled";
+			compatible = "st,stm32-ethernet-controller";
+			clock-names = "stm-eth";
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>;
+
+			mac: ethernet {
+				compatible = "st,stm32-ethernet";
+				interrupts = <61 0>;
+				clock-names = "mac-clk-tx", "mac-clk-rx",
+					      "mac-clk-ptp";
+				clocks = <&rcc STM32_CLOCK(AHB1, 26)>,
+					 <&rcc STM32_CLOCK(AHB1, 27)>,
+					 <&rcc STM32_CLOCK(AHB1, 28)>;
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };

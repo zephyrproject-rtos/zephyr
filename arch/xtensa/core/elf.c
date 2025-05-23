@@ -41,7 +41,7 @@ static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 
 	switch (type) {
 	case R_XTENSA_RELATIVE:
-		if (ldr_parm && ldr_parm->pre_located) {
+		if (ldr_parm->pre_located) {
 			/* Relative relocations are already correct in the pre-located case */
 			break;
 		}
@@ -52,8 +52,9 @@ static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 		for (sh_ndx = 0; sh_ndx < ext->sect_cnt; sh_ndx++) {
 			if (ext->sect_hdrs[sh_ndx].sh_addr <= *got_entry &&
 			    *got_entry <
-			    ext->sect_hdrs[sh_ndx].sh_addr + ext->sect_hdrs[sh_ndx].sh_size)
+			    ext->sect_hdrs[sh_ndx].sh_addr + ext->sect_hdrs[sh_ndx].sh_size) {
 				break;
+			}
 		}
 
 		if (sh_ndx == ext->sect_cnt) {

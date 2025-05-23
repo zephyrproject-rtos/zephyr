@@ -27,47 +27,9 @@ Details on the Relax Kit development board can be found in the `Relax Kit User M
 Supported Features
 ==================
 
-The Relax Kit development board configuration supports the following hardware features:
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port           |
-+-----------+------------+-----------------------+
-| SPI       | on-chip    | spi                   |
-+-----------+------------+-----------------------+
-| GPIO      | on-chip    | gpio                  |
-+-----------+------------+-----------------------+
-| FLASH     | on-chip    | flash                 |
-+-----------+------------+-----------------------+
-| ADC       | on-chip    | adc                   |
-+-----------+------------+-----------------------+
-| DMA       | on-chip    | dma                   |
-+-----------+------------+-----------------------+
-| PWM       | on-chip    | pwm                   |
-+-----------+------------+-----------------------+
-| WATCHDOG  | on-chip    | watchdog              |
-+-----------+------------+-----------------------+
-| MDIO      | on-chip    | mdio                  |
-+-----------+------------+-----------------------+
-| ETHERNET  | on-chip    | ethernet              |
-+-----------+------------+-----------------------+
-| PTP       | on-chip    | ethernet              |
-+-----------+------------+-----------------------+
-| RTC       | on-chip    | rtc                   |
-+-----------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 More details about the supported peripherals are available in `XMC4700 TRM`_
-Other hardware features are not currently supported by the Zephyr kernel.
-
-The default configuration can be found in the Kconfig
-
-:zephyr_file:`boards/infineon/xmc47_relax_kit/xmc47_relax_kit_defconfig`
 
 Build hello world sample
 ************************
@@ -80,6 +42,9 @@ Here is an example for building the :zephyr:code-sample:`hello_world` sample app
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 West Commands
 =============
 Here is an example for the :zephyr:code-sample:`hello_world` application.

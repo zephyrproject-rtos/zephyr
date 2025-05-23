@@ -41,8 +41,12 @@ Execute_AC_2 24_1_1
 Execute_AC_2 24_2_1
 Execute_AC_2 32_1_1
 Execute_AC_2 32_2_1
-Execute_AC_2 441_1_1
-Execute_AC_2 441_2_1
+# bap_stream_rx.c:66): ISO receive lost
+# https://github.com/zephyrproject-rtos/zephyr/issues/84303
+# Execute_AC_2 441_1_1
+# bap_stream_rx.c:66): ISO receive lost
+# https://github.com/zephyrproject-rtos/zephyr/issues/84303
+# Execute_AC_2 441_2_1
 Execute_AC_2 48_1_1
 Execute_AC_2 48_2_1
 Execute_AC_2 48_3_1

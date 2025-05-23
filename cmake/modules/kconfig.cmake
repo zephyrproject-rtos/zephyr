@@ -24,30 +24,6 @@ set_ifndef(KCONFIG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/Kconfig)
 set(KCONFIG_BOARD_DIR ${KCONFIG_BINARY_DIR}/boards)
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 
-if(HWMv1)
-  # HWMv1 only supoorts a single board dir which points directly to the board dir.
-  set(KCONFIG_BOARD_DIR ${BOARD_DIR})
-  # Support multiple SOC_ROOT
-  file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR}/soc)
-  set(kconfig_soc_root ${SOC_ROOT})
-  list(REMOVE_ITEM kconfig_soc_root ${ZEPHYR_BASE})
-  set(soc_defconfig_file ${KCONFIG_BINARY_DIR}/soc/Kconfig.defconfig)
-
-  set(OPERATION WRITE)
-  foreach(root ${kconfig_soc_root})
-    file(APPEND ${soc_defconfig_file}
-         "osource \"${root}/soc/$(ARCH)/*/Kconfig.defconfig\"\n")
-    file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.choice
-         "osource \"${root}/soc/$(ARCH)/*/Kconfig.soc\"\n"
-    )
-    file(${OPERATION} ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.arch
-         "osource \"${root}/soc/$(ARCH)/Kconfig\"\n"
-         "osource \"${root}/soc/$(ARCH)/*/Kconfig\"\n"
-    )
-    set(OPERATION APPEND)
-  endforeach()
-endif()
-
 # Support multiple shields in BOARD_ROOT, remove ZEPHYR_BASE as that is always sourced.
 set(kconfig_board_root ${BOARD_ROOT})
 list(REMOVE_ITEM kconfig_board_root ${ZEPHYR_BASE})
@@ -90,6 +66,14 @@ if(DEFINED BOARD_REVISION)
     message(DEPRECATION "Use of '${board_rev_file}.conf' is deprecated, please switch to '${board_rev_file}_defconfig'")
     set_ifndef(BOARD_REVISION_CONFIG ${BOARD_DIR}/${board_rev_file}.conf)
   endif()
+
+  # Generate boolean board revision kconfig option
+  zephyr_string(SANITIZE TOUPPER BOARD_REVISION_GEN_CONFIG_VAR "BOARD_REVISION_${BOARD_REVISION}")
+
+  file(APPEND ${KCONFIG_BOARD_DIR}/Kconfig
+       "config ${BOARD_REVISION_GEN_CONFIG_VAR}\n"
+       "\tdef_bool y\n"
+  )
 endif()
 
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
@@ -176,20 +160,13 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   ${ZEPHYR_KCONFIG_MODULES_DIR}
 )
 
-if(HWMv1)
-  list(APPEND COMMON_KCONFIG_ENV_SETTINGS
-    ARCH=${ARCH}
-    ARCH_DIR=${ARCH_DIR}
-  )
-else()
-  # For HWMv2 we should in future generate a Kconfig.arch.v2 which instead
-  # glob-sources all arch roots, but for Zephyr itself, the current approach is
-  # sufficient.
-  list(APPEND COMMON_KCONFIG_ENV_SETTINGS
-    ARCH=*
-    ARCH_DIR=${ZEPHYR_BASE}/arch
-  )
-endif()
+# For HWMv2 we should in future generate a Kconfig.arch.v2 which instead
+# glob-sources all arch roots, but for Zephyr itself, the current approach is
+# sufficient.
+list(APPEND COMMON_KCONFIG_ENV_SETTINGS
+  ARCH=*
+  ARCH_DIR=${ZEPHYR_BASE}/arch
+)
 
 # Allow out-of-tree users to add their own Kconfig python frontend
 # targets by appending targets to the CMake list

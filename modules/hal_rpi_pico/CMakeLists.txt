@@ -4,7 +4,7 @@ include(ExternalProject)
 
 if(CONFIG_HAS_RPI_PICO)
   zephyr_library()
-  zephyr_library_compile_options(-std=gnu11)
+  set_property(TARGET ${ZEPHYR_CURRENT_LIBRARY} PROPERTY C_STANDARD 11)
 
   set(rp2_common_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/rp2_common)
   set(rp2xxx_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/${CONFIG_SOC_SERIES})
@@ -61,7 +61,6 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_clocks/clocks.c
     ${rp2_common_dir}/hardware_pll/pll.c
     ${rp2_common_dir}/hardware_xosc/xosc.c
-    ${rp2_common_dir}/hardware_watchdog/watchdog.c
     ${rp2_common_dir}/hardware_sync_spin_lock/sync_spin_lock.c
     ${rp2_common_dir}/hardware_ticks/ticks.c
     ${rp2_common_dir}/pico_bootrom/bootrom.c

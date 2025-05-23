@@ -1,4 +1,4 @@
-description: STM32 WBA flash controller
+description: STM32WBA flash controller
 
 compatible: "st,stm32wba-flash-controller"
 

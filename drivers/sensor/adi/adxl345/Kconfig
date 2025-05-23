@@ -13,6 +13,8 @@ config ADXL345
 	help
 	  Enable driver for ADXL345 Three-Axis Digital Accelerometer.
 
+if ADXL345
+
 choice ADXL345_TRIGGER_MODE
 	prompt "Trigger mode"
 	default ADXL345_TRIGGER_NONE
@@ -58,3 +60,5 @@ config ADXL345_THREAD_STACK_SIZE
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ADXL345

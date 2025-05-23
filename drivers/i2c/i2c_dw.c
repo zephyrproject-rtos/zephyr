@@ -707,8 +707,15 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		/* Wait for transfer to be done */
 		ret = k_sem_take(&dw->device_sync_sem, K_MSEC(CONFIG_I2C_DW_RW_TIMEOUT_MS));
 		if (ret != 0) {
+			if (test_bit_con_master_mode(reg_base)) {
+				/* Trigger abort and wait for it to complete. */
+				set_bit_enable_abort(reg_base);
+				(void)k_sem_take(&dw->device_sync_sem, K_MSEC(1));
+			}
 			write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
 			value = read_clr_intr(reg_base);
+			ret = -ETIMEDOUT;
+			k_sem_reset(&dw->device_sync_sem);
 			break;
 		}
 

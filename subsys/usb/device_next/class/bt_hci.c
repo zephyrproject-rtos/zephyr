@@ -68,13 +68,13 @@ static K_FIFO_DEFINE(bt_hci_tx_queue);
 
 /*
  * Transfers through three endpoints proceed in a synchronous manner,
- * with maximum packet size of high speed bulk endpoint.
+ * with maximum packet size of max supported speed bulk endpoint.
  *
  * REVISE: global (bulk, interrupt, iso) specific pools would be more
  * RAM usage efficient.
  */
 UDC_BUF_POOL_DEFINE(bt_hci_ep_pool,
-		    3, 512,
+		    3, USBD_MAX_BULK_MPS,
 		    sizeof(struct udc_buf_info), NULL);
 /* HCI RX/TX threads */
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
@@ -138,7 +138,8 @@ static uint8_t bt_hci_get_bulk_in(struct usbd_class_data *const c_data)
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
 	}
 
@@ -151,7 +152,8 @@ static uint8_t bt_hci_get_bulk_out(struct usbd_class_data *const c_data)
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out_ep.bEndpointAddress;
 	}
 
@@ -201,11 +203,13 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		struct net_buf *bt_buf;
+		uint8_t type;
 		uint8_t ep;
 
 		bt_buf = k_fifo_get(&bt_hci_tx_queue, K_FOREVER);
+		type = net_buf_pull_u8(bt_buf);
 
-		switch (bt_buf_get_type(bt_buf)) {
+		switch (type) {
 		case BT_BUF_EVT:
 			ep = bt_hci_get_int_in(c_data);
 			break;
@@ -213,10 +217,9 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 			ep = bt_hci_get_bulk_in(c_data);
 			break;
 		default:
-			LOG_ERR("Unknown type %u", bt_buf_get_type(bt_buf));
+			LOG_ERR("Unknown type %u", type);
 			continue;
 		}
-
 
 		bt_hci_tx_sync_in(c_data, bt_buf, ep);
 		net_buf_unref(bt_buf);
@@ -270,43 +273,19 @@ static int bt_hci_acl_out_start(struct usbd_class_data *const c_data)
 	return  ret;
 }
 
-static uint16_t hci_pkt_get_len(struct net_buf *const buf,
-				const uint8_t *data, const size_t size)
+static uint16_t hci_acl_pkt_len(struct net_buf *const buf)
 {
-	size_t hdr_len = 0;
-	uint16_t len = 0;
+	struct bt_hci_acl_hdr *acl_hdr;
+	size_t hdr_len;
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_CMD: {
-		struct bt_hci_cmd_hdr *cmd_hdr;
-
-		hdr_len = sizeof(*cmd_hdr);
-		cmd_hdr = (struct bt_hci_cmd_hdr *)data;
-		len = cmd_hdr->param_len + hdr_len;
-		break;
-	}
-	case BT_BUF_ACL_OUT: {
-		struct bt_hci_acl_hdr *acl_hdr;
-
-		hdr_len = sizeof(*acl_hdr);
-		acl_hdr = (struct bt_hci_acl_hdr *)data;
-		len = sys_le16_to_cpu(acl_hdr->len) + hdr_len;
-		break;
-	}
-	case BT_BUF_ISO_OUT: {
-		struct bt_hci_iso_hdr *iso_hdr;
-
-		hdr_len = sizeof(*iso_hdr);
-		iso_hdr = (struct bt_hci_iso_hdr *)data;
-		len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len)) + hdr_len;
-		break;
-	}
-	default:
-		LOG_ERR("Unknown BT buffer type");
+	hdr_len = sizeof(*acl_hdr);
+	if (buf->len - 1 < hdr_len) {
 		return 0;
 	}
 
-	return (size < hdr_len) ? 0 : len;
+	acl_hdr = (struct bt_hci_acl_hdr *)(buf->data + 1);
+
+	return sys_le16_to_cpu(acl_hdr->len) + hdr_len;
 }
 
 static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
@@ -326,9 +305,8 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 			goto restart_out_transfer;
 		}
 
-		hci_data->acl_len = hci_pkt_get_len(hci_data->acl_buf,
-						    buf->data,
-						    buf->len);
+		hci_data->acl_len = hci_acl_pkt_len(hci_data->acl_buf);
+
 		LOG_DBG("acl_len %u, chunk %u", hci_data->acl_len, buf->len);
 
 		if (hci_data->acl_len == 0) {
@@ -449,7 +427,7 @@ static void *bt_hci_get_desc(struct usbd_class_data *const c_data,
 {
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return data->hs_desc;
 	}
 

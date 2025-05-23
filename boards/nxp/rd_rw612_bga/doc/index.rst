@@ -23,65 +23,11 @@ Hardware
 Supported Features
 ==================
 
-+-----------+------------+-----------------------------------+
-| Interface | Controller | Driver/Component                  |
-+===========+============+===================================+
-| NVIC      | on-chip    | nested vector interrupt controller|
-+-----------+------------+-----------------------------------+
-| SYSTICK   | on-chip    | systick                           |
-+-----------+------------+-----------------------------------+
-| MCI_IOMUX | on-chip    | pinmux                            |
-+-----------+------------+-----------------------------------+
-| GPIO      | on-chip    | gpio                              |
-+-----------+------------+-----------------------------------+
-| USART     | on-chip    | serial                            |
-+-----------+------------+-----------------------------------+
-| DMA       | on-chip    | dma                               |
-+-----------+------------+-----------------------------------+
-| SPI       | on-chip    | spi                               |
-+-----------+------------+-----------------------------------+
-| I2C       | on-chip    | i2c                               |
-+-----------+------------+-----------------------------------+
-| FLEXSPI   | on-chip    | flash/memc                        |
-+-----------+------------+-----------------------------------+
-| TRNG      | on-chip    | entropy                           |
-+-----------+------------+-----------------------------------+
-| DMIC      | on-chip    | dmic                              |
-+-----------+------------+-----------------------------------+
-| LCDIC     | on-chip    | mipi-dbi                          |
-+-----------+------------+-----------------------------------+
-| WWDT      | on-chip    | watchdog                          |
-+-----------+------------+-----------------------------------+
-| USBOTG    | on-chip    | usb                               |
-+-----------+------------+-----------------------------------+
-| CTIMER    | on-chip    | counter                           |
-+-----------+------------+-----------------------------------+
-| SCTIMER   | on-chip    | pwm                               |
-+-----------+------------+-----------------------------------+
-| MRT       | on-chip    | counter                           |
-+-----------+------------+-----------------------------------+
-| OS_TIMER  | on-chip    | os timer                          |
-+-----------+------------+-----------------------------------+
-| PM        | on-chip    | power management; uses SoC Power  |
-|           |            | Modes 1 and 2                     |
-+-----------+------------+-----------------------------------+
-| BLE       | on-chip    | Bluetooth                         |
-+-----------+------------+-----------------------------------+
-| ADC       | on-chip    | adc                               |
-+-----------+------------+-----------------------------------+
-| DAC       | on-chip    | dac                               |
-+-----------+------------+-----------------------------------+
-| ENET      | on-chip    | ethernet                          |
-+-----------+------------+-----------------------------------+
-| Wi-Fi     | on-chip    | Wi-Fi                             |
-+-----------+------------+-----------------------------------+
+.. zephyr:board-supported-hw::
 
-The default configuration can be found in the defconfig file:
+.. note::
 
-   :zephyr_file:`boards/nxp/rd_rw612_bga/rd_rw612_bga_defconfig/`
-
-Other hardware features are not currently supported
-
+   Power modes 1, 2 and 3 are supported when using System Power Management.
 
 Display Support
 ***************
@@ -147,6 +93,8 @@ achieved by running the following command:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -256,6 +204,9 @@ Remove resistors:
 - R505
 
 Then, build for the board target ``rd_rw612_bga//ethernet``.
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 Resources
 *********

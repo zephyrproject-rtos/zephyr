@@ -1,23 +1,15 @@
-# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_NEORV32
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if RISCV_MACHINE_TIMER
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if !SOC_NEORV32_READ_FREQUENCY_AT_RUNTIME
 
 config NUM_IRQS
 	default 32
 
 config SYSCON
 	default y
-
-config SERIAL_INIT_PRIORITY
-	default 55
-	depends on SERIAL
-
-config ENTROPY_INIT_PRIORITY
-	default 55
-	depends on ENTROPY_GENERATOR
 
 endif # SOC_NEORV32

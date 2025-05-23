@@ -16,5 +16,4 @@ supported:
   - arduino_gpio
   - netif:eth
   - memc
-  - kscan:touch
 vendor: st

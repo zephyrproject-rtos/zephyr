@@ -1,11 +1,11 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Synopsys DesignWare I2C node
+description: Synopsys DesignWare I2C
 
 compatible: "snps,designware-i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml, pcie-device.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml, pcie-device.yaml, reset-device.yaml]
 
 properties:
   interrupts:

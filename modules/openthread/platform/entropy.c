@@ -10,7 +10,7 @@
 
 #include <openthread/platform/entropy.h>
 
-LOG_MODULE_REGISTER(net_otPlat_entropy, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_otPlat_entropy, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL);
 
 #if !defined(CONFIG_CSPRNG_ENABLED)
 #error OpenThread requires an entropy source for a TRNG

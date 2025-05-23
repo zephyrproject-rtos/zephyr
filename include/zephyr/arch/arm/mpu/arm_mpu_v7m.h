@@ -38,9 +38,7 @@
 /* Privileged Read Only, Unprivileged Read Only */
 #define P_RO_U_RO       0x6
 #define P_RO_U_RO_Msk   ((P_RO_U_RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
-/* Privileged Read Only, Unprivileged Read Only */
-#define RO              0x7
-#define RO_Msk          ((RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+/* Note: mode 0x7 is the same as 0x6 but supported only by Cortex-M, not Cortex-R */
 
 /* Attribute flag for not-allowing execution (eXecute Never) */
 #define NOT_EXEC MPU_RASR_XN_Msk
@@ -126,7 +124,8 @@
 #define REGION_FLASH_ATTR(size)                                                                    \
 	{(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | P_RW_U_RO_Msk)}
 #else
-#define REGION_FLASH_ATTR(size) {(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | RO_Msk)}
+#define REGION_FLASH_ATTR(size)                                                                    \
+	{(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | P_RO_U_RO_Msk)}
 #endif
 #define REGION_PPB_ATTR(size)    {(STRONGLY_ORDERED_SHAREABLE | size | P_RW_U_NA_Msk)}
 #define REGION_IO_ATTR(size)     {(DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk)}
@@ -273,10 +272,21 @@ typedef struct {
 
 #endif /* _ASMLANGUAGE */
 
-#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK_SIZE(size)                                                 \
 	BUILD_ASSERT(!(((size) & ((size) - 1))) &&                                                 \
-			     (size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE &&                 \
-			     !((uint32_t)(start) & ((size) - 1)),                                  \
+		     (size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE,                           \
 		     "The size of the partition must be power of 2 and greater than or equal to "  \
-		     "the minimum MPU region size.\n"                                              \
+		     "the minimum MPU region size.\n")
+
+/* Some compilers do not handle BUILD_ASSERT on the values of pointers.*/
+#if defined(__IAR_SYSTEMS_ICC__)
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)
+#else
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)                                         \
+	BUILD_ASSERT(!((uint32_t)(start) & ((size) - 1)),                                          \
 		     "The start address of the partition must align with size.")
+#endif
+
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
+	_ARCH_MEM_PARTITION_ALIGN_CHECK_SIZE(size);                                                \
+	_ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)

@@ -9,12 +9,6 @@
 #if defined(CONFIG_BOARD_NATIVE_SIM)
 #include <nsi_cpu_if.h>
 #include <nsi_main_semipublic.h>
-#elif defined(CONFIG_BOARD_NATIVE_POSIX)
-/* Note: native_posix will be deprecated soon */
-extern void posix_init(int argc, char *argv[]);
-extern void posix_exec_for(uint64_t us);
-#define nsi_init posix_init
-#define nsi_exec_for posix_exec_for
 #else
 #error "Platform not supported"
 #endif

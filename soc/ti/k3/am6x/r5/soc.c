@@ -8,6 +8,7 @@
 #include <zephyr/fatal.h>
 
 #include "soc.h"
+#include <common/ctrl_partitions.h>
 
 unsigned int z_soc_irq_get_active(void)
 {
@@ -46,4 +47,9 @@ int z_soc_irq_is_enabled(unsigned int irq)
 {
 	/* Check if interrupt is enabled */
 	return z_vim_irq_is_enabled(irq);
+}
+
+void soc_early_init_hook(void)
+{
+	k3_unlock_all_ctrl_partitions();
 }

@@ -6,18 +6,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
-#include <errno.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/types.h>
-#include <zephyr/kernel.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "bap_endpoint.h"
 #include "btp/btp.h"
@@ -39,28 +45,8 @@ static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_aics_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_AICS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_AICS_SET_GAIN);
-	tester_set_bit(rp->data, BTP_AICS_MUTE);
-	tester_set_bit(rp->data, BTP_AICS_UNMUTE);
-	tester_set_bit(rp->data, BTP_AICS_MAN_GAIN_SET);
-	tester_set_bit(rp->data, BTP_AICS_AUTO_GAIN_SET);
-	tester_set_bit(rp->data, BTP_AICS_SET_MAN_GAIN_ONLY);
-
-	/* octet 1 */
-	tester_set_bit(rp->data, BTP_AICS_SET_AUTO_GAIN_ONLY);
-	tester_set_bit(rp->data, BTP_AICS_AUDIO_DESCRIPTION_SET);
-	tester_set_bit(rp->data, BTP_AICS_MUTE_DISABLE);
-	tester_set_bit(rp->data, BTP_AICS_GAIN_SETTING_PROP_GET);
-	tester_set_bit(rp->data, BTP_AICS_TYPE_GET);
-	tester_set_bit(rp->data, BTP_AICS_STATUS_GET);
-	tester_set_bit(rp->data, BTP_AICS_STATE_GET);
-
-	/* octet 2 */
-	tester_set_bit(rp->data, BTP_AICS_DESCRIPTION_GET);
-
-	*rsp_len = sizeof(*rp) + 2;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_AICS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

@@ -330,12 +330,6 @@ static inline void read_payload(void)
 	buf = rx.buf;
 	rx.buf = NULL;
 
-	if (rx.type == BT_HCI_H4_EVT) {
-		bt_buf_set_type(buf, BT_BUF_EVT);
-	} else {
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
-	}
-
 	reset_rx();
 
 	LOG_DBG("Putting buf %p to rx fifo", buf);
@@ -473,20 +467,6 @@ static int bt_da1469x_close(const struct device *dev)
 static int bt_da1469x_send(const struct device *dev, struct net_buf *buf)
 {
 	ARG_UNUSED(dev);
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		LOG_DBG("ACL: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		LOG_DBG("CMD: buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-	default:
-		LOG_ERR("Unsupported type");
-		return -EINVAL;
-	}
 
 	cmac_mbox_write(buf->data, buf->len);
 

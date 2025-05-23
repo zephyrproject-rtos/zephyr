@@ -71,6 +71,15 @@ set(ZEPHYR_CURRENT_LINKER_PASS 0)
 set(ZEPHYR_CURRENT_LINKER_CMD    linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}.cmd)
 set(ZEPHYR_LINK_STAGE_EXECUTABLE zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS})
 
+# Make kconfig variables available to the linker script generator
+zephyr_linker_include_generated(KCONFIG ${CMAKE_CURRENT_BINARY_DIR}/.config)
+
+# The linker generator also needs sections.h to be able to access e.g. _APP_SMEM_SECTION_NAME
+# for linkerscripts that do not support c-preprocessing.
+zephyr_linker_include_generated(HEADER ${ZEPHYR_BASE}/include/zephyr/linker/sections.h)
+
+zephyr_linker_include_var(VAR CMAKE_VERBOSE_MAKEFILE VALUE ${CMAKE_VERBOSE_MAKEFILE})
+
 # ZEPHYR_PREBUILT_EXECUTABLE is used outside of this file, therefore keep the
 # existing variable to allow slowly cleanup of linking stage handling.
 # Three stage linking active: pre0 -> pre1 -> final, this will correspond to `pre1`
@@ -87,7 +96,6 @@ set(OFFSETS_H_TARGET           offsets_h)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
-set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 set(DEVICE_API_LD_TARGET       device_api_ld_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
@@ -184,7 +192,7 @@ elseif(CONFIG_STACK_CANARIES_ALL)
   zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_all>>")
 elseif(CONFIG_STACK_CANARIES_EXPLICIT)
   zephyr_compile_options("$<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
-  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explitic>>")
+  zephyr_compile_options("$<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,security_canaries_explicit>>")
 endif()
 
 # @Intent: Obtain compiler optimizations flags and store in variables
@@ -333,6 +341,18 @@ endif()
 if (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_IO_FLOAT)
   # @Intent: Set compiler specific flag to disable printf-related optimizations
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,no_printf_return_value>>)
+endif()
+
+if(CONFIG_UBSAN)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined>>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined>)
+  if(CONFIG_UBSAN_LIBRARY)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined_library>>)
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined_library>)
+  elseif(CONFIG_UBSAN_TRAP)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,sanitizer_undefined_trap>>)
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitizer_undefined_trap>)
+  endif()
 endif()
 
 # @Intent: Set compiler specific flag for tentative definitions, no-common
@@ -813,7 +833,7 @@ add_custom_command(
   --file-list        ${syscalls_file_list_output}
   $<$<BOOL:${CONFIG_EMIT_ALL_SYSCALLS}>:--emit-all-syscalls>
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
-          ${syscalls_file_list_output} ${syscalls_interface}
+          ${syscalls_file_list_output} syscalls_interface
   )
 
 # Make sure Picolibc is built before the rest of the system; there's no explicit
@@ -830,12 +850,6 @@ set_property(TARGET ${SYSCALL_LIST_H_TARGET}
              ADDITIONAL_CLEAN_FILES
              ${CMAKE_CURRENT_BINARY_DIR}/include/generated/zephyr/syscalls
 )
-
-add_custom_target(${PARSE_SYSCALLS_TARGET}
-  DEPENDS
-  ${syscalls_json}
-  ${struct_tags_json}
-  )
 
 # 64-bit systems do not require special handling of 64-bit system call
 # parameters or return values, indicate this to the system call boilerplate
@@ -879,30 +893,24 @@ add_custom_command(
   COMMAND
   ${LEGACY_SYSCALL_LIST_H_ARGS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${PARSE_SYSCALLS_TARGET}
+  DEPENDS ${syscalls_json}
   )
-
-# This is passed into all calls to the gen_kobject_list.py script.
-set(gen_kobject_list_include_args --include-subsystem-list ${struct_tags_json})
-
-set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/zephyr/driver-validation.h)
-add_custom_command(
-  OUTPUT ${DRV_VALIDATION}
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
-  --validation-output ${DRV_VALIDATION}
-  ${gen_kobject_list_include_args}
-  $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-  DEPENDS
-  ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py
-  ${PARSE_SYSCALLS_TARGET}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  )
-add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
-gen_kobj(KOBJ_INCLUDE_PATH)
+
+set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/zephyr/driver-validation.h)
+gen_kobject_list(
+  TARGET ${DRIVER_VALIDATION_H_TARGET}
+  OUTPUTS ${DRV_VALIDATION}
+  SCRIPT_ARGS --validation-output ${DRV_VALIDATION}
+  INCLUDES ${struct_tags_json}
+  DEPENDS ${struct_tags_json}
+  )
+
+gen_kobject_list_headers(
+  INCLUDES ${struct_tags_json}
+  DEPENDS ${struct_tags_json}
+  )
 
 # Generate sections for kernel device subsystems
 set(
@@ -934,6 +942,8 @@ add_custom_target(${DEVICE_API_LD_TARGET}
                   DEPENDS ${DEVICE_API_LD_SECTIONS}
                           ${DEVICE_API_LINKER_SECTIONS_CMAKE}
 )
+
+zephyr_linker_include_generated(CMAKE ${DEVICE_API_LINKER_SECTIONS_CMAKE})
 
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
@@ -1099,7 +1109,6 @@ if(CONFIG_USERSPACE)
          NO_COVERAGE_FLAGS "${compiler_flags_priv}"
   )
 
-  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
@@ -1127,8 +1136,6 @@ elseif(DEFINED BOARD_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${BOARD_LINKER_SCRIPT})
 elseif(DEFINED SOC_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${SOC_LINKER_SCRIPT})
-else()
-  find_package(Deprecated COMPONENTS SEARCHED_LINKER_SCRIPT)
 endif()
 
 if(NOT EXISTS ${LINKER_SCRIPT})
@@ -1136,14 +1143,20 @@ if(NOT EXISTS ${LINKER_SCRIPT})
 endif()
 
 if(CONFIG_USERSPACE)
-  set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
-  set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
+  if(CONFIG_CMAKE_LINKER_GENERATOR)
+    set(APP_SMEM_LD_EXT "cmake")
+  else()
+    set(APP_SMEM_LD_EXT "ld")
+  endif()
+
+  set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.${APP_SMEM_LD_EXT}")
+  set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.${APP_SMEM_LD_EXT}")
 
   if(CONFIG_LINKER_USE_PINNED_SECTION)
     set(APP_SMEM_PINNED_ALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld")
+        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.${APP_SMEM_LD_EXT}")
     set(APP_SMEM_PINNED_UNALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld")
+        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.${APP_SMEM_LD_EXT}")
 
     if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
       # The libc partition may hold symbols that are required during boot process,
@@ -1208,9 +1221,11 @@ if(CONFIG_USERSPACE)
 
   set(APP_SMEM_UNALIGNED_LIB app_smem_unaligned_output_obj_renamed_lib)
   list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_APP_SMEM_UNALIGNED")
-endif()
 
-if (CONFIG_USERSPACE)
+  foreach(dep ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD})
+    zephyr_linker_include_generated(CMAKE ${dep} PASS LINKER_APP_SMEM_UNALIGNED)
+  endforeach()
+
   add_custom_command(
     OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
@@ -1230,6 +1245,9 @@ if (CONFIG_USERSPACE)
     COMMAND_EXPAND_LISTS
     COMMENT "Generating app_smem_aligned linker section"
     )
+    foreach(dep ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD})
+      zephyr_linker_include_generated(CMAKE ${dep} PASS NOT LINKER_APP_SMEM_UNALIGNED)
+    endforeach()
 endif()
 
 if(CONFIG_USERSPACE)
@@ -1244,23 +1262,13 @@ if(CONFIG_USERSPACE)
   set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE kobject_prebuilt_hash_preprocessed.c)
   set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC     kobject_prebuilt_hash.c)
 
-  add_custom_command(
+  gen_kobject_list_gperf(
+    TARGET kobj_prebuilt_hash_list
     OUTPUT ${KOBJECT_PREBUILT_HASH_LIST}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${GEN_KOBJ_LIST}
-    --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    --gperf-output ${KOBJECT_PREBUILT_HASH_LIST}
-    ${gen_kobject_list_include_args}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS
-    ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    KERNEL_TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    INCLUDES ${struct_tags_json}
+    DEPENDS ${struct_tags_json}
     )
-  add_custom_target(
-    kobj_prebuilt_hash_list
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_LIST}
-  )
 
   add_custom_command(
     OUTPUT ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
@@ -1337,6 +1345,13 @@ if(CONFIG_USERSPACE)
     DEPENDS
     ${KOBJECT_LINKER_HEADER_DATA}
   )
+
+  # gen_kobject_placeholders.py generates linker-kobject-prebuild-data.h,
+  # linker-kobject-prebuild-priv-stacks.h and linker-kobject-prebuild-rodata.h
+  foreach(ext "-data.h" "-priv-stacks.h" "-rodata.h")
+    string(REGEX REPLACE "-data.h$" ${ext} file ${KOBJECT_LINKER_HEADER_DATA})
+    zephyr_linker_include_generated(HEADER ${file} PASS LINKER_ZEPHYR_PREBUILT LINKER_ZEPHYR_FINAL)
+  endforeach()
 endif()
 
 if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
@@ -1444,23 +1459,13 @@ if(CONFIG_USERSPACE)
   # Use the script GEN_KOBJ_LIST to scan the kernel binary's
   # (${ZEPHYR_LINK_STAGE_EXECUTABLE}) DWARF information to produce a table of kernel
   # objects (KOBJECT_HASH_LIST) which we will then pass to gperf
-  add_custom_command(
+  gen_kobject_list_gperf(
+    TARGET kobj_hash_list
     OUTPUT ${KOBJECT_HASH_LIST}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${GEN_KOBJ_LIST}
-    --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    --gperf-output ${KOBJECT_HASH_LIST}
-    ${gen_kobject_list_include_args}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS
-    ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    KERNEL_TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    INCLUDES ${struct_tags_json}
+    DEPENDS ${struct_tags_json}
     )
-  add_custom_target(
-    kobj_hash_list
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_LIST}
-  )
 
   # Use gperf to generate C code (KOBJECT_HASH_OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on KOBJECT_HASH_LIST
@@ -1723,13 +1728,8 @@ if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
     )
 endif()
 
-if(NOT CONFIG_CPP_EXCEPTIONS)
-  set(eh_frame_section ".eh_frame")
-else()
-  set(eh_frame_section "")
-endif()
 set(remove_sections_argument_list "")
-foreach(section .comment COMMON ${eh_frame_section})
+foreach(section .comment COMMON)
   list(APPEND remove_sections_argument_list
     $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>${section})
 endforeach()
@@ -1808,6 +1808,28 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
     ${KERNEL_UF2_NAME}
   )
   set(BYPRODUCT_KERNEL_UF2_NAME "${PROJECT_BINARY_DIR}/${KERNEL_UF2_NAME}" CACHE FILEPATH "Kernel uf2 file" FORCE)
+endif()
+
+if(CONFIG_BUILD_OUTPUT_MOT)
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(srec IN_LIST elfconvert_formats)
+    list(APPEND
+      post_build_commands
+      COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+              $<TARGET_PROPERTY:bintools,elfconvert_flag>
+              ${GAP_FILL}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>srec
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_MOT_NAME}
+              $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+      )
+    list(APPEND
+      post_build_byproducts
+      ${KERNEL_MOT_NAME}
+      )
+    set(BYPRODUCT_KERNEL_MOT_NAME "${PROJECT_BINARY_DIR}/${KERNEL_MOT_NAME}" CACHE FILEPATH "Kernel mot file" FORCE)
+  endif()
 endif()
 
 set(KERNEL_META_PATH  ${PROJECT_BINARY_DIR}/${KERNEL_META_NAME} CACHE INTERNAL "")
@@ -2275,7 +2297,7 @@ if(CONFIG_LLEXT_EDK)
       ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
-    DEPENDS ${logical_target_for_zephyr_elf} build_info_yaml_saved
+    DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved
     COMMAND_EXPAND_LISTS
   )
   add_custom_target(llext-edk DEPENDS ${llext_edk_file})

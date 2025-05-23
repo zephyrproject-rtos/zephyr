@@ -149,8 +149,8 @@ static ssize_t prov_ccc_write(struct bt_conn *conn,
 }
 
 /* Mesh Provisioning Service Declaration */
-static struct _bt_gatt_ccc prov_ccc =
-	BT_GATT_CCC_INITIALIZER(prov_ccc_changed, prov_ccc_write, NULL);
+static struct bt_gatt_ccc_managed_user_data prov_ccc =
+	BT_GATT_CCC_MANAGED_USER_DATA_INIT(prov_ccc_changed, prov_ccc_write, NULL);
 
 static struct bt_gatt_attr prov_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MESH_PROV),

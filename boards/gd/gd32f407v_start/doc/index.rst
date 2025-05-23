@@ -30,34 +30,7 @@ For more information about the GD32F407 SoC and GD32F407V-START board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-
-Other peripherals may be used if shields are connected to the board.
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -67,6 +40,8 @@ is USART0 with TX connected at PB6 and RX at PB7.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before programming your board make sure to configure boot jumpers as
 follows:

@@ -23,16 +23,13 @@
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
 
-#if defined(__GNUC__)
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of
  * the cases of relocate_vector_table() it is valid to pass NULL, so we
  * suppress the warning for this case.  We need to do this before
  * string.h is included to get the declaration of memcpy.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull"
-#endif
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 
 #include <string.h>
 
@@ -42,7 +39,11 @@ Z_GENERIC_SECTION(.vt_pointer_section) __attribute__((used)) void *_vector_table
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
 
+#ifdef CONFIG_SRAM_VECTOR_TABLE
+#define VECTOR_ADDRESS ((uintptr_t)_sram_vector_start)
+#else
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
+#endif
 
 /* In some Cortex-M3 implementations SCB_VTOR bit[29] is called the TBLBASE bit */
 #ifdef SCB_VTOR_TBLBASE_Msk
@@ -51,8 +52,14 @@ Z_GENERIC_SECTION(.vt_pointer_section) __attribute__((used)) void *_vector_table
 #define VTOR_MASK SCB_VTOR_TBLOFF_Msk
 #endif
 
-static inline void relocate_vector_table(void)
+void __weak relocate_vector_table(void)
 {
+#ifdef CONFIG_SRAM_VECTOR_TABLE
+	/* Copy vector table to its location in SRAM */
+	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
+
+	z_early_memcpy(_sram_vector_start, _vector_start, vector_size);
+#endif
 	SCB->VTOR = VECTOR_ADDRESS & VTOR_MASK;
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
@@ -72,9 +79,7 @@ void __weak relocate_vector_table(void)
 #endif
 }
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 
 #endif /* CONFIG_CPU_CORTEX_M_HAS_VTOR */
 

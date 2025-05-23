@@ -7,6 +7,7 @@ Network APIs
    :maxdepth: 1
 
    sockets.rst
+   socket_service.rst
    ip_4_6.rst
    dns_resolve.rst
    net_mgmt.rst

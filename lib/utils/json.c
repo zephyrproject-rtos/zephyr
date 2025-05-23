@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <stdbool.h>
@@ -201,7 +202,7 @@ static void *lexer_number(struct json_lexer *lex)
 	while (true) {
 		int chr = next(lex);
 
-		if (isdigit(chr) != 0 || chr == '.') {
+		if (isdigit(chr) != 0 || chr == '.' || chr == 'e' || chr == '+' || chr == '-') {
 			continue;
 		}
 
@@ -210,6 +211,37 @@ static void *lexer_number(struct json_lexer *lex)
 
 		return lexer_json;
 	}
+}
+
+static void *lexer_number_nan(struct json_lexer *lex)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	backup(lex);
+
+	switch (peek(lex)) {
+	case 'N':
+		if (!accept_run(lex, "NaN")) {
+			emit(lex, JSON_TOK_NUMBER);
+			return lexer_json;
+		}
+		break;
+	case 'I':
+		if (!accept_run(lex, "Infinity")) {
+			emit(lex, JSON_TOK_NUMBER);
+			return lexer_json;
+		}
+		break;
+	case '-':
+		if (!accept_run(lex, "-Infinity")) {
+			emit(lex, JSON_TOK_NUMBER);
+			return lexer_json;
+		}
+		break;
+	}
+
+#endif
+	emit(lex, JSON_TOK_ERROR);
+	return NULL;
 }
 
 static void *lexer_json(struct json_lexer *lex)
@@ -236,9 +268,15 @@ static void *lexer_json(struct json_lexer *lex)
 		case 't':
 		case 'f':
 			return lexer_boolean;
+		case 'N':
+		case 'I':
+			return lexer_number_nan;
 		case '-':
 			if (isdigit(peek(lex)) != 0) {
 				return lexer_number;
+			}
+			if (peek(lex) == 'I') {
+				return lexer_number_nan;
 			}
 
 			__fallthrough;
@@ -307,10 +345,15 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_OBJECT_START:
 	case JSON_TOK_ARRAY_START:
 	case JSON_TOK_STRING:
+	case JSON_TOK_STRING_BUF:
 	case JSON_TOK_NUMBER:
+	case JSON_TOK_INT:
+	case JSON_TOK_UINT:
 	case JSON_TOK_INT64:
 	case JSON_TOK_UINT64:
 	case JSON_TOK_FLOAT:
+	case JSON_TOK_FLOAT_FP:
+	case JSON_TOK_DOUBLE_FP:
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_OBJ_ARRAY:
 	case JSON_TOK_TRUE:
@@ -419,7 +462,22 @@ static int skip_field(struct json_obj *obj, struct json_obj_key_value *kv)
 	return 0;
 }
 
-static int decode_num(const struct json_token *token, int32_t *num)
+static int decode_string_buf(const struct json_token *token, char *str, size_t size)
+{
+	size_t len = token->end - token->start;
+
+	/* buffer 'str' must be large enough to fit string and null-terminator */
+	if (size <= len) {
+		return -EINVAL;
+	}
+
+	memcpy(str, token->start, len);
+	str[len] = '\0';
+
+	return 0;
+}
+
+static int decode_int32(const struct json_token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
 	 * so using strtol() here.
@@ -432,6 +490,30 @@ static int decode_num(const struct json_token *token, int32_t *num)
 
 	errno = 0;
 	*num = strtol(token->start, &endptr, 10);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int decode_uint32(const struct json_token *token, uint32_t *num)
+{
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtoul(token->start, &endptr, 10);
 
 	*token->end = prev_end;
 
@@ -494,6 +576,204 @@ static int decode_uint64(const struct json_token *token, uint64_t *num)
 	return 0;
 }
 
+static int decode_float(const struct json_token *token, float *num)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtof(token->start, &endptr);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+
+#else
+	ARG_UNUSED(token);
+	ARG_UNUSED(num);
+	return -EINVAL;
+#endif
+}
+
+static int decode_double(const struct json_token *token, double *num)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtod(token->start, &endptr);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+
+#else
+	ARG_UNUSED(token);
+	ARG_UNUSED(num);
+	return -EINVAL;
+#endif
+}
+
+static int decode_int8(const struct json_token *token, int8_t *num)
+{
+	int32_t num_i32;
+	int res;
+
+	res = decode_int32(token, &num_i32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_i32 < INT8_MIN || num_i32 > INT8_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_i32;
+
+	return 0;
+}
+
+static int decode_uint8(const struct json_token *token, uint8_t *num)
+{
+	uint32_t num_u32;
+	int res;
+
+	res = decode_uint32(token, &num_u32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_u32 > UINT8_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_u32;
+
+	return 0;
+}
+
+static int decode_int16(const struct json_token *token, int16_t *num)
+{
+	int32_t num_i32;
+	int res;
+
+	res = decode_int32(token, &num_i32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_i32 < INT16_MIN || num_i32 > INT16_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_i32;
+
+	return 0;
+}
+
+static int decode_uint16(const struct json_token *token, uint16_t *num)
+{
+	uint32_t num_u32;
+	int res;
+
+	res = decode_uint32(token, &num_u32);
+
+	if (res != 0) {
+		return res;
+	}
+
+	if (num_u32 > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	*num = num_u32;
+
+	return 0;
+}
+
+static int decode_int(const struct json_token *token, void *field, size_t size)
+{
+	switch (size) {
+	case 1: {
+		int8_t *num = field;
+
+		return decode_int8(token, num);
+	}
+	case 2: {
+		int16_t *num = field;
+
+		return decode_int16(token, num);
+	}
+	case 4: {
+		int32_t *num = field;
+
+		return decode_int32(token, num);
+	}
+	case 8: {
+		int64_t *num = field;
+
+		return decode_int64(token, num);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static int decode_uint(const struct json_token *token, void *field, size_t size)
+{
+	switch (size) {
+	case 1: {
+		uint8_t *num = field;
+
+		return decode_uint8(token, num);
+	}
+	case 2: {
+		uint16_t *num = field;
+
+		return decode_uint16(token, num);
+	}
+	case 4: {
+		uint32_t *num = field;
+
+		return decode_uint32(token, num);
+	}
+	case 8: {
+		uint64_t *num = field;
+
+		return decode_uint64(token, num);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
 static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 {
 	if (type1 == JSON_TOK_TRUE || type1 == JSON_TOK_FALSE) {
@@ -501,6 +781,22 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	}
 
 	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_FLOAT_FP) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_DOUBLE_FP) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_INT) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_UINT) {
 		return true;
 	}
 
@@ -513,6 +809,10 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	}
 
 	if (type1 == JSON_TOK_STRING && type2 == JSON_TOK_OPAQUE) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_STRING && type2 == JSON_TOK_STRING_BUF) {
 		return true;
 	}
 
@@ -567,7 +867,13 @@ static int64_t decode_value(struct json_obj *obj,
 	case JSON_TOK_NUMBER: {
 		int32_t *num = field;
 
-		return decode_num(value, num);
+		return decode_int32(value, num);
+	}
+	case JSON_TOK_INT: {
+		return decode_int(value, field, descr->field.size);
+	}
+	case JSON_TOK_UINT: {
+		return decode_uint(value, field, descr->field.size);
 	}
 	case JSON_TOK_INT64: {
 		int64_t *num = field;
@@ -578,6 +884,16 @@ static int64_t decode_value(struct json_obj *obj,
 		uint64_t *num = field;
 
 		return decode_uint64(value, num);
+	}
+	case JSON_TOK_FLOAT_FP: {
+		float *num = field;
+
+		return decode_float(value, num);
+	}
+	case JSON_TOK_DOUBLE_FP: {
+		double *num = field;
+
+		return decode_double(value, num);
 	}
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_FLOAT: {
@@ -595,6 +911,11 @@ static int64_t decode_value(struct json_obj *obj,
 
 		return 0;
 	}
+	case JSON_TOK_STRING_BUF: {
+		char *str = field;
+
+		return decode_string_buf(value, str, descr->field.size);
+	}
 	default:
 		return -EINVAL;
 	}
@@ -609,12 +930,20 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		return sizeof(int64_t);
 	case JSON_TOK_UINT64:
 		return sizeof(uint64_t);
+	case JSON_TOK_FLOAT_FP:
+		return sizeof(float);
+	case JSON_TOK_DOUBLE_FP:
+		return sizeof(double);
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_FLOAT:
 	case JSON_TOK_OBJ_ARRAY:
 		return sizeof(struct json_obj_token);
 	case JSON_TOK_STRING:
 		return sizeof(char *);
+	case JSON_TOK_INT:
+	case JSON_TOK_UINT:
+	case JSON_TOK_STRING_BUF:
+		return descr->field.size;
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
 		return sizeof(bool);
@@ -635,11 +964,15 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		size_t i;
 
 		for (i = 0; i < descr->object.sub_descr_len; i++) {
-			total += get_elem_size(&descr->object.sub_descr[i]);
-
 			if (descr->object.sub_descr[i].align_shift > align_shift) {
 				align_shift = descr->object.sub_descr[i].align_shift;
 			}
+		}
+
+		i = descr->object.sub_descr_len;
+		if (i > 0) {
+			total = descr->object.sub_descr[i - 1].offset +
+				get_elem_size(&descr->object.sub_descr[i - 1]);
 		}
 
 		return ROUND_UP(total, 1 << align_shift);
@@ -1019,7 +1352,7 @@ static int arr_encode(const struct json_obj_descr *elem_descr,
 	return append_bytes("]", 1, data);
 }
 
-static int str_encode(const char **str, json_append_bytes_t append_bytes,
+static int str_encode(const char *str, json_append_bytes_t append_bytes,
 		      void *data)
 {
 	int ret;
@@ -1029,7 +1362,7 @@ static int str_encode(const char **str, json_append_bytes_t append_bytes,
 		return ret;
 	}
 
-	ret = json_escape_internal(*str, append_bytes, data);
+	ret = json_escape_internal(str, append_bytes, data);
 	if (!ret) {
 		return append_bytes("\"", 1, data);
 	}
@@ -1037,13 +1370,30 @@ static int str_encode(const char **str, json_append_bytes_t append_bytes,
 	return ret;
 }
 
-static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
-		      void *data)
+static int int32_encode(const int32_t *num, json_append_bytes_t append_bytes,
+			void *data)
 {
 	char buf[3 * sizeof(int32_t)];
 	int ret;
 
 	ret = snprintk(buf, sizeof(buf), "%d", *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
+static int uint32_encode(const uint32_t *num, json_append_bytes_t append_bytes,
+			 void *data)
+{
+	char buf[3 * sizeof(uint32_t)];
+	int ret;
+
+	ret = snprintk(buf, sizeof(buf), "%u", *num);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1086,6 +1436,131 @@ static int uint64_encode(const uint64_t *num, json_append_bytes_t append_bytes,
 	}
 
 	return append_bytes(buf, (size_t)ret, data);
+}
+
+static int print_double(char *str, size_t size, const char *fmt, double num)
+{
+#ifdef CONFIG_JSON_LIBRARY_FP_SUPPORT
+	if (isnan(num)) {
+		return snprintk(str, size, "NaN");
+	}
+
+	if (isinf(num)) {
+		if (num < 0) {
+			return snprintk(str, size, "-Infinity");
+		}
+		return snprintk(str, size, "Infinity");
+	}
+
+	return snprintk(str, size, fmt, num);
+
+#else
+	str[0] = '\0';
+	ARG_UNUSED(size);
+	ARG_UNUSED(fmt);
+	ARG_UNUSED(num);
+	return -EINVAL;
+#endif
+}
+
+static int float_encode(const float *num, json_append_bytes_t append_bytes, void *data)
+{
+	char buf[sizeof("-3.40282347e+38")];
+	int ret;
+
+	ret = print_double(buf, sizeof(buf), "%.9g", (double)*num);
+
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
+static int double_encode(const double *num, json_append_bytes_t append_bytes, void *data)
+{
+	char buf[sizeof("-1.797693134862316e+308")];
+	int ret;
+
+	ret = print_double(buf, sizeof(buf), "%.16g", *num);
+
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
+static int int_encode(const void *ptr, size_t size, json_append_bytes_t append_bytes,
+		      void *data)
+{
+	switch (size) {
+	case 1: {
+		const int8_t *num_8 = ptr;
+		int32_t num = *num_8;
+
+		return int32_encode(&num, append_bytes, data);
+	}
+	case 2: {
+		const int16_t *num_16 = ptr;
+		int32_t num = *num_16;
+
+		return int32_encode(&num, append_bytes, data);
+	}
+	case 4: {
+		const int32_t *num_32 = ptr;
+		int32_t num = *num_32;
+
+		return int32_encode(&num, append_bytes, data);
+	}
+	case 8: {
+		const int64_t *num_64 = ptr;
+		int64_t num = *num_64;
+
+		return int64_encode(&num, append_bytes, data);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static int uint_encode(const void *ptr, size_t size, json_append_bytes_t append_bytes,
+		       void *data)
+{
+	switch (size) {
+	case 1: {
+		const uint8_t *num_8 = ptr;
+		uint32_t num = *num_8;
+
+		return uint32_encode(&num, append_bytes, data);
+	}
+	case 2: {
+		const uint16_t *num_16 = ptr;
+		uint32_t num = *num_16;
+
+		return uint32_encode(&num, append_bytes, data);
+	}
+	case 4: {
+		const uint32_t *num_32 = ptr;
+		uint32_t num = *num_32;
+
+		return uint32_encode(&num, append_bytes, data);
+	}
+	case 8: {
+		const uint64_t *num_64 = ptr;
+		uint64_t num = *num_64;
+
+		return uint64_encode(&num, append_bytes, data);
+	}
+	default:
+		return -EINVAL;
+	}
 }
 
 static int float_ascii_encode(struct json_obj_token *num, json_append_bytes_t append_bytes,
@@ -1139,7 +1614,12 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 	case JSON_TOK_FALSE:
 	case JSON_TOK_TRUE:
 		return bool_encode(ptr, append_bytes, data);
-	case JSON_TOK_STRING:
+	case JSON_TOK_STRING: {
+		const char **str = ptr;
+
+		return str_encode(*str, append_bytes, data);
+	}
+	case JSON_TOK_STRING_BUF:
 		return str_encode(ptr, append_bytes, data);
 	case JSON_TOK_ARRAY_START:
 		return arr_encode(descr->array.element_descr, ptr,
@@ -1149,11 +1629,19 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 				       descr->object.sub_descr_len,
 				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
-		return num_encode(ptr, append_bytes, data);
+		return int32_encode(ptr, append_bytes, data);
+	case JSON_TOK_INT:
+		return int_encode(ptr, descr->field.size, append_bytes, data);
+	case JSON_TOK_UINT:
+		return uint_encode(ptr, descr->field.size, append_bytes, data);
 	case JSON_TOK_INT64:
 		return int64_encode(ptr, append_bytes, data);
 	case JSON_TOK_UINT64:
 		return uint64_encode(ptr, append_bytes, data);
+	case JSON_TOK_FLOAT_FP:
+		return float_encode(ptr, append_bytes, data);
+	case JSON_TOK_DOUBLE_FP:
+		return double_encode(ptr, append_bytes, data);
 	case JSON_TOK_FLOAT:
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:
@@ -1178,8 +1666,7 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	}
 
 	for (i = 0; i < descr_len; i++) {
-		ret = str_encode((const char **)&descr[i].field_name,
-				 append_bytes, data);
+		ret = str_encode(descr[i].field_name, append_bytes, data);
 		if (ret < 0) {
 			return ret;
 		}

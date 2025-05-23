@@ -7,6 +7,9 @@ config HAS_NRFS
 menu "nRF Services"
 	depends on HAS_NRFS
 
+config NRFS_HAS_AUDIOPLL_SERVICE
+	bool
+
 config NRFS_HAS_CLOCK_SERVICE
 	bool
 
@@ -132,6 +135,11 @@ config NRFS_SWEXT_SERVICE_ENABLED
 	bool "SWEXT peripheral control service"
 	depends on NRFS_HAS_SWEXT_SERVICE
 	default y
+
+config NRFS_AUDIOPLL_SERVICE_ENABLED
+	bool "Audio PLL service"
+	depends on NRFS_HAS_AUDIOPLL_SERVICE
+	default y if SOC_NRF54H20_CPUAPP
 
 endmenu
 

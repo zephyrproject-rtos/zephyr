@@ -5,7 +5,7 @@
 
 mainmenu "LwM2M Client sample"
 
-config LWM2M_APP_ID
+config NET_SAMPLE_LWM2M_ID
 	string "LwM2M Client identity"
 	default ""
 	help
@@ -13,24 +13,28 @@ config LWM2M_APP_ID
 	  Leave empty for using CONFIG_BOARD
 
 if LWM2M_DTLS_SUPPORT
-config LWM2M_APP_PSK
+config NET_SAMPLE_LWM2M_PSK
 	string "PSK key"
 	default "000102030405060708090a0b0c0d0e0f"
 	help
 	  PSK key as a hex string.
 	  Maximum binary size is CONFIG_LWM2M_SECURITY_KEY_SIZE.
 
-config LWM2M_APP_TLS_TAG
+config NET_SAMPLE_LWM2M_TLS_TAG
 	int "TLS security tag"
 	default 1
 	help
 	  TLS security tag to use when connecting.
 endif
 
-config LWM2M_APP_SERVER
+config NET_SAMPLE_MIGHT_HAVE_INTERNET
+	bool
+	default y if (WIFI || MODEM)
+
+config NET_SAMPLE_LWM2M_SERVER
 	string "LwM2M server address"
-	default "coap://leshan.eclipseprojects.io:5683" if (WIFI && !LWM2M_DTLS_SUPPORT)
-	default "coaps://leshan.eclipseprojects.io:5684" if (WIFI && LWM2M_DTLS_SUPPORT)
+	default "coap://leshan.eclipseprojects.io:5683" if (NET_SAMPLE_MIGHT_HAVE_INTERNET && !LWM2M_DTLS_SUPPORT)
+	default "coaps://leshan.eclipseprojects.io:5684" if (NET_SAMPLE_MIGHT_HAVE_INTERNET && LWM2M_DTLS_SUPPORT)
 	default "coap://192.0.2.2:5683" if !LWM2M_DTLS_SUPPORT
 	default "coaps://192.0.2.2:5684" if (LWM2M_DTLS_SUPPORT && !LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	default "coaps://192.0.2.2:5784" if (LWM2M_DTLS_SUPPORT && LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
@@ -41,7 +45,7 @@ config LWM2M_APP_SERVER
 	  When port number is missing, CONFIG_LWM2M_PEER_PORT is used instead.
 	  IPv6 addresses must be enclosed in square brackets, for example "coap://[fd00::1]".
 
-config WAIT_DNS_SERVER_ADDITION
+config NET_SAMPLE_LWM2M_WAIT_DNS
 	bool "Wait DNS server addition before considering connection to be up"
 	depends on MODEM_HL7800 && !DNS_SERVER_IP_ADDRESSES
 	help

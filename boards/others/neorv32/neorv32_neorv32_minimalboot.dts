@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <neorv32.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NEORV32 MinimalBoot";
+	compatible = "neorv32";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		sw3 = &btn2;
+		sw4 = &btn3;
+	};
+
+	chosen {
+		zephyr,flash = &imem;
+		zephyr,sram = &dmem;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "LED_0";
+		};
+
+		led1: led1 {
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			label = "LED_1";
+		};
+
+		led2: led2 {
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			label = "LED_2";
+		};
+
+		led3: led3 {
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			label = "LED_3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		btn0: btn0 {
+			label = "BTN0";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		btn1: btn1 {
+			label = "BTN1";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		btn2: btn2 {
+			label = "BTN2";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		btn3: btn3 {
+			label = "BTN3";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED_0";
+		};
+
+		pwm_led1: pwm_led1 {
+			pwms = <&pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED_1";
+		};
+
+		pwm_led2: pwm_led2 {
+			pwms = <&pwm 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED_2";
+		};
+	};
+};
+
+&cpu0 {
+	riscv,isa = "rv32i_zicsr_zifencei";
+};
+
+&bootrom {
+	status = "okay";
+};
+
+&imem {
+	status = "okay";
+	reg = <0x0 DT_SIZE_K(64)>;
+};
+
+&dmem {
+	status = "okay";
+	reg = <0x80000000 DT_SIZE_K(64)>;
+};
+
+&clint {
+	status = "okay";
+};
+
+&mtimer {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <19200>;
+};
+
+&gpio {
+	status = "okay";
+	ngpios = <4>;
+};
+
+&pwm {
+	status = "okay";
+};

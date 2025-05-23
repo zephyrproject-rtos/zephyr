@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STM32 Pin controller Node
+    STM32 Pin controller.
+
     Based on pincfg-node.yaml binding.
 
     Note: `bias-disable` and `drive-push-pull` are default pin configurations.

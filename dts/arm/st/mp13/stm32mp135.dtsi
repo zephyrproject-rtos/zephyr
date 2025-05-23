@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/mp13/stm32mp13.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32mp135", "st,stm32mp13", "simple-bus";
+
+		ltdc: display-controller@5a001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x5a001000 0x1000>;
+			interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 89 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB4_NS, 0)>;
+			resets = <&rctl STM32_RESET(APB4, 0)>;
+			status = "disabled";
+		};
+	};
+};

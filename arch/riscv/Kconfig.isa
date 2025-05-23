@@ -162,3 +162,11 @@ config RISCV_ISA_EXT_ZBS
 	  The Zbs instructions can be used for single-bit instructions that
 	  provide a mechanism to set, clear, invert, or extract a single bit in
 	  a register.
+
+config RISCV_ISA_EXT_ZMMUL
+	bool
+	help
+	  (Zmmul) - Zmmul Extension for Integer Multiplication
+
+	  The Zmmul extension implements the multiplication subset of the M
+	  extension.

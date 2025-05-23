@@ -25,7 +25,7 @@
 #include <fcntl.h>
 #endif
 
-#include "nsos_errno.h"
+#include "nsi_errno.h"
 #include "nsos_fcntl.h"
 
 #include <stdbool.h>
@@ -51,7 +51,7 @@ static int fl_to_nsos_mid_(int flags, bool strict)
 #undef TO_NSOS_MID
 
 	if (strict && flags != 0) {
-		return -NSOS_MID_EINVAL;
+		return -NSI_ERRNO_MID_EINVAL;
 	}
 
 	return flags_mid;

@@ -24,37 +24,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_feather_m0_lora board configuration supports the
-following hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| NVIC      | on-chip    | Nested vector interrupt controller       |
-+-----------+------------+------------------------------------------+
-| Flash     | on-chip    | Can be used with LittleFS to store files |
-+-----------+------------+------------------------------------------+
-| SYSTICK   | on-chip    | Systick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial port                              |
-+-----------+------------+------------------------------------------+
-| I2C       | on-chip    | Inter-Integrated Circuit                 |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface port         |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| RADIO     | SPI        | LoRa radio                               |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/feather_m0_lora/adafruit_feather_m0_lora_defconfig`.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -104,6 +74,8 @@ version, 433MHz or 900MHz is supported.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Adafruit Feather M0 with LoRa ships with a BOSSA compatible
 SAM-BA bootloader.  The bootloader can be entered by quickly tapping

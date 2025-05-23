@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Bastien Jauny <bastien.jauny@smile.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Vishay VS1838B infrared receiver
+
+compatible: "vishay,vs1838b"
+
+properties:
+  data-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO used to transmit the received data.

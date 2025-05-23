@@ -3,15 +3,21 @@
 
 tests:
   drivers.watchdog.reset_none:
-    platform_allow:
-      - s32z2xxdc2/s32z270/rtu0
-      - s32z2xxdc2/s32z270/rtu1
-      - s32z2xxdc2@D/s32z270/rtu0
-      - s32z2xxdc2@D/s32z270/rtu1
-      - mr_canhubk3
+    filter: dt_compat_enabled("nxp,s32-swt") or dt_compat_enabled("renesas,ra-wdt")
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0
     tags:
       - drivers
       - watchdog
     depends_on: watchdog
+  drivers.watchdog.reset_none_ewm:
+    filter: dt_compat_enabled("nxp,ewm")
+    platform_allow:
+      - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
+    integration_platforms:
+      - frdm_mcxw71
+    extra_args: DTC_OVERLAY_FILE="boards/mcxw7x_ewm.overlay"
+    extra_configs:
+      - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
+      - CONFIG_TEST_WDT_SLEEP_TIME=68

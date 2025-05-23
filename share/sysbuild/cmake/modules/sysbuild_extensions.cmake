@@ -216,7 +216,7 @@ endfunction()
 #                             and debugging.
 #
 function(ExternalZephyrProject_Add)
-  set(app_types MAIN BOOTLOADER)
+  set(app_types MAIN BOOTLOADER FIRMWARE_LOADER)
   cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
@@ -388,6 +388,17 @@ function(ExternalZephyrProject_Add)
 
   if(DEFINED ZBUILD_APP_TYPE)
     list(APPEND image_default "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.cmake")
+    set(image_default_dtc_overlay "${CMAKE_SOURCE_DIR}/image_configurations/${ZBUILD_APP_TYPE}_image_default.overlay")
+
+    if(EXISTS ${image_default_dtc_overlay})
+      if(NOT ${image_default_dtc_overlay} IN_LIST ${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE)
+        list(APPEND ${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE ${image_default_dtc_overlay})
+        set(${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE
+            ${${ZBUILD_APPLICATION}_EXTRA_DTC_OVERLAY_FILE}
+            CACHE INTERNAL "Application extra DTC overlay file" FORCE
+        )
+      endif()
+    endif()
   endif()
 
   set_target_properties(${ZBUILD_APPLICATION} PROPERTIES IMAGE_CONF_SCRIPT "${image_default}")
@@ -397,23 +408,17 @@ function(ExternalZephyrProject_Add)
     # The sysbuild BOARD is exported through sysbuild cache, and will be used
     # unless <image>_BOARD is defined.
     if(DEFINED ZBUILD_BOARD_REVISION)
-      # Use provided board revision
-      if(ZBUILD_BOARD MATCHES "/")
-        # HWMv2 requires adding version to the board, split elements up, attach version, then
-        # reassemble into a complete string
-        string(REPLACE "/" ";" split_board_qualifiers "${ZBUILD_BOARD}")
-        list(GET split_board_qualifiers 0 target_board)
-        set(target_board ${target_board}@${ZBUILD_BOARD_REVISION})
-        list(REMOVE_AT split_board_qualifiers 0)
-        list(PREPEND split_board_qualifiers ${target_board})
-        string(REPLACE ";" "/" board_qualifiers "${split_board_qualifiers}")
-        set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${board_qualifiers})
-        set(split_board_qualifiers)
-        set(board_qualifiers)
-      else()
-        # Legacy HWMv1 support, version goes at end
-        set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD}@${ZBUILD_BOARD_REVISION})
-      endif()
+      # Use provided board revision, HWMv2 requires adding version to the board, split elements
+      # up, attach version, then reassemble into a complete string
+      string(REPLACE "/" ";" split_board_qualifiers "${ZBUILD_BOARD}")
+      list(GET split_board_qualifiers 0 target_board)
+      set(target_board ${target_board}@${ZBUILD_BOARD_REVISION})
+      list(REMOVE_AT split_board_qualifiers 0)
+      list(PREPEND split_board_qualifiers ${target_board})
+      string(REPLACE ";" "/" board_qualifiers "${split_board_qualifiers}")
+      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${board_qualifiers})
+      set(split_board_qualifiers)
+      set(board_qualifiers)
     else()
       set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD})
     endif()
@@ -518,6 +523,7 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+  zephyr_dt_import(EDT_PICKLE_FILE ${BINARY_DIR}/zephyr/edt.pickle TARGET ${ZCMAKE_APPLICATION})
 
   # This custom target informs CMake how the BYPRODUCTS are generated if a target
   # depends directly on the BYPRODUCT instead of depending on the image target.

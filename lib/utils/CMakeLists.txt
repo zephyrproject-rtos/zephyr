@@ -11,6 +11,7 @@ zephyr_sources(
   )
 
 zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)
+
 zephyr_sources_ifdef(CONFIG_NOTIFY notify.c)
 
 zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)
@@ -21,7 +22,11 @@ zephyr_sources_ifdef(CONFIG_UTF8 utf8.c)
 
 zephyr_sources_ifdef(CONFIG_WINSTREAM winstream.c)
 
+zephyr_sources_ifdef(CONFIG_COBS cobs.c)
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
 )
+
+zephyr_sources_ifdef(CONFIG_LINKER_LAST_SECTION_ID last_section_id.c)

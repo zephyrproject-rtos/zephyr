@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Pete Johanson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <arm/renesas/ra/ra4/r7fa4m1ax.dtsi>
+
+/delete-node/ &ioport5;
+/delete-node/ &ioport6;
+/delete-node/ &ioport7;
+/delete-node/ &ioport8;
+
+/ {
+	soc {
+		flash-controller@407e0000 {
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(256)>;
+			};
+		};
+	};
+};

@@ -5,18 +5,21 @@
 
 import copy
 import warnings
+from typing import Any
 
 import scl
 from twisterlib.error import ConfigurationError
 
 
-def extract_fields_from_arg_list(target_fields: set, arg_list: str | list):
+def extract_fields_from_arg_list(
+    target_fields: set, arg_list: str | list
+ ) -> tuple[dict[str, list[str]], list[str]]:
     """
     Given a list of "FIELD=VALUE" args, extract values of args with a
     given field name and return the remaining args separately.
     """
-    extracted_fields = {f : list() for f in target_fields}
-    other_fields = []
+    extracted_fields: dict[str, list[str]] = {f: list() for f in target_fields}
+    other_fields: list[str] = []
 
     if isinstance(arg_list, str):
         args = arg_list.strip().split()
@@ -39,64 +42,66 @@ def extract_fields_from_arg_list(target_fields: set, arg_list: str | list):
 
     return extracted_fields, other_fields
 
+
 class TwisterConfigParser:
     """Class to read testsuite yaml files with semantic checking
     """
 
-    testsuite_valid_keys = {"tags": {"type": "set", "required": False},
-                       "type": {"type": "str", "default": "integration"},
-                       "extra_args": {"type": "list"},
-                       "extra_configs": {"type": "list"},
-                       "extra_conf_files": {"type": "list", "default": []},
-                       "extra_overlay_confs" : {"type": "list", "default": []},
-                       "extra_dtc_overlay_files": {"type": "list", "default": []},
-                       "required_snippets": {"type": "list"},
-                       "build_only": {"type": "bool", "default": False},
-                       "build_on_all": {"type": "bool", "default": False},
-                       "skip": {"type": "bool", "default": False},
-                       "slow": {"type": "bool", "default": False},
-                       "timeout": {"type": "int", "default": 60},
-                       "min_ram": {"type": "int", "default": 16},
-                       "modules": {"type": "list", "default": []},
-                       "depends_on": {"type": "set"},
-                       "min_flash": {"type": "int", "default": 32},
-                       "arch_allow": {"type": "set"},
-                       "arch_exclude": {"type": "set"},
-                       "vendor_allow": {"type": "set"},
-                       "vendor_exclude": {"type": "set"},
-                       "extra_sections": {"type": "list", "default": []},
-                       "integration_platforms": {"type": "list", "default": []},
-                       "integration_toolchains": {"type": "list", "default": []},
-                       "ignore_faults": {"type": "bool", "default": False },
-                       "ignore_qemu_crash": {"type": "bool", "default": False },
-                       "testcases": {"type": "list", "default": []},
-                       "platform_type": {"type": "list", "default": []},
-                       "platform_exclude": {"type": "set"},
-                       "platform_allow": {"type": "set"},
-                       "platform_key": {"type": "list", "default": []},
-                       "simulation_exclude": {"type": "list", "default": []},
-                       "toolchain_exclude": {"type": "set"},
-                       "toolchain_allow": {"type": "set"},
-                       "filter": {"type": "str"},
-                       "levels": {"type": "list", "default": []},
-                       "harness": {"type": "str", "default": "test"},
-                       "harness_config": {"type": "map", "default": {}},
-                       "seed": {"type": "int", "default": 0},
-                       "sysbuild": {"type": "bool", "default": False}
-                       }
+    testsuite_valid_keys: dict[str, dict[str, Any]] = {
+        "tags": {"type": "set", "required": False},
+        "type": {"type": "str", "default": "integration"},
+        "extra_args": {"type": "list"},
+        "extra_configs": {"type": "list"},
+        "extra_conf_files": {"type": "list", "default": []},
+        "extra_overlay_confs": {"type": "list", "default": []},
+        "extra_dtc_overlay_files": {"type": "list", "default": []},
+        "required_snippets": {"type": "list"},
+        "build_only": {"type": "bool", "default": False},
+        "build_on_all": {"type": "bool", "default": False},
+        "skip": {"type": "bool", "default": False},
+        "slow": {"type": "bool", "default": False},
+        "timeout": {"type": "int", "default": 60},
+        "min_ram": {"type": "int", "default": 16},
+        "modules": {"type": "list", "default": []},
+        "depends_on": {"type": "set"},
+        "min_flash": {"type": "int", "default": 32},
+        "arch_allow": {"type": "set"},
+        "arch_exclude": {"type": "set"},
+        "vendor_allow": {"type": "set"},
+        "vendor_exclude": {"type": "set"},
+        "extra_sections": {"type": "list", "default": []},
+        "integration_platforms": {"type": "list", "default": []},
+        "integration_toolchains": {"type": "list", "default": []},
+        "ignore_faults": {"type": "bool", "default": False},
+        "ignore_qemu_crash": {"type": "bool", "default": False},
+        "testcases": {"type": "list", "default": []},
+        "platform_type": {"type": "list", "default": []},
+        "platform_exclude": {"type": "set"},
+        "platform_allow": {"type": "set"},
+        "platform_key": {"type": "list", "default": []},
+        "simulation_exclude": {"type": "list", "default": []},
+        "toolchain_exclude": {"type": "set"},
+        "toolchain_allow": {"type": "set"},
+        "filter": {"type": "str"},
+        "levels": {"type": "list", "default": []},
+        "harness": {"type": "str", "default": "test"},
+        "harness_config": {"type": "map", "default": {}},
+        "seed": {"type": "int", "default": 0},
+        "sysbuild": {"type": "bool", "default": False}
+    }
 
-    def __init__(self, filename, schema):
+    def __init__(self, filename: str, schema: dict[str, Any]) -> None:
         """Instantiate a new TwisterConfigParser object
 
         @param filename Source .yaml file to read
         """
-        self.data = {}
         self.schema = schema
         self.filename = filename
-        self.scenarios = {}
-        self.common = {}
+        self.data: dict[str, Any] = {}
+        self.scenarios: dict[str, Any] = {}
+        self.common: dict[str, Any] = {}
 
-    def load(self):
+    def load(self) -> dict[str, Any]:
         data = scl.yaml_load_verify(self.filename, self.schema)
         self.data = data
 
@@ -106,7 +111,7 @@ class TwisterConfigParser:
             self.common = self.data['common']
         return data
 
-    def _cast_value(self, value, typestr):
+    def _cast_value(self, value: Any, typestr: str) -> Any:
         if typestr == "str":
             return value.strip()
 
@@ -142,7 +147,7 @@ class TwisterConfigParser:
         else:
             raise ConfigurationError(self.filename, f"unknown type '{value}'")
 
-    def get_scenario(self, name):
+    def get_scenario(self, name: str) -> dict[str, Any]:
         """Get a dictionary representing the keys/values within a scenario
 
         @param name The scenario in the .yaml file to retrieve data from
@@ -152,10 +157,10 @@ class TwisterConfigParser:
 
         # "CONF_FILE", "OVERLAY_CONFIG", and "DTC_OVERLAY_FILE" fields from each
         # of the extra_args lines
-        extracted_common = {}
-        extracted_testsuite = {}
+        extracted_common: dict = {}
+        extracted_testsuite: dict = {}
 
-        d = {}
+        d: dict[str, Any] = {}
         for k, v in self.common.items():
             if k == "extra_args":
                 # Pull out these fields and leave the rest
@@ -223,7 +228,7 @@ class TwisterConfigParser:
             self.scenarios[name].get("extra_dtc_overlay_files", [])
 
         if any({len(x) > 0 for x in extracted_common.values()}) or \
-           any({len(x) > 0 for x in extracted_testsuite.values()}):
+            any({len(x) > 0 for x in extracted_testsuite.values()}):
             warnings.warn(
                 "Do not specify CONF_FILE, OVERLAY_CONFIG, or DTC_OVERLAY_FILE "
                 "in extra_args. This feature is deprecated and will soon "

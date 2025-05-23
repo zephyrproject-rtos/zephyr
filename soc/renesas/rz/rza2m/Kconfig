@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RZA2M
+	select ARM
+	select CPU_CORTEX_A9

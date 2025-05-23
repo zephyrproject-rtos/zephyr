@@ -1,7 +1,7 @@
 # Copyright (c) 2021, Sun Amar
 # SPDX-License-Identifier: Apache-2.0
 
-description: Silabs gecko timer node
+description: Silabs Gecko timer
 
 compatible: "silabs,gecko-timer"
 

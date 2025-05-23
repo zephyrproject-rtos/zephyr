@@ -7,10 +7,6 @@ common:
     - websocket
   min_ram: 35
   depends_on: netif
-  # native_posix does not work with CONFIG_POSIX_API
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 sample:
   description: Websocket client sample
   name: websocket_client

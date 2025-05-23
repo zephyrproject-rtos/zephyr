@@ -1,6 +1,6 @@
 # Renesas RA Family
 
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config I2C_RENESAS_RA_IIC
@@ -11,3 +11,23 @@ config I2C_RENESAS_RA_IIC
 	select PINCTRL
 	help
 	  Enable Renesas RA I2C IIC Driver.
+
+config I2C_RENESAS_RA_SCI_B
+	bool "Renesas RA SCI-B I2C"
+	default y
+	depends on DT_HAS_RENESAS_RA_I2C_SCI_B_ENABLED
+	select USE_RA_FSP_SCI_B_I2C
+	select PINCTRL
+	help
+	  Enable Renesas RA SCI-B I2C Driver.
+
+if I2C_RENESAS_RA_SCI_B
+
+config I2C_RENESAS_RA_SCI_B_DTC
+	bool "DTC on Transmission and Reception"
+	default y
+	select USE_RA_FSP_DTC
+	help
+	   Enable DTC on transmission and reception
+
+endif

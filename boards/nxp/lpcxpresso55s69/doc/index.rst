@@ -44,58 +44,9 @@ Supported Features
 NXP considers the LPCXpresso55S69 as the superset board for the LPC55xx
 series of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire LPC55xx series.  NXP prioritizes enabling
-this board with new support for Zephyr features.  The lpcxpresso55s69 board
-configuration supports the following hardware features:
+this board with new support for Zephyr features.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WWDT      | on-chip    | windowed watchdog timer             |
-+-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| MAILBOX   | on-chip    | ipm                                 |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| USB HS    | on-chip    | USB High Speed device               |
-+-----------+------------+-------------------------------------+
-| USB FS    | on-chip    | USB Full Speed device               |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy;                            |
-|           |            | random                              |
-+-----------+------------+-------------------------------------+
-| IAP       | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| SDIF      | on-chip    | sdhc                                |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma (on CPU0)                       |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Targets available
 ==================
@@ -267,6 +218,8 @@ configured as USART for the console and the remaining are not used.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -275,32 +228,15 @@ Configuring a Debug Probe
 
 LinkServer is the default runner for this board.
 A debug probe is used for both flashing and debugging the board. This board is
-configured by default to use the LPC-Link2 CMSIS-DAP Onboard Debug Probe,
-however the :ref:`pyocd-debug-host-tools` does not yet support this probe so you
-must reconfigure the board for one of the following debug probes instead.
+configured by default to use the integrated :ref:`mcu-link-onboard-debug-probe`
+in the CMSIS-DAP mode. To use this probe with Zephyr, you need to install the
+:ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+Refer to the detailed overview about :ref:`application_debugging` for additional
+information.
 
-:ref:`lpclink2-jlink-onboard-debug-probe`
------------------------------------------
-
-Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
-
-Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program
-the J-Link firmware. Please make sure you have the latest firmware for this
-board.
-
-:ref:`lpclink2-cmsis-onboard-debug-probe`
------------------------------------------
-
-        1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
-        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`_
-
-:ref:`opensda-daplink-onboard-debug-probe`
-------------------------------------------
-
-PyOCD support for this board is ongoing and not yet available.
-To use DAPLink's flash memory programming on this board, follow the instructions
-for `updating LPCXpresso firmware`_.
+The integrated MCU-Link hardware can also be used as a J-Link probe with a
+firmware update, as described in :ref:`mcu-link-jlink-onboard-debug-probe`.
+The :ref:`jlink-debug-host-tools` should be available in this case.
 
 Configuring a Console
 =====================
@@ -374,6 +310,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS zephyr-v1.14.0 *****
    Hello World! lpcxpresso55s69
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _LPC55S69 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/lpc-cortex-m-mcus/lpc5500-cortex-m33/high-efficiency-arm-cortex-m33-based-microcontroller-family:LPC55S6x

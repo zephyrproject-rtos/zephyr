@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_MAXQ10XX
+	bool "MAXQ10xx mfd driver"
+	default y
+	depends on DT_HAS_ADI_MAXQ10XX_ENABLED
+	# using select SPI at this point introduces a cyclic dependency
+	depends on SPI
+	help
+	  This option enables the mfd driver for the
+	  MAXQ10xx crypto chips.
+
+if MFD_MAXQ10XX
+
+config MFD_MAXQ10XX_INIT_PRIORITY
+	int "MAXQ10xx init priority"
+	default 51
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+endif # MFD_MAXQ10XX

@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_AUDIO_TLV320AIC3110	tlv320aic3110.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_TLV320DAC	tlv320dac310x.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_MPXXDTYY	mpxxdtyy.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_MPXXDTYY	mpxxdtyy-i2s.c)
@@ -10,4 +11,5 @@ zephyr_library_sources_ifdef(CONFIG_AUDIO_TAS6422DAC tas6422dac.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_SHELL	codec_shell.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_MCUX dmic_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_WM8904 wm8904.c)
+zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_WM8962 wm8962.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_CS43L22 cs43l22.c)

@@ -25,6 +25,8 @@ For hardware feature details, refer to : `ARC IoT Development Kit
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Required Hardware and Software
 ==============================
 

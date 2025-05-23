@@ -393,8 +393,10 @@ void ztest_skip_failed_assumption(void)
 {
 	if (IS_ENABLED(CONFIG_ZTEST_FAIL_ON_ASSUME)) {
 		current_test_failed_assumption = true;
+		ztest_test_fail();
+	} else {
+		ztest_test_skip();
 	}
-	ztest_test_skip();
 }
 
 #ifndef KERNEL

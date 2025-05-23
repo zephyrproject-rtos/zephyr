@@ -1,7 +1,7 @@
 # Copyright (c) 2021, ATL Electronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cypress SBC[SPI]
+description: Cypress SBC SPI controller
 
 compatible: "cypress,psoc6-spi"
 

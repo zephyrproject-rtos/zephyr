@@ -7,6 +7,16 @@ config HAS_NORDIC_DMM
 config HAS_NORDIC_RAM_CTRL
 	bool
 
+config NRF_FORCE_RAM_ON_REBOOT
+	bool "Force all RAM blocks to be powered on before rebooting"
+	depends on HAS_NORDIC_RAM_CTRL
+	help
+	  RAM power configuration is preserved through soft reset,
+	  meaning that there is a risk of accessing powered off RAM blocks
+	  when booting in different application (i.e. bootloader).
+	  Force all RAM blocks to be powered on before triggering soft reset
+	  to prevent this from happening.
+
 config NRF_SYS_EVENT
 	bool "nRF system event support"
 	select NRFX_POWER if !NRF_PLATFORM_HALTIUM

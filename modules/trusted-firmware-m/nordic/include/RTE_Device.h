@@ -29,10 +29,10 @@
 	) \
 }
 
-#endif
+#else
 
 /* Configuration settings for Driver_USART1. */
-#if DT_PINCTRL_HAS_NAME(DT_NODELABEL(uart1), default) && DOMAIN_NS != 1U
+#if DT_PINCTRL_HAS_NAME(DT_NODELABEL(uart1), default)
 
 #define RTE_USART1 1
 
@@ -43,6 +43,20 @@
 		DT_FOREACH_PROP_ELEM, psels, UART_PIN_INIT \
 	) \
 }
+
+#elif DT_PINCTRL_HAS_NAME(DT_NODELABEL(uart30), default)
+
+#define RTE_USART30 1
+
+#define RTE_USART30_PINS \
+{ \
+	DT_FOREACH_CHILD_VARGS( \
+		DT_PINCTRL_BY_NAME(DT_NODELABEL(uart30), default, 0), \
+		DT_FOREACH_PROP_ELEM, psels, UART_PIN_INIT \
+	) \
+}
+
+#endif
 
 #endif
 

@@ -116,6 +116,10 @@ config NET_SOCKETS_SOCKOPT_TLS
 	imply TLS_CREDENTIALS
 	select MBEDTLS if NET_NATIVE
 	imply MBEDTLS_TLS_VERSION_1_2 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_MD if !NET_L2_OPENTHREAD
+	imply MBEDTLS_RSA_C if !NET_L2_OPENTHREAD
+	imply MBEDTLS_PKCS1_V15 if !NET_L2_OPENTHREAD
+	imply MBEDTLS_PKCS1_V21 if !NET_L2_OPENTHREAD
 	imply MBEDTLS_KEY_EXCHANGE_RSA_ENABLED if !NET_L2_OPENTHREAD
 	imply MBEDTLS_CIPHER_AES_ENABLED if !NET_L2_OPENTHREAD
 	imply PSA_WANT_KEY_TYPE_AES if !NET_L2_OPENTHREAD && PSA_CRYPTO_CLIENT
@@ -239,6 +243,14 @@ config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
 	    This variable specifies maximum number of stored TLS/DTLS sessions,
 	    used for TLS/DTLS session resumption.
 
+config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
+	bool "TLS certificate verification callback support"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This option controls whether TLS_CERT_VERIFY_CALLBACK TLS socket option
+	  is available to use. It allows to register a certificate verification
+	  callback, which is called by the TLS backend during the TLS handshake.
+
 config NET_SOCKETS_OFFLOAD
 	bool "Offload Socket APIs"
 	help
@@ -306,6 +318,13 @@ config NET_SOCKETS_PACKET_DGRAM
 	  on the information in the sockaddr_ll destination address before
 	  they are queued.
 
+config NET_SOCKETS_INET_RAW
+	bool "AF_INET/AF_INET6 and SOCK_RAW sockets support"
+	depends on NET_NATIVE_IP
+	help
+	  Support SOCK_RAW socket type for AF_INET/AF_INET6 sockets. This allows
+	  to receive raw IP datagrams before further processing takes place.
+
 config NET_SOCKETS_CAN
 	bool "Socket CAN support [EXPERIMENTAL]"
 	select NET_L2_CANBUS_RAW
@@ -337,7 +356,7 @@ config NET_SOCKETPAIR_BUFFER_SIZE
 	help
 	  Buffer size for socketpair(2)
 
-choice
+choice NET_SOCKETPAIR_ALLOCATION_STRATEGY
 	prompt "Memory management for socketpair"
 	default NET_SOCKETPAIR_HEAP if KERNEL_MEM_POOL
 
@@ -353,7 +372,8 @@ if NET_SOCKETPAIR_STATIC
 
 config NET_SOCKETPAIR_MAX
 	int "How many socketpairs to pre-allocate"
-	default 6 if WIFI_NM_WPA_SUPPLICANT
+	default 6 if WIFI_NM_HOSTAPD_AP
+	default 4 if WIFI_NM_WPA_SUPPLICANT
 	default 1
 
 endif # NET_SOCKETPAIR_STATIC
@@ -362,9 +382,9 @@ if NET_SOCKETPAIR_HEAP
 
 config HEAP_MEM_POOL_ADD_SIZE_SOCKETPAIR
 	int
-	default 13696 if WIFI_NM_HOSTAPD_AP
-	default 9120 if WIFI_NM_WPA_SUPPLICANT
-	default 256
+	default 9136 if WIFI_NM_HOSTAPD_AP
+	default 6852 if WIFI_NM_WPA_SUPPLICANT
+	default 296
 
 endif # NET_SOCKETPAIR_HEAP
 

@@ -19,6 +19,7 @@ supported:
   - can
   - rtc
   - sensors
+  - eeprom
 testing:
   timeout_multiplier: 3
   renode:

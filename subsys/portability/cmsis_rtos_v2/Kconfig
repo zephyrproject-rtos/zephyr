@@ -16,23 +16,20 @@ config CMSIS_RTOS_V2
 
 if CMSIS_RTOS_V2
 config CMSIS_V2_THREAD_MAX_COUNT
-	int "Maximum thread count in CMSIS RTOS V2 application"
+	int "Maximum thread count in CMSIS RTOS V2 application with dynamic control blocks"
 	default 15
 	range 0 $(UINT8_MAX)
 	help
-	  Mention max number of threads in CMSIS RTOS V2 compliant application.
-	  There's a limitation on the number of threads due to memory
-	  related constraints.
+	  Max number of threads in CMSIS RTOS V2 application that can be created with
+	  dynamically allocated control block.
 
 config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
-	int "Maximum dynamic thread count in CMSIS RTOS V2 application"
+	int "Maximum thread count in CMSIS RTOS V2 application with dynamic stack"
 	default 0
 	range 0 $(UINT8_MAX)
 	help
-	  Mention max number of dynamic threads in CMSIS RTOS V2 compliant
-	  application. There's a limitation on the number of threads due to memory
-	  related constraints. Dynamic threads are a subset of all other CMSIS
-	  threads i.e. they also count towards that maximum too.
+	  Max number of threads in CMSIS RTOS V2 application that can be created with
+	  dynamically allocated stack.
 
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	int "Max stack size threads can be allocated in CMSIS RTOS V2 application"
@@ -49,32 +46,36 @@ config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 	  Mention dynamic stack size threads are allocated in CMSIS RTOS V2 application.
 
 config CMSIS_V2_TIMER_MAX_COUNT
-	int "Maximum timer count in CMSIS RTOS V2 application"
+	int "Maximum dynamically-allocated timers in CMSIS RTOS V2 application"
 	default 5
 	range 0 $(UINT8_MAX)
 	help
-	  Mention maximum number of timers in CMSIS RTOS V2 compliant application.
+	  Mention maximum number of timers in CMSIS RTOS V2 compliant application that can
+	  be created with dynamically allocated control block.
 
 config CMSIS_V2_MUTEX_MAX_COUNT
-	int "Maximum mutex count in CMSIS RTOS V2 application"
+	int "Maximum dynamically-allocated mutexes in CMSIS RTOS V2 application"
 	default 5
 	range 0 $(UINT8_MAX)
 	help
-	  Mention max number of mutexes in CMSIS RTOS V2 compliant application.
+	  Mention max number of mutexes in CMSIS RTOS V2 compliant application that can
+	  be created with dynamically allocated control block.
 
 config CMSIS_V2_SEMAPHORE_MAX_COUNT
-	int "Maximum semaphore count in CMSIS RTOS V2 application"
+	int "Maximum dynamically-allocated semaphores in CMSIS RTOS V2 application"
 	default 5
 	range 0 $(UINT8_MAX)
 	help
-	  Mention max number of semaphores in CMSIS RTOS V2 compliant application.
+	  Mention max number of semaphores in CMSIS RTOS V2 compliant application that can
+	  be created with dynamically allocated control block.
 
 config CMSIS_V2_MEM_SLAB_MAX_COUNT
-	int "Maximum mem slab count in CMSIS RTOS V2 application"
+	int "Maximum dynamically-allocated mempools in CMSIS RTOS V2 application"
 	default 5
 	range 0 $(UINT8_MAX)
 	help
-	  Mention maximum number of memory slabs in CMSIS RTOS V2 compliant application.
+	  Mention maximum number of memory slabs in CMSIS RTOS V2 compliant application that can
+	  be created with dynamically allocated control block.
 
 config CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE
 	int "Maximum dynamic mem slab/pool size in CMSIS RTOS V2 application"
@@ -83,11 +84,12 @@ config CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE
 	  Mention maximum dynamic size of memory slabs/pools in CMSIS RTOS V2 compliant application.
 
 config CMSIS_V2_MSGQ_MAX_COUNT
-	int "Maximum message queue count in CMSIS RTOS V2 application"
+	int "Maximum dynamically-allocated message queues in CMSIS RTOS V2 application"
 	default 5
 	range 0 $(UINT8_MAX)
 	help
-	  Mention maximum number of message queues in CMSIS RTOS V2 compliant application.
+	  Mention maximum number of message queues in CMSIS RTOS V2 compliant application that can
+	  be created with dynamically allocated control block.
 
 config CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE
 	int "Maximum dynamic message queue size in CMSIS RTOS V2 application"
@@ -96,9 +98,10 @@ config CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE
 	  Mention maximum dynamic size of message queues in CMSIS RTOS V2 compliant application.
 
 config CMSIS_V2_EVT_FLAGS_MAX_COUNT
-	int "Maximum event flags count in CMSIS RTOS V2 application"
+	int "Maximum dynamically-allocated event flags count in CMSIS RTOS V2 application"
 	default 5
 	range 0 $(UINT8_MAX)
 	help
-	  Mention maximum number of event flags in CMSIS RTOS V2 compliant application.
+	  Mention maximum number of event flags in CMSIS RTOS V2 compliant application that can
+	  be created with dynamically allocated control block.
 endif

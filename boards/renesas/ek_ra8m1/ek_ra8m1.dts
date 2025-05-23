@@ -112,6 +112,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		watchdog0 = &wdt;
 	};
 
 	transceiver0: can-phy0 {
@@ -216,6 +217,17 @@
 	uart0: uart {
 		current-speed = <115200>;
 		status = "okay";
+	};
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+
+	i2c1: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
 	};
 };
 
@@ -368,4 +380,24 @@ pmod_sd_shield: &sdhc0 {};
 	pinctrl-0 = <&usbfs_default>;
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
+};
+
+&wdt {
+	status = "okay";
+};
+
+&ulpt0 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
 };

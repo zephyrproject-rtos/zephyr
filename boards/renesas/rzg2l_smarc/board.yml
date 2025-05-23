@@ -1,0 +1,6 @@
+board:
+  name: rzg2l_smarc
+  full_name: RZ/G2L SMARC Evaluation Board Kit
+  vendor: renesas
+  socs:
+  - name: r9a07g044l23gbg

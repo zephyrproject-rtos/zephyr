@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Atmel SAM Pinctrl container node
+  Atmel SAM Pinctrl Container
 
   The Atmel SAM pin controller is a singleton node responsible for controlling
   pin function selection and pin properties. For example, you can use this node

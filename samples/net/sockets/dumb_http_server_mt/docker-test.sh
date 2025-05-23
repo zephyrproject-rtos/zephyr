@@ -36,7 +36,7 @@ fi
 if [ -n "$zephyr_overlay" ]; then
 	overlay="${zephyr_overlay};overlay-tls.conf"
 else
-	overlay="-DOVERLAY_CONFIG=overlay-tls.conf"
+	overlay="-DEXTRA_CONF_FILE=overlay-tls.conf"
 fi
 
 start_configuration || return $?

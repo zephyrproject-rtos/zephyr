@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "nrf54l15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "ezurio,bl54l15u_dvk_nrf54l15-cpuapp";
+	model = "Ezurio BL54L15u DVK nRF54L15 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,sram = &sram0_ns;
+		zephyr,entropy = &psa_rng;
+	};
+
+	/delete-node/ rng;
+
+	psa_rng: psa-rng {
+		status = "okay";
+	};
+};
+
+/ {
+	/*
+	 * Default SRAM planning when building for nRF54L15 with ARM TrustZone-M support
+	 * - Lowest 80 kB SRAM allocated to Secure image (sram0_s).
+	 * - Upper 80 kB SRAM allocated to Non-Secure image (sram0_ns).
+	 *
+	 * nRF54L15 has 256 kB of volatile memory (SRAM) but the last 96kB are reserved for
+	 * the FLPR MCU.
+	 * This static layout needs to be the same with the upstream TF-M layout in the
+	 * header flash_layout.h of the relevant platform. Any updates in the layout
+	 * needs to happen both in the flash_layout.h and in this file at the same time.
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+			reg = <0x20000000 DT_SIZE_K(80)>;
+		};
+
+		sram0_ns: image_ns@20014000 {
+			/* Non-Secure image memory */
+			reg = <0x20014000 DT_SIZE_K(80)>;
+		};
+	};
+};
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* nRF54L15 has 1524 kB of non volatile memory (RRAM) but the
+		 * last 96kB are reserved for the FLPR MCU.
+		 *
+		 * This static layout needs to be the same with the upstream TF-M layout in the
+		 * header flash_layout.h of the relevant platform. Any updates in the layout
+		 * needs to happen both in the flash_layout.h and in this file at the same time.
+		 */
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x0000000 DT_SIZE_K(512)>;
+		};
+
+		tfm_ps_partition: partition@80000 {
+			label = "tfm-ps";
+			reg = <0x00080000 DT_SIZE_K(16)>;
+		};
+
+		tfm_its_partition: partition@84000 {
+			label = "tfm-its";
+			reg = <0x00084000 DT_SIZE_K(16)>;
+		};
+
+		tfm_otp_partition: partition@88000 {
+			label = "tfm-otp";
+			reg = <0x00088000 DT_SIZE_K(8)>;
+		};
+
+		slot0_ns_partition: partition@8A000 {
+			label = "image-0-nonsecure";
+			reg = <0x0008A000 DT_SIZE_K(844)>;
+		};
+
+		storage_partition: partition@15D000 {
+			label = "storage";
+			reg = <0x00015D000 DT_SIZE_K(32)>;
+		};
+	};
+};
+
+&uart30 {
+	/* Disable so that TF-M can use this UART */
+	status = "disabled";
+
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};

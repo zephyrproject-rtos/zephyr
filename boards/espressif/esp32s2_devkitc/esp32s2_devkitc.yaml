@@ -9,6 +9,7 @@ supported:
   - dac
   - gpio
   - i2c
+  - i2s
   - watchdog
   - uart
   - nvs
@@ -19,4 +20,7 @@ supported:
   - input
   - can
   - dma
+testing:
+  ignore_tags:
+    - bluetooth
 vendor: espressif

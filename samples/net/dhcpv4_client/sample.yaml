@@ -4,9 +4,6 @@ tests:
   sample.net.dhcpv4_client:
     harness: net
     depends_on: netif
-    platform_exclude:
-      - native_posix/native/64
-      - native_posix
     tags:
       - net
       - http

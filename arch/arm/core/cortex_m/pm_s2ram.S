@@ -178,9 +178,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
 	 * Mark entering suspend to RAM.
 	 */
-	mov 	r1, lr
-	bl 	pm_s2ram_mark_set
-	mov	lr, r1
+	bl pm_s2ram_mark_set
 
 	/*
 	 * Call the system_off function passed as parameter. This should never
@@ -199,9 +197,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
 	 * Reset the marking of suspend to RAM, return is ignored.
 	 */
-	mov 	r1, lr
-	bl	pm_s2ram_mark_check_and_clear
-	mov 	lr, r1
+	bl pm_s2ram_mark_check_and_clear
 
 	/* Move the stored return value of system_off back to r0,
 	 * setting it as return value for this function.
@@ -216,17 +212,24 @@ GTEXT(arch_pm_s2ram_resume)
 SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	/*
 	 * Check if reset occurred after suspending to RAM.
+	 * Store LR to ensure we can continue boot when we are not suspended
+	 * to RAM. In addition to LR, R0 is pushed too, to ensure "SP mod 8 = 0",
+	 * as stated by ARM rule 6.2.1.2 for AAPCS32.
 	 */
-	mov 	r1, lr
-	bl 	pm_s2ram_mark_check_and_clear
-	mov 	lr, r1
-	cmp     r0, #0x1
-	beq     .L_resume
-	bx      lr
+	push    {r0, lr}
+	bl      pm_s2ram_mark_check_and_clear
+	cmp	r0, #0x1
+	beq	.L_resume
+	pop	{r0, pc}
 
 .L_resume:
 	/*
-	 * Restore the CPU context
+	 * Switch to the stack used to execute "arch_pm_s2ram_suspend"
+	 * and restore CPU context backed up by that function, then
+	 * return to the call site of "arch_pm_s2ram_suspend".
+	 *
+	 * Note: the "push {r0, lr}" performed earlier doesn't
+	 * need to be balanced out since we are switching stacks.
 	 */
 	ldr	r0, =_cpu_context
 

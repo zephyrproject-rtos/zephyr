@@ -5,6 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# TODO: Use DTS generated Kconfig once the board support is added
+DT_COMPAT_NORDIC_WIFI71 := nordic,wifi71
+
 menuconfig WIFI_NRF70
 	bool "nRF70 driver"
 	select NET_L2_WIFI_MGMT if NETWORKING
@@ -16,7 +19,8 @@ menuconfig WIFI_NRF70
 	depends on \
 		DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED || \
 		DT_HAS_NORDIC_NRF7001_SPI_ENABLED || DT_HAS_NORDIC_NRF7001_QSPI_ENABLED || \
-		DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED
+		DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED || \
+		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_WIFI71))
 	help
 	  Nordic Wi-Fi Driver
 
@@ -24,7 +28,7 @@ if WIFI_NRF70
 # Hidden symbols for internal use
 config WIFI_NRF7002
 	bool
-	default y if DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED
+	default y if DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED || $(dt_compat_enabled,$(DT_COMPAT_NORDIC_WIFI71))
 
 config WIFI_NRF7001
 	bool
@@ -48,29 +52,40 @@ choice NRF70_OPER_MODES
 config NRF70_SCAN_ONLY
 	bool "nRF70 scan only mode"
 	help
-	  Select this option to enable scan only mode of the nRF70 driver
+	  Select this option to enable scan-only mode of the nRF70 driver.
+	  In this mode, the driver can only perform scanning operations
+	  to discover nearby Wi-Fi networks, but cannot establish connections
+	  or transmit/receive data. Mainly used for location accuracy
+	  improvement.
 
 config NRF70_SYSTEM_MODE
 	bool "System mode of the nRF70 driver"
 	help
-	  Select this option to enable system mode of the nRF70 driver
+	  Select this option to enable system mode of the nRF70 driver.
+	  This is the normal operating mode that supports full Wi-Fi
+	  functionality including sub-modes like STA, AP, and P2P.
 
 config NRF70_RADIO_TEST
 	bool "Radio test mode of the nRF70 driver"
+	help
+	  Select this option to enable radio test mode of the nRF70 driver.
+	  This mode is used for testing RF performance and regulatory
+	  compliance. It provides direct control of the radio hardware
+	  for transmitting test patterns and measuring RF parameters.
 
 config NRF70_OFFLOADED_RAW_TX
 	bool "Offloaded raw TX mode of the nRF70 driver"
+	help
+	  Select this option to enable offloaded raw TX mode.
+	  In this mode, raw 802.11 frames can be transmitted directly
+	  without normal Wi-Fi protocol processing. The frame construction
+	  and transmission timing is handled by the Wi-Fi hardware,
+	  reducing CPU load.
 
 endchoice
 
 config NET_L2_ETHERNET
 	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
-
-config HEAP_MEM_POOL_ADD_SIZE_NRF70
-	# Use a maximum that works for typical use cases and boards, each sample/app can override
-	# this value if needed by using CONFIG_HEAP_MEM_POOL_IGNORE_MIN
-	def_int 25000 if NRF70_SCAN_ONLY
-	def_int 150000
 
 if NRF70_SYSTEM_MODE
 config NRF70_STA_MODE
@@ -92,7 +107,7 @@ config NRF70_P2P_MODE
 	bool "P2P support in driver"
 
 config NRF70_SYSTEM_WITH_RAW_MODES
-	bool
+	bool "nRF70 system mode with raw modes"
 	default y if (NRF70_RAW_DATA_TX || NRF70_RAW_DATA_RX || NRF70_PROMISC_DATA_RX)
 	depends on WIFI_NRF7002 || WIFI_NRF7001
 	help
@@ -139,6 +154,8 @@ endchoice
 
 config NRF_WIFI_LOW_POWER
 	bool "Low power mode in nRF Wi-Fi chipsets"
+	depends on !NRF70_RADIO_TEST && !NRF70_AP_MODE
+	depends on !NRF71_ON_IPC
 	default y
 
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
@@ -156,6 +173,7 @@ config NRF70_REG_DOMAIN
 # stack requirements.
 config NET_MGMT_EVENT_STACK_SIZE
 	default 2048 if !WIFI_NM_WPA_SUPPLICANT
+	default 4600
 
 config NRF70_LOG_VERBOSE
 	bool "Maintains the verbosity of information in logs"
@@ -178,14 +196,28 @@ config NRF70_2_4G_ONLY
 config NRF70_SR_COEX
 	bool "Wi-Fi and SR coexistence support"
 
+if NRF70_SR_COEX
 config NRF70_SR_COEX_RF_SWITCH
 	bool "GPIO configuration to control SR side RF switch position"
-	depends on $(dt_node_has_prop,nrf70, srrf-switch-gpios)
-	depends on NRF70_SR_COEX
+	depends on $(dt_nodelabel_has_prop,nrf70,srrf-switch-gpios)
 	help
 	  Select this option to enable GPIO configuration to control SR side RF switch position.
 	  If this GPIO is asserted (1), the SR side RF switch is connected to the Wi-Fi side (shared antenna).
 	  If this GPIO is de-asserted (0), the SR side RF switch is connected to the SR side (separate antenna).
+
+config NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL
+	bool "Configuration of GPIO control for coexistence"
+	depends on !NRF71_ON_IPC
+	default y
+
+config NRF70_SR_COEX_SWCTRL1_OUTPUT
+	int "Configure SWCTRIL1 as output"
+	default 0
+
+config NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW
+	int "Configure BT grant active low"
+	default 1
+endif # NRF70_SR_COEX
 
 config NRF70_WORKQ_STACK_SIZE
 	int "Stack size for workqueue"
@@ -202,6 +234,10 @@ config NRF70_MAX_TX_PENDING_QLEN
 config NRF70_UTIL
 	depends on SHELL
 	bool "Utility shell in nRF70 driver"
+
+config NRF70_DEBUG_SHELL
+	depends on SHELL
+	bool "Debug shell in nRF70 driver"
 
 config NRF70_QSPI_LOW_POWER
 	bool "low power mode in QSPI"
@@ -529,8 +565,20 @@ config NRF70_RSSI_STALE_TIMEOUT_MS
 	  value as the driver does not store it and requires RPU to provide the
 	  information.
 
+config NRF_WIFI_CTRL_HEAP_SIZE
+	int "Dedicated memory pool for control plane"
+	default 20000
+
+config NRF_WIFI_DATA_HEAP_SIZE
+	int "Dedicated memory pool for data plane"
+	default 0 if NRF70_RADIO_TEST || NRF70_OFFLOADED_RAW_TX
+	default 8000 if NRF70_SCAN_ONLY
+	default 110000 if !SOC_FAMILY_NORDIC_NRF
+	default 130000
+
 if NETWORKING
 # Finetune defaults for certain system components used by the driver
+
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 4096
 
@@ -545,11 +593,22 @@ config NET_TC_TX_COUNT
 
 endif # NETWORKING
 
+config NRF_WIFI_USE_VARIABLE_NET_BUFS
+	bool "Use variable network buffers"
+	default y
+	help
+	  This option enables the use of variable network buffers in the nRF70 driver.
+	  Variable network buffers optimize RAM usage by allocating buffers of different sizes
+	  based on the data size. This option is enabled by default to optimize RAM usage.
+	  Samples and applications can override this option for higher performance.
+
+if NRF_WIFI_USE_VARIABLE_NET_BUFS
 # nRF70 now uses variable buffers as default to optimize RAM usage. Default pool sizes are used, samples/apps can override
 # for higher performance.
 choice NET_PKT_DATA_ALLOC_TYPE
 	default NET_BUF_VARIABLE_DATA_SIZE
 endchoice
+endif # NRF_WIFI_USE_VARIABLE_NET_BUFS
 
 config MAIN_STACK_SIZE
 	default 4096
@@ -635,9 +694,8 @@ config NRF_WIFI_AP_DEAD_DETECT_TIMEOUT
 
 config NRF_WIFI_RPU_RECOVERY
 	bool "RPU recovery mechanism"
-	# Relies on power-save mode, so, LPM is needed and AP mode is not supported
+	# Relies on power-save mode, so, LPM is needed
 	depends on NRF_WIFI_LOW_POWER
-	depends on !NRF70_AP_MODE
 	default y
 	select EXPERIMENTAL
 	help
@@ -741,6 +799,8 @@ endchoice
 
 config NRF_WIFI_MGMT_BUFF_OFFLOAD
 	bool "Management buffer offload"
+	# Raw scan results need host based refilling
+	depends on !WIFI_MGMT_RAW_SCAN_RESULTS
 	default y
 	help
 	  This option offloads the refilling of management buffers to the UMAC, saving the host
@@ -809,4 +869,38 @@ config NRF_WIFI_COEX_DISABLE_PRIORITY_WINDOW_FOR_SCAN
 	help
 	  Enable this configuration to disable priority window for scan
 	  in the case of coexistence with Short Range radio.
+
+if NETWORKING
+config NRF_WIFI_ZERO_COPY_TX
+	bool "Zero copy Transmit path [EXPERIMENTAL]"
+	select NET_L2_ETHERNET_RESERVE_HEADER
+	select EXPERIMENTAL
+	# 54L has lower RAM
+	default y if SOC_SERIES_NRF54LX
+	help
+	  Enable this configuration to use zero copy Transmit path.
+	  The driver will use the network buffer directly for transmission
+	  without copying the data to the driver's buffer. This reduces the
+	  driver heap memory usage without much impact on the performance.
+
+	  The application should configure the network buffers to ensure that
+	  the whole packet fits in a single buffer, else the driver will fallback
+	  to the normal copy path, but the memory requirements would still match
+	  to the zero copy path and may be sub-optimal for the normal copy path.
+
+endif # NETWORKING
+
+config NRF_WIFI_MAX_PS_POLL_FAIL_CNT
+	int "Maximum number of PS-Poll failures"
+	default 10
+	range 10 4294967295
+	help
+	  Maximum number of PS-Poll failures before entering qos null-based power save.
+
+config NRF_WIFI_RX_STBC_HT
+	bool "Receive packets encoded with STBC in HT (Wi-Fi4) mode"
+	default y
+	help
+	  Receive packets encoded with STBC (Space-Time Block Coding)
+	  in HT (Wi-Fi4) mode.
 endif # WIFI_NRF70

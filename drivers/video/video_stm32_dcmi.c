@@ -20,6 +20,8 @@
 
 #include <stm32_ll_dma.h>
 
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 
 #if CONFIG_VIDEO_BUFFER_POOL_NUM_MAX < 2
@@ -39,12 +41,9 @@ struct video_stm32_dcmi_data {
 	const struct device *dev;
 	DCMI_HandleTypeDef hdcmi;
 	struct video_format fmt;
+	int capture_rate;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
-	uint32_t pixel_format;
-	uint32_t height;
-	uint32_t width;
-	uint32_t pitch;
 	struct video_buffer *vbuf;
 };
 
@@ -125,7 +124,7 @@ static int stm32_dma_init(const struct device *dev)
 
 	/*
 	 * DMA configuration
-	 * Due to use of QSPI HAL API in current driver,
+	 * Due to use of DMA HAL API in current driver,
 	 * both HAL and Zephyr DMA drivers should be configured.
 	 * The required configuration for Zephyr DMA driver should only provide
 	 * the minimum information to inform the DMA slot will be in used and
@@ -177,7 +176,6 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	const struct device *dcmi_clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	int err;
 
 	if (!device_is_ready(dcmi_clock)) {
 		LOG_ERR("clock control device not ready");
@@ -185,76 +183,67 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	}
 
 	/* Turn on DCMI peripheral clock */
-	err = clock_control_on(dcmi_clock, (clock_control_subsys_t *) &config->pclken);
-	if (err < 0) {
-		LOG_ERR("Failed to enable DCMI clock. Error %d", err);
-		return err;
-	}
-
-	return 0;
+	return clock_control_on(dcmi_clock, (clock_control_subsys_t *)&config->pclken);
 }
 
-static int video_stm32_dcmi_set_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
-	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	int ret;
 
-	if (bpp == 0 || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
-		return -EINVAL;
+	ret = video_set_format(config->sensor_dev, fmt);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if ((fmt->pitch * fmt->height) > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-		return -EINVAL;
-	}
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
-	data->pixel_format = fmt->pixelformat;
-	data->pitch = fmt->pitch;
-	data->height = fmt->height;
-	data->width = fmt->width;
-
-	if (video_set_format(config->sensor_dev, ep, fmt)) {
-		return -EIO;
-	}
+	data->fmt = *fmt;
 
 	return 0;
 }
 
-static int video_stm32_dcmi_get_fmt(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_format *fmt)
+static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
+	int ret;
 
-	if (fmt == NULL || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
+	if (fmt == NULL) {
 		return -EINVAL;
 	}
 
-	if (!video_get_format(config->sensor_dev, ep, fmt)) {
-		/* align DCMI with sensor fmt */
-		return video_stm32_dcmi_set_fmt(dev, ep, fmt);
+	/* Align DCMI format with the one provided by the sensor */
+	ret = video_get_format(config->sensor_dev, fmt);
+	if (ret < 0) {
+		return ret;
 	}
 
-	fmt->pixelformat = data->pixel_format;
-	fmt->height = data->height;
-	fmt->width = data->width;
-	fmt->pitch = data->pitch;
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+
+	data->fmt = *fmt;
 
 	return 0;
 }
 
-static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
+#define STM32_DCMI_GET_CAPTURE_RATE(capture_rate)					\
+	((capture_rate) == 1 ? DCMI_CR_ALL_FRAME :					\
+	(capture_rate) == 2 ? DCMI_CR_ALTERNATE_2_FRAME :				\
+	(capture_rate) == 4 ? DCMI_CR_ALTERNATE_4_FRAME :				\
+	DCMI_CR_ALL_FRAME)
+
+static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
+				       enum video_buf_type type)
 {
+	struct video_stm32_dcmi_data *data = dev->data;
+	const struct video_stm32_dcmi_config *config = dev->config;
 	int err;
-	struct video_stm32_dcmi_data *data = dev->data;
-	const struct video_stm32_dcmi_config *config = dev->config;
 
 	if (!enable) {
-		if (video_stream_stop(config->sensor_dev)) {
-			return -EIO;
+		err = video_stream_stop(config->sensor_dev, type);
+		if (err < 0) {
+			return err;
 		}
 
 		err = HAL_DCMI_Stop(&data->hdcmi);
@@ -276,6 +265,10 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 		return -ENOMEM;
 	}
 
+	/* Set the frame control */
+	data->hdcmi.Instance->CR &= ~(DCMI_CR_FCRC_0 | DCMI_CR_FCRC_1);
+	data->hdcmi.Instance->CR |= STM32_DCMI_GET_CAPTURE_RATE(data->capture_rate);
+
 	err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
 			(uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
 	if (err != HAL_OK) {
@@ -283,23 +276,13 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable)
 		return -EIO;
 	}
 
-	if (video_stream_start(config->sensor_dev)) {
-		return -EIO;
-	}
-
-	return 0;
+	return video_stream_start(config->sensor_dev, type);
 }
 
-static int video_stm32_dcmi_enqueue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer *vbuf)
+static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-	const uint32_t buffer_size = data->pitch * data->height;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
+	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
 
 	if (buffer_size > vbuf->size) {
 		return -EINVAL;
@@ -313,16 +296,10 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_dequeue(const struct device *dev,
-				  enum video_endpoint_id ep,
-				  struct video_buffer **vbuf,
-				  k_timeout_t timeout)
+static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffer **vbuf,
+				    k_timeout_t timeout)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	*vbuf = k_fifo_get(&data->fifo_out, timeout);
 	if (*vbuf == NULL) {
@@ -332,46 +309,111 @@ static int video_stm32_dcmi_dequeue(const struct device *dev,
 	return 0;
 }
 
-static int video_stm32_dcmi_get_caps(const struct device *dev,
-				   enum video_endpoint_id ep,
-				   struct video_caps *caps)
+static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
-	int ret = -ENODEV;
-
-	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
-		return -EINVAL;
-	}
 
 	/* DCMI produces full frames */
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the sensor device */
-	ret = video_get_caps(config->sensor_dev, ep, caps);
-
-	return ret;
+	return video_get_caps(config->sensor_dev, caps);
 }
 
-static inline int video_stm32_dcmi_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret;
 
-	/* Forward to source dev if any */
-	ret = video_set_ctrl(config->sensor_dev, cid, value);
+	ret = video_enum_frmival(config->sensor_dev, fie);
+	if (ret < 0) {
+		return ret;
+	}
 
-	return ret;
+	/* Adapt the interval in order to report the frame drop capabilities */
+	if (fie->type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
+		struct video_frmival discrete = fie->discrete;
+
+		fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
+		fie->stepwise.max = discrete;
+		fie->stepwise.min.denominator = discrete.denominator;
+		fie->stepwise.min.numerator = discrete.numerator * 4;
+		fie->stepwise.step.denominator = discrete.denominator;
+		fie->stepwise.step.numerator = discrete.numerator * 2;
+	} else {
+		fie->stepwise.min.numerator *= 4;
+		fie->stepwise.step.numerator *= 2;
+	}
+
+	return 0;
 }
 
-static inline int video_stm32_dcmi_get_ctrl(const struct device *dev, unsigned int cid, void *value)
+#define STM32_DCMI_MAX_FRAME_DROP	4
+static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
+	struct video_stm32_dcmi_data *data = dev->data;
+	struct video_frmival_enum fie = {
+		.format = &data->fmt,
+	};
+	struct video_frmival best_sensor_frmival;
+	uint64_t best_diff_nsec = INT32_MAX;
+	uint64_t diff_nsec = 0, a, b;
+	int best_capture_rate = 1;
+
+	/*
+	 * Try to figure out a frameinterval setting allow to reach as close as
+	 * possible to the request. At first without relying on DCMI frame control,
+	 * then enabling it
+	 */
+	for (int capture_rate = 1; capture_rate <= STM32_DCMI_MAX_FRAME_DROP; capture_rate *= 2) {
+		/*
+		 * Take into consideration the drop done by the DCMI hence multiply
+		 * denominator by the rate introduced by the DCMI
+		 */
+		fie.discrete.numerator = frmival->numerator;
+		fie.discrete.denominator = frmival->denominator * capture_rate;
+
+		a = video_frmival_nsec(&fie.discrete);
+		video_closest_frmival(config->sensor_dev, &fie);
+		b = video_frmival_nsec(&fie.discrete);
+		diff_nsec = a > b ? a - b : b - a;
+		if (diff_nsec < best_diff_nsec) {
+			best_diff_nsec = diff_nsec;
+			best_sensor_frmival = fie.discrete;
+			best_capture_rate = capture_rate;
+		}
+		if (diff_nsec == 0) {
+			break;
+		}
+	}
+
+	/*
+	 * Give back the achieved frame interval achieved, ensuring to take into
+	 * consideration the DCMI frame control
+	 */
+	frmival->numerator = best_sensor_frmival.numerator * best_capture_rate;
+	frmival->denominator = best_sensor_frmival.denominator;
+
+	data->capture_rate = best_capture_rate;
+
+	return video_set_frmival(config->sensor_dev, &best_sensor_frmival);
+}
+
+static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+	struct video_stm32_dcmi_data *data = dev->data;
 	int ret;
 
-	/* Forward to source dev if any */
-	ret = video_get_ctrl(config->sensor_dev, cid, value);
+	ret = video_get_frmival(config->sensor_dev, frmival);
+	if (ret < 0) {
+		return ret;
+	}
 
-	return ret;
+	frmival->numerator *= data->capture_rate;
+
+	return 0;
 }
 
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
@@ -381,8 +423,9 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.enqueue = video_stm32_dcmi_enqueue,
 	.dequeue = video_stm32_dcmi_dequeue,
 	.get_caps = video_stm32_dcmi_get_caps,
-	.set_ctrl = video_stm32_dcmi_set_ctrl,
-	.get_ctrl = video_stm32_dcmi_get_ctrl,
+	.enum_frmival = video_stm32_dcmi_enum_frmival,
+	.set_frmival = video_stm32_dcmi_set_frmival,
+	.get_frmival = video_stm32_dcmi_get_frmival,
 };
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
@@ -414,12 +457,6 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 
 PINCTRL_DT_INST_DEFINE(0);
 
-#define STM32_DCMI_GET_CAPTURE_RATE(capture_rate)					\
-	((capture_rate) == 1 ? DCMI_CR_ALL_FRAME :					\
-	(capture_rate) == 2 ? DCMI_CR_ALTERNATE_2_FRAME :				\
-	(capture_rate) == 4 ? DCMI_CR_ALTERNATE_4_FRAME :				\
-	DCMI_CR_ALL_FRAME)
-
 #define STM32_DCMI_GET_BUS_WIDTH(bus_width)						\
 	((bus_width) == 8 ? DCMI_EXTEND_DATA_8B :					\
 	(bus_width) == 10 ? DCMI_EXTEND_DATA_10B :					\
@@ -439,16 +476,19 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
 		.Init = {
 				.SynchroMode = DCMI_SYNCHRO_HARDWARE,
-				.PCKPolarity = (DT_INST_PROP(0, pixelclk_active) ?
-						DCMI_PCKPOLARITY_RISING : DCMI_PCKPOLARITY_FALLING),
-				.HSPolarity = (DT_INST_PROP(0, hsync_active) ?
-						DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW),
-				.VSPolarity = (DT_INST_PROP(0, vsync_active) ?
-						DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW),
-				.CaptureRate = STM32_DCMI_GET_CAPTURE_RATE(
-							DT_INST_PROP(0, capture_rate)),
+				.PCKPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+							  pclk_sample, 0) ?
+							  DCMI_PCKPOLARITY_RISING :
+							  DCMI_PCKPOLARITY_FALLING,
+				.HSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+							 hsync_active, 0) ?
+							 DCMI_HSPOLARITY_HIGH : DCMI_HSPOLARITY_LOW,
+				.VSPolarity = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+							 vsync_active, 0) ?
+							 DCMI_VSPOLARITY_HIGH : DCMI_VSPOLARITY_LOW,
 				.ExtendedDataMode = STM32_DCMI_GET_BUS_WIDTH(
-							DT_INST_PROP(0, bus_width)),
+							DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0),
+								   bus_width, 8)),
 				.JPEGMode = DCMI_JPEG_DISABLE,
 				.ByteSelectMode = DCMI_BSM_ALL,
 				.ByteSelectStart = DCMI_OEBS_ODD,
@@ -458,6 +498,8 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 	},
 };
 
+#define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
+
 static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	.pclken = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
@@ -465,7 +507,7 @@ static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	},
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.sensor_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, sensor)),
+	.sensor_dev = SOURCE_DEV(0),
 	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
 };
 
@@ -493,12 +535,13 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	err = stm32_dcmi_enable_clock(dev);
 	if (err < 0) {
 		LOG_ERR("Clock enabling failed.");
-		return -EIO;
+		return err;
 	}
 
 	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
+	data->capture_rate = 1;
 
 	/* Run IRQ init */
 	config->irq_config(dev);
@@ -521,3 +564,5 @@ DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
 		    &video_stm32_dcmi_config_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_stm32_dcmi_driver_api);
+
+VIDEO_DEVICE_DEFINE(dcmi, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));

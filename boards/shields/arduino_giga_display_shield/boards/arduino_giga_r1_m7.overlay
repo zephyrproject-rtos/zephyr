@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2025 Arduino SA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911>;
+	};
+
+	aliases {
+		accel0 = &gt911;
+	};
+
+	chosen {
+		zephyr,display = &zephyr_lcd_controller;
+		zephyr,touch = &gt911;
+	};
+};
+
+&sdram1 {
+	/* Frame buffer memory cache will cause screen flickering. */
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+};
+
+&zephyr_lcd_controller {
+	status = "okay";
+	ext-sdram = <&sdram1>;
+	width = <480>;
+	height = <800>;
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	disp-on-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+
+	/* sitronix, st7701 */
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-active = <1>;
+		vsync-active = <0>;
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hback-porch = <40>;
+		hsync-len = <32>;
+		hfront-porch = <8>;
+		vback-porch = <6>;
+		vsync-len = <8>;
+		vfront-porch = <9>;
+	};
+};
+
+/* ltdc uses pll3_r as pixel clock */
+&pll3 {
+	status = "okay";
+	clocks = <&clk_hse>;
+	div-m = <16>;
+	mul-n = <110>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <4>; /* 27.5 MHz */
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+
+	pll-ndiv = <125>;
+	pll-idf = <4>;
+	pll-odf = <0>;
+
+	de-active-high;
+	largest-packet-size = <0>;
+
+	phy-timings = <35 35 35 35 0 10>;
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pb6 &i2c4_sda_ph12>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		reset-gpios = <&gpioi 2 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
+	};
+};

@@ -32,7 +32,6 @@
 		zephyr,flash-controller = &w25q64jvssiq;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &lpuart1;
-		zephyr,bt-hci = &bt_hci_uart;
 	};
 
 	sdram0: memory@80000000 {
@@ -132,24 +131,26 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 2 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(8))>;
+				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@322000 {
+			slot1_partition: partition@320000 {
 				label = "image-1";
-				reg = <0x00322000 DT_SIZE_M(3)>;
+				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@622000 {
+			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x00622000 (DT_SIZE_M(2) - DT_SIZE_K(136))>;
+				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};
@@ -233,28 +234,6 @@ lpi2c3: &lpi2c3 {
 	status = "okay";
 };
 
-m2_hci_uart: &lpuart3 {
-	pinctrl-0 = <&pinmux_lpuart3_flowcontrol>;
-	pinctrl-1 = <&pinmux_lpuart3_sleep>;
-	pinctrl-names = "default", "sleep";
+m2_hci_bt_uart: &lpuart3 {};
 
-	bt_hci_uart: bt_hci_uart {
-		compatible = "zephyr,bt-hci-uart";
-
-		m2_bt_module {
-			compatible = "nxp,bt-hci-uart";
-			sdio-reset-gpios = <&gpio3 4 GPIO_ACTIVE_HIGH>;
-			w-disable-gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
-			hci-operation-speed = <115200>;
-			hw-flow-control;
-			fw-download-primary-speed = <115200>;
-			fw-download-secondary-speed = <3000000>;
-			fw-download-secondary-flowcontrol;
-		};
-	};
-};
-
-&m2_hci_uart {
-	status = "okay";
-	current-speed = <115200>;
-};
+m2_wifi_sdio: &usdhc1 {};

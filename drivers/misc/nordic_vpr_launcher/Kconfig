@@ -4,7 +4,8 @@
 config NORDIC_VPR_LAUNCHER
 	bool "Nordic VPR coprocessor launcher"
 	default y
-	depends on DT_HAS_NORDIC_NRF_VPR_COPROCESSOR_ENABLED
+	depends on DT_HAS_NORDIC_NRF_VPR_COPROCESSOR_ENABLED && \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_NRF_VPR_COPROCESSOR),execution-memory)
 	help
 	  When enabled, the VPR coprocessors will be automatically launched
 	  during system initialization.

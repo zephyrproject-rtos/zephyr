@@ -32,25 +32,7 @@ For more information, refer to these documents:
 Supported Features
 ==================
 
-The xg27_dk2602a board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | ldma                                |
-+-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | comparator                          |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Flashing
 ========
@@ -98,6 +80,8 @@ Commander in unattended mode and passes all the necessary arguments to it.
 
 Programming and Debugging
 =========================
+
+.. zephyr:board-supported-runners::
 
 The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:

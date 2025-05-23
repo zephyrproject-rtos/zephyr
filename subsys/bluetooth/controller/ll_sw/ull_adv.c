@@ -1275,16 +1275,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 	/* Initialize ULL context before radio event scheduling is started. */
 	ull_hdr_init(&adv->ull);
 
-	/* TODO: active_to_start feature port */
-	adv->ull.ticks_active_to_start = 0;
-	adv->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	adv->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	adv->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
-	ticks_slot_offset = MAX(adv->ull.ticks_active_to_start,
-				adv->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -2381,14 +2374,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (adv->lll.aux) {
 			uint32_t ticks_to_expire;
-			uint32_t other_remainder;
+			uint32_t other_remainder = 0U;
 
 			LL_ASSERT(context->other_expire_info);
 
 			/* Adjust ticks to expire based on remainder value */
 			ticks_to_expire = context->other_expire_info->ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 			other_remainder = context->other_expire_info->remainder;
 			hal_ticker_remove_jitter(&ticks_to_expire, &other_remainder);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
 			/* Store the ticks and remainder offset for aux ptr population in LLL */
 			adv->lll.aux->ticks_pri_pdu_offset = ticks_to_expire;

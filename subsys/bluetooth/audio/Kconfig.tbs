@@ -52,6 +52,14 @@ config BT_TBS_MAX_SCHEME_LIST_LENGTH
 	help
 	  Sets the maximum length of the URI scheme list.
 
+config BT_TBS_LOCK_TIMEOUT
+	int "Milliseconds of timeout when handling concurrent operations"
+	range 0 1000
+	default 10
+	help
+	  The number of milliseconds that the TBS implementation will maximum wait before rejecting
+	  an write request if another is already in progress in another thread.
+
 endif # BT_TBS
 
 

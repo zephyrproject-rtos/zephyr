@@ -78,6 +78,7 @@ add_custom_target(code_data_relocation_target)
 # bin_file         "zephyr.bin" file for flashing
 # hex_file         "zephyr.hex" file for flashing
 # elf_file         "zephyr.elf" file for flashing or debugging
+# mot_file         "zephyr.mot" file for flashing
 # yaml_contents    generated contents of runners.yaml
 #
 # Note: there are quotes around "zephyr.bin" etc. because the actual
@@ -142,8 +143,12 @@ enable_language(ASM)
 # Verify that the toolchain can compile a dummy file, if it is not we
 # won't be able to test for compatibility with certain C flags.
 zephyr_check_compiler_flag(C "" toolchain_is_ok)
+set(log_file "CMakeConfigureLog.yaml")
+if(CMAKE_VERSION VERSION_LESS "3.26.0")
+  set(log_file "CMakeError.log")
+endif()
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file.\
- Move ${USER_CACHE_DIR}, re-run and look at CMakeError.log")
+ Move ${USER_CACHE_DIR}, re-run and look at ${log_file}")
 
 include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 
@@ -166,6 +171,7 @@ set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 set(KERNEL_META_NAME  ${KERNEL_NAME}.meta)
+set(KERNEL_MOT_NAME  ${KERNEL_NAME}.mot)
 set(KERNEL_SYMBOLS_NAME    ${KERNEL_NAME}.symbols)
 
 # Enable dynamic library support when required by LLEXT.

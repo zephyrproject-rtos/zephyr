@@ -60,6 +60,9 @@ Set ``--shield frdm_cr20a`` when you invoke ``west build``. For example:
    :shield: frdm_cr20a
    :goals: build
 
+.. include:: ../../../nxp/common/board-footer.rst
+   :start-after: nxp-board-footer
+
 .. _FRDM-CR20A Website:
    https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/wireless-connectivy/freedom-development-board-for-mcr20a-wireless-transceiver:FRDM-CR20A
 

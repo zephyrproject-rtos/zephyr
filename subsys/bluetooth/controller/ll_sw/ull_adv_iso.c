@@ -260,9 +260,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	if (aux && aux->is_started) {
 		ticks_slot_aux = aux->ull.ticks_slot;
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			ticks_slot_overhead =
-				MAX(aux->ull.ticks_active_to_start,
-				    aux->ull.ticks_prepare_to_start);
+			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 		} else {
 			ticks_slot_overhead = 0U;
 		}
@@ -275,9 +273,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		ticks_slot_aux = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 			/* Assume primary overheads may be inherited by aux */
-			ticks_slot_overhead =
-				MAX(adv->ull.ticks_active_to_start,
-				    adv->ull.ticks_prepare_to_start);
+			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 		} else {
 			ticks_slot_overhead = 0U;
 		}
@@ -299,8 +295,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
-					  sync->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	} else {
 		ticks_slot_overhead = 0U;
 	}
@@ -483,15 +478,25 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	}
 
 	/* Based on packing requested, sequential or interleaved */
-	if (packing) {
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+	} else if (packing) {
 		/* Interleaved Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
-					lll_adv_iso->nse;
-	} else {
+					    lll_adv_iso->num_bis;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+	} else if (true) {
 		/* Sequential Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
-					lll_adv_iso->nse;
+					   lll_adv_iso->nse;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+	} else {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 	}
 
 	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
@@ -1250,11 +1255,26 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 	 */
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO_RESERVE_MAX) || max) {
+		/* Maximum time reservation for both sequential and interleaved
+		 * packing.
+		 */
 		time_us = (pdu_spacing * lll_iso->nse * lll_iso->num_bis) +
 			  ctrl_spacing;
-	} else {
+
+	} else if (lll_iso->bis_spacing >=
+		   (lll_iso->sub_interval * lll_iso->nse)) {
+		/* Time reservation omitting PTC subevents in sequetial
+		 * packing.
+		 */
 		time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
 					 lll_iso->ptc);
+
+	} else {
+		/* Time reservation omitting PTC subevents in interleaved
+		 * packing.
+		 */
+		time_us = pdu_spacing * ((lll_iso->nse - lll_iso->ptc) *
+					 lll_iso->num_bis);
 	}
 
 	/* Add implementation defined radio event overheads */
@@ -1279,15 +1299,9 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 
 	slot_us = adv_iso_time_get(adv_iso, false);
 
-	adv_iso->ull.ticks_active_to_start = 0U;
-	adv_iso->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	adv_iso->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	adv_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(adv_iso->ull.ticks_active_to_start,
-				adv_iso->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {

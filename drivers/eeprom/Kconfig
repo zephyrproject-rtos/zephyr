@@ -96,7 +96,7 @@ config EEPROM_AT2X_INIT_PRIORITY
 source "drivers/eeprom/Kconfig.lpc11u6x"
 source "drivers/eeprom/Kconfig.stm32"
 source "drivers/eeprom/Kconfig.eeprom_emu"
-source "drivers/eeprom/Kconfig.tmp116"
+source "drivers/eeprom/Kconfig.tmp11x"
 source "drivers/eeprom/Kconfig.xec"
 source "drivers/eeprom/Kconfig.mb85rcxx"
 source "drivers/eeprom/Kconfig.mb85rsxx"

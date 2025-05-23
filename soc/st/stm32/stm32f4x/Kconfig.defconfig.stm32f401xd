@@ -1,0 +1,11 @@
+# ST STM32F401xD MCU configuration options
+
+# Copyright (c) 2025 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F401XD
+
+config NUM_IRQS
+	default 85
+
+endif # SOC_STM32F401XD

@@ -1,7 +1,4 @@
-.. _nrf9151dk_nrf9151:
-
-nRF9151 DK
-##########
+.. zephyr:board:: nrf9151dk
 
 Overview
 ********
@@ -39,50 +36,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The ``nrf9151dk/nrf9151`` board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| FLASH     | external   | spi                  |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| GPIO      | external   | i2c                  |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | nRF53      | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-
-.. _nrf9151dk_additional_hardware:
-
-Other hardware features have not been enabled yet for this board.
-See the `nRF9151 website`_ for more information.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -116,6 +70,8 @@ Security components
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 ``nrf9151dk/nrf9151`` supports the Armv8m Security Extension, and by default boots
 in the Secure state.

@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/* Please keep in sync with cmake/linker_script/common/common-noinit.cmake */
 
 SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 {

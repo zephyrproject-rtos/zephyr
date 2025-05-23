@@ -8,7 +8,7 @@ if(CONFIG_CMSIS_NN)
 
   zephyr_library()
 
-  zephyr_library_compile_options(-Ofast)
+  zephyr_library_compile_options($<TARGET_PROPERTY:compiler,optimization_fast>)
 
   zephyr_include_directories(${CMSIS_NN_DIR}/Include)
 

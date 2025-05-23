@@ -50,6 +50,8 @@ source "drivers/clock_control/Kconfig.mcux_sim"
 
 source "drivers/clock_control/Kconfig.mcux_syscon"
 
+source "drivers/clock_control/Kconfig.mspm0"
+
 source "drivers/clock_control/Kconfig.npcm"
 
 source "drivers/clock_control/Kconfig.npcx"
@@ -90,6 +92,8 @@ source "drivers/clock_control/Kconfig.agilex5"
 
 source "drivers/clock_control/Kconfig.renesas_ra_cgc"
 
+source "drivers/clock_control/Kconfig.renesas_rx_cgc"
+
 source "drivers/clock_control/Kconfig.renesas_rz_cpg"
 
 source "drivers/clock_control/Kconfig.max32"
@@ -109,5 +113,7 @@ source "drivers/clock_control/Kconfig.silabs"
 source "drivers/clock_control/Kconfig.siwx91x"
 
 source "drivers/clock_control/Kconfig.wch_rcc"
+
+source "drivers/clock_control/Kconfig.it51xxx"
 
 endif # CLOCK_CONTROL

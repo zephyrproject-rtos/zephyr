@@ -64,7 +64,7 @@
 		clk_msi: clk-msi {
 			#clock-cells = <0>;
 			compatible = "st,stm32-msi-clock";
-			msi-range = <4>; /* 4MHz (reset value) */
+			msi-range = <6>; /* 4MHz (reset value) */
 			status = "disabled";
 		};
 
@@ -550,6 +550,15 @@
 			reg = <0x40009400 0x400>;
 			interrupts = <18 1>;
 			interrupt-names = "combined";
+		};
+
+		tsc: tsc@40024000 {
+			compatible = "st,stm32-tsc";
+			reg = <0x40024000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 24U)>;
+			resets = <&rctl STM32_RESET(AHB1, 24U)>;
+			interrupts = <21 0>;
+			interrupt-names = "global";
 			status = "disabled";
 		};
 	};

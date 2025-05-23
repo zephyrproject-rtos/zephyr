@@ -5,14 +5,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/has.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "btp/btp.h"
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/arch/common/ffs.h>
-#include <stdint.h>
 
-#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_has
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -21,14 +27,8 @@ static uint8_t has_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_has_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_HAS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_HAS_SET_ACTIVE_INDEX);
-	tester_set_bit(rp->data, BTP_HAS_SET_PRESET_NAME);
-	tester_set_bit(rp->data, BTP_HAS_REMOVE_PRESET);
-	tester_set_bit(rp->data, BTP_HAS_ADD_PRESET);
-	tester_set_bit(rp->data, BTP_HAS_SET_PROPERTIES);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_HAS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

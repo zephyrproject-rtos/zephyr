@@ -4,6 +4,9 @@ on:
   schedule:
   - cron: '*/10 * * * *'
 
+permissions:
+  contents: read
+
 env:
   OUTPUT_FILE_NAME: IssuesReport.md
   COMMITTER_EMAIL: actions@github.com
@@ -14,7 +17,7 @@ env:
 jobs:
   track-issues:
     name: "Collect Issue Stats"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
 
     steps:
@@ -27,7 +30,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install discount
 
-    - uses: brcrista/summarize-issues@v4
+    - uses: brcrista/summarize-issues@54c549b7d38b7db39e5c6e06fd9617e12e5c3491 # v4
       with:
         title: 'Issues Report for ${{ github.repository }}'
         configPath: 'issues-report-config.json'
@@ -35,14 +38,14 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: upload-stats
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       continue-on-error: true
       with:
         name: ${{ env.OUTPUT_FILE_NAME }}
         path: ${{ env.OUTPUT_FILE_NAME }}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
       with:
         aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}

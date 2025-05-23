@@ -63,7 +63,6 @@ config SYSTEM_CLOCK_LOCK_FREE_COUNT
 	  cycle count accessor. This is needed for instrumenting spin lock
 	  hold times.
 
-source "drivers/timer/Kconfig.altera_avalon"
 source "drivers/timer/Kconfig.ambiq"
 source "drivers/timer/Kconfig.x86"
 source "drivers/timer/Kconfig.arcv2"
@@ -75,6 +74,7 @@ source "drivers/timer/Kconfig.wch_ch32v00x"
 source "drivers/timer/Kconfig.cortex_m_systick"
 source "drivers/timer/Kconfig.esp32"
 source "drivers/timer/Kconfig.gecko"
+source "drivers/timer/Kconfig.it51xxx"
 source "drivers/timer/Kconfig.ite_it8xxx2"
 source "drivers/timer/Kconfig.leon_gptimer"
 source "drivers/timer/Kconfig.litex"
@@ -84,11 +84,12 @@ source "drivers/timer/Kconfig.mcux_lptmr"
 source "drivers/timer/Kconfig.mcux_os"
 source "drivers/timer/Kconfig.mec5"
 source "drivers/timer/Kconfig.mips_cp0"
-source "drivers/timer/Kconfig.native_posix"
+source "drivers/timer/Kconfig.native_sim"
 source "drivers/timer/Kconfig.npcx_itim"
 source "drivers/timer/Kconfig.nrf_rtc"
 source "drivers/timer/Kconfig.nrf_grtc"
 source "drivers/timer/Kconfig.nrf_xrtc"
+source "drivers/timer/Kconfig.renesas_rx"
 source "drivers/timer/Kconfig.rcar_cmt"
 source "drivers/timer/Kconfig.riscv_machine"
 source "drivers/timer/Kconfig.rv32m1_lptmr"
@@ -102,6 +103,8 @@ source "drivers/timer/Kconfig.xlnx_psttc"
 source "drivers/timer/Kconfig.xtensa"
 source "drivers/timer/Kconfig.mtk_adsp"
 source "drivers/timer/Kconfig.sy1xx_sys_timer"
+source "drivers/timer/Kconfig.renesas_ra_ulpt"
+source "drivers/timer/Kconfig.renesas_rza2m"
 
 endmenu
 

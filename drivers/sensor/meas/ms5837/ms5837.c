@@ -1,11 +1,10 @@
 /* Driver for MS5837 pressure sensor
  *
  * Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * Copyright (c) 2025 Ivan Wagner <ivan.wagner@tecinvent.ch>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define DT_DRV_COMPAT meas_ms5837
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -44,6 +43,8 @@ static int ms5837_get_measurement(const struct device *dev, uint32_t *val,
 
 	return 0;
 }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(meas_ms5837_30ba)
 
 static void ms5837_compensate_30(const struct device *dev,
 				 const int32_t adc_temperature,
@@ -94,9 +95,13 @@ static void ms5837_compensate_30(const struct device *dev,
 	SENS -= SENSi;
 
 	data->temperature -= Ti;
-	data->pressure =
-	    (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13);
+	/* Result is in mbar * 10 but store result as mbar * 100 same as 02 sensor variant */
+	data->pressure = ((((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 13)) * 10;
 }
+
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(meas_ms5837_02ba)
 
 /*
  * First and second order pressure and temperature calculations, as per the flowchart in the
@@ -135,12 +140,16 @@ static void ms5837_compensate_02(const struct device *dev,
 	SENS -= SENSi;
 
 	data->temperature -= Ti;
+	/* Result is in mbar * 100 */
 	data->pressure = (((SENS * adc_pressure) / (1ll << 21)) - OFF) / (1ll << 15);
 }
+
+#endif
 
 static int ms5837_sample_fetch(const struct device *dev,
 			       enum sensor_channel channel)
 {
+	const struct ms5837_config *cfg = dev->config;
 	struct ms5837_data *data = dev->data;
 	int err;
 	uint32_t adc_pressure;
@@ -161,7 +170,7 @@ static int ms5837_sample_fetch(const struct device *dev,
 		return err;
 	}
 
-	data->comp_func(dev, adc_temperature, adc_pressure);
+	cfg->comp_func(dev, adc_temperature, adc_pressure);
 
 	return 0;
 }
@@ -348,34 +357,25 @@ static int ms5837_init(const struct device *dev)
 		return err;
 	}
 
-	const int type_id = (data->factory >> 5) & 0x7f;
-
-	switch (type_id) {
-	case  MS5837_02BA01:
-	case MS5837_02BA21:
-		data->comp_func = ms5837_compensate_02;
-		break;
-	case MS5837_30BA26:
-		data->comp_func = ms5837_compensate_30;
-		break;
-	default:
-		LOG_WRN(" unrecognized type: '%2x', defaulting to MS5837-30", type_id);
-		data->comp_func = ms5837_compensate_30;
-		break;
-	}
-
 	return 0;
 }
 
-#define MS5837_DEFINE(inst)								\
-	static struct ms5837_data ms5837_data_##inst;					\
-											\
-	static const struct ms5837_config ms5837_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5837_init, NULL,				\
-			      &ms5837_data_##inst, &ms5837_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &ms5837_api_funcs);		\
+#define MS5837_DEFINE(inst, type)                                                                  \
+	static struct ms5837_data ms5837_##type##_data_##inst;                                     \
+                                                                                                   \
+	static const struct ms5837_config ms5837_##type##_config_##inst = {                        \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.comp_func = ms5837_compensate_##type                                              \
+	};                                                                                         \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5837_init, NULL, &ms5837_##type##_data_##inst,        \
+				     &ms5837_##type##_config_##inst, POST_KERNEL,                  \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ms5837_api_funcs);
 
-DT_INST_FOREACH_STATUS_OKAY(MS5837_DEFINE)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT meas_ms5837_02ba
+DT_INST_FOREACH_STATUS_OKAY_VARGS(MS5837_DEFINE, 02)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT meas_ms5837_30ba
+DT_INST_FOREACH_STATUS_OKAY_VARGS(MS5837_DEFINE, 30)

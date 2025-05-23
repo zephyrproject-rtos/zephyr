@@ -1,0 +1,41 @@
+# zephyr-keep-sorted-start
+anytree
+awscli
+canopen
+clang-format>=15.0.0
+elasticsearch
+exceptiongroup>=1.0.0rc8
+gcovr==6.0
+gitlint>=0.19.1
+gitpython>=3.1.41
+ijson
+intelhex
+junit2html
+junitparser>=2
+lxml>=5.3.0
+mock
+mypy
+natsort
+ply>=3.10
+progress
+psutil>=5.6.6
+pyelftools>=0.29
+pygithub
+pykwalify
+pylint>=3
+pyserial
+pytest
+python-magic-bin; sys_platform == "win32"
+python-magic; sys_platform != "win32"
+pyyaml
+ruff==0.8.1
+setuptools>=70.2.0
+sphinx-lint
+tabulate
+tomli>=1.1.0
+tox
+unidiff
+west>=0.14.0
+xlsxwriter
+yamllint
+# zephyr-keep-sorted-stop

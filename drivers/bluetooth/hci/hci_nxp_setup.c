@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,11 +27,12 @@ LOG_MODULE_REGISTER(bt_nxp_ctlr);
 
 #include "common/bt_str.h"
 
-#include "bt_nxp_ctlr_fw.h"
-
 #define DT_DRV_COMPAT nxp_bt_hci_uart
 
 #define FW_UPLOAD_CHANGE_TIMEOUT_RETRY_COUNT 6
+
+extern const unsigned char *bt_fw_bin;
+extern const unsigned int bt_fw_bin_len;
 
 static const struct device *uart_dev = DEVICE_DT_GET(DT_INST_GPARENT(0));
 
@@ -194,6 +195,7 @@ struct nxp_ctlr_fw_upload_state {
 	bool is_error_case;
 	bool is_cmd7_req;
 	bool is_entry_point_req;
+	bool is_setup_done;
 
 	uint8_t last_5bytes_buffer[6];
 };
@@ -1171,11 +1173,15 @@ static int bt_nxp_ctlr_init(void)
 
 int bt_hci_transport_setup(const struct device *dev)
 {
+	int ret = 0;
 	if (dev != uart_dev) {
 		return -EINVAL;
 	}
 
-	return bt_nxp_ctlr_init();
+	if (!fw_upload.is_setup_done) {
+		ret = bt_nxp_ctlr_init();
+	}
+	return ret;
 }
 
 #define BT_HCI_VSC_BAUDRATE_UPDATE_LENGTH 4
@@ -1228,19 +1234,23 @@ int bt_h4_vnd_setup(const struct device *dev)
 		return 0;
 	}
 
-	err = bt_hci_baudrate_update(dev, operation_speed);
-	if (err) {
-		return err;
-	}
+	if (!fw_upload.is_setup_done) {
+		err = bt_hci_baudrate_update(dev, operation_speed);
+		if (err) {
+			return err;
+		}
 
-	/* BT waiting time after controller bandrate updated */
-	(void)k_msleep(CONFIG_BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE);
+		/* BT waiting time after controller bandrate updated */
+		(void)k_msleep(CONFIG_BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE);
+	}
 
 	err = fw_upload_uart_reconfig(operation_speed, flowcontrol_of_hci);
 	if (err) {
 		LOG_ERR("Fail to update uart bandrate");
 		return err;
 	}
+
+	fw_upload.is_setup_done = true;
 
 	return 0;
 }

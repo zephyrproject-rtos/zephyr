@@ -1,0 +1,3 @@
+name: wifi-ip
+append:
+  EXTRA_CONF_FILE: wifi-ip.conf

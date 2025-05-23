@@ -20,13 +20,8 @@ The main hardware features are:
 
 Supported Features
 ==================
-- LoRa via SPI
-- UART0 (USB Serial via CP2102)
-- UART1
-- I2C
-- CAN (optional, need to enable)
-- PWM LED
-- User Switch / Button
+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -145,6 +140,8 @@ below to retrieve those files.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Simple boot
 ===========

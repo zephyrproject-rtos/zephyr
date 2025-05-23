@@ -33,27 +33,7 @@ See these documents for more information
 Supported Features
 ==================
 
-The efm32hg_slstk3400 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/silabs/starter_kits/slstk3400a/slstk3400a_defconfig`
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -97,6 +77,8 @@ USART1 is connected to the board controller and is used for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware

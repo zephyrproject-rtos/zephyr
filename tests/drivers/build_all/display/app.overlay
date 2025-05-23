@@ -140,15 +140,16 @@
 				compatible = "solomon,ssd1327fb";
 				reg = <7>;
 				mipi-max-frequency = <100000000>;
-
-				width = <240>;
-				height = <240>;
+				width = <128>;
+				height = <128>;
 				oscillator-freq = <0>;
 				display-offset = <0>;
 				start-line = <0>;
 				multiplex-ratio = <0>;
 				prechargep = <0>;
 				remap-value = <0>;
+				phase-length = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 
 			test_mipi_dbi_ssd1322: ssd1322@9 {
@@ -158,6 +159,96 @@
 				width =	<128>;
 				height = <64>;
 				column-offset =	<28>;
+			};
+
+			test_mipi_dbi_st75256: st75256@10 {
+				compatible = "sitronix,st75256";
+				mipi-max-frequency = <10000000>;
+				reg = <10>;
+				width = <256>;
+				height = <128>;
+				booster-frequency = <0>;
+				bias-ratio = <0>;
+				flip-configuration = <0>;
+				duty = <0>;
+				light-grey = <0>;
+				dark-grey = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_ssd1320: ssd1320@11 {
+				compatible = "solomon,ssd1320";
+				reg = <11>;
+				mipi-max-frequency = <10000000>;
+				width = <160>;
+				height = <160>;
+				oscillator-freq = <0x0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				remap-value = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_sh1122: sh1122@12 {
+				compatible = "sinowealth,sh1122";
+				reg = <12>;
+				mipi-max-frequency = <10000000>;
+				width =	<256>;
+				height = <64>;
+				oscillator-freq = <0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				low-voltage = <0>;
+				dc-dc = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_ssd1331: ssd1331@13 {
+				compatible = "solomon,ssd1331";
+				reg = <13>;
+				mipi-max-frequency = <10000000>;
+				width =	<96>;
+				height = <64>;
+				display-offset = <0x0>;
+				start-line = <0x0>;
+				phase-length = <0x0>;
+				oscillator-freq = <0x0>;
+				multiplex-ratio = <0x0>;
+				precharge-time-a = <0x0>;
+				precharge-time-b = <0x0>;
+				precharge-time-c = <0x0>;
+				precharge-voltage = <0x0>;
+				vcomh-voltage = <0x0>;
+				current-att = <0x0>;
+				remap-value = <0x0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_ssd1351: ssd1351@14 {
+				compatible = "solomon,ssd1351";
+				mipi-max-frequency = <10000000>;
+				reg = <14>;
+				width = <128>;
+				height = <128>;
+				oscillator-freq = <0x0>;
+				display-offset = <0x0>;
+				multiplex-ratio = <0x0>;
+				phase-length = <0x0>;
+				vcomh-voltage = <0x0>;
+				current-att = <0x0>;
+				precharge-time = <0x0>;
+				start-line = <0>;
+				precharge-voltage = <0x0>;
+				remap-value = <0x0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 		};
 
@@ -248,6 +339,32 @@
 				width = <720>;
 				height = <1280>;
 				pixel-format = <0>;
+			};
+
+			test_st7701: st7701@5 {
+				compatible = "sitronix,st7701";
+				reg = <0x5>;
+				height = <800>;
+				width = <480>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				rotation = <0>;
+				pvgamctrl = [00 10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+				nvgamctrl = [00 10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					hsync-active = <1>;
+					vsync-active = <0>;
+					de-active = <0>;
+					pixelclk-active = <0>;
+					hback-porch = <40>;
+					hsync-len = <32>;
+					hfront-porch = <8>;
+					vback-porch = <6>;
+					vsync-len = <8>;
+					vfront-porch = <9>;
+				};
 			};
 		};
 
@@ -360,6 +477,61 @@
 				segment-remap;
 				com-invdir;
 				prechargep = <0x22>;
+			};
+
+			test_st7567: st7567@2 {
+				compatible = "sitronix,st7567";
+				reg = <0x2>;
+				width = <128>;
+				height = <64>;
+				column-offset = <0>;
+				line-offset = <0>;
+				regulation-ratio = <7>;
+			};
+
+			test_ssd1320: ssd1320@3 {
+				compatible = "solomon,ssd1320";
+				reg = <3>;
+				width = <160>;
+				height = <160>;
+				oscillator-freq = <0x0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				remap-value = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+			};
+
+			test_sh1122: sh1122@4 {
+				compatible = "sinowealth,sh1122";
+				reg = <4>;
+				width =	<256>;
+				height = <64>;
+				oscillator-freq = <0>;
+				multiplex-ratio = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				low-voltage = <0>;
+				dc-dc = <0>;
+				precharge-voltage = <0>;
+				phase-length = <0>;
+				vcomh-voltage = <0>;
+			};
+
+			test_ssd1327fb: ssd1327fb@5 {
+				compatible = "solomon,ssd1327fb";
+				reg = <5>;
+				width = <128>;
+				height = <128>;
+				oscillator-freq = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				multiplex-ratio = <0>;
+				prechargep = <0>;
+				remap-value = <0>;
+				phase-length = <0>;
 			};
 		};
 	};

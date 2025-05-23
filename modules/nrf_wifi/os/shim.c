@@ -18,15 +18,29 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#ifdef CONFIG_NRF71_ON_IPC
+#include "ipc_if.h"
+#else
 #include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
+#endif /* CONFIG_NRF71_ON_IPC */
+#include <zephyr/sys/math_extras.h>
 
 #include "shim.h"
 #include "work.h"
 #include "timer.h"
 #include "osal_ops.h"
+#include "common/hal_structs_common.h"
 
 LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
+#if defined(CONFIG_NOCACHE_MEMORY)
+K_HEAP_DEFINE_NOCACHE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
+K_HEAP_DEFINE_NOCACHE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
+#else
+K_HEAP_DEFINE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
+K_HEAP_DEFINE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
+#endif /* CONFIG_NOCACHE_MEMORY */
+#define WORD_SIZE 4
 
 struct zep_shim_intr_priv *intr_priv;
 
@@ -34,14 +48,66 @@ static void *zep_shim_mem_alloc(size_t size)
 {
 	size_t size_aligned = ROUND_UP(size, 4);
 
-	return k_malloc(size_aligned);
+	return k_heap_aligned_alloc(&wifi_drv_ctrl_mem_pool, WORD_SIZE, size_aligned, K_FOREVER);
+}
+
+static void *zep_shim_data_mem_alloc(size_t size)
+{
+	size_t size_aligned = ROUND_UP(size, 4);
+
+	return k_heap_aligned_alloc(&wifi_drv_data_mem_pool, WORD_SIZE, size_aligned, K_FOREVER);
 }
 
 static void *zep_shim_mem_zalloc(size_t size)
 {
+	void *ret;
+	size_t bounds;
+
 	size_t size_aligned = ROUND_UP(size, 4);
 
-	return k_calloc(size_aligned, sizeof(char));
+	if (size_mul_overflow(size_aligned, sizeof(char), &bounds)) {
+		return NULL;
+	}
+
+	ret = zep_shim_mem_alloc(bounds);
+	if (ret != NULL) {
+		(void)memset(ret, 0, bounds);
+	}
+
+	return ret;
+}
+
+static void *zep_shim_data_mem_zalloc(size_t size)
+{
+	void *ret;
+	size_t bounds;
+
+	size_t size_aligned = ROUND_UP(size, 4);
+
+	if (size_mul_overflow(size_aligned, sizeof(char), &bounds)) {
+		return NULL;
+	}
+
+	ret = zep_shim_data_mem_alloc(bounds);
+	if (ret != NULL) {
+		(void)memset(ret, 0, bounds);
+	}
+
+	return ret;
+}
+
+static void zep_shim_mem_free(void *buf)
+{
+	if (buf) {
+		k_heap_free(&wifi_drv_ctrl_mem_pool, buf);
+	}
+}
+
+static void zep_shim_data_mem_free(void *buf)
+{
+	if (buf) {
+		k_heap_free(&wifi_drv_data_mem_pool, buf);
+	}
 }
 
 static void *zep_shim_mem_cpy(void *dest, const void *src, size_t count)
@@ -61,6 +127,7 @@ static int zep_shim_mem_cmp(const void *addr1,
 	return memcmp(addr1, addr2, size);
 }
 
+#ifndef CONFIG_NRF71_ON_IPC
 static unsigned int zep_shim_qspi_read_reg32(void *priv, unsigned long addr)
 {
 	unsigned int val;
@@ -113,12 +180,13 @@ static void zep_shim_qspi_cpy_to(void *priv, unsigned long addr, const void *src
 
 	dev->write(addr, src, count_aligned);
 }
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 static void *zep_shim_spinlock_alloc(void)
 {
 	struct k_mutex *lock = NULL;
 
-	lock = k_malloc(sizeof(*lock));
+	lock = zep_shim_mem_zalloc(sizeof(*lock));
 
 	if (!lock) {
 		LOG_ERR("%s: Unable to allocate memory for spinlock", __func__);
@@ -129,7 +197,7 @@ static void *zep_shim_spinlock_alloc(void)
 
 static void zep_shim_spinlock_free(void *lock)
 {
-	k_free(lock);
+	k_heap_free(&wifi_drv_ctrl_mem_pool, lock);
 }
 
 static void zep_shim_spinlock_init(void *lock)
@@ -207,22 +275,25 @@ struct nwb {
 	void (*cleanup_cb)();
 	unsigned char priority;
 	bool chksum_done;
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+	struct net_pkt *pkt;
+#endif
 };
 
 static void *zep_shim_nbuf_alloc(unsigned int size)
 {
 	struct nwb *nbuff;
 
-	nbuff = (struct nwb *)k_calloc(sizeof(struct nwb), sizeof(char));
+	nbuff = (struct nwb *)zep_shim_data_mem_zalloc(sizeof(struct nwb));
 
 	if (!nbuff) {
 		return NULL;
 	}
 
-	nbuff->priv = k_calloc(size, sizeof(char));
+	nbuff->priv = zep_shim_data_mem_zalloc(size);
 
 	if (!nbuff->priv) {
-		k_free(nbuff);
+		zep_shim_data_mem_free(nbuff);
 		return NULL;
 	}
 
@@ -240,9 +311,15 @@ static void zep_shim_nbuf_free(void *nbuf)
 	if (!nbuf) {
 		return;
 	}
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+	if (((struct nwb *)nbuf)->pkt) {
+		net_pkt_unref(((struct nwb *)nbuf)->pkt);
+		((struct nwb *)nbuf)->pkt = NULL;
+	}
+#endif /* CONFIG_NRF_WIFI_ZERO_COPY_TX */
 
-	k_free(((struct nwb *)nbuf)->priv);
-	k_free(nbuf);
+	zep_shim_data_mem_free(((struct nwb *)nbuf)->priv);
+	zep_shim_data_mem_free(nbuf);
 }
 
 static void zep_shim_nbuf_headroom_res(void *nbuf, unsigned int size)
@@ -326,11 +403,61 @@ static void zep_shim_nbuf_set_chksum_done(void *nbuf, unsigned char chksum_done)
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+void *net_pkt_to_nbuf_zc(struct net_pkt *pkt)
+{
+	struct nwb *nbuff;
+
+	if (!pkt || !pkt->buffer) {
+		LOG_DBG("Invalid packet, dropping");
+		return NULL;
+	}
+
+	/* Check if packet has more than one fragment */
+	if (pkt->buffer->frags) {
+		LOG_ERR("Zero-copy only supports single buffer packets");
+		return NULL;
+	}
+
+	nbuff = zep_shim_nbuf_alloc(NRF_WIFI_EXTRA_TX_HEADROOM); /* Just for headers */
+	if (!nbuff) {
+		return NULL;
+	}
+
+	zep_shim_nbuf_headroom_res(nbuff, NRF_WIFI_EXTRA_TX_HEADROOM);
+
+	/* Zero-copy: point to the single data buffer */
+	/* TODO: Use API for proper cursor access? */
+	nbuff->data = pkt->buffer->data;
+	nbuff->len = pkt->buffer->len;
+
+	nbuff->priority = net_pkt_priority(pkt);
+	nbuff->chksum_done = (bool)net_pkt_is_chksum_done(pkt);
+
+	nbuff->pkt = pkt;
+	/* Ref the packet so that it is not freed */
+	net_pkt_ref(pkt);
+
+	return nbuff;
+}
+#endif /* CONFIG_NRF_WIFI_ZERO_COPY_TX */
+
 void *net_pkt_to_nbuf(struct net_pkt *pkt)
 {
 	struct nwb *nbuff;
 	unsigned char *data;
 	unsigned int len;
+
+	if (!pkt) {
+		return NULL;
+	}
+
+#ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
+	/* For zero-copy, check if packet has single buffer */
+	if (pkt->buffer && !pkt->buffer->frags) {
+		return net_pkt_to_nbuf_zc(pkt);
+	}
+#endif /* CONFIG_NRF_WIFI_ZERO_COPY_TX */
 
 	len = net_pkt_get_len(pkt);
 
@@ -406,7 +533,7 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 	nwb_data = zep_shim_nbuf_data_get(nwb);
 	total_len = raw_hdr_len + nwb_len;
 
-	data = (unsigned char *)k_malloc(total_len);
+	data = (unsigned char *)zep_shim_data_mem_zalloc(total_len);
 	if (!data) {
 		LOG_ERR("%s: Unable to allocate memory for sniffer data packet", __func__);
 		goto out;
@@ -428,7 +555,7 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 	}
 out:
 	if (data != NULL) {
-		k_free(data);
+		zep_shim_data_mem_free(data);
 	}
 
 	if (pkt_free) {
@@ -443,7 +570,23 @@ static void *zep_shim_llist_node_alloc(void)
 {
 	struct zep_shim_llist_node *llist_node = NULL;
 
-	llist_node = k_calloc(sizeof(*llist_node), sizeof(char));
+	llist_node = zep_shim_data_mem_zalloc(sizeof(*llist_node));
+
+	if (!llist_node) {
+		LOG_ERR("%s: Unable to allocate memory for linked list node", __func__);
+		return NULL;
+	}
+
+	sys_dnode_init(&llist_node->head);
+
+	return llist_node;
+}
+
+static void *zep_shim_ctrl_llist_node_alloc(void)
+{
+	struct zep_shim_llist_node *llist_node = NULL;
+
+	llist_node = zep_shim_mem_zalloc(sizeof(*llist_node));
 
 	if (!llist_node) {
 		LOG_ERR("%s: Unable to allocate memory for linked list node", __func__);
@@ -457,7 +600,12 @@ static void *zep_shim_llist_node_alloc(void)
 
 static void zep_shim_llist_node_free(void *llist_node)
 {
-	k_free(llist_node);
+	zep_shim_data_mem_free(llist_node);
+}
+
+static void zep_shim_ctrl_llist_node_free(void *llist_node)
+{
+	zep_shim_mem_free(llist_node);
 }
 
 static void *zep_shim_llist_node_data_get(void *llist_node)
@@ -482,7 +630,20 @@ static void *zep_shim_llist_alloc(void)
 {
 	struct zep_shim_llist *llist = NULL;
 
-	llist = k_calloc(sizeof(*llist), sizeof(char));
+	llist = zep_shim_data_mem_zalloc(sizeof(*llist));
+
+	if (!llist) {
+		LOG_ERR("%s: Unable to allocate memory for linked list", __func__);
+	}
+
+	return llist;
+}
+
+static void *zep_shim_ctrl_llist_alloc(void)
+{
+	struct zep_shim_llist *llist = NULL;
+
+	llist = zep_shim_mem_zalloc(sizeof(*llist));
 
 	if (!llist) {
 		LOG_ERR("%s: Unable to allocate memory for linked list", __func__);
@@ -493,7 +654,12 @@ static void *zep_shim_llist_alloc(void)
 
 static void zep_shim_llist_free(void *llist)
 {
-	k_free(llist);
+	zep_shim_data_mem_free(llist);
+}
+
+static void zep_shim_ctrl_llist_free(void *llist)
+{
+	zep_shim_mem_free(llist);
 }
 
 static void zep_shim_llist_init(void *llist)
@@ -648,14 +814,56 @@ static enum nrf_wifi_status zep_shim_bus_qspi_dev_init(void *os_qspi_dev_ctx)
 static void zep_shim_bus_qspi_dev_deinit(void *priv)
 {
 	struct zep_shim_bus_qspi_priv *qspi_priv = priv;
+#ifndef CONFIG_NRF71_ON_IPC
 	volatile struct qspi_dev *dev = qspi_priv->qspi_dev;
-
+#else
+	volatile struct rpu_dev *dev = qspi_priv->qspi_dev;
+#endif /* !CONFIG_NRF71_ON_IPC */
 	dev->deinit();
 }
+
+#ifdef CONFIG_NRF71_ON_IPC
+static int ipc_send_msg(unsigned int msg_type, void *msg, unsigned int len)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	struct rpu_dev *dev = rpu_dev();
+	int ret;
+	ipc_ctx_t ctx;
+
+	switch (msg_type) {
+	case NRF_WIFI_HAL_MSG_TYPE_CMD_CTRL:
+		ctx.inst = IPC_INSTANCE_CMD_CTRL;
+		ctx.ept = IPC_EPT_UMAC;
+		break;
+	case NRF_WIFI_HAL_MSG_TYPE_CMD_DATA_TX:
+		ctx.inst = IPC_INSTANCE_CMD_TX;
+		ctx.ept = IPC_EPT_UMAC;
+		break;
+	case NRF_WIFI_HAL_MSG_TYPE_CMD_DATA_RX:
+		ctx.inst = IPC_INSTANCE_RX;
+		ctx.ept = IPC_EPT_LMAC;
+		break;
+	default:
+		nrf_wifi_osal_log_err("%s: Invalid msg_type (%d)", __func__, msg_type);
+		goto out;
+	};
+
+	ret = dev->send(ctx, msg, len);
+	if (ret < 0) {
+		nrf_wifi_osal_log_err("%s: Sending message to RPU failed\n", __func__);
+		goto out;
+	}
+
+	status = NRF_WIFI_STATUS_SUCCESS;
+out:
+	return status;
+}
+#endif /*  CONFIG_NRF71_ON_IPC */
 
 static void *zep_shim_bus_qspi_dev_add(void *os_qspi_priv, void *osal_qspi_dev_ctx)
 {
 	struct zep_shim_bus_qspi_priv *zep_qspi_priv = os_qspi_priv;
+#ifndef CONFIG_NRF71_ON_IPC
 	struct qspi_dev *dev = qspi_dev();
 	int ret;
 	enum nrf_wifi_status status;
@@ -677,6 +885,11 @@ static void *zep_shim_bus_qspi_dev_add(void *os_qspi_priv, void *osal_qspi_dev_c
 		LOG_ERR("%s: RPU enable failed with error %d", __func__, ret);
 		return NULL;
 	}
+#else
+	struct rpu_dev *dev = rpu_dev();
+
+	dev->init();
+#endif /* !CONFIG_NRF71_ON_IPC */
 	zep_qspi_priv->qspi_dev = dev;
 	zep_qspi_priv->dev_added = true;
 
@@ -690,15 +903,17 @@ static void zep_shim_bus_qspi_dev_rem(void *priv)
 
 	ARG_UNUSED(dev);
 
+#ifndef CONFIG_NRF71_ON_IPC
 	/* TODO: Make qspi_dev a dynamic instance and remove it here */
 	rpu_disable();
+#endif /* !CONFIG_NRF71_ON_IPC */
 }
 
 static void *zep_shim_bus_qspi_init(void)
 {
 	struct zep_shim_bus_qspi_priv *qspi_priv = NULL;
 
-	qspi_priv = k_calloc(sizeof(*qspi_priv), sizeof(char));
+	qspi_priv = zep_shim_mem_zalloc(sizeof(*qspi_priv));
 
 	if (!qspi_priv) {
 		LOG_ERR("%s: Unable to allocate memory for qspi_priv", __func__);
@@ -714,7 +929,7 @@ static void zep_shim_bus_qspi_deinit(void *os_qspi_priv)
 
 	qspi_priv = os_qspi_priv;
 
-	k_free(qspi_priv);
+	zep_shim_mem_free(qspi_priv);
 }
 
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
@@ -749,6 +964,7 @@ static void zep_shim_bus_qspi_dev_host_map_get(void *os_qspi_dev_ctx,
 	host_map->addr = 0;
 }
 
+#ifndef CONFIG_NRF71_ON_IPC
 static void irq_work_handler(struct k_work *work)
 {
 	int ret = 0;
@@ -781,6 +997,8 @@ static void zep_shim_irq_handler(const struct device *dev, struct gpio_callback 
 	k_work_schedule_for_queue(&zep_wifi_intr_q, &intr_priv->work, K_NO_WAIT);
 }
 
+#endif /* !CONFIG_NRF71_ON_IPC */
+
 static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *callbk_data,
 						       int (*callbk_fn)(void *callbk_data))
 {
@@ -789,7 +1007,15 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 
 	ARG_UNUSED(os_dev_ctx);
 
-	intr_priv = k_calloc(sizeof(*intr_priv), sizeof(char));
+#ifdef CONFIG_NRF71_ON_IPC
+	ret = ipc_register_rx_cb(callbk_fn, callbk_data);
+	if (ret) {
+		LOG_ERR("%s: ipc_register_rx_cb failed\n", __func__);
+		goto out;
+	}
+	status = NRF_WIFI_STATUS_SUCCESS;
+#else
+	intr_priv = zep_shim_mem_zalloc(sizeof(*intr_priv));
 
 	if (!intr_priv) {
 		LOG_ERR("%s: Unable to allocate memory for intr_priv", __func__);
@@ -805,24 +1031,26 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 
 	if (ret) {
 		LOG_ERR("%s: request_irq failed", __func__);
-		k_free(intr_priv);
+		zep_shim_mem_free(intr_priv);
 		intr_priv = NULL;
 		goto out;
 	}
 
 	status = NRF_WIFI_STATUS_SUCCESS;
-
+#endif /* CONFIG_NRF71_ON_IPC */
 out:
 	return status;
 }
 
 static void zep_shim_bus_qspi_intr_unreg(void *os_qspi_dev_ctx)
 {
+#ifndef CONFIG_NRF71_ON_IPC
 	struct k_work_sync sync;
 	int ret;
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 	ARG_UNUSED(os_qspi_dev_ctx);
-
+#ifndef CONFIG_NRF71_ON_IPC
 	ret = rpu_irq_remove(&intr_priv->gpio_cb_data);
 	if (ret) {
 		LOG_ERR("%s: rpu_irq_remove failed", __func__);
@@ -831,8 +1059,9 @@ static void zep_shim_bus_qspi_intr_unreg(void *os_qspi_dev_ctx)
 
 	k_work_cancel_delayable_sync(&intr_priv->work, &sync);
 
-	k_free(intr_priv);
+	zep_shim_mem_free(intr_priv);
 	intr_priv = NULL;
+#endif /*! CONFIG_NRF71_ON_IPC */
 }
 
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
@@ -840,7 +1069,7 @@ static void *zep_shim_timer_alloc(void)
 {
 	struct timer_list *timer = NULL;
 
-	timer = k_malloc(sizeof(*timer));
+	timer = zep_shim_mem_zalloc(sizeof(*timer));
 
 	if (!timer) {
 		LOG_ERR("%s: Unable to allocate memory for work", __func__);
@@ -859,7 +1088,7 @@ static void zep_shim_timer_init(void *timer, void (*callback)(unsigned long), un
 
 static void zep_shim_timer_free(void *timer)
 {
-	k_free(timer);
+	zep_shim_mem_free(timer);
 }
 
 static void zep_shim_timer_schedule(void *timer, unsigned long duration)
@@ -907,16 +1136,18 @@ static unsigned int zep_shim_strlen(const void *str)
 const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.mem_alloc = zep_shim_mem_alloc,
 	.mem_zalloc = zep_shim_mem_zalloc,
-	.mem_free = k_free,
+	.data_mem_zalloc = zep_shim_data_mem_zalloc,
+	.mem_free = zep_shim_mem_free,
+	.data_mem_free = zep_shim_data_mem_free,
 	.mem_cpy = zep_shim_mem_cpy,
 	.mem_set = zep_shim_mem_set,
 	.mem_cmp = zep_shim_mem_cmp,
-
+#ifndef CONFIG_NRF71_ON_IPC
 	.qspi_read_reg32 = zep_shim_qspi_read_reg32,
 	.qspi_write_reg32 = zep_shim_qspi_write_reg32,
 	.qspi_cpy_from = zep_shim_qspi_cpy_from,
 	.qspi_cpy_to = zep_shim_qspi_cpy_to,
-
+#endif /* CONFIG_NRF71_ON_IPC */
 	.spinlock_alloc = zep_shim_spinlock_alloc,
 	.spinlock_free = zep_shim_spinlock_free,
 	.spinlock_init = zep_shim_spinlock_init,
@@ -931,12 +1162,16 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.log_err = zep_shim_pr_err,
 
 	.llist_node_alloc = zep_shim_llist_node_alloc,
+	.ctrl_llist_node_alloc = zep_shim_ctrl_llist_node_alloc,
 	.llist_node_free = zep_shim_llist_node_free,
+	.ctrl_llist_node_free = zep_shim_ctrl_llist_node_free,
 	.llist_node_data_get = zep_shim_llist_node_data_get,
 	.llist_node_data_set = zep_shim_llist_node_data_set,
 
 	.llist_alloc = zep_shim_llist_alloc,
+	.ctrl_llist_alloc = zep_shim_ctrl_llist_alloc,
 	.llist_free = zep_shim_llist_free,
+	.ctrl_llist_free = zep_shim_ctrl_llist_free,
 	.llist_init = zep_shim_llist_init,
 	.llist_add_node_tail = zep_shim_llist_add_node_tail,
 	.llist_add_node_head = zep_shim_llist_add_node_head,
@@ -992,7 +1227,9 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.bus_qspi_ps_wake = zep_shim_bus_qspi_ps_wake,
 	.bus_qspi_ps_status = zep_shim_bus_qspi_ps_status,
 #endif /* CONFIG_NRF_WIFI_LOW_POWER */
-
 	.assert = zep_shim_assert,
 	.strlen = zep_shim_strlen,
+#ifdef CONFIG_NRF71_ON_IPC
+	.ipc_send_msg = ipc_send_msg,
+#endif /* CONFIG_NRF71_ON_IPC */
 };

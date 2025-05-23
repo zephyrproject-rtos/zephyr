@@ -340,7 +340,7 @@ config HAS_HW_NRF_SPIS30
 	def_bool $(dt_nodelabel_enabled_with_compat,spi30,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
 config HAS_HW_NRF_SPIS120
-	def_bool $(dt_nodelabel_enabled_with_compat,spi120,$(DT_COMPAT_NORDIC_NRF_SPIS))
+	def_bool $(dt_nodelabel_enabled_with_compat,spis120,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
 config HAS_HW_NRF_SPIS130
 	def_bool $(dt_nodelabel_enabled_with_compat,spi130,$(DT_COMPAT_NORDIC_NRF_SPIS))

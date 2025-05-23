@@ -175,6 +175,10 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 			}
 
 			if (start) {
+				if (idx > WIFI_MGMT_SCAN_CHAN_MAX_MANUAL) {
+					*chan_idx = idx;
+					break;
+				}
 				band_chan[idx].band = band_idx;
 				band_chan[idx].channel = valid_5g_chans_20mhz[i];
 				idx++;

@@ -1,0 +1,35 @@
+/*
+ * Copyright 2025 Stefan Golinschi <stefan.golinschi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_appcpu.dtsi>
+#include <espressif/partitions_0x0_amp.dtsi>
+
+/ {
+	model = "TDONGLE S3 APPCPU";
+	compatible = "espressif,esp32s3";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};

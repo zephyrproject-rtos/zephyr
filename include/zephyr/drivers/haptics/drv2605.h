@@ -9,6 +9,10 @@
 #include <zephyr/drivers/haptics.h>
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DRV2605_WAVEFORM_SEQUENCER_MAX 8
 
 enum drv2605_library {
@@ -82,5 +86,9 @@ union drv2605_config_data {
  */
 int drv2605_haptic_config(const struct device *dev, enum drv2605_haptics_source source,
 			  const union drv2605_config_data *config_data);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif

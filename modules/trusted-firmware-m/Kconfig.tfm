@@ -22,9 +22,12 @@ config TFM_BOARD
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "arm/musca_b1" if BOARD_V2M_MUSCA_B1
 	default "arm/musca_s1" if BOARD_V2M_MUSCA_S1
+	default "adi/max32657" if BOARD_MAX32657EVKIT_MAX32657_NS
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9160" if SOC_NRF9160
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf9120" if SOC_NRF9120
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l15_cpuapp" if SOC_NRF54L15_CPUAPP
+	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic/nrf54l10_cpuapp" if SOC_NRF54L10_CPUAPP
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.
@@ -206,6 +209,12 @@ config TFM_IMAGE_VERSION_NS
 	help
 	  Version of the non-secure image.
 
+config TFM_BL1
+	bool "Add BL1 to TFM"
+	help
+	  TFM is designed to run with BL1 in a certain configuration.
+	  This config adds BL1 to the build - built via TFM's build system.
+
 config TFM_BL2
 	bool "Add MCUboot to TFM"
 	depends on !TFM_BL2_NOT_SUPPORTED
@@ -239,6 +248,18 @@ config TFM_CONNECTION_BASED_SERVICE_API
 	  Note: This is an auto-generated configuration in the TF-M build
 	  system. When this option is not enabled in the TF-M build system this
 	  will result in compilation error.
+
+
+if TFM_BL1
+
+config TFM_BL2_SIGNING_KEY_PATH
+	string "Path to private key used to sign BL2 firmware images."
+	help
+	  Path to binary BL2 signing private key
+	  Default is ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl1/bl1_2/bl1_dummy_rotpk
+	  if it has not been changed on TF-M side for your board
+
+endif # TFM_BL1
 
 if TFM_BL2
 
@@ -312,6 +333,7 @@ endchoice
 
 config TFM_ETHOS_DRIVER_PATH_LOCAL
 	string "Path to a locally available Ethos-U driver or an empty string"
+	depends on SOC_SERIES_MPS3
 	default "${ZEPHYR_HAL_ETHOS_U_MODULE_DIR}"
 	help
 	  Path to a locally available Ethos-U driver to be used for TF-M builds or

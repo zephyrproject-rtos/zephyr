@@ -1,3 +1,7 @@
+common:
+  build_only: true
+  tags: bluetooth
+
 tests:
   bluetooth.general.tester:
     build_only: true
@@ -7,6 +11,14 @@ tests:
       - nrf52840dk/nrf52840
     tags: bluetooth
     harness: bluetooth
+  bluetooth.general.tester_bsim:
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_prj_conf
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
   bluetooth.general.tester.nxp:
     # Disabling monolithic since CI environment doesn't use blobs
     build_only: true
@@ -25,10 +37,14 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
-    extra_args:
-      # Build config used by AutoPTS for nRF53
-      - EXTRA_CONF_FILE="hci_ipc.conf"
     tags: bluetooth
+    sysbuild: true
+  bluetooth.general.tester_hci_ipc_bsim:
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_prj_conf
     sysbuild: true
   bluetooth.general.tester_le_audio:
     build_only: true
@@ -62,5 +78,14 @@ tests:
       - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_BT_EXT_ADV=n
+    tags: bluetooth
+    harness: bluetooth
+  bluetooth.general.tester_br_edr:
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - EXTRA_CONF_FILE="prj_br.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
     tags: bluetooth
     harness: bluetooth

@@ -1,0 +1,14 @@
+sample:
+  name: fatfs fstab sample
+tests:
+  sample.filesystem.fat_fs.fstab:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="fatfs_fstab.overlay"
+    tags: filesystem
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "I: Filesystem access successful"

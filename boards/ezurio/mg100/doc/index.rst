@@ -49,47 +49,7 @@ Hardware
 Supported Features
 ==================
 
-The MG100 board configuration supports the following
-hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-| QSPI      | on-chip    | qspi/MX25R64(8MB)    |
-+-----------+------------+----------------------+
-| LIS3DH    | I2C(M)     | sensor/lis3dh        |
-+-----------+------------+----------------------+
-| HL7800    | UART       | HL7800 modem driver  |
-+-----------+------------+----------------------+
-| SDMMC     | SPI(M)     | SD Card via SPI      |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 See `MG100 website`_ for a complete list
 of MG100 hardware features.
@@ -148,6 +108,8 @@ SPI MISO = P0.12
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``mg100`` board configuration can be
 built and flashed in the usual way. (see :ref:`build_an_application`

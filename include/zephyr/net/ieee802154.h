@@ -296,7 +296,7 @@ struct ieee802154_context {
 	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
 
 	/** Link layer address (in big endian) */
-	struct net_linkaddr_storage linkaddr;
+	struct net_linkaddr linkaddr;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	/** Security context */

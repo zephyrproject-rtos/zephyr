@@ -5,7 +5,7 @@
 #
 
 set(RT1180_BOARD_DIR
-"${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk/boards/evkmimxrt1180")
+"${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/boards/evkmimxrt1180")
 # Note1: Suggest developers use Secure Provisioning Tool(SPT) to download RT1180 image
 # SPT can be downloaded on NXP web: https://www.nxp.com/design/design-center/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-secure-provisioning-tool:MCUXPRESSO-SECURE-PROVISIONING
 # Details about the usage of SPT on MIMXRT1180-EVK board can be referred on chapter 7 of getting start with Mcuxpresso SDK for MIMXRT1180-EVK doc in SDK package.

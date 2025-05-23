@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Realtek Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTS5912 keyboard matrix controller
+
+compatible: "realtek,rts5912-kbd"
+
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  row-size:
+    required: true
+
+  col-size:
+    required: true
+
+  kso-ignore-mask:
+    type: int
+    default: 0

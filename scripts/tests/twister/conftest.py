@@ -4,12 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''Common fixtures for use in testing the twister tool.'''
-
+import logging
 import os
 import sys
 import pytest
 
 pytest_plugins = ["pytester"]
+logging.getLogger("twister").setLevel(logging.DEBUG)  # requires for testing twister
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))

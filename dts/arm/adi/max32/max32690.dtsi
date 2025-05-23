@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,6 +119,15 @@
 			};
 		};
 
+		hpb: hpb@40039000 {
+			compatible = "adi,max32-hpb";
+			reg = <0x40039000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 4 &gcr ADI_MAX32_CLOCK_BUS1 7>;
+			status = "disabled";
+		};
+
 		spi0: spi@40046000 {
 			compatible = "adi,max32-spi";
 			reg = <0x40046000 0x1000>;
@@ -230,6 +239,18 @@
 			reg = <0x4003d000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 13>;
 			interrupts = <67 0>;
+			status = "disabled";
+		};
+
+		usbhs: usbhs@400b1000 {
+			compatible = "adi,max32-usbhs";
+			reg = <0x400b1000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 3>;
+			interrupts = <2 0>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <6>;
+			num-out-endpoints = <7>;
+			maximum-speed = "high-speed";
 			status = "disabled";
 		};
 	};

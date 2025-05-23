@@ -79,6 +79,43 @@
 			clocks = <&sysclk>;
 			status = "disabled";
 		};
+
+		aes: aes@400c0000 {
+			compatible = "ti,cc23x0-aes";
+			reg = <0x400c0000 0x120>;
+			interrupts = <9 0>;
+			status = "disabled";
+		};
+
+		dma: dma@40026000 {
+			compatible = "ti,cc23x0-dma";
+			reg = <0x40026000 0x524>;
+			interrupts = <8 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		spi0: spi@40030000 {
+			compatible = "ti,cc23x0-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40030000 0x164>;
+			interrupts = <10 0>;
+			status = "disabled";
+		};
+
+		wdt0: watchdog@40001000 {
+			compatible = "ti,cc23x0-wdt";
+			reg = <0x40001000 0x310>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@40002000 {
+			compatible = "ti,cc23x0-rtc";
+			reg = <0x40002000 0x64>;
+			interrupts = <3 0>;
+			status = "disabled";
+		};
 	};
 };
 

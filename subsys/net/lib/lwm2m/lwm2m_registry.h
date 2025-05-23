@@ -219,9 +219,7 @@ struct lwm2m_time_series_resource {
 
 struct lwm2m_cache_read_entry {
 	struct lwm2m_time_series_resource *cache_data;
-	int32_t original_get_head;
-	int32_t original_get_tail;
-	int32_t original_get_base;
+	struct ring_buf_index original_rb_get;
 };
 
 struct lwm2m_cache_read_info {

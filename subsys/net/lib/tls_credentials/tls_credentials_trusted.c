@@ -401,6 +401,7 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
 
 	if (info.size > *credlen) {
 		ret = -EFBIG;
+		*credlen = info.size;
 		goto cleanup;
 	}
 

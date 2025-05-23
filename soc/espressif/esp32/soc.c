@@ -26,8 +26,6 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 	esp_flash_config();
 
-	esp_intr_initialize();
-
 #if CONFIG_ESP_SPIRAM
 	esp_init_psram();
 
@@ -47,8 +45,6 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 void IRAM_ATTR __esp_platform_mcuboot_start(void)
 {
-	esp_intr_initialize();
-
 	/* Start Zephyr */
 	z_prep_c();
 
@@ -67,5 +63,5 @@ int IRAM_ATTR arch_printk_char_out(int c)
 
 void sys_arch_reboot(int type)
 {
-	esp_restart_noos();
+	esp_restart();
 }

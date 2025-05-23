@@ -18,30 +18,25 @@
 
 #define WCH_RCC_CLOCK_ID_OFFSET(id) (((id) >> 5) & 0xFF)
 #define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)
+#define WCH_RCC_SYSCLK              DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll)) && DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)
-#define DT_PLL_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_NODELABEL(pll))
-#if DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
+#if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock) ||                          \
+	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock)
+#define WCH_RCC_SRC_IS_PLL 1
+#if DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(DT_INST_CLOCKS_CTLR(0)), wch_ch32v00x_hse_clock)
+#define WCH_RCC_PLL_SRC_IS_HSE 1
+#elif DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(DT_INST_CLOCKS_CTLR(0)), wch_ch32v00x_hsi_clock)
 #define WCH_RCC_PLL_SRC_IS_HSI 1
 #endif
-#if DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
-#define WCH_RCC_PLL_SRC_IS_HSE 1
-#endif
-#endif
-
-#define DT_RCC_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_NODELABEL(rcc))
-#if DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(pll))
-#define WCH_RCC_SRC_IS_PLL 1
-#endif
-#if DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
-#define WCH_RCC_SRC_IS_HSI 1
-#endif
-#if DT_SAME_NODE(DT_RCC_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
+#elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_hse_clock)
 #define WCH_RCC_SRC_IS_HSE 1
+#elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_hsi_clock)
+#define WCH_RCC_SRC_IS_HSI 1
 #endif
 
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
+	uint8_t mul;
 };
 
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
@@ -84,6 +79,33 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 	return 0;
 }
 
+static void clock_control_wch_rcc_setup_flash(void)
+{
+#if defined(FLASH_ACTLR_LATENCY)
+	uint32_t latency;
+
+#if defined(CONFIG_SOC_CH32V003)
+	if (WCH_RCC_SYSCLK <= 24000000) {
+		latency = FLASH_ACTLR_LATENCY_0;
+	} else {
+		latency = FLASH_ACTLR_LATENCY_1;
+	}
+#elif defined(CONFIG_SOC_SERIES_CH32V00X)
+	if (WCH_RCC_SYSCLK <= 15000000) {
+		latency = FLASH_ACTLR_LATENCY_0;
+	} else if (WCH_RCC_SYSCLK <= 24000000) {
+		latency = FLASH_ACTLR_LATENCY_1;
+	} else {
+		latency = FLASH_ACTLR_LATENCY_2;
+	}
+	FLASH->ACTLR = (FLASH->ACTLR & ~FLASH_ACTLR_LATENCY) | latency;
+#else
+#error Unrecognised SOC family
+#endif
+	FLASH->ACTLR = (FLASH->ACTLR & ~FLASH_ACTLR_LATENCY) | latency;
+#endif
+}
+
 static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.on = clock_control_wch_rcc_on,
 	.get_rate = clock_control_wch_rcc_get_rate,
@@ -91,7 +113,12 @@ static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 
 static int clock_control_wch_rcc_init(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED)) {
+	const struct clock_control_wch_rcc_config *config = dev->config;
+
+	clock_control_wch_rcc_setup_flash();
+
+	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
+	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
 		/* Disable the PLL before potentially changing the input clocks. */
 		RCC->CTLR &= ~RCC_PLLON;
 	}
@@ -123,6 +150,17 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
 		}
 	}
+	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
+		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSE)) {
+			RCC->CFGR0 |= RCC_PLLSRC;
+		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+			RCC->CFGR0 &= ~RCC_PLLSRC;
+		}
+		RCC->CFGR0 |= (config->mul == 18 ? 0xF : (config->mul - 2)) << 0x12;
+		RCC->CTLR |= RCC_PLLON;
+		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
+		}
+	}
 
 	if (IS_ENABLED(WCH_RCC_SRC_IS_HSI)) {
 		RCC->CFGR0 = (RCC->CFGR0 & ~RCC_SW) | RCC_SW_HSI;
@@ -137,8 +175,6 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	RCC->INTR = RCC_CSSC | RCC_PLLRDYC | RCC_HSERDYC | RCC_LSIRDYC;
 	/* HCLK = SYSCLK = APB1 */
 	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | RCC_HPRE_DIV1;
-	/* Set the Flash to 0 wait state */
-	FLASH->ACTLR = (FLASH->ACTLR & ~FLASH_ACTLR_LATENCY) | FLASH_ACTLR_LATENCY_1;
 
 	return 0;
 }
@@ -146,9 +182,11 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 #define CLOCK_CONTROL_WCH_RCC_INIT(idx)                                                            \
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \
 		.regs = (RCC_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
+		.mul = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), mul, 1),                               \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, clock_control_wch_rcc_init, NULL, NULL,                         \
 			      &clock_control_wch_rcc_##idx##_config, PRE_KERNEL_1,                 \
 			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_wch_rcc_api);
 
-DT_INST_FOREACH_STATUS_OKAY(CLOCK_CONTROL_WCH_RCC_INIT)
+/* There is only ever one RCC */
+CLOCK_CONTROL_WCH_RCC_INIT(0)

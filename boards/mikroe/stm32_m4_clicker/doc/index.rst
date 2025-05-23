@@ -18,36 +18,12 @@ board see the `STM32 M4 Clicker website`_.
 Supported Features
 ==================
 
-The ``mikroe_stm32_m4_clicker`` board target supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO output                         |
-|           |            | GPIO input                          |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not yet been enabled for this board.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/mikroe/stm32_m4_clicker/mikroe_stm32_m4_clicker_defconfig`.
+.. zephyr:board-supported-hw::
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building & Flashing
 ===================

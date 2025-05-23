@@ -13,7 +13,7 @@ tests:
       - gd32f350r_eval
     harness: shell
     extra_configs:
-      - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
     min_ram: 12
     integration_platforms:
       - qemu_x86

@@ -1665,7 +1665,12 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	struct net_pkt *pkt;
 	int ret;
 
+#ifdef CONFIG_NET_RAW_MODE
+	/* net_if_get_by_iface is not available in raw mode */
+	NET_DBG("On iface N/A (%p) size %zu", iface, size);
+#else
 	NET_DBG("On iface %d (%p) size %zu", net_if_get_by_iface(iface), iface, size);
+#endif /* CONFIG_NET_RAW_MODE */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	pkt = pkt_alloc_on_iface(slab, iface, timeout, caller, line);
@@ -2007,49 +2012,6 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 	return 0;
 }
 
-static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
-{
-	struct net_buf *buf;
-	uint32_t ret = -EINVAL;
-	uint16_t offset;
-
-	if (!ptr || !pkt || !pkt->buffer) {
-		return ret;
-	}
-
-	offset = 0U;
-	buf = pkt->buffer;
-
-	while (buf) {
-		if (buf->data <= ptr && ptr < (buf->data + buf->len)) {
-			ret = offset + (ptr - buf->data);
-			break;
-		}
-		offset += buf->len;
-		buf = buf->frags;
-	}
-
-	return ret;
-}
-
-static void clone_pkt_lladdr(struct net_pkt *pkt, struct net_pkt *clone_pkt,
-			     struct net_linkaddr *lladdr)
-{
-	int32_t ll_addr_offset;
-
-	if (!lladdr->addr) {
-		return;
-	}
-
-	ll_addr_offset = net_pkt_find_offset(pkt, lladdr->addr);
-
-	if (ll_addr_offset >= 0) {
-		net_pkt_cursor_init(clone_pkt);
-		net_pkt_skip(clone_pkt, ll_addr_offset);
-		lladdr->addr = net_pkt_cursor_get_pos(clone_pkt);
-	}
-}
-
 #if defined(NET_PKT_HAS_CONTROL_BLOCK)
 static inline void clone_pkt_cb(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 {
@@ -2101,17 +2063,6 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 		       sizeof(struct net_linkaddr));
 		memcpy(net_pkt_lladdr_dst(clone_pkt), net_pkt_lladdr_dst(pkt),
 		       sizeof(struct net_linkaddr));
-		/* The link header pointers are usable as-is if we
-		 * shallow-copied the buffer even if they point
-		 * into the fragment memory of the buffer,
-		 * otherwise we have to set the ll address pointer
-		 * relative to the new buffer to avoid dangling
-		 * pointers into the source packet.
-		 */
-		if (pkt->buffer != clone_pkt->buffer) {
-			clone_pkt_lladdr(pkt, clone_pkt, net_pkt_lladdr_src(clone_pkt));
-			clone_pkt_lladdr(pkt, clone_pkt, net_pkt_lladdr_dst(clone_pkt));
-		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {

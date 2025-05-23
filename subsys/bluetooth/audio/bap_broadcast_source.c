@@ -1,7 +1,7 @@
 /*  Bluetooth Audio Broadcast Source */
 
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,6 +191,9 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 	stream->_prev_seq_num = 0U;
 #endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
+	/* Setup the ISO data path */
+	bt_bap_setup_iso_data_path(stream);
+
 	ops = stream->ops;
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(stream);
@@ -317,7 +320,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->tx, qos);
-	bt_bap_iso_configure_data_path(ep, codec_cfg);
+
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -967,7 +970,6 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		 */
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
 			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
-			bt_bap_iso_configure_data_path(stream->ep, codec_cfg);
 		}
 	}
 

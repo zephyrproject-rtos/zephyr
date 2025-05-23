@@ -21,9 +21,9 @@ common:
     - CONFIG_BENCHMARK_RECORDING=y
 
 tests:
-  benchmark.sched_queues.dumb:
+  benchmark.sched_queues.simple:
     extra_configs:
-      - CONFIG_SCHED_DUMB=y
+      - CONFIG_SCHED_SIMPLE=y
 
   benchmark.sched_queues.scalable:
     extra_configs:

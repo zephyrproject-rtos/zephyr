@@ -169,7 +169,7 @@
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
-		int-gpios = <&gpioh 2 0>;
+		int-gpios = <&gpioh 2 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -231,6 +231,7 @@
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	disk-name = "SD";
 	status = "okay";
 };
 

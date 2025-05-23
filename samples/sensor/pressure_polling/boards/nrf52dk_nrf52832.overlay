@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Get a node identifier for pressure sensor.
+ */
+/ {
+	aliases {
+		pressure-sensor = &icp201xx;
+	};
+};
+
+/*
+ * Example configuration of a icp201xx device on an Arduino I2C bus.
+ *
+ * Device address 0x63 is assumed. Your device may have a different
+ * address; check your device documentation if unsure.
+ */
+&arduino_i2c {
+	status = "okay";
+	icp201xx: icp201xx@63 {
+		compatible = "invensense,icp201xx";
+		reg = <0x63>;
+	};
+};
+
+/*
+ * Increase native UART speed to report sensor data.
+ */
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <1000000>;
+};

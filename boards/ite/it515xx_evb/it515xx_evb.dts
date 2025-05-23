@@ -1,0 +1,155 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ite/it51xxx.dtsi>
+#include <ite/it51xxx-pinctrl-map.dtsi>
+
+/ {
+	model = "IT515XX EV-Board";
+	compatible = "ite,it515xx-evb";
+
+	aliases {
+		i2c-0 = &i2c0;
+		led0 = &led0;
+		watchdog0 = &twd0;
+		pwm-0 = &pwm0;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flashctrl;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_clk_gpf2_default
+		     &i2c0_data_gpf3_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <1843200>;
+	pinctrl-0 = <&uart1_rx_gpc7_default
+		     &uart1_tx_gpe6_default>;
+	pinctrl-names = "default";
+};
+
+&ite_uart1_wrapper {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+
+		slot1_partition: partition@20000 {
+			label = "image-1";
+			reg = <0x00020000 DT_SIZE_K(128)>;
+		};
+
+		storage_partition: partition@40000 {
+			label = "storage";
+			reg = <0x00040000 DT_SIZE_K(256)>;
+		};
+	};
+};
+
+&kbd {
+	status = "okay";
+	pinctrl-0 = <&ksi0_default
+		     &ksi1_default
+		     &ksi2_default
+		     &ksi3_default
+		     &ksi4_default
+		     &ksi5_default
+		     &ksi6_default
+		     &ksi7_default
+		     &kso0_default
+		     &kso1_default
+		     &kso2_default
+		     &kso3_default
+		     &kso4_default
+		     &kso5_default
+		     &kso6_default
+		     &kso7_default
+		     &kso8_default
+		     &kso9_default
+		     &kso10_default
+		     &kso11_default
+		     &kso12_default
+		     &kso13_default
+		     &kso14_default
+		     &kso15_default>;
+	pinctrl-names = "default";
+	row-size = <8>;
+	col-size = <16>;
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch3_gpi3_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * test pwm:
+ * If we need pwm output in ITE chip power saving mode,
+ * then we should set pwm output frequency <=324Hz.
+ */
+&pwm0 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C6>;
+	pinctrl-0 = <&pwm0_gpa0_default>;
+	pinctrl-names = "default";
+};
+
+/* test fan */
+&pwm7 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C4>;
+	pinctrl-0 = <&pwm7_gpa7_default>;
+	pinctrl-names = "default";
+};
+
+/* test fan tachometer sensor */
+&tach0 {
+	status = "okay";
+	input-pin = <IT51XXX_TACH_INPUT_PIN_A>;
+	pulses-per-round = <2>;
+	pinctrl-0 = <&tach0a_gpd6_default>;
+	pinctrl-names = "default";
+};
+
+&sha256 {
+	status = "okay";
+};

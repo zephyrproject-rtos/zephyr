@@ -8,7 +8,7 @@ if(CONFIG_CMSIS_DSP)
 
   zephyr_library()
 
-  zephyr_library_compile_options(-Ofast)
+  zephyr_library_compile_options($<TARGET_PROPERTY:compiler,optimization_fast>)
 
   zephyr_include_directories(
     ${CMSIS_DSP_DIR}/Include
@@ -46,8 +46,6 @@ if(CONFIG_CMSIS_DSP)
       zephyr_library_compile_options($<$<STREQUAL:${CMAKE_C_COMPILER_ID},ARMClang>:-flax-vector-conversions=none>)
     endif()
   endif()
-
-  zephyr_library_compile_options(-Ofast)
 
   zephyr_compile_definitions_ifndef(CONFIG_ARM __GNUC_PYTHON__)
 

@@ -11,13 +11,19 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
@@ -25,17 +31,18 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-
-#include "common/bt_str.h"
-
-#include "crypto/bt_crypto.h"
-
-#include "hci_core.h"
-#include "ecc.h"
-#include "keys.h"
 #include "conn_internal.h"
+#include "common/bt_str.h"
+#include "crypto/bt_crypto.h"
+#include "ecc.h"
+#include "hci_core.h"
+#include "keys.h"
 #include "l2cap_internal.h"
 #include "smp.h"
 
@@ -261,6 +268,9 @@ struct bt_smp_br {
 
 	/* Remote key distribution */
 	uint8_t			remote_dist;
+
+	/* Local keys have been distributed */
+	uint8_t			local_distributed;
 
 	/* Encryption Key Size used for connection */
 	uint8_t 			enc_key_size;
@@ -749,6 +759,47 @@ static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 #endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_CLASSIC)
+static bool ltk_derive_link_key_allowed(struct bt_smp *smp)
+{
+	struct bt_conn *conn;
+	struct bt_keys_link_key *link_key;
+	struct bt_keys *keys;
+
+	if (!smp->chan.chan.conn) {
+		return false;
+	}
+
+	conn = smp->chan.chan.conn;
+	keys = conn->le.keys;
+	if (keys == NULL) {
+		return false;
+	}
+
+	/* Check whether it is has been bonded */
+	link_key = bt_keys_find_link_key(&conn->le.dst.a);
+	if (link_key == NULL) {
+		return true;
+	}
+
+	if (link_key->flags & BT_LINK_KEY_DEBUG) {
+		LOG_DBG("Debug LK can be overwrote");
+		return true;
+	}
+
+	if ((link_key->flags & BT_LINK_KEY_AUTHENTICATED) &&
+	    ((keys->flags & BT_KEYS_AUTHENTICATED) == 0)) {
+		LOG_DBG("Stronger LK (MITM) cannot be overwrote by weaker LTK");
+		return false;
+	}
+
+	if ((link_key->flags & BT_LINK_KEY_SC) && ((keys->flags & BT_KEYS_SC) == 0)) {
+		LOG_DBG("Stronger LK (SC) cannot be overwrote by weaker LTK");
+		return false;
+	}
+
+	return true;
+}
+
 static void sc_derive_link_key(struct bt_smp *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
@@ -760,6 +811,17 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	LOG_DBG("");
 
 	/* TODO handle errors? */
+
+	if (!ltk_derive_link_key_allowed(smp)) {
+		LOG_DBG("LK cannot be derived by LTK");
+		return;
+	}
+
+	/* Remove the bonding information */
+	link_key = bt_keys_find_link_key(&conn->le.dst.a);
+	if (link_key != NULL) {
+		bt_keys_link_key_clear(link_key);
+	}
 
 	/*
 	 * At this point remote device identity is known so we can use
@@ -795,21 +857,37 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		bt_keys_link_key_clear(link_key);
 	}
 
-	link_key->flags |= BT_LINK_KEY_SC;
+	if (conn->le.keys->flags & BT_KEYS_SC) {
+		link_key->flags |= BT_LINK_KEY_SC;
+	} else {
+		link_key->flags &= ~BT_LINK_KEY_SC;
+	}
 
 	if (conn->le.keys->flags & BT_KEYS_AUTHENTICATED) {
 		link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 	} else {
 		link_key->flags &= ~BT_LINK_KEY_AUTHENTICATED;
 	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+		/* Store the link key */
+		bt_keys_link_key_store(link_key);
+	}
 }
 
 static void smp_br_reset(struct bt_smp_br *smp)
 {
+	bool br_smp_connected;
+
+	br_smp_connected = atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
+
 	/* Clear flags first in case canceling of timeout fails. The SMP context
 	 * shall be marked as timed out in that case.
 	 */
 	atomic_set(smp->flags, 0);
+
+	/* Set back the status of the flag SMP_FLAG_BR_CONNECTED. */
+	atomic_set_bit_to(smp->flags, SMP_FLAG_BR_CONNECTED, br_smp_connected);
 
 	/* If canceling fails the timeout handler will set the timeout flag and
 	 * mark the it as timed out. No new pairing procedures shall be started
@@ -820,6 +898,29 @@ static void smp_br_reset(struct bt_smp_br *smp)
 	atomic_set(smp->allowed_cmds, 0);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+}
+
+static void smp_br_id_add_replace(struct bt_keys *keys)
+{
+	struct bt_keys *conflict;
+
+	/* Check whether key has been added to resolving list. */
+	if (keys->state & BT_KEYS_ID_ADDED) {
+		bt_id_del(keys);
+	}
+
+	conflict = bt_id_find_conflict(keys);
+	if (conflict != NULL) {
+		int err;
+
+		LOG_DBG("Un-pairing old conflicting bond and finalizing new.");
+
+		err = bt_unpair(conflict->id, &conflict->addr);
+		__ASSERT_NO_MSG(!err);
+	}
+
+	__ASSERT_NO_MSG(!bt_id_find_conflict(keys));
+	bt_id_add(keys);
 }
 
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
@@ -852,8 +953,12 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 			}
 		}
 	} else {
-		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+		bool bond_flag = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
 		struct bt_conn_auth_info_cb *listener, *next;
+
+		if (keys) {
+			smp_br_id_add_replace(keys);
+		}
 
 		if (bond_flag && keys) {
 			bt_keys_store(keys);
@@ -934,10 +1039,17 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void smp_br_init(struct bt_smp_br *smp)
 {
+	bool br_smp_connected;
+
+	br_smp_connected = atomic_test_bit(smp->flags, SMP_FLAG_BR_CONNECTED);
+
 	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
 	(void)memset(smp, 0, offsetof(struct bt_smp_br, chan));
+
+	/* Set back the status of the flag SMP_FLAG_BR_CONNECTED. */
+	atomic_set_bit_to(smp->flags, SMP_FLAG_BR_CONNECTED, br_smp_connected);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 }
@@ -958,7 +1070,8 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) && conn->encrypt != 0x02) {
+	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) &&
+	    conn->encrypt != BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 		LOG_WRN("Using P192 Link Key for P256 LTK derivation");
 	}
 
@@ -968,6 +1081,12 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	 */
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
+
+	keys = bt_keys_find_addr(conn->id, &addr);
+	if (keys != NULL) {
+		LOG_DBG("Clear the current keys for %s", bt_addr_le_str(&addr));
+		bt_keys_clear(keys);
+	}
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
 	if (!keys) {
@@ -1009,6 +1128,12 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		keys->flags |= BT_KEYS_AUTHENTICATED;
 	} else {
 		keys->flags &= ~BT_KEYS_AUTHENTICATED;
+	}
+
+	if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
+		keys->flags |= BT_KEYS_SC;
+	} else {
+		keys->flags &= ~BT_KEYS_SC;
 	}
 
 	LOG_DBG("LTK derived from LinkKey");
@@ -1066,12 +1191,13 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (smp->local_dist & BT_SMP_DIST_ID_KEY) {
+	if ((smp->local_dist & BT_SMP_DIST_ID_KEY) &&
+	    ((smp->local_distributed & BT_SMP_DIST_ID_KEY) == 0)) {
 		struct bt_smp_ident_info *id_info;
 		struct bt_smp_ident_addr_info *id_addr_info;
 		struct net_buf *buf;
 
-		smp->local_dist &= ~BT_SMP_DIST_ID_KEY;
+		smp->local_distributed |= BT_SMP_DIST_ID_KEY;
 
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_IDENT_INFO,
 					sizeof(*id_info));
@@ -1100,11 +1226,12 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-	if (smp->local_dist & BT_SMP_DIST_SIGN) {
+	if ((smp->local_dist & BT_SMP_DIST_SIGN) &&
+	    ((smp->local_distributed & BT_SMP_DIST_SIGN) == 0)) {
 		struct bt_smp_signing_info *info;
 		struct net_buf *buf;
 
-		smp->local_dist &= ~BT_SMP_DIST_SIGN;
+		smp->local_distributed |= BT_SMP_DIST_SIGN;
 
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
 					sizeof(*info));
@@ -1133,12 +1260,42 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 
 static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 {
-	if (smp->chan.chan.conn->encrypt == 0x02) {
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	struct bt_keys_link_key *key;
+	bool le_bonded;
+
+	if (!smp->chan.chan.conn) {
+		return false;
+	}
+
+	conn = smp->chan.chan.conn;
+
+	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_copy(&addr.a, &conn->br.dst);
+	le_bonded = bt_le_bond_exists(BT_ID_DEFAULT, &addr);
+
+	key = bt_keys_find_link_key(&conn->br.dst);
+	if (!key) {
+		return false;
+	}
+
+	/**
+	 * Core v6.0, Vol 3, Part C, 14.1 Cross-transport key derivation
+	 *
+	 * If an LE LTK already exists and the BR/EDR link key is weaker in either strength
+	 * or MITM protection, then neither device shall generate an LE LTK using cross-transport
+	 * key derivation from a BR/EDR link key.
+	 */
+	if (le_bonded && !(key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+		return false;
+	}
+
+	if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
 		return true;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) &&
-	    smp->chan.chan.conn->encrypt == 0x01) {
+	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) && conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_E0) {
 		LOG_WRN("Allowing BR/EDR SMP with P-192 key");
 		return true;
 	}
@@ -1201,7 +1358,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 	rsp->oob_flag = 0x00;
 	rsp->max_key_size = max_key_size;
 	rsp->init_key_dist = (req->init_key_dist & BR_RECV_KEYS_SC);
-	rsp->resp_key_dist = (req->resp_key_dist & BR_RECV_KEYS_SC);
+	rsp->resp_key_dist = (req->resp_key_dist & BR_SEND_KEYS_SC);
 
 	smp->local_dist = rsp->resp_key_dist;
 	smp->remote_dist = rsp->init_key_dist;
@@ -4240,7 +4397,7 @@ static uint8_t smp_public_key_periph(struct bt_smp *smp)
 
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
 	    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
-		/* Deny public key with identitcal X coordinate unless it is the
+		/* Deny public key with identical X coordinate unless it is the
 		 * debug public key.
 		 */
 		LOG_WRN("Remote public key rejected");
@@ -4326,7 +4483,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_CENTRAL) {
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
 		    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
-			/* Deny public key with identitcal X coordinate unless
+			/* Deny public key with identical X coordinate unless
 			 * it is the debug public key.
 			 */
 			LOG_WRN("Remote public key rejected");

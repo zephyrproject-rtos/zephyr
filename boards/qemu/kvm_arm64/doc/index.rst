@@ -48,6 +48,8 @@ CPU's UART0.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Refer to the qemu_cortex_a53 board instructions for this part.
 
 Debugging

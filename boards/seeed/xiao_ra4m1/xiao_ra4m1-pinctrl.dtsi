@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Peter Johanson
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci2_default: sci2_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 2)>,
+			<RA_PSEL(RA_PSEL_SCI_2, 3, 1)>;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			/* MISO MOSI RSPCK */
+			psels = <RA_PSEL(RA_PSEL_SPI, 1, 10)>,
+			<RA_PSEL(RA_PSEL_SPI, 1, 9)>,
+			<RA_PSEL(RA_PSEL_SPI, 1, 11)>;
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USB_VBUS */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 4, 7)>;
+			drive-strength = "high";
+		};
+	};
+};

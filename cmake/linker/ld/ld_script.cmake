@@ -88,6 +88,10 @@ function(group_to_string)
   cmake_parse_arguments(STRING "" "OBJECT;STRING" "" ${ARGN})
 
   get_property(type GLOBAL PROPERTY ${STRING_OBJECT}_OBJ_TYPE)
+
+  # Output a comment for the section start
+  set(${STRING_STRING} "${${STRING_STRING}}\n  /* ${type} : ${STRING_OBJECT} */")
+
   if(${type} STREQUAL REGION)
     get_property(empty GLOBAL PROPERTY ${STRING_OBJECT}_EMPTY)
     if(empty)
@@ -168,6 +172,16 @@ function(group_to_string)
   set(${STRING_STRING} ${${STRING_STRING}} PARENT_SCOPE)
 endfunction()
 
+# Helper to add size-checks and padding to handle MIN_SIZE and MAX_SIZE
+macro(add_min_max_size TEMP min_size max_size symbol_start symbol_end)
+  if(DEFINED ${min_size})
+    set(${TEMP} "${${TEMP}}\n  . = MAX(${${symbol_start}} + ${${min_size}}, .); /*MIN_SIZE*/")
+  endif()
+  if(DEFINED ${max_size})
+    set(${TEMP} "${${TEMP}}\n  ASSERT( ${${symbol_end}} <= ( ${${symbol_start}} + ${${max_size}}), \"MAX_SIZE\");\n . = MIN( ., ${${symbol_start}} + ${${max_size}}); /*MAX_SIZE*/")
+  endif()
+endmacro()
+
 function(section_to_string)
   cmake_parse_arguments(STRING "" "SECTION;STRING" "" ${ARGN})
 
@@ -185,6 +199,8 @@ function(section_to_string)
   get_property(nosymbols  GLOBAL PROPERTY ${STRING_SECTION}_NOSYMBOLS)
   get_property(parent     GLOBAL PROPERTY ${STRING_SECTION}_PARENT)
   get_property(start_syms GLOBAL PROPERTY ${STRING_SECTION}_START_SYMBOLS)
+  get_property(sect_min_size GLOBAL PROPERTY ${STRING_SECTION}_MIN_SIZE)
+  get_property(sect_max_size GLOBAL PROPERTY ${STRING_SECTION}_MAX_SIZE)
 
   string(REGEX REPLACE "^[\.]" "" name_clean "${name}")
   string(REPLACE "." "_" name_clean "${name_clean}")
@@ -212,12 +228,24 @@ function(section_to_string)
 
   set(TEMP "${name} ${address}${type} :${secalign}\n{")
 
+  # Symbol names for size_check
+  set(sect_symbol_start)
+  set(sect_symbol_end)
+
   foreach(start_symbol ${start_syms})
     set(TEMP "${TEMP}\n  ${start_symbol} = .;")
+    set(sect_symbol_start "${start_symbol}")
   endforeach()
 
   if(NOT nosymbols)
     set(TEMP "${TEMP}\n  __${name_clean}_start = .;")
+    set(sect_symbol_start "__${name_clean}_start")
+  endif()
+
+  # Min and Max size may need symbols too, even if the user did not want them
+  if((DEFINED sect_min_size OR DEFINED sect_max_size)
+    AND NOT DEFINED sect_symbol_start)
+      set(sect_symbol_start "__${name_clean}_size_check_start")
   endif()
 
   if(NOT noinput)
@@ -236,8 +264,10 @@ function(section_to_string)
     get_property(input    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_INPUT)
     get_property(symbols  GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_SYMBOLS)
     get_property(offset   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_OFFSET)
+    get_property(min_size   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MIN_SIZE)
+    get_property(max_size   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MAX_SIZE)
 
-    if(DEFINED SETTINGS_ALIGN)
+    if(DEFINED align)
       set(TEMP "${TEMP}\n  . = ALIGN(${align});")
     endif()
 
@@ -250,6 +280,19 @@ function(section_to_string)
         list(GET symbols 1 symbol_end)
       endif()
     endif()
+    # Min and Max size may need symbols too, even if the user did not want them
+    if(DEFINED min_size OR DEFINED max_size)
+      foreach(se "start" "end")
+        if(NOT DEFINED symbol_${se})
+          set(symbol_${se} "__${name_clean}_${idx}_size_check_${se}")
+        endif()
+      endforeach()
+    endif()
+
+    if(DEFINED offset AND NOT ("${offset}" STREQUAL "${current_offset}"))
+      set(TEMP "${TEMP}\n  . = ${offset}; /* OFFSET */")
+      set(current_offset ${offset})
+    endif()
 
     if(DEFINED symbol_start)
       set(TEMP "${TEMP}\n  ${symbol_start} = .;")
@@ -261,21 +304,30 @@ function(section_to_string)
         set(current_offset ${offset})
       endif()
 
-      if(keep AND sort)
-        set(TEMP "${TEMP}\n  KEEP(*(${SORT_TYPE_${sort}}(${setting})));")
-      elseif(SETTINGS_SORT)
-        message(WARNING "Not tested")
-        set(TEMP "${TEMP}\n  *(${SORT_TYPE_${sort}}(${setting}));")
-      elseif(keep)
-        set(TEMP "${TEMP}\n  KEEP(*(${setting}));")
+      #setting may have file-pattern or not.
+      if(setting MATCHES "(.+)\\((.+)\\)")
+        set(file_pattern "${CMAKE_MATCH_1}")
+        set(section_pattern "${CMAKE_MATCH_2}")
       else()
-        set(TEMP "${TEMP}\n  *(${setting})")
+        set(file_pattern "*")
+        set(section_pattern "${setting}")
       endif()
+
+      if(sort)
+        set(section_pattern "${SORT_TYPE_${sort}}(${section_pattern})")
+      endif()
+      set(pattern "${file_pattern}(${section_pattern})")
+      if(keep)
+        set(pattern "KEEP(${pattern})")
+      endif()
+      set(TEMP "${TEMP}\n  ${pattern};")
     endforeach()
 
     if(DEFINED symbol_end)
       set(TEMP "${TEMP}\n  ${symbol_end} = .;")
     endif()
+
+    add_min_max_size(TEMP min_size max_size symbol_start symbol_end)
 
     set(symbol_start)
     set(symbol_end)
@@ -283,11 +335,21 @@ function(section_to_string)
 
   if(NOT nosymbols)
     set(TEMP "${TEMP}\n  __${name_clean}_end = .;")
+    set(sect_symbol_end "__${name_clean}_end")
   endif()
 
   if(DEFINED extra_symbol_end)
     set(TEMP "${TEMP}\n  ${extra_symbol_end} = .;")
+    set(sect_symbol_end "${extra_symbol_end}")
   endif()
+
+  # Min and Max size may need symbols too, even if the user did not want them
+  if((DEFINED sect_min_size OR DEFINED sect_max_size)
+    AND NOT DEFINED sect_symbol_end)
+      set(sect_symbol_end "__${name_clean}_size_check_end")
+  endif()
+
+  add_min_max_size(TEMP sect_min_size sect_max_size sect_symbol_start sect_symbol_end)
 
   set(TEMP "${TEMP}\n}")
 

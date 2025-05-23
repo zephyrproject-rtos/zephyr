@@ -1,16 +1,22 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
 zephyr_library_sources(common.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_TELINK_B91 pinctrl_b91.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_AMBIQ pinctrl_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS2 pinctrl_arm_mps2.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS3 pinctrl_arm_mps3.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_V2M_BEETLE pinctrl_arm_v2m_beetle.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_BFLB pinctrl_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AF pinctrl_gd32_af.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AFIO pinctrl_gd32_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ITE_IT8XXX2 pinctrl_ite_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_NPCX pinctrl_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_NUMICRO pinctrl_numicro.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_NRF pinctrl_nrf.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_MSPM0 pinctrl_mspm0.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_RPI_PICO pinctrl_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_SAM pinctrl_sam.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_SAM0 pinctrl_sam0.c)
@@ -46,5 +52,7 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_MCHP_MEC5 pinctrl_mchp_mec5.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_AFIO pinctrl_wch_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_SY1XX pinctrl_sy1xx.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_REALTEK_RTS5912 pinctrl_realtek_rts5912.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_20X_30X_AFIO pinctrl_wch_20x_30x_afio.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_00X_AFIO pinctrl_wch_00x_afio.c)
 
 add_subdirectory(renesas)

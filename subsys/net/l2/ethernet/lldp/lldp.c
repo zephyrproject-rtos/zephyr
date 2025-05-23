@@ -142,12 +142,17 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		}
 	}
 
-	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(lldp->iface)->addr;
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
-	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)lldp_multicast_eth_addr.addr;
-	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
+				net_if_get_link_addr(lldp->iface));
 
-	if (net_if_send_data(lldp->iface, pkt) == NET_DROP) {
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+			       (uint8_t *)lldp_multicast_eth_addr.addr,
+			       sizeof(struct net_eth_addr));
+
+	/* send without timeout, so we do not risk being blocked by tx when
+	 * being flooded
+	 */
+	if (net_if_try_send_data(lldp->iface, pkt, K_NO_WAIT) == NET_DROP) {
 		net_pkt_unref(pkt);
 		ret = -EIO;
 	}

@@ -41,6 +41,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - lp_em_cc2340r5
     integration_platforms:
       - nucleo_f746zg
   sample.drivers.counter.alarm.stm32_rtc:

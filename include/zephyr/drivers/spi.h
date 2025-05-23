@@ -39,97 +39,175 @@ extern "C" {
  * @name SPI operational mode
  * @{
  */
-#define SPI_OP_MODE_MASTER	0U      /**< Master mode. */
+
+/**
+ * @brief Master (controller) mode.
+ *
+ * In this case the device used with the API will function as a controller,
+ * meaning it will control the CLK line on the SPI bus and the chip select,
+ * and therefore have full control over the timing of the transaction.
+ */
+#define SPI_OP_MODE_MASTER	0U
+
+/**
+ * @brief Slave (peripheral) mode.
+ *
+ * With this mode, the device will function as a peripheral,
+ * meaning it will need to wait for it's select line to be asserted,
+ * and will be need to be subject to pacing by a controller's clock in order to
+ * send and receive data during a transaction.
+ */
 #define SPI_OP_MODE_SLAVE	BIT(0)  /**< Slave mode. */
+
 /** @cond INTERNAL_HIDDEN */
 #define SPI_OP_MODE_MASK	0x1U
 /** @endcond */
-/** Get SPI operational mode. */
+
+/**
+ * @brief Get SPI Operational mode bitmask from a @ref spi_operation_t
+ */
 #define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
 /** @} */
 
+
 /**
- * @name SPI Polarity & Phase Modes
+ * @name SPI Clock Modes
  * @{
  */
 
 /**
- * Clock Polarity: if set, clock idle state will be 1
- * and active state will be 0. If untouched, the inverse will be true
- * which is the default.
+ * @brief Clock Polarity (Clock Idle State)
+ *
+ * @details
+ * Used in @ref spi_operation_t definition.
+ * If set, clock idle state will be 1 and active state will be 0.
+ * If unset, clock idle state will be 0 and active state will be 1.
+ * Unset is the default.
  */
 #define SPI_MODE_CPOL		BIT(1)
 
 /**
- * Clock Phase: this dictates when is the data captured, and depends
- * clock's polarity. When SPI_MODE_CPOL is set and this bit as well,
- * capture will occur on low to high transition and high to low if
- * this bit is not set (default). This is fully reversed if CPOL is
- * not set.
+ * @brief Clock Phase (Clock data capture edge)
+ *
+ * @details
+ * Used in @ref spi_operation_t definition.
+ * If set, data is captured on transition from active to idle CLK state.
+ * If unset, data is captured on transition from idle to active state.
+ * Unset is the default.
  */
 #define SPI_MODE_CPHA		BIT(2)
 
 /**
- * Whatever data is transmitted is looped-back to the receiving buffer of
- * the controller. This is fully controller dependent as some may not
- * support this, and can be used for testing purposes only.
+ * @brief Controller loopback mode
+ *
+ * @details
+ * For testing purposes, enable hardware loopback,
+ * which means that transmit data is fed back to the receiver of the same controller.
+ *
+ * Not all controllers support this feature.
  */
 #define SPI_MODE_LOOP		BIT(3)
+
 /** @cond INTERNAL_HIDDEN */
 #define SPI_MODE_MASK		(0xEU)
 /** @endcond */
-/** Get SPI polarity and phase mode bits. */
+
+/**
+ * @brief Get SPI clock polarity and phase mode bitmask from a @ref spi_operation_t
+ */
 #define SPI_MODE_GET(_mode_)			\
 	((_mode_) & SPI_MODE_MASK)
 
 /** @} */
 
-/**
- * @name SPI Transfer modes (host controller dependent)
- * @{
- */
-#define SPI_TRANSFER_MSB	(0U)    /**< Most significant bit first. */
-#define SPI_TRANSFER_LSB	BIT(4)  /**< Least significant bit first. */
-/** @} */
 
 /**
- * @name SPI word size
+ * @name SPI Data Word Configurations
+ *
+ * A SPI Data word is a value that is shifted in/out of the controller's hardware FIFO
+ * and is the atomic unit of communication on the spi bus.
+ * A word is also called a "data frame" in this API.
+ * A transfer is made up of an arbitrary number of words.
+ * The following options specify configurations of the SPI word for the operation.
+ *
  * @{
  */
+
+/** Words are most significant bit first, used for @ref spi_operation_t */
+#define SPI_TRANSFER_MSB	(0U)
+/** Words are least significant bit first, used for @ref spi_operation_t */
+#define SPI_TRANSFER_LSB	BIT(4)
+
 /** @cond INTERNAL_HIDDEN */
 #define SPI_WORD_SIZE_SHIFT	(5U)
 #define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
 /** @endcond */
-/** Get SPI word size (data frame size) in bits. */
-#define SPI_WORD_SIZE_GET(_operation_)					\
-	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
-/** Set SPI word size (data frame size) in bits. */
-#define SPI_WORD_SET(_word_size_)		\
-	((_word_size_) << SPI_WORD_SIZE_SHIFT)
-/** @} */
 
 /**
- * @name Specific SPI devices control bits
+ * @brief Get SPI word size in bits from a @ref spi_operation_t
+ *
+ * @param operation A @ref spi_operation_t from which to get the configured word size.
+ * @retval The size (in bits) of a spi word for the operation.
+ */
+#define SPI_WORD_SIZE_GET(operation)					\
+	(((operation) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
+
+/**
+ * @brief Get a bitmask to set the word size in a @ref spi_operation_t
+ *
+ * @param word_size The size of a SPI data frame in bits.
+ * @retval A bitmask to apply to a @ref spi_operation_t
+ */
+#define SPI_WORD_SET(word_size)			\
+	((word_size) << SPI_WORD_SIZE_SHIFT)
+
+/** @} */
+
+
+/**
+ * @name SPI Transfer control flags
  * @{
  */
-/** Requests - if possible - to keep CS asserted after the transaction */
+
+/**
+ * @brief Keep chip select active after transaction
+ *
+ * After one of the spi transceive calls described in this API,
+ * if this flag is set in the spi config operation, then
+ * attempt to keep the CS active after the call, if supported and possible.
+ */
 #define SPI_HOLD_ON_CS		BIT(12)
-/** Keep the device locked after the transaction for the current config.
- * Use this with extreme caution (see spi_release() below) as it will
- * prevent other callers to access the SPI device until spi_release() is
- * properly called.
+
+/**
+ * @brief Retain ownership of the spi device
+ *
+ * This is a software control parameter that will prevent the spi device
+ * from being accessed by other API callers after the transaction,
+ * and therefore should be used with caution.
+ *
+ * The identifying piece of information for who "locks" the device
+ * is the spi_config pointer given to the transaction API, so this same
+ * config should be re-used to do another transaction or release the lock.
+ *
+ * See @ref spi_release for how to release the  lock.
  */
 #define SPI_LOCK_ON		BIT(13)
 
-/** Active high logic on CS. Usually, and by default, CS logic is active
- * low. However, some devices may require the reverse logic: active high.
- * This bit will request the controller to use that logic. Note that not
- * all controllers are able to handle that natively. In this case deferring
- * the CS control to a gpio line through struct spi_cs_control would be
- * the solution.
+/**
+ * @brief Chip select active state configuration
+ *
+ * If this flag is set, the CS will be active high.
+ * If this flag is unset, the CS will be active low.
+ *
+ * Default is active low (unset) as that is most common for spi peripherals.
+ *
+ * Not all controllers are able to handle this natively, in which case a
+ * gpio can still be used to control the CS through software with a @ref spi_cs_control
  */
 #define SPI_CS_ACTIVE_HIGH	BIT(14)
+
 /** @} */
+
 
 /**
  * @name SPI MISO lines
@@ -150,10 +228,15 @@ extern "C" {
 /** @} */
 
 /**
+ * @name SPI GPIO Chip Select control
+ * @{
+ */
+
+/**
  * @brief SPI Chip Select control structure
  *
  * This can be used to control a CS line via a GPIO line, instead of
- * using the controller inner CS logic.
+ * using the controller internal CS logic.
  *
  */
 struct spi_cs_control {
@@ -285,6 +368,8 @@ struct spi_cs_control {
 #define SPI_CS_CONTROL_INIT_INST(inst, delay_)		\
 	SPI_CS_CONTROL_INIT(DT_DRV_INST(inst), delay_)
 
+/** @} */
+
 /**
  * @typedef spi_operation_t
  * Opaque type to hold the SPI operation flags.
@@ -297,6 +382,10 @@ typedef uint16_t spi_operation_t;
 
 /**
  * @brief SPI controller configuration structure
+ *
+ * @warning Most drivers use pointer comparison to determine whether a passed
+ * configuration is different from one used in a previous transaction.
+ * Changes to fields in the structure may not be detected.
  */
 struct spi_config {
 	/** @brief Bus frequency in Hertz. */
@@ -307,7 +396,7 @@ struct spi_config {
 	 * It is a bit field with the following parts:
 	 *
 	 * - 0:      Master or slave.
-	 * - 1..3:   Polarity, phase and loop mode.
+	 * - 1..3:   Clock polarity, phase and loop mode.
 	 * - 4:      LSB or MSB first.
 	 * - 5..10:  Size of a data frame (word) in bits.
 	 * - 11:     Full/half duplex.
@@ -454,27 +543,41 @@ struct spi_dt_spec {
 
 /**
  * @brief SPI buffer structure
+ *
+ * A SPI buffer describes either a real data buffer or an indication of NOP
+ * For a NOP indicator:
+ *   If buffer is used for TX, only 0's will be sent for the length on the bus
+ *   If buffer is used for RX, that length of data received by bus will be ignored/skipped
  */
 struct spi_buf {
-	/** Valid pointer to a data buffer, or NULL otherwise */
+	/** Valid pointer to a data buffer, or NULL for NOP indication */
 	void *buf;
-	/** Length of the buffer @a buf in bytes.
-	 * If @a buf is NULL, length which as to be sent as dummy bytes (as TX
-	 * buffer) or the length of bytes that should be skipped (as RX buffer).
-	 */
+	/** Length of the buffer @a buf in bytes, or length of NOP */
 	size_t len;
 };
 
 /**
- * @brief SPI buffer array structure
+ * @brief SPI scatter-gather buffer array structure
+ *
+ * A spi_buf_set is a flexible description of a whole single SPI bus transfer.
+ *
+ * Since the set is an array of pointers to buffers, it means that pieces of a spi transfer
+ * definition can be re-used across different transfers, without having to redefine or allocate
+ * new memory for them each time.
+ * This accomplishes what is called "scatter-gather" buffer management at the driver level with
+ * user-provided buffers.
  */
 struct spi_buf_set {
 	/** Pointer to an array of spi_buf, or NULL */
 	const struct spi_buf *buffers;
-	/** Length of the array (number of buffers) pointed by @a buffers */
+	/** Number of buffers in the array pointed to: by @a buffers */
 	size_t count;
 };
 
+/**
+ * @name SPI Stats
+ * @{
+ */
 #if defined(CONFIG_SPI_STATS)
 STATS_SECT_START(spi)
 STATS_SECT_ENTRY32(rx_bytes)
@@ -528,6 +631,7 @@ struct spi_device_state {
 #define SPI_STATS_TRANSFER_ERROR_INC(dev_)			\
 	STATS_INC(Z_SPI_GET_STATS(dev_), transfer_error)
 
+/** @cond INTERNAL_HIDDEN */
 /**
  * @brief Define a statically allocated and section assigned SPI device state
  */
@@ -551,26 +655,8 @@ struct spi_device_state {
 		stats_register(dev->name, &(state->stats.s_hdr));	\
 		return init_fn(dev);					\
 	}
+/** @endcond */
 
-/**
- * @brief Like DEVICE_DT_DEFINE() with SPI specifics.
- *
- * @details Defines a device which implements the SPI API. May
- * generate a custom device_state container struct and init_fn
- * wrapper when needed depending on SPI @kconfig{CONFIG_SPI_STATS}.
- *
- * @param node_id The devicetree node identifier.
- * @param init_fn Name of the init function of the driver.
- * @param pm_device PM device resources reference (NULL if device does not use PM).
- * @param data_ptr Pointer to the device's private data.
- * @param cfg_ptr The address to the structure containing the configuration
- *                information for this instance of the driver.
- * @param level The initialization level. See SYS_INIT() for details.
- * @param prio Priority within the selected initialization level. See SYS_INIT()
- *             for details.
- * @param api_ptr Provides an initial pointer to the API function struct used by
- *                the driver. Can be NULL.
- */
 #define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
 			     data_ptr, cfg_ptr, level, prio,		\
 			     api_ptr, ...)				\
@@ -579,7 +665,7 @@ struct spi_device_state {
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
 			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			pm_device,					\
+			NULL, Z_DEVICE_DT_FLAGS(node_id), pm_device,	\
 			data_ptr, cfg_ptr, level, prio,			\
 			api_ptr,					\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
@@ -606,18 +692,44 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 		SPI_STATS_RX_BYTES_INCN(dev, rx_bytes);
 	}
 }
+/** @} */
 
 #else /*CONFIG_SPI_STATS*/
 
+/**
+ * @name SPI DT Device Macros
+ * @{
+ */
+/**
+ * @brief Like DEVICE_DT_DEFINE() with SPI specifics.
+ *
+ * @details Defines a device which implements the SPI API. May
+ * generate a custom device_state container struct and init_fn
+ * wrapper when needed depending on SPI @kconfig{CONFIG_SPI_STATS}.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param init_fn Name of the init function of the driver.
+ * @param pm PM device resources reference (NULL if device does not use PM).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the configuration
+ *                information for this instance of the driver.
+ * @param level The initialization level. See SYS_INIT() for details.
+ * @param prio Priority within the selected initialization level. See SYS_INIT()
+ *             for details.
+ * @param api Provides an initial pointer to the API function struct used by
+ *                the driver. Can be NULL.
+ */
 #define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm,		\
 				data, config, level, prio,	\
 				api, ...)			\
 	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));			\
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),			\
-			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,	\
+			DEVICE_DT_NAME(node_id), init_fn, NULL,			\
+			Z_DEVICE_DT_FLAGS(node_id), pm, data, config,		\
 			level, prio, api,					\
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),	\
 			__VA_ARGS__)
+/** @} */
 
 #define SPI_STATS_RX_BYTES_INC(dev_)
 #define SPI_STATS_TX_BYTES_INC(dev_)
@@ -626,6 +738,7 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 #define spi_transceive_stats(dev, error, tx_bufs, rx_bufs)
 
 #endif /*CONFIG_SPI_STATS*/
+
 
 /**
  * @brief Like SPI_DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
@@ -750,9 +863,26 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
 }
 
 /**
+ * @name SPI Synchronous Transfer Functions
+ *
+ * These functions will not return until transfer is complete
+ *
+ * @{
+ */
+
+/**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
  * @note This function is synchronous.
+ *
+ * @note In master mode, the chip select line will remain asserted (active) for
+ *       the entire duration of the transfer of all buffers in the provided buf sets.
+ *       Only after all buffers have been transferred will CS be deasserted.
+ *
+ * @note In peripheral mode, data transfer happens when the master asserts CS and
+ *       provides the clock. The function will wait for the master to complete
+ *       the transfer before returning. The CS is controlled by master
+ *       and therefore may not be continuously asserted for the whole transfer.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -765,6 +895,9 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful in master mode.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 __syscall int spi_transceive(const struct device *dev,
@@ -824,6 +957,9 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_read(const struct device *dev,
@@ -865,6 +1001,9 @@ static inline int spi_read_dt(const struct spi_dt_spec *spec,
  * @param tx_bufs Buffer array where data to be sent originates from.
  *
  * @retval 0 If successful.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_write(const struct device *dev,
@@ -891,8 +1030,20 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
 {
 	return spi_write(spec->bus, &spec->config, tx_bufs);
 }
+/** @} */
 
 #if defined(CONFIG_SPI_ASYNC) || defined(__DOXYGEN__)
+/**
+ * @name SPI Asynchronous Transfer Functions
+ *
+ * With this API the transfer function will return after the transfer is started and
+ * report completion through a notification mechanism: callback or signal.
+ *
+ * @note Note that asynchronous API calls can still be blocking if the bus is already busy.
+ *       The functions will block until the bus is available to start the requested transfer.
+ *
+ * @{
+ */
 
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
@@ -901,6 +1052,9 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *
  * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
+ *
+ * @note The chip select behavior as described by @ref spi_transceive and
+ *       the function of controller/peripheral modes is the same.
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
@@ -918,6 +1072,9 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful in master mode.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_transceive_cb(const struct device *dev,
@@ -944,6 +1101,9 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  *
  * @note This function is asynchronous.
  *
+ * @note The chip select behavior as described by @ref spi_transceive and
+ *       the function of controller/peripheral modes is the same.
+ *
  * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * and @kconfig{CONFIG_POLL} are selected.
  *
@@ -962,6 +1122,9 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful in master mode.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_transceive_signal(const struct device *dev,
@@ -999,6 +1162,9 @@ static inline int spi_transceive_signal(const struct device *dev,
  *
  * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_read_signal(const struct device *dev,
@@ -1030,6 +1196,9 @@ static inline int spi_read_signal(const struct device *dev,
  *        successfully or not).
  *
  * @retval 0 If successful.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
  * @retval -errno Negative errno code on failure.
  */
 static inline int spi_write_signal(const struct device *dev,
@@ -1042,11 +1211,19 @@ static inline int spi_write_signal(const struct device *dev,
 
 #endif /* CONFIG_POLL */
 
+/** @} */
 #endif /* CONFIG_SPI_ASYNC */
 
 
 #if defined(CONFIG_SPI_RTIO) || defined(__DOXYGEN__)
 
+/**
+ * @name SPI RTIO API
+ *
+ * Theses functions are for using the SPI driver class through an RTIO-based API
+ *
+ * @{
+ */
 /**
  * @brief Submit a SPI device with a request
  *
@@ -1063,7 +1240,9 @@ static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	api->iodev_submit(dt_spec->bus, iodev_sqe);
 }
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct rtio_iodev_api spi_iodev_api;
+/** @endcond */
 
 /**
  * @brief Define an iodev for a given dt node on the bus
@@ -1095,6 +1274,7 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
 
 	return spi_is_ready_dt(spec);
 }
+/** @} */
 
 #endif /* CONFIG_SPI_RTIO */
 
@@ -1156,4 +1336,7 @@ static inline int spi_release_dt(const struct spi_dt_spec *spec)
 
 #include <zephyr/syscalls/spi.h>
 
+/**
+ * @}
+ */
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SPI_H_ */

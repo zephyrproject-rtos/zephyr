@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * To support native_posix drivers or tests which register their own arguments
- * we provide the same API as in native_posix
- */
-
 #include "nsi_cmdline.h"
 
 void native_add_command_line_opts(struct args_struct_t *args)

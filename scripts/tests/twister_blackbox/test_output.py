@@ -132,7 +132,11 @@ class TestOutput:
             r'-- Configuring done \([0-9.]+s\)',
             r'-- Generating done \([0-9.]+s\)',
             # Cache location may vary between CI runs
-            r'^.*-- Cache files will be written to:.*$'
+            r'^.*-- Cache files will be written to:.*$',
+            # List of built C object may differ between runs.
+            # See: Issue #87769.
+            # Probable culprits: the cache mechanism, build error
+            r'^Building C object .*$'
         ]
         for pattern in removal_patterns:
             c_pattern = re.compile(pattern, flags=re.MULTILINE)

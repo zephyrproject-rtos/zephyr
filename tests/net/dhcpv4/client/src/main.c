@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include "net_private.h"
 
 /* Sample DHCP offer (420 bytes) */
-static const unsigned char offer[420] = {
+static const unsigned char offer[] = {
 0x02, 0x01, 0x06, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x0a, 0xed, 0x48, 0x9e, 0x0a, 0xb8,
@@ -70,6 +70,8 @@ static const unsigned char offer[420] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 /* Magic cookie: DHCP */
 0x63, 0x82, 0x53, 0x63,
+/* [0] Pad option */
+0x00,
 /* [53] DHCP Message Type: OFFER */
 0x35, 0x01, 0x02,
 /* [1] Subnet Mask: 255.255.255.0 */
@@ -124,7 +126,7 @@ static const unsigned char offer[420] = {
 };
 
 /* Sample DHCPv4 ACK */
-static const unsigned char ack[420] = {
+static const unsigned char ack[] = {
 0x02, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x0a, 0xed, 0x48, 0x9e, 0x00, 0x00, 0x00, 0x00,
@@ -157,6 +159,8 @@ static const unsigned char ack[420] = {
 0x00, 0x00, 0x00, 0x00,
 /* Magic cookie: DHCP */
 0x63, 0x82, 0x53, 0x63,
+/* [0] Pad option */
+0x00,
 /* [53] DHCP Message Type: ACK */
 0x35, 0x01, 0x05,
 /* [58] Renewal Time Value: (21600s) 6 hours */
@@ -229,6 +233,9 @@ struct dhcp_msg {
 	uint32_t xid;
 	uint8_t type;
 };
+
+static uint32_t offer_xid;
+static uint32_t request_xid;
 
 static struct k_sem test_lock;
 
@@ -305,6 +312,8 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 	net_pkt_cursor_init(pkt);
 
 	net_ipv4_finalize(pkt, IPPROTO_UDP);
+
+	offer_xid = xid;
 
 	return pkt;
 
@@ -390,6 +399,10 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 
 			if (net_pkt_read_u8(pkt, &msg->type)) {
 				return 0;
+			}
+
+			if (msg->type == NET_DHCPV4_MSG_TYPE_REQUEST) {
+				request_xid = msg->xid;
 			}
 
 			return 1;
@@ -680,6 +693,8 @@ ZTEST(dhcpv4_tests, test_dhcp)
 	while (event_count < 16) {
 #elif defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 	while (event_count < 10) {
+#elif defined(CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED)
+	while (event_count < 2) {
 #else
 	while (event_count < 5) {
 #endif
@@ -687,6 +702,10 @@ ZTEST(dhcpv4_tests, test_dhcp)
 			zassert_true(false, "Timeout while waiting");
 		}
 	}
+
+	/* Verify that Request xid matched Offer xid. */
+	zassert_equal(offer_xid, request_xid, "Offer/Request xid mismatch, "
+		      "Offer 0x%08x, Request 0x%08x", offer_xid, request_xid);
 }
 
 /**test case main entry */

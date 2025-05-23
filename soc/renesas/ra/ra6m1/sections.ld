@@ -11,7 +11,11 @@ SECTION_DATA_PROLOGUE(.fsp_dtc_vector_table,(NOLOAD),)
 	*(.fsp_dtc_vector_table)
 } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(id_code))
+
 SECTION_PROLOGUE(.id_code,,)
 {
     KEEP(*(.id_code*))
 } GROUP_LINK_IN(ID_CODE)
+
+#endif

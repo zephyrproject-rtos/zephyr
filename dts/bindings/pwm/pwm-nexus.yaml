@@ -1,0 +1,20 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for PWM nexus nodes
+
+properties:
+  pwm-map:
+    type: compound
+    required: true
+
+  pwm-map-mask:
+    type: array
+
+  pwm-map-pass-thru:
+    type: array
+
+  "#pwm-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a PWM specifier

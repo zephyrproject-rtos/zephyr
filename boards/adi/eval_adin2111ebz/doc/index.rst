@@ -46,39 +46,7 @@ https://wiki.analog.com/resources/eval/user-guides/eval-adin2111ebz-user-guide
 Supported Features
 ==================
 
-The ADI adi_eval_adin2111ebz board configuration supports the
-following hardware features:
-
-+--------------+------------+-------------------------------------+
-| Interface    | Controller | Driver/Component                    |
-+==============+============+=====================================+
-| NVIC         | on-chip    | nested vector interrupt controller  |
-+--------------+------------+-------------------------------------+
-| UART         | on-chip    | serial port-polling;                |
-|              |            | serial port-interrupt               |
-+--------------+------------+-------------------------------------+
-| PINMUX       | on-chip    | pinmux                              |
-+--------------+------------+-------------------------------------+
-| GPIO         | on-chip    | gpio                                |
-+--------------+------------+-------------------------------------+
-| I2C          | on-chip    | i2c                                 |
-+--------------+------------+-------------------------------------+
-| SPI          | on-chip    | spi                                 |
-+--------------+------------+-------------------------------------+
-| PWM          | on-chip    | pwm                                 |
-+--------------+------------+-------------------------------------+
-| WATCHDOG     | on-chip    | independent watchdog                |
-+--------------+------------+-------------------------------------+
-| ADIN2111     | spi        | adin2111 10BASE-T1L mac/phy         |
-+--------------+------------+-------------------------------------+
-| FT232        | uart       | usb-uart                            |
-+--------------+------------+-------------------------------------+
-
-
-The default configuration can be found in the defconfig file:
-
-	:zephyr_file:`boards/adi/eval_adin2111ebz/adi_eval_adin2111ebz_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -119,6 +87,8 @@ Same UART1 TX and RX cmos signals are available before the FT232, at P9 connecto
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

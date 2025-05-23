@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Actinius
+ * Copyright (c) 2025 Bang & Olufsen A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +17,7 @@
 
 LOG_MODULE_REGISTER(opt3001, CONFIG_SENSOR_LOG_LEVEL);
 
-static int opt3001_reg_read(const struct device *dev, uint8_t reg,
+int opt3001_reg_read(const struct device *dev, uint8_t reg,
 			    uint16_t *val)
 {
 	const struct opt3001_config *config = dev->config;
@@ -45,7 +46,7 @@ static int opt3001_reg_write(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&config->i2c, tx_buf, sizeof(tx_buf));
 }
 
-static int opt3001_reg_update(const struct device *dev, uint8_t reg,
+int opt3001_reg_update(const struct device *dev, uint8_t reg,
 			      uint16_t mask, uint16_t val)
 {
 	uint16_t old_val;
@@ -85,6 +86,7 @@ static int opt3001_channel_get(const struct device *dev,
 			       struct sensor_value *val)
 {
 	struct opt3001_data *drv_data = dev->data;
+	uint16_t sample = drv_data->sample;
 	int32_t uval;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
@@ -99,8 +101,7 @@ static int opt3001_channel_get(const struct device *dev,
 	 * lux is the integer obtained using the following formula:
 	 * (2^(exponent value)) * 0.01 * mantissa value
 	 */
-	uval = (1 << (drv_data->sample >> OPT3001_SAMPLE_EXPONENT_SHIFT))
-		* (drv_data->sample & OPT3001_MANTISSA_MASK);
+	uval = (1 << (sample >> OPT3001_SAMPLE_EXPONENT_SHIFT)) * (sample & OPT3001_MANTISSA_MASK);
 	val->val1 = uval / 100;
 	val->val2 = (uval % 100) * 10000;
 
@@ -108,6 +109,9 @@ static int opt3001_channel_get(const struct device *dev,
 }
 
 static DEVICE_API(sensor, opt3001_driver_api) = {
+#ifdef CONFIG_OPT3001_TRIGGER
+	.trigger_set = opt3001_trigger_set,
+#endif
 	.sample_fetch = opt3001_sample_fetch,
 	.channel_get = opt3001_channel_get,
 };
@@ -156,6 +160,13 @@ int opt3001_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_OPT3001_TRIGGER
+	if (opt3001_init_interrupt(dev)) {
+		LOG_ERR("Failed to initialize interrupt");
+		return -EIO;
+	}
+#endif
+
 	return 0;
 }
 
@@ -164,6 +175,8 @@ int opt3001_init(const struct device *dev)
 												\
 	static const struct opt3001_config opt3001_config_##inst = {				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		IF_ENABLED(CONFIG_OPT3001_TRIGGER,						\
+			(.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),))		\
 	};											\
 												\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL,					\

@@ -17,7 +17,7 @@
 #include "coex.h"
 #include "coex_struct.h"
 #include "fmac_main.h"
-#include "fmac_api.h"
+#include "common/fmac_api_common.h"
 
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
@@ -103,7 +103,7 @@ const uint16_t config_buffer_5G[] = {
 /* Shared antenna */
 const uint32_t ch_config_sha[] = {
 	0x00000028, 0x00000000, 0x001e1023, 0x00000000, 0x00000000,
-	0x00000000, 0x00000021, 0x000002ca, 0x00000050, 0x00000000,
+	0x00000000, 0x00000021, 0x000002ca, 0x0000005A, 0x00000000,
 	0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
 	0x00000000
 };

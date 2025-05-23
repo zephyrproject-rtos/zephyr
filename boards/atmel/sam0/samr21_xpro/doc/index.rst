@@ -23,33 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The samr21_xpro board configuration supports the following hardware
-features:
-
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vector interrupt controller   |
-+-----------+------------+--------------------------------------+
-| SYSTICK   | on-chip    | systick                              |
-+-----------+------------+--------------------------------------+
-| WDT       | on-chip    | Watchdog                             |
-+-----------+------------+--------------------------------------+
-| GPIO      | on-chip    | I/O ports                            |
-+-----------+------------+--------------------------------------+
-| PWM       | on-chip    | Pulse Width Modulation               |
-+-----------+------------+--------------------------------------+
-| USART     | on-chip    | Serial ports                         |
-+-----------+------------+--------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports    |
-+-----------+------------+--------------------------------------+
-| I2C       | on-chip    | I2C Peripheral Interface ports       |
-+-----------+------------+--------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/atmel/sam0/samr21_xpro/samr21_xpro_defconfig`.
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -159,6 +133,8 @@ echo demo. More information at :zephyr:code-sample:`sockets-echo-server` and
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The SAM R21 Xplained Pro comes with a Atmel Embedded Debugger (EDBG).  This
 provides a debug interface to the SAMR21 chip and is supported by

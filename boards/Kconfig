@@ -2,8 +2,7 @@
 
 config BOARD
 	string
-	# When using hw model v2, then the board is inherited from CMake.
-	default "$(BOARD)" if "$(HWM_SCHEME)" = "v2"
+	default "$(BOARD)"
 	help
 	  This option holds the name of the board and is used to locate the files
 	  related to the board in the source tree (under boards/).
@@ -53,7 +52,7 @@ config NET_DRIVERS
 	  When building for a qemu target then NET_DRIVERS will be default
 	  enabled to allow for easy use of SLIP or PPP
 
-rsource "Kconfig.$(HWM_SCHEME)"
+rsource "Kconfig.v2"
 
 # Parse shields references
 # Don't do it as a menuconfig, as shield selection is a CMake feature.

@@ -78,12 +78,12 @@ static void decrement_coil_charge(const struct device *dev)
 	}
 }
 
-static int power_down_coils(const struct device *dev)
+static int energize_coils(const struct device *dev, const bool energized)
 {
 	const struct gpio_stepper_config *config = dev->config;
 
 	for (int i = 0; i < NUM_CONTROL_PINS; i++) {
-		const int err = gpio_pin_set_dt(&config->control_pins[i], 0u);
+		const int err = gpio_pin_set_dt(&config->control_pins[i], energized);
 
 		if (err != 0) {
 			LOG_ERR("Failed to power down coil %d", i);
@@ -107,20 +107,14 @@ static void update_coil_charge(const struct device *dev)
 	}
 }
 
-static void update_remaining_steps(struct gpio_stepper_data *data)
+static void update_remaining_steps(const struct device *dev)
 {
+	struct gpio_stepper_data *data = dev->data;
+
 	if (data->step_count > 0) {
 		data->step_count--;
-		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
 	} else if (data->step_count < 0) {
 		data->step_count++;
-		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
-	} else {
-		if (!data->callback) {
-			LOG_WRN_ONCE("No callback set");
-			return;
-		}
-		data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED, data->event_cb_user_data);
 	}
 }
 
@@ -141,11 +135,18 @@ static void position_mode_task(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
 
+	update_remaining_steps(dev);
+	(void)stepper_motor_set_coil_charge(dev);
+	update_coil_charge(dev);
 	if (data->step_count) {
-		(void)stepper_motor_set_coil_charge(dev);
-		update_coil_charge(dev);
+		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
+	} else {
+		if (data->callback) {
+			data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED,
+				       data->event_cb_user_data);
+		}
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
 	}
-	update_remaining_steps(dev->data);
 }
 
 static void velocity_mode_task(const struct device *dev)
@@ -223,23 +224,12 @@ static int gpio_stepper_get_actual_position(const struct device *dev, int32_t *p
 static int gpio_stepper_move_to(const struct device *dev, int32_t micro_steps)
 {
 	struct gpio_stepper_data *data = dev->data;
+	int32_t steps_to_move;
 
-	if (!data->is_enabled) {
-		LOG_ERR("Stepper motor is not enabled");
-		return -ECANCELED;
-	}
-
-	if (data->delay_in_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
-		return -EINVAL;
-	}
 	K_SPINLOCK(&data->lock) {
-		data->run_mode = STEPPER_RUN_MODE_POSITION;
-		data->step_count = micro_steps - data->actual_position;
-		update_direction_from_step_count(dev);
-		(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
+		steps_to_move = micro_steps - data->actual_position;
 	}
-	return 0;
+	return gpio_stepper_move_by(dev, steps_to_move);
 }
 
 static int gpio_stepper_is_moving(const struct device *dev, bool *is_moving)
@@ -289,6 +279,7 @@ static int gpio_stepper_set_micro_step_res(const struct device *dev,
 					   enum stepper_micro_step_resolution micro_step_res)
 {
 	struct gpio_stepper_data *data = dev->data;
+	int err = 0;
 
 	K_SPINLOCK(&data->lock) {
 		switch (micro_step_res) {
@@ -298,10 +289,10 @@ static int gpio_stepper_set_micro_step_res(const struct device *dev,
 			break;
 		default:
 			LOG_ERR("Unsupported micro step resolution %d", micro_step_res);
-			return -ENOTSUP;
+			err = -ENOTSUP;
 		}
 	}
-	return 0;
+	return err;
 }
 
 static int gpio_stepper_get_micro_step_res(const struct device *dev,
@@ -324,26 +315,54 @@ static int gpio_stepper_set_event_callback(const struct device *dev,
 	return 0;
 }
 
-static int gpio_stepper_enable(const struct device *dev, bool enable)
+static int gpio_stepper_enable(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
+	int err;
+
+	if (data->is_enabled) {
+		LOG_WRN("Stepper motor is already enabled");
+		return 0;
+	}
 
 	K_SPINLOCK(&data->lock) {
-
-		data->is_enabled = enable;
-
-		if (enable) {
-			(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
-		} else {
-			(void)k_work_cancel_delayable(&data->stepper_dwork);
-			const int err = power_down_coils(dev);
-
-			if (err != 0) {
-				return -EIO;
-			}
+		err = energize_coils(dev, true);
+		if (err == 0) {
+			data->is_enabled = true;
 		}
 	}
-	return 0;
+	return err;
+}
+
+static int gpio_stepper_disable(const struct device *dev)
+{
+	struct gpio_stepper_data *data = dev->data;
+	int err;
+
+	K_SPINLOCK(&data->lock) {
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
+		err = energize_coils(dev, false);
+		if (err == 0) {
+			data->is_enabled = false;
+		}
+	}
+	return err;
+}
+
+static int gpio_stepper_stop(const struct device *dev)
+{
+	struct gpio_stepper_data *data = dev->data;
+	int err;
+
+	K_SPINLOCK(&data->lock) {
+		(void)k_work_cancel_delayable(&data->stepper_dwork);
+		err = energize_coils(dev, true);
+
+		if (data->callback && !err) {
+			data->callback(data->dev, STEPPER_EVENT_STOPPED, data->event_cb_user_data);
+		}
+	}
+	return err;
 }
 
 static int gpio_stepper_init(const struct device *dev)
@@ -362,16 +381,18 @@ static int gpio_stepper_init(const struct device *dev)
 
 static DEVICE_API(stepper, gpio_stepper_api) = {
 	.enable = gpio_stepper_enable,
-	.move_by = gpio_stepper_move_by,
-	.is_moving = gpio_stepper_is_moving,
-	.set_reference_position = gpio_stepper_set_reference_position,
-	.get_actual_position = gpio_stepper_get_actual_position,
-	.move_to = gpio_stepper_move_to,
-	.set_microstep_interval = gpio_stepper_set_microstep_interval,
-	.run = gpio_stepper_run,
+	.disable = gpio_stepper_disable,
 	.set_micro_step_res = gpio_stepper_set_micro_step_res,
 	.get_micro_step_res = gpio_stepper_get_micro_step_res,
+	.set_reference_position = gpio_stepper_set_reference_position,
+	.get_actual_position = gpio_stepper_get_actual_position,
 	.set_event_callback = gpio_stepper_set_event_callback,
+	.set_microstep_interval = gpio_stepper_set_microstep_interval,
+	.move_by = gpio_stepper_move_by,
+	.move_to = gpio_stepper_move_to,
+	.run = gpio_stepper_run,
+	.stop = gpio_stepper_stop,
+	.is_moving = gpio_stepper_is_moving,
 };
 
 #define GPIO_STEPPER_DEFINE(inst)								\

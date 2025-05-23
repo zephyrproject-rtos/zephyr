@@ -43,16 +43,19 @@ ZTEST_SUITE(stepper_shell, NULL, stepper_shell_setup, NULL, NULL, NULL);
 ZTEST(stepper_shell, test_stepper_enable)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(sh, "stepper enable " FAKE_STEPPER_NAME " on");
+	int err = shell_execute_cmd(sh, "stepper enable " FAKE_STEPPER_NAME);
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_enable_fake, err);
-	zassert_equal(fake_stepper_enable_fake.arg1_val, true, "wrong enable value");
+	zassert_equal(err, 0, "stepper enable could not be executed");
+}
 
-	RESET_FAKE(fake_stepper_enable);
+ZTEST(stepper_shell, test_stepper_disable)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err = shell_execute_cmd(sh, "stepper disable " FAKE_STEPPER_NAME);
 
-	err = shell_execute_cmd(sh, "stepper enable " FAKE_STEPPER_NAME " off");
-	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_enable_fake, err);
-	zassert_equal(fake_stepper_enable_fake.arg1_val, false, "wrong enable value");
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_disable_fake, err);
+	zassert_equal(err, 0, "stepper disable could not be executed");
 }
 
 ZTEST(stepper_shell, test_stepper_move_by)
@@ -143,6 +146,15 @@ ZTEST(stepper_shell, test_stepper_run_invalid_direction)
 	int err = shell_execute_cmd(sh, "stepper run " FAKE_STEPPER_NAME " foo");
 
 	zassert_not_equal(err, 0, " executed run with invalid direction value");
+}
+
+ZTEST(stepper_shell, test_stepper_stop)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err = shell_execute_cmd(sh, "stepper stop " FAKE_STEPPER_NAME);
+
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_stop_fake, err);
+	zassert_equal(err, 0, "stepper stop could not be executed");
 }
 
 ZTEST(stepper_shell, test_stepper_info)

@@ -14,6 +14,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf5340dk/nrf5340/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.uart.uart_errors.async:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     platform_allow:
@@ -21,6 +22,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf5340dk/nrf5340/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_INTERRUPT_DRIVEN=n

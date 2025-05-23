@@ -1,6 +1,7 @@
 # IPv6 Options
 
 # Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2025 Aerlync Labs Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig NET_IPV6
@@ -80,6 +81,13 @@ config NET_INITIAL_MCAST_HOP_LIMIT
 	  The default is 1 (same as in IPv4) which means that multicast packets
 	  don't leave the local network unless the application explicitly
 	  requests it.
+
+config NET_INITIAL_IPV6_MCAST_LOOP
+	bool "Control whether the socket sees multicast packets sent by itself"
+	default y
+	help
+	  Assign initial value to IPV6_MULTICAST_LOOP in socket options,
+	  if not set by the user using setsockopt().
 
 config NET_IPV6_MAX_NEIGHBORS
 	int "How many IPv6 neighbors are supported"

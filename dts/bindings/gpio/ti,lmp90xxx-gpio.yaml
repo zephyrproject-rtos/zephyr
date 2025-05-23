@@ -1,4 +1,4 @@
-description: TI LMP90xxx GPIO controller binding
+description: TI LMP90xxx GPIO Controller
 
 compatible: "ti,lmp90xxx-gpio"
 

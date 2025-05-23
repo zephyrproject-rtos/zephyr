@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  This allows you to define a group of LEDs. Each LED in the group is
-  controlled by a GPIO. Each LED is defined in a child node of the
-  gpio-leds node.
+  Group of GPIO-controlled LEDs.
+
+  Each LED is defined in a child node of the gpio-leds node.
 
   Here is an example which defines three LEDs in the node /leds:
 

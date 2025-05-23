@@ -366,7 +366,7 @@ initialization levels:
 
 Within each initialization level you may specify a priority level, relative to
 other devices in the same initialization level. The priority level is specified
-as an integer value in the range 0 to 99; lower values indicate earlier
+as an integer value in the range 0 to 999; lower values indicate earlier
 initialization.  The priority level must be a decimal integer literal without
 leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``\#define MY_INIT_PRIO 32``); symbolic expressions are *not* permitted (e.g.
@@ -590,7 +590,7 @@ would be in the driver config struct:
 Drivers that do not use Zephyr Device Model
 ===========================================
 
-Some drivers or driver-like code may not user Zephyr's device model,
+Some drivers or driver-like code may not use Zephyr's device model,
 and alternative storage must be arranged for the MMIO data. An
 example of this are timer drivers, or interrupt controller code.
 

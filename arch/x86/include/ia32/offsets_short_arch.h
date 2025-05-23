@@ -14,6 +14,9 @@
 #define _kernel_offset_to_isf \
 	(___kernel_t_arch_OFFSET + ___kernel_arch_t_isf_OFFSET)
 
+#define _kernel_offset_to_fpu_owner \
+	(___kernel_t_cpus_OFFSET + ___cpu_t_arch_OFFSET + ___cpu_arch_t_fpu_owner_OFFSET)
+
 /* end - kernel */
 
 /* threads */

@@ -52,29 +52,7 @@ More information about STM32G071RB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32g071b_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| UCPD      | on-chip    | ucpd                                |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32g071b_disco/stm32g071b_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -107,6 +85,8 @@ For more details please refer to `STM32G0 Discovery board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The STM32G071B Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
 

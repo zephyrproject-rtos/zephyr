@@ -3,7 +3,7 @@
 
 include: base.yaml
 
-description: RTC (real-time clock) device common bindings
+description: RTC (real-time clock) device
 
 properties:
   alarms-count:

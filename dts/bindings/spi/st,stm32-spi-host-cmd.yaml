@@ -3,6 +3,7 @@
 
 description: |
         Host Command version of STM32 SPI controller.
+
         All properties are the same, but a different driver is used.
 
 compatible: "st,stm32-spi-host-cmd"

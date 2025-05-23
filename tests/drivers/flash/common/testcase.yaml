@@ -46,7 +46,9 @@ tests:
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
@@ -94,3 +96,45 @@ tests:
       - gd32vf103v_eval
       - gd32a503v_eval
       - gd32f470i_eval
+  drivers.flash.common.silabs.dma:
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_DMA=y
+  drivers.flash.common.silabs.dma.lpwrite:
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_DMA=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/silabs_s2_lpwrite.overlay
+  drivers.flash.common.silabs.dma_read:
+    platform_allow:
+      - xg24_rb4187c
+      - xg29_rb4412a
+    extra_configs:
+      - CONFIG_DMA=y
+      - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
+  drivers.flash.common.stm32:
+    filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
+      and CONFIG_SOC_FAMILY_STM32
+      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+    integration_platforms:
+      - nucleo_g474re
+    platform_exclude:
+      - nucleo_wb55rg
+  drivers.flash.common.non_quad_mode:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/mx25r64_non_quad.overlay
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+  drivers.flash.common.disable_spi_nor:
+    filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+    extra_args:
+      - CONFIG_SPI_NOR=n

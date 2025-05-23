@@ -6,11 +6,29 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <zephyr/kernel.h>
-#include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -20,35 +38,29 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-#include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/direction.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/hci_vs.h>
-#include <zephyr/bluetooth/att.h>
-
+#include "addr_internal.h"
+#include "adv.h"
+#include "att_internal.h"
+#include "buf_view.h"
+#include "classic/conn_br_internal.h"
+#include "classic/sco_internal.h"
+#include "classic/ssp.h"
 #include "common/assert.h"
 #include "common/bt_str.h"
-
-#include "buf_view.h"
-#include "addr_internal.h"
+#include "conn_internal.h"
+#include "direction_internal.h"
 #include "hci_core.h"
 #include "id.h"
-#include "adv.h"
-#include "scan.h"
-#include "conn_internal.h"
-#include "l2cap_internal.h"
-#include "keys.h"
-#include "smp.h"
-#include "classic/ssp.h"
-#include "att_internal.h"
 #include "iso_internal.h"
-#include "direction_internal.h"
-#include "classic/sco_internal.h"
+#include "keys.h"
+#include "l2cap_internal.h"
+#include "scan.h"
+#include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_conn);
 
 K_FIFO_DEFINE(free_tx);
@@ -108,11 +120,9 @@ sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 
 static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
 
-static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
+static struct bt_conn_tx conn_tx[CONFIG_BT_BUF_ACL_TX_COUNT];
 
 #if defined(CONFIG_BT_CLASSIC)
-static int bt_hci_connect_br_cancel(struct bt_conn *conn);
-
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CLASSIC */
 #endif /* CONFIG_BT_CONN */
@@ -378,11 +388,10 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 	conn->rx = NULL;
 }
 
-static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
+			uint8_t flags)
 {
 	uint16_t acl_total_len;
-
-	bt_acl_set_ncp_sent(buf, false);
 
 	/* Check packet boundary flags */
 	switch (flags) {
@@ -395,7 +404,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		LOG_DBG("First, len %u final %u", buf->len,
 			(buf->len < sizeof(uint16_t)) ? 0 : sys_get_le16(buf->data));
 
-		conn->rx = net_buf_ref(buf);
+		conn->rx = buf;
 		break;
 	case BT_ACL_CONT:
 		if (!conn->rx) {
@@ -425,6 +434,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		}
 
 		net_buf_add_mem(conn->rx, buf->data, buf->len);
+		net_buf_unref(buf);
 		break;
 	default:
 		/* BT_ACL_START_NO_FLUSH and BT_ACL_COMPLETE are not allowed on
@@ -441,10 +451,6 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		/* Still not enough data received to retrieve the L2CAP header
 		 * length field.
 		 */
-		bt_send_one_host_num_completed_packets(conn->handle);
-		bt_acl_set_ncp_sent(buf, true);
-		net_buf_unref(buf);
-
 		return;
 	}
 
@@ -452,16 +458,10 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 
 	if (conn->rx->len < acl_total_len) {
 		/* L2CAP frame not complete. */
-		bt_send_one_host_num_completed_packets(conn->handle);
-		bt_acl_set_ncp_sent(buf, true);
-		net_buf_unref(buf);
-
 		return;
 	}
 
-	net_buf_unref(buf);
-
-	if (conn->rx->len > acl_total_len) {
+	if ((conn->type != BT_CONN_TYPE_BR) && (conn->rx->len > acl_total_len)) {
 		LOG_ERR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
 		bt_conn_reset_rx_state(conn);
 		return;
@@ -471,10 +471,12 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 	buf = conn->rx;
 	conn->rx = NULL;
 
-	__ASSERT(buf->ref == 1, "buf->ref %d", buf->ref);
-
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
-	bt_l2cap_recv(conn, buf, true);
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
+		bt_br_acl_recv(conn, buf, true);
+	} else {
+		bt_l2cap_recv(conn, buf, true);
+	}
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
@@ -541,7 +543,7 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ACL);
 
 	return bt_send(buf);
 }
@@ -599,7 +601,7 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
+	net_buf_push_u8(buf, BT_HCI_H4_ISO);
 
 	return bt_send(buf);
 }
@@ -1883,6 +1885,9 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 #if defined(CONFIG_BT_CLASSIC)
 		else if (conn->type == BT_CONN_TYPE_BR) {
 			return bt_hci_connect_br_cancel(conn);
+		} else if (conn->type == BT_CONN_TYPE_SCO) {
+			/* There is no HCI cmd to cancel SCO connecting from spec */
+			return -EPROTONOSUPPORT;
 		}
 #endif /* CONFIG_BT_CLASSIC */
 		else {
@@ -2297,66 +2302,9 @@ static struct bt_conn *acl_conn_new(void)
 }
 
 #if defined(CONFIG_BT_CLASSIC)
-void bt_sco_cleanup(struct bt_conn *sco_conn)
-{
-	bt_sco_cleanup_acl(sco_conn);
-	bt_conn_unref(sco_conn);
-}
-
 static struct bt_conn *sco_conn_new(void)
 {
 	return bt_conn_new(sco_conns, ARRAY_SIZE(sco_conns));
-}
-
-struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
-				  const struct bt_br_conn_param *param)
-{
-	struct bt_hci_cp_connect *cp;
-	struct bt_conn *conn;
-	struct net_buf *buf;
-
-	conn = bt_conn_lookup_addr_br(peer);
-	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_INITIATING:
-		case BT_CONN_CONNECTED:
-			return conn;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
-	}
-
-	conn = bt_conn_add_br(peer);
-	if (!conn) {
-		return NULL;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
-	if (!buf) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	(void)memset(cp, 0, sizeof(*cp));
-
-	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
-	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
-	cp->pscan_rep_mode = 0x02; /* R2 */
-	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
-	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_INITIATING);
-	conn->role = BT_CONN_ROLE_CENTRAL;
-
-	return conn;
 }
 
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
@@ -2389,6 +2337,11 @@ struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 {
 	int i;
+
+	if (peer == NULL) {
+		LOG_DBG("Invalid peer address");
+		return NULL;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
 		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
@@ -2461,36 +2414,6 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 
 	return conn;
 }
-
-static int bt_hci_connect_br_cancel(struct bt_conn *conn)
-{
-	struct bt_hci_cp_connect_cancel *cp;
-	struct bt_hci_rp_connect_cancel *rp;
-	struct net_buf *buf, *rsp;
-	int err;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	rp = (void *)rsp->data;
-
-	err = rp->status ? -EIO : 0;
-
-	net_buf_unref(rsp);
-
-	return err;
-}
-
 #endif /* CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_SMP)
@@ -2978,7 +2901,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
-		    conn->iso.info.type == BT_ISO_CHAN_TYPE_CONNECTED && conn->iso.acl != NULL) {
+		    (conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
+		     conn->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
+		    conn->iso.acl != NULL) {
 			info->le.dst = &conn->iso.acl->le.dst;
 			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
 		} else {
@@ -3003,8 +2928,7 @@ bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type)
 	return (conn->type & type) != 0;
 }
 
-int bt_conn_get_remote_info(struct bt_conn *conn,
-			    struct bt_conn_remote_info *remote_info)
+int bt_conn_get_remote_info(const struct bt_conn *conn, struct bt_conn_remote_info *remote_info)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)) {
 		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
@@ -3400,53 +3324,56 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 #endif /* CONFIG_BT_SUBRATING */
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
-void notify_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_capabilities params)
+void notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
+				   struct bt_conn_le_cs_capabilities *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_remote_capabilities_available) {
-			callback->le_cs_remote_capabilities_available(conn, &params);
+		if (callback->le_cs_read_remote_capabilities_complete) {
+			callback->le_cs_read_remote_capabilities_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_remote_capabilities_available) {
-			cb->le_cs_remote_capabilities_available(conn, &params);
+		if (cb->le_cs_read_remote_capabilities_complete) {
+			cb->le_cs_read_remote_capabilities_complete(conn, status, params);
 		}
 	}
 }
 
-void notify_remote_cs_fae_table(struct bt_conn *conn, struct bt_conn_le_cs_fae_table params)
+void notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
+				struct bt_conn_le_cs_fae_table *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_remote_fae_table_available) {
-			callback->le_cs_remote_fae_table_available(conn, &params);
+		if (callback->le_cs_read_remote_fae_table_complete) {
+			callback->le_cs_read_remote_fae_table_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_remote_fae_table_available) {
-			cb->le_cs_remote_fae_table_available(conn, &params);
+		if (cb->le_cs_read_remote_fae_table_complete) {
+			cb->le_cs_read_remote_fae_table_complete(conn, status, params);
 		}
 	}
 }
 
-void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params)
+void notify_cs_config_created(struct bt_conn *conn, uint8_t status,
+			      struct bt_conn_le_cs_config *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_config_created) {
-			callback->le_cs_config_created(conn, params);
+		if (callback->le_cs_config_complete) {
+			callback->le_cs_config_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_config_created) {
-			cb->le_cs_config_created(conn, params);
+		if (cb->le_cs_config_complete) {
+			cb->le_cs_config_complete(conn, status, params);
 		}
 	}
 }
@@ -3468,37 +3395,37 @@ void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 	}
 }
 
-void notify_cs_security_enable_available(struct bt_conn *conn)
+void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_security_enabled) {
-			callback->le_cs_security_enabled(conn);
+		if (callback->le_cs_security_enable_complete) {
+			callback->le_cs_security_enable_complete(conn, status);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_security_enabled) {
-			cb->le_cs_security_enabled(conn);
+		if (cb->le_cs_security_enable_complete) {
+			cb->le_cs_security_enable_complete(conn, status);
 		}
 	}
 }
 
-void notify_cs_procedure_enable_available(struct bt_conn *conn,
+void notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
 					  struct bt_conn_le_cs_procedure_enable_complete *params)
 {
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->le_cs_procedure_enabled) {
-			callback->le_cs_procedure_enabled(conn, params);
+		if (callback->le_cs_procedure_enable_complete) {
+			callback->le_cs_procedure_enable_complete(conn, status, params);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->le_cs_procedure_enabled) {
-			cb->le_cs_procedure_enabled(conn, params);
+		if (cb->le_cs_procedure_enable_complete) {
+			cb->le_cs_procedure_enable_complete(conn, status, params);
 		}
 	}
 }

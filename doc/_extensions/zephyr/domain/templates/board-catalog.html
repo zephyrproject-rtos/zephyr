@@ -17,7 +17,6 @@
     <div class="select-container">
       <select id="arch">
         <option value="" disabled selected>Select an architecture</option>
-        <option value="nios2">Altera Nios II</option>
         <option value="arm">ARM</option>
         <option value="arm64">ARM 64</option>
         <option value="mips">MIPS</option>
@@ -61,7 +60,7 @@
   </div>
 
   <div class="form-group" style="flex-basis: 100%">
-    <label for="hw-capabilities">Supported Hardware Capabilities</label>
+    <label for="tag-input">Supported Hardware Capabilities</label>
     <div class="tag-container" id="tag-container">
       <input list="tag-list" class="tag-input" id="tag-input"
              placeholder="{% if hw_features_present -%}

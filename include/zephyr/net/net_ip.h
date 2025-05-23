@@ -496,7 +496,11 @@ enum net_ip_mtu {
 	/** IPv4 MTU length. We must be able to receive this size IPv4 packet
 	 * without fragmentation.
 	 */
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	NET_IPV4_MTU = CONFIG_NET_IPV4_MTU,
+#else
 	NET_IPV4_MTU = 576,
+#endif
 };
 
 /** @brief Network packet priority settings described in IEEE 802.1Q Annex I.1 */
@@ -1539,9 +1543,24 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 		}
 
 		break;
+	default:
+		return false;
 	}
 
 	return false;
+}
+
+/**
+ * @brief Get sockaddr from sockaddr_storage. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket storage address
+ *
+ * @return Pointer to socket address (struct sockaddr)
+ */
+static inline struct sockaddr *net_sad(const struct sockaddr_storage *addr)
+{
+	return (struct sockaddr *)addr;
 }
 
 /**
@@ -1656,6 +1675,32 @@ __syscall char *net_addr_ntop(sa_family_t family, const void *src,
 			      char *dst, size_t size);
 
 /**
+ * @brief Create netmask from mask length.
+ *
+ * @param family IP address family (AF_INET or AF_INET6)
+ * @param mask_len Netmask length (in IPv4) or prefix length (in IPv6)
+ * @param mask Pointer to struct sockaddr_in if family is AF_INET or
+ * pointer to struct sockaddr_in6 if family is AF_INET6
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_mask_len_to_netmask(sa_family_t family, uint8_t mask_len,
+			    struct sockaddr *mask);
+
+/**
+ * @brief Create mask length from netmask.
+ *
+ * @param family IP address family (AF_INET or AF_INET6)
+ * @param mask Pointer to struct sockaddr_in if family is AF_INET or
+ * pointer to struct sockaddr_in6 if family is AF_INET6
+ * @param mask_len Netmask length (in IPv4) or prefix length (in IPv6)
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_netmask_to_mask_len(sa_family_t family, struct sockaddr *mask,
+			    uint8_t *mask_len);
+
+/**
  * @brief Parse a string that contains either IPv4 or IPv6 address
  * and optional port, and store the information in user supplied
  * sockaddr struct.
@@ -1678,6 +1723,36 @@ __syscall char *net_addr_ntop(sa_family_t family, const void *src,
  */
 bool net_ipaddr_parse(const char *str, size_t str_len,
 		      struct sockaddr *addr);
+
+/**
+ * @brief Parse a string that contains either IPv4 or IPv6 address
+ * and optional mask len, and store the information in user supplied
+ * sockaddr struct. There can be multiple IP addresses separated by
+ * comma or space. The function returns the pointer to the next IP address
+ * in the string.
+ *
+ * @details Syntax of the IP address string:
+ *   192.0.2.1/24
+ *   192.0.2.42
+ *   2001:db8::1/64
+ *   2001:db8::2
+ *   2001:db::42/128
+ *   2001:db8::1/64,192.0.2.1,2001:db8::2,192.0.2.2/24
+ *   2001:db8::1/64 192.0.2.1 2001:db8::2 192.0.2.2/24
+ * Note that the str_len parameter is used to restrict the amount of
+ * characters that are checked.
+ *
+ * @param str String that contains the IP address.
+ * @param str_len Length of the string to be parsed.
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param mask_len Pointer to mask_len which is returned to the caller.
+ *
+ * @return NULL if there was an error while parsing.
+ *         "" if we could parse the IP address and there is nothing more to parse.
+ *         All other values point to next character after the "," or " " in the string.
+ */
+const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
+				  struct sockaddr *addr, uint8_t *mask_len);
 
 /**
  * @brief Set the default port in the sockaddr structure.

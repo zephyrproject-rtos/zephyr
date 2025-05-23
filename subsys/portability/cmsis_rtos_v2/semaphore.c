@@ -47,11 +47,7 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 
 	k_sem_init(&semaphore->z_semaphore, initial_count, max_count);
 
-	if (attr->name == NULL) {
-		strncpy(semaphore->name, init_sema_attrs.name, sizeof(semaphore->name) - 1);
-	} else {
-		strncpy(semaphore->name, attr->name, sizeof(semaphore->name) - 1);
-	}
+	semaphore->name = (attr->name == NULL) ? init_sema_attrs.name : attr->name;
 
 	return (osSemaphoreId_t)semaphore;
 }
@@ -148,13 +144,16 @@ osStatus_t osSemaphoreDelete(osSemaphoreId_t semaphore_id)
 	return osOK;
 }
 
+/**
+ * @brief Get name of a semaphore.
+ * This function may be called from Interrupt Service Routines.
+ */
 const char *osSemaphoreGetName(osSemaphoreId_t semaphore_id)
 {
 	struct cmsis_rtos_semaphore_cb *semaphore = (struct cmsis_rtos_semaphore_cb *)semaphore_id;
 
-	if (!k_is_in_isr() && (semaphore_id != NULL)) {
-		return semaphore->name;
-	} else {
+	if (semaphore == NULL) {
 		return NULL;
 	}
+	return semaphore->name;
 }

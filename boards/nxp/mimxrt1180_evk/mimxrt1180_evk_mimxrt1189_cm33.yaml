@@ -20,6 +20,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - mbox
   - netif:eth
   - pwm
   - uart
@@ -27,6 +28,6 @@ supported:
   - dma
   - spi
   - watchdog
-  - usb_device
+  - usbd
   - sdhc
 vendor: nxp

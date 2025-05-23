@@ -1000,8 +1000,6 @@ static int shi_npcx_init_registers(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), shi_npcx_isr, DEVICE_DT_INST_GET(0),
 		    0);
 
-	shi_npcx_enable(dev);
-
 	return ret;
 }
 

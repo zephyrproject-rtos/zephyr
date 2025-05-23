@@ -44,6 +44,9 @@ struct dma_stm32_config {
 	uint8_t offset; /* position in the list of dmamux channel list */
 #endif
 	struct dma_stm32_stream *streams;
+#ifdef CONFIG_DMA_STM32U5
+	volatile uint32_t *linked_list_buffer;
+#endif
 };
 
 uint32_t dma_stm32_id_to_stream(uint32_t id);
@@ -52,7 +55,8 @@ uint32_t dma_stm32_slot_to_channel(uint32_t id);
 #endif
 
 typedef void (*dma_stm32_clear_flag_func)(DMA_TypeDef *DMAx);
-#if !defined(CONFIG_SOC_SERIES_STM32G0X) && \
+#if !defined(CONFIG_SOC_SERIES_STM32C0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32H7X) && \
 	!defined(CONFIG_SOC_SERIES_STM32U0X)
 typedef uint32_t (*dma_stm32_check_flag_func)(DMA_TypeDef *DMAx);

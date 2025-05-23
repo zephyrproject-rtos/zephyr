@@ -1,4 +1,4 @@
-description: RV32M1 pinmux node
+description: RV32M1 pinmux
 
 compatible: "openisa,rv32m1-pinmux"
 

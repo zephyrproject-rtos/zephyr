@@ -573,7 +573,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordU32x2(TID_HEAP_ALIGNED_ALLOC, (uint32_t)(uintptr_t)heap,              \
 				   (uint32_t)timeout.ticks)
 
-#define sys_port_trace_k_heap_aligned_alloc_blocking(heap, timeout)
+#define sys_port_trace_k_heap_alloc_helper_blocking(heap, timeout)
 
 #define sys_port_trace_k_heap_aligned_alloc_exit(heap, timeout, ret)                               \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_HEAP_ALIGNED_ALLOC, (uint32_t)ret)
@@ -655,6 +655,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCall(TID_SYSCALL)
 
 void sys_trace_idle(void);
+void sys_trace_idle_exit(void);
 
 void sys_trace_k_thread_create(struct k_thread *new_thread, size_t stack_size, int prio);
 void sys_trace_k_thread_user_mode_enter(k_thread_entry_t entry, void *p1, void *p2, void *p3);

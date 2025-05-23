@@ -20,34 +20,7 @@ The following parts are built into the board:
 Supported Features
 ==================
 
-The innblue22 board configuration supports the following
-hardware (as of nRF9160) features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPU       | on-chip    | system protection    |
-+-----------+------------+----------------------+
-| UARTE     | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -76,6 +49,8 @@ Security components
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 innblue22 supports the Armv8m Security Extension, and by default boots
 in the Secure state.

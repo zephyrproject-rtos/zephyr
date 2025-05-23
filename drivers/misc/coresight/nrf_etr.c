@@ -203,13 +203,13 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 	static const char *tp_d32 = "%d %08x";
 	const char *dname = stm_m_name[packet->major];
 	static const char *sname = "tp";
-	const char **lptr;
+	const char *lptr;
 
 	if (packet->id >= CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE) {
-		TYPE_SECTION_GET(const char *, log_stmesp_ptr,
-				 packet->id - CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE, &lptr);
-		uint8_t level = (uint8_t)((*lptr)[0]) - (uint8_t)'0';
-		const char *ptr = *lptr + 1;
+		lptr = log_frontend_stmesp_demux_str_get(packet->major,
+				packet->id - CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE);
+		uint8_t level = (uint8_t)(lptr[0]) - (uint8_t)'0';
+		const char *ptr = lptr + 1;
 		static const union cbprintf_package_hdr desc0 = {
 			.desc = {.len = 2 /* hdr + fmt */}};
 		static const union cbprintf_package_hdr desc1 = {

@@ -1,4 +1,4 @@
-# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 if((CONFIG_BOARD_NEORV32) AND (CONFIG_BUILD_OUTPUT_BIN))
@@ -18,7 +18,7 @@ if((CONFIG_BOARD_NEORV32) AND (CONFIG_BUILD_OUTPUT_BIN))
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${IMAGE_GEN}
-      ARGS -app_img
+      ARGS -app_vhd
       ${CONFIG_KERNEL_BIN_NAME}.bin
       ${CONFIG_KERNEL_BIN_NAME}.vhd
       ${PROJECT_BINARY_DIR}

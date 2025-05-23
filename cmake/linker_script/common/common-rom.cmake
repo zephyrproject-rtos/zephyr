@@ -1,4 +1,7 @@
-# originates from common-rom.ld
+# SPDX-License-Identifier: Apache-2.0
+# The contents of this file is based on include/zephyr/linker/common-rom.ld
+# and som of include/zephyr/linker/common-rom/*.ld
+# Please keep in sync
 
 zephyr_linker_section(NAME init KVMA RAM_REGION GROUP RODATA_REGION)
 zephyr_linker_section_obj_level(SECTION init LEVEL EARLY)
@@ -7,9 +10,6 @@ zephyr_linker_section_obj_level(SECTION init LEVEL PRE_KERNEL_2)
 zephyr_linker_section_obj_level(SECTION init LEVEL POST_KERNEL)
 zephyr_linker_section_obj_level(SECTION init LEVEL APPLICATION)
 zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
-
-zephyr_linker_section(NAME deferred_init_list KVMA RAM_REGION GROUP RODATA_REGION)
-zephyr_linker_section_configure(SECTION deferred_init_list INPUT ".z_deferred_init*" KEEP SORT NAME)
 
 zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
@@ -20,10 +20,16 @@ if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_DYNAMIC_INTERRUPTS)
     SECTION sw_isr_table
     INPUT ".gnu.linkonce.sw_isr_table*"
   )
+  if(CONFIG_SHARED_INTERRUPTS)
+    zephyr_linker_section_configure(
+      SECTION sw_isr_table
+      INPUT ".gnu.linkonce.shared_sw_isr_table*"
+    )
+  endif()
 endif()
 
 zephyr_linker_section(NAME initlevel_error KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)
-zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_[_A-Z0-9]*" KEEP SORT NAME)
+zephyr_linker_section_configure(SECTION initlevel_error INPUT ".z_init_*" KEEP SORT NAME)
 # How to do cross linker ?
 # ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
@@ -69,16 +75,7 @@ endif()
 if(CONFIG_USERSPACE)
   # Build-time assignment of permissions to kernel objects to
   # threads declared with K_THREAD_DEFINE()
-  zephyr_linker_section(
-    NAME k_object_assignment_area
-    VMA FLASH NOINPUT
-    SUBALIGN 4
-  )
-  zephyr_linker_section_configure(
-    SECTION k_object_assignment
-    INPUT ".k_object_assignment.static.*"
-    KEEP SORT NAME
-  )
+  zephyr_iterable_section(NAME k_object_assignment VMA FLASH SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 endif()
 
 zephyr_linker_section(
@@ -176,6 +173,9 @@ endif()
 zephyr_iterable_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 zephyr_iterable_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+
+zephyr_linker_section(NAME symbol_to_keep GROUP RODATA_REGION NOINPUT)
+zephyr_linker_section_configure(SECTION symbol_to_keep INPUT ".symbol_to_keep*" KEEP SORT NAME)
 
 zephyr_iterable_section(NAME shell KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 

@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -53,12 +54,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <stm32_ll_system.h>
 #endif
 
-#ifdef CONFIG_NOCACHE_MEMORY
 #include <zephyr/linker/linker-defs.h>
-#elif defined(CONFIG_CACHE_MANAGEMENT)
-#include <zephyr/arch/cache.h>
-#endif /* CONFIG_NOCACHE_MEMORY */
-
 
 /* Here are some redefinitions of ADC versions for better readability */
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
@@ -281,7 +277,7 @@ static int adc_stm32_dma_start(const struct device *dev,
  *		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) | ... )>;
  *	};
  */
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
+static bool buf_in_nocache(uintptr_t buf __maybe_unused, size_t len_bytes __maybe_unused)
 {
 	bool buf_within_nocache = false;
 
@@ -293,8 +289,10 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	}
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#ifdef CONFIG_MEM_ATTR
 	buf_within_nocache = mem_attr_check_buf(
 		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
+#endif /* CONFIG_MEM_ATTR */
 
 	return buf_within_nocache;
 }
@@ -821,6 +819,9 @@ static void dma_callback(const struct device *dev, void *user_data,
 			LL_ADC_REG_StopConversion(adc);
 #endif
 			dma_stop(data->dma.dma_dev, data->dma.channel);
+			if (data->ctx.options.interval_us != 0U) {
+				adc_context_disable_timer(&data->ctx);
+			}
 			adc_context_complete(&data->ctx, status);
 		}
 	}

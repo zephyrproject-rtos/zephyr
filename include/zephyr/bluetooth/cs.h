@@ -22,6 +22,8 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -601,6 +603,12 @@ int bt_le_cs_set_default_settings(struct bt_conn *conn,
  * This command is used to read the per-channel mode-0 Frequency Actuation Error
  * table of the remote Controller.
  *
+ * If the remote controller supports a Frequency Actuation Error of zero relative
+ * to its mode-0 transmissions in the reflector role
+ * (see @ref bt_conn_le_cs_capabilities::cs_without_fae_supported), calling this
+ * function is not needed and the read remote FAE table complete event will be
+ * generated with an error code.
+ *
  * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
  *
  * @param conn   Connection Object.
@@ -869,6 +877,11 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  *  This command is used to write a cached copy of the per-channel mode-0
  *  Frequency Actuation Error table of the remote device in the local Controller.
  *
+ *  If the remote controller supports a Frequency Actuation Error of zero relative
+ *  to its mode-0 transmissions in the reflector role
+ *  (see @ref bt_conn_le_cs_capabilities::cs_without_fae_supported), calling this
+ *  function is not needed. An error code will be returned.
+ *
  * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
  *
  * @param conn   Connection Object.
@@ -877,6 +890,27 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72]);
+
+/** @brief Get antenna path used for the CS tone exchange
+ *	   when using multiple antenna paths for mode-2 or mode-3
+ *	   CS procedure.
+ *
+ *	   The function implements antenna path permutation defined in
+ *	   Bluetooth Core Specification 6.0, Vol. 6, Part H, Section 4.7.5.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param n_ap				 The number of antenna paths, range: [1, 4].
+ * @param antenna_path_permutation_index Antenna Path Permutation Index.
+ * @param tone_index			 Index of the tone in the CS step, range [0, n_ap].
+ *					 tone_index = n_ap corresponds to extension slot.
+ *
+ * @return Antenna path used to exchange CS tones, range: [0, 3].
+ * @return -EINVAL if arguments are invalid.
+ */
+int bt_le_cs_get_antenna_path(uint8_t n_ap,
+			      uint8_t antenna_path_permutation_index,
+			      uint8_t tone_index);
 
 #ifdef __cplusplus
 }

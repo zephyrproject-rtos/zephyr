@@ -2,10 +2,8 @@ board:
   name: neorv32
   full_name: NEORV32
   vendor: others
-  revision:
-    format: major.minor.patch
-    default: "1.8.6"
-    revisions:
-      - name: "1.8.6"
   socs:
     - name: neorv32
+      variants:
+        - name: "minimalboot"
+        - name: "up5kdemo"

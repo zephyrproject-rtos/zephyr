@@ -89,9 +89,6 @@ void soc_early_init_hook(void)
 #else
 	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-	while (LL_PWR_IsActiveFlag_VOS() == 0) {
-	}
 
 	/* Errata ES0392 Rev 8:
 	 * 2.2.9: Reading from AXI SRAM may lead to data read corruption

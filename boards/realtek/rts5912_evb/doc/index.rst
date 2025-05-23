@@ -29,28 +29,12 @@ The board is powered through the +5V USB Type-C connector or adaptor.
 Supported Features
 ==================
 
-The ``rts5912_evb`` supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| SCCON     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| RTMR      | on-chip    | timer                               |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Building
 ========

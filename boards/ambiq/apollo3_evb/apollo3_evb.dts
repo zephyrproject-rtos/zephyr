@@ -30,7 +30,6 @@
 		sw1 = &button1;
 		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
-		rtc = &rtc0;
 	};
 
 	leds {
@@ -139,57 +138,33 @@
 	status = "okay";
 };
 
-&spi0 {
-	pinctrl-0 = <&spi0_default>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
-	clock-frequency = <DT_FREQ_M(1)>;
-	status = "okay";
+&iom0 {
+	spi0: spi {
+		pinctrl-0 = <&spi0_default>;
+		pinctrl-names = "default";
+		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
+	};
 };
 
-&i2c3 {
-	pinctrl-0 = <&i2c3_default>;
-	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	scl-gpios = <&gpio32_63 10 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-	sda-gpios = <&gpio32_63 11 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
-	status = "okay";
+&iom3 {
+	i2c3: i2c {
+		pinctrl-0 = <&i2c3_default>;
+		pinctrl-names = "default";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		scl-gpios = <&gpio32_63 10 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpio32_63 11 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		status = "disabled";
+	};
 };
 
 &counter0 {
-	status = "okay";
-};
-
-&counter1 {
-	status = "okay";
-};
-
-&counter2 {
-	status = "okay";
-};
-
-&counter3 {
-	status = "okay";
-};
-
-&counter4 {
-	status = "okay";
-};
-
-&counter5 {
-	status = "okay";
-};
-
-&counter6 {
-	status = "okay";
-};
-
-&counter7 {
-	status = "okay";
+	status = "disabled";
 };
 
 &rtc0 {
-	status = "okay";
+	status = "disabled";
 	clock = "XTAL";
 };
 

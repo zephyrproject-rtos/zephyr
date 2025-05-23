@@ -85,12 +85,12 @@ tests:
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
-      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc/esp32/procpu
       - esp32s2_saola
       - esp32c3_devkitm
       - esp32s3_devkitm/esp32s3/procpu
       - esp8684_devkitm
-      - esp32c6_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
   sample.net.wifi.siwx91x_offloaded:
     extra_args:
       - CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD=y

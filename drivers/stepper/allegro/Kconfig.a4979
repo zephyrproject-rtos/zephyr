@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+config A4979_STEPPER
+	bool "Activate allegro A4979 stepper driver"
+	default y
+	depends on DT_HAS_ALLEGRO_A4979_ENABLED
+	select STEP_DIR_STEPPER
+	help
+	  Microstepping motor driver for stepper motors.

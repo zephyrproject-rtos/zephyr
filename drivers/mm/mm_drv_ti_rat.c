@@ -24,7 +24,21 @@
 #include <zephyr/drivers/mm/system_mm.h>
 #include <zephyr/sys/__assert.h>
 
-static struct address_trans_params translate_config;
+#define ADDR_TRANSLATE_MAX_REGIONS (16u)
+#define RAT_CTRL(base_addr, i)     (base_addr + 0x20 + 0x10 * (i))
+#define RAT_BASE(base_addr, i)     (base_addr + 0x24 + 0x10 * (i))
+#define RAT_TRANS_L(base_addr, i)  (base_addr + 0x28 + 0x10 * (i))
+#define RAT_TRANS_H(base_addr, i)  (base_addr + 0x2C + 0x10 * (i))
+#define RAT_CTRL_W(enable, size)   (((enable & 0x1) << 31u) | (size & 0x3F))
+
+/**
+ * @brief Parameters for address_trans_init
+ */
+static struct address_trans_params {
+	uint32_t num_regions;
+	uint32_t rat_base_addr;
+	struct address_trans_region_config *region_config;
+} translate_config;
 
 /**
  * @brief Set registers for the address regions being used
@@ -34,13 +48,13 @@ static struct address_trans_params translate_config;
  * @param enable Region status
  */
 
-static void address_trans_set_region(struct address_trans_params *addr_translate_config,
+static void address_trans_set_region(struct address_trans_region_config *region_config,
 			uint16_t region_num, uint32_t enable)
 {
-	uint32_t rat_base_addr = addr_translate_config->rat_base_addr;
-	uint64_t system_addr = addr_translate_config->region_config[region_num].system_addr;
-	uint32_t local_addr = addr_translate_config->region_config[region_num].local_addr;
-	uint32_t size = addr_translate_config->region_config[region_num].size;
+	uint32_t rat_base_addr = translate_config.rat_base_addr;
+	uint64_t system_addr = region_config->system_addr;
+	uint32_t local_addr = region_config->local_addr;
+	uint32_t size = region_config->size;
 	uint32_t system_addrL, system_addrH;
 
 	if (size > address_trans_region_size_4G) {
@@ -57,27 +71,6 @@ static void address_trans_set_region(struct address_trans_params *addr_translate
 	sys_write32(RAT_CTRL_W(enable, size), RAT_CTRL(rat_base_addr, region_num));
 }
 
-static void address_trans_init(struct address_trans_params *params)
-{
-	uint32_t i;
-
-	if (params != NULL) {
-		translate_config = *params;
-	}
-
-	__ASSERT(translate_config.num_regions < ADDR_TRANSLATE_MAX_REGIONS,
-		 "Exceeding maximum number of regions");
-
-	for (i = 0; i < translate_config.num_regions; i++) {
-		__ASSERT(translate_config.rat_base_addr != 0, "RAT base address cannot be 0");
-		__ASSERT(translate_config.region_config != NULL,
-			 "RAT region config cannot be NULL");
-
-		/* enable regions setup by user */
-		address_trans_set_region(&translate_config, i, 1);
-	}
-}
-
 /**
  * @brief Initialise RAT module
  *
@@ -86,59 +79,60 @@ static void address_trans_init(struct address_trans_params *params)
  * @param translate_regions Number of regions being initialised
  */
 
-void sys_mm_drv_ti_rat_init(void *region_config, uint64_t rat_base_addr, uint8_t translate_regions)
+void sys_mm_drv_ti_rat_init(struct address_trans_region_config *region_config,
+			    uint64_t rat_base_addr, uint8_t translate_regions)
 {
+	uint32_t i;
+
+	__ASSERT(translate_regions < ADDR_TRANSLATE_MAX_REGIONS, "Maximum regions exceeded");
+	__ASSERT(rat_base_addr != 0, "RAT base address cannot be 0");
+	__ASSERT(region_config != NULL, "RAT region config cannot be NULL");
+
 	translate_config.num_regions = translate_regions;
 	translate_config.rat_base_addr = rat_base_addr;
-	translate_config.region_config = (struct address_trans_region_config *)region_config;
+	translate_config.region_config = region_config;
 
-	address_trans_init(&translate_config);
+	/* enable regions setup by user */
+	for (i = 0; i < translate_regions; i++) {
+		address_trans_set_region(&region_config[i], i, 1);
+	}
 }
 
 int sys_mm_drv_page_phys_get(void *virt, uintptr_t *phys)
 {
-	if (virt == NULL) {
-		return -EINVAL;
+	if (phys == NULL) {
+		/*
+		 * NULL phys means the caller wants to check if a virtual address is
+		 * valid. For RAT, even addresses without a mapping are still valid and
+		 * are mapped as pass-through in HW, so we always return 0(valid) here.
+		 */
+		return 0;
 	}
 	uintptr_t pa = (uintptr_t) virt;
 	uintptr_t *va = phys;
 
-	uint32_t found, regionId;
-
-	__ASSERT(translate_config.num_regions < ADDR_TRANSLATE_MAX_REGIONS,
-		 "Exceeding maximum number of regions");
-
-	found = 0;
+	uint32_t regionId;
 
 	for (regionId = 0; regionId < translate_config.num_regions; regionId++) {
-		uint64_t start_addr, end_addr;
-		uint32_t size_mask;
+		struct address_trans_region_config *region_config =
+			&translate_config.region_config[regionId];
 
-		size_mask =
-			((uint32_t)((BIT64_MASK(translate_config.region_config[regionId].size))));
+		uint64_t start_addr = region_config->system_addr;
+		uint64_t end_addr = start_addr + BIT64_MASK(region_config->size);
 
-		start_addr = translate_config.region_config[regionId].system_addr;
-
-		end_addr = start_addr + size_mask;
-
-		if (pa >= start_addr && pa <= end_addr) {
-			found = 1;
-			break;
+		if (pa < start_addr || pa > end_addr) {
+			continue;
 		}
-	}
-	if (found) {
+
 		/* translate input address to output address */
-		uint32_t offset =
-			pa - translate_config.region_config[regionId].system_addr;
+		uint32_t offset = pa - start_addr;
+		*va = region_config->local_addr + offset;
 
-		*va = (translate_config.region_config[regionId].local_addr + offset);
-	} else {
-		/* no mapping found, set output = input with 32b truncation */
-		*va = pa;
+		return 0;
 	}
 
-	if (va == NULL) {
-		return -EFAULT;
-	}
+	/* no mapping found, set output = input with 32b truncation */
+	*va = pa;
+
 	return 0;
 }

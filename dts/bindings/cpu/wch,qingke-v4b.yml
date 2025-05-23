@@ -1,0 +1,8 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH QingKe V4B RISC-V MCU
+
+compatible: "wch,qingke-v4b"
+
+include: riscv,cpus.yaml

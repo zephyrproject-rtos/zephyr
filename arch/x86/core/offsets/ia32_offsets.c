@@ -33,6 +33,12 @@
 GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 #endif
 
+#if defined(CONFIG_FPU_SHARING)
+GEN_OFFSET_SYM(_kernel_t, cpus);
+GEN_OFFSET_SYM(_cpu_t, arch);
+GEN_OFFSET_SYM(_cpu_arch_t, fpu_owner);
+#endif
+
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
 #ifndef CONFIG_X86_COMMON_PAGE_TABLE

@@ -17,6 +17,7 @@ tests:
       - stm32f072b_disco
       - stm32f3_disco
       - stm32h573i_dk
+      - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
       - nucleo_c071rb
       - nucleo_g071rb
@@ -27,6 +28,7 @@ tests:
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_u083rc
+      - nucleo_wba55cg
       - nucleo_wb55rg
       - rpi_pico
       - sltb010a@0
@@ -38,6 +40,7 @@ tests:
   drivers.i2c.target_api.single_role:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - mcxw72_evk/mcxw727c/cpu0
       - mimxrt1170_evk@B/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
@@ -48,6 +51,8 @@ tests:
       - frdm_ke17z512
       - frdm_mcxn236
       - frdm_mcxa156
+      - frdm_mcxa166
+      - frdm_mcxa276
       - max32655evkit/max32655/m4
       - max32662evkit
       - max32666evkit/max32666/cpu0
@@ -59,5 +64,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - max32690evkit/max32690/m4

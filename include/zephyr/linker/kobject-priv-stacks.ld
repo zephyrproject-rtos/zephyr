@@ -3,12 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/* Please keep in sync with cmake/linker_script/common/kobject-priv-stacks.cmake */
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_GEN_PRIV_STACKS
 	SECTION_DATA_PROLOGUE(priv_stacks_noinit,(NOLOAD),)
 	{
-	z_priv_stacks_ram_start = .;
+	PLACE_SYMBOL_HERE(z_priv_stacks_ram_start);
 
 	/* During LINKER_KOBJECT_PREBUILT and LINKER_ZEPHYR_PREBUILT,
 	 * space needs to be reserved for the rodata that will be
@@ -35,7 +36,7 @@
 	*(".priv_stacks.noinit")
 #endif /* LINKER_ZEPHYR_FINAL */
 
-	z_priv_stacks_ram_end = .;
+	PLACE_SYMBOL_HERE(z_priv_stacks_ram_end);
 
 #if defined(LINKER_ZEPHYR_FINAL)
 #ifdef KOBJECT_PRIV_STACKS_ALIGN

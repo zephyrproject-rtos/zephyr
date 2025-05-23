@@ -133,7 +133,7 @@ struct _ready_q {
 	struct k_thread *cache;
 #endif
 
-#if defined(CONFIG_SCHED_DUMB)
+#if defined(CONFIG_SCHED_SIMPLE)
 	sys_dlist_t runq;
 #elif defined(CONFIG_SCHED_SCALABLE)
 	struct _priq_rb runq;
@@ -217,20 +217,6 @@ struct z_kernel {
 	struct _ready_q ready_q;
 #endif
 
-#ifdef CONFIG_FPU_SHARING
-	/*
-	 * A 'current_sse' field does not exist in addition to the 'current_fp'
-	 * field since it's not possible to divide the IA-32 non-integer
-	 * registers into 2 distinct blocks owned by differing threads.  In
-	 * other words, given that the 'fxnsave/fxrstor' instructions
-	 * save/restore both the X87 FPU and XMM registers, it's not possible
-	 * for a thread to only "own" the XMM registers.
-	 */
-
-	/* thread that owns the FP regs */
-	struct k_thread *current_fp;
-#endif
-
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
 #endif
@@ -270,6 +256,8 @@ __attribute_const__ struct k_thread *z_smp_current_get(void);
 #define _current_cpu (&_kernel.cpus[0])
 #define _current _kernel.cpus[0].current
 #endif
+
+#define CPU_ID ((CONFIG_MP_MAX_NUM_CPUS == 1) ? 0 : _current_cpu->id)
 
 /* This is always invoked from a context where preemption is disabled */
 #define z_current_thread_set(thread) ({ _current_cpu->current = (thread); })

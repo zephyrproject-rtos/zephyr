@@ -149,6 +149,18 @@ def dt_node_enabled(kconf, name, node):
     return "y" if node and node.status == "okay" else "n"
 
 
+def dt_nodelabel_exists(kconf, _, label):
+    """
+    This function returns "y" if a nodelabel exists and "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.label2node.get(label)
+
+    return "y" if node else "n"
+
+
 def dt_nodelabel_enabled(kconf, _, label):
     """
     This function is like dt_node_enabled(), but the 'label' argument
@@ -1030,6 +1042,7 @@ functions = {
         "dt_chosen_has_compat": (dt_chosen_has_compat, 2, 2),
         "dt_path_enabled": (dt_node_enabled, 1, 1),
         "dt_alias_enabled": (dt_node_enabled, 1, 1),
+        "dt_nodelabel_exists": (dt_nodelabel_exists, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
         "dt_nodelabel_enabled_with_compat": (dt_nodelabel_enabled_with_compat, 2, 2),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),

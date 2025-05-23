@@ -1,7 +1,7 @@
 # Copyright (c) 2019 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: LPC I2C node
+description: LPC I2C
 
 compatible: "nxp,lpc-i2c"
 

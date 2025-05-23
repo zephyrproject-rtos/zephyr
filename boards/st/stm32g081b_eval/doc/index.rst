@@ -93,29 +93,7 @@ More information about STM32G081RB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32g081b_eval board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| UCPD      | on-chip    + ucpd                                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported in this Zephyr port.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32g081b_eval/stm32g081b_eval_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -145,6 +123,8 @@ For more details please refer to `STM32G0 Evaluation board User Manual`_.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The STM32G081B Evaluation board includes an ST-LINK/V2-1 embedded debug tool interface.
 

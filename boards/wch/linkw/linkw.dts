@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v208/ch32v208gbu.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "linkw-pinctrl.dtsi"
+
+/ {
+	model = "linkw";
+	compatible = "wch,ch32v208";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		green_led: led0 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+		};
+
+		blue_led: led1 {
+			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		mode: sw0 {
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		boot: sw1 {
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		sw0 = &mode;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(32)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&usart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+};

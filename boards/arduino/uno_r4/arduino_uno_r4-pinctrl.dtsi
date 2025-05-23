@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci2_default: sci2_default {
+		group1 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 2)>;
+			drive-strength = "medium";
+		};
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 3, 1)>;
+		};
+	};
+
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 1, 0)>,
+				<RA_PSEL(RA_PSEL_I2C, 1, 1)>;
+			drive-strength = "medium";
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0,  9)>,
+				<RA_PSEL(RA_PSEL_ADC, 0,  0)>,
+				<RA_PSEL(RA_PSEL_ADC, 0,  1)>,
+				<RA_PSEL(RA_PSEL_ADC, 0,  2)>;
+			renesas,analog-enable;
+		};
+	};
+
+	pwm7_default: pwm7_default {
+		group1 {
+			/* GTIOC7A GTIOC7B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 3, 4)>,
+				<RA_PSEL(RA_PSEL_GPT1, 3, 3)>;
+		};
+	};
+};

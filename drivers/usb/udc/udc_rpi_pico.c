@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 
 #include <zephyr/logging/log.h>
@@ -33,6 +34,7 @@ struct rpi_pico_config {
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
 	const struct device *clk_dev;
+	struct pinctrl_dev_config *const pcfg;
 	clock_control_subsys_t clk_sys;
 };
 
@@ -41,32 +43,57 @@ struct rpi_pico_ep_data {
 	uint8_t next_pid;
 };
 
+enum rpi_pico_event_type {
+	/* Setup packet received */
+	RPI_PICO_EVT_SETUP,
+	/* Trigger new transfer (except control OUT) */
+	RPI_PICO_EVT_XFER_NEW,
+	/* Transfer for specific endpoint is finished */
+	RPI_PICO_EVT_XFER_FINISHED,
+};
+
 struct rpi_pico_data {
 	struct k_thread thread_data;
+	/*
+	 * events are events that the driver thread waits.
+	 * xfer_new and xfer_finished contain information on which endpoints
+	 * events RPI_PICO_EVT_XFER_NEW or RPI_PICO_EVT_XFER_FINISHED are
+	 * triggered. The mapping is bits 31..16 for IN endpoints and bits
+	 * 15..0 for OUT endpoints.
+	 */
+	struct k_event events;
+	atomic_t xfer_new;
+	atomic_t xfer_finished;
 	struct rpi_pico_ep_data out_ep[USB_NUM_ENDPOINTS];
 	struct rpi_pico_ep_data in_ep[USB_NUM_ENDPOINTS];
 	bool rwu_pending;
 	uint8_t setup[8];
 };
 
-enum rpi_pico_event_type {
-	/* Trigger next transfer, must not be used for control OUT */
-	RPI_PICO_EVT_XFER,
-	/* Setup packet received */
-	RPI_PICO_EVT_SETUP,
-	/* OUT transaction for specific endpoint is finished */
-	RPI_PICO_EVT_DOUT,
-	/* IN transaction for specific endpoint is finished */
-	RPI_PICO_EVT_DIN,
-};
+static inline int udc_ep_to_bnum(const uint8_t ep)
+{
+	if (USB_EP_DIR_IS_IN(ep)) {
+		return 16UL + USB_EP_GET_IDX(ep);
+	}
 
-struct rpi_pico_event {
-	const struct device *dev;
-	enum rpi_pico_event_type type;
-	uint8_t ep;
-};
+	return USB_EP_GET_IDX(ep);
+}
 
-K_MSGQ_DEFINE(drv_msgq, sizeof(struct rpi_pico_event), 16, sizeof(void *));
+static inline uint8_t udc_pull_ep_from_bmsk(uint32_t *const bitmap)
+{
+	unsigned int bit;
+
+	__ASSERT_NO_MSG(bitmap && *bitmap);
+
+	bit = find_lsb_set(*bitmap) - 1;
+	*bitmap &= ~BIT(bit);
+
+	if (bit >= 16) {
+		return USB_EP_DIR_IN | (bit - 16);
+	} else {
+		return USB_EP_DIR_OUT | bit;
+	}
+}
 
 /* Use Atomic Register Access to set bits */
 static void ALWAYS_INLINE rpi_pico_bit_set(const mm_reg_t reg, const uint32_t bit)
@@ -78,6 +105,19 @@ static void ALWAYS_INLINE rpi_pico_bit_set(const mm_reg_t reg, const uint32_t bi
 static void ALWAYS_INLINE rpi_pico_bit_clr(const mm_reg_t reg, const uint32_t bit)
 {
 	sys_write32(bit, REG_ALIAS_CLR_BITS | reg);
+}
+
+
+static void sie_dp_pullup(const struct device *dev, const bool enable)
+{
+	const struct rpi_pico_config *config = dev->config;
+	usb_hw_t *base = config->base;
+
+	if (enable) {
+		rpi_pico_bit_set((mm_reg_t)&base->sie_ctrl, USB_SIE_CTRL_PULLUP_EN_BITS);
+	} else {
+		rpi_pico_bit_clr((mm_reg_t)&base->sie_ctrl, USB_SIE_CTRL_PULLUP_EN_BITS);
+	}
 }
 
 static void ALWAYS_INLINE sie_status_clr(const struct device *dev, const uint32_t bit)
@@ -163,6 +203,7 @@ static void write_ep_ctrl_reg(const struct device *dev, const uint8_t ep,
 static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 {
 	bool abort_handshake_supported = rp2040_chip_version() >= 2;
+	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	const struct rpi_pico_config *config = dev->config;
 	usb_hw_t *base = config->base;
 	mm_reg_t abort_done_reg = (mm_reg_t)&base->abort_done;
@@ -173,6 +214,7 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 	buf_ctrl = read_buf_ctrl_reg(dev, ep);
 	if (!(buf_ctrl & USB_BUF_CTRL_AVAIL)) {
 		/* The buffer is not used by the controller */
+		udc_ep_set_busy(ep_cfg, false);
 		return;
 	}
 
@@ -189,6 +231,7 @@ static void rpi_pico_ep_cancel(const struct device *dev, const uint8_t ep)
 		rpi_pico_bit_clr(abort_reg, ep_mask);
 	}
 
+	udc_ep_set_busy(ep_cfg, false);
 	LOG_INF("Canceled ep 0x%02x transaction", ep);
 }
 
@@ -196,6 +239,7 @@ static int rpi_pico_prep_rx(const struct device *dev,
 			    struct net_buf *const buf, struct udc_ep_config *const cfg)
 {
 	struct rpi_pico_ep_data *const ep_data = get_ep_data(dev, cfg->addr);
+	unsigned int lock_key;
 	uint32_t buf_ctrl;
 
 	buf_ctrl = read_buf_ctrl_reg(dev, cfg->addr);
@@ -206,6 +250,8 @@ static int rpi_pico_prep_rx(const struct device *dev,
 
 	LOG_DBG("Prepare RX ep 0x%02x len %u pid: %u",
 		cfg->addr, net_buf_tailroom(buf), ep_data->next_pid);
+
+	lock_key = irq_lock();
 
 	buf_ctrl = cfg->mps;
 	buf_ctrl |= ep_data->next_pid ? USB_BUF_CTRL_DATA1_PID : USB_BUF_CTRL_DATA0_PID;
@@ -221,6 +267,8 @@ static int rpi_pico_prep_rx(const struct device *dev,
 	arch_nop();
 	write_buf_ctrl_reg(dev, cfg->addr, buf_ctrl | USB_BUF_CTRL_AVAIL);
 
+	irq_unlock(lock_key);
+
 	return 0;
 }
 
@@ -228,6 +276,7 @@ static int rpi_pico_prep_tx(const struct device *dev,
 			    struct net_buf *const buf, struct udc_ep_config *const cfg)
 {
 	struct rpi_pico_ep_data *const ep_data = get_ep_data(dev, cfg->addr);
+	unsigned int lock_key;
 	uint32_t buf_ctrl;
 	size_t len;
 
@@ -236,6 +285,8 @@ static int rpi_pico_prep_tx(const struct device *dev,
 		LOG_ERR("ep 0x%02x buffer is used by the controller", cfg->addr);
 		return -EBUSY;
 	}
+
+	lock_key = irq_lock();
 
 	len = MIN(cfg->mps, buf->len);
 	memcpy(ep_data->buf, buf->data, len);
@@ -258,6 +309,8 @@ static int rpi_pico_prep_tx(const struct device *dev,
 	arch_nop();
 	write_buf_ctrl_reg(dev, cfg->addr, buf_ctrl | USB_BUF_CTRL_AVAIL);
 
+	irq_unlock(lock_key);
+
 	return 0;
 }
 
@@ -278,14 +331,16 @@ static int rpi_pico_ctrl_feed_dout(const struct device *dev, const size_t length
 
 static void drop_control_transfers(const struct device *dev)
 {
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
 
-	buf = udc_buf_get_all(dev, USB_CONTROL_EP_OUT);
+	buf = udc_buf_get_all(cfg_out);
 	if (buf != NULL) {
 		net_buf_unref(buf);
 	}
 
-	buf = udc_buf_get_all(dev, USB_CONTROL_EP_IN);
+	buf = udc_buf_get_all(cfg_in);
 	if (buf != NULL) {
 		net_buf_unref(buf);
 	}
@@ -337,14 +392,14 @@ static inline int rpi_pico_handle_evt_dout(const struct device *dev,
 	struct net_buf *buf;
 	int err = 0;
 
-	buf = udc_buf_get(dev, cfg->addr);
+	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for OUT ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENODATA;
 	}
 
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
@@ -373,15 +428,15 @@ static int rpi_pico_handle_evt_din(const struct device *dev,
 	struct net_buf *buf;
 	int err;
 
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
 	}
 
-	buf = udc_buf_get(dev, cfg->addr);
-	udc_ep_set_busy(dev, cfg->addr, false);
+	buf = udc_buf_get(cfg);
+	udc_ep_set_busy(cfg, false);
 
 	if (cfg->addr == USB_CONTROL_EP_IN) {
 		if (udc_ctrl_stage_is_status_in(dev) ||
@@ -415,12 +470,16 @@ static void rpi_pico_handle_xfer_next(const struct device *dev,
 	struct net_buf *buf;
 	int err;
 
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		return;
 	}
 
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+		if (cfg->stat.halted) {
+			return;
+		}
+
 		err = rpi_pico_prep_rx(dev, buf, cfg);
 	} else {
 		err = rpi_pico_prep_tx(dev, buf, cfg);
@@ -429,40 +488,71 @@ static void rpi_pico_handle_xfer_next(const struct device *dev,
 	if (err != 0) {
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 	} else {
-		udc_ep_set_busy(dev, cfg->addr, true);
+		udc_ep_set_busy(cfg, true);
 	}
 }
 
 static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 {
 	const struct device *dev = (const struct device *)arg;
+	struct rpi_pico_data *priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg;
-	struct rpi_pico_event evt;
+	uint32_t evt;
+	uint32_t eps;
+	uint8_t ep;
 
-	k_msgq_get(&drv_msgq, &evt, K_FOREVER);
-	ep_cfg = udc_get_ep_cfg(dev, evt.ep);
+	evt = k_event_wait(&priv->events, UINT32_MAX, false, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 
-	switch (evt.type) {
-	case RPI_PICO_EVT_XFER:
-		LOG_DBG("New transfer in the queue");
-		break;
-	case RPI_PICO_EVT_SETUP:
+	if (evt & BIT(RPI_PICO_EVT_XFER_FINISHED)) {
+		k_event_clear(&priv->events, BIT(RPI_PICO_EVT_XFER_FINISHED));
+
+		eps = atomic_clear(&priv->xfer_finished);
+
+		while (eps) {
+			ep = udc_pull_ep_from_bmsk(&eps);
+			ep_cfg = udc_get_ep_cfg(dev, ep);
+			LOG_DBG("Finished event ep 0x%02x", ep);
+
+			if (USB_EP_DIR_IS_IN(ep)) {
+				rpi_pico_handle_evt_din(dev, ep_cfg);
+			} else {
+				rpi_pico_handle_evt_dout(dev, ep_cfg);
+			}
+
+			if (!udc_ep_is_busy(ep_cfg)) {
+				rpi_pico_handle_xfer_next(dev, ep_cfg);
+			} else {
+				LOG_ERR("Endpoint 0x%02x busy", ep);
+			}
+		}
+	}
+
+	if (evt & BIT(RPI_PICO_EVT_XFER_NEW)) {
+		k_event_clear(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
+
+		eps = atomic_clear(&priv->xfer_new);
+
+		while (eps) {
+			ep = udc_pull_ep_from_bmsk(&eps);
+			ep_cfg = udc_get_ep_cfg(dev, ep);
+			LOG_DBG("New transfer ep 0x%02x in the queue", ep);
+
+			if (!udc_ep_is_busy(ep_cfg)) {
+				rpi_pico_handle_xfer_next(dev, ep_cfg);
+			} else {
+				LOG_ERR("Endpoint 0x%02x busy", ep);
+			}
+		}
+	}
+
+	if (evt & BIT(RPI_PICO_EVT_SETUP)) {
+		k_event_clear(&priv->events, BIT(RPI_PICO_EVT_SETUP));
 		LOG_DBG("SETUP event");
 		rpi_pico_handle_evt_setup(dev);
-		break;
-	case RPI_PICO_EVT_DOUT:
-		LOG_DBG("DOUT event ep 0x%02x", ep_cfg->addr);
-		rpi_pico_handle_evt_dout(dev, ep_cfg);
-		break;
-	case RPI_PICO_EVT_DIN:
-		LOG_DBG("DIN event");
-		rpi_pico_handle_evt_din(dev, ep_cfg);
-		break;
 	}
 
-	if (ep_cfg->addr != USB_CONTROL_EP_OUT && !udc_ep_is_busy(dev, ep_cfg->addr)) {
-		rpi_pico_handle_xfer_next(dev, ep_cfg);
-	}
+	udc_unlock_internal(dev);
 }
 
 static void rpi_pico_handle_setup(const struct device *dev)
@@ -470,11 +560,6 @@ static void rpi_pico_handle_setup(const struct device *dev)
 	const struct rpi_pico_config *config = dev->config;
 	struct rpi_pico_data *priv = udc_get_private(dev);
 	usb_device_dpram_t *dpram = config->dpram;
-	struct rpi_pico_event evt = {
-		.type = RPI_PICO_EVT_SETUP,
-		.ep = USB_CONTROL_EP_OUT,
-	};
-
 	/*
 	 * Host may issue a new setup packet even if the previous control transfer
 	 * did not complete. Cancel any active transaction.
@@ -489,21 +574,18 @@ static void rpi_pico_handle_setup(const struct device *dev)
 	get_ep_data(dev, USB_CONTROL_EP_IN)->next_pid = 1;
 	get_ep_data(dev, USB_CONTROL_EP_OUT)->next_pid = 1;
 
-	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+	k_event_post(&priv->events, BIT(RPI_PICO_EVT_SETUP));
 }
 
 static void rpi_pico_handle_buff_status_in(const struct device *dev, const uint8_t ep)
 {
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
-	struct rpi_pico_event evt = {
-		.ep = ep,
-		.type = RPI_PICO_EVT_DIN,
-	};
+	struct rpi_pico_data *priv = udc_get_private(dev);
 	__maybe_unused int err;
 	struct net_buf *buf;
 	size_t len;
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -522,7 +604,8 @@ static void rpi_pico_handle_buff_status_in(const struct device *dev, const uint8
 			__ASSERT(err == 0, "Failed to start new IN transaction");
 			udc_ep_buf_clear_zlp(buf);
 		} else {
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+			atomic_set_bit(&priv->xfer_finished, udc_ep_to_bnum(ep));
+			k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_FINISHED));
 		}
 	}
 }
@@ -531,14 +614,11 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 {
 	struct rpi_pico_ep_data *ep_data = get_ep_data(dev, ep);
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
-	struct rpi_pico_event evt = {
-		.ep = ep,
-		.type = RPI_PICO_EVT_DOUT,
-	};
+	struct rpi_pico_data *priv = udc_get_private(dev);
 	struct net_buf *buf;
 	size_t len;
 
-	buf = udc_buf_peek(dev, ep);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -548,14 +628,14 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 	len = read_buf_ctrl_reg(dev, ep) & USB_BUF_CTRL_LEN_MASK;
 	net_buf_add_mem(buf, ep_data->buf, MIN(len, net_buf_tailroom(buf)));
 
-	if (net_buf_tailroom(buf) >= udc_mps_ep_size(ep_cfg) &&
-	    len == udc_mps_ep_size(ep_cfg)) {
+	if (net_buf_tailroom(buf) && len == udc_mps_ep_size(ep_cfg)) {
 		__unused int err;
 
 		err = rpi_pico_prep_rx(dev, buf, ep_cfg);
 		__ASSERT(err == 0, "Failed to start new OUT transaction");
 	} else {
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		atomic_set_bit(&priv->xfer_finished, udc_ep_to_bnum(ep));
+		k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_FINISHED));
 	}
 }
 
@@ -573,6 +653,7 @@ static void rpi_pico_handle_buff_status(const struct device *dev)
 			continue;
 		}
 
+		rpi_pico_bit_clr((mm_reg_t)&base->buf_status, BIT(i));
 		/* Odd bits in the register correspond to OUT endpoints */
 		if (i & 1U) {
 			ep = USB_EP_DIR_OUT | (i >> 1U);
@@ -582,7 +663,6 @@ static void rpi_pico_handle_buff_status(const struct device *dev)
 			rpi_pico_handle_buff_status_in(dev, ep);
 		}
 
-		rpi_pico_bit_clr((mm_reg_t)&base->buf_status, BIT(i));
 		buf_status &= ~BIT(i);
 	}
 }
@@ -590,6 +670,7 @@ static void rpi_pico_handle_buff_status(const struct device *dev)
 static void rpi_pico_isr_handler(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
 	struct rpi_pico_data *priv = udc_get_private(dev);
 	usb_hw_t *base = config->base;
 	uint32_t status = base->ints;
@@ -603,15 +684,35 @@ static void rpi_pico_isr_handler(const struct device *dev)
 	if (status & USB_INTS_DEV_CONN_DIS_BITS) {
 		uint32_t sie_status;
 
-		handled |= USB_INTS_DEV_CONN_DIS_BITS;
-		sie_status_clr(dev, USB_SIE_STATUS_CONNECTED_BITS);
-
 		sie_status = sys_read32((mm_reg_t)&base->sie_status);
-		if (sie_status & USB_SIE_STATUS_CONNECTED_BITS) {
-			udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
-		} else {
+		LOG_DBG("CONNECTED bit %u, VBUS_DETECTED bit %u",
+			(bool)(sie_status & USB_SIE_STATUS_CONNECTED_BITS),
+			(bool)(sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS));
+
+		if (pcfg != NULL && !(sie_status & USB_SIE_STATUS_CONNECTED_BITS) &&
+		    !(sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS)) {
+			sie_dp_pullup(dev, false);
 			udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
 		}
+
+		handled |= USB_INTS_DEV_CONN_DIS_BITS;
+		sie_status_clr(dev, USB_SIE_STATUS_CONNECTED_BITS);
+	}
+
+	if (status & USB_INTS_VBUS_DETECT_BITS) {
+		uint32_t sie_status;
+
+		sie_status = sys_read32((mm_reg_t)&base->sie_status);
+		LOG_DBG("VBUS_DETECTED bit %u",
+			(bool)(sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS));
+
+		if (pcfg != NULL && (sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS)) {
+			sie_dp_pullup(dev, true);
+			udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+		}
+
+		handled |= USB_INTS_VBUS_DETECT_BITS;
+		sie_status_clr(dev, USB_SIE_STATUS_VBUS_DETECTED_BITS);
 	}
 
 	if ((status & (USB_INTS_BUFF_STATUS_BITS | USB_INTS_SETUP_REQ_BITS)) &&
@@ -631,6 +732,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		sie_status_clr(dev, USB_SIE_STATUS_RESUME_BITS);
 
 		priv->rwu_pending = false;
+		udc_set_suspended(dev, false);
 		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 	}
 
@@ -638,6 +740,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		handled |= USB_INTS_DEV_SUSPEND_BITS;
 		sie_status_clr(dev, USB_SIE_STATUS_SUSPENDED_BITS);
 
+		udc_set_suspended(dev, true);
 		udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
 	}
 
@@ -652,9 +755,13 @@ static void rpi_pico_isr_handler(const struct device *dev)
 	if (status & USB_INTS_ERROR_DATA_SEQ_BITS) {
 		handled |= USB_INTS_ERROR_DATA_SEQ_BITS;
 		sie_status_clr(dev, USB_SIE_STATUS_DATA_SEQ_ERROR_BITS);
-
-		LOG_ERR("Data Sequence Error");
-		udc_submit_event(dev, UDC_EVT_ERROR, -EINVAL);
+		/*
+		 * This can be triggered before the STALL handshake response
+		 * to the OUT DATAx. Handling IRQ_ON_STALL to fix the expected
+		 * DATA PID is too much overhead since the endpoint is halted
+		 * anyway.
+		 */
+		LOG_WRN("Data Sequence Error");
 	}
 
 	if (status & USB_INTS_ERROR_RX_TIMEOUT_BITS) {
@@ -716,15 +823,13 @@ static int udc_rpi_pico_ep_enqueue(const struct device *dev,
 				   struct udc_ep_config *const cfg,
 				   struct net_buf *buf)
 {
-	struct rpi_pico_event evt = {
-		.ep = cfg->addr,
-		.type = RPI_PICO_EVT_XFER,
-	};
+	struct rpi_pico_data *priv = udc_get_private(dev);
 
 	udc_buf_put(cfg, buf);
 
 	if (!cfg->stat.halted) {
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		atomic_set_bit(&priv->xfer_new, udc_ep_to_bnum(cfg->addr));
+		k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
 	}
 
 	return 0;
@@ -739,7 +844,7 @@ static int udc_rpi_pico_ep_dequeue(const struct device *dev,
 	lock_key = irq_lock();
 
 	rpi_pico_ep_cancel(dev, cfg->addr);
-	buf = udc_buf_get_all(dev, cfg->addr);
+	buf = udc_buf_get_all(cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
@@ -816,20 +921,38 @@ static int udc_rpi_pico_ep_set_halt(const struct device *dev,
 	const struct rpi_pico_config *config = dev->config;
 	mem_addr_t buf_ctrl_reg = get_buf_ctrl_reg(dev, cfg->addr);
 	usb_hw_t *base = config->base;
+	unsigned int lock_key;
+	uint32_t bits;
 
+	lock_key = irq_lock();
 	if (USB_EP_GET_IDX(cfg->addr) == 0) {
-		uint32_t bit = USB_EP_DIR_IS_OUT(cfg->addr) ?
-			       USB_EP_STALL_ARM_EP0_OUT_BITS : USB_EP_STALL_ARM_EP0_IN_BITS;
-
-		rpi_pico_bit_set((mm_reg_t)&base->ep_stall_arm, bit);
+		bits = USB_EP_DIR_IS_OUT(cfg->addr) ?
+		       USB_EP_STALL_ARM_EP0_OUT_BITS : USB_EP_STALL_ARM_EP0_IN_BITS;
+		rpi_pico_bit_set((mm_reg_t)&base->ep_stall_arm, bits);
 	}
 
-	rpi_pico_bit_set(buf_ctrl_reg, USB_BUF_CTRL_STALL);
+	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+		/*
+		 * Cancel any transfer in progress.  The available bit must be
+		 * set for the controller to respond to OUT DATAx with a STALL
+		 * handshake.
+		 */
+		rpi_pico_ep_cancel(dev, cfg->addr);
+		bits = USB_BUF_CTRL_STALL | USB_BUF_CTRL_AVAIL;
+	} else {
+		/* Only STALL bit needs to be set here. */
+		bits = USB_BUF_CTRL_STALL;
+	}
 
-	LOG_INF("Set halt ep 0x%02x", cfg->addr);
+	rpi_pico_bit_set(buf_ctrl_reg, bits);
+
 	if (USB_EP_GET_IDX(cfg->addr) != 0) {
 		cfg->stat.halted = true;
 	}
+
+	irq_unlock(lock_key);
+	LOG_DBG("Set halt ep 0x%02x buf_ctrl 0x%08x busy %u",
+		cfg->addr, sys_read32(buf_ctrl_reg), udc_ep_is_busy(cfg));
 
 	return 0;
 }
@@ -838,32 +961,35 @@ static int udc_rpi_pico_ep_clear_halt(const struct device *dev,
 				      struct udc_ep_config *const cfg)
 {
 	struct rpi_pico_ep_data *const ep_data = get_ep_data(dev, cfg->addr);
+	struct rpi_pico_data *priv = udc_get_private(dev);
 	mem_addr_t buf_ctrl_reg = get_buf_ctrl_reg(dev, cfg->addr);
-	struct rpi_pico_event evt = {
-		.ep = cfg->addr,
-		.type = RPI_PICO_EVT_XFER,
-	};
+	unsigned int lock_key;
 
-	if (USB_EP_GET_IDX(cfg->addr) != 0) {
-		ep_data->next_pid = 0;
-		rpi_pico_bit_clr(buf_ctrl_reg, USB_BUF_CTRL_DATA1_PID);
-		/*
-		 * By default, clk_sys runs at 125MHz, wait 3 nop instructions
-		 * before clearing the CTRL_STALL bit. See 4.1.2.5.4.
-		 */
-		arch_nop();
-		arch_nop();
-		arch_nop();
-		rpi_pico_bit_clr(buf_ctrl_reg, USB_BUF_CTRL_STALL);
-
-		if (udc_buf_peek(dev, cfg->addr)) {
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
-		}
+	if (USB_EP_GET_IDX(cfg->addr) == 0) {
+		return 0;
 	}
 
+	lock_key = irq_lock();
+	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+		/* Cancel responds with a STALL handshake.*/
+		rpi_pico_ep_cancel(dev, cfg->addr);
+	} else {
+		rpi_pico_bit_clr(buf_ctrl_reg, USB_BUF_CTRL_STALL);
+	}
+
+	ep_data->next_pid = 0;
 	cfg->stat.halted = false;
-	LOG_INF("Clear halt ep 0x%02x buf_ctrl 0x%08x",
-		cfg->addr, sys_read32(buf_ctrl_reg));
+	irq_unlock(lock_key);
+
+	if (udc_ep_is_busy(cfg)) {
+		rpi_pico_handle_xfer_next(dev, cfg);
+	} else if (udc_buf_peek(cfg)) {
+		atomic_set_bit(&priv->xfer_new, udc_ep_to_bnum(cfg->addr));
+		k_event_post(&priv->events, BIT(RPI_PICO_EVT_XFER_NEW));
+	}
+
+	LOG_DBG("Clear halt ep 0x%02x buf_ctrl 0x%08x busy %u",
+		cfg->addr, sys_read32(buf_ctrl_reg), udc_ep_is_busy(cfg));
 
 	return 0;
 }
@@ -896,6 +1022,7 @@ static int udc_rpi_pico_host_wakeup(const struct device *dev)
 static int udc_rpi_pico_enable(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
 	usb_device_dpram_t *dpram = config->dpram;
 	usb_hw_t *base = config->base;
 
@@ -911,9 +1038,11 @@ static int udc_rpi_pico_enable(const struct device *dev)
 	sys_write32(USB_USB_MUXING_TO_PHY_BITS | USB_USB_MUXING_SOFTCON_BITS,
 		    (mm_reg_t)&base->muxing);
 
-	/* Force VBUS detect so the device thinks it is plugged into a host */
-	sys_write32(USB_USB_PWR_VBUS_DETECT_BITS | USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS,
-		    (mm_reg_t)&base->pwr);
+	if (pcfg == NULL) {
+		/* Force VBUS detect so the device thinks it is plugged into a host */
+		sys_write32(USB_USB_PWR_VBUS_DETECT_BITS |
+			    USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS, (mm_reg_t)&base->pwr);
+	}
 
 	/* Enable an interrupt per EP0 transaction */
 	sys_write32(USB_SIE_CTRL_EP0_INT_1BUF_BITS, (mm_reg_t)&base->sie_ctrl);
@@ -934,8 +1063,10 @@ static int udc_rpi_pico_enable(const struct device *dev)
 		    USB_INTE_BUFF_STATUS_BITS,
 		    (mm_reg_t)&base->inte);
 
-	/* Present full speed device by enabling pull up on DP */
-	rpi_pico_bit_set((mm_reg_t)&base->sie_ctrl, USB_SIE_CTRL_PULLUP_EN_BITS);
+	if (sys_read32((mm_reg_t)&base->sie_status) & USB_SIE_STATUS_VBUS_DETECTED_BITS) {
+		/* Present full speed device by enabling pull up on DP */
+		sie_dp_pullup(dev, true);
+	}
 
 	/* Enable the USB controller in device mode. */
 	sys_write32(USB_MAIN_CTRL_CONTROLLER_EN_BITS, (mm_reg_t)&base->main_ctrl);
@@ -960,6 +1091,8 @@ static int udc_rpi_pico_disable(const struct device *dev)
 static int udc_rpi_pico_init(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
+	int err;
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
@@ -971,6 +1104,14 @@ static int udc_rpi_pico_init(const struct device *dev)
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
 		LOG_ERR("Failed to enable control endpoint");
 		return -EIO;
+	}
+
+	if (pcfg != NULL) {
+		err = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+		if (err) {
+			LOG_ERR("Failed to apply default pinctrl state (%d)", err);
+			return err;
+		}
 	}
 
 	return clock_control_on(config->clk_dev, config->clk_sys);
@@ -996,11 +1137,15 @@ static int udc_rpi_pico_shutdown(const struct device *dev)
 static int udc_rpi_pico_driver_preinit(const struct device *dev)
 {
 	const struct rpi_pico_config *config = dev->config;
+	struct rpi_pico_data *priv = udc_get_private(dev);
 	struct udc_data *data = dev->data;
 	uint16_t mps = 1023;
 	int err;
 
 	k_mutex_init(&data->mutex);
+	k_event_init(&priv->events);
+	atomic_clear(&priv->xfer_new);
+	atomic_clear(&priv->xfer_finished);
 
 	data->caps.rwup = true;
 	data->caps.mps0 = UDC_MPS0_64;
@@ -1052,12 +1197,14 @@ static int udc_rpi_pico_driver_preinit(const struct device *dev)
 
 static void udc_rpi_pico_lock(const struct device *dev)
 {
+	k_sched_lock();
 	udc_lock_internal(dev, K_FOREVER);
 }
 
 static void udc_rpi_pico_unlock(const struct device *dev)
 {
 	udc_unlock_internal(dev);
+	k_sched_unlock();
 }
 
 static const struct udc_api udc_rpi_pico_api = {
@@ -1079,7 +1226,16 @@ static const struct udc_api udc_rpi_pico_api = {
 
 #define DT_DRV_COMPAT raspberrypi_pico_usbd
 
+#define UDC_RPI_PICO_PINCTRL_DT_INST_DEFINE(n)						\
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),				\
+		    (PINCTRL_DT_INST_DEFINE(n)), ())
+
+#define UDC_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_GET(n)					\
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),				\
+		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
+
 #define UDC_RPI_PICO_DEVICE_DEFINE(n)							\
+	UDC_RPI_PICO_PINCTRL_DT_INST_DEFINE(n);						\
 	K_THREAD_STACK_DEFINE(udc_rpi_pico_stack_##n, CONFIG_UDC_RPI_PICO_STACK_SIZE);	\
 											\
 	SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF(rpi_pico_mb_##n,			\
@@ -1137,6 +1293,7 @@ static const struct udc_api udc_rpi_pico_api = {
 		.make_thread = udc_rpi_pico_make_thread_##n,				\
 		.irq_enable_func = udc_rpi_pico_irq_enable_func_##n,			\
 		.irq_disable_func = udc_rpi_pico_irq_disable_func_##n,			\
+		.pcfg = UDC_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clk_sys = (void *)DT_INST_PHA_BY_IDX(n, clocks, 0, clk_id),		\
 	};										\

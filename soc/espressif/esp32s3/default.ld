@@ -458,6 +458,7 @@ SECTIONS
     *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     /* [mapping:soc_pm] */
@@ -640,6 +641,7 @@ SECTIONS
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
+    *libzephyr.a:efuse_hal.*(.rodata .rodata.*)
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)

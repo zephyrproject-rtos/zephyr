@@ -26,6 +26,8 @@ if enabled in GRMON, is preserved.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Building
 ========
 

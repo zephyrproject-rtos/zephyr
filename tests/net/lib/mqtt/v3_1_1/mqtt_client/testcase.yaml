@@ -11,3 +11,6 @@ tests:
   net.mqtt.client.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.mqtt.client.mqtt_5_0:
+    extra_configs:
+      - CONFIG_MQTT_VERSION_5_0=y

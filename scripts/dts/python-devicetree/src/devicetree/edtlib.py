@@ -67,30 +67,32 @@ bindings_from_paths() helper function.
 #   @properties are documented in the class docstring, as if they were
 #   variables. See the existing @properties for a template.
 
-from collections import defaultdict
-from copy import deepcopy
-from dataclasses import dataclass
-from typing import (Any, Callable, Iterable, NoReturn,
-                    Optional, TYPE_CHECKING, Union)
 import base64
 import hashlib
 import logging
 import os
 import re
+from collections import defaultdict
+from collections.abc import Callable, Iterable
+from copy import deepcopy
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, Union
 
 import yaml
+
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # This makes e.g. gen_defines.py more than twice as fast.
     from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader     # type: ignore
+    from yaml import Loader  # type: ignore
 
-from devicetree.dtlib import DT, DTError, to_num, to_nums, Type
+from devicetree._private import _slice_helper
+from devicetree.dtlib import DT, DTError, Type, to_num, to_nums
 from devicetree.dtlib import Node as dtlib_Node
 from devicetree.dtlib import Property as dtlib_Property
 from devicetree.grutils import Graph
-from devicetree._private import _slice_helper
+
 
 def _compute_hash(path: str) -> str:
     # Calculates the hash associated with the node's full path.
@@ -112,8 +114,21 @@ class Binding:
     path:
       The absolute path to the file defining the binding.
 
+    title:
+      The free-form title of the binding (optional).
+
+      When the content in the 'description:' is too long, the 'title:' can
+      be used as a heading for the extended description. Typically, it serves
+      as a description of the hardware model. For example:
+
+      title: Nordic GPIO
+
+      description: |
+        Descriptions and example nodes related to GPIO.
+        ...
+
     description:
-      The free-form description of the binding, or None.
+      The free-form description of the binding.
 
     compatible:
       The compatible string the binding matches.
@@ -171,7 +186,7 @@ class Binding:
 
     def __init__(self, path: Optional[str], fname2path: dict[str, str],
                  raw: Any = None, require_compatible: bool = True,
-                 require_description: bool = True):
+                 require_description: bool = True, require_title: bool = False):
         """
         Binding constructor.
 
@@ -199,6 +214,12 @@ class Binding:
           "description:" line. If False, a missing "description:" is
           not an error. Either way, "description:" must be a string
           if it is present in the binding.
+
+        require_title:
+          If True, it is an error if the binding does not contain a
+          "title:" line. If False, a missing "title:" is not an error.
+          Either way, "title:" must be a string if it is present in
+          the binding.
         """
         self.path: Optional[str] = path
         self._fname2path: dict[str, str] = fname2path
@@ -215,13 +236,13 @@ class Binding:
         self.raw: dict = self._merge_includes(raw, self.path)
 
         # Recursively initialize any child bindings. These don't
-        # require a 'compatible' or 'description' to be well defined,
-        # but they must be dicts.
+        # require a 'compatible', 'description' or 'title' to be well
+        # defined, but they must be dicts.
         if "child-binding" in raw:
             if not isinstance(raw["child-binding"], dict):
                 _err(f"malformed 'child-binding:' in {self.path}, "
                      "expected a binding (dictionary with keys/values)")
-            self.child_binding: Optional['Binding'] = Binding(
+            self.child_binding: Optional[Binding] = Binding(
                 path, fname2path,
                 raw=raw["child-binding"],
                 require_compatible=False,
@@ -230,11 +251,11 @@ class Binding:
             self.child_binding = None
 
         # Make sure this is a well defined object.
-        self._check(require_compatible, require_description)
+        self._check(require_compatible, require_description, require_title)
 
         # Initialize look up tables.
-        self.prop2specs: dict[str, 'PropertySpec'] = {}
-        for prop_name in self.raw.get("properties", {}).keys():
+        self.prop2specs: dict[str, PropertySpec] = {}
+        for prop_name in self.raw.get("properties", {}):
             self.prop2specs[prop_name] = PropertySpec(prop_name, self)
         self.specifier2cells: dict[str, list[str]] = {}
         for key, val in self.raw.items():
@@ -248,6 +269,11 @@ class Binding:
             compat = ""
         basename = os.path.basename(self.path or "")
         return f"<Binding {basename}" + compat + ">"
+
+    @property
+    def title(self) -> Optional[str]:
+        "See the class docstring"
+        return self.raw.get('title')
 
     @property
     def description(self) -> Optional[str]:
@@ -362,7 +388,8 @@ class Binding:
 
         return self._merge_includes(contents, path)
 
-    def _check(self, require_compatible: bool, require_description: bool):
+    def _check(self, require_compatible: bool, require_description: bool,
+               require_title: bool):
         # Does sanity checking on the binding.
 
         raw = self.raw
@@ -376,6 +403,13 @@ class Binding:
         elif require_compatible:
             _err(f"missing 'compatible' in {self.path}")
 
+        if "title" in raw:
+            title = raw["title"]
+            if not isinstance(title, str) or not title:
+                _err(f"malformed or empty 'title' in {self.path}")
+        elif require_title:
+            _err(f"missing 'title' in {self.path}")
+
         if "description" in raw:
             description = raw["description"]
             if not isinstance(description, str) or not description:
@@ -385,8 +419,8 @@ class Binding:
 
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
-        ok_top = {"description", "compatible", "bus", "on-bus",
-                  "properties", "child-binding"}
+        ok_top = {"title", "description", "compatible", "bus",
+                  "on-bus", "properties", "child-binding"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -396,7 +430,6 @@ class Binding:
             "parent": "use 'on-bus: <bus>' instead",
             "parent-bus": "use 'on-bus: <bus>' instead",
             "sub-node": "use 'child-binding' instead",
-            "title": "use 'description' instead",
         }
 
         for key in raw:
@@ -429,11 +462,11 @@ class Binding:
         self._check_properties()
 
         for key, val in raw.items():
-            if key.endswith("-cells"):
-                if (not isinstance(val, list)
-                    or not all(isinstance(elem, str) for elem in val)):
-                    _err(f"malformed '{key}:' in {self.path}, "
-                         "expected a list of strings")
+            if (key.endswith("-cells")
+                and not isinstance(val, list)
+                or not all(isinstance(elem, str) for elem in val)):
+                _err(f"malformed '{key}:' in {self.path}, "
+                     "expected a list of strings")
 
     def _check_properties(self) -> None:
         # _check() helper for checking the contents of 'properties:'.
@@ -887,6 +920,10 @@ class Node:
       node name format ...@<dev>,<func> or ...@<dev> (e.g. "pcie@1,0"), in
       this case None is returned.
 
+    title:
+      The title string from the binding for the node, or None if the node
+      has no binding.
+
     description:
       The description string from the binding for the node, or None if the node
       has no binding. Leading and trailing whitespace (including newlines) is
@@ -1034,7 +1071,7 @@ class Node:
         self._binding: Optional[Binding] = None
 
         # Public, some of which are initialized properly later:
-        self.edt: 'EDT' = edt
+        self.edt: EDT = edt
         self.dep_ordinal: int = -1
         self.compats: list[str] = compats
         self.ranges: list[Range] = []
@@ -1080,6 +1117,13 @@ class Node:
             _err(f"{self!r} has non-hex unit address")
 
         return _translate(addr, self._node)
+
+    @property
+    def title(self) -> Optional[str]:
+        "See the class docstring."
+        if self._binding:
+            return self._binding.title
+        return None
 
     @property
     def description(self) -> Optional[str]:
@@ -1258,10 +1302,10 @@ class Node:
         if "gpio-hog" not in self.props:
             return []
 
-        if not self.parent or not "gpio-controller" in self.parent.props:
+        if not self.parent or "gpio-controller" not in self.parent.props:
             _err(f"GPIO hog {self!r} lacks parent GPIO controller node")
 
-        if not "#gpio-cells" in self.parent._node.props:
+        if "#gpio-cells" not in self.parent._node.props:
             _err(f"GPIO hog {self!r} parent node lacks #gpio-cells")
 
         n_cells = self.parent._node.props["#gpio-cells"].to_num()
@@ -1877,7 +1921,7 @@ class Node:
                  f"{controller._node!r} - {len(cell_names)} "
                  f"instead of {len(data_list)}")
 
-        return dict(zip(cell_names, data_list))
+        return dict(zip(cell_names, data_list, strict=False))
 
 
 class EDT:
@@ -1949,6 +1993,7 @@ class EDT:
     def __init__(self,
                  dts: Optional[str],
                  bindings_dirs: list[str],
+                 workspace_dir: Optional[str] = None,
                  warn_reg_unit_address_mismatch: bool = True,
                  default_prop_types: bool = True,
                  support_fixed_partitions_on_any_bus: bool = True,
@@ -1964,6 +2009,10 @@ class EDT:
         bindings_dirs:
           List of paths to directories containing bindings, in YAML format.
           These directories are recursively searched for .yaml files.
+
+        workspace_dir:
+          Path to the root of the Zephyr workspace. This is used as a base
+          directory for relative paths in the generated devicetree comments.
 
         warn_reg_unit_address_mismatch (default: True):
           If True, a warning is logged if a node has a 'reg' property where
@@ -2033,7 +2082,7 @@ class EDT:
 
         if dts is not None:
             try:
-                self._dt = DT(dts)
+                self._dt = DT(dts, base_dir=workspace_dir)
             except DTError as e:
                 raise EDTError(e) from e
             self._finish_init()
@@ -2121,7 +2170,7 @@ class EDT:
         try:
             return self._graph.scc_order()
         except Exception as e:
-            raise EDTError(e)
+            raise EDTError(e) from None
 
     def _process_properties_r(self, root_node: Node, props_node: Node) -> None:
         """
@@ -2455,7 +2504,7 @@ def load_vendor_prefixes_txt(vendor_prefixes: str) -> dict[str, str]:
     representation mapping a vendor prefix to the vendor name.
     """
     vnd2vendor: dict[str, str] = {}
-    with open(vendor_prefixes, 'r', encoding='utf-8') as f:
+    with open(vendor_prefixes, encoding='utf-8') as f:
         for line in f:
             line = line.strip()
 
@@ -2482,23 +2531,19 @@ def _dt_compats(dt: DT) -> set[str]:
 
     return {compat
             for node in dt.node_iter()
-                if "compatible" in node.props
-                    for compat in node.props["compatible"].to_strings()}
+            if "compatible" in node.props
+            for compat in node.props["compatible"].to_strings()}
 
 
 def _binding_paths(bindings_dirs: list[str]) -> list[str]:
     # Returns a list with the paths to all bindings (.yaml files) in
     # 'bindings_dirs'
 
-    binding_paths = []
-
-    for bindings_dir in bindings_dirs:
-        for root, _, filenames in os.walk(bindings_dir):
-            for filename in filenames:
-                if filename.endswith(".yaml") or filename.endswith(".yml"):
-                    binding_paths.append(os.path.join(root, filename))
-
-    return binding_paths
+    return [os.path.join(root, filename)
+            for bindings_dir in bindings_dirs
+            for root, _, filenames in os.walk(bindings_dir)
+            for filename in filenames
+            if filename.endswith((".yaml", ".yml"))]
 
 
 def _binding_inc_error(msg):
@@ -2713,11 +2758,12 @@ def _check_prop_by_type(prop_name: str,
         _err(f"'specifier-space' in 'properties: {prop_name}' "
              f"has type '{prop_type}', expected 'phandle-array'")
 
-    if prop_type == "phandle-array":
-        if not prop_name.endswith("s") and not "specifier-space" in options:
-            _err(f"'{prop_name}' in 'properties:' in {binding_path} "
-                 f"has type 'phandle-array' and its name does not end in 's', "
-                 f"but no 'specifier-space' was provided.")
+    if (prop_type == "phandle-array"
+        and not prop_name.endswith("s")
+        and "specifier-space" not in options):
+        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+             f"has type 'phandle-array' and its name does not end in 's', "
+             f"but no 'specifier-space' was provided.")
 
     # If you change const_types, be sure to update the type annotation
     # for PropertySpec.const.
@@ -2839,7 +2885,7 @@ def _add_names(node: dtlib_Node, names_ident: str, objs: Any) -> None:
                  f"in {node.dt.filename} has {len(names)} strings, "
                  f"expected {len(objs)} strings")
 
-        for obj, name in zip(objs, names):
+        for obj, name in zip(objs, names, strict=False):
             if obj is None:
                 continue
             obj.name = name
@@ -3115,7 +3161,7 @@ def _and(b1: bytes, b2: bytes) -> bytes:
     # Pad on the left, to equal length
     maxlen = max(len(b1), len(b2))
     return bytes(x & y for x, y in zip(b1.rjust(maxlen, b'\xff'),
-                                       b2.rjust(maxlen, b'\xff')))
+                                       b2.rjust(maxlen, b'\xff'), strict=False))
 
 
 def _or(b1: bytes, b2: bytes) -> bytes:
@@ -3125,7 +3171,7 @@ def _or(b1: bytes, b2: bytes) -> bytes:
     # Pad on the left, to equal length
     maxlen = max(len(b1), len(b2))
     return bytes(x | y for x, y in zip(b1.rjust(maxlen, b'\x00'),
-                                       b2.rjust(maxlen, b'\x00')))
+                                       b2.rjust(maxlen, b'\x00'), strict=False))
 
 
 def _not(b: bytes) -> bytes:
@@ -3249,11 +3295,10 @@ def _check_dt(dt: DT) -> None:
                      " (see the devicetree specification)")
 
         ranges_prop = node.props.get("ranges")
-        if ranges_prop:
-            if ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-                _err(f"expected 'ranges = < ... >;' in {node.path} in "
-                     f"{node.dt.filename}, not '{ranges_prop}' "
-                     "(see the devicetree specification)")
+        if ranges_prop and ranges_prop.type not in (Type.EMPTY, Type.NUMS):
+            _err(f"expected 'ranges = < ... >;' in {node.path} in "
+                 f"{node.dt.filename}, not '{ranges_prop}' "
+                  "(see the devicetree specification)")
 
 
 def _err(msg) -> NoReturn:
@@ -3326,7 +3371,8 @@ _DEFAULT_PROP_BINDING: Binding = Binding(
             for name in _DEFAULT_PROP_TYPES
         },
     },
-    require_compatible=False, require_description=False,
+    require_compatible=False,
+    require_description=False,
 )
 
 _DEFAULT_PROP_SPECS: dict[str, PropertySpec] = {

@@ -53,6 +53,7 @@ extern int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 extern size_t service_proto_size(const struct dns_sd_rec *ref);
 extern bool rec_is_valid(const struct dns_sd_rec *ref);
 extern int setup_dst_addr(int sock, sa_family_t family,
+			  struct sockaddr *src, socklen_t src_len,
 			  struct sockaddr *dst, socklen_t *dst_len);
 
 
@@ -685,7 +686,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	v4 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(v4 >= 0, "Create IPv4 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(v4, AF_INET, &dst, &dst_len), "");
+	zassert_equal(0, setup_dst_addr(v4, AF_INET, NULL, 0, &dst, &dst_len), "");
 
 	optlen = sizeof(int);
 	(void)zsock_getsockopt(v4, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, &optlen);
@@ -708,7 +709,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	v6 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(v6 >= 0, "Create IPv6 UDP context failed (%d)", -errno);
 
-	zassert_equal(0, setup_dst_addr(v6, AF_INET6, &dst, &dst_len), "");
+	zassert_equal(0, setup_dst_addr(v6, AF_INET6, NULL, 0, &dst, &dst_len), "");
 
 	optlen = sizeof(int);
 	(void)zsock_getsockopt(v6, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &ttl, &optlen);
@@ -729,7 +730,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	zassert_true(xx >= 0, "Create IPV4 udp socket failed");
 
 	zassert_equal(-EPFNOSUPPORT,
-		      setup_dst_addr(xx, AF_PACKET, &dst, &dst_len), "");
+		      setup_dst_addr(xx, AF_PACKET, NULL, 0, &dst, &dst_len), "");
 }
 
 /** test for @ref dns_sd_is_service_type_enumeration */

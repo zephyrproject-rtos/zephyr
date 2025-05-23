@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
+#include <zephyr/test_toolchain.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 #include <kswap.h>
@@ -82,8 +83,6 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
-#elif defined(CONFIG_NIOS2)
-	__asm__ volatile ("trap");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #elif defined(CONFIG_RISCV)
@@ -111,8 +110,8 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_CPU_CORTEX_M)
 	__asm__ volatile ("udf #0");
-#elif defined(CONFIG_NIOS2)
-	__asm__ volatile ("trap");
+#elif defined(CONFIG_RX)
+	__asm__ volatile ("brk");
 #elif defined(CONFIG_RISCV)
 	/* In riscv architecture, use an undefined
 	 * instruction to trigger illegal instruction on RISCV.
@@ -192,20 +191,16 @@ __no_optimization void blow_up_stack(void)
 /* stack sentinel doesn't catch it in time before it trashes the entire kernel
  */
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Winfinite-recursion"
-#endif
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_PRAGMAS)
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_INFINITE_RECURSION)
 
 __no_optimization int stack_smasher(int val)
 {
 	return stack_smasher(val * 2) + stack_smasher(val * 3);
 }
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_PRAGMAS)
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_INFINITE_RECURSION)
 
 void blow_up_stack(void)
 {
@@ -303,7 +298,7 @@ void check_stack_overflow(k_thread_entry_t handler, uint32_t flags)
  * should match. Check for stack sentinel feature by overflowing the
  * thread's stack and check for the exception.
  *
- * @ingroup kernel_common_tests
+ * @ingroup kernel_fatal_tests
  */
 ZTEST(fatal_exception, test_fatal)
 {

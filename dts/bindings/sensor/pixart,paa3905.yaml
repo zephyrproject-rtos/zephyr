@@ -1,0 +1,42 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: PA3905 optical flow sensor
+
+compatible: "pixart,paa3905"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  resolution:
+    type: int
+    default: 42
+    description: |
+      The resolution of the sensor, which affects the counts per inch detected
+      by the sensor.
+      Default is power-on reset value.
+
+  led-control:
+    type: boolean
+    default:
+    description: |
+      Enable or disable the LED control feature, which allows the optical flow
+      sensor to drive an external LED in order to provide illuminance when needed.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal default configuration is active-low. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  backup-timer-ms:
+    type: int
+    default: 80
+    description: |
+      The back-up timer in milliseconds used to ensure sensor interaction
+      even if no motion is present, when Data-Ready streaming trigger is
+      configured. If erratic behavior is detected, a sensor recovery
+      sequence is performed.
+      Default is 10X the fastest frame rate (126 fps).

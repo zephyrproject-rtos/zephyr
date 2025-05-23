@@ -8,3 +8,5 @@ tests:
       - userspace
       - scrub
       - registers
+    integration_platforms:
+      - qemu_x86

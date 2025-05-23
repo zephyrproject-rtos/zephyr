@@ -59,3 +59,7 @@ ignore-merge-commits=false
 # By specifying this rule, developers can only change the file when they explicitly reference
 # it in the commit message.
 #files=gitlint/rules.py,README.md
+
+[ignore-by-author-name]
+regex=^dependabot\[bot\]$
+ignore=all

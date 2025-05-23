@@ -6,4 +6,3 @@ config COMPARATOR_MCUX_ACMP
 	default y
 	depends on DT_HAS_NXP_KINETIS_ACMP_ENABLED
 	select PINCTRL
-	select MCUX_ACMP

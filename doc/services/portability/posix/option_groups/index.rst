@@ -72,6 +72,25 @@ Group.
 For more information on developing Zephyr applications in the C programming language, please refer
 to :ref:`details<language_support>`.
 
+.. _posix_option_group_c_lang_support_r:
+
+POSIX_C_LANG_SUPPORT_R
+++++++++++++++++++++++
+
+Enable this option group with :kconfig:option:`CONFIG_POSIX_C_LANG_SUPPORT_R`.
+
+.. csv-table:: POSIX_C_LANG_SUPPORT_R
+   :header: API, Supported
+   :widths: 50,10
+
+    asctime_r(),yes
+    ctime_r(),yes
+    gmtime_r(),yes
+    localtime_r(),yes
+    rand_r(),yes
+    strerror_r(),yes
+    strtok_r(),yes
+
 .. _posix_option_group_c_lib_ext:
 
 POSIX_C_LIB_EXT
@@ -658,6 +677,21 @@ Enable this option group with :kconfig:option:`CONFIG_XSI_REALTIME`.
 
 When this option group is enabled, the ``_XOPEN_REALTIME`` feature test macro will be defined to a
 value other than -1.
+
+.. _posix_option_group_xsi_single_process:
+
+XSI_SINGLE_PROCESS
+++++++++++++++++++
+
+Enable this option group with :kconfig:option:`CONFIG_XSI_SINGLE_PROCESS`.
+
+.. csv-table:: XSI_SINGLE_PROCESS
+   :header: API, Supported
+   :widths: 50,10
+
+    gethostid(),yes
+    gettimeofday(),yes
+    putenv(),yes
 
 .. _posix_option_group_xsi_system_logging:
 

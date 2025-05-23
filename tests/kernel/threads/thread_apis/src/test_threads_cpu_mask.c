@@ -22,6 +22,19 @@ void child_fn(void *a, void *b, void *c)
 	child_has_run = true;
 }
 
+
+/**
+ * @brief Test the CPU mask APIs for thread lifecycle management
+ *
+ * This test verifies the behavior of the CPU mask APIs in the Zephyr kernel
+ * for thread lifecycle management. It ensures that the APIs behave as expected
+ * when operating on both running and non-running threads.
+ *
+ * @note This test is only executed if `CONFIG_SCHED_CPU_MASK` is enabled.
+ *       Otherwise, the test is skipped.
+ *
+ * @ingroup kernel_thread_tests
+ */
 ZTEST(threads_lifecycle_1cpu, test_threads_cpu_mask)
 {
 #ifdef CONFIG_SCHED_CPU_MASK

@@ -7,6 +7,8 @@
 
 #include <zephyr/kernel.h>
 
+#include "net_sample_common.h"
+
 /* Value of 0 will cause the IP stack to select next free port */
 #define MY_PORT 0
 
@@ -96,12 +98,3 @@ static inline void stop_udp(void) { }
 int start_tcp(void);
 int process_tcp(void);
 void stop_tcp(void);
-
-#if defined(CONFIG_NET_VLAN)
-int init_vlan(void);
-#else
-static inline int init_vlan(void)
-{
-	return 0;
-}
-#endif

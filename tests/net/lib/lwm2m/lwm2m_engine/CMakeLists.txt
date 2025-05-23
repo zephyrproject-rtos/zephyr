@@ -21,7 +21,6 @@ target_include_directories(app PRIVATE ${ZEPHYR_BASE}/../modules/crypto/mbedtls/
 add_compile_definitions(CONFIG_LWM2M_ENGINE_MAX_PENDING=2)
 add_compile_definitions(CONFIG_LWM2M_ENGINE_MAX_REPLIES=2)
 add_compile_definitions(CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE=512)
-add_compile_definitions(CONFIG_LWM2M_ENGINE_MESSAGE_HEADER_SIZE=512)
 add_compile_definitions(CONFIG_LWM2M_ENGINE_MAX_OBSERVER=10)
 add_compile_definitions(CONFIG_LWM2M_ENGINE_STACK_SIZE=2048)
 add_compile_definitions(CONFIG_LWM2M_NUM_BLOCK1_CONTEXT=3)

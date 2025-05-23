@@ -29,6 +29,9 @@
 
 LOG_MODULE_REGISTER(hci_ipc, CONFIG_BT_LOG_LEVEL);
 
+BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL),
+	     "HCI IPC driver can drop ACL data without Controller-to-Host ACL flow control");
+
 static struct ipc_ept hci_ept;
 
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
@@ -222,30 +225,10 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 {
-	uint8_t pkt_indicator;
 	uint8_t retries = 0;
 	int ret;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "Controller buffer:");
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_IN:
-		pkt_indicator = HCI_IPC_ACL;
-		break;
-	case BT_BUF_EVT:
-		pkt_indicator = HCI_IPC_EVT;
-		break;
-	case BT_BUF_ISO_IN:
-		pkt_indicator = HCI_IPC_ISO;
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		net_buf_unref(buf);
-		return;
-	}
-	net_buf_push_u8(buf, pkt_indicator);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 

@@ -1,4 +1,4 @@
-description: stm32 sdmmc disk access
+description: STM32 SDMMC Disk Access
 
 compatible: "st,stm32-sdmmc"
 
@@ -7,6 +7,7 @@ include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
 properties:
   disk-name:
     type: string
+    required: true
     description: |
       Disk name.
 

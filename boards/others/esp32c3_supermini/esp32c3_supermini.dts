@@ -42,7 +42,7 @@
 	leds {
 		compatible = "gpio-leds";
 		blue_led_0: led_0 {
-			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 0";
 		};
 	};
@@ -87,5 +87,9 @@
 };
 
 &esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 };

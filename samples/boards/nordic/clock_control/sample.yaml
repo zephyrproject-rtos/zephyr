@@ -41,3 +41,8 @@ tests:
     extra_args:
       - CONF_FILE="configs/global_hsfll.conf"
       - DTC_OVERLAY_FILE="configs/global_hsfll.overlay"
+  sample.boards.nrf.clock_control.audiopll:
+    filter: dt_nodelabel_enabled("audiopll")
+    extra_args:
+      - CONF_FILE="configs/audiopll.conf"
+      - DTC_OVERLAY_FILE="configs/audiopll.overlay"

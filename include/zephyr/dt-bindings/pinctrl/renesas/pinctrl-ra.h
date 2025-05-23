@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_RA_PINCTRL_H__
-#define __ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_RA_PINCTRL_H__
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA_H__
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA_H__
 
 #define RA_PORT_NUM_POS  0
 #define RA_PORT_NUM_MASK 0xf
@@ -16,6 +16,7 @@
 #define RA_PSEL_HIZ_JTAG_SWD 0x0
 #define RA_PSEL_ADC          0x0
 #define RA_PSEL_DAC          0x0
+#define RA_PSEL_ACMPHS       0x0
 #define RA_PSEL_AGT          0x1
 #define RA_PSEL_GPT0         0x2
 #define RA_PSEL_GPT1         0x3
@@ -32,6 +33,7 @@
 #define RA_PSEL_SPI          0x6
 #define RA_PSEL_I2C          0x7
 #define RA_PSEL_CLKOUT_RTC   0x9
+#define RA_PSEL_ACMPHS_VCOUT 0x9
 #define RA_PSEL_CAC_ADC      0xa
 #define RA_PSEL_CAC_DAC      0xa
 #define RA_PSEL_BUS          0xb
@@ -56,4 +58,4 @@
 	(1 << RA_MODE_POS | psel << RA_PSEL_POS | port_num << RA_PORT_NUM_POS |                    \
 	 pin_num << RA_PIN_NUM_POS)
 
-#endif /* __ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_RA_PINCTRL_H__ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA_H__ */

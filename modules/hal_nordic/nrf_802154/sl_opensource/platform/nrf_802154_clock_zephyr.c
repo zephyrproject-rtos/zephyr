@@ -12,6 +12,7 @@
 #include <compiler_abstraction.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <nrf_sys_event.h>
 
 static bool hfclk_is_running;
 
@@ -43,6 +44,19 @@ static void hfclk_on_callback(struct onoff_manager *mgr,
 }
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
+
+#if defined(NRF54LM20A_ENGA_XXAA)
+/* HF clock time to ramp-up. */
+#define MAX_HFXO_RAMP_UP_TIME_US 550
+
+static void hfclk_started_timer_handler(struct k_timer *dummy)
+{
+	hfclk_on_callback(NULL, NULL, 0, 0);
+}
+
+K_TIMER_DEFINE(hfclk_started_timer, hfclk_started_timer_handler, NULL);
+#endif
+
 void nrf_802154_clock_hfclk_start(void)
 {
 	struct onoff_manager *mgr =
@@ -52,9 +66,26 @@ void nrf_802154_clock_hfclk_start(void)
 
 	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
 
+	/*
+	 * todo: replace constlat request with PM policy API when
+	 * controlling the event latency becomes possible.
+	 */
+	if (IS_ENABLED(CONFIG_NRF_802154_CONSTLAT_CONTROL)) {
+		nrf_sys_event_request_global_constlat();
+	}
+
 	int ret = onoff_request(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
+
+	#if defined(NRF54LM20A_ENGA_XXAA)
+		/*
+		 * Right now, the power_clock_irq is not available on nRF54LM20A.
+		 * Since the onoff mechanism relies on the irq, the timer is used
+		 * to emit the hfclk_ready callback.
+		 */
+		k_timer_start(&hfclk_started_timer, K_USEC(MAX_HFXO_RAMP_UP_TIME_US), K_NO_WAIT);
+	#endif
 }
 
 void nrf_802154_clock_hfclk_stop(void)
@@ -67,6 +98,11 @@ void nrf_802154_clock_hfclk_stop(void)
 	int ret = onoff_cancel_or_release(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
+
+	if (IS_ENABLED(CONFIG_NRF_802154_CONSTLAT_CONTROL)) {
+		nrf_sys_event_release_global_constlat();
+	}
+
 	hfclk_is_running = false;
 }
 

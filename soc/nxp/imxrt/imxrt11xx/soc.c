@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 NXP
+ * Copyright 2021-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M7)
 #include <fsl_flexspi_nor_boot.h>
 #endif
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include "usb_phy.h"
 #include "usb.h"
 #endif
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
 #include <cmsis_core.h>
 
@@ -127,7 +127,7 @@ usb_phy_config_struct_t usbPhyConfig = {
 };
 #endif
 
-#ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M7)
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
 #ifdef CONFIG_XIP
 	.start = CONFIG_FLASH_BASE_ADDRESS,
@@ -463,8 +463,8 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
-	/* Configure lpspi using Osc48MDiv2 */
-	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc48MDiv2;
+	/* Configure input clock to be able to reach the datasheet specified band rate. */
+	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc400M;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
@@ -494,7 +494,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#ifdef CONFIG_MCUX_ACMP
+#if defined(CONFIG_COMPARATOR_MCUX_ACMP) || defined(CONFIG_SENSOR_MCUX_ACMP)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp1))
 	/* Configure ACMP1 using Osc48MDiv2*/
 	rootCfg.mux = kCLOCK_ACMP_ClockRoot_MuxOscRc48MDiv2;
@@ -782,7 +782,7 @@ void __used _soc_reset_hook(void)
 
 #if defined(FLEXRAM_RUNTIME_BANKS_USED)
 	/* Configure flexram if not running from RAM */
-	memc_flexram_dt_partition();
+	flexram_dt_partition();
 #endif
 }
 #endif

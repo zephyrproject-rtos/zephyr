@@ -1,31 +1,114 @@
 /*
- * Copyright 2018, 2024 NXP
+ * Copyright 2018, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_lpspi_common, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
+#include <fsl_lpspi.h>
 
-int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
+#if defined(LPSPI_RSTS) || defined(LPSPI_CLOCKS)
+static LPSPI_Type *const lpspi_bases[] = LPSPI_BASE_PTRS;
+#endif
+
+#ifdef LPSPI_RSTS
+static const reset_ip_name_t lpspi_resets[] = LPSPI_RSTS;
+
+static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type *const base)
 {
-	struct spi_mcux_data *data = dev->data;
+	reset_ip_name_t rst = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			rst = lpspi_resets[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(rst != -1);
+	return rst;
+
+}
+#endif
+
+#ifdef LPSPI_CLOCKS
+static const clock_ip_name_t lpspi_clocks[] = LPSPI_CLOCKS;
+
+static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type *const base)
+{
+	clock_ip_name_t clk = -1; /* invalid initial value */
+
+	ARRAY_FOR_EACH(lpspi_bases, idx) {
+		if (lpspi_bases[idx] == base) {
+			clk = lpspi_clocks[idx];
+			break;
+		}
+	}
+
+	__ASSERT_NO_MSG(clk != -1);
+	return clk;
+}
+#endif
+
+void lpspi_wait_tx_fifo_empty(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
+	while (LPSPI_GetTxFifoCount(base) != 0) {
+	}
+}
+
+int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg)
+{
+	struct lpspi_data *data = dev->data;
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
 
+static inline int lpspi_validate_xfer_args(const struct spi_config *spi_cfg)
+{
+	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	uint32_t pcs = spi_cfg->slave;
+
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		/* the IP DOES support half duplex, need to implement driver support */
+		LOG_WRN("Half-duplex not supported");
+		return -ENOTSUP;
+	}
+
+	if (word_size < 2 || (word_size % 32 == 1)) {
+		/* Zephyr word size == hardware FRAME size (not word size)
+		 * Max frame size: 4096 bits
+		 *   (zephyr field is 6 bit wide for max 64 bit size, no need to check)
+		 * Min frame size: 8 bits.
+		 * Minimum hardware word size is 2. Since this driver is intended to work
+		 * for 32 bit platforms, and 64 bits is max size, then only 33 and 1 are invalid.
+		 */
+		LOG_WRN("Word size %d not allowed", word_size);
+		return -EINVAL;
+	}
+
+	if (pcs > LPSPI_CHIP_SELECT_COUNT - 1) {
+		LOG_WRN("Peripheral %d select exceeds max %d", pcs, LPSPI_CHIP_SELECT_COUNT - 1);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
+	const struct lpspi_config *config = dev->config;
+	struct lpspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
+	bool already_configured = spi_context_configured(ctx, spi_cfg);
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
-	bool configured = ctx->config != NULL;
 	lpspi_master_config_t master_config;
 	uint32_t clock_freq;
 	int ret;
@@ -34,32 +117,13 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	/* TODO: S32K3 errata ERR050456 requiring module reset before every transfer,
 	 * investigate alternative workaround so we don't have this latency for S32.
 	 */
-	if (spi_context_configured(ctx, spi_cfg) && !IS_ENABLED(CONFIG_SOC_FAMILY_NXP_S32)) {
+	if (already_configured && !IS_ENABLED(CONFIG_SOC_FAMILY_NXP_S32)) {
 		return 0;
 	}
 
-	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		/* the IP DOES support half duplex, need to implement driver support */
-		LOG_ERR("Half-duplex not supported");
-		return -ENOTSUP;
-	}
-
-	if (word_size < 8 || (word_size % 32 == 1)) {
-		/* Zephyr word size == hardware FRAME size (not word size)
-		 * Max frame size: 4096 bits
-		 *   (zephyr field is 6 bit wide for max 64 bit size, no need to check)
-		 * Min frame size: 8 bits.
-		 * Minimum hardware word size is 2. Since this driver is intended to work
-		 * for 32 bit platforms, and 64 bits is max size, then only 33 and 1 are invalid.
-		 */
-		LOG_ERR("Word size %d not allowed", word_size);
-		return -EINVAL;
-	}
-
-	if (spi_cfg->slave > LPSPI_CHIP_SELECT_COUNT) {
-		LOG_ERR("Peripheral %d select exceeds max %d", spi_cfg->slave,
-			LPSPI_CHIP_SELECT_COUNT - 1);
-		return -EINVAL;
+	ret = lpspi_validate_xfer_args(spi_cfg);
+	if (ret) {
+		return ret;
 	}
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
@@ -67,7 +131,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 		return ret;
 	}
 
-	if (configured) {
+	if (already_configured) {
 		/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled. Only
 		 * disable if already configured, otherwise the clock is not enabled and the
 		 * CR register cannot be written.
@@ -90,7 +154,7 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 
 	LPSPI_MasterGetDefaultConfig(&master_config);
 
-	master_config.bitsPerFrame = word_size;
+	master_config.bitsPerFrame = word_size < 8 ? 8 : word_size; /* minimum FRAMSZ is 8 */
 	master_config.cpol = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 				     ? kLPSPI_ClockPolarityActiveLow
 				     : kLPSPI_ClockPolarityActiveHigh;
@@ -103,9 +167,12 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
 	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
 	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+	master_config.whichPcs = spi_cfg->slave + kLPSPI_Pcs0;
+	master_config.pcsActiveHighOrLow = (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
+				    ? kLPSPI_PcsActiveHigh : kLPSPI_PcsActiveLow;
 	master_config.pinCfg = config->data_pin_config;
-	master_config.dataOutConfig = config->output_config ? kLpspiDataOutTristate :
-							      kLpspiDataOutRetained;
+	master_config.dataOutConfig = config->tristate_output ? kLpspiDataOutTristate :
+								kLpspiDataOutRetained;
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 	LPSPI_SetDummyData(base, 0);
@@ -117,10 +184,22 @@ int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cf
 	return 0;
 }
 
+static void lpspi_module_system_init(LPSPI_Type *base)
+{
+#ifdef LPSPI_CLOCKS
+	CLOCK_EnableClock(lpspi_get_clock(base));
+#endif
+
+#ifdef LPSPI_RSTS
+	RESET_ReleasePeripheralReset(lpspi_get_reset(base));
+#endif
+}
+
 int spi_nxp_init_common(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct lpspi_config *config = dev->config;
+	struct lpspi_data *data = dev->data;
 	int err = 0;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
@@ -132,6 +211,8 @@ int spi_nxp_init_common(const struct device *dev)
 		return -ENODEV;
 	}
 
+	lpspi_module_system_init(base);
+
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
 		return err;
@@ -141,6 +222,8 @@ int spi_nxp_init_common(const struct device *dev)
 	if (err) {
 		return err;
 	}
+
+	LPSPI_Reset(base);
 
 	config->irq_config_func(dev);
 

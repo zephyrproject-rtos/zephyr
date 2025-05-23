@@ -147,42 +147,7 @@ More information about STM32H7S7 can be found here:
 Supported Features
 ==================
 
-The Zephyr STM32H7S78_DK board configuration supports the following
-hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi bus                             |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/stm32h7s78_dk/stm32h7s78_dk_defconfig`
-  - :zephyr_file:`boards/st/stm32h7s78_dk/stm32h7s78_dk.dts`
+.. zephyr:board-supported-hw::
 
 Zephyr board options
 ====================
@@ -218,6 +183,7 @@ Default Zephyr Peripheral Mapping:
 - LD4 (blue) : PM3
 - ADC1 channel 6 input : PF12
 - USB OTG FS DM/DP : PM12/PM11
+- XSPI1 NCS/DQS0/DQS1/CLK/IO: PO0/PO2/PO3/PO4/PP0..15
 
 System Clock
 ------------
@@ -240,6 +206,8 @@ USB port2 (FS) is supported.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 

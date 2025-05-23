@@ -1,13 +1,25 @@
 /* hci_core.h - Bluetooth HCI core access */
 
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
 
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
@@ -74,6 +86,7 @@ enum {
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
+	BT_DEV_LIMITED_DISCOVERABLE_MODE,
 #endif /* CONFIG_BT_CLASSIC */
 
 	/* Total number of flags - must be at the end of the enum */
@@ -82,7 +95,8 @@ enum {
 
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID))
+				 BIT(BT_DEV_PRESET_ID) | \
+				 BIT(BT_DEV_DISABLE))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 /* Check the feature bit for extended or legacy advertising commands */
@@ -271,7 +285,7 @@ struct bt_le_per_adv_sync {
 
 struct bt_dev_le {
 	/* LE features */
-	uint8_t			features[8];
+	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];
 	/* LE states */
 	uint64_t			states;
 
@@ -477,7 +491,6 @@ int bt_le_create_conn_cancel(void);
 int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_adv *adv,
 			     uint8_t subevent);
 
-bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
@@ -569,5 +582,3 @@ int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
 bool bt_drv_quirk_no_auto_dle(void);
 
 void bt_tx_irq_raise(void);
-void bt_send_one_host_num_completed_packets(uint16_t handle);
-void bt_acl_set_ncp_sent(struct net_buf *packet, bool value);

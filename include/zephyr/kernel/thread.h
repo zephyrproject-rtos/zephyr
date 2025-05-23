@@ -105,7 +105,9 @@ struct _thread_base {
 	int prio_deadline;
 #endif /* CONFIG_SCHED_DEADLINE */
 
+#if defined(CONFIG_SCHED_SCALABLE) || defined(CONFIG_WAITQ_SCALABLE)
 	uint32_t order_key;
+#endif
 
 #ifdef CONFIG_SMP
 	/* True for the per-CPU idle threads */
@@ -194,6 +196,7 @@ struct _mem_domain_info {
 	struct k_mem_domain *mem_domain;
 };
 
+typedef struct _mem_domain_info _mem_domain_info_t;
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA

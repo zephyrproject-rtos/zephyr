@@ -1,0 +1,64 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI MAX14915 compact industrial octal high-side switch with
+  diagnostics
+
+  https://www.analog.com/media/en/technical-documentation/data-sheets/MAX14915.pdf
+
+  Example:
+
+  max14915: max14915@0 {
+      compatible = "adi,max14915-gpio";
+      status = "okay";
+      reg = <0x00>;
+      fault-gpios = <&gpiof 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+      sync-gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+      en-gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+      drdy-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+      spi-max-frequency = <10000000>;
+      gpio-controller;
+      #gpio-cells = <2>;
+      ngpios = <8>;
+      crc-en;
+      spi-addr = <0>;
+      ow-on-en = <0 0 0 0 0 0 0 0>;
+      ow-off-en = <0 0 0 0 0 0 0 0>;
+      sh-vdd-en = <0 0 0 0 0 0 0 0>;
+      /* Config Reg 1 */
+      fled-set;
+      sled-set;
+      fled-stretch = <3>;
+      ffilter-en;
+      filter-long;
+      flatch-en;
+      led-cur-lim;
+      /* Config Reg 2 */
+      vdd-on-thr;
+      synch-wd-en;
+      sht-vdd-thr = <3>;
+      ow-off-cs = <3>;
+      wd-to = <0>;
+    };
+
+compatible: "adi,max14915-gpio"
+
+properties:
+  wd-to:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Default value according to documentation.
+      Set SPI and SYNCH Watchdog Timeout
+      0: Disable SPI Watchdog and set SYNCH Watchdog Timeout to 600ms (typ)
+      1: Set SPI and SYNCH Watchdog Timeout to 200ms (typ)
+      2: Set SPI and SYNCH Watchdog Timeout to 600ms (typ)
+      3: Set SPI and SYNCH Watchdog Timeout to 1.2s (typ)
+
+include: adi,max14916-gpio.yaml

@@ -19,6 +19,16 @@ like this:
 
 .. code-block:: yaml
 
+   # When the description text is too long, this field can
+   # be used to improve readability, e.g.:
+   #
+   # title: Binding the device's hardware model.
+   #
+   # description |
+   #   A piece of content with 20 lines.
+   #   ...
+   title: Concise title for the long description [optional]
+
    # A high level description of the device the binding applies to:
    description: |
       This is the Vendomatic company's foo-device.
@@ -57,6 +67,24 @@ like this:
      # values are 'gpio', 'pwm', and 'dma'. See below for more information.
 
 These keys are explained in the following sections.
+
+.. _dt-bindings-title:
+
+Title
+*****
+
+Short description of the bound device, typically the hardware model. It should
+typically be on the format "Vendor Family Model". If acronyms are used, they
+should be spelled out in parentheses. The naming should stay as close to the
+vendor datasheet as possible.
+
+Titles should not exceed 100 characters. The description field should be used
+for longer descriptions. The words "binding", "schema" or "driver" should not
+be used in the title, everything is a binding.
+
+.. code-block:: YAML
+
+   title: Acme Foo UART (Universal Asynchronous Receiver/Transmitter)
 
 .. _dt-bindings-description:
 

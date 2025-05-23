@@ -7,10 +7,17 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   backport:
     name: Backport
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write       # to create/push backport branches
+      pull-requests: write  # to create backport PRs
+      issues: write         # to add labels to issue created if backport fails
     # Only react to merged PRs for security reasons.
     # See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target.
     if: >
@@ -24,8 +31,8 @@ jobs:
       )
     steps:
       - name: Backport
-        uses: zephyrproject-rtos/action-backport@v2.0.3-3
+        uses: zephyrproject-rtos/action-backport@7e74f601d11eaca577742445e87775b5651a965f # v2.0.3-3
         with:
-          github_token: ${{ secrets.ZB_GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           issue_labels: Backport
           labels_template: '["Backport"]'

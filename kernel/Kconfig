@@ -121,14 +121,14 @@ config SCHED_DEADLINE
 
 config SCHED_CPU_MASK
 	bool "CPU mask affinity/pinning API"
-	depends on SCHED_DUMB
+	depends on SCHED_SIMPLE
 	help
 	  When true, the application will have access to the
 	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
 	  SMP mode, allowing applications to pin threads to specific CPUs or
 	  disallow threads from running on given CPUs.  Note that as currently
 	  implemented, this involves an inherent O(N) scaling in the number of
-	  idle-but-runnable threads, and thus works only with the DUMB
+	  idle-but-runnable threads, and thus works only with the simple
 	  scheduler (as SCALABLE and MULTIQ would see no benefit).
 
 	  Note that this setting does not technically depend on SMP and is
@@ -157,7 +157,7 @@ config SCHED_CPU_MASK_PIN_ONLY
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
-	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC || NIOS2)
+	default 512 if ZTEST && !(RISCV || X86 || ARM || ARC)
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
@@ -297,16 +297,23 @@ endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
 
+config SCHED_DUMB
+	bool "Simple linked-list ready queue"
+	select DEPRECATED
+	help
+	  Deprecated in favour of SCHED_SIMPLE.
+
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
-	default SCHED_DUMB
+	default SCHED_SIMPLE if SCHED_DUMB
+	default SCHED_SIMPLE
 	help
 	  The kernel can be built with several choices for the
 	  ready queue implementation, offering different choices between
 	  code size, constant factor runtime overhead and performance
 	  scaling when many threads are added.
 
-config SCHED_DUMB
+config SCHED_SIMPLE
 	bool "Simple linked-list ready queue"
 	help
 	  When selected, the scheduler ready queue will be implemented
@@ -339,20 +346,27 @@ config SCHED_MULTIQ
 	  as the classic/textbook array of lists, one per priority.
 	  This corresponds to the scheduler algorithm used in Zephyr
 	  versions prior to 1.12.  It incurs only a tiny code size
-	  overhead vs. the "dumb" scheduler and runs in O(1) time
+	  overhead vs. the "simple" scheduler and runs in O(1) time
 	  in almost all circumstances with very low constant factor.
 	  But it requires a fairly large RAM budget to store those list
 	  heads, and the limited features make it incompatible with
 	  features like deadline scheduling that need to sort threads
 	  more finely, and SMP affinity which need to traverse the list
 	  of threads.  Typical applications with small numbers of runnable
-	  threads probably want the DUMB scheduler.
+	  threads probably want the simple scheduler.
 
 endchoice # SCHED_ALGORITHM
 
+config WAITQ_DUMB
+	bool "Simple linked-list wait_q"
+	select DEPRECATED
+	help
+	  Deprecated in favour of WAITQ_SIMPLE.
+
 choice WAITQ_ALGORITHM
 	prompt "Wait queue priority algorithm"
-	default WAITQ_DUMB
+	default WAITQ_SIMPLE if WAITQ_DUMB
+	default WAITQ_SIMPLE
 	help
 	  The wait_q abstraction used in IPC primitives to pend
 	  threads for later wakeup shares the same backend data
@@ -365,13 +379,13 @@ config WAITQ_SCALABLE
 	  When selected, the wait_q will be implemented with a
 	  balanced tree.  Choose this if you expect to have many
 	  threads waiting on individual primitives.  There is a ~2kb
-	  code size increase over WAITQ_DUMB (which may be shared with
+	  code size increase over WAITQ_SIMPLE (which may be shared with
 	  SCHED_SCALABLE) if the rbtree is not used elsewhere in the
 	  application, and pend/unpend operations on "small" queues
 	  will be somewhat slower (though this is not generally a
 	  performance path).
 
-config WAITQ_DUMB
+config WAITQ_SIMPLE
 	bool "Simple linked-list wait_q"
 	help
 	  When selected, the wait_q will be implemented with a
@@ -639,7 +653,7 @@ config TIMESLICING
 
 config TIMESLICE_SIZE
 	int "Time slice size (in ms)"
-	default 0
+	default 20
 	range 0 $(INT32_MAX)
 	depends on TIMESLICING
 	help
@@ -768,9 +782,9 @@ endmenu
 config SWAP_NONATOMIC
 	bool
 	help
-	  On some architectures, the _Swap() primitive cannot be made
+	  On some architectures, the z_swap() primitive cannot be made
 	  atomic with respect to the irq_lock being released.  That
-	  is, interrupts may be received between the entry to _Swap
+	  is, interrupts may be received between the entry to z_swap
 	  and the completion of the context switch.  There are a
 	  handful of workaround cases in the kernel that need to be
 	  enabled when this is true.  Currently, this only happens on
@@ -813,6 +827,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
+	default 0 if TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
 	  This option specifies the frequency of the hardware timer used for the
 	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file
@@ -1031,10 +1046,10 @@ config KERNEL_WHOLE_ARCHIVE
 	  to be included, rather than searching the archive for required object files.
 
 config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
-	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
-	# initialization of static objects, new toolchains can be added
-	# here if required.
-	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	# As of today, we don't know of any toolchains that don't create
+	# either .ctors or .init_array sections containing initializer
+	# addresses in a fashion compatible with how Zephyr uses them.
+	def_bool y
 
 config STATIC_INIT_GNU
 	bool "Support GNU-compatible initializers and constructors"
@@ -1044,14 +1059,11 @@ config STATIC_INIT_GNU
 	help
 	  GNU-compatible initialization of static objects. This is required for
 	  C++ constructor support as well as for initializer functions as
-	  defined by GNU-compatible toolchains. This increases the size
-	  of Zephyr binaries by around 100 bytes. If you know your
-	  application doesn't need any initializers, you can disable this
-	  option.
-	  The ARC MWDT toolchain, does not support or use this setting,
-	  and has instead separate C++ constructor initialization code.
-	  Note the option CMAKE_LINKER_GENERATOR does not yet support this feature
-	  or CPP.
+	  defined by GNU-compatible toolchains. This increases the size of
+	  Zephyr binaries by around 24 bytes. If you know your application
+	  doesn't need any initializers, you can disable this option. The linker
+	  will emit an error if constructors are needed and this option has been
+	  disabled.
 
 config BOOTARGS
 	bool "Support bootargs"
@@ -1060,7 +1072,7 @@ config BOOTARGS
 
 config DYNAMIC_BOOTARGS
 	bool "Support dynamic bootargs"
-	depends on BOOTARGS && (MULTIBOOT_INFO || BUILD_OUTPUT_EFI)
+	depends on BOOTARGS
 	help
 	  Enables dynamic bootargs support.
 

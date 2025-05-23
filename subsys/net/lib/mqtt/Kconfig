@@ -17,6 +17,29 @@ module-str=Log level for MQTT
 module-help=Enables mqtt debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+choice MQTT_VERSION_SUPPORT
+	prompt "Maximum MQTT protocol version supported"
+	default MQTT_VERSION_3_1_1
+	help
+	  Maximum MQTT protocol version supported by the library.
+
+config MQTT_VERSION_3_1_1
+	bool "Support up to version 3.1.1 of the MQTT protocol"
+	help
+	  The MQTT version 3.1.1 will be the default library choice. Applications
+	  will still be able to choose to use an older MQTT protocol version
+	  with respective runtime MQTT client configuration.
+
+config MQTT_VERSION_5_0
+	bool "Support up to version 5.0 of the MQTT protocol [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  The MQTT version 5.0 will be the default library choice. Applications
+	  will still be able to choose to use an older MQTT protocol version
+	  with respective runtime MQTT client configuration.
+
+endchoice
+
 config MQTT_KEEPALIVE
 	int "Maximum number of clients Keep alive time for MQTT (in seconds)"
 	default 60
@@ -57,5 +80,40 @@ config MQTT_CLEAN_SESSION
 	  all subscriptions are reinstated and all stored messages are sent to
 	  the client. Setting this flag to 0 allows the client to create a
 	  persistent session.
+
+#if MQTT_VERSION_5_0
+
+config MQTT_USER_PROPERTIES_MAX
+	int "Maximum number of user properties in a packet"
+	default 1
+	range 1 $(UINT16_MAX)
+	help
+	  Maximum number of user properties that the client can include in a
+	  packet or parse on input.
+
+config MQTT_SUBSCRIPTION_ID_PROPERTIES_MAX
+	int "Maximum number of Subscription ID properties in a Publish packet"
+	default 1
+	range 1 32
+	help
+	  Maximum number of Subscription ID properties that the client can
+	  parse when processing Publish message.
+
+config MQTT_TOPIC_ALIAS_MAX
+	int "Maximum number of supported topic aliases"
+	default 5
+	range 0 $(UINT16_MAX)
+	help
+	  Maximum number of supported topic aliases used in PUBLISH packets.
+	  If set to 0, topic aliasing is disabled.
+
+config MQTT_TOPIC_ALIAS_STRING_MAX
+	int "The longest topic name that can be aliased"
+	default 64
+	range 8 $(UINT16_MAX)
+	help
+	  Specifies a size of a buffer for storing aliased topics.
+
+#endif # MQTT_VERSION_5_0
 
 endif # MQTT_LIB

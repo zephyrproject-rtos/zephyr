@@ -75,10 +75,15 @@ BUILD_ASSERT(RPU_PKTRAM_SIZE - TOTAL_RX_SIZE >= TOTAL_TX_SIZE,
 BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
 	"TX buffer size must be at least as big as the MTU and headroom");
 
+BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE % 4 == 0,
+	"TX buffer size must be a multiple of 4");
+BUILD_ASSERT(CONFIG_NRF70_RX_MAX_DATA_SIZE % 4 == 0,
+	"RX buffer size must be a multiple of 4");
+
 static const unsigned char aggregation = 1;
 static const unsigned char max_num_tx_agg_sessions = 4;
 static const unsigned char max_num_rx_agg_sessions = 8;
-static const unsigned char reorder_buf_size = 16;
+static const unsigned char reorder_buf_size = CONFIG_NRF70_RX_NUM_BUFS / 2;
 static const unsigned char max_rxampdu_size = MAX_RX_AMPDU_SIZE_64KB;
 
 static const unsigned char max_tx_aggregation = CONFIG_NRF70_MAX_TX_AGGREGATION;
@@ -357,6 +362,7 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 			goto out;
 		}
 
+		ret = 0;
 		goto out;
 	}
 #endif
@@ -465,7 +471,8 @@ void reg_change_callbk_fn(void *vif_ctx,
 		return;
 	}
 
-	fmac_dev_ctx->reg_change = k_malloc(sizeof(struct nrf_wifi_event_regulatory_change));
+	fmac_dev_ctx->reg_change = nrf_wifi_osal_mem_alloc(sizeof(struct
+							   nrf_wifi_event_regulatory_change));
 	if (!fmac_dev_ctx->reg_change) {
 		LOG_ERR("%s: Failed to allocate memory for reg_change", __func__);
 		return;
@@ -478,8 +485,12 @@ void reg_change_callbk_fn(void *vif_ctx,
 }
 #endif /* !CONFIG_NRF70_RADIO_TEST */
 
+#ifdef CONFIG_NRF71_ON_IPC
+#define MAX_TX_PWR(label) DT_PROP(DT_NODELABEL(wifi), label) * 4
+#else
 /* DTS uses 1dBm as the unit for TX power, while the RPU uses 0.25dBm */
 #define MAX_TX_PWR(label) DT_PROP(DT_NODELABEL(nrf70), label) * 4
+#endif /* CONFIG_NRF71_ON_IPC */
 
 void configure_tx_pwr_settings(struct nrf_wifi_tx_pwr_ctrl_params *tx_pwr_ctrl_params,
 				struct nrf_wifi_tx_pwr_ceil_params *tx_pwr_ceil_params)
@@ -580,6 +591,13 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	unsigned int fw_ver = 0;
 
+#if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
+	defined(CONFIG_NRF70_SYSTEM_MODE)
+	unsigned int alt_swctrl1_function_bt_coex_status1 =
+			(~CONFIG_NRF70_SR_COEX_SWCTRL1_OUTPUT) & 0x1;
+	unsigned int invert_bt_coex_grant_output = CONFIG_NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW;
+#endif /* CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL && CONFIG_NRF70_SYSTEM_MODE */
+
 	rpu_ctx_zep = &drv_priv_zep->rpu_ctx_zep;
 
 	rpu_ctx_zep->drv_priv_zep = drv_priv_zep;
@@ -622,6 +640,18 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 				  &tx_pwr_ceil_params);
 
 	configure_board_dep_params(&board_params);
+
+#if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
+	defined(CONFIG_NRF70_SYSTEM_MODE)
+	LOG_DBG("Configuring SLEEP CTRL GPIO control register\n");
+	status = nrf_wifi_coex_config_sleep_ctrl_gpio_ctrl(rpu_ctx_zep->rpu_ctx,
+			alt_swctrl1_function_bt_coex_status1,
+			invert_bt_coex_grant_output);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: Failed to configure GPIO control register", __func__);
+		goto err;
+	}
+#endif /* CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL  && CONFIG_NRF70_SYSTEM_MODE */
 
 #ifdef CONFIG_NRF70_RADIO_TEST
 	status = nrf_wifi_rt_fmac_dev_init(rpu_ctx_zep->rpu_ctx,
@@ -677,9 +707,9 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	nrf_wifi_fmac_dev_rem(rpu_ctx_zep->rpu_ctx);
 
-	k_free(rpu_ctx_zep->extended_capa);
+	nrf_wifi_osal_mem_free(rpu_ctx_zep->extended_capa);
 	rpu_ctx_zep->extended_capa = NULL;
-	k_free(rpu_ctx_zep->extended_capa_mask);
+	nrf_wifi_osal_mem_free(rpu_ctx_zep->extended_capa_mask);
 	rpu_ctx_zep->extended_capa_mask = NULL;
 
 	rpu_ctx_zep->rpu_ctx = NULL;

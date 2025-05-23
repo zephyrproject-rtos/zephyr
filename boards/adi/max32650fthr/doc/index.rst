@@ -8,10 +8,6 @@ for high-performance, battery-powered applications.
 
 The Zephyr port is running on the MAX32650 MCU.
 
-.. image:: img/max32650fthr.webp
-   :align: center
-   :alt: MAX32650 FTHR Front
-
 Hardware
 ********
 
@@ -68,24 +64,12 @@ Hardware
 Supported Features
 ==================
 
-The ``max32650fthr`` board supports the following interfaces:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Flashing
 ========

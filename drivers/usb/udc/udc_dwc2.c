@@ -105,16 +105,17 @@ struct udc_dwc2_data {
 	/* Main events the driver thread waits for */
 	struct k_event drv_evt;
 	/* Transfer triggers (IN on bits 0-15, OUT on bits 16-31) */
-	struct k_event xfer_new;
+	atomic_t xfer_new;
 	/* Finished transactions (IN on bits 0-15, OUT on bits 16-31) */
-	struct k_event xfer_finished;
+	atomic_t xfer_finished;
 	struct dwc2_reg_backup backup;
 	uint32_t ghwcfg1;
-	uint32_t txf_set;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
 	uint32_t rx_siz[16];
+	uint16_t txf_set;
+	uint16_t pending_tx_flush;
 	uint16_t dfifodepth;
 	uint16_t rxfifo_depth;
 	uint16_t max_txfifo_depth[16];
@@ -138,6 +139,9 @@ struct udc_dwc2_data {
 	uint8_t outeps;
 	uint8_t setup[8];
 };
+
+static void udc_dwc2_ep_disable(const struct device *dev,
+				struct udc_ep_config *const cfg, bool stall);
 
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
@@ -403,7 +407,7 @@ static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
 	}
 
 	udc_buf_put(ep_cfg, buf);
-	k_event_post(&priv->xfer_new, BIT(16));
+	atomic_set_bit(&priv->xfer_new, 16);
 	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 
 	return 0;
@@ -416,7 +420,7 @@ static void dwc2_ensure_setup_ready(const struct device *dev)
 		return;
 	}
 
-	if (!udc_buf_peek(dev, USB_CONTROL_EP_OUT)) {
+	if (!udc_buf_peek(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN))) {
 		dwc2_ctrl_feed_dout(dev, 8);
 	}
 }
@@ -668,7 +672,32 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 
 	/* Clear NAK and set endpoint enable */
 	doepctl = sys_read32(doepctl_reg);
-	doepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK;
+	doepctl |= USB_DWC2_DEPCTL_EPENA;
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_data *data = dev->data;
+
+		/* During OUT Data Stage every packet has to have CNAK set.
+		 * In Buffer DMA mode the OUT endpoint is armed during IN Data
+		 * Stage to accept either Status stage or new SETUP token. The
+		 * Status stage (premature or not) can only be received if CNAK
+		 * was set. In Completer mode the OUT endpoint armed during OUT
+		 * Status stage needs CNAK.
+		 *
+		 * Setting CNAK in other cases opens up possibility for Buffer
+		 * DMA controller to lock up completely if the endpoint is
+		 * enabled (to receive SETUP data) when the host is transmitting
+		 * subsequent control transfer OUT Data Stage packet (SETUP DATA
+		 * is unconditionally ACKed regardless of software state).
+		 */
+		if (data->stage == CTRL_PIPE_STAGE_DATA_OUT ||
+		    data->stage == CTRL_PIPE_STAGE_DATA_IN ||
+		    data->stage == CTRL_PIPE_STAGE_STATUS_OUT) {
+			doepctl |= USB_DWC2_DEPCTL_CNAK;
+		}
+	} else {
+		/* Non-control endpoint, set CNAK for all transfers */
+		doepctl |= USB_DWC2_DEPCTL_CNAK;
+	}
 
 	if (dwc2_ep_is_iso(cfg)) {
 		xfersize = USB_MPS_TO_TPL(cfg->mps);
@@ -736,7 +765,7 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 {
 	struct net_buf *buf;
 
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		return;
 	}
@@ -770,7 +799,7 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 			LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x (err: %d)",
 				cfg->addr, err);
 
-			buf = udc_buf_get(dev, cfg->addr);
+			buf = udc_buf_get(cfg);
 			if (udc_submit_ep_event(dev, buf, -ECONNREFUSED)) {
 				LOG_ERR("Failed to submit endpoint event");
 			};
@@ -779,12 +808,14 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 		}
 	}
 
-	udc_ep_set_busy(dev, cfg->addr, true);
+	udc_ep_set_busy(cfg, true);
 }
 
 static int dwc2_handle_evt_setup(const struct device *dev)
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
 	int err;
 
@@ -792,20 +823,21 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 	 * transfer beforehand. In Buffer DMA the SETUP can be copied to any EP0
 	 * OUT buffer. If there is any buffer queued, it is obsolete now.
 	 */
-	k_event_clear(&priv->xfer_finished, BIT(0) | BIT(16));
+	atomic_and(&priv->xfer_finished, ~(BIT(0) | BIT(16)));
 
-	buf = udc_buf_get_all(dev, USB_CONTROL_EP_OUT);
+	buf = udc_buf_get_all(cfg_out);
 	if (buf) {
 		net_buf_unref(buf);
 	}
 
-	buf = udc_buf_get_all(dev, USB_CONTROL_EP_IN);
+	buf = udc_buf_get_all(cfg_in);
 	if (buf) {
+		udc_dwc2_ep_disable(dev, cfg_in, false);
 		net_buf_unref(buf);
 	}
 
-	udc_ep_set_busy(dev, USB_CONTROL_EP_OUT, false);
-	udc_ep_set_busy(dev, USB_CONTROL_EP_IN, false);
+	udc_ep_set_busy(cfg_out, false);
+	udc_ep_set_busy(cfg_in, false);
 
 	/* Allocate buffer and copy received SETUP for processing */
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 8);
@@ -851,13 +883,13 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 	struct net_buf *buf;
 	int err = 0;
 
-	buf = udc_buf_get(dev, cfg->addr);
+	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer queued for ep 0x%02x", cfg->addr);
 		return -ENODATA;
 	}
 
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
@@ -899,7 +931,7 @@ static int dwc2_handle_evt_din(const struct device *dev,
 {
 	struct net_buf *buf;
 
-	buf = udc_buf_peek(dev, cfg->addr);
+	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -916,8 +948,8 @@ static int dwc2_handle_evt_din(const struct device *dev,
 		return dwc2_tx_fifo_write(dev, cfg, buf);
 	}
 
-	buf = udc_buf_get(dev, cfg->addr);
-	udc_ep_set_busy(dev, cfg->addr, false);
+	buf = udc_buf_get(cfg);
+	udc_ep_set_busy(cfg, false);
 
 	if (cfg->addr == USB_CONTROL_EP_IN) {
 		if (udc_ctrl_stage_is_status_in(dev) ||
@@ -1484,6 +1516,7 @@ static int dwc2_unset_dedicated_fifo(const struct device *dev,
 static void udc_dwc2_ep_disable(const struct device *dev,
 				struct udc_ep_config *const cfg, bool stall)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t dxepctl_reg;
@@ -1493,7 +1526,43 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	dxepctl = sys_read32(dxepctl_reg);
 
-	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS)) {
+	if (priv->hibernated) {
+		/* Currently USB stack calls this function while hibernated,
+		 * for example if usbd_disable() is called. We cannot access the
+		 * real registers when hibernated, so just modify backup values
+		 * that will be restored on hibernation exit.
+		 */
+		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+			dxepctl = priv->backup.doepctl[ep_idx];
+
+			dxepctl &= ~USB_DWC2_DEPCTL_EPENA;
+			if (stall) {
+				dxepctl |= USB_DWC2_DEPCTL_STALL;
+			} else {
+				dxepctl |= USB_DWC2_DEPCTL_SNAK;
+			}
+
+			priv->backup.doepctl[ep_idx] = dxepctl;
+		} else {
+			dxepctl = priv->backup.diepctl[ep_idx];
+
+			dxepctl &= ~USB_DWC2_DEPCTL_EPENA;
+			dxepctl |= USB_DWC2_DEPCTL_SNAK;
+			if (stall) {
+				dxepctl |= USB_DWC2_DEPCTL_STALL;
+			}
+
+			priv->backup.diepctl[ep_idx] = dxepctl;
+
+			priv->pending_tx_flush |= BIT(usb_dwc2_get_depctl_txfnum(dxepctl));
+		}
+
+		udc_ep_set_busy(cfg, false);
+		return;
+	}
+
+	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS) &&
+	    !(dxepctl & USB_DWC2_DEPCTL_EPENA)) {
 		/* Endpoint already sends forced NAKs. STALL if necessary. */
 		if (stall) {
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
@@ -1588,7 +1657,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		dwc2_flush_tx_fifo(dev, usb_dwc2_get_depctl_txfnum(dxepctl));
 	}
 
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 }
 
 /* Deactivated endpoint means that there will be a bus timeout when the host
@@ -1624,15 +1693,6 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 
 	sys_write32(dxepctl, dxepctl_reg);
 	dwc2_set_epint(dev, cfg, false);
-
-	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		struct net_buf *buf = udc_buf_get_all(dev, cfg->addr);
-
-		/* Release the buffer allocated in dwc2_ctrl_feed_dout() */
-		if (buf) {
-			net_buf_unref(buf);
-		}
-	}
 
 	return 0;
 }
@@ -1671,16 +1731,16 @@ static int udc_dwc2_ep_clear_halt(const struct device *dev,
 	cfg->stat.halted = false;
 
 	/* Resume queued transfers if any */
-	if (udc_buf_peek(dev, cfg->addr)) {
-		uint32_t ep_bit;
+	if (udc_buf_peek(cfg)) {
+		int ep_bit;
 
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
-			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+			ep_bit = USB_EP_GET_IDX(cfg->addr);
 		} else {
-			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
+			ep_bit = 16 + USB_EP_GET_IDX(cfg->addr);
 		}
 
-		k_event_post(&priv->xfer_new, ep_bit);
+		atomic_set_bit(&priv->xfer_new, ep_bit);
 		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 	}
 
@@ -1697,15 +1757,15 @@ static int udc_dwc2_ep_enqueue(const struct device *dev,
 	udc_buf_put(cfg, buf);
 
 	if (!cfg->stat.halted) {
-		uint32_t ep_bit;
+		int ep_bit;
 
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
-			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+			ep_bit = USB_EP_GET_IDX(cfg->addr);
 		} else {
-			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
+			ep_bit = 16 + USB_EP_GET_IDX(cfg->addr);
 		}
 
-		k_event_post(&priv->xfer_new, ep_bit);
+		atomic_set_bit(&priv->xfer_new, ep_bit);
 		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 	}
 
@@ -1719,12 +1779,12 @@ static int udc_dwc2_ep_dequeue(const struct device *dev,
 
 	udc_dwc2_ep_disable(dev, cfg, false);
 
-	buf = udc_buf_get_all(dev, cfg->addr);
+	buf = udc_buf_get_all(cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
-	udc_ep_set_busy(dev, cfg->addr, false);
+	udc_ep_set_busy(cfg, false);
 
 	LOG_DBG("dequeue ep 0x%02x", cfg->addr);
 
@@ -1839,10 +1899,16 @@ static int dwc2_core_soft_reset(const struct device *dev)
 		}
 
 		k_busy_wait(1);
+
+		if (dwc2_quirk_is_phy_clk_off(dev)) {
+			/* Software reset won't finish without PHY clock */
+			return -EIO;
+		}
 	} while (sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRST &&
 		 !(sys_read32(grstctl_reg) & USB_DWC2_GRSTCTL_CSFTRSTDONE));
 
-	sys_clear_bits(grstctl_reg, USB_DWC2_GRSTCTL_CSFTRST | USB_DWC2_GRSTCTL_CSFTRSTDONE);
+	/* CSFTRSTDONE is W1C so the write must have the bit set to clear it */
+	sys_clear_bits(grstctl_reg, USB_DWC2_GRSTCTL_CSFTRST);
 
 	return 0;
 }
@@ -1980,15 +2046,21 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_ULPI:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		if (IS_ENABLED(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED)) {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBHS20);
+		} else {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS20);
+		}
 		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUS:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_UTMI;
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		if (IS_ENABLED(CONFIG_UDC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED)) {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBHS20);
+		} else {
+			dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS20);
+		}
 		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS:
@@ -1999,8 +2071,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB11;
 		}
 
-		dcfg |= USB_DWC2_DCFG_DEVSPD_USBFS1148
-			<< USB_DWC2_DCFG_DEVSPD_POS;
+		dcfg |= usb_dwc2_set_dcfg_devspd(USB_DWC2_DCFG_DEVSPD_USBFS1148);
 		hs_phy = false;
 	}
 
@@ -2141,10 +2212,9 @@ static int udc_dwc2_disable(const struct device *dev)
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
+	struct net_buf *buf;
 	int err;
 
-	/* Enable soft disconnect */
-	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
 	LOG_DBG("Disable device %p", dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
@@ -2162,9 +2232,26 @@ static int udc_dwc2_disable(const struct device *dev)
 	if (priv->hibernated) {
 		dwc2_exit_hibernation(dev, false, true);
 		priv->hibernated = 0;
+		priv->pending_tx_flush = 0;
 	}
 
 	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
+
+	/* Enable soft disconnect */
+	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
+
+	/* OUT endpoint 0 cannot be disabled by software. The buffer allocated
+	 * in dwc2_ctrl_feed_dout() can only be freed after core reset if the
+	 * core was in Buffer DMA mode.
+	 *
+	 * Soft Reset does timeout if PHY clock is not running. However, just
+	 * triggering Soft Reset seems to be enough on shutdown clean up.
+	 */
+	dwc2_core_soft_reset(dev);
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
+	if (buf) {
+		net_buf_unref(buf);
+	}
 
 	err = dwc2_quirk_disable(dev);
 	if (err) {
@@ -2214,8 +2301,8 @@ static int dwc2_driver_preinit(const struct device *dev)
 	k_mutex_init(&data->mutex);
 
 	k_event_init(&priv->drv_evt);
-	k_event_init(&priv->xfer_new);
-	k_event_init(&priv->xfer_finished);
+	atomic_clear(&priv->xfer_new);
+	atomic_clear(&priv->xfer_finished);
 
 	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
@@ -2318,12 +2405,14 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 static void udc_dwc2_lock(const struct device *dev)
 {
+	k_sched_lock();
 	udc_lock_internal(dev, K_FOREVER);
 }
 
 static void udc_dwc2_unlock(const struct device *dev)
 {
 	udc_unlock_internal(dev);
+	k_sched_unlock();
 }
 
 static void dwc2_on_bus_reset(const struct device *dev)
@@ -2437,7 +2526,7 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 	case USB_DWC2_GRXSTSR_PKTSTS_OUT_DATA:
 		ep_cfg = udc_get_ep_cfg(dev, ep);
 
-		buf = udc_buf_peek(dev, ep_cfg->addr);
+		buf = udc_buf_peek(ep_cfg);
 
 		/* RxFIFO data must be retrieved even when buf is NULL */
 		dwc2_read_fifo(dev, ep, buf, bcnt);
@@ -2463,7 +2552,7 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 	struct net_buf *buf;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep_idx | USB_EP_DIR_IN);
-	buf = udc_buf_peek(dev, ep_cfg->addr);
+	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return;
@@ -2474,39 +2563,38 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 		return;
 	}
 
-	k_event_post(&priv->xfer_finished, BIT(ep_idx));
+	atomic_set_bit(&priv->xfer_finished, ep_idx);
 	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 }
 
 static inline void dwc2_handle_iepint(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	const uint8_t n_max = 16;
 	uint32_t diepmsk;
-	uint32_t daint;
+	uint32_t epint;
 
 	diepmsk = sys_read32((mem_addr_t)&base->diepmsk);
-	daint = sys_read32((mem_addr_t)&base->daint);
+	epint = usb_dwc2_get_daint_inepint(sys_read32((mem_addr_t)&base->daint));
 
-	for (uint8_t n = 0U; n < n_max; n++) {
+	while (epint) {
+		uint8_t n = find_lsb_set(epint) - 1;
 		mem_addr_t diepint_reg = (mem_addr_t)&base->in_ep[n].diepint;
 		uint32_t diepint;
 		uint32_t status;
 
-		if (daint & USB_DWC2_DAINT_INEPINT(n)) {
-			/* Read and clear interrupt status */
-			diepint = sys_read32(diepint_reg);
-			status = diepint & diepmsk;
-			sys_write32(status, diepint_reg);
+		/* Read and clear interrupt status */
+		diepint = sys_read32(diepint_reg);
+		status = diepint & diepmsk;
+		sys_write32(status, diepint_reg);
 
-			LOG_DBG("ep 0x%02x interrupt status: 0x%x",
-				n | USB_EP_DIR_IN, status);
+		LOG_DBG("ep 0x%02x interrupt status: 0x%x",
+			n | USB_EP_DIR_IN, status);
 
-			if (status & USB_DWC2_DIEPINT_XFERCOMPL) {
-				dwc2_handle_in_xfercompl(dev, n);
-			}
-
+		if (status & USB_DWC2_DIEPINT_XFERCOMPL) {
+			dwc2_handle_in_xfercompl(dev, n);
 		}
+
+		epint &= ~BIT(n);
 	}
 
 	/* Clear IEPINT interrupt */
@@ -2526,7 +2614,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 
 	doeptsiz = sys_read32((mem_addr_t)&base->out_ep[ep_idx].doeptsiz);
 
-	buf = udc_buf_peek(dev, ep_cfg->addr);
+	buf = udc_buf_peek(ep_cfg);
 	if (!buf) {
 		LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -2580,7 +2668,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	    net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg);
 	} else {
-		k_event_post(&priv->xfer_finished, BIT(16 + ep_idx));
+		atomic_set_bit(&priv->xfer_finished, 16 + ep_idx);
 		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 	}
 }
@@ -2589,21 +2677,17 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
-	const uint8_t n_max = 16;
 	uint32_t doepmsk;
-	uint32_t daint;
+	uint32_t epint;
 
 	doepmsk = sys_read32((mem_addr_t)&base->doepmsk);
-	daint = sys_read32((mem_addr_t)&base->daint);
+	epint = usb_dwc2_get_daint_outepint(sys_read32((mem_addr_t)&base->daint));
 
-	for (uint8_t n = 0U; n < n_max; n++) {
+	while (epint) {
+		uint8_t n = find_lsb_set(epint) - 1;
 		mem_addr_t doepint_reg = (mem_addr_t)&base->out_ep[n].doepint;
 		uint32_t doepint;
 		uint32_t status;
-
-		if (!(daint & USB_DWC2_DAINT_OUTEPINT(n))) {
-			continue;
-		}
 
 		/* Read and clear interrupt status */
 		doepint = sys_read32(doepint_reg);
@@ -2650,6 +2734,8 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		if (status & USB_DWC2_DOEPINT_XFERCOMPL) {
 			dwc2_handle_out_xfercompl(dev, n);
 		}
+
+		epint &= ~BIT(n);
 	}
 
 	/* Clear OEPINT interrupt */
@@ -2695,7 +2781,7 @@ static void dwc2_handle_incompisoin(const struct device *dev)
 
 				udc_dwc2_ep_disable(dev, cfg, false);
 
-				buf = udc_buf_get(dev, cfg->addr);
+				buf = udc_buf_get(cfg);
 				if (buf) {
 					/* Data is no longer relevant */
 					udc_submit_ep_event(dev, buf, 0);
@@ -2750,7 +2836,7 @@ static void dwc2_handle_incompisoout(const struct device *dev)
 
 				udc_dwc2_ep_disable(dev, cfg, false);
 
-				buf = udc_buf_get(dev, cfg->addr);
+				buf = udc_buf_get(cfg);
 				if (buf) {
 					udc_submit_ep_event(dev, buf, 0);
 				}
@@ -2911,18 +2997,25 @@ static void dwc2_handle_hibernation_exit(const struct device *dev,
 
 	if (bus_reset) {
 		/* Clear all pending transfers */
-		k_event_clear(&priv->xfer_new, UINT32_MAX);
-		k_event_clear(&priv->xfer_finished, UINT32_MAX);
+		atomic_clear(&priv->xfer_new);
+		atomic_clear(&priv->xfer_finished);
 		dwc2_on_bus_reset(dev);
 	} else {
 		/* Resume any pending transfer handling */
-		if (k_event_test(&priv->xfer_new, UINT32_MAX)) {
+		if (atomic_get(&priv->xfer_new)) {
 			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 		}
 
-		if (k_event_test(&priv->xfer_finished, UINT32_MAX)) {
+		if (atomic_get(&priv->xfer_finished)) {
 			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 		}
+	}
+
+	while (priv->pending_tx_flush) {
+		unsigned int fifo = find_lsb_set(priv->pending_tx_flush) - 1;
+
+		priv->pending_tx_flush &= ~BIT(fifo);
+		dwc2_flush_tx_fifo(dev, fifo);
 	}
 }
 
@@ -2968,8 +3061,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 
 		if (!priv->hibernated) {
 			LOG_DBG("New transfer(s) in the queue");
-			eps = k_event_test(&priv->xfer_new, UINT32_MAX);
-			k_event_clear(&priv->xfer_new, eps);
+			eps = atomic_clear(&priv->xfer_new);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;
@@ -2979,7 +3071,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 			ep = pull_next_ep_from_bitmap(&eps);
 			ep_cfg = udc_get_ep_cfg(dev, ep);
 
-			if (!udc_ep_is_busy(dev, ep_cfg->addr)) {
+			if (!udc_ep_is_busy(ep_cfg)) {
 				dwc2_handle_xfer_next(dev, ep_cfg);
 			} else {
 				LOG_DBG("ep 0x%02x busy", ep_cfg->addr);
@@ -2991,8 +3083,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 
 		if (!priv->hibernated) {
-			eps = k_event_test(&priv->xfer_finished, UINT32_MAX);
-			k_event_clear(&priv->xfer_finished, eps);
+			eps = atomic_clear(&priv->xfer_finished);
 		} else {
 			/* Events will be handled after hibernation exit */
 			eps = 0;
@@ -3010,7 +3101,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 				dwc2_handle_evt_dout(dev, ep_cfg);
 			}
 
-			if (!udc_ep_is_busy(dev, ep_cfg->addr)) {
+			if (!udc_ep_is_busy(ep_cfg)) {
 				dwc2_handle_xfer_next(dev, ep_cfg);
 			} else {
 				LOG_DBG("ep 0x%02x busy", ep_cfg->addr);

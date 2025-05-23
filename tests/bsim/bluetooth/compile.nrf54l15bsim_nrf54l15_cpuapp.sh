@@ -15,6 +15,9 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/ll/throughput compile
 app=tests/bsim/bluetooth/ll/multiple_id compile
+app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
+app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
+app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf compile
 
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh

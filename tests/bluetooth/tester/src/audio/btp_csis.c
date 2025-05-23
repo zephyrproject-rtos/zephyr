@@ -5,12 +5,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "btp/btp.h"
-#include <zephyr/sys/byteorder.h>
 
-#include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_csis
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -24,13 +31,8 @@ static uint8_t csis_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_csis_read_supported_commands_rp *rp = rsp;
 
-	/* octet 0 */
-	tester_set_bit(rp->data, BTP_CSIS_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CSIS_SET_MEMBER_LOCK);
-	tester_set_bit(rp->data, BTP_CSIS_GET_MEMBER_RSI);
-	tester_set_bit(rp->data, BTP_CSIS_ENC_SIRK_TYPE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CSIS, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

@@ -5,7 +5,5 @@ common:
     - qemu
 tests:
   testing.ztest.ztress:
-    # FIXME: qemu_cortex_r5 is excluded due to a run-time failure, see #49494
-    platform_exclude: qemu_cortex_r5
     integration_platforms:
       - qemu_x86

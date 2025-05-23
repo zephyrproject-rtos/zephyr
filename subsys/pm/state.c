@@ -56,6 +56,25 @@ static const uint8_t states_per_cpu[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_NUM_CPU_POWER_STATES, (,))
 };
 
+#define DEFINE_DISABLED_PM_STATE(node) \
+	IF_ENABLED(DT_NODE_HAS_STATUS(node, disabled), (PM_STATE_INFO_DT_INIT(node),))
+
+/** Check if power states exists in the Devicetree. */
+#define POWER_STATES_EXISTS()						       \
+	UTIL_OR(DT_NODE_EXISTS(DT_PATH(cpus, power_states)),		       \
+		DT_NODE_EXISTS(DT_PATH(power_states)))
+
+/** Get node with power states. Macro assumes that power states exists. */
+#define POWER_STATES_NODE()						       \
+	COND_CODE_1(DT_NODE_EXISTS(DT_PATH(cpus, power_states)),	       \
+		    (DT_PATH(cpus, power_states)), (DT_PATH(power_states)))
+
+/* Array with all states which are disabled but can be forced. */
+static const struct pm_state_info disabled_states[] = {
+	IF_ENABLED(POWER_STATES_EXISTS(),
+		   (DT_FOREACH_CHILD(POWER_STATES_NODE(), DEFINE_DISABLED_PM_STATE)))
+};
+
 uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)
 {
 	if (cpu >= ARRAY_SIZE(cpus_states)) {
@@ -65,4 +84,26 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)
 	*states = cpus_states[cpu];
 
 	return states_per_cpu[cpu];
+}
+
+const struct pm_state_info *pm_state_get(uint8_t cpu, enum pm_state state, uint8_t substate_id)
+{
+	__ASSERT_NO_MSG(cpu < ARRAY_SIZE(cpus_states));
+	const struct pm_state_info *states = cpus_states[cpu];
+	uint8_t cnt = states_per_cpu[cpu];
+
+	for (uint8_t i = 0; i < cnt; i++) {
+		if ((states[i].state == state) && (states[i].substate_id == substate_id)) {
+			return &states[i];
+		}
+	}
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(disabled_states); i++) {
+		if ((disabled_states[i].state == state) &&
+		    (disabled_states[i].substate_id == substate_id)) {
+			return &disabled_states[i];
+		}
+	}
+
+	return NULL;
 }

@@ -126,6 +126,7 @@ static uint32_t bme280_compensate_humidity(struct bme280_data *data,
 	h = (h - (((((h >> 15) * (h >> 15)) >> 7) *
 		((int32_t)data->dig_h1)) >> 4));
 	h = (h > 419430400 ? 419430400 : h);
+	h = (h < 0 ? 0 : h);
 
 	return (uint32_t)(h >> 12);
 }
@@ -166,15 +167,6 @@ int bme280_sample_fetch_helper(const struct device *dev,
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-	(void)pm_device_state_get(dev, &state);
-	/* Do not allow sample fetching from suspended state */
-	if (state == PM_DEVICE_STATE_SUSPENDED) {
-		return -EIO;
-	}
-#endif
 
 #ifdef CONFIG_BME280_MODE_FORCED
 	ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);

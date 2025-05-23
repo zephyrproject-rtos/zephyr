@@ -30,34 +30,7 @@ For more information about the GD32E507 SoC and GD32E507V-START board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - EXTI
-     - :kconfig:option:`CONFIG_GD32_EXTI`
-     - :dtcompatible:`gd,gd32-exti`
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v8m-nvic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - SYSTICK
-     - N/A
-     - N/A
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
-
-Other peripherals may be used if shields are connected to the board.
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -68,6 +41,8 @@ virtual COM port via the CN3 USB connector.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before programming your board make sure to configure boot jumpers as
 follows:

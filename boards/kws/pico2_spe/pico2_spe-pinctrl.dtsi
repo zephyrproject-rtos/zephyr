@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 KWS Computersysteme Gmbh
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2350a-pinctrl.h>
+
+#include "../common/pico_spe-pinctrl-common.dtsi"

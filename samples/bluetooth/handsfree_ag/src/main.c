@@ -25,8 +25,7 @@
 
 static struct bt_conn *default_conn;
 struct bt_hfp_ag *hfp_ag;
-
-static struct bt_br_discovery_param br_discover;
+struct bt_hfp_ag_call *hfp_ag_call;
 
 static struct bt_br_discovery_param br_discover;
 static struct bt_br_discovery_result scan_result[CONFIG_BT_HFP_AG_DISCOVER_RESULT_COUNT];
@@ -41,8 +40,15 @@ struct k_work_delayable call_remote_accept_work;
 NET_BUF_POOL_DEFINE(sdp_discover_pool, 10, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static void ag_connected(struct bt_hfp_ag *ag)
+static void ag_connected(struct bt_conn *conn, struct bt_hfp_ag *ag)
 {
+	if (conn != default_conn) {
+		printk("The conn %p is not aligned with ACL conn %p", conn, default_conn);
+	}
+
+	if (!hfp_ag) {
+		hfp_ag = ag;
+	}
 	printk("HFP AG connected!\n");
 	k_work_schedule(&call_connect_work, K_MSEC(CONFIG_BT_HFP_AG_START_CALL_DELAY_TIME));
 }
@@ -57,43 +63,45 @@ static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 	printk("HFP AG SCO connected!\n");
 }
 
-static void ag_sco_disconnected(struct bt_hfp_ag *ag)
+static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 {
-	printk("HFP AG SCO disconnected!\n");
+	printk("HFP AG SCO disconnected %u!\n", reason);
 }
 
-static void ag_ringing(struct bt_hfp_ag *ag, bool in_band)
+static void ag_ringing(struct bt_hfp_ag_call *call, bool in_band)
 {
 	printk("Ringing (in bond? %s)\n", in_band ? "Yes" : "No");
 }
 
-static void ag_accept(struct bt_hfp_ag *ag)
+static void ag_accept(struct bt_hfp_ag_call *call)
 {
 	printk("Call Accepted\n");
 	k_work_schedule(&call_disconnect_work, K_SECONDS(10));
 }
 
-static void ag_reject(struct bt_hfp_ag *ag)
+static void ag_reject(struct bt_hfp_ag_call *call)
 {
 	printk("Call Rejected\n");
 	k_work_schedule(&call_disconnect_work, K_SECONDS(1));
 }
 
-static void ag_terminate(struct bt_hfp_ag *ag)
+static void ag_terminate(struct bt_hfp_ag_call *call)
 {
 	printk("Call terminated\n");
 	k_work_schedule(&call_disconnect_work, K_SECONDS(1));
 }
 
-static void ag_outgoing(struct bt_hfp_ag *ag, const char *number)
+static void ag_outgoing(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
+	hfp_ag_call = call;
 	printk("Call outgoing, remote number %s\n", number);
 	k_work_cancel_delayable(&call_connect_work);
 	k_work_schedule(&call_remote_ringing_work, K_SECONDS(1));
 }
 
-static void ag_incoming(struct bt_hfp_ag *ag, const char *number)
+static void ag_incoming(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
+	hfp_ag_call = call;
 	printk("Incoming call, remote number %s\n", number);
 	k_work_cancel_delayable(&call_connect_work);
 }
@@ -228,7 +236,7 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 
 	for (i = 0; i < count; i++) {
 		bt_addr_to_str(&results[i].addr, addr, sizeof(addr));
-		printk("Device[%d]: %s, rssi %d, cod 0x%X%X%X", i, addr, results[i].rssi,
+		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i, addr, results[i].rssi,
 		       results[i].cod[0], results[i].cod[1], results[i].cod[2]);
 
 		major_device = (uint8_t)BT_COD_MAJOR_DEVICE_CLASS(results[i].cod);
@@ -329,7 +337,7 @@ static void call_remote_ringing_work_handler(struct k_work *work)
 
 	printk("Remote starts ringing\n");
 
-	err = bt_hfp_ag_remote_ringing(hfp_ag);
+	err = bt_hfp_ag_remote_ringing(hfp_ag_call);
 
 	if (err != 0) {
 		printk("Fail to notify hfp unit that the remote starts ringing (err %d)\n", err);
@@ -344,7 +352,7 @@ static void call_remote_accept_work_handler(struct k_work *work)
 
 	printk("Remote accepts the call\n");
 
-	err = bt_hfp_ag_remote_accept(hfp_ag);
+	err = bt_hfp_ag_remote_accept(hfp_ag_call);
 
 	if (err != 0) {
 		printk("Fail to notify hfp unit that the remote accepts call (err %d)\n", err);

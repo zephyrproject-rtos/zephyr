@@ -1,0 +1,11 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - socket
+tests:
+  net.socket.af_inet_raw: {}
+  net.socket.af_inet_raw.af_packet:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_PACKET=y
+      - CONFIG_NET_SOCKETS_PACKET_DGRAM=y

@@ -44,7 +44,7 @@ properties:
 
 child-binding:
   description: |
-    Worldsemi WS2812 or compatible LED strip driver based on RaspberryPi Pico's PIO
+    Worldsemi WS2812 or compatible LED strip driver based on Raspberry Pi Pico's PIO
     The LED strip node can put up to 4 instances under a single PIO node.
 
   include: ws2812-gpio.yaml

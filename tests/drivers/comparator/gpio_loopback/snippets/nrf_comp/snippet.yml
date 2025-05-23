@@ -10,6 +10,9 @@ boards:
   nrf54l15dk/nrf54l15/cpuapp:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/nrf54l15dk_nrf54l15_cpuapp.overlay
+  ophelia4ev/nrf54l15/cpuapp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nrf54l15dk_nrf54l15_cpuapp.overlay
   nrf5340dk/nrf5340/cpuapp:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/nrf5340dk_nrf5340_cpuapp.overlay

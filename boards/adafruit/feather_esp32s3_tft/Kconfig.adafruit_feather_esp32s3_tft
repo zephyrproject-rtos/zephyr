@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_ESP32S3_TFT
+	select SOC_ESP32S3_WROOM_N8
+	select SOC_ESP32S3_PROCPU if BOARD_ADAFRUIT_FEATHER_ESP32S3_TFT_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_ADAFRUIT_FEATHER_ESP32S3_TFT_ESP32S3_APPCPU

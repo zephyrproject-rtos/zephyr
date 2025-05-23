@@ -7,26 +7,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/atomic.h>
-#include <zephyr/types.h>
-#include <string.h>
+#include <stdint.h>
 
-#include <zephyr/toolchain.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
-
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/net_buf.h>
-
-#include <hci_core.h>
-
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+
+#include "btp/btp.h"
+#include "hci_core.h"
+
 #define LOG_MODULE_NAME bttester_core
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
-#include "btp/btp.h"
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER) ||              \
+	defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_BROADCAST_SINK) ||        \
+	defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT) || defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
+#define BAP_SUPPORTED 1
+#endif
+
+#if defined(CONFIG_BT_CAP_ACCEPTOR) || defined(CONFIG_BT_CAP_INITIATOR) ||                         \
+	defined(CONFIG_BT_CAP_COMMANDER)
+#define CAP_SUPPORTED 1
+#endif
 
 static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_MAX);
 
@@ -35,12 +45,8 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_core_read_supported_commands_rp *rp = rsp;
 
-	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_COMMANDS);
-	tester_set_bit(rp->data, BTP_CORE_READ_SUPPORTED_SERVICES);
-	tester_set_bit(rp->data, BTP_CORE_REGISTER_SERVICE);
-	tester_set_bit(rp->data, BTP_CORE_UNREGISTER_SERVICE);
-
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CORE, rp->data);
+	*rsp_len += sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -74,14 +80,28 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_VOCS);
 #endif /* CONFIG_BT_VOCS */
+#if defined(CONFIG_BT_PACS)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_PACS);
+#endif /* CONFIG_BT_PACS */
+#if defined(CONFIG_BT_AICS)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_AICS);
+#endif /* CONFIG_BT_AICS */
+#if BAP_SUPPORTED
+	tester_set_bit(rp->data, BTP_SERVICE_ID_BAP);
+#endif /* BAP_SUPPORTED */
 #if defined(CONFIG_BT_HAS) || defined(CONFIG_BT_HAS_CLIENT)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_HAS);
 #endif /* CONFIG_BT_HAS */
+
+	/* octet 2 */
+#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MICP);
+#endif /* CONFIG_BT_MICP_MIC_DEV || CONFIG_BT_MICP_MIC_CTLR */
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_CSIS);
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
-#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
-	tester_set_bit(rp->data, BTP_SERVICE_ID_MICP);
+#if defined(CONFIG_BT_MICP_MIC_DEV)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MICS);
 #endif /* CONFIG_BT_MICP_MIC_DEV */
 #if defined(CONFIG_BT_TBS_CLIENT)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_CCP);
@@ -98,20 +118,31 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_MCS)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_GMCS);
 #endif /* CONFIG_BT_MCS */
+
+	/* octet 3 */
 #if defined(CONFIG_BT_HAS)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_HAP);
 #endif /* CONFIG_BT_HAS */
+#if defined(CONFIG_BT_CSIP_SET_COORDINATOR) || defined(CONFIG_BT_CSIP_SET_MEMBER)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CSIP);
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR || CONFIG_BT_CSIP_SET_MEMBER */
+#if CAP_SUPPORTED
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CAP);
+#endif /* CAP_SUPPORTED */
 #if defined(CONFIG_BT_TBS)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_TBS);
 #endif /*CONFIG_BT_TBS */
 #if defined(CONFIG_BT_TMAP)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_TMAP);
 #endif /* CONFIG_BT_TMAP */
+#if defined(CONFIG_BT_OTS)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_OTS);
+#endif /* CONFIG_BT_OTS */
 #if defined(CONFIG_BT_PBP)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_PBP);
 #endif /* CONFIG_BT_PBP */
 
-	*rsp_len = sizeof(*rp) + 2;
+	*rsp_len = sizeof(*rp) + 4U;
 
 	return BTP_STATUS_SUCCESS;
 }
@@ -171,28 +202,31 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER) || \
-	defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_PACS)
 	case BTP_SERVICE_ID_PACS:
 		status = tester_init_pacs();
 		break;
+#endif /* CONFIG_BT_PACS */
+#if defined(CONFIG_BT_ASCS)
 	case BTP_SERVICE_ID_ASCS:
 		status = tester_init_ascs();
 		break;
+#endif /* CONFIG_BT_ASCS */
+#if BAP_SUPPORTED
 	case BTP_SERVICE_ID_BAP:
 		status = tester_init_bap();
 		break;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT || CONFIG_BT_BAP_UNICAST_SERVER || \
-	* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_BROADCAST_SINK
-	*/
+#endif /* BAP_SUPPORTED */
 #if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
 	case BTP_SERVICE_ID_MICP:
 		status = tester_init_micp();
 		break;
+#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
+#if defined(CONFIG_BT_MICP_MIC_DEV)
 	case BTP_SERVICE_ID_MICS:
 		status = tester_init_mics();
 		break;
-#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
+#endif /* CONFIG_BT_MICP_MIC_DEV */
 #if defined(CONFIG_BT_HAS)
 	case BTP_SERVICE_ID_HAS:
 		status = tester_init_has();
@@ -218,11 +252,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_cas();
 		break;
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
-#if defined(CONFIG_BT_CAP_INITIATOR)
+#if CAP_SUPPORTED
 	case BTP_SERVICE_ID_CAP:
 		status = tester_init_cap();
 		break;
-#endif /* CONFIG_BT_CAP_INITIATOR */
+#endif /* CAP_SUPPORTED */
 #if defined(CONFIG_BT_MCC)
 	case BTP_SERVICE_ID_MCP:
 		status = tester_init_mcp();
@@ -323,28 +357,31 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER) || \
-	defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#if defined(CONFIG_BT_PACS)
 	case BTP_SERVICE_ID_PACS:
 		status = tester_unregister_pacs();
 		break;
+#endif /* CONFIG_BT_PACS */
+#if defined(CONFIG_BT_ASCS)
 	case BTP_SERVICE_ID_ASCS:
 		status = tester_unregister_ascs();
 		break;
+#endif /* CONFIG_BT_ASCS */
+#if BAP_SUPPORTED
 	case BTP_SERVICE_ID_BAP:
 		status = tester_unregister_bap();
 		break;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT || CONFIG_BT_BAP_UNICAST_SERVER || \
-	* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_BROADCAST_SINK
-	*/
+#endif /* BAP_SUPPORTED */
 #if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
 	case BTP_SERVICE_ID_MICP:
 		status = tester_unregister_micp();
 		break;
+#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
+#if defined(CONFIG_BT_MICP_MIC_DEV)
 	case BTP_SERVICE_ID_MICS:
 		status = tester_unregister_mics();
 		break;
-#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
+#endif /* CONFIG_BT_MICP_MIC_DEV  */
 #if defined(CONFIG_BT_HAS)
 	case BTP_SERVICE_ID_HAS:
 		status = tester_unregister_has();
@@ -370,11 +407,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_cas();
 		break;
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
-#if defined(CONFIG_BT_CAP_INITIATOR)
+#if CAP_SUPPORTED
 	case BTP_SERVICE_ID_CAP:
 		status = tester_unregister_cap();
 		break;
-#endif /* CONFIG_BT_CAP_INITIATOR */
+#endif /* CAP_SUPPORTED */
 #if defined(CONFIG_BT_MCC)
 	case BTP_SERVICE_ID_MCP:
 		status = tester_unregister_mcp();

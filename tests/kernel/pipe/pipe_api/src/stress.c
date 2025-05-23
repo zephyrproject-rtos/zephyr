@@ -18,10 +18,11 @@ LOG_MODULE_REGISTER(k_k_pipe_stress, LOG_LEVEL_INF);
 
 ZTEST_SUITE(k_pipe_stress, NULL, NULL, NULL, NULL, NULL);
 
+static struct k_pipe pipe;
+
 ZTEST(k_pipe_stress, test_write)
 {
 	int rc;
-	struct k_pipe pipe;
 	const size_t len = WRITE_LEN;
 	uint8_t buffer[WRITE_LEN];
 	uint8_t buf[WRITE_LEN];
@@ -43,7 +44,6 @@ ZTEST(k_pipe_stress, test_write)
 ZTEST(k_pipe_stress, test_read)
 {
 	int rc;
-	struct k_pipe pipe;
 	const size_t len = READ_LEN;
 	uint8_t buffer[READ_LEN];
 	uint8_t buf[READ_LEN];

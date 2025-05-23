@@ -1,8 +1,10 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+title: Silicon Labs Series 2 LDMA (Linked Direct Memory Access)
+
 description: |
-  Silabs LDMA controller
+  Linked Direct Memory Access controller peripheral.
 
   The Silabs LDMA is a general-purpose direct memory access controller
   capable of supporting 8 independent DMA channels. It supports specific
@@ -21,7 +23,7 @@ properties:
   interrupts:
     required: true
 
-  dma_channels:
+  dma-channels:
     type: int
     required: true
 

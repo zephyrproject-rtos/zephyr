@@ -257,6 +257,11 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 				    req->p_max_sdu[0];
 
 	cis->lll.active = 0U;
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	cis->lll.prepared = 0U;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 	cis->lll.handle = LLL_HANDLE_INVALID;
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);

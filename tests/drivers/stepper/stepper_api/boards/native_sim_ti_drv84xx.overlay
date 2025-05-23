@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"
+
+/ {
+	aliases {
+		stepper =  &ti_drv84xx;
+	};
+};
+
+/ {
+	ti_drv84xx: ti_drv84xx {
+		status = "okay";
+		compatible = "ti,drv84xx";
+		micro-step-res = <8>;
+		dir-gpios = <&gpio1 0 0>;
+		step-gpios = <&gpio1 1 0>;
+		sleep-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		en-gpios = <&gpio2 1 0>;
+		m0-gpios = <&gpio3 0 0>;
+		m1-gpios = <&gpio3 1 0>;
+		counter = <&counter0>;
+	};
+};

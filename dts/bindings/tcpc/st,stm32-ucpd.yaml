@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    ST STM32 family USB Type-C / Power Delivery. The default values were
-    taken from the LL_UCPD_StructInit function defined in the HAL.
+    STM32 USB Type-C / Power Delivery.
+
+    The default values were taken from the LL_UCPD_StructInit function defined in the HAL.
 
 compatible: "st,stm32-ucpd"
 

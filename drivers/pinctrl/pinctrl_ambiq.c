@@ -7,7 +7,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
@@ -22,7 +22,8 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 			       : pin->tristate   ? AM_HAL_GPIO_PIN_OUTCFG_TRISTATE
 						 : AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
 	pin_config.eDriveStrength = pin->drive_strength;
-	pin_config.uNCE = pin->iom_nce;
+	pin_config.uNCE = pin->nce;
+	pin_config.eCEpol = pin->nce_pol;
 #if defined(CONFIG_SOC_APOLLO3P_BLUE)
 	pin_config.bIomMSPIn = pin->iom_mspi;
 #endif
@@ -42,9 +43,40 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 					: pin->tristate   ? AM_HAL_GPIO_PIN_OUTCFG_TRISTATE
 							  : AM_HAL_GPIO_PIN_OUTCFG_DISABLE;
 	pin_config.GP.cfg_b.eDriveStrength = pin->drive_strength;
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
 	pin_config.GP.cfg_b.uSlewRate = pin->slew_rate;
-	pin_config.GP.cfg_b.uNCE = pin->iom_nce;
-	pin_config.GP.cfg_b.eIntDir = pin->interrupt_direction;
+	switch (pin->sdif_cdwp) {
+	case 1:
+		am_hal_gpio_cd_pin_config(pin->pin_num);
+		break;
+	case 2:
+		am_hal_gpio_wp_pin_config(pin->pin_num);
+		break;
+	default:
+		/* not a sdif pin */
+		break;
+	}
+#else
+	switch (pin->sdif_cdwp) {
+	case 1:
+		am_hal_gpio_cd0_pin_config(pin->pin_num);
+		break;
+	case 2:
+		am_hal_gpio_wp0_pin_config(pin->pin_num);
+		break;
+	case 3:
+		am_hal_gpio_cd1_pin_config(pin->pin_num);
+		break;
+	case 4:
+		am_hal_gpio_wp1_pin_config(pin->pin_num);
+		break;
+	default:
+		/* not a sdif pin */
+		break;
+	}
+#endif
+	pin_config.GP.cfg_b.uNCE = pin->nce;
+	pin_config.GP.cfg_b.eCEpol = pin->nce_pol;
 
 	if (pin->bias_pull_up) {
 		pin_config.GP.cfg_b.ePullup = pin->ambiq_pull_up_ohms + AM_HAL_GPIO_PIN_PULLUP_1_5K;

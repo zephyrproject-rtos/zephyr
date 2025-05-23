@@ -9,7 +9,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
@@ -137,6 +150,7 @@ struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;
 	uint8_t			remote_auth;
+	uint8_t			local_auth;
 	uint8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
 	uint8_t			features[LMP_MAX_PAGES][8];
@@ -196,16 +210,8 @@ struct bt_conn_tx {
 };
 
 struct acl_data {
-	/* Extend the bt_buf user data */
-	struct bt_buf_data buf_data;
-
 	/* Index into the bt_conn storage array */
-	uint8_t index;
-
-	/** Host has already sent a Host Number of Completed Packets
-	 *  for this buffer.
-	 */
-	bool host_ncp_sent;
+	uint8_t  index;
 
 	/** ACL connection handle */
 	uint16_t handle;
@@ -423,9 +429,6 @@ void bt_sco_cleanup(struct bt_conn *sco_conn);
 /* Look up an existing sco connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
 
-/* Look up an existing connection by BT address */
-struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer);
-
 void bt_conn_disconnect_all(uint8_t id);
 
 /* Allocate new connection object */
@@ -498,20 +501,25 @@ void notify_subrate_change(struct bt_conn *conn,
 			   struct bt_conn_le_subrate_changed params);
 
 void notify_remote_cs_capabilities(struct bt_conn *conn,
-			   struct bt_conn_le_cs_capabilities params);
+				   uint8_t status,
+				   struct bt_conn_le_cs_capabilities *params);
 
 void notify_remote_cs_fae_table(struct bt_conn *conn,
-			   struct bt_conn_le_cs_fae_table params);
+				uint8_t status,
+				struct bt_conn_le_cs_fae_table *params);
 
-void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params);
+void notify_cs_config_created(struct bt_conn *conn,
+			      uint8_t status,
+			      struct bt_conn_le_cs_config *params);
 
 void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
 
 void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result);
 
-void notify_cs_security_enable_available(struct bt_conn *conn);
+void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status);
 
 void notify_cs_procedure_enable_available(struct bt_conn *conn,
+					  uint8_t status,
 					  struct bt_conn_le_cs_procedure_enable_complete *params);
 
 #if defined(CONFIG_BT_SMP)

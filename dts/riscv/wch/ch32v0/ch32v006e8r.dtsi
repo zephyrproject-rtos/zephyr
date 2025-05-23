@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v0/ch32v006.dtsi>
+
+&gpioa {
+	gpio-reserved-ranges = <7 1>;
+};
+
+&gpiob {
+	gpio-reserved-ranges = <2 1>, <4 3>;
+};
+
+&gpioc {
+	gpio-reserved-ranges = <3 1>, <6 2>;
+};
+
+&gpiod {
+};

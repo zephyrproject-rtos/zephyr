@@ -125,9 +125,8 @@ static int verify_buf(int16_t *rx_block, int att)
 }
 
 #define TIMEOUT          2000
-#define FRAME_CLK_FREQ   44000
 
-static int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
+static int configure_stream(const struct device *dev_i2s, enum i2s_dir dir, uint32_t frame_clk_freq)
 {
 	int ret;
 	struct i2s_config i2s_cfg;
@@ -135,7 +134,7 @@ static int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 	i2s_cfg.word_size = 16U;
 	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
-	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
+	i2s_cfg.frame_clk_freq = frame_clk_freq;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = TIMEOUT;
 
@@ -179,16 +178,7 @@ static int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 	return TC_PASS;
 }
 
-
-/** @brief Short I2S transfer.
- *
- * - TX stream START trigger starts transmission.
- * - RX stream START trigger starts reception.
- * - sending / receiving a short sequence of data returns success.
- * - TX stream DRAIN trigger empties the transmit queue.
- * - RX stream STOP trigger stops reception.
- */
-ZTEST(drivers_i2s_speed, test_i2s_transfer_short)
+static void i2s_transfer_short(uint32_t frame_clk_freq)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -200,6 +190,12 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_short)
 	void *tx_block;
 	size_t rx_size;
 	int ret;
+
+	/* Configure I2S TX and I2S RX transfer. */
+	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX, frame_clk_freq);
+	zassert_equal(ret, TC_PASS);
+	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX, frame_clk_freq);
+	zassert_equal(ret, TC_PASS);
 
 	/* Prefill TX queue */
 	for (int i = 0; i < 3; i++) {
@@ -258,6 +254,111 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_short)
 	TC_PRINT("%d<-OK\n", 3);
 }
 
+/** @brief Short I2S transfer at 8000 samples per second.
+ *
+ * - TX stream START trigger starts transmission.
+ * - RX stream START trigger starts reception.
+ * - sending / receiving a short sequence of data returns success.
+ * - TX stream DRAIN trigger empties the transmit queue.
+ * - RX stream STOP trigger stops reception.
+ */
+ZTEST(drivers_i2s_speed, test_i2s_transfer_short_08000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_8000);
+
+	i2s_transfer_short(8000);
+}
+
+/** @brief Short I2S transfer at 16000 samples per second.
+ *
+ * - TX stream START trigger starts transmission.
+ * - RX stream START trigger starts reception.
+ * - sending / receiving a short sequence of data returns success.
+ * - TX stream DRAIN trigger empties the transmit queue.
+ * - RX stream STOP trigger stops reception.
+ */
+ZTEST(drivers_i2s_speed, test_i2s_transfer_short_16000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_16000);
+
+	i2s_transfer_short(16000);
+}
+
+/** @brief Short I2S transfer at 32000 samples per second.
+ *
+ * - TX stream START trigger starts transmission.
+ * - RX stream START trigger starts reception.
+ * - sending / receiving a short sequence of data returns success.
+ * - TX stream DRAIN trigger empties the transmit queue.
+ * - RX stream STOP trigger stops reception.
+ */
+ZTEST(drivers_i2s_speed, test_i2s_transfer_short_32000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_32000);
+
+	i2s_transfer_short(32000);
+}
+
+/** @brief Short I2S transfer at 44100 samples per second.
+ *
+ * - TX stream START trigger starts transmission.
+ * - RX stream START trigger starts reception.
+ * - sending / receiving a short sequence of data returns success.
+ * - TX stream DRAIN trigger empties the transmit queue.
+ * - RX stream STOP trigger stops reception.
+ */
+ZTEST(drivers_i2s_speed, test_i2s_transfer_short_44100)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_44100);
+
+	i2s_transfer_short(44100);
+}
+
+/** @brief Short I2S transfer at 48000 samples per second.
+ *
+ * - TX stream START trigger starts transmission.
+ * - RX stream START trigger starts reception.
+ * - sending / receiving a short sequence of data returns success.
+ * - TX stream DRAIN trigger empties the transmit queue.
+ * - RX stream STOP trigger stops reception.
+ */
+ZTEST(drivers_i2s_speed, test_i2s_transfer_short_48000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_48000);
+
+	i2s_transfer_short(48000);
+}
+
+/** @brief Short I2S transfer at 88200 samples per second.
+ *
+ * - TX stream START trigger starts transmission.
+ * - RX stream START trigger starts reception.
+ * - sending / receiving a short sequence of data returns success.
+ * - TX stream DRAIN trigger empties the transmit queue.
+ * - RX stream STOP trigger stops reception.
+ */
+ZTEST(drivers_i2s_speed, test_i2s_transfer_short_88200)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_88200);
+
+	i2s_transfer_short(88200);
+}
+
+/** @brief Short I2S transfer at 96000 samples per second.
+ *
+ * - TX stream START trigger starts transmission.
+ * - RX stream START trigger starts reception.
+ * - sending / receiving a short sequence of data returns success.
+ * - TX stream DRAIN trigger empties the transmit queue.
+ * - RX stream STOP trigger stops reception.
+ */
+ZTEST(drivers_i2s_speed, test_i2s_transfer_short_96000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_96000);
+
+	i2s_transfer_short(96000);
+}
+
 /** @brief Long I2S transfer.
  *
  * - TX stream START trigger starts transmission.
@@ -266,7 +367,7 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_short)
  * - TX stream DRAIN trigger empties the transmit queue.
  * - RX stream STOP trigger stops reception.
  */
-ZTEST(drivers_i2s_speed, test_i2s_transfer_long)
+ZTEST(drivers_i2s_speed, test_i2s_transfer_long_44100)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
 		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
@@ -281,6 +382,13 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_long)
 	int rx_idx = 0;
 	int num_verified;
 	int ret;
+	uint32_t frame_clk_freq = 44100;
+
+	/* Configure I2S TX and I2S RX transfer. */
+	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX, frame_clk_freq);
+	zassert_equal(ret, TC_PASS);
+	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX, frame_clk_freq);
+	zassert_equal(ret, TC_PASS);
 
 	/* Prepare TX data blocks */
 	for (tx_idx = 0; tx_idx < NUM_BLOCKS; tx_idx++) {
@@ -349,14 +457,7 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_long)
 	zassert_equal(num_verified, NUM_BLOCKS, "Invalid RX blocks received");
 }
 
-
-/** @brief Short I2S transfer using I2S_DIR_BOTH.
- *
- * - START trigger starts both the transmission and reception.
- * - Sending / receiving a short sequence of data returns success.
- * - DRAIN trigger empties the transmit queue and stops both streams.
- */
-ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short)
+static void i2s_dir_both_transfer_short(uint32_t frame_clk_freq)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -368,6 +469,10 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short)
 	void *tx_block;
 	size_t rx_size;
 	int ret;
+
+	/* Configure I2S Dir Both transfer. */
+	ret = configure_stream(dev_i2s_rxtx, I2S_DIR_BOTH, frame_clk_freq);
+	zassert_equal(ret, TC_PASS);
 
 	/* Prefill TX queue */
 	for (int i = 0; i < 3; i++) {
@@ -417,13 +522,104 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short)
 	TC_PRINT("%d<-OK\n", 3);
 }
 
+/** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 8000.
+ *
+ * - START trigger starts both the transmission and reception.
+ * - Sending / receiving a short sequence of data returns success.
+ * - DRAIN trigger empties the transmit queue and stops both streams.
+ */
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short_08000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_8000);
+
+	i2s_dir_both_transfer_short(8000);
+}
+
+/** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 16000.
+ *
+ * - START trigger starts both the transmission and reception.
+ * - Sending / receiving a short sequence of data returns success.
+ * - DRAIN trigger empties the transmit queue and stops both streams.
+ */
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short_16000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_16000);
+
+	i2s_dir_both_transfer_short(16000);
+}
+
+/** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 32000.
+ *
+ * - START trigger starts both the transmission and reception.
+ * - Sending / receiving a short sequence of data returns success.
+ * - DRAIN trigger empties the transmit queue and stops both streams.
+ */
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short_32000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_32000);
+
+	i2s_dir_both_transfer_short(32000);
+}
+
+/** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 44100.
+ *
+ * - START trigger starts both the transmission and reception.
+ * - Sending / receiving a short sequence of data returns success.
+ * - DRAIN trigger empties the transmit queue and stops both streams.
+ */
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short_44100)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_44100);
+
+	i2s_dir_both_transfer_short(44100);
+}
+
+/** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 48000.
+ *
+ * - START trigger starts both the transmission and reception.
+ * - Sending / receiving a short sequence of data returns success.
+ * - DRAIN trigger empties the transmit queue and stops both streams.
+ */
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short_48000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_48000);
+
+	i2s_dir_both_transfer_short(48000);
+}
+
+/** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 88200.
+ *
+ * - START trigger starts both the transmission and reception.
+ * - Sending / receiving a short sequence of data returns success.
+ * - DRAIN trigger empties the transmit queue and stops both streams.
+ */
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short_88200)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_88200);
+
+	i2s_dir_both_transfer_short(88200);
+}
+
+/** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 96000.
+ *
+ * - START trigger starts both the transmission and reception.
+ * - Sending / receiving a short sequence of data returns success.
+ * - DRAIN trigger empties the transmit queue and stops both streams.
+ */
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_short_96000)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_I2S_TEST_SKIP_SAMPLERATE_96000);
+
+	i2s_dir_both_transfer_short(96000);
+}
+
 /** @brief Long I2S transfer using I2S_DIR_BOTH.
  *
  * - START trigger starts both the transmission and reception.
  * - Sending / receiving a long sequence of data returns success.
  * - DRAIN trigger empties the transmit queue and stops both streams.
  */
-ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long)
+ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long_44100)
 {
 	if (!dir_both_supported) {
 		TC_PRINT("I2S_DIR_BOTH value is not supported.\n");
@@ -438,6 +634,11 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long)
 	int rx_idx = 0;
 	int num_verified;
 	int ret;
+	uint32_t frame_clk_freq = 44100;
+
+	/* Configure I2S Dir Both transfer. */
+	ret = configure_stream(dev_i2s_rxtx, I2S_DIR_BOTH, frame_clk_freq);
+	zassert_equal(ret, TC_PASS);
 
 	/* Prepare TX data blocks */
 	for (tx_idx = 0; tx_idx < NUM_BLOCKS; tx_idx++) {
@@ -499,23 +700,14 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long)
 
 static void *test_i2s_speed_configure(void)
 {
-	/* Configure I2S TX transfer. */
-	int ret;
-
+	/* Check if I2S TX and I2S RX devices are ready. */
 	dev_i2s_tx = DEVICE_DT_GET_OR_NULL(I2S_DEV_NODE_TX);
 	zassert_not_null(dev_i2s_tx, "transfer device not found");
 	zassert(device_is_ready(dev_i2s_tx), "transfer device not ready");
 
-	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX);
-	zassert_equal(ret, TC_PASS);
-
-	/* Configure I2S RX transfer. */
 	dev_i2s_rx = DEVICE_DT_GET_OR_NULL(I2S_DEV_NODE_RX);
 	zassert_not_null(dev_i2s_rx, "receive device not found");
 	zassert(device_is_ready(dev_i2s_rx), "receive device not ready");
-
-	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX);
-	zassert_equal(ret, TC_PASS);
 
 	return 0;
 }
@@ -529,7 +721,7 @@ static void *test_i2s_speed_rxtx_configure(void)
 	zassert_not_null(dev_i2s_rxtx, "receive device not found");
 	zassert(device_is_ready(dev_i2s_rxtx), "receive device not ready");
 
-	ret = configure_stream(dev_i2s_rxtx, I2S_DIR_BOTH);
+	ret = configure_stream(dev_i2s_rxtx, I2S_DIR_BOTH, 44100);
 	zassert_equal(ret, TC_PASS);
 
 	/* Check if the tested driver supports the I2S_DIR_BOTH value.

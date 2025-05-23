@@ -2,10 +2,12 @@ sample:
   name: LIS2DH Accelerometer Monitor
 tests:
   sample.sensor.lis2dh:
+    filter: dt_compat_enabled("st,lis2dh")
     harness: sensor
     tags:
       - samples
       - sensor
     depends_on:
       - i2c
-      - lis2dh
+    integration_platforms:
+      - sparkfun_thing_plus/nrf9160

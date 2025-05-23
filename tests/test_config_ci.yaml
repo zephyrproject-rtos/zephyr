@@ -1,0 +1,25 @@
+options:
+  integration_mode:
+    - sample.
+platforms:
+  override_default_platforms: false
+  increased_platform_scope: true
+levels:
+  - name: smoke
+    description: >
+      A plan to be used verifying basic zephyr features on hardware.
+    adds:
+      - kernel.threads.*
+      - kernel.timer.behavior
+      - arch.interrupt
+      - boards.*
+      - drivers.gpio.1pin
+      - drivers.console.uart
+      - drivers.entropy
+  - name: acceptance
+    description: >
+      More coverage
+    inherits:
+      - smoke
+    adds:
+      - kernel.*

@@ -1,7 +1,7 @@
 # Copyright 2017, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: i.MX GPIO node
+description: i.MX GPIO
 
 compatible: "nxp,imx-gpio"
 

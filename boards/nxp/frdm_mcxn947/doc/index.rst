@@ -37,94 +37,36 @@ For more information about the MCX-N947 SoC and FRDM-MCXN947 board, see:
 Supported Features
 ==================
 
-The FRDM-MCXN947 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| I3C       | on-chip    | i3c                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | soc flash                           |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | dac                                 |
-+-----------+------------+-------------------------------------+
-| ENET QOS  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| SCTimer   | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| USDHC     | on-chip    | sdhc                                |
-+-----------+------------+-------------------------------------+
-| VREF      | on-chip    | regulator                           |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| USBHS     | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| LPCMP     | on-chip    | sensor(comparator)                  |
-+-----------+------------+-------------------------------------+
-| FLEXCAN   | on-chip    | CAN                                 |
-+-----------+------------+-------------------------------------+
-| LPTMR     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| FLEXIO    | on-chip    | flexio                              |
-+-----------+------------+-------------------------------------+
-| SAI       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
-|           |            | :ref:`lcd_par_s035`                 |
-+-----------+------------+-------------------------------------+
-| MRT       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Dual Core samples
 *****************
 
-+-----------+-------------------+----------------------+
-| Core      | Boot Address      | Comment              |
-+===========+===================+======================+
-| CPU0      | 0x10000000[1856K] | primary core flash   |
-+-----------+-------------------+----------------------+
-| CPU1      | 0x101d0000[192K]  | secondary core flash |
-+-----------+-------------------+----------------------+
++-----------+----------------------+-------------------------------+
+| Core      | Flash Region         | Comment                       |
++===========+======================+===============================+
+| CPU0      | Full flash memory    | Primary core with bootloader  |
+|           | (including partition | access and application in     |
+|           | slot0_partition)     | slot0_partition               |
++-----------+----------------------+-------------------------------+
+| CPU1      | slot1_partition only | Secondary core restricted to  |
+|           |                      | its dedicated partition       |
++-----------+----------------------+-------------------------------+
 
 +----------+------------------+-----------------------+
-| Memory   | Address[Size]    | Comment               |
+| Memory   | Region           | Comment               |
 +==========+==================+=======================+
-| srama    | 0x20000000[320k] | CPU0 ram              |
+| srama    | RAM (320KB)      | CPU0 ram              |
 +----------+------------------+-----------------------+
-| sramg    | 0x20050000[64k]  | CPU1 ram              |
+| sramg    | RAM (64KB)       | CPU1 ram              |
 +----------+------------------+-----------------------+
-| sramh    | 0x20060000[32k]  | Shared memory         |
+| sramh    | RAM (32KB)       | Shared memory         |
 +----------+------------------+-----------------------+
+
+.. note::
+   The actual memory addresses are defined in the device tree and can be viewed in the
+   generated map files after building. CPU0 accesses the full flash memory starting from
+   its base address, while CPU1 is restricted to the slot1_partition region.
 
 Targets available
 ==================
@@ -177,6 +119,8 @@ Flexcomm 4 is configured as UART for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -330,6 +274,9 @@ Troubleshooting
 
 .. include:: ../../common/segger-ecc-systemview.rst
    :start-after: segger-ecc-systemview
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _MCX-N947 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n94x-54x-highly-integrated-multicore-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N94X-N54X

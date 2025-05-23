@@ -24,6 +24,7 @@
 		zephyr,console = &uart10;
 		zephyr,shell-uart = &uart10;
 		zephyr,pcie-controller = &pcie1;
+		zephyr,entropy = &rng;
 	};
 
 	leds {

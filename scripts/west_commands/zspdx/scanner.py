@@ -115,7 +115,7 @@ def calculateVerificationCode(pkg):
     hashes.sort()
     filelist = "".join(hashes)
 
-    hSHA1 = hashlib.sha1()
+    hSHA1 = hashlib.sha1(usedforsecurity=False)
     hSHA1.update(filelist.encode('utf-8'))
     return hSHA1.hexdigest()
 

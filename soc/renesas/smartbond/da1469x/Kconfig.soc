@@ -13,6 +13,12 @@ config SOC_DA14695
 	help
 	  DA14695
 
+config SOC_DA14697
+	bool
+	select SOC_SERIES_DA1469X
+	help
+	  DA14697
+
 config SOC_DA14699
 	bool
 	select SOC_SERIES_DA1469X
@@ -24,4 +30,5 @@ config SOC_SERIES
 
 config SOC
 	default "da14695" if SOC_DA14695
+	default "da14697" if SOC_DA14697
 	default "da14699" if SOC_DA14699

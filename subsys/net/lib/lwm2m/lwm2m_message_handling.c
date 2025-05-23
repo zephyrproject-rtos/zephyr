@@ -383,6 +383,7 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 	ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt),
 			 complete_payload + (block_num * block_size_bytes), payload_size);
 	if (ret < 0) {
+		LOG_ERR("CoAP message size overflow");
 		return ret;
 	}
 
@@ -392,19 +393,16 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 {
 	int ret;
-	uint16_t len;
-	const uint8_t *payload;
-
 	/* save the big buffer for later use (splitting blocks) */
 	msg->body_encode_buffer = msg->cpkt;
 
 	/* set the default (small) buffer for sending blocks */
 	msg->cpkt.data = msg->msg_data;
 	msg->cpkt.offset = 0;
-	msg->cpkt.max_len = MAX_PACKET_SIZE;
+	msg->cpkt.max_len = sizeof(msg->msg_data);
 
-	payload = coap_packet_get_payload(&msg->body_encode_buffer, &len);
-	if (len <= CONFIG_LWM2M_COAP_MAX_MSG_SIZE) {
+	/* Can we fit a whole message into one frame */
+	if (msg->body_encode_buffer.offset <= msg->cpkt.max_len) {
 
 		/* copy the packet */
 		ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt), msg->body_encode_buffer.data,
@@ -422,6 +420,9 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 
 		NET_ASSERT(msg->out.block_ctx == NULL, "Expecting to have no context to release");
 	} else {
+		uint16_t len;
+		const uint8_t *payload = coap_packet_get_payload(&msg->body_encode_buffer, &len);
+
 		/* Before splitting the content, append Etag option to protect the integrity of
 		 * the payload.
 		 */
@@ -461,6 +462,9 @@ void lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 
 	for (i = 0, msg = messages; i < ARRAY_SIZE(messages); i++, msg++) {
 		if (msg->ctx == client_ctx) {
+			if (msg->send_status_cb) {
+				msg->send_status_cb(LWM2M_SEND_STATUS_FAILURE);
+			}
 			lwm2m_reset_message(msg, true);
 		}
 	}
@@ -1053,9 +1057,6 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 				return ret;
 			}
 		}
-		if (msg->in.block_ctx && !last_pkt_block) {
-			msg->in.block_ctx->ctx.current += len;
-		}
 		opaque_ctx.offset += len;
 		written += len;
 	}
@@ -1403,9 +1404,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_get_base = cached_data->rb.get_base;
-		read_info->original_get_head = cached_data->rb.get_head;
-		read_info->original_get_tail = cached_data->rb.get_tail;
+		read_info->original_rb_get = cached_data->rb.get;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -3079,12 +3078,8 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 
 	/* Put Ring buffer back to original */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->rb.get_head =
-			cache_temp->read_info[i].original_get_head;
-		cache_temp->read_info[i].cache_data->rb.get_tail =
-			cache_temp->read_info[i].original_get_tail;
-		cache_temp->read_info[i].cache_data->rb.get_base =
-			cache_temp->read_info[i].original_get_base;
+		cache_temp->read_info[i].cache_data->rb.get =
+			cache_temp->read_info[i].original_rb_get;
 	}
 
 	if (cache_temp->entry_limit) {
@@ -3501,7 +3496,6 @@ static void do_send_timeout_cb(struct lwm2m_message *msg)
 	LOG_WRN("Send Timeout");
 	lwm2m_rd_client_timeout(msg->ctx);
 }
-#endif
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cache_temp,
@@ -3535,7 +3529,8 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 	cache_temp->entry_limit = 0;
 	return true;
 }
-#endif
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+#endif /* CONFIG_LWM2M_VERSION_1_1 */
 
 int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
 			 uint8_t path_list_size, lwm2m_send_cb_t reply_cb)

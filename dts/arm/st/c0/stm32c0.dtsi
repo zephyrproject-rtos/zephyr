@@ -3,6 +3,58 @@
  * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * The mapping of wake-up line WKUP2, WKUP5 and WKUP6 to GPIO pins depends on
+ * the pin count of the SoC installed on a given board. Board DTS files are
+ * responsible for configuring these lines using the following snippet
+ * (which must be adapted depending on the board's SoC):
+ *
+ *   &pwr {
+ *       wkup-pin@2 {
+ *           wkup-gpios = <&gpioX YY STM32_PWR_WKUP_PIN_NOT_MUXED>;
+ *       };
+ *       wkup-pin@5 {
+ *           wkup-gpios = <&gpioX YY STM32_PWR_WKUP_PIN_NOT_MUXED>;
+ *       };
+ *       wkup-pin@6 {
+ *           wkup-gpios = <&gpioX YY STM32_PWR_WKUP_PIN_NOT_MUXED>;
+ *       };
+ *   };
+ *
+ * Refer to product Datasheet §4 "Pinouts, pin description and alternate functions"
+ * for information about which GPIO pin (if any) is connected to wake-up lines WKUP2,
+ * WKUP5 and WKUP6. The following table provides a summary:
+ *
+ * Part Number |- WKUP2 -|- WKUP5 -|- WKUP6 -|
+ * ------------|---------|---------|---------|
+ * STM32C011Jx |   N/A   |   N/A   |   N/A   |
+ * STM32C011Dx |   PA4   |   N/A   |   N/A   |
+ * STM32C011Fx |   PA4   |   N/A   |   N/A   |
+ * ------------|---------|---------|---------|
+ * STM32C031Fx |   PA4   |   N/A   |   N/A   |
+ * STM32C031Gx |   PA4   |   N/A   |   PB5   |
+ * STM32C031Kx |   PA4   |   N/A   |   PB5   |
+ * STM32C031Cx |   PC13  |   N/A   |   PB5   |
+ * ------------|---------|---------|---------|
+ * STM32C051Dx |   PA4   |   N/A   |   PB5   |
+ * STM32C051Fx |   PA4   |   N/A   |   PB5   |
+ * STM32C051Gx |   PA4   |   N/A   |   PB5   |
+ * STM32C051Kx |   PA4   |   N/A   |   PB5   |
+ * STM32C051Cx |   PC13  |   N/A   |   PB5   |
+ * ------------|---------|---------|---------|
+ * STM32C071Fx |   PA4   |   N/A   |   PB5   |
+ * STM32C071Gx |   PA4   |   N/A   |   PB5   |
+ * STM32C071Kx |   PA4   |   N/A   |   PB5   |
+ * STM32C071Cx |   PC13  |   N/A   |   PB5   |
+ * STM32C071Rx |   PC13  |   PC5   |   PB5   |
+ * ------------|---------|---------|---------|
+ * STM32C09xFx |   PA4   |   N/A   |   PB5   |
+ * STM32C09xEx |   PA4   |   N/A   |   PB5   |
+ * STM32C09xGx |   PA4   |   N/A   |   PB5   |
+ * STM32C09xKx |   PA4   |   N/A   |   PB5   |
+ * STM32C09xCx |   PC13  |   N/A   |   PB5   |
+ * STM32C09xRx |   PC13  |   PC5   |   PB5   |
+ * ------------|---------|---------|---------|
  */
 
 #include <arm/armv6-m.dtsi>
@@ -15,6 +67,7 @@
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32c0_reset.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
@@ -159,6 +212,46 @@
 				#gpio-cells = <2>;
 				reg = <0x50001400 0x400>;
 				clocks = <&rcc STM32_CLOCK(IOP, 5U)>;
+			};
+		};
+
+		pwr: power@40007000 {
+			compatible = "st,stm32-pwr";
+			reg = <0x40007000 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			wkup-pins-nb = <6>; /* 6 system wake-up pins */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+			};
+
+			wkup-pin@3 {
+				reg = <0x3>;
+				wkup-gpios = <&gpiob 6 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
+
+			wkup-pin@4 {
+				reg = <0x4>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+			};
+
+			wkup-pin@5 {
+				reg = <0x5>;
+			};
+
+			wkup-pin@6 {
+				reg = <0x6>;
 			};
 		};
 

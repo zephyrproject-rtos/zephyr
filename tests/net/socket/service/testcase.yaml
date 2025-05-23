@@ -1,13 +1,5 @@
 common:
   depends_on: netif
-  # FIXME: This test fails very frequently on mps2/an385 due to the system
-  #        timer stability issues, so keep it disabled until the root cause
-  #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
-  # eventfd API does not work with native_posix so exclude it here
-  platform_exclude:
-    - mps2/an385
-    - native_posix
-    - native_posix/native/64
 tests:
   net.socket.service:
     min_ram: 21

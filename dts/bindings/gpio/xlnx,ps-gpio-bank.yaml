@@ -4,7 +4,7 @@
 #
 
 description: |
-  Xilinx Zynq-7000/ZynqMP MIO/EMIO GPIO controller bank node.
+  Xilinx Zynq-7000/ZynqMP MIO/EMIO GPIO Controller bank.
 
   Each node of this type specified in the devicetree represents
   a bank of the MIO/EMIO GPIO controller integrated in the Processor

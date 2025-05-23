@@ -55,8 +55,8 @@ config ENABLE_LC3
 config USE_USB_AUDIO_OUTPUT
 	bool "Use USB Audio as output"
 	depends on ENABLE_LC3
-	select USB_DEVICE_STACK
-	select USB_DEVICE_AUDIO
+	select USB_DEVICE_STACK_NEXT
+	select USBD_AUDIO2_CLASS
 	select RING_BUFFER
 	help
 	  Enables USB audio as output as a USB peripheral. This does not support providing USB
@@ -86,5 +86,10 @@ config INFO_REPORTING_INTERVAL
 	help
 	  Determines how often information about received data is logged.
 	  Set to 0 to disable reporting.
+
+# Source common USB sample options used to initialize new experimental USB device stack.
+# The scope of these options is limited to USB samples in project tree,
+# you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
 
 source "Kconfig.zephyr"

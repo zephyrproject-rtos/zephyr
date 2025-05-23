@@ -138,6 +138,16 @@ struct http_resource_detail_static_fs {
 	const char *fs_path;
 };
 
+/** @brief HTTP compressions */
+enum http_compression {
+	HTTP_NONE = 0,     /**< NONE */
+	HTTP_GZIP = 1,     /**< GZIP */
+	HTTP_COMPRESS = 2, /**< COMPRESS */
+	HTTP_DEFLATE = 3,  /**< DEFLATE */
+	HTTP_BR = 4,       /**< BR */
+	HTTP_ZSTD = 5      /**< ZSTD */
+};
+
 /** @cond INTERNAL_HIDDEN */
 /* Make sure that the common is the first in the struct. */
 BUILD_ASSERT(offsetof(struct http_resource_detail_static_fs, common) == 0);
@@ -475,6 +485,11 @@ struct http_client_ctx {
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 /** @endcond */
 
+/** @cond INTERNAL_HIDDEN */
+	/** Client supported compression. */
+	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (uint8_t supported_compression));
+/** @endcond */
+
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;
 
@@ -492,6 +507,9 @@ struct http_client_ctx {
 
 	/** Flag indicating Websocket key is being processed. */
 	bool websocket_sec_key_next : 1;
+
+	/** Flag indicating accept encoding is being processed. */
+	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (bool accept_encoding_next: 1));
 
 	/** The next frame on the stream is expectd to be a continuation frame. */
 	bool expect_continuation : 1;

@@ -45,6 +45,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &button0;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -101,6 +102,12 @@
 	pinctrl-names = "default";
 };
 
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &port_irq0 {
 	interrupts = <27 12>;
 	status = "okay";
@@ -126,5 +133,9 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	interrupts = <10 1>, <11 1>, <12 1>, <13 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&wdt {
 	status = "okay";
 };

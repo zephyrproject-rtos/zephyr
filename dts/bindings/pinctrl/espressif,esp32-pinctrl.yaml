@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
+    ESP32 pin controller
+
     Espressif's pin controller is in charge of controlling pin configurations, pin
     functionalities and pin properties as defined by pin states. In its turn, pin
     states are composed by groups of pre-defined pin muxing definitions and user

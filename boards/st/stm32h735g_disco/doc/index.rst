@@ -34,46 +34,7 @@ More information about STM32H735 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h735g_disco board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | True Random number generator        |
-+-----------+------------+-------------------------------------+
-| FMC       | on-chip    | memc (SDRAM)                        |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| FDCAN1    | on-chip    | CAN-FD Controller                   |
-+-----------+------------+-------------------------------------+
-| FDCAN2    | on-chip    | CAN-FD Controller                   |
-+-----------+------------+-------------------------------------+
-| FDCAN3    | on-chip    | CAN-FD Controller (disabled by      |
-|           |            | default. Solder bridges SB29 and    |
-|           |            | SB30 need to be closed for FDCAN3   |
-|           |            | to work)                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb_device                          |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on Zephyr porting.
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/st/stm32h735g_disco/stm32h735g_disco_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -106,6 +67,8 @@ COM port interface. Default communication settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32H735G-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
 

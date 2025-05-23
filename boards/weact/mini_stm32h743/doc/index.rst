@@ -71,34 +71,7 @@ More information about STM32H743 can be found here:
 Supported Features
 ==================
 
-The mini_stm32h743 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | off-chip flash                      |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration per core can be found in the defconfig file:
-``boards/weact/mini_stm32h743/mini_stm32h743_defconfig``
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -136,6 +109,8 @@ Virtual COM port interface. Default communication settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The MiniSTM32H743 Core board facilitates firmware flashing via the USB DFU
 bootloader. This method simplifies the process of updating images, although

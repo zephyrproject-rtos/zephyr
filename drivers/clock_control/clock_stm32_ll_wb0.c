@@ -206,8 +206,7 @@ int enabled_clock(uint32_t src_clk)
 	return r;
 }
 
-static inline int stm32_clock_control_on(const struct device *dev,
-					 clock_control_subsys_t sub_system)
+static int stm32_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	const mem_addr_t reg = RCC_REG(pclken->bus);
@@ -230,8 +229,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_off(const struct device *dev,
-					  clock_control_subsys_t sub_system)
+static int stm32_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	const mem_addr_t reg = RCC_REG(pclken->bus);
@@ -247,9 +245,9 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_configure(const struct device *dev,
-						clock_control_subsys_t sub_system,
-						void *data)
+static int stm32_clock_control_configure(const struct device *dev,
+					 clock_control_subsys_t sub_system,
+					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
 	const uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(pclken->enr);
@@ -271,7 +269,7 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 	return 0;
 }
 
-static inline int get_apb0_periph_clkrate(struct stm32_pclken *pclken,
+static int get_apb0_periph_clkrate(struct stm32_pclken *pclken,
 	uint32_t *rate, uint32_t slow_clock, uint32_t sysclk, uint32_t clk_sys)
 {
 	switch (pclken->enr) {
@@ -312,8 +310,7 @@ static inline int get_apb0_periph_clkrate(struct stm32_pclken *pclken,
 	return 0;
 }
 
-static inline int get_apb1_periph_clkrate(struct stm32_pclken *pclken,
-	uint32_t *rate, uint32_t clk_sys)
+static int get_apb1_periph_clkrate(struct stm32_pclken *pclken, uint32_t *rate, uint32_t clk_sys)
 {
 	switch (pclken->enr) {
 #if defined(SPI1)
@@ -603,7 +600,7 @@ static void set_up_fixed_clock_sources(void)
  * @brief Converts the Kconfig STM32_WB0_CLKSYS_PRESCALER option
  * to a LL_RCC_RC64MPLL_DIV_x value understandable by the LL.
  */
-static inline uint32_t kconfig_to_ll_prescaler(uint32_t kcfg_pre)
+static uint32_t kconfig_to_ll_prescaler(uint32_t kcfg_pre)
 {
 	switch (kcfg_pre) {
 	case 1:

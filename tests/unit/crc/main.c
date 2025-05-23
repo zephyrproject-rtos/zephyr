@@ -12,6 +12,28 @@
 #include "../../../lib/crc/crc32c_sw.c"
 #include "../../../lib/crc/crc7_sw.c"
 #include "../../../lib/crc/crc24_sw.c"
+#include "../../../lib/crc/crc32k_4_2_sw.c"
+
+ZTEST(crc, test_crc32_k_4_2)
+{
+	uint8_t test1[] = "A";
+	uint8_t test2[] = "123456789";
+	uint8_t test3[] = "Zephyr";
+
+	const uint32_t TEST2_CRC = 0x3ee83603;
+
+	zassert_equal(crc32_k_4_2_update(0xFFFFFFFF, test1, sizeof(test1) - 1), 0x2d098604);
+	zassert_equal(crc32_k_4_2_update(0xFFFFFFFF, test2, sizeof(test2) - 1), TEST2_CRC);
+	zassert_equal(crc32_k_4_2_update(0xFFFFFFFF, test3, sizeof(test3) - 1), 0xacf334b2);
+
+	/* test iteration */
+	uint32_t crc = 0xFFFFFFFF;
+
+	for (size_t i = 0; i < sizeof(test2) - 1; i++) {
+		crc = crc32_k_4_2_update(crc, &test2[i], 1);
+	}
+	zassert_equal(crc, TEST2_CRC);
+}
 
 ZTEST(crc, test_crc32c)
 {
@@ -21,11 +43,11 @@ ZTEST(crc, test_crc32c)
 
 	/* Single streams */
 	zassert_equal(crc32_c(0, test1, sizeof(test1), true, true),
-			0xE16DCDEE, NULL);
+			0xE16DCDEE);
 	zassert_equal(crc32_c(0, test2, sizeof(test2), true, true),
-			0xE3069283, NULL);
+			0xE3069283);
 	zassert_equal(crc32_c(0, test3, sizeof(test3), true, true),
-			0xFCDEB58D, NULL);
+			0xFCDEB58D);
 
 	/* Continuous streams - test1, test2 and test3 are considered part
 	 * of one big stream whose CRC needs to be calculated. Note that the
@@ -33,11 +55,11 @@ ZTEST(crc, test_crc32c)
 	 * second to third and so on.
 	 */
 	zassert_equal(crc32_c(0, test1, sizeof(test1), true, false),
-			0x1E923211, NULL);
+			0x1E923211);
 	zassert_equal(crc32_c(0x1E923211, test2, sizeof(test2), false, false),
-			0xB2983B83, NULL);
+			0xB2983B83);
 	zassert_equal(crc32_c(0xB2983B83, test3, sizeof(test3), false, true),
-			0x7D4F9D21, NULL);
+			0x7D4F9D21);
 }
 
 ZTEST(crc, test_crc32_ieee)
@@ -120,7 +142,7 @@ ZTEST(crc, test_crc16_ccitt)
 	 * check=0x906e
 	 */
 	zassert_equal(crc16_ccitt(0xffff, test2, sizeof(test2)) ^ 0xffff,
-		      0x906e, NULL);
+		      0x906e);
 
 	/* Appending the CRC to a buffer and computing the CRC over
 	 * the extended buffer leaves a residual of zero.
@@ -146,9 +168,9 @@ ZTEST(crc, test_crc16_ccitt_for_ppp)
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 	zassert_equal(crc16_ccitt(0xffff, test0, sizeof(test0)),
-		      0xf0b8, NULL);
+		      0xf0b8);
 	zassert_equal(crc16_ccitt(0xffff, test2, sizeof(test2)) ^ 0xFFFF,
-		      0x906e, NULL);
+		      0x906e);
 }
 
 ZTEST(crc, test_crc16_itu_t)

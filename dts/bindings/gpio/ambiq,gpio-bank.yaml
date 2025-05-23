@@ -2,7 +2,7 @@
 # Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Ambiq GPIO bank node
+description: Ambiq GPIO bank
 
 compatible: "ambiq,gpio-bank"
 

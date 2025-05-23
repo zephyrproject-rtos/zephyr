@@ -10,7 +10,7 @@ config DMA_MCUX_EDMA
 	bool "MCUX DMA driver"
 	default y
 	depends on $(dt_compat_any_has_prop,$(EDMA_COMPAT),$(REV_PROP),2)
-	imply NOCACHE_MEMORY if HAS_MCUX_CACHE
+	imply NOCACHE_MEMORY if CPU_HAS_DCACHE
 	help
 	  DMA driver for MCUX series SoCs.
 
@@ -38,9 +38,11 @@ config DMA_TCD_QUEUE_SIZE
 
 config DMA_MCUX_TEST_SLOT_START
 	int "test slot start num"
-	depends on (SOC_SERIES_KINETIS_K6X || SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_S32K3 || SOC_SERIES_S32ZE)
+	depends on (SOC_SERIES_KINETIS_K6X || SOC_SERIES_KINETIS_KE1XF \
+		    || SOC_SERIES_S32K3 || SOC_SERIES_S32ZE || SOC_SERIES_KE1XZ)
 	default 58 if SOC_SERIES_KINETIS_K6X
 	default 60 if SOC_SERIES_KINETIS_KE1XF
+	default 60 if SOC_SERIES_KE1XZ
 	default 62 if SOC_SERIES_S32K3 || SOC_SERIES_S32ZE
 	help
 	  test slot start num

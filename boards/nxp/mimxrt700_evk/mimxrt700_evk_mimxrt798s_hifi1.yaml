@@ -1,0 +1,18 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt700_evk/mimxrt798s/hifi1
+name: NXP MIMXRT700-EVK HiFi1
+type: mcu
+arch: xtensa
+toolchain:
+  - xcc
+  - xt-clang
+  - zephyr
+testing:
+  only_tags:
+    - kernel
+vendor: nxp

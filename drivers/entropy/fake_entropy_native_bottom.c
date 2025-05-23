@@ -3,8 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Bottom/Linux side of the pseudo-random entropy generator for
- * ARCH_POSIX architecture
+ * Bottom/Linux side of the pseudo-random entropy generator for the native simulator
  */
 
 #undef _XOPEN_SOURCE

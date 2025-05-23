@@ -77,40 +77,7 @@ Hardware
 Supported Features
 ==================
 
-Below interfaces are supported by Zephyr on MAX32672EVKIT.
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock and reset control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma controller                      |
-+-----------+------------+-------------------------------------+
-| Watchdog  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| Timer     | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| Flash     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -312,11 +279,9 @@ The I2C ports can independently pulled up to V_AUX (3.3V default) through JP4 (I
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The IC can be reset by pushbutton SW1.
-
-
-Programming and Debugging
-*************************
 
 Flashing
 ========

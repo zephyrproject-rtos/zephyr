@@ -9,3 +9,22 @@ config SOC_FAMILY_SILABS_SIWX91X
 	select CPU_HAS_ARM_MPU
 	select HAS_SILABS_WISECONNECT
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+if SOC_FAMILY_SILABS_SIWX91X
+
+rsource "*/Kconfig"
+
+config SOC_SILABS_SLEEPTIMER
+	bool
+	help
+	  The Sleeptimer HAL module is used for SIWX91X.
+
+config SIWX91X_NWP_INIT_PRIORITY
+	int "SiWx91x Network Processor init priority"
+	default 39
+	help
+	  Initialization priority of the SiWx91x Network Processor. NWP init must
+	  have a higher priority than services that depend on it, such as Bluetooth,
+	  Wi-Fi and crypto.
+
+endif # SOC_FAMILY_SILABS_SIWX91X

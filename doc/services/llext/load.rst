@@ -11,9 +11,17 @@ Loading an extension
 An extension may be loaded using any implementation of a :c:struct:`llext_loader`
 which has a set of function pointers that provide the necessary functionality
 to read the ELF data. A loader also provides some minimal context (memory)
-needed by the :c:func:`llext_load` function. An implementation over a buffer
-containing an ELF in addressable memory in memory is available as
-:c:struct:`llext_buf_loader`.
+needed by the :c:func:`llext_load` function. Several loaders are already provided:
+
+ * An implementation over a buffer containing an ELF in addressable memory in
+   memory is available as :c:struct:`llext_buf_loader`. To use this kind of
+   loader, it is helpful to use one of the :c:macro:`LLEXT_TEMPORARY_BUF_LOADER`,
+   :c:macro:`LLEXT_PERSISTENT_BUF_LOADER`, or :c:macro:`LLEXT_WRITABLE_BUF_LOADER`
+   macros to tell LLEXT the appropriate type of memory buffer.
+
+ * An implementation that reads data from a file in the filesystem is available
+   as the :c:struct:`llext_fs_loader`. The path to the file must be provided
+   when creating the loader with the :c:macro:`LLEXT_FS_LOADER` macro.
 
 The extensions are loaded with a call to the :c:func:`llext_load` function,
 passing in the extension name and the configured loader. Once that completes

@@ -1,0 +1,40 @@
+# Copyright (c) 2025, SECO Mind Srl
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Universally Unique Identifier (UUID)"
+
+config UUID
+	bool "UUID support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable use of the UUID library.
+
+config UUID_V4
+	bool "UUID version 4 generation support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on UUID
+	depends on ENTROPY_GENERATOR
+	help
+	  Enable generation of UUID v4.
+
+config UUID_V5
+	bool "UUID version 5 generation support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on UUID
+	depends on MBEDTLS
+	depends on MBEDTLS_MD
+	depends on MBEDTLS_SHA1
+	help
+	  Enable generation of UUID v5.
+
+config UUID_BASE64
+	bool "UUID Base64 support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on UUID
+	depends on BASE64
+	help
+	  Enable conversion functions to write UUIDs in base 64
+	  formats.
+
+endmenu

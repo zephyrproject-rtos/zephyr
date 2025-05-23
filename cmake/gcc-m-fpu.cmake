@@ -45,6 +45,10 @@ if("${ARCH}" STREQUAL "arm")
     set(FPU_FOR_cortex-m85+nodsp    auto)
 
     set(GCC_M_FPU ${FPU_FOR_${GCC_M_CPU}})
+  elseif(CONFIG_CPU_AARCH32_CORTEX_A)
+    if(CONFIG_CPU_CORTEX_A7)
+      set(GCC_M_FPU vfpv4-d16)
+    endif()
   endif()
 endif()
 

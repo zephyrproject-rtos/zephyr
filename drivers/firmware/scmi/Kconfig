@@ -64,4 +64,6 @@ config ARM_SCMI_TRANSPORT_INIT_PRIORITY
 	help
 	  SCMI transport driver device initialization priority.
 
+source "drivers/firmware/scmi/nxp/Kconfig"
+
 endif # ARM_SCMI

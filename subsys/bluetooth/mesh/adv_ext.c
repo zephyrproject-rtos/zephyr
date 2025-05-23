@@ -317,11 +317,16 @@ static void start_proxy_sol_or_proxy_adv(struct bt_mesh_ext_adv *ext_adv)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) &&
-	    !atomic_test_and_set_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
-		if (bt_mesh_adv_gatt_send()) {
-			atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY);
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
+		if (stop_proxy_adv(ext_adv)) {
 			return;
+		}
+
+		if (!atomic_test_and_set_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+			if (bt_mesh_adv_gatt_send()) {
+				atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY);
+				return;
+			}
 		}
 	}
 }
@@ -429,6 +434,13 @@ void bt_mesh_adv_friend_ready(void)
 	}
 }
 
+static void adv_sent(struct bt_mesh_ext_adv *ext_adv)
+{
+	atomic_set_bit(ext_adv->flags, ADV_FLAG_SENT);
+
+	bt_mesh_wq_submit(&ext_adv->work);
+}
+
 int bt_mesh_adv_terminate(struct bt_mesh_adv *adv)
 {
 	int err;
@@ -453,9 +465,7 @@ int bt_mesh_adv_terminate(struct bt_mesh_adv *adv)
 		/* Do not call `cb:end`, since this user action */
 		adv->ctx.cb = NULL;
 
-		atomic_set_bit(ext_adv->flags, ADV_FLAG_SENT);
-
-		bt_mesh_wq_submit(&ext_adv->work);
+		adv_sent(ext_adv);
 
 		return 0;
 	}
@@ -497,8 +507,7 @@ static struct bt_mesh_ext_adv *adv_instance_find(struct bt_le_ext_adv *instance)
 	return NULL;
 }
 
-static void adv_sent(struct bt_le_ext_adv *instance,
-		     struct bt_le_ext_adv_sent_info *info)
+static void ext_adv_set_sent(struct bt_le_ext_adv *instance, struct bt_le_ext_adv_sent_info *info)
 {
 	struct bt_mesh_ext_adv *ext_adv = adv_instance_find(instance);
 
@@ -512,9 +521,7 @@ static void adv_sent(struct bt_le_ext_adv *instance,
 		return;
 	}
 
-	atomic_set_bit(ext_adv->flags, ADV_FLAG_SENT);
-
-	bt_mesh_wq_submit(&ext_adv->work);
+	adv_sent(ext_adv);
 }
 
 int bt_mesh_adv_enable(void)
@@ -522,7 +529,7 @@ int bt_mesh_adv_enable(void)
 	int err;
 
 	static const struct bt_le_ext_adv_cb adv_cb = {
-		.sent = adv_sent,
+		.sent = ext_adv_set_sent,
 	};
 
 	if (advs[0].instance) {
@@ -531,8 +538,7 @@ int bt_mesh_adv_enable(void)
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
-		err = bt_le_ext_adv_create(&advs[i].adv_param, &adv_cb,
-					   &advs[i].instance);
+		err = bt_le_ext_adv_create(&advs[i].adv_param, &adv_cb, &advs[i].instance);
 		if (err) {
 			return err;
 		}
@@ -560,11 +566,6 @@ int bt_mesh_adv_disable(void)
 			return err;
 		}
 
-		/* `adv_sent` is called to finish transmission of an adv buffer that was pushed to
-		 * the host before the advertiser was stopped, but did not finish.
-		 */
-		adv_sent(advs[i].instance, NULL);
-
 		err = bt_le_ext_adv_delete(advs[i].instance);
 		if (err) {
 			LOG_ERR("Failed to delete adv %d", err);
@@ -574,6 +575,11 @@ int bt_mesh_adv_disable(void)
 		advs[i].instance = NULL;
 
 		atomic_clear_bit(advs[i].flags, ADV_FLAG_SUSPENDING);
+
+		/* `adv_sent` is called to finish transmission of an adv buffer that was pushed to
+		 * the host before the advertiser was stopped, but did not finish.
+		 */
+		adv_sent(&advs[i]);
 	}
 
 	return 0;

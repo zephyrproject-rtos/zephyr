@@ -10,6 +10,13 @@ tests:
     platform_exclude:
       - nucleo_u031r8
       - panb511evb/nrf54l15/cpuapp
+      - panb511evb/nrf54l15/cpuapp/ns
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+      - nrf54l15dk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l10/cpuapp/ns
+      - bl54l15_dvk/nrf54l15/cpuapp/ns
+      - bl54l15u_dvk/nrf54l15/cpuapp/ns
+      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
@@ -35,6 +42,7 @@ tests:
       - nucleo_f207zg
       - nucleo_f401re
       - nucleo_f429zi
+      - nucleo_f439zi
       - nucleo_f746zg
       - nucleo_g071rb
       - nucleo_g474re
@@ -45,7 +53,8 @@ tests:
       - nucleo_u083rc
       - nucleo_u575zi_q
       - nucleo_wb55rg
-      - nucleo_wba52cg
+      - nucleo_wba55cg
+      - nucleo_wba65ri
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk

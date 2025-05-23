@@ -728,6 +728,8 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to send over the bus.
+ * @retval -EINVAL invalid signal.
+ * @retval -ETIMEDOUT timeout waiting for eSPI controller to process the VW.
  */
 __syscall int espi_send_vwire(const struct device *dev,
 			      enum espi_vwire_signal signal,

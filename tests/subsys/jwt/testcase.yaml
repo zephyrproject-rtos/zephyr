@@ -5,9 +5,11 @@ common:
   timeout: 120
   tags: jwt
   integration_platforms:
-    - frdm_k64f
+    - qemu_x86
   extra_configs:
     - CONFIG_TEST_RANDOM_GENERATOR=y
+  platform_exclude:
+    - max32657evkit/max32657/ns
 tests:
   libraries.encoding.jwt.ecdsa.psa:
     extra_configs:

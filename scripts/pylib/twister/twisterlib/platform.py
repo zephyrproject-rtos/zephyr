@@ -18,7 +18,6 @@ from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.environment import ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 
 
 class Simulator:
@@ -31,6 +30,9 @@ class Simulator:
         self.exec = data.get("exec")
 
     def is_runnable(self) -> bool:
+        if self.name == "simics":
+            return shutil.which(self.exec, path=os.environ.get("SIMICS_PROJECT")) is not None
+
         return not bool(self.exec) or bool(shutil.which(self.exec))
 
     def __str__(self):
@@ -159,7 +161,6 @@ class Platform:
           "arm": ["zephyr", "gnuarmemb", "armclang", "llvm"],
           "arm64": ["zephyr", "cross-compile"],
           "mips": ["zephyr"],
-          "nios2": ["zephyr"],
           "riscv": ["zephyr", "cross-compile"],
           "posix": ["host", "llvm"],
           "sparc": ["zephyr"],

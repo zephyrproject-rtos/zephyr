@@ -1,7 +1,4 @@
-.. _nrf21540dk_nrf52840:
-
-nRF21540 DK
-###########
+.. zephyr:board:: nrf21540dk
 
 Overview
 ********
@@ -25,12 +22,6 @@ The CPU provides support for the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf21540dk_nrf52840.jpg
-     :align: center
-     :alt: nRF21540 DK
-
-     nRF21540 DK (Credit: Nordic Semiconductor)
-
 More information about the board can be found at the `nRF21540 website`_.
 `nRF21540 Product Specification`_ contains the processor's and front end
 module's information and the datasheet.
@@ -44,45 +35,8 @@ of the slow clock is 32.768 kHz. The frequency of the main clock is 32 MHz.
 Supported Features
 ==================
 
-The nrf21540dk/nrf52840 board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth,           |
-|           |            | ieee802154           |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| USB       | on-chip    | usb                  |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
 See `nRF52840 Product Specification`_ and `nRF21540 DK Hardware guide`_
 for a complete list of nRF21540 Development Kit board hardware features.
 
@@ -121,6 +75,8 @@ Front End Module
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``nrf21540dk/nrf52840`` board configuration can be built,
 flashed, and debugged in the usual way. See :ref:`build_an_application` and

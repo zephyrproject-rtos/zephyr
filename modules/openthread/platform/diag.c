@@ -90,10 +90,16 @@ otError otPlatDiagProcess(otInstance *aInstance, uint8_t aArgsLength, char *aArg
 
 void otPlatDiagModeSet(bool aMode)
 {
+	otError error;
+
 	sDiagMode = aMode;
 
 	if (!sDiagMode) {
-		otPlatRadioSleep(NULL);
+		error = otPlatRadioSleep(NULL);
+		if (error != OT_ERROR_NONE) {
+			otPlatLog(OT_LOG_LEVEL_WARN, OT_LOG_REGION_PLATFORM,
+				  "%s failed (%d)", "otPlatRadioSleep", error);
+		}
 	}
 }
 
@@ -345,6 +351,7 @@ static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char 
 void otPlatDiagAlarmCallback(otInstance *aInstance)
 {
 	uint32_t now;
+	otError error;
 	otRadioFrame *txPacket;
 	const uint16_t diag_packet_len = 30;
 
@@ -370,7 +377,11 @@ void otPlatDiagAlarmCallback(otInstance *aInstance)
 				txPacket->mPsdu[i] = i;
 			}
 
-			otPlatRadioTransmit(aInstance, txPacket);
+			error = otPlatRadioTransmit(aInstance, txPacket);
+			if (error != OT_ERROR_NONE) {
+				otPlatLog(OT_LOG_LEVEL_WARN, OT_LOG_REGION_PLATFORM,
+					  "%s failed (%d)", "otPlatRadioTransmit", error);
+			}
 
 			if (sTxCount != -1) {
 				sTxCount--;
@@ -405,8 +416,11 @@ static otError processTransmit(otInstance *aInstance, uint8_t aArgsLength, char 
 		otPlatAlarmMilliStop(aInstance);
 		diag_output("diagnostic message transmission is stopped\r\n");
 		sTransmitMode = DIAG_TRANSMIT_MODE_IDLE;
-		otPlatRadioReceive(aInstance, sChannel);
-
+		error = otPlatRadioReceive(aInstance, sChannel);
+		if (error != OT_ERROR_NONE) {
+			otPlatLog(OT_LOG_LEVEL_WARN, OT_LOG_REGION_PLATFORM,
+				  "%s failed (%d)", "otPlatRadioReceive", error);
+		}
 	} else if (strcmp(aArgs[0], "start") == 0) {
 		if (sTransmitMode != DIAG_TRANSMIT_MODE_IDLE) {
 			return OT_ERROR_INVALID_STATE;

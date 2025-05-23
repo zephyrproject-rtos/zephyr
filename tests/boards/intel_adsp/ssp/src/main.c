@@ -260,88 +260,67 @@ ZTEST(adsp_ssp, test_adsp_ssp_transfer)
 	const struct dai_properties *props;
 	static int chan_id_rx;
 	static int chan_id;
+	int status;
 
 	props = dai_get_properties(dev_dai_ssp, DAI_DIR_TX, 0);
-	if (!props) {
-		TC_PRINT("Cannot get dai tx properties\n");
-		return;
-	}
+	zassert_not_null(props, "Cannot get dai tx properties\n");
 
-	if (config_output_dma(props, &chan_id)) {
-		TC_PRINT("ERROR: config tx dma (%d)\n", chan_id);
-		return;
-	}
+	status = config_output_dma(props, &chan_id);
+	zassert_equal(status, 0, "ERROR: config tx dma (%d)\n", chan_id);
 
 	TC_PRINT("Configuring the dma tx transfer on channel %d\n", chan_id);
 
-	if (dma_config(dev_dma_dw, chan_id, &dma_cfg)) {
-		TC_PRINT("ERROR: dma tx config (%d)\n", chan_id);
-		return;
-	}
+	status = dma_config(dev_dma_dw, chan_id, &dma_cfg);
+	zassert_equal(status, 0, "ERROR: dma tx config (%d)\n", chan_id);
 
 	props = dai_get_properties(dev_dai_ssp, DAI_DIR_RX, 0);
-	if (!props) {
-		TC_PRINT("Cannot get dai rx properties\n");
-		return;
-	}
+	zassert_not_null(props, "Cannot get dai rx properties\n");
 
-	if (config_input_dma(props, &chan_id_rx)) {
-		TC_PRINT("ERROR: config rx dma (%d)\n", chan_id);
-		return;
-	}
+	status = config_input_dma(props, &chan_id_rx);
+	zassert_equal(status, 0, "ERROR: config rx dma (%d)\n", chan_id);
 
 	TC_PRINT("Configuring the dma rx transfer on channel %d\n", chan_id_rx);
 
-	if (dma_config(dev_dma_dw, chan_id_rx, &dma_cfg_rx)) {
-		TC_PRINT("ERROR: transfer config (%d)\n", chan_id_rx);
-		return;
-	}
+	status = dma_config(dev_dma_dw, chan_id_rx, &dma_cfg_rx);
+	zassert_equal(status, 0, "ERROR: transfer config (%d)\n", chan_id_rx);
 
 	TC_PRINT("Starting the transfer on channels %d and %d and waiting completion\n", chan_id,
 		 chan_id_rx);
 
-	if (dai_trigger(dev_dai_ssp, DAI_DIR_RX, DAI_TRIGGER_PRE_START)) {
-		TC_PRINT("ERROR: dai rx pre start\n");
-		return;
-	}
+	status = dai_trigger(dev_dai_ssp, DAI_DIR_RX, DAI_TRIGGER_PRE_START);
+	zassert_equal(status, 0, "ERROR: dai rx pre start\n");
 
-	if (dai_trigger(dev_dai_ssp, DAI_DIR_TX, DAI_TRIGGER_PRE_START)) {
-		TC_PRINT("ERROR: dai tx pre start\n");
-		return;
-	}
+	status = dai_trigger(dev_dai_ssp, DAI_DIR_TX, DAI_TRIGGER_PRE_START);
+	zassert_equal(status, 0, "ERROR: dai tx pre start\n");
 
-	if (dma_start(dev_dma_dw, chan_id_rx)) {
-		TC_PRINT("ERROR: dma rx transfer start (%d)\n", chan_id);
-		return;
-	}
+	status = dma_start(dev_dma_dw, chan_id_rx);
+	zassert_equal(status, 0, "ERROR: dma rx transfer start (%d)\n", chan_id);
+	status = dma_start(dev_dma_dw, chan_id);
+	zassert_equal(status, 0, "ERROR: dma tx transfer start (%d)\n", chan_id);
 
-	if (dma_start(dev_dma_dw, chan_id)) {
-		TC_PRINT("ERROR: dma tx transfer start (%d)\n", chan_id);
-		return;
-	}
+	status = dai_trigger(dev_dai_ssp, DAI_DIR_RX, DAI_TRIGGER_START);
+	zassert_equal(status, 0, "ERROR: rx dai start\n");
 
-	if (dai_trigger(dev_dai_ssp, DAI_DIR_RX, DAI_TRIGGER_START)) {
-		TC_PRINT("ERROR: rx dai start\n");
-		return;
-	}
+	status = dai_trigger(dev_dai_ssp, DAI_DIR_TX, DAI_TRIGGER_START);
+	zassert_equal(status, 0, "ERROR: tx dai start\n");
 
-	if (dai_trigger(dev_dai_ssp, DAI_DIR_TX, DAI_TRIGGER_START)) {
-		TC_PRINT("ERROR: tx dai start\n");
-		return;
-	}
+	status = k_sem_take(&xfer_sem, K_MSEC(1000));
+	zassert_equal(status, 0, "Timed out waiting for xfers\n");
 
+	status = dma_stop(dev_dma_dw, chan_id_rx);
+	zassert_equal(status, 0, "ERROR: rx dma stop");
 
-	if (k_sem_take(&xfer_sem, K_MSEC(1000)) != 0) {
-		TC_PRINT("timed out waiting for xfers\n");
-		return;
-	}
+	status = dma_stop(dev_dma_dw, chan_id);
+	zassert_equal(status, 0, "ERROR: rx dma stop");
 
-	dma_stop(dev_dma_dw, chan_id_rx);
-	dma_stop(dev_dma_dw, chan_id);
-	dai_trigger(dev_dai_ssp, DAI_DIR_RX, DAI_TRIGGER_STOP);
-	dai_trigger(dev_dai_ssp, DAI_DIR_TX, DAI_TRIGGER_STOP);
+	status = dai_trigger(dev_dai_ssp, DAI_DIR_RX, DAI_TRIGGER_STOP);
+	zassert_equal(status, 0, "ERROR: rx dai stop");
 
-	check_transmission();
+	status = dai_trigger(dev_dai_ssp, DAI_DIR_TX, DAI_TRIGGER_STOP);
+	zassert_equal(status, 0, "ERROR: tx dai stop");
+
+	status = check_transmission();
+	zassert_equal(status, TC_PASS, "Error detected in transmission");
 }
 
 ZTEST(adsp_ssp, test_adsp_ssp_config_set)

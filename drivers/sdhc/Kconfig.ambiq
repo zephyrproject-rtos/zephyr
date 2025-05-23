@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_AMBIQ
+	bool "Ambiq SDHC driver"
+	default y
+	depends on DT_HAS_AMBIQ_SDIO_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_SDIO
+	select PINCTRL
+	select GPIO
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  This option enables the SDHC driver for Ambiq Apollo family.
+
+if SDHC_AMBIQ
+
+config AMBIQ_SDIO_ASYNC
+	bool "Ambiq SDIO Async Mode"
+	default y
+	depends on DT_HAS_AMBIQ_SDIO_ENABLED
+	help
+	  This option enables Ambiq SDIO Async Mode.
+
+config SDHC_BUFFER_ALIGNMENT
+	default 32 if DCACHE
+	default 16
+	help
+	  SDHC buffer should be 32bytes aligned when placed in cachable region.
+
+endif

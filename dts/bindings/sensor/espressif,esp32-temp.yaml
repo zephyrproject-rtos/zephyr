@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ESP32 family temperature sensor node
+description: ESP32 temperature sensor
 
 compatible: "espressif,esp32-temp"
 
@@ -11,7 +11,7 @@ properties:
   range:
     type: int
     description: |
-      The temperature sensor is available on the ESP32-S2, ESP32-S3, ESP32-C3.
+      The temperature sensor is available on the ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C6.
       Note that it is unavailable on the ESP32 due to missing offset calibration.
       Temperature range is defined by the temperature offset which is used during
       calculation of the output temperature from the measured value.

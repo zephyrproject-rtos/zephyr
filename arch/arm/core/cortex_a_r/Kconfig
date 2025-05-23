@@ -13,6 +13,15 @@
 # CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R blocks so they are not
 # exposed if one selects a different ARM Cortex Family (Cortex-M).
 
+config CPU_CORTEX_A7
+	bool
+	select CPU_AARCH32_CORTEX_A
+	select ARMV7_A
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a Cortex-A7 CPU.
+
 config CPU_CORTEX_A9
 	bool
 	select CPU_AARCH32_CORTEX_A
@@ -82,6 +91,8 @@ config CPU_CORTEX_R5
 	select CPU_AARCH32_CORTEX_R
 	select ARMV7_R
 	select ARMV7_R_FP if CPU_HAS_FPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
 	help
 	  This option signifies the use of a Cortex-R5 CPU
 

@@ -151,29 +151,7 @@ More information about STM32P157C can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32mp157c_dk2 board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/st/stm32mp157c_dk2/stm32mp157c_dk2_defconfig`
-
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -211,6 +189,9 @@ console settings are 115200 8N1.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 The STM32MP157C doesn't have QSPI flash for the Cortex®-M4  and it needs to be
 started by the Cortex®-A7 core. The Cortex®-A7 core is responsible to load the
 Cortex®-M4 binary application into the RAM, and get the Cortex®-M4 out of reset.

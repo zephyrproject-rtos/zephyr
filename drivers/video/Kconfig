@@ -50,11 +50,21 @@ config VIDEO_BUFFER_SMH_ATTRIBUTE
 	  1: SMH_REG_ATTR_NON_CACHEABLE
 	  2: SMH_REG_ATTR_EXTERNAL
 
+config VIDEO_I2C_RETRY_NUM
+	int "Number of retries after a failed I2C communication"
+	default 0
+	help
+	  If set to 0, only a single write attempt will be done with no retry.
+	  The default is to not retry. Board configuration files or user project can then
+	  use the number of retries that matches their situation.
+
 source "drivers/video/Kconfig.esp32_dvp"
 
 source "drivers/video/Kconfig.mcux_csi"
 
 source "drivers/video/Kconfig.mcux_mipi_csi2rx"
+
+source "drivers/video/Kconfig.shell"
 
 source "drivers/video/Kconfig.sw_generator"
 
@@ -77,5 +87,7 @@ source "drivers/video/Kconfig.mcux_sdma"
 source "drivers/video/Kconfig.emul_imager"
 
 source "drivers/video/Kconfig.emul_rx"
+
+source "drivers/video/Kconfig.imx335"
 
 endif # VIDEO

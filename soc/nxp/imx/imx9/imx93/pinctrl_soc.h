@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, NXP
+ * Copyright 2022-2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,8 @@ extern "C" {
 	 (DT_PROP(node_id, bias_pull_down) << MCUX_IMX_BIAS_PULL_DOWN_SHIFT) |                     \
 	 (DT_PROP(node_id, bias_pull_up) << MCUX_IMX_BIAS_PULL_UP_SHIFT) |                         \
 	 (DT_ENUM_IDX(node_id, slew_rate) << MCUX_IMX_SLEW_RATE_SHIFT) |                           \
-	 ((~(0xff << DT_ENUM_IDX(node_id, drive_strength))) << MCUX_IMX_DRIVE_STRENGTH_SHIFT) |    \
+	 ((~(0xffffffff << DT_ENUM_IDX(node_id, drive_strength)))                                  \
+	  << MCUX_IMX_DRIVE_STRENGTH_SHIFT) |                                                      \
 	 (DT_PROP(node_id, input_enable) << MCUX_IMX_INPUT_ENABLE_SHIFT))
 
 /* This struct must be present. It is used by the mcux gpio driver */

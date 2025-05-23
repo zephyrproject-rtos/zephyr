@@ -17,6 +17,8 @@
 /delete-node/ &adc1;
 /delete-node/ &usbfs;
 /delete-node/ &usbfs_phy;
+/delete-node/ &eth;
+/delete-node/ &mdio;
 
 / {
 	soc {
@@ -36,7 +38,6 @@
 		};
 
 		adc@40170000 {
-			channel-count = <12>;
 			channel-available-mask = <0x139f7>;
 		};
 

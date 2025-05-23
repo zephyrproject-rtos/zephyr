@@ -1,0 +1,18 @@
+# STMicroelectronics STM32MP13 MPU series
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32MP13X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32mp13x" if SOC_SERIES_STM32MP13X
+
+config SOC_STM32MP135FXX
+	bool
+	select SOC_SERIES_STM32MP13X
+
+config SOC
+	default "stm32mp135fxx" if SOC_STM32MP135FXX

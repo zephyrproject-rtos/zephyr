@@ -169,7 +169,6 @@ config XTENSA_MMU
 	bool "Xtensa MMU Support"
 	select MMU
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
-	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	select KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK if XTENSA_RPO_CACHE
 	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
 	help
@@ -222,12 +221,6 @@ config XTENSA_MMU_DOUBLE_MAP
 	help
 	  This option specifies that the memory is mapped in two
 	  distinct region, cached and uncached.
-
-	config XTENSA_INVALIDATE_MEM_DOMAIN_TLB_ON_SWAP
-		bool
-		help
-		  This invalidates all TLBs referred by the incoming thread's
-		  memory domain when swapping page tables.
 
 config PRIVILEGED_STACK_SIZE
 	# Must be multiple of CONFIG_MMU_PAGE_SIZE

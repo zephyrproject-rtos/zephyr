@@ -897,10 +897,13 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 		if (sub == beacon_sub) {
 			beacon_sub = NULL;
 		}
+
+		bt_mesh_proxy_identity_stop(sub);
 	} else {
 		bt_mesh_proxy_beacon_send(sub);
-		bt_mesh_adv_gatt_update();
 	}
+
+	bt_mesh_adv_gatt_update();
 }
 
 BT_MESH_SUBNET_CB_DEFINE(gatt_services) = {
@@ -934,8 +937,8 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 }
 
 /* Mesh Proxy Service Declaration */
-static struct _bt_gatt_ccc proxy_ccc =
-	BT_GATT_CCC_INITIALIZER(proxy_ccc_changed, proxy_ccc_write, NULL);
+static struct bt_gatt_ccc_managed_user_data proxy_ccc =
+	BT_GATT_CCC_MANAGED_USER_DATA_INIT(proxy_ccc_changed, proxy_ccc_write, NULL);
 
 static struct bt_gatt_attr proxy_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MESH_PROXY),
@@ -982,6 +985,8 @@ int bt_mesh_proxy_gatt_enable(void)
 			clients[i].filter_type = ACCEPT;
 		}
 	}
+
+	bt_mesh_adv_gatt_update();
 
 	return 0;
 }

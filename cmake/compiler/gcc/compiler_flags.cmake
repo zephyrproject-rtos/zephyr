@@ -21,6 +21,7 @@ endif()
 set_compiler_property(PROPERTY optimization_speed -O2)
 set_compiler_property(PROPERTY optimization_size  -Os)
 set_compiler_property(PROPERTY optimization_size_aggressive -Oz)
+set_compiler_property(PROPERTY optimization_fast -Ofast)
 
 if(CMAKE_C_COMPILER_VERSION GREATER_EQUAL "4.5.0")
   set_compiler_property(PROPERTY optimization_lto -flto=auto)
@@ -196,6 +197,10 @@ if(NOT CONFIG_NO_OPTIMIZATIONS)
   set_compiler_property(PROPERTY security_fortify_run_time _FORTIFY_SOURCE=2)
 endif()
 
+check_set_compiler_property(PROPERTY sanitizer_undefined -fsanitize=undefined)
+check_set_compiler_property(PROPERTY sanitizer_undefined_trap -fsanitize-undefined-trap-on-error)
+check_set_compiler_property(PROPERTY sanitizer_undefined_library)
+
 # gcc flag for a hosted (no-freestanding) application
 check_set_compiler_property(APPEND PROPERTY hosted -fno-freestanding)
 
@@ -249,6 +254,7 @@ set_compiler_property(PROPERTY no_position_independent
 set_compiler_property(PROPERTY no_global_merge "")
 
 set_compiler_property(PROPERTY warning_shadow_variables -Wshadow)
+set_compiler_property(PROPERTY warning_no_array_bounds -Wno-array-bounds)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)

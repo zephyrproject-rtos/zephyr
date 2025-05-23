@@ -286,39 +286,20 @@ function(group_to_string)
 
   get_property(type GLOBAL PROPERTY ${STRING_OBJECT}_OBJ_TYPE)
   if(${type} STREQUAL REGION)
-    get_property(name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
-    get_property(address GLOBAL PROPERTY ${STRING_OBJECT}_ADDRESS)
-    get_property(size GLOBAL PROPERTY ${STRING_OBJECT}_SIZE)
-
     get_property(empty GLOBAL PROPERTY ${STRING_OBJECT}_EMPTY)
     if(empty)
       return()
     endif()
-
-  else()
-    get_property(else_name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
-    get_property(else_symbol GLOBAL PROPERTY ${STRING_OBJECT}_SYMBOL)
-    string(TOLOWER ${else_name} else_name)
-
-    get_objects(LIST sections OBJECT ${STRING_OBJECT} TYPE SECTION)
-    list(GET sections 0 section)
-    get_property(first_section_name GLOBAL PROPERTY ${section}_NAME)
-
   endif()
 
-  if(${type} STREQUAL GROUP)
-    get_property(group_name GLOBAL PROPERTY ${STRING_OBJECT}_NAME)
-    get_property(group_address GLOBAL PROPERTY ${STRING_OBJECT}_ADDRESS)
-    get_property(group_vma GLOBAL PROPERTY ${STRING_OBJECT}_VMA)
-    get_property(group_lma GLOBAL PROPERTY ${STRING_OBJECT}_LMA)
-  endif()
-
+  #_SECTIONS_FIXED need a place at address statement:
   get_property(sections GLOBAL PROPERTY ${STRING_OBJECT}_SECTIONS_FIXED)
   foreach(section ${sections})
     to_string(OBJECT ${section} STRING ${STRING_STRING})
     get_property(name       GLOBAL PROPERTY ${section}_NAME)
     get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
-    set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place at address mem:${address} { block ${name_clean} };\n")
+    get_property(section_address GLOBAL PROPERTY ${section}_ADDRESS)
+    set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place at address mem:${section_address} { block ${name_clean} };\n")
   endforeach()
 
   get_property(groups GLOBAL PROPERTY ${STRING_OBJECT}_GROUPS)
@@ -352,7 +333,7 @@ function(group_to_string)
     endif()
 
     set(${STRING_STRING} "${${STRING_STRING}}\"${name}\": place in ${ILINK_CURRENT_NAME} { block ${name_clean} };\n")
-    if(DEFINED vma AND DEFINED lma AND NOT ${noinit})
+    if(CONFIG_IAR_ZEPHYR_INIT AND DEFINED vma AND DEFINED lma AND NOT ${noinit})
       set(${STRING_STRING} "${${STRING_STRING}}\"${name}_init\": place in ${lma} { block ${name_clean}_init };\n")
     endif()
 
@@ -649,7 +630,7 @@ function(section_to_string)
       set(TEMP "${TEMP} { section ${first_index_section_name} },\n")
     endif()
 
-    # block init_100 with alphabetical order { section .z_init_EARLY?_}
+    # block init_100 with alphabetical order { section .z_init_EARLY_?_}
     set(TEMP "${TEMP}\n  block ${name_clean}_${idx}")
     if(DEFINED offset AND NOT offset EQUAL 0 )
       list(APPEND block_attr "size = ${offset}")
@@ -811,32 +792,51 @@ function(section_to_string)
       list(JOIN current_sections ", " SELECTORS)
       set(TEMP "${TEMP}\ndo not initialize {\n${SELECTORS}\n};")
     else()
-      # Generate the _init block and the initialize manually statement.
-      # Note that we need to have the X_init block defined even if we have
-      # no sections, since there will come a "place in XXX" statement later.
 
-      # "${TEMP}" is there too keep the ';' else it will be a list
-      string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
-      string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
-      string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)" "ro\\2\\3" INIT_TEMP "${INIT_TEMP}")
-      string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
-      string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
-
-      # If any content is marked as keep, is has to be applied to the init block
-      # too, esp. for blocks that are not referenced (e.g. empty blocks wiht min_size)
-      if(to_be_kept)
-        list(APPEND to_be_kept "block ${name_clean}_init")
-      endif()
-      set(TEMP "${TEMP}\n${INIT_TEMP}\n")
       if(DEFINED current_sections)
-        set(TEMP "${TEMP}\ninitialize manually with copy friendly\n")
-        set(TEMP "${TEMP}{\n")
-        foreach(section ${current_sections})
-          set(TEMP "${TEMP}  ${section},\n")
-        endforeach()
-        set(TEMP "${TEMP}};")
-        set(current_sections)
+        if(CONFIG_IAR_DATA_INIT)
+          set(TEMP "${TEMP}\ninitialize by copy\n")
+          set(TEMP "${TEMP}{\n")
+          foreach(section ${current_sections})
+            set(TEMP "${TEMP}  ${section},\n")
+          endforeach()
+          set(TEMP "${TEMP}};")
+
+          set(TEMP "${TEMP}\n\"${name}_init\": place in ${group_parent_lma} {\n")
+          foreach(section ${current_sections})
+            set(TEMP "${TEMP}  ${section}_init,\n")
+          endforeach()
+          set(TEMP "${TEMP}};")
+        elseif(CONFIG_IAR_ZEPHYR_INIT)
+          # Generate the _init block and the initialize manually statement.
+          # Note that we need to have the X_init block defined even if we have
+          # no sections, since there will come a "place in XXX" statement later.
+
+          # "${TEMP}" is there too keep the ';' else it will be a list
+          string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
+          string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
+          string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)" "ro\\2\\3" INIT_TEMP "${INIT_TEMP}")
+          string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
+          string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
+
+          # If any content is marked as keep, is has to be applied to the init block
+          # too, esp. for blocks that are not referenced (e.g. empty blocks wiht min_size)
+          if(to_be_kept)
+            list(APPEND to_be_kept "block ${name_clean}_init")
+          endif()
+          set(TEMP "${TEMP}\n${INIT_TEMP}\n")
+          set(TEMP "${TEMP}\ninitialize manually with copy friendly\n")
+          set(TEMP "${TEMP}{\n")
+          foreach(section ${current_sections})
+            set(TEMP "${TEMP}  ${section},\n")
+          endforeach()
+          set(TEMP "${TEMP}};")
+          set(current_sections)
+        endif()
       endif()
+
+      set(current_sections)
+
     endif()
   endif()
 

@@ -12,9 +12,6 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/init.h>
 
-/* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
-
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)

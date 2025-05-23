@@ -1,7 +1,4 @@
-.. _adp_xc7k_ae350:
-
-Andes ADP-XC7K AE350
-####################
+.. zephyr:board:: adp_xc7k
 
 Overview
 ********
@@ -52,40 +49,7 @@ The ADP-XC7K AE350 platform provides following hardware components:
 Supported Features
 ==================
 
-The ``adp_xc7k/ae350`` board configuration supports the following hardware features:
-
-+----------------+------------+----------------------+
-| Interface      | Controller | Driver/Component     |
-+================+============+======================+
-| PLIC           | on-chip    | interrupt_controller |
-+----------------+------------+----------------------+
-| RISC-V Machine | on-chip    | timer                |
-| Timer          |            |                      |
-+----------------+------------+----------------------+
-| GPIO           | on-chip    | gpio                 |
-+----------------+------------+----------------------+
-| UART           | on-chip    | serial               |
-+----------------+------------+----------------------+
-| COUNTER        | on-chip    | counter              |
-+----------------+------------+----------------------+
-| SPI            | on-chip    | spi                  |
-+----------------+------------+----------------------+
-| I2C            | on-chip    | i2c                  |
-+----------------+------------+----------------------+
-| EEPROM         | on-chip    | eeprom               |
-+----------------+------------+----------------------+
-| FLASH          | on-chip    | flash                |
-+----------------+------------+----------------------+
-| HWINFO         | on-chip    | syscon               |
-+----------------+------------+----------------------+
-| MAILBOX        | on-chip    | mbox                 |
-+----------------+------------+----------------------+
-| DMA            | on-chip    | dma                  |
-+----------------+------------+----------------------+
-| WATCHDOG       | on-chip    | wdt                  |
-+----------------+------------+----------------------+
-
-Other hardware features are not supported yet.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -205,6 +169,8 @@ settings are 115200 8N1.
 
 Programming and debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 For debugging zephyr applications or burning them into a flash, you will need to
 connect Andes ICE from host computer to ADP-XC7K board and execute the

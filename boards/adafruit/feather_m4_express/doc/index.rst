@@ -23,39 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The ``adafruit_feather_m4_express`` board target supports the following
-hardware features:
-
-+-----------+------------+------------------------------------------+
-| Interface | Controller | Driver/Component                         |
-+===========+============+==========================================+
-| SYSTICK   | on-chip    | systick                                  |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog                                 |
-+-----------+------------+------------------------------------------+
-| GPIO      | on-chip    | I/O ports                                |
-+-----------+------------+------------------------------------------+
-| USART     | on-chip    | Serial ports                             |
-+-----------+------------+------------------------------------------+
-| SPI       | on-chip    | Serial Peripheral Interface ports        |
-+-----------+------------+------------------------------------------+
-| TRNG      | on-chip    | True Random Number Generator             |
-+-----------+------------+------------------------------------------+
-| HWINFO    | on-chip    | Unique 128 bit serial number             |
-+-----------+------------+------------------------------------------+
-| RTC       | on-chip    | Real-Time Counter                        |
-+-----------+------------+------------------------------------------+
-| USB       | on-chip    | USB device                               |
-+-----------+------------+------------------------------------------+
-| WDT       | on-chip    | Watchdog Timer                           |
-+-----------+------------+------------------------------------------+
-| PWM       | on-chip    | PWM                                      |
-+-----------+------------+------------------------------------------+
-
-Other hardware features are not currently supported by Zephyr.
-
-The default configuration can be found in the Kconfig file
-:zephyr_file:`boards/adafruit/feather_m4_express/adafruit_feather_m4_express_defconfig`.
+.. zephyr:board-supported-hw::
 
 Zephyr can use the default Cortex-M SYSTICK timer or the SAM0 specific RTC.
 To use the RTC, set :code:`CONFIG_CORTEX_M_SYSTICK=n` and set
@@ -104,6 +72,8 @@ serial port that echos characters back to the host PC.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 The Feather ships with a the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.

@@ -86,11 +86,8 @@
 #define ECC_INTR_SOURCE                    76  /* interrupt of ECC accelerator, level*/
 #define MAX_INTR_SOURCE                    77
 
-/* RISC-V supports priority values from 1 (lowest) to 15.
- * As interrupt controller for Xtensa and RISC-V is shared, this is
- * set to an intermediate and compatible value.
- */
-#define IRQ_DEFAULT_PRIORITY	3
+/* Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED) */
+#define IRQ_DEFAULT_PRIORITY	0
 
 #define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */
 

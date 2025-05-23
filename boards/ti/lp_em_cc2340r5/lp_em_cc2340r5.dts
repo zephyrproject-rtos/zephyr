@@ -30,6 +30,7 @@
 		led1 = &led1;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {
@@ -72,4 +73,25 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
+};
+
+&aes {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sck_default
+		     &spi0_mosi_default
+		     &spi0_miso_default
+		     &spi0_cs_default>;
+	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
 };

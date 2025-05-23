@@ -29,11 +29,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
@@ -43,14 +45,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_1 {
 			gpios = <&gpio1 8 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "RGB red LED";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpio1 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "RGB green LED";
 		};
+
 		blue_led: led_3 {
 			gpios = <&gpio1 7 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "RGB blue LED";
@@ -60,8 +65,8 @@
 	nrf_radio_fem: fem {
 		compatible = "nordic,nrf21540-fem";
 		rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		mode-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		pdn-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		spi-if = <&nrf_radio_fem_spi>;
 		supply-voltage-mv = <3000>;
@@ -136,7 +141,6 @@ fem_spi: &spi0 {
 };
 
 &flash1 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -146,18 +150,17 @@ fem_spi: &spi0 {
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x12000>;
+			reg = <0x0000C000 0x17000>;
 		};
-		slot1_partition: partition@1e000 {
+
+		slot1_partition: partition@23000 {
 			label = "image-1";
-			reg = <0x0001E000 0x12000>;
+			reg = <0x00023000 0x17000>;
 		};
-		scratch_partition: partition@30000 {
-			label = "image-scratch";
-			reg = <0x00030000 0xa000>;
-		};
+
 		storage_partition: partition@3a000 {
 			label = "storage";
 			reg = <0x0003a000 0x6000>;
@@ -170,4 +173,4 @@ fem_spi: &spi0 {
 };
 
 /* Include default shared RAM configuration file */
-#include <common/nordic/nrf5340_shared_sram_partition.dtsi>
+#include <nordic/nrf5340_shared_sram_partition.dtsi>

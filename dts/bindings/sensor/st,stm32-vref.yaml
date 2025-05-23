@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Kenneth J. Miller <ken@miller.ec>
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 family VREF+ node
+description: STM32 VREF+.
 
 compatible: "st,stm32-vref"
 

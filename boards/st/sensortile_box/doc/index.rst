@@ -70,6 +70,8 @@ on a smartphone/PC to implement applications such as:
 - Compass and inclinometer
 - Sensor data logger
 
+.. zephyr:board-supported-hw::
+
 Connections and IOs
 ===================
 
@@ -120,6 +122,8 @@ functions.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 There are 2 main entry points for flashing STM32FL4Rx SoCs, one using the ROM
 bootloader, and another by using the SWD debug port (which requires additional

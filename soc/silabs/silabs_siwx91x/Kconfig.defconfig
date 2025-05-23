@@ -3,6 +3,19 @@
 
 if SOC_FAMILY_SILABS_SIWX91X
 
+configdefault SILABS_SLEEPTIMER_TIMER
+	default y if PM
+
+configdefault CORTEX_M_SYSTICK
+	default n if SILABS_SLEEPTIMER_TIMER
+
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 128 if !TICKLESS_KERNEL && SILABS_SLEEPTIMER_TIMER
+	default 1024 if SILABS_SLEEPTIMER_TIMER
+
+configdefault UART_NS16550_DW8250_DW_APB
+	default y
+
 config WISECONNECT_NETWORK_STACK
 	bool
 	select CMSIS_RTOS_V2

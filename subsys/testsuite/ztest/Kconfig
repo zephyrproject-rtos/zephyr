@@ -101,6 +101,7 @@ config ZTEST_ASSERT_HOOK
 
 config ZTEST_NO_YIELD
 	bool "Do not yield to the idle thread after tests complete"
+	default y if PM
 	help
 	  When the tests complete, do not yield to the idle thread and instead
 	  spin in a loop. This is useful for low power mode tests, where
@@ -207,7 +208,6 @@ config ZTEST_VERBOSE_SUMMARY
 
 config ZTEST_FAIL_ON_ASSUME
 	bool "Fail the test run when an assumption fails"
-	default y
 	help
 	  When enabled, the test binary will fail at the end if an assumption failed. This means
 	  that while tests will still be marked as skipped on failed zassume calls, the final test

@@ -191,7 +191,7 @@ static void spi_max32_setup(mxc_spi_regs_t *spi, mxc_spi_req_t *req)
 	}
 
 	spi->dma |= (ADI_MAX32_SPI_DMA_TX_FIFO_CLEAR | ADI_MAX32_SPI_DMA_RX_FIFO_CLEAR);
-	spi->ctrl0 |= MXC_F_SPI_CTRL0_EN;
+	spi->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 	MXC_SPI_ClearFlags(spi);
 }
 
@@ -413,14 +413,14 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 			spi_context_cs_control(ctx, false);
 		} else {
 			cfg->regs->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
-					      MXC_F_SPI_CTRL0_EN);
-			cfg->regs->ctrl0 |= MXC_F_SPI_CTRL0_EN;
+					      ADI_MAX32_SPI_CTRL_EN);
+			cfg->regs->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 		}
 	}
 #else
-		struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 
-		ret = spi_rtio_transceive(rtio_ctx, config, tx_bufs, rx_bufs);
+	ret = spi_rtio_transceive(rtio_ctx, config, tx_bufs, rx_bufs);
 #endif
 	spi_context_release(ctx, ret);
 	return ret;
@@ -620,9 +620,9 @@ unlock:
 	if (!hw_cs_ctrl) {
 		spi_context_cs_control(ctx, false);
 	} else {
-		spi->ctrl0 &=
-			~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL | MXC_F_SPI_CTRL0_EN);
-		spi->ctrl0 |= MXC_F_SPI_CTRL0_EN;
+		spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
+				ADI_MAX32_SPI_CTRL_EN);
+		spi->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 	}
 
 	spi_context_release(ctx, ret);
@@ -680,8 +680,8 @@ static inline void spi_max32_iodev_prepare_start(const struct device *dev)
 	if (!hw_cs_ctrl) {
 		spi_context_cs_control(&data->ctx, true);
 	} else {
-		cfg->regs->ctrl0 = (cfg->regs->ctrl0 & ~MXC_F_SPI_CTRL0_START) |
-					MXC_F_SPI_CTRL0_SS_CTRL;
+		cfg->regs->ctrl0 =
+			(cfg->regs->ctrl0 & ~MXC_F_SPI_CTRL0_START) | MXC_F_SPI_CTRL0_SS_CTRL;
 	};
 }
 
@@ -701,8 +701,8 @@ static void spi_max32_iodev_complete(const struct device *dev, int status)
 			spi_context_cs_control(&data->ctx, false);
 		} else {
 			cfg->regs->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
-					      MXC_F_SPI_CTRL0_EN);
-			cfg->regs->ctrl0 |= MXC_F_SPI_CTRL0_EN;
+					      ADI_MAX32_SPI_CTRL_EN);
+			cfg->regs->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 		}
 
 		if (spi_rtio_complete(rtio_ctx, status)) {
@@ -773,8 +773,8 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 			spi_context_cs_control(ctx, false);
 		} else {
 			req->spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
-					     MXC_F_SPI_CTRL0_EN);
-			req->spi->ctrl0 |= MXC_F_SPI_CTRL0_EN;
+					     ADI_MAX32_SPI_CTRL_EN);
+			req->spi->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
 		}
 		spi_context_complete(ctx, dev, error == E_NO_ERROR ? 0 : -EIO);
 	}
@@ -954,8 +954,8 @@ static DEVICE_API(spi, spi_max32_api) = {
 #define MAX32_SPI_DMA_INIT(n)
 #endif
 
-#define DEFINE_SPI_MAX32_RTIO(_num) SPI_RTIO_DEFINE(max32_spi_rtio_##_num,                 \
-			CONFIG_SPI_MAX32_RTIO_SQ_SIZE,                              \
+#define DEFINE_SPI_MAX32_RTIO(_num)                                                                \
+	SPI_RTIO_DEFINE(max32_spi_rtio_##_num, CONFIG_SPI_MAX32_RTIO_SQ_SIZE,                      \
 			CONFIG_SPI_MAX32_RTIO_CQ_SIZE)
 
 #define DEFINE_SPI_MAX32(_num)                                                                     \
@@ -975,7 +975,7 @@ static DEVICE_API(spi, spi_max32_api) = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(_num), ctx)                            \
 		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &max32_spi_rtio_##_num))};                \
 	SPI_DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,              \
-			      &max32_spi_config_##_num, PRE_KERNEL_2, CONFIG_SPI_INIT_PRIORITY,    \
-			      &spi_max32_api);
+				  &max32_spi_config_##_num, PRE_KERNEL_2,                          \
+				  CONFIG_SPI_INIT_PRIORITY, &spi_max32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_SPI_MAX32)

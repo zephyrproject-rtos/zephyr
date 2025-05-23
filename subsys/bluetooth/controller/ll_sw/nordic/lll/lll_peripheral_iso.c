@@ -158,6 +158,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	LL_ASSERT(cis_lll);
 
+	/* Unconditionally set the prepared flag.
+	 * This flag ensures current CIG event does not pick up a new CIS becoming active when the
+	 * ACL overlaps at the instant with this already started CIG events.
+	 */
+	cis_lll->prepared = 1U;
+
 	/* Save first active CIS offset */
 	cis_offset_first = cis_lll->offset;
 
@@ -377,6 +383,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 			break;
 		}
 
+		/* Unconditionally set the prepared flag.
+		 * This flag ensures current CIG event does not pick up a new CIS becoming active
+		 * when the ACL overlaps at the instant with this already started CIG events.
+		 */
+		cis_lll->prepared = 1U;
+
 		/* Pick the event_count calculated in the ULL prepare */
 		cis_lll->event_count = cis_lll->event_count_prepare;
 
@@ -421,7 +433,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 			next_cis_lll =
 				ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll,
 									    &cis_handle_curr);
-			if (next_cis_lll && next_cis_lll->active) {
+			if (next_cis_lll && next_cis_lll->prepared) {
 				payload_count_rx_flush_or_txrx_inc(next_cis_lll);
 			}
 		} while (next_cis_lll);
@@ -432,6 +444,15 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		 */
 		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		/* Get reference to ACL context */
+		const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+		if (conn_lll->enc_rx) {
+			radio_ccm_disable();
+		}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 		return;
 	}
@@ -625,10 +646,7 @@ static void isr_rx(void *param)
 
 			ull_iso_pdu_rx_alloc();
 			iso_rx_put(node_rx->hdr.link, node_rx);
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 			iso_rx_sched();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			cis_lll->rx.bn_curr++;
 			if ((cis_lll->rx.bn_curr > cis_lll->rx.bn) &&
@@ -782,7 +800,7 @@ static void isr_rx(void *param)
 		do {
 			next_cis_lll =
 				ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll, &cis_handle);
-		} while (next_cis_lll && !next_cis_lll->active);
+		} while (next_cis_lll && !next_cis_lll->prepared);
 
 		if (!next_cis_lll) {
 			/* ISO Event Done */
@@ -994,7 +1012,7 @@ static void next_cis_prepare(void *param)
 	cis_handle = cis_handle_curr;
 	do {
 		next_cis_lll = ull_conn_iso_lll_stream_sorted_get_by_group(cig_lll, &cis_handle);
-	} while (next_cis_lll && !next_cis_lll->active);
+	} while (next_cis_lll && !next_cis_lll->prepared);
 
 	if (!next_cis_lll) {
 		/* ISO Event Done */
@@ -1002,6 +1020,8 @@ static void next_cis_prepare(void *param)
 
 		return;
 	}
+
+	payload_count_rx_flush_or_txrx_inc(cis_lll);
 
 	cis_handle_curr = cis_handle;
 

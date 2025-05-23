@@ -16,28 +16,7 @@ are available in the `candleLight FD GitHub repository`_.
 Supported Features
 ==================
 
-The ``candlelightfd/stm32g0b1xx`` board target supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB                                 |
-+-----------+------------+-------------------------------------+
-| CAN1      | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-| CAN2      | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/others/candlelightfd/candlelightfd_stm32g0b1xx_defconfig`.
+.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -48,6 +27,8 @@ clock of 80 MHz.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).

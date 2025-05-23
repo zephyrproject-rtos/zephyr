@@ -41,46 +41,7 @@ these reference documents:
 Supported Features
 ******************
 
-The olimex_esp32_evb board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| EFUSE     | on-chip    | hwinfo, device ID                   |
-+-----------+------------+-------------------------------------+
-| FLASH     | module     | External flash                      |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | I2C                                 |
-+-----------+------------+-------------------------------------+
-| INTERRUPT | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| IO_MUX    | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TIMG      | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| TWAI      | on-chip    | CAN controller                      |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | uart                                |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| WiFi      | on-chip    | WiFi                                |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/olimex/olimex_esp32_evb/olimex_esp32_evb_appcpu_defconfig`
-and
-:zephyr_file:`boards/olimex/olimex_esp32_evb/olimex_esp32_evb_procpu_defconfig`
-
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 System requirements
 *******************
@@ -101,6 +62,8 @@ below to retrieve those files.
 
 Building & Flashing
 *******************
+
+.. zephyr:board-supported-runners::
 
 Simple boot
 ===========

@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ADAFRUIT_FEATHER_ESP32S3_TFT_ESP32S3_PROCPU
+
+if DISPLAY
+
+config BOARD_ADAFRUIT_FEATHER_ESP32S3_TFT
+	select BOARD_LATE_INIT_HOOK
+
+choice ST7789V_PIXEL_FORMAT
+	default ST7789V_RGB565
+endchoice
+
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # BOARD_ADAFRUIT_FEATHER_ESP32S3_TFT_PROCPU

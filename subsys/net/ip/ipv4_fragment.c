@@ -206,7 +206,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	net_pkt_set_data(pkt, &ipv4_access);
 	net_pkt_set_ip_reassembled(pkt, true);
 
-	LOG_DBG("New pkt %p IPv4 len is %d bytes", pkt, net_pkt_get_len(pkt));
+	LOG_DBG("New pkt %p IPv4 len is %zd bytes", pkt, net_pkt_get_len(pkt));
 
 	/* We need to use the queue when feeding the packet back into the
 	 * IP stack as we might run out of stack if we call processing_data()

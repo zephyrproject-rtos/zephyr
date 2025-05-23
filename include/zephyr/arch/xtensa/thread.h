@@ -42,6 +42,11 @@ struct _thread_arch {
 	 * Un-set for surpervisor threads.
 	 */
 	uint8_t *psp;
+
+	/* Stashed PS value used to restore PS when restoring from
+	 * context switching or returning from non-nested interrupts.
+	 */
+	uint32_t return_ps;
 #endif
 };
 

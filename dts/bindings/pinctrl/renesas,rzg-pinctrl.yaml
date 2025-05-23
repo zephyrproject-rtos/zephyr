@@ -1,11 +1,18 @@
 # Copyright (c) 2024 Epam Systems
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Below generic example shows of supported pinctrl definitions:
+    Renesas RZ/G pin controller
 
-    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl_rzg3s.h>
+    The Renesas RZ/G pin controller is a node responsible for controlling
+    pin function selection and pin properties.
+
+    The pre-defined combinations for the RZ/G variants are defined in the below headers
+    - pinctrl-rzg-common.h for RZ/G3S
+    - pinctrl-rzg2-common.h for RZ/G2L, RZ/G2LC
+
+    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg(2)-common.h>
     example_pins: device_pin {
         device-pinmux {
           pinmux = <RZG_PINMUX(PORT_08, 1, 5)>,
@@ -65,13 +72,13 @@ child-binding:
           Pinmux configuration node.
           Values are constructed from GPIO port number, pin number, and
           alternate function configuration number using the RZG_PINMUX()
-          helper macro in pinctrl_rzg.h
+          helper macro in pinctrl-rzg(2)-common.h.
 
       pins:
         type: array
         description: |
           Special Purpose pins configuration node.
-          Values are define in pinctrl_rzg.h.
+          Values are define in pinctrl-rzg(2)-common.h.
           Ex: BSP_IO_XSPI_IO0,BSP_IO_I3C_SCL,...
 
       drive-strength:

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <SPI1_CSN_P9>, <SPI1_SCK_P10>, <SPI1_TX_P11>;
+		};
+	};
+};
+
+&spi1 {
+	pinctrl-0 = < &spi1_default >;
+	pinctrl-names = "default";
+	cs-gpios = <&pico_header 9 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};

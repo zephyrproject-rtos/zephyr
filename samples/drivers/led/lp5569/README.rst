@@ -16,7 +16,7 @@ This pattern then repeats indefinitely.
 Building and Running
 ********************
 
-Build the application for the :ref:`nrf52840dk_nrf52840` board, and connect
+Build the application for the :zephyr:board:`nrf52840dk` board, and connect
 a LP5569 LED controller on the bus I2C0 at the address 0x32.
 
 .. zephyr-app-commands::
@@ -26,7 +26,7 @@ a LP5569 LED controller on the bus I2C0 at the address 0x32.
    :compact:
 
 For flashing the application, refer to the Flashing section of the
-:ref:`nrf52840dk_nrf52840` board documentation.
+:zephyr:board:`nrf52840dk` board documentation.
 
 .. code-block:: none
 

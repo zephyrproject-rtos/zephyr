@@ -11,7 +11,6 @@ menuconfig HAWKBIT
 	depends on IMG_MANAGER
 	depends on NETWORKING
 	depends on HTTP_CLIENT
-	depends on DNS_RESOLVER
 	depends on JSON_LIBRARY
 	depends on BOOTLOADER_MCUBOOT
 	depends on SMF
@@ -57,7 +56,8 @@ config HAWKBIT_TENANT
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
 	help
-	  Configure the hawkbit server address.
+	  Configure the hawkbit server address. If the address is not an IP address,
+	  CONFIG_DNS_RESOLVER must be enabled to resolve the hostname.
 
 config HAWKBIT_PORT
 	int "Port number for the hawkbit server"
@@ -76,18 +76,28 @@ choice HAWKBIT_DDI_SECURITY
 
 config HAWKBIT_DDI_NO_SECURITY
 	bool "No authentication security"
+	select DEPRECATED
 	help
-	  No authentication security for the hawkBit DDI API.
+	  No authentication security for the hawkBit DDI API. Support for this
+	  had been removed from the hawkBit server in version 0.8.0. Use gateway
+	  security token authentication instead, if you want something similar.
 
 config HAWKBIT_DDI_TARGET_SECURITY
 	bool "Use target security token authentication"
 	help
 	  Use target security token authentication for the hawkBit DDI API.
+	  Here the security token is unique for each device and is generated
+	  during the device registration process. The device has to be registered
+	  in the hawkBit server before using this authentication mode.
 
 config HAWKBIT_DDI_GATEWAY_SECURITY
 	bool "Use gateway security token authentication"
 	help
 	  Use gateway security token authentication for the hawkBit DDI API.
+	  Here the security token is shared between all devices in the same
+	  tenant. The device can register itself in the hawkBit server on
+	  first connection to the server. The device does not need to be registered
+	  in the hawkBit server before using this authentication mode.
 
 endchoice
 

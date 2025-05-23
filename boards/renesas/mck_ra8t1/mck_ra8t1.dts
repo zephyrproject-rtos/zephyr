@@ -47,6 +47,7 @@
 	aliases {
 		led0 = &led1;
 		sdhc0 = &sdhc0;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -115,6 +116,17 @@
 	uart3: uart {
 		current-speed = <115200>;
 		status = "okay";
+	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+
+	i2c9: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
 	};
 };
 
@@ -217,6 +229,26 @@
 	maximum-speed = "full-speed";
 	status = "okay";
 	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&wdt {
+	status = "okay";
+};
+
+&ulpt0 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
 		status = "okay";
 	};
 };

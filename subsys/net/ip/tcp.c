@@ -1514,6 +1514,10 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 	} else {
 		uint32_t ack = ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
 
+		if (th_flags(th_pkt) & SYN) {
+			ack++;
+		}
+
 		UNALIGNED_PUT(RST | ACK, &th_rst->th_flags);
 		UNALIGNED_PUT(htonl(ack), &th_rst->th_ack);
 	}
@@ -2483,7 +2487,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		net_sprint_addr(context->remote.sa_family,
 				(const void *)&net_sin(&context->remote)->sin_addr));
 
-	ret = net_conn_register(IPPROTO_TCP, af,
+	ret = net_conn_register(IPPROTO_TCP, SOCK_STREAM, af,
 				&context->remote, &local_addr,
 				ntohs(conn->dst.sin.sin_port),/* local port */
 				ntohs(conn->src.sin.sin_port),/* remote port */
@@ -2801,11 +2805,11 @@ static void tcp_check_sock_options(struct tcp *conn)
 /* TCP state machine, everything happens here */
 static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
-	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
+	struct tcphdr *th;
 	uint8_t next = 0, fl = 0;
 	bool do_close = false;
 	bool connection_ok = false;
-	size_t tcp_options_len = th ? (th_off(th) - 5) * 4 : 0;
+	size_t tcp_options_len;
 	struct net_conn *conn_handler = NULL;
 	struct net_pkt *recv_pkt;
 	void *recv_user_data;
@@ -2815,10 +2819,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	int close_status = 0;
 	enum net_verdict verdict = NET_DROP;
 
-	if (th) {
-		/* Currently we ignore ECN and CWR flags */
-		fl = th_flags(th) & ~(ECN | CWR);
+	if (conn == NULL || pkt == NULL) {
+		NET_ERR("Invalid parameters");
+		return NET_DROP;
 	}
+
+	th = th_get(pkt);
+	if (th == NULL) {
+		NET_ERR("Failed to get TCP header");
+		return NET_DROP;
+	}
+
+	tcp_options_len = (th_off(th) - 5) * 4;
+
+	/* Currently we ignore ECN and CWR flags */
+	fl = th_flags(th) & ~(ECN | CWR);
 
 	if (conn->state != TCP_SYN_SENT) {
 		tcp_check_sock_options(conn);
@@ -2834,8 +2849,8 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 	NET_DBG("%s", tcp_conn_state(conn, pkt));
 
-	if (th && th_off(th) < 5) {
-		tcp_out(conn, RST);
+	if (th_off(th) < 5) {
+		net_tcp_reply_rst(pkt);
 		do_close = true;
 		close_status = -ECONNRESET;
 		goto out;
@@ -2854,6 +2869,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 		do_close = true;
 		close_status = -ECONNRESET;
+		conn->rst_received = true;
 
 		/* If we receive RST and ACK for the sent SYN, it means
 		 * that there is no socket listening the port we are trying
@@ -2862,6 +2878,13 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		if (conn->in_connect) {
 			fl = th_flags(th);
 			if (FL(&fl, ==, RST | ACK)) {
+				if (th_ack(th) != conn->seq) {
+					/* Invalid ACKnum - drop it */
+					net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
+					k_mutex_unlock(&conn->lock);
+					return NET_DROP;
+				}
+
 				close_status = -ECONNREFUSED;
 			}
 		}
@@ -2872,13 +2895,13 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	if (tcp_options_len && !tcp_options_check(&conn->recv_options, pkt,
 						  tcp_options_len)) {
 		NET_DBG("DROP: Invalid TCP option list");
-		tcp_out(conn, RST);
+		net_tcp_reply_rst(pkt);
 		do_close = true;
 		close_status = -ECONNRESET;
 		goto out;
 	}
 
-	if (th && (conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT) &&
+	if ((conn->state != TCP_LISTEN) && (conn->state != TCP_SYN_SENT) &&
 	    tcp_validate_seq(conn, th) && FL(&fl, &, SYN)) {
 		/* According to RFC 793, ch 3.9 Event Processing, receiving SYN
 		 * once the connection has been established is an error
@@ -2887,41 +2910,35 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		NET_DBG("conn: %p, SYN received in %s state, dropping connection",
 			conn, tcp_state_to_str(conn->state, false));
 		net_stats_update_tcp_seg_drop(conn->iface);
-		tcp_out(conn, RST);
+		net_tcp_reply_rst(pkt);
 		do_close = true;
 		close_status = -ECONNRESET;
 		goto out;
 	}
 
-	if (th) {
-		conn->send_win = ntohs(th_win(th));
-		if (conn->send_win > conn->send_win_max) {
-			NET_DBG("Lowering send window from %u to %u",
-				conn->send_win, conn->send_win_max);
-
-			conn->send_win = conn->send_win_max;
-		}
-
-		if (conn->send_win == 0) {
-			if (!k_work_delayable_is_pending(&conn->persist_timer)) {
-				conn->zwp_retries = 0;
-				(void)k_work_reschedule_for_queue(
-					&tcp_work_q, &conn->persist_timer,
-					K_MSEC(TCP_RTO_MS));
-			}
-		} else {
-			(void)k_work_cancel_delayable(&conn->persist_timer);
-		}
-
-		if (tcp_window_full(conn)) {
-			(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
-		} else {
-			k_sem_give(&conn->tx_sem);
-		}
+	conn->send_win = ntohs(th_win(th));
+	if (conn->send_win > conn->send_win_max) {
+		NET_DBG("Lowering send window from %u to %u", conn->send_win, conn->send_win_max);
+		conn->send_win = conn->send_win_max;
 	}
 
-next_state:
-	len = pkt ? tcp_data_len(pkt) : 0;
+	if (conn->send_win == 0) {
+		if (!k_work_delayable_is_pending(&conn->persist_timer)) {
+			conn->zwp_retries = 0;
+			(void)k_work_reschedule_for_queue(&tcp_work_q, &conn->persist_timer,
+							  K_MSEC(TCP_RTO_MS));
+		}
+	} else {
+		(void)k_work_cancel_delayable(&conn->persist_timer);
+	}
+
+	if (tcp_window_full(conn)) {
+		(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
+	} else {
+		k_sem_give(&conn->tx_sem);
+	}
+
+	len = tcp_data_len(pkt);
 
 	switch (conn->state) {
 	case TCP_LISTEN:
@@ -2941,17 +2958,8 @@ next_state:
 						    ACK_TIMEOUT);
 			verdict = NET_OK;
 		} else {
-			conn->send_options.mss_found = true;
-			ret = tcp_out_ext(conn, SYN, NULL /* no data */, conn->seq);
-			if (ret < 0) {
-				do_close = true;
-				close_status = ret;
-			} else {
-				conn->send_options.mss_found = false;
-				conn_seq(conn, + 1);
-				next = TCP_SYN_SENT;
-				tcp_conn_ref(conn);
-			}
+			k_mutex_unlock(&conn->lock);
+			return NET_DROP;
 		}
 		break;
 	case TCP_SYN_RECEIVED:
@@ -2985,8 +2993,6 @@ next_state:
 				net_tcp_put(conn->context);
 				break;
 			}
-
-			keep_alive_timer_restart(conn);
 
 			net_ipaddr_copy(&conn->context->remote, &conn->dst.sa);
 
@@ -3071,7 +3077,6 @@ next_state:
 					      NET_CONTEXT_CONNECTED);
 			tcp_ca_init(conn);
 			tcp_out(conn, ACK);
-			keep_alive_timer_restart(conn);
 
 			/* The connection semaphore is released *after*
 			 * we have changed the connection state. This way
@@ -3085,16 +3090,14 @@ next_state:
 			 * the connection makes a "forward progress".
 			 */
 			tcp_nbr_reachability_hint(conn);
-		} else if (pkt) {
+		} else {
 			net_tcp_reply_rst(pkt);
 		}
 
 		break;
 	case TCP_ESTABLISHED:
 		/* full-close */
-		if (th && FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
-			bool acked = false;
-
+		if (FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
 				if (verdict == NET_OK) {
@@ -3108,25 +3111,16 @@ next_state:
 			conn_ack(conn, + len + 1);
 			keep_alive_timer_stop(conn);
 
-			if (FL(&fl, &, ACK)) {
-				acked = true;
+			if (FL(&fl, &, ACK) && (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0)) {
+				uint32_t len_acked = th_ack(th) - conn->seq;
 
-				if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
-					uint32_t len_acked = th_ack(th) - conn->seq;
-
-					conn_seq(conn, + len_acked);
-				}
+				conn_seq(conn, + len_acked);
 			}
 
-			if (acked) {
-				tcp_out(conn, FIN | ACK);
-				conn_seq(conn, + 1);
-				tcp_setup_last_ack_timer(conn);
-				next = TCP_LAST_ACK;
-			} else {
-				tcp_out(conn, ACK);
-				next = TCP_CLOSE_WAIT;
-			}
+			tcp_out(conn, FIN | ACK);
+			conn_seq(conn, + 1);
+			tcp_setup_last_ack_timer(conn);
+			next = TCP_LAST_ACK;
 
 			break;
 		}
@@ -3137,7 +3131,7 @@ next_state:
 		keep_alive_timer_restart(conn);
 
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
-		if (th && (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0)) {
+		if (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0) {
 			/* Only if there is pending data, increment the duplicate ack count */
 			if (conn->send_data_total > 0) {
 				/* There could be also payload, only without payload account them */
@@ -3178,7 +3172,7 @@ next_state:
 			   "conn: %p, Missing a subscription "
 				"of the send_data queue timer", conn);
 
-		if (th && (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0)) {
+		if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
 			uint32_t len_acked = th_ack(th) - conn->seq;
 
 			NET_DBG("conn: %p len_acked=%u", conn, len_acked);
@@ -3190,7 +3184,7 @@ next_state:
 					"(total=%zu)", conn, len_acked,
 					conn->send_data_total);
 				net_stats_update_tcp_seg_drop(conn->iface);
-				tcp_out(conn, RST);
+				net_tcp_reply_rst(pkt);
 				do_close = true;
 				close_status = -ECONNRESET;
 				break;
@@ -3253,7 +3247,7 @@ next_state:
 
 			ret = tcp_send_queued_data(conn);
 			if (ret < 0 && ret != -ENOBUFS) {
-				tcp_out(conn, RST);
+				net_tcp_reply_rst(pkt);
 				do_close = true;
 				close_status = ret;
 				verdict = NET_OK;
@@ -3265,42 +3259,39 @@ next_state:
 			}
 		}
 
-		if (th) {
-			if (th_seq(th) == conn->ack) {
-				if (len > 0) {
-					bool psh = FL(&fl, &, PSH);
+		if (th_seq(th) == conn->ack) {
+			if (len > 0) {
+				bool psh = FL(&fl, &, PSH);
 
-					verdict = tcp_data_received(conn, pkt, &len, psh);
-					if (verdict == NET_OK) {
-						/* net_pkt owned by the recv fifo now */
-						pkt = NULL;
-					}
-				} else {
-					/* ACK, no data */
-					verdict = NET_OK;
+				verdict = tcp_data_received(conn, pkt, &len, psh);
+				if (verdict == NET_OK) {
+					/* net_pkt owned by the recv fifo now */
+					pkt = NULL;
 				}
-			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
-				/* This should handle the acknowledgements of keep alive
-				 * packets and retransmitted data.
-				 * RISK:
-				 * There is a tiny risk of creating a ACK loop this way when
-				 * both ends of the connection are out of order due to packet
-				 * loss is a simultaneous bidirectional data flow.
-				 */
-				tcp_out(conn, ACK); /* peer has resent */
-
-				net_stats_update_tcp_seg_ackerr(conn->iface);
-				verdict = NET_OK;
-			} else if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
-				tcp_out_of_order_data(conn, pkt, len,
-						      th_seq(th));
-				/* Send out a duplicated ACK */
-				if ((len > 0) || FL(&fl, &, FIN)) {
-					tcp_out(conn, ACK);
-				}
-
+			} else {
+				/* ACK, no data */
 				verdict = NET_OK;
 			}
+		} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
+			/* This should handle the acknowledgements of keep alive
+			 * packets and retransmitted data.
+			 * RISK:
+			 * There is a tiny risk of creating a ACK loop this way when
+			 * both ends of the connection are out of order due to packet
+			 * loss is a simultaneous bidirectional data flow.
+			 */
+			tcp_out(conn, ACK); /* peer has resent */
+
+			net_stats_update_tcp_seg_ackerr(conn->iface);
+			verdict = NET_OK;
+		} else if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
+			tcp_out_of_order_data(conn, pkt, len, th_seq(th));
+			/* Send out a duplicated ACK */
+			if ((len > 0) || FL(&fl, &, FIN)) {
+				tcp_out(conn, ACK);
+			}
+
+			verdict = NET_OK;
 		}
 
 		/* Check if there is any data left to retransmit possibly*/
@@ -3318,13 +3309,10 @@ next_state:
 
 		break;
 	case TCP_CLOSE_WAIT:
-		tcp_out(conn, FIN);
-		conn_seq(conn, + 1);
-		next = TCP_LAST_ACK;
-		tcp_setup_last_ack_timer(conn);
+		/* Half-close is not supported, so do nothing here */
 		break;
 	case TCP_LAST_ACK:
-		if (th && FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
+		if (FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
 			tcp_send_timer_cancel(conn);
 			do_close = true;
 			verdict = NET_OK;
@@ -3336,7 +3324,7 @@ next_state:
 		break;
 	case TCP_CLOSED:
 		break;
-	case TCP_FIN_WAIT_1:
+	case TCP_FIN_WAIT_1: {
 		/*
 		 * FIN1:
 		 * Acknowledge path and sequence path are independent, treat them that way
@@ -3346,75 +3334,75 @@ next_state:
 		 * -   & ACK -> TCP_FIN_WAIT_2
 		 * FIN & ACK -> TCP_TIME_WAIT
 		 */
-		if (th) {
-			bool fin_acked = false;
+		bool fin_acked = false;
 
-			if (tcp_compute_new_length(conn, th, len, false) > 0) {
-				/* We do not implement half closed sockets, therefore
-				 * cannot accept new data in after sending our FIN, as
-				 * we are in sequence can send a reset now.
-				 */
-				net_stats_update_tcp_seg_drop(conn->iface);
+		if (tcp_compute_new_length(conn, th, len, false) > 0) {
+			/* We do not implement half closed sockets, therefore
+			 * cannot accept new data in after sending our FIN, as
+			 * we are in sequence can send a reset now.
+			 */
+			net_stats_update_tcp_seg_drop(conn->iface);
+
+			next = tcp_enter_time_wait(conn);
+
+			net_tcp_reply_rst(pkt);
+			break;
+		}
+		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+			NET_DBG("conn %p: FIN acknowledged, going to FIN_WAIT_2 "
+				"state seq %u, ack %u",
+				conn, conn->seq, conn->ack);
+			tcp_send_timer_cancel(conn);
+			fin_acked = true;
+			next = TCP_FIN_WAIT_2;
+			verdict = NET_OK;
+		}
+
+		/*
+		 * There can also be data in the message, so compute with the length
+		 * of the packet to check the sequence number of the FIN flag with the ACK
+		 */
+		if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len, conn->ack) == 0)) {
+			conn_ack(conn, + 1);
+
+			/* State path is dependent on if the acknowledge is in */
+			if (fin_acked) {
+				/* Already acknowledged, we can go further */
+				NET_DBG("conn %p: FIN received, going to TIME WAIT", conn);
 
 				next = tcp_enter_time_wait(conn);
 
-				tcp_out(conn, RST);
-				break;
-			}
-			if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
-				NET_DBG("conn %p: FIN acknowledged, going to FIN_WAIT_2 "
-					"state seq %u, ack %u"
-					, conn, conn->seq, conn->ack);
+				tcp_out(conn, ACK);
+			} else {
+				/* Fin not yet acknowledged, waiting for the ack in CLOSING
+				 */
+				NET_DBG("conn %p: FIN received, going to CLOSING as no "
+					"ACK has been received",
+					conn);
 				tcp_send_timer_cancel(conn);
-				fin_acked = true;
-				next = TCP_FIN_WAIT_2;
-				verdict = NET_OK;
+				tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
+				next = TCP_CLOSING;
 			}
-
-			/*
-			 * There can also be data in the message, so compute with the length
-			 * of the packet to check the sequence number of the FIN flag with the ACK
-			 */
-			if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len, conn->ack) == 0)) {
-				conn_ack(conn, + 1);
-
-				/* State path is dependent on if the acknowledge is in */
+			verdict = NET_OK;
+		} else {
+			if (len > 0) {
 				if (fin_acked) {
-					/* Already acknowledged, we can go further */
-					NET_DBG("conn %p: FIN received, going to TIME WAIT", conn);
-
-					next = tcp_enter_time_wait(conn);
-
+					/* Send out a duplicate ACK */
+					tcp_send_timer_cancel(conn);
 					tcp_out(conn, ACK);
 				} else {
-					/* Fin not yet acknowledged, waiting for the ack in CLOSING
+					/* In FIN1 state
+					 * Send out a duplicate ACK, with the pending FIN
+					 * flag
 					 */
-					NET_DBG("conn %p: FIN received, going to CLOSING as no "
-						"ACK has been received", conn);
 					tcp_send_timer_cancel(conn);
 					tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
-					next = TCP_CLOSING;
 				}
 				verdict = NET_OK;
-			} else {
-				if (len > 0) {
-					if (fin_acked) {
-						/* Send out a duplicate ACK */
-						tcp_send_timer_cancel(conn);
-						tcp_out(conn, ACK);
-					} else {
-						/* In FIN1 state
-						 * Send out a duplicate ACK, with the pending FIN
-						 * flag
-						 */
-						tcp_send_timer_cancel(conn);
-						tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
-					}
-					verdict = NET_OK;
-				}
 			}
 		}
-		break;
+	}
+	break;
 	case TCP_FIN_WAIT_2:
 		/*
 		 * FIN2:
@@ -3422,140 +3410,135 @@ next_state:
 		 * -   -> TCP_FIN_WAIT_2
 		 * FIN -> TCP_TIME_WAIT
 		 */
-		if (th) {
-			/* No tcp_send_timer_cancel call required here, as is has been called
-			 * before entering this state, only allowed through the
-			 * tcp_enter_time_wait function.
+		/* No tcp_send_timer_cancel call required here, as is has been called
+		 * before entering this state, only allowed through the
+		 * tcp_enter_time_wait function.
+		 */
+
+		/* Compute if there is new data after our close */
+		if (tcp_compute_new_length(conn, th, len, false) > 0) {
+			/* We do not implement half closed sockets, therefore
+			 * cannot accept new data in after sending our FIN, as
+			 * we are in sequence can send a reset now.
 			 */
+			net_stats_update_tcp_seg_drop(conn->iface);
 
-			/* Compute if there is new data after our close */
-			if (tcp_compute_new_length(conn, th, len, false) > 0) {
-				/* We do not implement half closed sockets, therefore
-				 * cannot accept new data in after sending our FIN, as
-				 * we are in sequence can send a reset now.
-				 */
-				net_stats_update_tcp_seg_drop(conn->iface);
+			next = tcp_enter_time_wait(conn);
 
-				next = tcp_enter_time_wait(conn);
+			net_tcp_reply_rst(pkt);
+			break;
+		}
+		/*
+		 * There can also be data in the message, so compute with the length
+		 * of the packet to check the sequence number of the FIN flag with the ACK
+		 */
+		if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len, conn->ack) == 0)) {
+			conn_ack(conn, + 1);
+			NET_DBG("conn %p: FIN received, going to TIME WAIT", conn);
 
-				tcp_out(conn, RST);
-				break;
-			}
-			/*
-			 * There can also be data in the message, so compute with the length
-			 * of the packet to check the sequence number of the FIN flag with the ACK
-			 */
-			if (FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len, conn->ack) == 0)) {
-				conn_ack(conn, + 1);
-				NET_DBG("conn %p: FIN received, going to TIME WAIT", conn);
+			next = tcp_enter_time_wait(conn);
 
-				next = tcp_enter_time_wait(conn);
-
+			verdict = NET_OK;
+			tcp_out(conn, ACK);
+		} else {
+			if (len > 0) {
+				/* Send out a duplicate ACK */
+				tcp_out(conn, ACK);
 				verdict = NET_OK;
+			}
+		}
+		break;
+	case TCP_CLOSING: {
+		bool fin_acked = false;
+
+		/*
+		 * Closing:
+		 * Our FIN has to be acknowledged
+		 * -   -> TCP_CLOSING
+		 * ACK -> TCP_TIME_WAIT
+		 */
+		int32_t new_len = tcp_compute_new_length(conn, th, len, true);
+
+		if (new_len > 0) {
+			/* This should not happen here, as no data can be send after
+			 * the FIN flag has been send.
+			 */
+			NET_ERR("conn: %p, new bytes %u during CLOSING state "
+				"sending reset",
+				conn, new_len);
+			net_stats_update_tcp_seg_drop(conn->iface);
+
+			next = tcp_enter_time_wait(conn);
+
+			net_tcp_reply_rst(pkt);
+			break;
+		}
+
+		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
+			NET_DBG("conn %p: FIN acknowledged, going to TIME WAIT "
+				"state seq %u, ack %u",
+				conn, conn->seq, conn->ack);
+
+			next = tcp_enter_time_wait(conn);
+			fin_acked = true;
+
+			verdict = NET_OK;
+		}
+
+		/*
+		 * There can also be data in the message, so compute with the length
+		 * of the packet to check with the ack
+		 * Since the conn->ack was already incremented in TCP_FIN_WAIT_1
+		 * add 1 in the comparison sequence
+		 */
+		if ((FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + len + 1, conn->ack) == 0)) ||
+		    (len > 0)) {
+			tcp_send_timer_cancel(conn);
+			if (fin_acked) {
+				/* Send out a duplicate ACK */
 				tcp_out(conn, ACK);
 			} else {
-				if (len > 0) {
-					/* Send out a duplicate ACK */
-					tcp_out(conn, ACK);
-					verdict = NET_OK;
-				}
-			}
-		}
-		break;
-	case TCP_CLOSING:
-		if (th) {
-			bool fin_acked = false;
-
-			/*
-			 * Closing:
-			 * Our FIN has to be acknowledged
-			 * -   -> TCP_CLOSING
-			 * ACK -> TCP_TIME_WAIT
-			 */
-			int32_t new_len = tcp_compute_new_length(conn, th, len, true);
-
-			if (new_len > 0) {
-				/* This should not happen here, as no data can be send after
-				 * the FIN flag has been send.
+				/* Send out a duplicate ACK, with the pending FIN
+				 * flag
 				 */
-				NET_ERR("conn: %p, new bytes %u during CLOSING state "
-					"sending reset", conn, new_len);
-				net_stats_update_tcp_seg_drop(conn->iface);
-
-				next = tcp_enter_time_wait(conn);
-
-				tcp_out(conn, RST);
-				break;
+				tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
 			}
+			verdict = NET_OK;
+		}
+	}
+	break;
+	case TCP_TIME_WAIT: {
+		int32_t new_len = tcp_compute_new_length(conn, th, len, true);
 
-			if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
-				NET_DBG("conn %p: FIN acknowledged, going to TIME WAIT "
-					"state seq %u, ack %u"
-					, conn, conn->seq, conn->ack);
+		/* No tcp_send_timer_cancel call required here, as is has been called
+		 * before entering this state, only allowed through the
+		 * tcp_enter_time_wait function.
+		 */
 
-				next = tcp_enter_time_wait(conn);
-				fin_acked = true;
-
-				verdict = NET_OK;
-			}
-
-			/*
-			 * There can also be data in the message, so compute with the length
-			 * of the packet to check with the ack
-			 * Since the conn->ack was already incremented in TCP_FIN_WAIT_1
-			 * add 1 in the comparison sequence
+		if (new_len > 0) {
+			/* This should not happen here, as no data can be send after
+			 * the FIN flag has been send.
 			 */
-			if ((FL(&fl, &, FIN,
-				net_tcp_seq_cmp(th_seq(th) + len + 1, conn->ack) == 0)) ||
+			NET_ERR("conn: %p, new bytes %u during TIME-WAIT state "
+				"sending reset",
+				conn, new_len);
+			net_stats_update_tcp_seg_drop(conn->iface);
+
+			net_tcp_reply_rst(pkt);
+		} else {
+			/* Acknowledge any FIN attempts, in case retransmission took
+			 * place.
+			 */
+			if ((FL(&fl, &, FIN, net_tcp_seq_cmp(th_seq(th) + 1, conn->ack) == 0)) ||
 			    (len > 0)) {
-				tcp_send_timer_cancel(conn);
-				if (fin_acked) {
-					/* Send out a duplicate ACK */
-					tcp_out(conn, ACK);
-				} else {
-					/* Send out a duplicate ACK, with the pending FIN
-					 * flag
-					 */
-					tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
-				}
+				tcp_out(conn, ACK);
 				verdict = NET_OK;
 			}
 		}
-		break;
-	case TCP_TIME_WAIT:
-		if (th) {
-			int32_t new_len = tcp_compute_new_length(conn, th, len, true);
-
-			/* No tcp_send_timer_cancel call required here, as is has been called
-			 * before entering this state, only allowed through the
-			 * tcp_enter_time_wait function.
-			 */
-
-			if (new_len > 0) {
-				/* This should not happen here, as no data can be send after
-				 * the FIN flag has been send.
-				 */
-				NET_ERR("conn: %p, new bytes %u during TIME-WAIT state "
-					"sending reset", conn, new_len);
-				net_stats_update_tcp_seg_drop(conn->iface);
-
-				tcp_out(conn, RST);
-			} else {
-				/* Acknowledge any FIN attempts, in case retransmission took
-				 * place.
-				 */
-				if ((FL(&fl, &, FIN,
-					net_tcp_seq_cmp(th_seq(th) + 1, conn->ack) == 0)) ||
-				    (len > 0)) {
-					tcp_out(conn, ACK);
-					verdict = NET_OK;
-				}
-			}
-		}
-		break;
+	}
+	break;
 	default:
-		NET_ASSERT(false, "%s is unimplemented",
-			   tcp_state_to_str(conn->state, true));
+		NET_ASSERT(false, "%s is unimplemented", tcp_state_to_str(conn->state, true));
 	}
 
 out:
@@ -3570,6 +3553,11 @@ out:
 	if (next) {
 		th = NULL;
 		conn_state(conn, next);
+
+		if (next == TCP_ESTABLISHED) {
+			keep_alive_timer_restart(conn);
+		}
+
 		next = 0;
 
 		if (connection_ok) {
@@ -3583,8 +3571,6 @@ out:
 
 			k_sem_give(&conn->connect_sem);
 		}
-
-		goto next_state;
 	}
 
 	if (conn->context) {
@@ -3813,6 +3799,28 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 	return 0;
 }
 
+static int tcp_start_handshake(struct tcp *conn)
+{
+	int ret;
+
+	/* Start the connection handshake */
+	k_mutex_lock(&conn->lock, K_FOREVER);
+	tcp_check_sock_options(conn);
+	conn->send_options.mss_found = true;
+	ret = tcp_out_ext(conn, SYN, NULL /* no data */, conn->seq);
+	if (ret < 0) {
+		k_mutex_unlock(&conn->lock);
+		return ret;
+	}
+	conn->send_options.mss_found = false;
+	conn_seq(conn, + 1);
+	conn_state(conn, TCP_SYN_SENT);
+	tcp_conn_ref(conn);
+	k_mutex_unlock(&conn->lock);
+
+	return 0;
+}
+
 /* When connect() is called on a TCP socket, register the socket for incoming
  * traffic with net context and give the TCP packet receiving function, which
  * in turn will call tcp_in() to deliver the TCP packet to the stack
@@ -3921,6 +3929,7 @@ int net_tcp_connect(struct net_context *context,
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
 	ret = net_conn_register(net_context_get_proto(context),
+				net_context_get_type(context),
 				net_context_get_family(context),
 				remote_addr, local_addr,
 				ntohs(remote_port), ntohs(local_port),
@@ -3944,20 +3953,22 @@ int net_tcp_connect(struct net_context *context,
 	 */
 	conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
 
-	/* The ref will make sure that if the connection is closed in tcp_in(),
-	 * we do not access already freed connection.
-	 */
-	tcp_conn_ref(conn);
-	(void)tcp_in(conn, NULL);
+	ret = tcp_start_handshake(conn);
+	if (ret < 0) {
+		goto out;
+	}
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
 		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
-			ret = -ENOTCONN;
-			goto out_unref;
-		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
-			   conn->state != TCP_ESTABLISHED) {
+			if (conn->rst_received) {
+				ret = -ECONNREFUSED;
+			} else {
+				ret = -ENOTCONN;
+			}
+			goto out;
+		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) && conn->state != TCP_ESTABLISHED) {
 			ret = -EINPROGRESS;
-			goto out_unref;
+			goto out;
 		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
 			   conn->state != TCP_ESTABLISHED) {
 			if (conn->in_connect) {
@@ -3965,14 +3976,15 @@ int net_tcp_connect(struct net_context *context,
 				tcp_conn_close(conn, -ETIMEDOUT);
 			}
 
-			ret = -ETIMEDOUT;
-			goto out_unref;
+			if (conn->rst_received) {
+				ret = -ECONNREFUSED;
+			} else {
+				ret = -ETIMEDOUT;
+			}
+			goto out;
 		}
 		conn->in_connect = false;
 	}
-
-out_unref:
-	tcp_conn_unref(conn);
 
 out:
 	NET_DBG("conn: %p, ret=%d", conn, ret);
@@ -4054,6 +4066,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	net_conn_unregister(context->conn_handler);
 
 	return net_conn_register(net_context_get_proto(context),
+				 net_context_get_type(context),
 				 local_addr.sa_family,
 				 context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 				 &context->remote : NULL,
@@ -4275,7 +4288,10 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 				tcp_conn_ref(conn);
 			}
 			conn->seq = tp->seq;
-			verdict = tcp_in(conn, NULL);
+
+			if (tcp_start_handshake(conn) == 0) {
+				verdict = NET_OK;
+			}
 		}
 		if (is("CLOSE", tp->op)) {
 			tp_trace = false;
@@ -4284,8 +4300,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 				conn = (void *)sys_slist_peek_head(&tcp_conns);
 				context = conn->context;
-				while (tcp_conn_close(conn, 0))
-					;
+				while (tcp_conn_close(conn, 0)) {
+				}
 				tcp_free(context);
 			}
 			tp_mem_stat();
@@ -4354,13 +4370,15 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	return verdict;
 }
 
-static void test_cb_register(sa_family_t family, uint8_t proto, uint16_t remote_port,
+static void test_cb_register(sa_family_t family, enum net_sock_type type,
+			     uint8_t proto, uint16_t remote_port,
 			     uint16_t local_port, net_conn_cb_t cb)
 {
 	struct net_conn_handle *conn_handle = NULL;
 	const struct sockaddr addr = { .sa_family = family, };
 
 	int ret = net_conn_register(proto,
+				    type,
 				    family,
 				    &addr,	/* remote address */
 				    &addr,	/* local address */
@@ -4623,10 +4641,10 @@ void net_tcp_init(void)
 	int rto;
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 	/* Register inputs for TTCN-3 based TCP sanity check */
-	test_cb_register(AF_INET,  IPPROTO_TCP, 4242, 4242, tcp_input);
-	test_cb_register(AF_INET6, IPPROTO_TCP, 4242, 4242, tcp_input);
-	test_cb_register(AF_INET,  IPPROTO_UDP, 4242, 4242, tp_input);
-	test_cb_register(AF_INET6, IPPROTO_UDP, 4242, 4242, tp_input);
+	test_cb_register(AF_INET,  SOCK_STREAM, IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET6, SOCK_STREAM, IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET,  SOCK_DGRAM, IPPROTO_UDP, 4242, 4242, tp_input);
+	test_cb_register(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, 4242, 4242, tp_input);
 
 	tcp_recv_cb = tp_tcp_recv_cb;
 #endif

@@ -406,6 +406,97 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI
+	/* Power on COM VDDN domain for USB */
+	POWER_DisablePD(kPDRUNCFG_DSR_VDDN_COM);
+
+	/* Power on usb ram array as need, powered USB0RAM array*/
+	POWER_DisablePD(kPDRUNCFG_APD_USB0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_USB0_SRAM);
+	/* Apply the config */
+	POWER_ApplyPD();
+	/* disable the read and write gate */
+	SYSCON4->USB0_MEM_CTRL |= (SYSCON4_USB0_MEM_CTRL_MEM_WIG_MASK |
+				   SYSCON4_USB0_MEM_CTRL_MEM_RIG_MASK |
+				   SYSCON4_USB0_MEM_CTRL_MEM_STDBY_MASK);
+	/* Enable the USBPHY0 CLOCK */
+	SYSCON4->USBPHY0_CLK_ACTIVE |= SYSCON4_USBPHY0_CLK_ACTIVE_IPG_CLK_ACTIVE_MASK;
+	CLOCK_AttachClk(k32KHZ_WAKE_to_USB);
+	CLOCK_AttachClk(kOSC_CLK_to_USB_24MHZ);
+	CLOCK_EnableClock(kCLOCK_Usb0);
+	CLOCK_EnableClock(kCLOCK_UsbphyRef);
+	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSBPHY0_RST_SHIFT_RSTn);
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M,
+				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
+				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	CLOCK_AttachClk(kLPOSC_to_WWDT0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sc_timer), okay)
+	CLOCK_AttachClk(kFRO0_DIV6_to_SCT);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_dcnano_lcdif, okay) && \
+	CONFIG_DISPLAY
+	/* Assert LCDIF reset. */
+	RESET_SetPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+
+	/* Disable media main and LCDIF power down. */
+	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
+	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
+
+	/* Apply power down configuration. */
+	POWER_ApplyPD();
+
+	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_LCDIF);
+	/* Note- pixel clock follows formula
+	 * (height  VSW  VFP  VBP) * (width  HSW  HFP  HBP) * frame rate.
+	 * this means the clock divider will vary depending on
+	 * the attached display.
+	 *
+	 * The root clock used here is the main PLL (PLL PFD2).
+	 */
+	CLOCK_SetClkDiv(
+		kCLOCK_DivLcdifClk,
+		(CLOCK_GetMainPfdFreq(kCLOCK_Pfd2) /
+		  DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings), clock_frequency)));
+
+	CLOCK_EnableClock(kCLOCK_Lcdif);
+
+	/* Clear LCDIF reset. */
+	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdif), nxp_mipi_dbi_dcnano_lcdif, okay)
+	/* Assert LCDIF reset. */
+	RESET_SetPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+
+	/* Disable media main and LCDIF power down. */
+	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
+	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
+
+	/* Apply power down configuration. */
+	POWER_ApplyPD();
+
+	/* Calculate the divider for MEDIA MAIN clock source main pll pfd2. */
+	CLOCK_InitMainPfd(kCLOCK_Pfd2, (uint64_t)CLOCK_GetMainPllFreq() * 18UL /
+						DT_PROP(DT_NODELABEL(lcdif), clock_frequency));
+	CLOCK_SetClkDiv(kCLOCK_DivMediaMainClk, 1U);
+	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_MEDIA_MAIN);
+
+	CLOCK_EnableClock(kCLOCK_Lcdif);
+
+	/* Clear LCDIF reset. */
+	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)

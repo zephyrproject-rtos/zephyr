@@ -414,7 +414,7 @@ void aws_client_loop(void)
 	}
 
 cleanup:
-	mqtt_disconnect(&client_ctx);
+	mqtt_disconnect(&client_ctx, NULL);
 
 	close(fds.fd);
 	fds.fd = -1;

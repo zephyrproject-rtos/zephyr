@@ -7,6 +7,8 @@ config SOC_SERIES_NRF53X
 	bool
 	select ARM
 	select SOC_COMPATIBLE_NRF53X
+	select SOC_EARLY_INIT_HOOK
+	select SOC_LATE_INIT_HOOK if SOC_NRF53_RTC_PRETICK || SOC_NRF53_CPUNET_ENABLE
 	select CPU_CORTEX_M33
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU
@@ -40,6 +42,14 @@ if SOC_SERIES_NRF53X
 
 VREGMAIN_PATH := $(dt_nodelabel_path,vregmain)
 VREGRADIO_PATH := $(dt_nodelabel_path,vregradio)
+
+config SOC_NRF53_ANOMALY_47_WORKAROUND
+	bool "Anomaly 47 workaround"
+	depends on NRFX_TWIM
+	help
+	  Due to Anomaly 47 the low period of SCL clock is too short to meet
+	  the I2C specification at 400 kHz. This workaround configures the I2C
+	  frequency to 390 kHz instead of 400 kHz.
 
 config SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	bool "Workaround for nRF5340 anomaly 160"

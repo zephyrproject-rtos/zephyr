@@ -97,7 +97,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
  */
 FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 {
-#if defined(CONFIG_ACPI)
+#if defined(CONFIG_ACPI) && !defined(CONFIG_ACRN_COMMON)
 	__ASSERT(z_x86_cpuid_get_current_physical_apic_id() ==
 		 x86_cpu_loapics[cpuboot->cpu_id], "APIC ID miss match!");
 #endif

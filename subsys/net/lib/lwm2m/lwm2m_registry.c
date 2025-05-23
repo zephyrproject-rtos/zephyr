@@ -1723,13 +1723,11 @@ size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry)
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	uint32_t bytes_available;
 
-	/* ring_buf_is_empty() takes non-const pointer but still does not modify */
-	if (ring_buf_is_empty((struct ring_buf *) &cache_entry->rb)) {
+	if (ring_buf_is_empty(&cache_entry->rb)) {
 		return 0;
 	}
 
-	/* ring_buf_size_get() takes non-const pointer but still does not modify */
-	bytes_available = ring_buf_size_get((struct ring_buf *) &cache_entry->rb);
+	bytes_available = ring_buf_size_get(&cache_entry->rb);
 
 	return (bytes_available / sizeof(struct lwm2m_time_series_elem));
 #else

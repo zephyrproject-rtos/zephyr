@@ -5,7 +5,6 @@ set_ifndef(C++ g++)
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
 
-find_package(Deprecated COMPONENTS SPARSE)
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
@@ -39,11 +38,11 @@ endif()
 # Add check for GCC version >= 13.1
 execute_process(
     COMMAND ${CMAKE_C_COMPILER} -dumpfullversion
-    OUTPUT_VARIABLE temp_compiler_version
+    OUTPUT_VARIABLE GCC_COMPILER_VERSION
     )
 
-if("${temp_compiler_version}" VERSION_LESS 4.3.0 OR
-    "${temp_compiler_version}" VERSION_GREATER_EQUAL 13.1.0)
+if("${GCC_COMPILER_VERSION}" VERSION_LESS 4.3.0 OR
+    "${GCC_COMPILER_VERSION}" VERSION_GREATER_EQUAL 13.1.0)
     set(fix_header_file include/limits.h)
 else()
     set(fix_header_file include-fixed/limits.h)
@@ -79,6 +78,8 @@ elseif("${ARCH}" STREQUAL "mips")
   include(${CMAKE_CURRENT_LIST_DIR}/target_mips.cmake)
 elseif("${ARCH}" STREQUAL "xtensa")
   include(${CMAKE_CURRENT_LIST_DIR}/target_xtensa.cmake)
+elseif("${ARCH}" STREQUAL "rx")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_rx.cmake)
 endif()
 
 if(SYSROOT_DIR)

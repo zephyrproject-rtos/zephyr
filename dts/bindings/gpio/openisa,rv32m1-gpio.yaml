@@ -1,4 +1,4 @@
-description: OpenISA GPIO node
+description: OpenISA GPIO
 
 compatible: "openisa,rv32m1-gpio"
 

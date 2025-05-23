@@ -16,10 +16,10 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 
 	switch (data->direction) {
 	case STEPPER_DIRECTION_POSITIVE:
-		ret = gpio_pin_set_dt(&config->dir_pin, 1);
+		ret = gpio_pin_set_dt(&config->dir_pin, 1 ^ config->invert_direction);
 		break;
 	case STEPPER_DIRECTION_NEGATIVE:
-		ret = gpio_pin_set_dt(&config->dir_pin, 0);
+		ret = gpio_pin_set_dt(&config->dir_pin, 0 ^ config->invert_direction);
 		break;
 	default:
 		LOG_ERR("Unsupported direction: %d", data->direction);
@@ -53,7 +53,7 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 	return 0;
 }
 
-static void stepper_trigger_callback(const struct device *dev, enum stepper_event event)
+void stepper_trigger_callback(const struct device *dev, enum stepper_event event)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
@@ -145,11 +145,11 @@ static void position_mode_task(const struct device *dev)
 		(void)step_dir_stepper_perform_step(dev);
 	}
 
-	update_remaining_steps(dev->data);
-
 	if (config->timing_source->needs_reschedule(dev) && data->step_count != 0) {
 		(void)config->timing_source->start(dev);
 	}
+
+	update_remaining_steps(dev->data);
 }
 
 static void velocity_mode_task(const struct device *dev)
@@ -288,22 +288,14 @@ int step_dir_stepper_common_get_actual_position(const struct device *dev, int32_
 int step_dir_stepper_common_move_to(const struct device *dev, const int32_t value)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
-	const struct step_dir_stepper_common_config *config = dev->config;
+	int32_t steps_to_move;
 
-	if (data->microstep_interval_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
-		return -EINVAL;
-	}
-
+	/* Calculate the relative movement required */
 	K_SPINLOCK(&data->lock) {
-		data->run_mode = STEPPER_RUN_MODE_POSITION;
-		data->step_count = value - data->actual_position;
-		config->timing_source->update(dev, data->microstep_interval_ns);
-		update_direction_from_step_count(dev);
-		config->timing_source->start(dev);
+		steps_to_move = value - data->actual_position;
 	}
 
-	return 0;
+	return step_dir_stepper_common_move_by(dev, steps_to_move);
 }
 
 int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving)
@@ -326,6 +318,21 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 		config->timing_source->start(dev);
 	}
 
+	return 0;
+}
+
+int step_dir_stepper_common_stop(const struct device *dev)
+{
+	const struct step_dir_stepper_common_config *config = dev->config;
+	int ret;
+
+	ret = config->timing_source->stop(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to stop timing source: %d", ret);
+		return ret;
+	}
+
+	stepper_trigger_callback(dev, STEPPER_EVENT_STOPPED);
 	return 0;
 }
 

@@ -176,7 +176,13 @@
 #define ADC_GAIN             ADC_GAIN_1
 #define ADC_REFERENCE        ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID       0
+#if defined(CONFIG_BOARD_EK_RA4L1)
+#define ADC_CHANNEL_ID 1
+#elif defined(CONFIG_BOARD_EK_RA4W1)
+#define ADC_CHANNEL_ID 4
+#else
+#define ADC_CHANNEL_ID 0
+#endif
 
 #else
 #error "Unsupported board."
@@ -185,7 +191,11 @@
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id = DAC_CHANNEL_ID,
 	.resolution = DAC_RESOLUTION,
-	.buffered = true
+#if defined(CONFIG_DAC_BUFFER_NOT_SUPPORT)
+	.buffered = false,
+#else
+	.buffered = true,
+#endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 };
 
 static const struct adc_channel_cfg adc_ch_cfg = {

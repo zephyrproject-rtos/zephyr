@@ -30,29 +30,7 @@ For more information about the GD32VF103 SoC and GD32VF103C-STARTER board:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`gd,gd32-gpio`
-   * - Machine timer
-     - :kconfig:option:`CONFIG_RISCV_MACHINE_TIMER`
-     - :dtcompatible:`riscv,machine-timer`
-   * - Nuclei ECLIC Interrupt Controller
-     - :kconfig:option:`CONFIG_NUCLEI_ECLIC`
-     - :dtcompatible:`nuclei,eclic`
-   * - PWM
-     - :kconfig:option:`CONFIG_PWM`
-     - :dtcompatible:`gd,gd32-pwm`
-   * - USART
-     - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`gd,gd32-usart`
+.. zephyr:board-supported-hw::
 
 Serial Port
 ===========
@@ -62,6 +40,8 @@ TX connected at PA9 and RX at PA10.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Before programming your board make sure to configure boot and serial jumpers
 as follows:

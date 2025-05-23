@@ -7,6 +7,8 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
 
+#include "rtio_sched.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 
@@ -21,6 +23,9 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe)
 	case RTIO_OP_CALLBACK:
 		sqe->callback.callback(iodev_sqe->r, sqe, sqe->callback.arg0);
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		break;
+	case RTIO_OP_DELAY:
+		rtio_sched_alarm(iodev_sqe, sqe->delay.timeout);
 		break;
 	default:
 		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
@@ -84,6 +89,10 @@ void rtio_executor_submit(struct rtio *r)
 				    "Expected chained or transaction flag, not both");
 #endif
 			node = mpsc_pop(&iodev_sqe->r->sq);
+
+			__ASSERT(node != NULL,
+				    "Expected a valid submission in the queue while in a transaction or chain");
+
 			next = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
 			/* If the current submission was cancelled before submit,

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Copyright 2018 Oticon A/S
 # SPDX-License-Identifier: Apache-2.0
+set -eo pipefail
 
 start=$SECONDS
 
@@ -51,7 +52,8 @@ elif [ -n "${TESTS_LIST}" ]; then
 	all_cases=${TESTS_LIST}
 else
 	SEARCH_PATH="${SEARCH_PATH:-.}"
-	all_cases=`find ${SEARCH_PATH} -name "*.sh" | grep -Ev "${sh_filter}"`
+	all_cases=`find ${SEARCH_PATH} -name "*.sh" | grep -Ev "${sh_filter}"` \
+	          || (echo "No tests found"; exit 1)
 	#we dont run ourselves
 fi
 
@@ -98,6 +100,7 @@ if [ `command -v parallel` ]; then
     ' ::: $all_cases >> $tmp_res_file ; err=$?
   fi
 else #fallback in case parallel is not installed
+  set +e
   for case in $all_cases; do
     echo "<testcase name=\"$case\" time=\"0\">" >> $tmp_res_file
     $case $@ &> $i.log

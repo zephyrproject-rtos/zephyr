@@ -1,4 +1,4 @@
-description: Silabs SiWx91x GPIO node
+description: Silabs SiWx91x GPIO
 
 compatible: "silabs,siwx91x-gpio"
 

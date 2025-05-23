@@ -4,6 +4,15 @@
 family:
 - name: ch32v
   series:
-  - name: qingke-v2
+  - name: qingke-v2a
     socs:
     - name: ch32v003
+  - name: ch32v00x
+    socs:
+    - name: ch32v006
+  - name: qingke-v4c
+    socs:
+    - name: ch32v208
+  - name: qingke-v4b
+    socs:
+    - name: ch32v203

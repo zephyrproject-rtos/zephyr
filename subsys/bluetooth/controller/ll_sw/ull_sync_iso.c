@@ -147,7 +147,8 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	}
 
 	/* Check if free BISes available */
-	if (mem_free_count_get(stream_free) < num_bis) {
+	if ((num_bis > BT_CTLR_SYNC_ISO_STREAM_MAX) ||
+	    (mem_free_count_get(stream_free) < num_bis)) {
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
@@ -505,6 +506,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		lll->ptc = 0U;
 	}
 	lll->sdu_interval = PDU_BIG_INFO_SDU_INTERVAL_GET(bi);
+	lll->max_sdu = PDU_BIG_INFO_MAX_SDU_GET(bi);
 
 	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
@@ -580,10 +582,15 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	sync_iso_offset_us += PDU_BIG_INFO_OFFS_GET(bi) *
 			      lll->window_size_event_us;
 	/* Skip to first selected BIS subevent */
-	/* FIXME: add support for interleaved packing */
 	stream = ull_sync_iso_stream_get(lll->stream_handle[0]);
-	sync_iso_offset_us += (stream->bis_index - 1U) * lll->sub_interval *
-			      ((lll->irc * lll->bn) + lll->ptc);
+	if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
+		sync_iso_offset_us += (stream->bis_index - 1U) *
+				      lll->sub_interval *
+				      ((lll->irc * lll->bn) + lll->ptc);
+	} else {
+		sync_iso_offset_us += (stream->bis_index - 1U) *
+				      lll->bis_spacing;
+	}
 	sync_iso_offset_us -= PDU_AC_US(pdu->len, sync_iso->sync->lll.phy,
 					ftr->phy_flags);
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
@@ -651,16 +658,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
-	/* TODO: active_to_start feature port */
-	sync_iso->ull.ticks_active_to_start = 0U;
-	sync_iso->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	sync_iso->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
 
-	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
-				sync_iso->ull.ticks_prepare_to_start);
+	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {

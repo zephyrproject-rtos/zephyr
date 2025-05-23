@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 STMicroelectronics
+ */
+
+/* Enable the clock we are going to output */
+&clk_lse {
+	status = "okay";
+};
+
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_LSE MCO1_SEL(MCO_SEL_LSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
+	pinctrl-0 = <&rcc_mco_pa8>;
+	pinctrl-names = "default";
+};

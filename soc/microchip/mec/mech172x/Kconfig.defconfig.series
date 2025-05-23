@@ -12,6 +12,15 @@ config NUM_IRQS
 	default 181
 
 config CORTEX_M_SYSTICK
-	depends on !RTOS_TIMER
+	depends on !MCHP_MEC5_KTIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency) if MCHP_MEC5_KTIMER
+
+if MCHP_MEC5_KTIMER
+config SYS_CLOCK_TICKS_PER_SEC
+	default $(dt_node_int_prop_int,/soc/timer@40007400,clock-frequency)
+endif # MCHP_MEC5_KTIMER
 
 endif # SOC_SERIES_MECH172X

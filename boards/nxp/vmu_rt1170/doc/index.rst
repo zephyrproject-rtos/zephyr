@@ -69,60 +69,9 @@ Supported Features
 ==================
 
 VMU-RT1170 is a "Vehicle Management Unit" based on the general i.MX RT1170
-family of processors. The VMU RT1170 board configuration supports the
-following hardware features:
+family of processors.
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| COUNTER   | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| CAN       | on-chip    | flexcan                             |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | flexpwm, qtmr                       |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | dma                                 |
-+-----------+------------+-------------------------------------+
-| GPT       | on-chip    | gpt                                 |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| ENET      | on-chip    | ethernet                            |
-+-----------+------------+-------------------------------------+
-| SAI       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB Device                          |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | display                             |
-+-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | sensor                              |
-+-----------+------------+-------------------------------------+
-| CAAM RNG  | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in
-:zephyr_file:`boards/nxp/vmu_rt1170/vmu_rt1170_mimxrt1176_cm7_defconfig`
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and I/Os
 ====================
@@ -469,6 +418,8 @@ The MIMXRT1170 SoC has 12 UARTs.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
@@ -531,6 +482,9 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! vmu_rt1170
+
+.. include:: ../../common/board-footer.rst
+   :start-after: nxp-board-footer
 
 .. _VMU RT1170 Schematics:
    https://github.com/CogniPilot/NXP-VMU_RT117x-HW

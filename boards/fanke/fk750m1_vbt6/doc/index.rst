@@ -46,35 +46,7 @@ More information about STM32H750VB can be found here:
 Supported Features
 ==================
 
-The Zephyr ``fk750m1_vbt6`` board target supports the following hardware
-features:
-
-+-------------+------------+-------------------------------------+
-| Interface   | Controller | Driver/Component                    |
-+=============+============+=====================================+
-| NVIC        | on-chip    | nested vector interrupt controller  |
-+-------------+------------+-------------------------------------+
-| FLASH       | on-chip    | flash memory                        |
-+-------------+------------+-------------------------------------+
-| UART        | on-chip    | serial port                         |
-+-------------+------------+-------------------------------------+
-| PINMUX      | on-chip    | pinmux                              |
-+-------------+------------+-------------------------------------+
-| GPIO        | on-chip    | gpio                                |
-+-------------+------------+-------------------------------------+
-| RNG         | on-chip    | True Random number generator        |
-+-------------+------------+-------------------------------------+
-| Backup SRAM | on-chip    | Backup SRAM                         |
-+-------------+------------+-------------------------------------+
-| SPI         | on-chip    | spi bus                             |
-+-------------+------------+-------------------------------------+
-| QUADSPI     | on-chip    | quadspi                             |
-+-------------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration per core can be found in
-:zephyr_file:`boards/fanke/fk750m1_vbt6/fk750m1_vbt6_defconfig`
+.. zephyr:board-supported-hw::
 
 Pin Mapping
 ===========
@@ -107,6 +79,8 @@ The Zephyr console output is assigned to UART1. The default communication settin
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Applications for the ``fk750m1_vbt6`` board target can be built and flashed in the usual
 way (see :ref:`build_an_application` and :ref:`application_run` for more details).

@@ -1,45 +1,23 @@
 /*
  * Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define FUSE_USE_VERSION 26
-
-#undef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 700
-
-#include <fuse.h>
-#include <libgen.h>
-#include <linux/limits.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-
 #include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
+#include <nsi_errno.h>
 
 #include "cmdline.h"
 #include "soc.h"
 
-#define S_IRWX_DIR (0775)
-#define S_IRW_FILE (0664)
+#include "fuse_fs_access_bottom.h"
 
 #define NUMBER_OF_OPEN_FILES 128
-#define INVALID_FILE_HANDLE (NUMBER_OF_OPEN_FILES + 1)
-
-#define DIR_END '\0'
 
 static struct fs_file_t files[NUMBER_OF_OPEN_FILES];
 static uint8_t file_handles[NUMBER_OF_OPEN_FILES];
-
-static pthread_t fuse_thread;
 
 static const char default_fuse_mountpoint[] = "flash";
 
@@ -66,427 +44,221 @@ static void release_file_handle(size_t handle)
 	}
 }
 
-static bool is_mount_point(const char *path)
-{
-	char dir_path[PATH_MAX];
-	size_t len;
-
-	len = strlen(path);
-	if (len >=  sizeof(dir_path)) {
-		return false;
-	}
-
-	memcpy(dir_path, path, len);
-	dir_path[len] = '\0';
-	return strcmp(dirname(dir_path), "/") == 0;
-}
-
-static int fuse_fs_access_getattr(const char *path, struct stat *stat)
+static int ffa_stat_top(const char *path, struct ffa_dirent *entry_bottom)
 {
 	struct fs_dirent entry;
 	int err;
 
-	stat->st_dev = 0;
-	stat->st_ino = 0;
-	stat->st_nlink = 0;
-	stat->st_uid = getuid();
-	stat->st_gid = getgid();
-	stat->st_rdev = 0;
-	stat->st_blksize = 0;
-	stat->st_blocks = 0;
-	stat->st_atime = 0;
-	stat->st_mtime = 0;
-	stat->st_ctime = 0;
-
-	if ((strcmp(path, "/") == 0) || is_mount_point(path)) {
-		if (strstr(path, "/.") != NULL) {
-			return -ENOENT;
-		}
-		stat->st_mode = S_IFDIR | S_IRWX_DIR;
-		stat->st_size = 0;
-		return 0;
-	}
-
 	err = fs_stat(path, &entry);
+
 	if (err != 0) {
-		return err;
+		return nsi_errno_to_mid(-err);
 	}
+
+	entry_bottom->size = entry.size;
 
 	if (entry.type == FS_DIR_ENTRY_DIR) {
-		stat->st_mode = S_IFDIR | S_IRWX_DIR;
-		stat->st_size = 0;
+		entry_bottom->is_directory = true;
 	} else {
-		stat->st_mode = S_IFREG | S_IRW_FILE;
-		stat->st_size = entry.size;
+		entry_bottom->is_directory = false;
 	}
 
 	return 0;
 }
 
-static int fuse_fs_access_readmount(void *buf, fuse_fill_dir_t filler)
+static int ffa_readmount_top(int *mnt_nbr, const char **mnt_name)
 {
-	int mnt_nbr = 0;
-	const char *mnt_name;
-	struct stat stat;
-	int err;
+	int err = fs_readmount(mnt_nbr, mnt_name);
 
-	stat.st_dev = 0;
-	stat.st_ino = 0;
-	stat.st_nlink = 0;
-	stat.st_uid = getuid();
-	stat.st_gid = getgid();
-	stat.st_rdev = 0;
-	stat.st_atime = 0;
-	stat.st_mtime = 0;
-	stat.st_ctime = 0;
-	stat.st_mode = S_IFDIR | S_IRWX_DIR;
-	stat.st_size = 0;
-	stat.st_blksize = 0;
-	stat.st_blocks = 0;
-
-	filler(buf, ".", &stat, 0);
-	filler(buf, "..", NULL, 0);
-
-	do {
-		err = fs_readmount(&mnt_nbr, &mnt_name);
-		if (err < 0) {
-			break;
-		}
-
-		filler(buf, &mnt_name[1], &stat, 0);
-
-	} while (true);
-
-	if (err == -ENOENT) {
-		err = 0;
-	}
-
-	return err;
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_readdir(const char *path, void *buf,
-			      fuse_fill_dir_t filler, off_t off,
-			      struct fuse_file_info *fi)
-{
+/* Status shared between readdir_* calls */
+static struct {
 	struct fs_dir_t dir;
 	struct fs_dirent entry;
+} readdir_status;
+
+static int ffa_readdir_start(const char *path)
+{
 	int err;
-	struct stat stat;
 
-	ARG_UNUSED(off);
-	ARG_UNUSED(fi);
+	fs_dir_t_init(&readdir_status.dir);
+	err = fs_opendir(&readdir_status.dir, path);
 
-	if (strcmp(path, "/") == 0) {
-		return fuse_fs_access_readmount(buf, filler);
-	}
-
-	fs_dir_t_init(&dir);
-
-	if (is_mount_point(path)) {
-		/* File system API expects trailing slash for a mount point
-		 * directory but FUSE strips the trailing slashes from
-		 * directory names so add it back.
-		 */
-		char mount_path[PATH_MAX] = {0};
-		size_t len = strlen(path);
-
-		if (len >= (PATH_MAX - 2)) {
-			return -ENOMEM;
-		}
-
-		memcpy(mount_path, path, len);
-		mount_path[len] = '/';
-		err = fs_opendir(&dir, mount_path);
-	} else {
-		err = fs_opendir(&dir, path);
-	}
-
-	if (err) {
-		return -ENOEXEC;
-	}
-
-	stat.st_dev = 0;
-	stat.st_ino = 0;
-	stat.st_nlink = 0;
-	stat.st_uid = getuid();
-	stat.st_gid = getgid();
-	stat.st_rdev = 0;
-	stat.st_atime = 0;
-	stat.st_mtime = 0;
-	stat.st_ctime = 0;
-	stat.st_mode = S_IFDIR | S_IRWX_DIR;
-	stat.st_size = 0;
-	stat.st_blksize = 0;
-	stat.st_blocks = 0;
-
-	filler(buf, ".", &stat, 0);
-	filler(buf, "..", &stat, 0);
-
-	do {
-		err = fs_readdir(&dir, &entry);
-		if (err) {
-			break;
-		}
-
-		if (entry.name[0] == DIR_END) {
-			break;
-		}
-
-		if (entry.type == FS_DIR_ENTRY_DIR) {
-			stat.st_mode = S_IFDIR | S_IRWX_DIR;
-			stat.st_size = 0;
-		} else {
-			stat.st_mode = S_IFREG | S_IRW_FILE;
-			stat.st_size = entry.size;
-		}
-
-		if (filler(buf, entry.name, &stat, 0)) {
-			break;
-		}
-
-	} while (1);
-
-	fs_closedir(&dir);
-
-	return err;
-
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_create(const char *path, mode_t mode,
-			     struct fuse_file_info *fi)
+static int ffa_readdir_read_next(struct ffa_dirent *entry_bottom)
+{
+	int err;
+
+	err = fs_readdir(&readdir_status.dir, &readdir_status.entry);
+
+	if (err) {
+		return nsi_errno_to_mid(-err);
+	}
+	entry_bottom->name = readdir_status.entry.name;
+	entry_bottom->size = readdir_status.entry.size;
+
+	if (readdir_status.entry.type == FS_DIR_ENTRY_DIR) {
+		entry_bottom->is_directory = true;
+	} else {
+		entry_bottom->is_directory = false;
+	}
+
+	return 0;
+}
+
+static void ffa_readdir_end(void)
+{
+	(void)fs_closedir(&readdir_status.dir);
+}
+
+static int ffa_create_top(const char *path, uint64_t *fh)
 {
 	int err;
 	ssize_t handle;
 
-	ARG_UNUSED(mode);
-
-	if (is_mount_point(path)) {
-		return -ENOENT;
-	}
-
 	handle = get_new_file_handle();
 	if (handle < 0) {
-		return handle;
+		return nsi_errno_to_mid(-handle);
 	}
 
-	fi->fh = handle;
+	*fh = handle;
 
 	err = fs_open(&files[handle], path, FS_O_CREATE | FS_O_WRITE);
 	if (err != 0) {
 		release_file_handle(handle);
-		fi->fh = INVALID_FILE_HANDLE;
-		return err;
+		*fh = INVALID_FILE_HANDLE;
+		return nsi_errno_to_mid(-err);
 	}
 
 	return 0;
 }
 
-static int fuse_fs_access_open(const char *path, struct fuse_file_info *fi)
+static int ffa_release_top(uint64_t fh)
 {
-	return fuse_fs_access_create(path, 0, fi);
-}
+	fs_close(&files[fh]);
 
-static int fuse_fs_access_release(const char *path, struct fuse_file_info *fi)
-{
-	ARG_UNUSED(path);
-
-	if (fi->fh == INVALID_FILE_HANDLE) {
-		return -EINVAL;
-	}
-
-	fs_close(&files[fi->fh]);
-
-	release_file_handle(fi->fh);
+	release_file_handle(fh);
 
 	return 0;
 }
 
-static int fuse_fs_access_read(const char *path, char *buf, size_t size,
-		off_t off, struct fuse_file_info *fi)
+static int ffa_read_top(uint64_t fh, char *buf, size_t size, off_t off)
 {
 	int err;
 
-	ARG_UNUSED(path);
+	err = fs_seek(&files[fh], off, FS_SEEK_SET);
 
-	if (fi->fh == INVALID_FILE_HANDLE) {
-		return -EINVAL;
+	if (err == 0) {
+		err = fs_read(&files[fh], buf, size);
 	}
 
-	err = fs_seek(&files[fi->fh], off, FS_SEEK_SET);
-	if (err != 0) {
-		return err;
-	}
-
-	err = fs_read(&files[fi->fh], buf, size);
-
-	return err;
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_write(const char *path, const char *buf, size_t size,
-		off_t off, struct fuse_file_info *fi)
+static int ffa_write_top(uint64_t fh, const char *buf, size_t size, off_t off)
 {
 	int err;
 
-	ARG_UNUSED(path);
+	err = fs_seek(&files[fh], off, FS_SEEK_SET);
 
-	if (fi->fh == INVALID_FILE_HANDLE) {
-		return -EINVAL;
+	if (err == 0) {
+		err = fs_write(&files[fh], buf, size);
 	}
 
-	err = fs_seek(&files[fi->fh], off, FS_SEEK_SET);
-	if (err != 0) {
-		return err;
-	}
-
-	err = fs_write(&files[fi->fh], buf, size);
-
-	return err;
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_ftruncate(const char *path, off_t size,
-				struct fuse_file_info *fi)
+static int ffa_ftruncate_top(uint64_t fh, off_t size)
 {
-	int err;
+	int err = fs_truncate(&files[fh], size);
 
-	ARG_UNUSED(path);
-
-	if (fi->fh == INVALID_FILE_HANDLE) {
-		return -EINVAL;
-	}
-
-	err = fs_truncate(&files[fi->fh], size);
-
-	return err;
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_truncate(const char *path, off_t size)
+static int ffa_truncate_top(const char *path, off_t size)
 {
 	int err;
 	static struct fs_file_t file;
 
 	err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
 	if (err != 0) {
-		return err;
+		return nsi_errno_to_mid(-err);
 	}
 
 	err = fs_truncate(&file, size);
 	if (err != 0) {
 		fs_close(&file);
-		return err;
+	} else {
+		err = fs_close(&file);
 	}
 
-	err = fs_close(&file);
-
-	return err;
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_mkdir(const char *path, mode_t mode)
+static int ffa_mkdir_top(const char *path)
 {
-	ARG_UNUSED(mode);
+	int err = fs_mkdir(path);
 
-	return fs_mkdir(path);
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_rmdir(const char *path)
+static int ffa_unlink_top(const char *path)
 {
-	return fs_unlink(path);
+	int err = fs_unlink(path);
+
+	return nsi_errno_to_mid(-err);
 }
 
-static int fuse_fs_access_unlink(const char *path)
-{
-	return fs_unlink(path);
-}
-
-static int fuse_fs_access_statfs(const char *path, struct statvfs *buf)
-{
-	ARG_UNUSED(path);
-	ARG_UNUSED(buf);
-	return 0;
-}
-
-static int fuse_fs_access_utimens(const char *path, const struct timespec tv[2])
-{
-	/* dummy */
-	ARG_UNUSED(path);
-	ARG_UNUSED(tv);
-
-	return 0;
-}
-
-
-static struct fuse_operations fuse_fs_access_oper = {
-	.getattr = fuse_fs_access_getattr,
-	.readlink = NULL,
-	.getdir = NULL,
-	.mknod = NULL,
-	.mkdir = fuse_fs_access_mkdir,
-	.unlink = fuse_fs_access_unlink,
-	.rmdir = fuse_fs_access_rmdir,
-	.symlink = NULL,
-	.rename = NULL,
-	.link = NULL,
-	.chmod = NULL,
-	.chown = NULL,
-	.truncate = fuse_fs_access_truncate,
-	.utime = NULL,
-	.open = fuse_fs_access_open,
-	.read = fuse_fs_access_read,
-	.write = fuse_fs_access_write,
-	.statfs = fuse_fs_access_statfs,
-	.flush = NULL,
-	.release = fuse_fs_access_release,
-	.fsync = NULL,
-	.setxattr = NULL,
-	.getxattr = NULL,
-	.listxattr = NULL,
-	.removexattr = NULL,
-	.opendir  = NULL,
-	.readdir = fuse_fs_access_readdir,
-	.releasedir = NULL,
-	.fsyncdir = NULL,
-	.init = NULL,
-	.destroy = NULL,
-	.access = NULL,
-	.create = fuse_fs_access_create,
-	.ftruncate = fuse_fs_access_ftruncate,
-	.fgetattr = NULL,
-	.lock = NULL,
-	.utimens = fuse_fs_access_utimens,
-	.bmap = NULL,
-	.flag_nullpath_ok = 0,
-	.flag_nopath = 0,
-	.flag_utime_omit_ok = 0,
-	.flag_reserved = 0,
-	.ioctl = NULL,
-	.poll = NULL,
-	.write_buf = NULL,
-	.read_buf = NULL,
-	.flock = NULL,
-	.fallocate = NULL,
+struct ffa_op_callbacks op_callbacks = {
+	.readdir_start = ffa_readdir_start,
+	.readdir_read_next = ffa_readdir_read_next,
+	.readdir_end = ffa_readdir_end,
+	.stat = ffa_stat_top,
+	.readmount = ffa_readmount_top,
+	.mkdir = ffa_mkdir_top,
+	.create = ffa_create_top,
+	.release = ffa_release_top,
+	.read = ffa_read_top,
+	.write = ffa_write_top,
+	.ftruncate = ffa_ftruncate_top,
+	.truncate = ffa_truncate_top,
+	.unlink = ffa_unlink_top,
+	.rmdir = ffa_unlink_top,
 };
 
-static void *fuse_fs_access_main(void *arg)
+static void fuse_top_dispath_thread(void *arg1, void *arg2, void *arg3)
 {
-	ARG_UNUSED(arg);
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
-	char *argv[] = {
-		"",
-		"-f",
-		"-s",
-		(char *) fuse_mountpoint
-	};
-	int argc = ARRAY_SIZE(argv);
+#define COOLDOWN_TIME 10
+	int cooldown_count = 0;
 
-	posix_print_trace("Mounting flash at %s/\n", fuse_mountpoint);
-	fuse_main(argc, argv, &fuse_fs_access_oper, NULL);
-
-	pthread_exit(0);
+	while (true) {
+		if (ffa_is_op_pended()) {
+			ffa_run_pending_op();
+			cooldown_count = COOLDOWN_TIME;
+		} else {
+			if (cooldown_count > 0) {
+				k_sleep(K_MSEC(1));
+				cooldown_count--;
+			} else {
+				k_sleep(K_MSEC(20));
+			}
+		}
+	}
 }
+
+K_THREAD_DEFINE(fuse_op_handler, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
+		fuse_top_dispath_thread, NULL, NULL, NULL, 100, 0, 0);
 
 static void fuse_fs_access_init(void)
 {
-	int err;
-	struct stat st;
 	size_t i = 0;
 
 	while (i < ARRAY_SIZE(files)) {
@@ -498,44 +270,16 @@ static void fuse_fs_access_init(void)
 		fuse_mountpoint = default_fuse_mountpoint;
 	}
 
-	if (stat(fuse_mountpoint, &st) < 0) {
-		if (mkdir(fuse_mountpoint, 0700) < 0) {
-			posix_print_error_and_exit("Failed to create"
-				" directory for flash mount point (%s): %s\n",
-				fuse_mountpoint, strerror(errno));
-		}
-	} else if (!S_ISDIR(st.st_mode)) {
-		posix_print_error_and_exit("%s is not a directory\n",
-					   fuse_mountpoint);
-
-	}
-
-	err = pthread_create(&fuse_thread, NULL, fuse_fs_access_main, NULL);
-	if (err < 0) {
-		posix_print_error_and_exit(
-					"Failed to create thread for "
-					"fuse_fs_access_main\n");
-	}
+	ffsa_init_bottom(fuse_mountpoint, &op_callbacks);
 }
 
-static void fuse_fs_access_exit(void)
+static void fuse_fs_access_cleanup(void)
 {
-	char *full_cmd;
-	const char cmd[] = "fusermount -uz ";
-
 	if (fuse_mountpoint == NULL) {
 		return;
 	}
 
-	full_cmd = malloc(strlen(cmd) + strlen(fuse_mountpoint) + 1);
-
-	sprintf(full_cmd, "%s%s", cmd, fuse_mountpoint);
-	if (system(full_cmd) < -1) {
-		printf("Failed to unmount fuse mount point\n");
-	}
-	free(full_cmd);
-
-	pthread_join(fuse_thread, NULL);
+	ffsa_cleanup_bottom(fuse_mountpoint);
 }
 
 static void fuse_fs_access_options(void)
@@ -558,4 +302,4 @@ static void fuse_fs_access_options(void)
 
 NATIVE_TASK(fuse_fs_access_options, PRE_BOOT_1, 1);
 NATIVE_TASK(fuse_fs_access_init, PRE_BOOT_2, 1);
-NATIVE_TASK(fuse_fs_access_exit, ON_EXIT, 1);
+NATIVE_TASK(fuse_fs_access_cleanup, ON_EXIT, 1);

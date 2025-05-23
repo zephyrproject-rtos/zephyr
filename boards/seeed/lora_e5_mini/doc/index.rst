@@ -91,6 +91,8 @@ main PLL clock. By default System clock is driven by the MSI clock at 48MHz.
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 Applications for the ``lora_e5_mini`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 

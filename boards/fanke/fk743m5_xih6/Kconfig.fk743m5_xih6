@@ -1,0 +1,5 @@
+# Copyright (c) 2024 zack jiang, Honbo He <hehongbo918@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FK743M5_XIH6
+	select SOC_STM32H743XX

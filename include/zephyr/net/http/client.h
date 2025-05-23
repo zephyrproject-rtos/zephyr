@@ -260,6 +260,13 @@ struct http_request {
 	/** Length of the user supplied receive buffer */
 	size_t recv_buf_len;
 
+	/** Length of the unprocessed data left inside the user supplied receive
+	 *  buffer. In typical HTTP processing this should be 0, however in case
+	 *  of switching protocols, there may be some data left belonging to the
+	 *  new protocol.
+	 */
+	size_t data_len;
+
 	/** The URL for this request, for example: /index.html */
 	const char *url;
 
@@ -272,7 +279,7 @@ struct http_request {
 	 * some header fields may remain constant through the application's
 	 * life cycle. This is a NULL terminated list of header fields.
 	 */
-	const char **header_fields;
+	const char * const *header_fields;
 
 	/** The value of the Content-Type header field, may be NULL */
 	const char *content_type_value;

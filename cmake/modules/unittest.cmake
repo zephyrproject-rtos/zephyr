@@ -12,8 +12,8 @@ include(hwm_v2)
 include(configuration_files)
 
 include(kconfig)
-include(arch_v2)
-include(soc_v2)
+include(arch)
+include(soc)
 
 find_package(TargetTools)
 
@@ -44,8 +44,6 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
 
-find_package(Deprecated COMPONENTS SOURCES)
-
 if(NOT SOURCES AND EXISTS main.c)
   set(SOURCES main.c)
 endif()
@@ -57,7 +55,7 @@ target_link_libraries(testbinary PRIVATE test_interface)
 set(KOBJ_TYPES_H_TARGET kobj_types_h_target)
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 add_dependencies(test_interface ${KOBJ_TYPES_H_TARGET})
-gen_kobj(KOBJ_GEN_DIR)
+gen_kobject_list_headers(GEN_DIR_OUT_VAR KOBJ_GEN_DIR)
 
 # Generates empty header files to build
 set(INCL_GENERATED_DIR ${APPLICATION_BINARY_DIR}/zephyr/include/generated/zephyr)

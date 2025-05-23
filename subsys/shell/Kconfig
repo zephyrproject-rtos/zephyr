@@ -115,6 +115,7 @@ config SHELL_DEFAULT_TERMINAL_HEIGHT
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	range 3 $(UINT8_MAX)
+	default 30 if NET_L2_WIFI_SHELL
 	default 20
 	help
 	  Maximum number of arguments that can build a command.

@@ -182,8 +182,7 @@ config BT_PATH_LOSS_MONITORING
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
 
 config BT_SUBRATING
-	bool "LE Connection Subrating [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "LE Connection Subrating"
 	depends on !HAS_BT_CTLR || BT_CTLR_SUBRATING_SUPPORT
 	help
 	  Enable support for LE Connection Subrating feature that is defined in the
@@ -307,18 +306,6 @@ config BT_ISO_TX_BUF_COUNT
 	range 1 $(UINT8_MAX)
 	help
 	  Number of buffers available for outgoing Isochronous channel SDUs.
-
-config BT_ISO_TX_FRAG_COUNT
-	int "Number of ISO TX fragment buffers"
-	default 2
-	range 0 $(UINT8_MAX)
-	help
-	  Number of buffers available for fragments of TX buffers. Warning:
-	  setting this to 0 means that the application must ensure that
-	  queued TX buffers never need to be fragmented, i.e. that the
-	  controller's buffer size is large enough. If this is not ensured,
-	  and there are no dedicated fragment buffers, a deadlock may occur.
-	  In most cases the default value of 2 is a safe bet.
 
 config BT_ISO_TX_MTU
 	int "Maximum supported MTU for Isochronous TX buffers"

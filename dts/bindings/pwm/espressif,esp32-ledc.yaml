@@ -3,7 +3,7 @@
 
 description: |
 
-  Espressif's LEDC controller Node
+  ESP32 LED Control (LEDC)
 
   The LEDC controller is primarily designed to control the intensity of LEDs, although it can be
   used to generate PWM signals for other purposes as well.

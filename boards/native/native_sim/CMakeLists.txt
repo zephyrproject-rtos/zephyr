@@ -13,6 +13,15 @@ zephyr_library_sources(
 	posix_arch_if.c
 	)
 
+if(CONFIG_NATIVE_SIM_REBOOT)
+  zephyr_library_sources(reboot.c)
+  if(CONFIG_NATIVE_LIBRARY)
+    target_sources(native_simulator INTERFACE reboot_bottom.c)
+  else()
+    zephyr_library_sources(reboot_bottom.c)
+  endif()
+endif()
+
 zephyr_include_directories(
   ${NSI_DIR}/common/src/include
   ${NSI_DIR}/native/src/include

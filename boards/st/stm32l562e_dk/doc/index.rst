@@ -139,68 +139,8 @@ More information about STM32L562QE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32l562e_dk board configuration supports the following
-hardware features:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
-| AES       | on-chip    | crypto                              |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| DAC       | on-chip    | DAC Controller                      |
-+-----------+------------+-------------------------------------+
-| DISPLAY   | on-chip    | TFT LCD screen with st7789v driver  |
-|           |            | and touch panel with ft5336 driver  |
-+-----------+------------+-------------------------------------+
-| DMA       | on-chip    | Direct Memory Access                |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | PWM                                 |
-+-----------+------------+-------------------------------------+
-| RNG       | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| SDMMC     | on-chip    | sd/mmc                              |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| TrustZone | on-chip    | Trusted Firmware-M                  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | usb                                 |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not yet supported on this Zephyr port.
-
-The default configuration can be found in the defconfig and dts files:
-
-- Common:
-
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_common.dtsi`
-
-- Secure target:
-
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_defconfig`
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk.dts`
-
-- Non-Secure target:
-
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx_ns_defconfig`
-  - :zephyr_file:`boards/st/stm32l562e_dk/stm32l562e_dk_stm32l562xx_ns.dts`
 
 Zephyr board options
 ====================
@@ -289,6 +229,8 @@ They can be tested using :zephyr:code-sample:`lvgl` sample:
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 STM32L562E-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
 

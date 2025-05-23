@@ -8,8 +8,8 @@ common:
   platform_key:
     - arch
     - simulation
-  min_flash: 64
-  min_ram: 32
+  integration_platforms:
+    - qemu_cortex_m0
 tests:
   portability.posix.c_lib_ext:
     extra_configs:

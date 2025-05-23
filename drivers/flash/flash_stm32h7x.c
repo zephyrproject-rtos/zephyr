@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define REAL_FLASH_SIZE_KB (KB(STM32H7_M4_FLASH_SIZE * 2))
 #endif
 #else
-#define REAL_FLASH_SIZE_KB KB(LL_GetFlashSize())
+#define REAL_FLASH_SIZE_KB DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash))
 #endif
 #define SECTOR_PER_BANK ((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
 #if defined(DUAL_BANK)
@@ -308,31 +308,6 @@ int flash_stm32_option_bytes_disable(const struct device *dev)
 	return 0;
 }
 #endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
-
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-	if (enable) {
-		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
-	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-#ifdef CONFIG_SOC_SERIES_STM32H7RSX
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-#else
-		regs->OPTKEYR = FLASH_OPT_KEY1;
-		regs->OPTKEYR = FLASH_OPT_KEY2;
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	}
-
-	if (enable) {
-		LOG_DBG("Option bytes locked");
-	} else {
-		LOG_DBG("Option bytes unlocked");
-	}
-
-	return 0;
-}
 
 bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
@@ -861,6 +836,18 @@ static const struct flash_parameters *flash_stm32h7_get_parameters(const struct 
 	return &flash_stm32h7_parameters;
 }
 
+#ifndef CONFIG_SOC_SERIES_STM32H7RSX
+/* Gives the total logical device size in bytes and return 0. */
+static int flash_stm32h7_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)LL_GetFlashSize() * 1024U;
+
+	return 0;
+}
+#endif /* !CONFIG_SOC_SERIES_STM32H7RSX */
+
 void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
@@ -918,6 +905,9 @@ static DEVICE_API(flash, flash_stm32h7_api) = {
 	.write = flash_stm32h7_write,
 	.read = flash_stm32h7_read,
 	.get_parameters = flash_stm32h7_get_parameters,
+#ifndef CONFIG_SOC_SERIES_STM32H7RSX
+	.get_size = flash_stm32h7_get_size,
+#endif
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif

@@ -415,7 +415,7 @@ void sys_clock_idle_exit(void)
 __boot_func
 static int sys_clock_driver_init(void)
 {
-	extern int z_clock_hw_cycles_per_sec;
+	extern unsigned int z_clock_hw_cycles_per_sec;
 	uint32_t hz, reg;
 
 	ARG_UNUSED(hz);

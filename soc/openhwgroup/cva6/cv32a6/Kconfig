@@ -1,0 +1,19 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+# RISCV32 OpenHW Group cva6 configuration options
+
+config SOC_CV32A6
+	select RISCV
+	select RISCV_PRIVILEGED
+	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_HAS_PLIC
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select SCHED_IPI_SUPPORTED
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE

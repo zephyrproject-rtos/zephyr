@@ -41,6 +41,8 @@ LED
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
+
 The XIAO BLE ships with the `Adafruit nRF52 Bootloader`_ which supports flashing
 using `UF2`_. Doing so allows easy flashing of new images, but does not support
 debugging the device. For debugging please use `External Debugger`_.

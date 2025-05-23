@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+
+&pinctrl {
+	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PC1>, <EUSART1_SCLK_PC3>;
+			drive-push-pull;
+			output-high;
+		};
+		group1 {
+			pins = <EUSART1_RX_PC2>;
+			input-enable;
+		};
+	};
+};
+
+&eusart1 {
+	dmas = <&dma0 DMA_REQSEL_EUSART1TXFL>,
+	       <&dma0 DMA_REQSEL_EUSART1RXFL>;
+	dma-names = "tx", "rx";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@1 {
+		compatible = "test-spi-loopback-fast";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};

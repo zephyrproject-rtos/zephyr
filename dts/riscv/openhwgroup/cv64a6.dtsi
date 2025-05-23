@@ -1,0 +1,38 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2024 CISPA Helmholtz Center for Information Security
+ */
+
+#include <freq.h>
+#include "cva6.dtsi"
+/*
+ * Application-class configuration of CVA6 64-bit CPUs:
+ * FPU for 32-bit and 64-bit floats, SV39 MMU.
+ *
+ */
+/ {
+	cpus_0: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu_0: cpu@0 {
+			clock-frequency = <DT_FREQ_M(50)>;
+			timebase-frequency = <DT_FREQ_M(25)>;
+			device_type = "cpu";
+			compatible = "openhwgroup,cva6";
+			riscv,isa = "rv64imafdc";
+			mmu-type = "riscv,sv39";
+			reg = <0>;
+
+			status = "okay";
+
+			hlic: interrupt-controller {
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+				status = "okay";
+			};
+		};
+	};
+};

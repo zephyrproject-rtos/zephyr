@@ -361,10 +361,13 @@ int pm_device_driver_init(const struct device *dev,
 	struct pm_device_base *pm = dev->pm_base;
 	int rc;
 
+	/* Device is currently in the OFF state */
+	if (pm) {
+		pm->state = PM_DEVICE_STATE_OFF;
+	}
+
 	/* Work only needs to be performed if the device is powered */
 	if (!pm_device_is_powered(dev)) {
-		/* Start in off mode */
-		pm_device_init_off(dev);
 		return 0;
 	}
 
@@ -380,16 +383,21 @@ int pm_device_driver_init(const struct device *dev,
 		return action_cb(dev, PM_DEVICE_ACTION_RESUME);
 	}
 
+	/* Device is currently in the SUSPENDED state */
+	pm->state = PM_DEVICE_STATE_SUSPENDED;
+
 	/* If device will have PM device runtime enabled */
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
 	    atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO)) {
-		/* Init into suspend mode.
-		 * This saves a SUSPENDED->ACTIVE->SUSPENDED cycle.
-		 */
-		pm_device_init_suspended(dev);
 		return 0;
 	}
 
 	/* Startup into active mode */
-	return action_cb(dev, PM_DEVICE_ACTION_RESUME);
+	rc = action_cb(dev, PM_DEVICE_ACTION_RESUME);
+
+	/* Device is now in the ACTIVE state */
+	pm->state = PM_DEVICE_STATE_ACTIVE;
+
+	/* Return the PM_DEVICE_ACTION_RESUME result */
+	return rc;
 }

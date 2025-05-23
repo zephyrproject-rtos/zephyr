@@ -399,3 +399,33 @@ test_spi_ilps22qs: ilps22qs@30 {
 	spi-max-frequency = <0>;
 	status = "okay";
 };
+
+test_spi_icm45686:icm45686@31 {
+	compatible = "invensense,icm45686";
+	reg = <0x31>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+paa3905: paa3905@32 {
+	compatible = "pixart,paa3905";
+	spi-max-frequency = <0>;
+	reg = <0x32>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_pat9136: pat9136@33 {
+	compatible = "pixart,pat9136";
+	reg = <0x33>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_icp201xx: icp201xx@34 {
+	compatible = "invensense,icp201xx";
+	reg = <0x34>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
