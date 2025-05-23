@@ -1,0 +1,25 @@
+# Copyright 2025 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: TISCI-managed power domain
+
+compatible: "ti,sci-pm-domain"
+
+include: base.yaml
+
+properties:
+  tisci,device-id:
+    type: int
+    required: true
+    description: |
+      The device ID of the power domain as defined in the TISCI documentation.
+  tisci,device-mode:
+    type: string
+    required: true
+    enum:
+      - "SHARED"
+      - "EXCLUSIVE"
+    description: |
+      The device mode of the power domain as defined in the TISCI documentation.
+  "#power-domain-cells":
+    const: 0
