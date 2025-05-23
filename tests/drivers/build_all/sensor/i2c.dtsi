@@ -1321,3 +1321,32 @@ test_i2c_rm3100: rm3100@b2 {
 	reg = <0xb2>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_npm1300: npm1300@b3 {
+	compatible = "nordic,npm1300";
+	reg = <0xb3>;
+
+	charger {
+		compatible = "nordic,npm1300-charger";
+		vbus-limit-microamp = <1000000>;
+		thermistor-ohms = <10000>;
+		thermistor-beta = <3380>;
+		term-microvolt = <4150000>;
+		current-microamp = <150000>;
+		dischg-limit-microamp = <1000000>;
+	};
+};
+
+test_i2c_npm1304: npm1304@b4 {
+	compatible = "nordic,npm1304";
+	reg = <0xb4>;
+
+	charger {
+		compatible = "nordic,npm1304-charger";
+		vbus-limit-microamp = <1000000>;
+		thermistor-ohms = <10000>;
+		thermistor-beta = <3380>;
+		term-microvolt = <4150000>;
+		current-microamp = <10000>;
+	};
+};

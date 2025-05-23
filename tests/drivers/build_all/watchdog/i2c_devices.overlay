@@ -41,6 +41,24 @@
 					compatible = "nordic,npm2100-wdt";
 				};
 			};
+
+			npm1300_pmic: pmic@2 {
+				compatible = "nordic,npm1300";
+				reg = <0x2>;
+
+				npm1300_wdt: watchdog {
+					compatible = "nordic,npm1300-wdt";
+				};
+			};
+
+			npm1304_pmic: pmic@3 {
+				compatible = "nordic,npm1304";
+				reg = <0x3>;
+
+				npm1304_wdt: watchdog {
+					compatible = "nordic,npm1304-wdt";
+				};
+			};
 		};
 	};
 };
