@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 DNDG srl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	flash_disk0 {
+		status="okay";
+		compatible = "zephyr,flash-disk";
+		partition = <&wlan_partition>;
+		disk-name = "SD";
+		/* A sector size of 4096 is needed to correctly operate on partitions
+		 * formatted by Arduino example sketches. It is possible to reformat
+		 * the external flash and use a different sector size if needed.
+		 */
+		sector-size = <4096>;
+		cache-size = <4096>;
+	};
+};

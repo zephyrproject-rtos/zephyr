@@ -80,6 +80,49 @@ as well as by the main PLL clock. By default, the CPU2 (Cortex-M4) System clock
 is driven at 240MHz. PLL clock is fed by a 25MHz high speed external clock. The
 M7 clock is driven at 400MHz.
 
+External flash
+==============
+
+External flash (16MB on QSPI) access can be enabled by the ``CONFIG_FLASH``
+option. The ``partitions`` entry provided in the default device tree is meant
+as an example and is valid only if the Opta is fresh from the factory and the
+flash has not been repartitioned. If, for example, the ``QSPIFormat.ino``
+sketch has been used to create a different paritioning scheme, the following
+applies:
+
+ .. code-block:: dts
+
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        /* Partition 1: WiFi firmware and certificates 1MB */
+        wlan_partition: partition@1000 {
+            label = "wlan";
+            reg=<0x001000 DT_SIZE_K(1020)>;
+        };
+
+        /* Partition 2: OTA 5MB */
+        ota_partition: partition@100000 {
+            label = "ota";
+            reg=<0x100000 DT_SIZE_K(5 * 1024)>;
+        };
+
+        /* Partition 3: Provisioning KVStore 1MB */
+        kvs_partition: partition@600000 {
+            label = "kvs";
+            reg=<0x600000 DT_SIZE_K(1024)>;
+        };
+
+        /* Partition 4: User data / OPTA PLC runtime 7MB (littlefs) */
+        user_partition: partition@700000 {
+            label = "user";
+            reg=<0x00000 DT_SIZE_K(7 * 1024)>;
+        };
+    };
+
+
 Resources sharing
 =================
 
