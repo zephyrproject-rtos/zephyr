@@ -198,6 +198,7 @@ struct tcp_mss_option {
 
 enum tcp_state {
 	TCP_UNUSED = 0,
+	TCP_CLOSED,
 	TCP_LISTEN,
 	TCP_SYN_SENT,
 	TCP_SYN_RECEIVED,
@@ -207,8 +208,7 @@ enum tcp_state {
 	TCP_CLOSE_WAIT,
 	TCP_CLOSING,
 	TCP_LAST_ACK,
-	TCP_TIME_WAIT,
-	TCP_CLOSED
+	TCP_TIME_WAIT
 };
 
 enum tcp_data_mode {
