@@ -18,4 +18,7 @@
 #include "fsl_dmamux.h"
 #endif
 
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
+#include "fsl_memory.h"
+#endif
 #endif /* DMA_MCUX_EDMA_H_*/
