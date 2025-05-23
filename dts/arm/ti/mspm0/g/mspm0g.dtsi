@@ -40,6 +40,21 @@
 			counter0: counter {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+			};
+		};
+
+		tima0: tima@40860000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40860000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			interrupts = <18 0>;
+			ti,clk-prescaler = <0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			pwma0: pwma0 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};
