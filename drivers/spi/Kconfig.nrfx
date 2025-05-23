@@ -5,7 +5,6 @@ menuconfig SPI_NRFX
 	bool "nRF SPI nrfx drivers"
 	default y
 	depends on SOC_FAMILY_NORDIC_NRF
-	depends on MULTITHREADING
 	select GPIO
 	select PINCTRL
 	help
