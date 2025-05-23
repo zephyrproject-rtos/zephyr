@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2021-2024 MUNIC SA
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * DTS for Renesas EK-RA2L1 eval. board
  *
@@ -14,6 +14,8 @@
 #include <renesas/ra/ra2/r7fa2l1xxxxfp.dtsi>
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <dt-bindings/input/input-event-codes.h>
 #include "ek_ra2l1-pinctrl.dtsi"
 
 / {
@@ -25,6 +27,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -36,13 +39,35 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: s1 {
+			gpios = <&ioport0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: s2 {
+			gpios = <&ioport0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
 		watchdog0 = &wdt;
 	};
 };
 
 &ioport5 {
+	status = "okay";
+};
+
+&ioport0 {
 	status = "okay";
 };
 
@@ -58,5 +83,33 @@
 };
 
 &wdt {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>;
+	interrupt-names = "scanend";
+	status = "okay";
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&port_irq3 {
+	interrupts = <11 1>;
+	status = "okay";
+};
+
+&port_irq7 {
+	interrupts = <15 1>;
 	status = "okay";
 };
