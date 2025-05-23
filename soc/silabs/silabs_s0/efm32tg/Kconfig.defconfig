@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Lukas Woodtli
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFM32TG
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 39
+
+endif
