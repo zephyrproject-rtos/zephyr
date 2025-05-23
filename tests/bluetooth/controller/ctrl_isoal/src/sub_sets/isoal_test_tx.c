@@ -121,7 +121,7 @@ static void check_next_custom_source_pdu_write_test_sdu_payload(const uint8_t *d
 	for (size_t i = 0; i < custom_source_pdu_write_test_sdu_payloads.out_size[pos]; i++) {
 		zassert_equal(custom_source_pdu_write_test_sdu_payloads.out[pos][i],
 			      data[i],
-			      "[Line %lu] deviation at index %u, expected %u, got %u",
+			      "[Line %u] deviation at index %u, expected %u, got %u",
 			      line,
 			      i,
 			      data[i],
@@ -243,7 +243,7 @@ static isoal_status_t custom_source_pdu_emit_test(struct node_tx_iso *node_tx,
 			  source_pdu_emit_test_fake.arg0_##_typ);                                  \
 	zassert_equal(_payload_count,                                                              \
 		      source_pdu_emit_test_handler_fake.arg0_##_typ.payload_count,                 \
-		      "\t\t%u != %u",                                                              \
+		      "\t\t%llu != %u",                                                            \
 		      _payload_count,                                                              \
 		      source_pdu_emit_test_handler_fake.arg0_##_typ.payload_count);                \
 	zassert_equal(_sdu_fragments,                                                              \

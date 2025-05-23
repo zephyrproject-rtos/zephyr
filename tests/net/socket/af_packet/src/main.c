@@ -259,7 +259,7 @@ static void prepare_udp_socket(int *sock, struct sockaddr_in *sockaddr, uint16_t
 	int ret;
 
 	*sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	zassert_true(*sock >= 0, "Cannot create DGRAM (UDP) socket (%d)", sock);
+	zassert_true(*sock >= 0, "Cannot create DGRAM (UDP) socket (%d)", *sock);
 
 	sockaddr->sin_family = AF_INET;
 	sockaddr->sin_port = htons(local_port);

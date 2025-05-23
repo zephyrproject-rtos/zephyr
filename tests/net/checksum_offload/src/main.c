@@ -333,7 +333,7 @@ static int eth_tx_offloading_disabled(const struct device *dev,
 
 	zassert_equal_ptr(&eth_context_offloading_disabled, context,
 			  "Context pointers do not match (%p vs %p)",
-			  eth_context_offloading_disabled, context);
+			  &eth_context_offloading_disabled, context);
 
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");
@@ -377,7 +377,7 @@ static int eth_tx_offloading_enabled(const struct device *dev,
 
 	zassert_equal_ptr(&eth_context_offloading_enabled, context,
 			  "Context pointers do not match (%p vs %p)",
-			  eth_context_offloading_enabled, context);
+			  &eth_context_offloading_enabled, context);
 
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");

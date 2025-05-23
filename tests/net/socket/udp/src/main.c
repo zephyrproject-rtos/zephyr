@@ -2446,7 +2446,7 @@ ZTEST(net_socket_udp, test_36_v6_address_removal)
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup(&my_addr1, &iface);
-	zassert_equal(ifaddr->atomic_ref, 1, "Ref count is wrong (%ld vs %ld)",
+	zassert_equal(ifaddr->atomic_ref, 1, "Ref count is wrong (%ld vs %d)",
 		      ifaddr->atomic_ref, 1);
 
 	prepare_sock_udp_v6(MY_IPV6_ADDR_ETH, CLIENT_PORT, &client_sock, &client_addr);

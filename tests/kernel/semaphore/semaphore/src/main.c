@@ -972,7 +972,7 @@ ZTEST(semaphore, test_sem_measure_timeout_from_thread)
 
 	zassert_true((diff_ticks < SEC2MS(1)),
 		     "k_sem_take took too long: %d >= %d",
-		     diff_ticks, SEC2MS(1));
+		     (int)diff_ticks, SEC2MS(1));
 	k_thread_join(&sem_tid_1, K_FOREVER);
 }
 

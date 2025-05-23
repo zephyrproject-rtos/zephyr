@@ -513,7 +513,7 @@ ZTEST(pthread_attr, test_pthread_attr_policy_and_priority_limits)
 			zassert_not_equal(-1, param.sched_priority,
 					  "sched_get_priority_%s(%s) failed: %d",
 					  i == 0 ? "min" : "max", policy_names[policy], errno);
-			zassert_ok(errno, "sched_get_priority_%s(%s) set errno to %s",
+			zassert_ok(errno, "sched_get_priority_%s(%s) set errno to %d",
 				   i == 0 ? "min" : "max", policy_names[policy], errno);
 		}
 

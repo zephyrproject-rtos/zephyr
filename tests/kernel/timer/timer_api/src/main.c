@@ -791,7 +791,7 @@ ZTEST_USER(timer_api, test_timeout_abs)
 	} while (t0 != t1);
 
 	zassert_true(t0 + rem_ticks == exp_ticks,
-		     "Wrong remaining: now %lld rem %lld expires %lld (%d)",
+		     "Wrong remaining: now %lld rem %lld expires %lld (%lld)",
 		     (uint64_t)t0, (uint64_t)rem_ticks, (uint64_t)exp_ticks,
 		     t0+rem_ticks-exp_ticks);
 

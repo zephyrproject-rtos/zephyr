@@ -1029,7 +1029,7 @@ ZTEST(net_content_oma_tlv_nodata, test_get_opaque_nodata)
 
 	ret = oma_tlv_reader.get_opaque(&test_in, value, sizeof(value),
 					&ctx, &last_block);
-	zassert_equal(ret, -ENODATA, "Invalid error code returned %d");
+	zassert_equal(ret, -ENODATA, "Invalid error code returned %d", ret);
 }
 
 ZTEST(net_content_oma_tlv, test_get_objlnk)
