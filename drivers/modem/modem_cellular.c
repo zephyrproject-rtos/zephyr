@@ -2287,6 +2287,13 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_set_baudrate_chat_script,
  * which works well
  */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_init_chat_script_cmds,
+
+			      /* U-blox LARA-R6 LWM2M client is enabled by default. Not only causes
+			       * this the modem to connect to U-blox's server on its own, it also
+			       * for some reason causes the modem to reply "Destination
+			       * unreachable" to DNS answers from DNS requests that we send
+			       */
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+ULWM2M=1", allow_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
