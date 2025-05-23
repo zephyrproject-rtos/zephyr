@@ -82,6 +82,8 @@ void video_buffer_release(struct video_buffer *vbuf)
 	struct mem_block *block = NULL;
 	int i;
 
+	__ASSERT_NO_MSG(vbuf != NULL);
+
 	/* vbuf to block */
 	for (i = 0; i < ARRAY_SIZE(video_block); i++) {
 		if (video_block[i].data == vbuf->buffer) {
@@ -99,6 +101,10 @@ void video_buffer_release(struct video_buffer *vbuf)
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
 			    size_t *idx)
 {
+	__ASSERT_NO_MSG(fmts != NULL);
+	__ASSERT_NO_MSG(fmt != NULL);
+	__ASSERT_NO_MSG(idx != NULL);
+
 	for (int i = 0; fmts[i].pixelformat != 0; i++) {
 		if (fmts[i].pixelformat == fmt->pixelformat &&
 		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
@@ -114,6 +120,10 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 				    const struct video_frmival *desired,
 				    struct video_frmival *match)
 {
+	__ASSERT_NO_MSG(stepwise != NULL);
+	__ASSERT_NO_MSG(desired != NULL);
+	__ASSERT_NO_MSG(match != NULL);
+
 	uint64_t min = stepwise->min.numerator;
 	uint64_t max = stepwise->max.numerator;
 	uint64_t step = stepwise->step.numerator;
@@ -136,6 +146,9 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
 {
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(match != NULL);
+
 	struct video_frmival desired = match->discrete;
 	struct video_frmival_enum fie = {.format = match->format};
 	uint64_t best_diff_nsec = INT32_MAX;
@@ -207,6 +220,8 @@ int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_
 	uint8_t *data_ptr;
 	int ret;
 
+	__ASSERT_NO_MSG(i2c != NULL);
+	__ASSERT_NO_MSG(reg_data != NULL);
 	__ASSERT(addr_size > 0, "The address must have a address size flag");
 	__ASSERT(data_size > 0, "The address must have a data size flag");
 
@@ -246,6 +261,9 @@ static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, 
 {
 	int ret;
 
+	__ASSERT_NO_MSG(i2c != NULL);
+	__ASSERT_NO_MSG(buf_w != NULL);
+
 	for (int i = 0;; i++) {
 		ret = i2c_write_dt(i2c, buf_w, size);
 		if (ret == 0) {
@@ -272,6 +290,7 @@ int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32
 	uint8_t *data_ptr;
 	int ret;
 
+	__ASSERT_NO_MSG(i2c != NULL);
 	__ASSERT(addr_size > 0, "The address must have a address size flag");
 	__ASSERT(data_size > 0, "The address must have a data size flag");
 
@@ -326,6 +345,8 @@ int video_write_cci_multiregs(const struct i2c_dt_spec *i2c, const struct video_
 {
 	int ret;
 
+	__ASSERT_NO_MSG(regs != NULL);
+
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr, regs[i].data);
 		if (ret < 0) {
@@ -341,6 +362,8 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 {
 	int ret;
 
+	__ASSERT_NO_MSG(regs != NULL);
+
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR8_DATA8, regs[i].data);
 		if (ret < 0) {
@@ -355,6 +378,8 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 				size_t num_regs)
 {
 	int ret;
+
+	__ASSERT_NO_MSG(regs != NULL);
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR16_DATA8, regs[i].data);
