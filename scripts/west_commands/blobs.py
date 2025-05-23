@@ -77,6 +77,10 @@ class Blobs(WestCommand):
                             help='''format string to use to list each blob;
                                     see FORMAT STRINGS below''')
 
+        group = parser.add_argument_group('west blobs fetch options')
+        group.add_argument('-a', '--auto-accept', action='store_true',
+                            help='''auto accept license if the fetching needs click-through''')
+
         return parser
 
     def get_blobs(self, args):
@@ -154,7 +158,7 @@ class Blobs(WestCommand):
                 continue
             self.inf('Fetching blob {module}: {abspath}'.format(**blob))
 
-            if blob['click-through']:
+            if blob['click-through'] and not args.auto_accept:
                 while True:
                     user_input = input("For this blob, need to read and accept "
                                        "license to continue. Read it?\n"
