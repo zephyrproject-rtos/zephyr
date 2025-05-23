@@ -53,6 +53,69 @@ config WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA
 	  would be buffered when the STA is in Power Save (PS) mode.
 	  This helps manage buffer usage and ensures efficient packet handling.
 
+config WIFI_SILABS_SIWX91X_SNTP_CLIENT
+	bool "Offloaded implementation of SNTP client"
+	help
+	  Enable this option to allow to use the SNTP (Simple Network Time
+	  protocol) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_sntp.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_HTTP_CLIENT
+	bool "Offloaded implementation of HTTP client"
+	help
+	  Enable this option to allow to use the HTTP (hypertext transfer
+	  protocol) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_http_client.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_MQTT_CLIENT
+	bool "Offloaded implementation of MQTT client"
+	help
+	  Enable this option to allow to use the MQTT(Message Queuing Telemetry
+	  Transport) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_mqtt_client.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_PING
+	bool "Offloaded implementation of ICMP client"
+	help
+	  Enable this option to allow to use the MQTT(Internet Control Message
+	  Protocol) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_net_ping.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_WEBSOCKET_CLIENT
+	bool "Offloaded implementation of Websocket client"
+	help
+	  Enable this option to allow to use the Websocket client implementation
+	  provided by the Network Co-Processor present on SiWx91x series. This
+	  implementation usually require less resources than the Zephyr one.
+	  See also sl_websocket_client.h in Silabs HAL for more information
+	  about the API.
+
+config WIFI_SILABS_SIWX91X_MDNS
+	bool "Offloaded implementation of MDNS"
+	help
+	  Enable this option to allow to use the MDNS(Multicast Domain Name
+	  System) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_mdns.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_DNS
+	bool "Offloaded implementation of DNS"
+	help
+	  Enable this option to allow to use the DNS(Domain Name System)
+	  implementation provided by the Network Co-Processor present on
+	  SiWx91x series. This implementation usually require less
+	  resources than the Zephyr one. See also sl_net_dns.h in Silabs
+	  HAL for more information about the API.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
