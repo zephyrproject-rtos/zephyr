@@ -677,9 +677,16 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *ts)
 #if defined(CONFIG_SPEED_OPTIMIZATIONS)
 
 	return (k_timeout_t){
-		.ticks = ((ts->tv_sec == INT64_MAX) && (ts->tv_nsec == NSEC_PER_SEC - 1)) *
+		/* note: must check for 32-bit size here until #90029 is resolved */
+		.ticks = ((sizeof(ts->tv_sec) == sizeof(int32_t) && (ts->tv_sec == INT32_MAX) &&
+			   (ts->tv_nsec == NSEC_PER_SEC - 1)) ||
+			  ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec == INT64_MAX) &&
+			   (ts->tv_nsec == NSEC_PER_SEC - 1))) *
 				 K_TICKS_FOREVER +
-			 ((ts->tv_sec != INT64_MAX) && (ts->tv_sec >= 0)) *
+			 ((sizeof(ts->tv_sec) == sizeof(int32_t) && (ts->tv_sec == INT32_MAX) &&
+			   (ts->tv_nsec == NSEC_PER_SEC - 1)) ||
+			  ((sizeof(ts->tv_sec) == sizeof(int64_t)) && (ts->tv_sec != INT64_MAX) &&
+			   (ts->tv_sec >= 0))) *
 				 (IS_ENABLED(CONFIG_TIMEOUT_64BIT)
 					  ? (int64_t)(CLAMP(
 						    k_sec_to_ticks_floor64(ts->tv_sec) +
