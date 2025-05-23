@@ -418,6 +418,7 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 #define PCIE_CONF_CMDSTAT_IO		0x00000001U  /* I/O access enable */
 #define PCIE_CONF_CMDSTAT_MEM		0x00000002U  /* mem access enable */
 #define PCIE_CONF_CMDSTAT_MASTER	0x00000004U  /* bus master enable */
+#define PCIE_CONF_CMDSTAT_SERR		0x00000010U  /* SERR# enable */
 #define PCIE_CONF_CMDSTAT_INTERRUPT	0x00080000U  /* interrupt status */
 #define PCIE_CONF_CMDSTAT_CAPS		0x00100000U  /* capabilities list */
 
