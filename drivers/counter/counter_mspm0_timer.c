@@ -31,6 +31,7 @@ struct counter_mspm0_config {
 	const struct mspm0_clockSys *clock_subsys;
 	DL_Timer_ClockConfig clk_config;
 	void (*irq_config_func)(const struct device *dev);
+	uint32_t irqn;
 };
 
 static int counter_mspm0_start(const struct device *dev)
@@ -120,22 +121,32 @@ static int counter_mspm0_set_alarm(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if ((COUNTER_ALARM_CFG_ABSOLUTE & alarm_cfg->flags) == 0) {
-		ticks += DL_Timer_getTimerCount(config->base);
-		if (ticks > top) {
-			ticks %= top;
-		}
-	}
-
 	data->alarm_cb = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
 
-	DL_Timer_setCaptureCompareValue(config->base, ticks,
-					DL_TIMER_CC_0_INDEX);
 	DL_Timer_clearInterruptStatus(config->base,
 				      DL_TIMER_INTERRUPT_CC0_UP_EVENT);
 	DL_Timer_enableInterrupt(config->base,
 				 DL_TIMER_INTERRUPT_CC0_UP_EVENT);
+
+	/* fixme: mismatch between the kernel clock resolution and the timer
+	 * clock resolution, causes time-to-counter conversions to yield a
+	 * value of zero timer. High chance of missing irq late with current
+	 * counter reference, set pending irq
+	 */
+	if (!ticks) {
+		NVIC_SetPendingIRQ(config->irqn);
+	} else {
+		if ((COUNTER_ALARM_CFG_ABSOLUTE & alarm_cfg->flags) == 0) {
+			ticks += DL_Timer_getTimerCount(config->base);
+			if (ticks > top) {
+				ticks %= top;
+			}
+		}
+
+		DL_Timer_setCaptureCompareValue(config->base, ticks,
+						DL_TIMER_CC_0_INDEX);
+	}
 
 	if (DL_Timer_isRunning(config->base) == false) {
 		DL_Timer_startCounter(config->base);
@@ -270,6 +281,7 @@ static void counter_mspm0_isr(void *arg)
 	static const struct counter_mspm0_config counter_mspm0_config_ ## n = {	\
 		.base = (GPTIMER_Regs *)DT_REG_ADDR(DT_INST_PARENT(n)),		\
 		.clock_subsys = &mspm0_counter_clockSys ## n,			\
+		.irqn = DT_INST_IRQN(n),					\
 		.clk_config = {.clockSel = (DT_INST_CLOCKS_CELL(n, bus) &	\
 					    MSPM0_CLOCK_SEL_MASK),		\
 			       .divideRatio = MSPMO_CLK_DIV(DT_PROP(DT_DRV_INST(n),ti_clk_div)), \
