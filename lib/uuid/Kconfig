@@ -25,6 +25,11 @@ config UUID_V5
 	depends on MBEDTLS
 	depends on MBEDTLS_MD
 	depends on MBEDTLS_SHA1
+	# When TF-M is enabled, Mbed TLS's MD module (which is used to generate
+	# v5 UUIDs) will dispacth hash operations to TF-M. Unfortunately TF-M
+	# does not support SHA-1 (because it's a weak algorithm) so the
+	# computation will fail.
+	depends on !BUILD_WITH_TFM
 	help
 	  Enable generation of UUID v5.
 
