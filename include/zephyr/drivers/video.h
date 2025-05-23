@@ -376,8 +376,12 @@ __subsystem struct video_driver_api {
  */
 static inline int video_set_format(const struct device *dev, struct video_format *fmt)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(fmt != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->set_format == NULL) {
 		return -ENOSYS;
 	}
@@ -397,8 +401,12 @@ static inline int video_set_format(const struct device *dev, struct video_format
  */
 static inline int video_get_format(const struct device *dev, struct video_format *fmt)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(fmt != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->get_format == NULL) {
 		return -ENOSYS;
 	}
@@ -424,8 +432,12 @@ static inline int video_get_format(const struct device *dev, struct video_format
  */
 static inline int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(frmival != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->set_frmival == NULL) {
 		return -ENOSYS;
 	}
@@ -448,8 +460,12 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
  */
 static inline int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(frmival != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->get_frmival == NULL) {
 		return -ENOSYS;
 	}
@@ -476,8 +492,13 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
  */
 static inline int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(fie != NULL);
+	__ASSERT_NO_MSG(fie->format != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->enum_frmival == NULL) {
 		return -ENOSYS;
 	}
@@ -502,6 +523,11 @@ static inline int video_enqueue(const struct device *dev, struct video_buffer *b
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
+	__ASSERT_NO_MSG(buf->buffer != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->enqueue == NULL) {
 		return -ENOSYS;
 	}
@@ -526,8 +552,12 @@ static inline int video_enqueue(const struct device *dev, struct video_buffer *b
 static inline int video_dequeue(const struct device *dev, struct video_buffer **buf,
 				k_timeout_t timeout)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->dequeue == NULL) {
 		return -ENOSYS;
 	}
@@ -550,8 +580,11 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
  */
 static inline int video_flush(const struct device *dev, bool cancel)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->flush == NULL) {
 		return -ENOSYS;
 	}
@@ -576,8 +609,11 @@ static inline int video_flush(const struct device *dev, bool cancel)
  */
 static inline int video_stream_start(const struct device *dev, enum video_buf_type type)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->set_stream == NULL) {
 		return -ENOSYS;
 	}
@@ -599,9 +635,12 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
  */
 static inline int video_stream_stop(const struct device *dev, enum video_buf_type type)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 	int ret;
 
+	__ASSERT_NO_MSG(dev != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->set_stream == NULL) {
 		return -ENOSYS;
 	}
@@ -622,8 +661,12 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
  */
 static inline int video_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(caps != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->get_caps == NULL) {
 		return -ENOSYS;
 	}
@@ -712,8 +755,12 @@ void video_print_ctrl(const struct device *const dev, const struct video_ctrl_qu
  */
 static inline int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api;
 
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(sig != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
 	if (api->set_signal == NULL) {
 		return -ENOSYS;
 	}
@@ -771,6 +818,8 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
  */
 static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
 {
+	__ASSERT_NO_MSG(frmival != NULL);
+
 	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
 }
 
