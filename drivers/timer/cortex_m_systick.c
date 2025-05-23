@@ -237,6 +237,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER
 	if (idle) {
+		uint32_t top;
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 		struct counter_alarm_cfg cfg = {
@@ -247,6 +248,15 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		};
 
 		timeout_idle = true;
+
+		/* set alarm fails when sleep time is more than counter top and
+		 * result is ignored, so alarm wake will not happens.
+		 * fixme! arbitary set alarm value less than top.
+		 */
+		top = counter_get_top_value(idle_timer);
+		if (cfg.ticks >= top) {
+			cfg.ticks = top - 1;
+		}
 
 		/* Set the alarm using timer that runs the idle.
 		 * Needed rump-up/setting time, lower accurency etc. should be
