@@ -1,0 +1,60 @@
+# Copyright 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI MSPM0 PWM node for MSPM0 SoCs. Each channel in MSPM0 can be configured
+  to use for PWM operation. There are three PWM modes supported by hardware.
+
+  timer0: timer {
+    pwm0: pwm {
+      compatible = "ti,mspm0g-timer-pwm";
+      #pwm-cells = <3>;
+
+      ti,cc-index = <0>;
+      ti,pwm-mode = "PULSE_WIDTH";
+      ti,period = <1000>;
+    };
+  };
+
+compatible: "ti,mspm0-timer-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  ti,cc-index:
+    type: array
+    required: true
+    description: |
+      Capture input/Compare output index, should match with the pin function.
+
+  ti,pwm-mode:
+    type: string
+    description: |
+      Select PWM OUT mode:
+      - EDGE_ALIGN: generate pulses with edge aligned down counting mode.
+
+      - EDGE_ALIGN_UP: generate pulses with edge aligned up counting mode.
+
+      - CENTER_ALIGN: generates pulses center aligned up and down counting mode.
+
+    enum:
+      - "EDGE_ALIGN"
+      - "EDGE_ALIGN_UP"
+      - "CENTER_ALIGN"
+
+  ti,period:
+    type: int
+    required: true
+    description: |
+      Time period in TIMCLK cycle for Capture mode or PWM output.
+
+pwm-cells:
+  - channel
+  - period
+  - flags

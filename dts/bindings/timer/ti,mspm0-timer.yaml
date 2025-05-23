@@ -1,0 +1,38 @@
+# Copyright 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 Timer
+
+compatible: "ti,mspm0-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-prescaler:
+    type: int
+    required: true
+    description: |
+      TIMCLK clock source prescaler value.
+      Valid range [0 ... 255].
+
+  clk-div:
+    type: int
+    required: true
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+    description: |
+      Clock divider selction value.
