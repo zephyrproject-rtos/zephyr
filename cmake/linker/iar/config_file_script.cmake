@@ -712,8 +712,27 @@ function(section_to_string)
       #		message(FATAL_ERROR "How to handle this? lma=${lma} vma=${vma}")
       # endif()
 
-      set(TEMP "${TEMP}${section_type} ${part}section ${setting}")
-      set_property(GLOBAL APPEND PROPERTY ILINK_CURRENT_SECTIONS "section ${setting}")
+
+      # Setting may have file-pattern or not.
+      #   <file-pattern>(<section-patterns>... )
+      #   <file-pattern> is [library.a:]file
+      #   e.g. foo.a:bar.o(.data*)
+      if(setting MATCHES "^([^\\(]+)\\((.+)\\)$")
+        set(file_pattern "${CMAKE_MATCH_1}")
+        set(section_pattern "${CMAKE_MATCH_2}")
+
+        # This contains library:object specification.
+        # This is translated from LD lib.a:obj.o to IARs obj.o(lib.a).
+        if(file_pattern MATCHES "^([^:]+):(.+)$")
+          set(file_pattern "${CMAKE_MATCH_2}(${CMAKE_MATCH_1})")
+        endif()
+        set(pattern "section ${section_pattern} object ${file_pattern}")
+      else()
+        set(pattern "section ${setting}")
+      endif()
+
+      set(TEMP "${TEMP}${section_type} ${part} ${pattern}")
+      set_property(GLOBAL APPEND PROPERTY ILINK_CURRENT_SECTIONS "${pattern}")
       set(section_type "")
 
       if("${setting}" STREQUAL "${last_input}")
