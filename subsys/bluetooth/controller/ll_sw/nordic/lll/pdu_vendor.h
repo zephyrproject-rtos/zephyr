@@ -10,6 +10,9 @@
 #define OCTET3_LEN 1U
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 
+/* Minimum vendor specific Rx payload buffer allocation */
+#define LL_VND_OCTETS_RX_MIN 27
+
 /* Presence of vendor Data PDU struct octet3 */
 struct pdu_data_vnd_octet3 {
 	union {
