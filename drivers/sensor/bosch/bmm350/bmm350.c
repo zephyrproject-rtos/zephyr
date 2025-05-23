@@ -349,7 +349,7 @@ static int bmm350_set_powermode(const struct device *dev, enum bmm350_power_mode
  * used to perform the magnetic reset of the sensor
  * which is necessary after a field shock ( 400mT field applied to sensor )
  */
-static int bmm350_magnetic_reset_and_wait(const struct device *dev)
+int bmm350_magnetic_reset(const struct device *dev)
 {
 	/* Variable to store the function result */
 	int ret = 0;
@@ -1005,7 +1005,7 @@ static int bmm350_init_chip(const struct device *dev)
 		goto err_poweroff;
 	}
 
-	ret = bmm350_magnetic_reset_and_wait(dev);
+	ret = bmm350_magnetic_reset(dev);
 	if (ret != 0) {
 		LOG_ERR("failed to perform magnetic reset");
 		goto err_poweroff;
