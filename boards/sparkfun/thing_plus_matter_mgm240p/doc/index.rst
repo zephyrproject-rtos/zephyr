@@ -1,7 +1,4 @@
-.. _sparkfun_thing_plus_mgm240p:
-
-SparkFun Thing Plus Matter
-###########################
+.. zephyr:board:: sparkfun_thing_plus_matter_mgm240p
 
 Overview
 ********
@@ -9,13 +6,6 @@ Overview
 The MGM240P Mighty Sparkfun Think Plus Matter contains
 a Wireless System-On-Chip from the EFR32MG24 family built on an
 ARM Cortex®-M33F processor with excellent low power capabilities.
-
-.. figure:: ./img/MGM240P_Thing_Plus.jpg
-   :height: 260px
-   :align: center
-   :alt: MGM240P Sparkfun Think Plus Matter
-
-   MGM240P Sparkfun Think Plus Matter (image courtesy of Sparkfun)
 
 Hardware
 ********
@@ -40,29 +30,7 @@ documents:
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| COUNTER   | on-chip    | stimer                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash memory                        |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | semailbox                           |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| I2C(M/S)  | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are currently not supported by the port.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -97,6 +65,8 @@ USART0 is connected to the board controller and is used for the console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
