@@ -738,8 +738,6 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
-	/* Wiseconnect requires a valid PSK even if WIFI_SECURITY_TYPE_NONE is selected */
-	static const char dummy_psk[] = "dummy_value";
 	sl_wifi_ap_configuration_t saved_ap_cfg;
 	int ret;
 	int sec;
@@ -807,18 +805,14 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 	}
 
 	siwx91x_ap_cfg.security = sec;
-	if (params->security == WIFI_SECURITY_TYPE_NONE) {
-		ret = sl_net_set_credential(siwx91x_ap_cfg.credential_id, SL_NET_WIFI_PSK,
-					    dummy_psk, strlen(dummy_psk));
-	} else {
+	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		ret = sl_net_set_credential(siwx91x_ap_cfg.credential_id, SL_NET_WIFI_PSK,
 					    params->psk, params->psk_length);
-	}
-
-	if (ret != SL_STATUS_OK) {
-		LOG_ERR("Failed to set credentials: 0x%x", ret);
-		wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_FAIL);
-		return -EINVAL;
+		if (ret != SL_STATUS_OK) {
+			LOG_ERR("Failed to set credentials: 0x%x", ret);
+			wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_FAIL);
+			return -EINVAL;
+		}
 	}
 
 	ret = siwx91x_nwp_reboot_if_required(dev, WIFI_SOFTAP_MODE);
