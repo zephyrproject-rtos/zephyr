@@ -359,13 +359,13 @@ static void test_addr_add_common(struct net_if *test_iface, const char *off_type
 	lookup_iface = NULL;
 	zassert_equal_ptr(net_if_ipv4_addr_lookup(&test_addr_ipv4, &lookup_iface),
 			  ipv4_addr,
-			  "Failed to find IPv4 address on a %s offloaded interface");
+			  "Failed to find IPv4 address on a %s offloaded interface", off_type);
 	zassert_equal_ptr(lookup_iface, test_iface, "Wrong interface");
 
 	lookup_iface = NULL;
 	zassert_equal_ptr(net_if_ipv6_addr_lookup(&test_addr_ipv6, &lookup_iface),
 			  ipv6_addr,
-			  "Failed to find IPv6 address on a %s offloaded interface");
+			  "Failed to find IPv6 address on a %s offloaded interface", off_type);
 	zassert_equal_ptr(lookup_iface, test_iface, "Wrong interface");
 
 	zassert_true(net_if_ipv4_addr_rm(test_iface, &test_addr_ipv4),
