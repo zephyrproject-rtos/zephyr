@@ -428,6 +428,29 @@ void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, co
 			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr);
 
 /**
+ * @brief Relink dependencies to prepare for suspend
+ *
+ * @param[in] ext Extension array
+ * @param[in] n_ext Number of extensions
+ * @retval 0 Success
+ * @retval -ENOENT Some dependencies not found
+ */
+int llext_relink_dependency(struct llext *ext, unsigned int n_ext);
+
+/**
+ * @brief Restore LLEXT context from saved data
+ *
+ * @param[in/out] ext Extension pointer array - replaced with re-allocated copies
+ * @param[in/out] ldr Array of loader pointers to restore section maps
+ * @param[in] n_ext Number of extensions
+ * @retval 0 Success
+ * @retval -ENOMEM No memory
+ * @retval -EINVAL Stored dependency out of range
+ * @retval -EFAULT Internal algorithmic error
+ */
+int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_ext);
+
+/**
  * @}
  */
 
