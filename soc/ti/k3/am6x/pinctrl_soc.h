@@ -15,6 +15,7 @@ extern "C" {
 #endif
 
 struct pinctrl_soc_pin {
+	const struct device *dev;
 	uint32_t offset;
 	uint32_t value;
 };
@@ -23,6 +24,7 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 
 #define TI_K3_DT_PIN(node_id)				\
 	{							\
+		.dev = DEVICE_DT_GET(DT_PARENT(node_id)),	\
 		.offset = DT_PROP_BY_IDX(node_id, pinmux, 0),	\
 		.value = DT_PROP_BY_IDX(node_id, pinmux, 1)	\
 	},

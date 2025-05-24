@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	mcu_pinctrl: pinctrl@4084000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0x04084000 0x88>;
+		status = "disabled";
+	};
+
+	mcu_uart0: serial@4a00000 {
+		compatible = "ns16550";
+		reg = <0x04a00000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	mcu_uart1: serial@4a10000 {
+		compatible = "ns16550";
+		reg = <0x04a10000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	mcu_i2c0: i2c0@4900000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x4900000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	mcu_i2c1: i2c0@4910000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x4910000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	mcu_gpio0: gpio@4201000 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x4201000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <23>;
+		status = "disabled";
+	};
+};

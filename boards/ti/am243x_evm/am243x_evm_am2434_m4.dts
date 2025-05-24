@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated
- *	Andrew Davis <afd@ti.com>
+ * Copyright (c) 2025 Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,22 +8,22 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ti/am64x_m4.dtsi>
-#include "sk_am64_am6442_m4-pinctrl.dtsi"
+#include "am243x_evm_am2434_m4-pinctrl.dtsi"
 
 / {
-	model = "TI AM64x STARTER KIT (SK) M4";
-	compatible = "ti,am64x_m4_sk", "ti,am6442";
+	model = "TI AM243x EVM M4 core";
+	compatible = "ti,am243x-evm-m4";
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &mcu_uart0;
 		zephyr,shell-uart = &mcu_uart0;
 		zephyr,ipc = &ipc0;
-		zephyr,ipc_shm = &ddr0;
+		zephyr,ipc-shm = &ipc_shm0;
 	};
 
 	aliases {
-		led0 = &heartbeat_led;
+		led0 = &ld26;
 	};
 
 	cpus {
@@ -34,9 +33,12 @@
 		};
 	};
 
-	ddr0: memory@a4000000 {
-		compatible = "mmio-sram";
-		reg = <0xa4000000 DT_SIZE_M(1)>;
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld26: led_0 {
+			gpios = <&mcu_gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	rsc_table: memory@a4100000 {
@@ -45,19 +47,10 @@
 		zephyr,memory-region = "RSC_TABLE";
 	};
 
-	ddr1: memory@a4101000 {
+	ipc_shm0: memory@a5000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xa4101000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
-		zephyr,memory-region = "DRAM";
-	};
-
-	leds: leds {
-		compatible = "gpio-leds";
-
-		heartbeat_led: led_0 {
-			gpios = <&mcu_gpio0 5 GPIO_ACTIVE_HIGH>;
-			label = "Heartbeat LED";
-		};
+		reg = <0xa5000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "IPC_SHM";
 	};
 
 	ipc0: ipc {
@@ -69,13 +62,13 @@
 
 &mcu_uart0 {
 	current-speed = <115200>;
-	pinctrl-0 = <&mcu_uart0_rx_default &mcu_uart0_tx_default>;
+	pinctrl-0 = <&mcu_uart0_rx &mcu_uart0_tx>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
 &mcu_gpio0 {
-	pinctrl-0 = <&mcu_gpio0_led_default>;
+	pinctrl-0 = <&mcu_gpio0_led>;
 	pinctrl-names = "default";
 	status = "okay";
 };
