@@ -254,6 +254,14 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
 }
 
+static void recycled(void) {
+	printk("connection recycled. Restart advertising a connection");
+	const int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+	}
+}
+
 static void alert_stop(void)
 {
 	printk("Alert stopped\n");
@@ -272,6 +280,7 @@ static void alert_high_start(void)
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled,
 };
 
 BT_IAS_CB_DEFINE(ias_callbacks) = {
