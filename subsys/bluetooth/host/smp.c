@@ -1263,7 +1263,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
 	struct bt_keys_link_key *key;
-	bool le_bonded;
+	struct bt_keys *le_keys;
 
 	if (!smp->chan.chan.conn) {
 		return false;
@@ -1273,7 +1273,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 
 	addr.type = BT_ADDR_LE_PUBLIC;
 	bt_addr_copy(&addr.a, &conn->br.dst);
-	le_bonded = bt_le_bond_exists(BT_ID_DEFAULT, &addr);
+	le_keys = bt_keys_find_addr(BT_ID_DEFAULT, &addr);
 
 	key = bt_keys_find_link_key(&conn->br.dst);
 	if (!key) {
@@ -1287,7 +1287,9 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	 * or MITM protection, then neither device shall generate an LE LTK using cross-transport
 	 * key derivation from a BR/EDR link key.
 	 */
-	if (le_bonded && !(key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+	if ((le_keys != NULL) && ((le_keys->flags & BT_KEYS_AUTHENTICATED) != 0) &&
+	    ((key->flags & BT_LINK_KEY_AUTHENTICATED) == 0)) {
+		LOG_WRN("Stronger LTK (MITM) cannot be overwrote by weaker LK");
 		return false;
 	}
 
