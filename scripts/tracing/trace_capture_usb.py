@@ -82,10 +82,6 @@ def main():
     #enable device tracing
     write_endpoint.write('enable')
 
-    #try to read to avoid garbage mixed to useful stream data
-    buff = usb.util.create_buffer(8192)
-    read_endpoint.read(buff, 10000)
-
     with open(output_file, "wb") as file_desc:
         while True:
             buff = usb.util.create_buffer(8192)
