@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2024 Sensoan Oy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include "sgw2_nrf5340.h"
+
+/ {
+	edge_connector: edge_connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <24 0 GPIO_AND_PIN(EDGE_CONN, 24) 0>,	/* GPIO */
+				<25 0 GPIO_AND_PIN(EDGE_CONN, 25) 0>,		/* GPIO */
+				<26 0 GPIO_AND_PIN(EDGE_CONN, 26) 0>,		/* GPIO */
+				<29 0 GPIO_AND_PIN(EDGE_CONN, 29) 0>,		/* GPIO */
+				<31 0 GPIO_AND_PIN(EDGE_CONN, 31) 0>,		/* I2C_SDA */
+				<33 0 GPIO_AND_PIN(EDGE_CONN, 33) 0>,		/* I2C_SCL */
+				<49 0 GPIO_AND_PIN(EDGE_CONN, 49) 0>,		/* GPIO */
+				<50 0 GPIO_AND_PIN(EDGE_CONN, 50) 0>,		/* GPIO */
+				<51 0 GPIO_AND_PIN(EDGE_CONN, 51) 0>,		/* GPIO */
+				<52 0 GPIO_AND_PIN(EDGE_CONN, 52) 0>;		/* GPIO */
+	};
+
+	mcu_if: mcu_if {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 GPIO_AND_PIN(MCU_IF, 0) 0>,
+				<1 0 GPIO_AND_PIN(MCU_IF, 1) 0>,
+				<2 0 GPIO_AND_PIN(MCU_IF, 2) 0>,
+				<3 0 GPIO_AND_PIN(MCU_IF, 3) 0>,
+				<4 0 GPIO_AND_PIN(MCU_IF, 4) 0>,
+				<5 0 GPIO_AND_PIN(MCU_IF, 5) 0>,
+				<6 0 GPIO_AND_PIN(MCU_IF, 6) 0>;
+	};
+};
