@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 PSICONTROL nv
+ * Copyright (c) 2025 Charles Dias
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 
 / {
 	soc {
-		compatible = "st,stm32u599", "st,stm32u5", "simple-bus";
+		compatible = "st,stm32u5f9", "st,stm32u5", "simple-bus";
 
 		ltdc: display-controller@40016800 {
 			compatible = "st,stm32-ltdc";
