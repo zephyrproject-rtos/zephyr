@@ -48,4 +48,12 @@
 			output-high;
 		};
 	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PC6>, <PTI_DFRAME_PC7>;
+			drive-push-pull;
+			output-high;
+		};
+	};
 };
