@@ -46,6 +46,8 @@ NSI_EXTRA_SRCS?=
 NSI_EXTRA_INCLUDES?=
 #  Extra libraries to be linked to the final executable
 NSI_EXTRA_LIBS?=
+# Extra linker flags
+NSI_EXTRA_LINK_OPTIONS?=
 
 SHELL?=bash
 #  Compiler
@@ -74,7 +76,7 @@ CFLAGS:=-std=c11 ${COMMON_BUILD_FLAGS} ${NSI_BUILD_C_OPTIONS}
 CXXFLAGS:=${COMMON_BUILD_FLAGS} ${NSI_BUILD_CXX_OPTIONS}
 FINALLINK_FLAGS:=${NO_PIE_CO} -no-pie  ${NSI_WARNINGS} \
   -Wl,--gc-sections -ldl -pthread \
-  ${NSI_LINK_OPTIONS} -lm
+  ${NSI_LINK_OPTIONS} ${NSI_EXTRA_LINK_OPTIONS} -lm
 
 no_default:
 	@echo "There is no default rule, please specify what you want to build,\
