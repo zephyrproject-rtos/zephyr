@@ -54,7 +54,7 @@ static struct _timeout *next(struct _timeout *t)
 	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
-static void remove_timeout(struct _timeout *t)
+static ALWAYS_INLINE void remove_timeout(struct _timeout *t)
 {
 	if (next(t) != NULL) {
 		next(t)->dticks += t->dticks;
