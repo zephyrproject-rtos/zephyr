@@ -24,7 +24,7 @@ if WIFI_ESP32
 config HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
 	int
 	default 40960 if ESP_WIFI_HEAP_SYSTEM
-	default 0
+	default 19456 if ESP_WIFI_HEAP_SPIRAM
 	help
 	  Make sure there is a minimal heap available for Wi-Fi driver.
 
@@ -34,6 +34,9 @@ choice ESP_WIFI_HEAP
 
 	config ESP_WIFI_HEAP_SYSTEM
 		bool "Wi-Fi adapter use kernel mempool heap (k_malloc)"
+
+	config ESP_WIFI_HEAP_SPIRAM
+		bool "Wi-Fi adapter use spiram mempool heap (smh_malloc)"
 
 endchoice # ESP_WIFI_HEAP
 
