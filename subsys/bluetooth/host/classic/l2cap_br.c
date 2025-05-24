@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
@@ -18,6 +19,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/classic/l2cap_br.h>
 
 #include "host/buf_view.h"
 #include "host/hci_core.h"
@@ -75,6 +77,7 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_BR_CFG_TIMEOUT     K_SECONDS(4)
 #define L2CAP_BR_DISCONN_TIMEOUT K_SECONDS(1)
 #define L2CAP_BR_CONN_TIMEOUT    K_SECONDS(40)
+#define L2CAP_BR_ECHO_TIMEOUT    K_SECONDS(30)
 
 #define L2CAP_FEAT_FC_MASK           BIT(0)
 #define L2CAP_FEAT_RET_MASK          BIT(1)
@@ -87,6 +90,12 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_FEAT_EXT_WIN_SIZE_MASK BIT(8)
 #define L2CAP_FEAT_CLS_MASK          BIT(9)
 #define L2CAP_FEAT_ECBFC_MASK        BIT(10)
+
+#if defined(CONFIG_BT_L2CAP_CLS)
+#define L2CAP_FEAT_CLS_ENABLE_MASK L2CAP_FEAT_CLS_MASK
+#else
+#define L2CAP_FEAT_CLS_ENABLE_MASK 0
+#endif /* CONFIG_BT_L2CAP_CLS */
 
 #if defined(CONFIG_BT_L2CAP_RET)
 #define L2CAP_FEAT_RET_ENABLE_MASK L2CAP_FEAT_RET_MASK
@@ -132,7 +141,7 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 	(L2CAP_FEAT_FIXED_CHAN_MASK | L2CAP_FEAT_RET_ENABLE_MASK |                             \
 	 L2CAP_FEAT_FC_ENABLE_MASK | L2CAP_FEAT_ENH_RET_ENABLE_MASK |                          \
 	 L2CAP_FEAT_STREAM_ENABLE_MASK | L2CAP_FEAT_FCS_ENABLE_MASK |                          \
-	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK)
+	 L2CAP_FEAT_EXT_WIN_SIZE_ENABLE_MASK | L2CAP_FEAT_CLS_ENABLE_MASK)
 
 enum {
 	/* Connection oriented channels flags */
@@ -227,6 +236,8 @@ struct bt_l2cap_br {
 };
 
 static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BT_MAX_CONN];
+
+static sys_slist_t bt_l2cap_br_echo_cbs = SYS_SLIST_STATIC_INIT(&bt_l2cap_br_echo_cbs);
 
 struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 						uint16_t cid)
@@ -343,6 +354,7 @@ static void l2cap_br_rtx_timeout(struct k_work *work)
 	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
 		LOG_DBG("Skip BR/EDR signalling channel ");
 		atomic_clear_bit(chan->flags, L2CAP_FLAG_SIG_INFO_PENDING);
+		chan->ident = 0;
 		return;
 	}
 
@@ -1636,6 +1648,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 	switch (info_type) {
 	case BT_L2CAP_INFO_FEAT_MASK:
 	case BT_L2CAP_INFO_FIXED_CHAN:
+	case BT_L2CAP_INFO_CLS_MTU:
 		break;
 	default:
 		LOG_WRN("Unsupported info type %u", info_type);
@@ -1760,7 +1773,31 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 		connect_optional_fixed_channels(l2cap);
 
+#if defined(CONFIG_BT_L2CAP_CLS)
+		if (!(l2cap->info_feat_mask & L2CAP_FEAT_CLS_MASK)) {
+			break;
+		}
+
+		l2cap_br_get_info(l2cap, BT_L2CAP_INFO_CLS_MTU);
+		return 0;
+	case BT_L2CAP_INFO_CLS_MTU:
+		struct bt_l2cap_chan *cls_chan;
+
+		if (buf->len < sizeof(uint16_t)) {
+			LOG_ERR("Invalid remote info connectionless MTU");
+			err = -EINVAL;
+			break;
+		}
+
+		cls_chan = bt_l2cap_br_lookup_rx_cid(l2cap->chan.chan.conn, BT_L2CAP_CID_CLS);
+		if (cls_chan != NULL) {
+			BR_CHAN(cls_chan)->tx.mtu = net_buf_pull_le16(buf);
+			break;
+		}
+		__fallthrough;
+#else
 		break;
+#endif /* CONFIG_BT_L2CAP_CLS */
 	default:
 		LOG_WRN("type 0x%04x unsupported", type);
 		err = -EINVAL;
@@ -1826,6 +1863,20 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 		hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + 8);
 		break;
+#if defined(CONFIG_BT_L2CAP_CLS)
+	case BT_L2CAP_INFO_CLS_MTU:
+		struct bt_l2cap_chan *cls_chan;
+
+		cls_chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_CLS);
+		if (cls_chan != NULL) {
+			rsp->type = sys_cpu_to_le16(BT_L2CAP_INFO_CLS_MTU);
+			rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_SUCCESS);
+			net_buf_add_le16(rsp_buf, BR_CHAN(cls_chan)->rx.mtu);
+			hdr_info->len = sys_cpu_to_le16(sizeof(*rsp) + sizeof(uint16_t));
+			break;
+		}
+		__fallthrough;
+#endif /* CONFIG_BT_L2CAP_CLS */
 	default:
 		rsp->type = req->type;
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_INFO_NOTSUPP);
@@ -4504,6 +4555,7 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 		 * so this should always succeed.
 		 */
 		(void)k_work_cancel_delayable(&br_chan->rtx_work);
+		br_chan->ident = 0;
 	}
 }
 
@@ -4803,6 +4855,40 @@ static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct
 	} while (chan != NULL);
 }
 
+static void l2cap_br_echo_req(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_br_echo_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
+		if (callback->req) {
+			callback->req(conn, ident, buf);
+		}
+	}
+}
+
+static void l2cap_br_echo_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_br_echo_cb *callback;
+
+	if (ident != l2cap->chan.ident) {
+		LOG_WRN("ident mismatch (%u != %u)!", l2cap->chan.ident, ident);
+		goto failed;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
+		if (callback->rsp) {
+			callback->rsp(conn, buf);
+		}
+	}
+
+failed:
+	l2cap->chan.ident = 0;
+	/* Release RTX work since got the response */
+	k_work_cancel_delayable(&l2cap->chan.rtx_work);
+}
+
 static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_hdr *hdr,
 				struct net_buf *buf)
 {
@@ -4840,6 +4926,12 @@ static void l2cap_br_sig_handle(struct bt_l2cap_br *l2cap, struct bt_l2cap_sig_h
 		break;
 	case BT_L2CAP_CMD_REJECT:
 		l2cap_br_reject_rsp(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_ECHO_REQ:
+		l2cap_br_echo_req(l2cap, hdr->ident, buf);
+		break;
+	case BT_L2CAP_ECHO_RSP:
+		l2cap_br_echo_rsp(l2cap, hdr->ident, buf);
 		break;
 	default:
 		LOG_WRN("Unknown/Unsupported L2CAP PDU code 0x%02x", hdr->code);
@@ -5986,3 +6078,322 @@ void bt_l2cap_br_init(void)
 		bt_avrcp_init();
 	}
 }
+
+int bt_l2cap_br_echo_cb_register(struct bt_l2cap_br_echo_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&bt_l2cap_br_echo_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&bt_l2cap_br_echo_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_l2cap_br_echo_cb_unregister(struct bt_l2cap_br_echo_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&bt_l2cap_br_echo_cbs, &cb->_node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
+{
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_sig_hdr *hdr;
+	int err;
+
+	if ((conn == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
+
+	if (buf->ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+		return -EINVAL;
+	}
+
+	if (buf->len >= (L2CAP_BR_MIN_MTU - sizeof(*hdr))) {
+		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
+		return -EMSGSIZE;
+	}
+
+	if (net_buf_headroom(buf) < BT_L2CAP_BR_ECHO_REQ_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_br_echo_req().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (chan == NULL) {
+		LOG_ERR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
+		return -ENOTCONN;
+	}
+
+	if (BR_CHAN(chan)->ident) {
+		LOG_ERR("Waiting for ECHO RSP");
+		return -EBUSY;
+	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+
+	hdr->code = BT_L2CAP_ECHO_REQ;
+	hdr->ident = l2cap_br_get_ident();
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+
+	/* Set the ident for the signaling request */
+	BR_CHAN(chan)->ident = hdr->ident;
+
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
+	if (err == 0) {
+		k_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
+	}
+
+	return err;
+}
+
+int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
+{
+	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_sig_hdr *hdr;
+
+	if ((conn == NULL) || (buf == NULL) || (identifier == 0)) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
+
+	if (buf->ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+		return -EINVAL;
+	}
+
+	if (buf->len >= (L2CAP_BR_MIN_MTU - sizeof(*hdr))) {
+		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
+		return -EMSGSIZE;
+	}
+
+	if (net_buf_headroom(buf) < BT_L2CAP_BR_ECHO_RSP_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_BR_ECHO_RSP_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_br_echo_rsp().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (chan == NULL) {
+		LOG_ERR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
+		return -ENOTCONN;
+	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+
+	hdr->code = BT_L2CAP_ECHO_RSP;
+	hdr->ident = identifier;
+	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
+
+	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
+}
+
+#if defined(CONFIG_BT_L2CAP_CLS)
+
+static sys_slist_t br_cls_cbs = SYS_SLIST_STATIC_INIT(br_cls_cbs);
+
+int bt_l2cap_br_cls_register(struct bt_l2cap_br_cls_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (cb->recv == NULL) {
+		LOG_ERR("Recv callback should not be NULL");
+		return -EINVAL;
+	}
+
+	/* PSM must be odd and lsb of upper byte must be 0 */
+	if ((cb->psm != 0) && (cb->psm & 0x0101) != 0x0001) {
+		LOG_ERR("PSM must be odd and lsb of upper byte must be 0");
+		return -EINVAL;
+	}
+
+	if (cb->sec_level > BT_SECURITY_L4) {
+		LOG_ERR("Invalid security level %u", cb->sec_level);
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&br_cls_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&br_cls_cbs, &cb->_node);
+	return 0;
+}
+
+int bt_l2cap_br_cls_unregister(struct bt_l2cap_br_cls_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&br_cls_cbs, &cb->_node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+static uint32_t bt_l2cap_br_get_remote_features(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan_sig;
+	struct bt_l2cap_br *br_chan_sig;
+
+	chan_sig = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (chan_sig == NULL) {
+		return (uint32_t)0U;
+	}
+
+	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
+
+	return br_chan_sig->info_feat_mask;
+}
+
+int bt_l2cap_br_cls_send(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
+{
+	struct bt_l2cap_chan *chan;
+	uint32_t remote_features;
+	uint16_t mtu;
+
+	if ((conn == NULL) || (buf == NULL)) {
+		LOG_ERR("Invalid parameters");
+		return -EINVAL;
+	}
+
+	/* PSM must be odd and lsb of upper byte must be 0 */
+	if ((psm & 0x0101) != 0x0001) {
+		LOG_ERR("Invalid PSM");
+		return -EINVAL;
+	}
+
+	LOG_DBG("ACL conn %p buf %p len %u", conn, buf, buf->len);
+
+	if (buf->ref != 1) {
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
+		return -EINVAL;
+	}
+
+	if (net_buf_headroom(buf) < BT_L2CAP_CLS_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_CLS_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_br_cls_send().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
+	remote_features = bt_l2cap_br_get_remote_features(conn);
+	if ((remote_features & L2CAP_FEAT_CLS_MASK) == 0) {
+		LOG_ERR("Remote device does not support CLS reception");
+		return -ENOTSUP;
+	}
+
+	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_CLS);
+	if (chan == NULL) {
+		LOG_ERR("Connectionless data channel %u not found", BT_L2CAP_CID_CLS);
+		return -ENOTCONN;
+	}
+
+	mtu = BR_CHAN(chan)->tx.mtu - sizeof(psm);
+	if (buf->len > mtu) {
+		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, mtu);
+		return -EMSGSIZE;
+	}
+
+	net_buf_push_le16(buf, psm);
+
+	return bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_CLS, buf, NULL, NULL);
+}
+
+static struct bt_l2cap_br_chan bt_l2cap_br_cls_pool[CONFIG_BT_MAX_CONN];
+
+static void l2cap_br_cls_connected(struct bt_l2cap_chan *chan)
+{
+	LOG_DBG("ch %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
+}
+
+static void l2cap_br_cls_disconnected(struct bt_l2cap_chan *chan)
+{
+	LOG_DBG("ch %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
+}
+
+static int l2cap_br_cls_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct bt_conn *conn;
+	uint16_t psm;
+	struct bt_l2cap_br_cls_cb *cb;
+
+	if (buf->len < sizeof(psm)) {
+		LOG_ERR("Invalid buffer length for CLS receive");
+		return -EINVAL;
+	}
+
+	conn = chan->conn;
+	psm = net_buf_pull_le16(buf);
+
+	/* Iterate through registered CLS callbacks to find matching PSM */
+	SYS_SLIST_FOR_EACH_CONTAINER(&br_cls_cbs, cb, _node) {
+		if ((cb->psm == 0) || (cb->psm == psm)) {
+			/* Found matching PSM, call registered callback */
+			if ((conn->sec_level >= cb->sec_level) && (cb->recv != NULL)) {
+				cb->recv(conn, psm, buf);
+			} else {
+				LOG_WRN("No matching sec level (%u < %u)", conn->sec_level,
+					cb->sec_level);
+			}
+		} else {
+			LOG_DBG("Ignore the received CLS data, no matching PSM");
+		}
+	}
+	return 0;
+}
+
+static int l2cap_br_cls_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+{
+	struct bt_l2cap_br_chan *br_chan;
+	uint8_t index;
+	static const struct bt_l2cap_chan_ops ops = {
+		.connected = l2cap_br_cls_connected,
+		.disconnected = l2cap_br_cls_disconnected,
+		.recv = l2cap_br_cls_recv,
+	};
+
+	LOG_DBG("conn %p handle %u", conn, conn->handle);
+
+
+	index = bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_l2cap_br_pool), "Invalid ACL conn index");
+
+	br_chan = &bt_l2cap_br_cls_pool[index];
+
+	br_chan->chan.ops = &ops;
+	br_chan->rx.mtu = BT_L2CAP_RX_MTU - BT_L2CAP_CLS_SDU_HDR_SIZE;
+	br_chan->tx.mtu = L2CAP_BR_MIN_MTU;
+	*chan = &br_chan->chan;
+	atomic_set(br_chan->flags, 0);
+	return 0;
+}
+
+BT_L2CAP_BR_CHANNEL_DEFINE(br_fixed_chan_cls, BT_L2CAP_CID_CLS, l2cap_br_cls_accept);
+#endif /* CONFIG_BT_L2CAP_CLS */
