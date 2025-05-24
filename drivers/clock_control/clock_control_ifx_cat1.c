@@ -301,8 +301,6 @@ static cy_rslt_t _configure_path_mux(cyhal_clock_t *clock_obj, cyhal_clock_t *cl
 {
 	cy_rslt_t rslt;
 
-	ARG_UNUSED(clock_source_obj);
-
 	rslt = cyhal_clock_reserve(clock_obj, reserve_obj);
 
 	if (rslt == CY_RSLT_SUCCESS) {
@@ -335,11 +333,9 @@ static cy_rslt_t _configure_clk_hf(cyhal_clock_t *clock_obj, cyhal_clock_t *cloc
 }
 
 static cy_rslt_t _configure_clk_frequency_and_enable(cyhal_clock_t *clock_obj,
-						     cyhal_clock_t *clock_source_obj,
 						     const cyhal_clock_t *reserve_obj,
 						     uint32_t frequency)
 {
-	ARG_UNUSED(clock_source_obj);
 	cy_rslt_t rslt;
 
 	rslt = cyhal_clock_reserve(clock_obj, reserve_obj);
@@ -555,8 +551,7 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_FLL0].obj.cyhal_clock;
 	frequency = DT_PROP(DT_NODELABEL(fll0), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_FLL, frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_FLL, frequency);
 	if (rslt) {
 		return -EIO;
 	}
@@ -567,8 +562,7 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL0].obj.cyhal_clock;
 	frequency = DT_PROP(DT_NODELABEL(pll0), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_PLL[0], frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL[0], frequency);
 
 	if (rslt) {
 		return -EIO;
@@ -580,8 +574,7 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PLL1].obj.cyhal_clock;
 	frequency = DT_PROP(DT_NODELABEL(pll1), clock_frequency);
 
-	rslt = _configure_clk_frequency_and_enable(clock_obj, clock_source_obj,
-						   &CYHAL_CLOCK_PLL[1], frequency);
+	rslt = _configure_clk_frequency_and_enable(clock_obj, &CYHAL_CLOCK_PLL[1], frequency);
 	if (rslt) {
 		return -EIO;
 	}
