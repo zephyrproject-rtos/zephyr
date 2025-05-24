@@ -10,10 +10,11 @@ building Zephyr applications needed by multiple commands.
 See build.py for the build command itself.
 '''
 
-import zcmake
 import os
 import sys
 from pathlib import Path
+
+import zcmake
 from west import log
 from west.configuration import config
 from west.util import escapes_directory
@@ -22,7 +23,7 @@ from west.util import escapes_directory
 # twister also uses the implementation
 script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(script_dir, "pylib/build_helpers/"))
-from domains import Domains
+from domains import Domains  # noqa: E402
 
 DEFAULT_BUILD_DIR = 'build'
 '''Name of the default Zephyr build directory.'''
@@ -30,11 +31,11 @@ DEFAULT_BUILD_DIR = 'build'
 DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
-FIND_BUILD_DIR_DESCRIPTION = '''\
-If the build directory is not given, the default is {}/ unless the
+FIND_BUILD_DIR_DESCRIPTION = f'''\
+If the build directory is not given, the default is {DEFAULT_BUILD_DIR}/ unless the
 build.dir-fmt configuration variable is set. The current directory is
 checked after that. If either is a Zephyr build directory, it is used.
-'''.format(DEFAULT_BUILD_DIR)
+'''
 
 def _resolve_build_dir(fmt, guess, cwd, **kwargs):
     # Remove any None values, we do not want 'None' as a string
@@ -100,14 +101,14 @@ def find_build_dir(dir, guess=False, **kwargs):
         cwd = os.getcwd()
         default = config.get('build', 'dir-fmt', fallback=DEFAULT_BUILD_DIR)
         default = _resolve_build_dir(default, guess, cwd, **kwargs)
-        log.dbg('config dir-fmt: {}'.format(default), level=log.VERBOSE_EXTREME)
+        log.dbg(f'config dir-fmt: {default}', level=log.VERBOSE_EXTREME)
         if default and is_zephyr_build(default):
             build_dir = default
         elif is_zephyr_build(cwd):
             build_dir = cwd
         else:
             build_dir = default
-    log.dbg('build dir: {}'.format(build_dir), level=log.VERBOSE_EXTREME)
+    log.dbg(f'build dir: {build_dir}', level=log.VERBOSE_EXTREME)
     if build_dir:
         return os.path.abspath(build_dir)
     else:
