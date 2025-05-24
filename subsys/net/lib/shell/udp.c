@@ -191,6 +191,7 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t port;
 	uint8_t *payload = NULL;
 	int ret;
+	struct net_context *send_ctx = NULL;
 
 	struct net_if *iface;
 	struct sockaddr addr;
@@ -210,11 +211,6 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (udp_ctx && net_context_is_used(udp_ctx)) {
-		PR_WARNING("Network context already in use\n");
-		return -EALREADY;
-	}
-
 	memset(&addr, 0, sizeof(addr));
 	ret = net_ipaddr_parse(host, strlen(host), &addr);
 	if (ret < 0) {
@@ -222,11 +218,15 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
-			      &udp_ctx);
-	if (ret < 0) {
-		PR_WARNING("Cannot get UDP context (%d)\n", ret);
-		return ret;
+	/* Re-use already bound context if possible, or allocate temporary one. */
+	if (udp_ctx && net_context_is_used(udp_ctx)) {
+		send_ctx = udp_ctx;
+	} else {
+		ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP, &send_ctx);
+		if (ret < 0) {
+			PR_WARNING("Cannot get UDP context (%d)\n", ret);
+			return ret;
+		}
 	}
 
 	udp_shell = sh;
@@ -253,16 +253,16 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		goto release_ctx;
 	}
 
-	net_context_set_iface(udp_ctx, iface);
+	net_context_set_iface(send_ctx, iface);
 
-	ret = net_context_recv(udp_ctx, udp_rcvd, K_NO_WAIT, NULL);
+	ret = net_context_recv(send_ctx, udp_rcvd, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		PR_WARNING("Setting rcv callback failed (%d)\n", ret);
 		goto release_ctx;
 	}
 
-	ret = net_context_sendto(udp_ctx, payload, strlen(payload), &addr,
-				 addrlen, udp_sent, K_FOREVER, NULL);
+	ret = net_context_sendto(send_ctx, payload, strlen(payload), &addr, addrlen, udp_sent,
+				 K_FOREVER, NULL);
 	if (ret < 0) {
 		PR_WARNING("Sending packet failed (%d)\n", ret);
 		goto release_ctx;
@@ -274,9 +274,11 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 release_ctx:
-	ret = net_context_put(udp_ctx);
-	if (ret < 0) {
-		PR_WARNING("Cannot put UDP context (%d)\n", ret);
+	if (send_ctx && (send_ctx != udp_ctx)) {
+		ret = net_context_put(send_ctx);
+		if (ret < 0) {
+			PR_WARNING("Cannot put UDP context (%d)\n", ret);
+		}
 	}
 
 	return 0;
