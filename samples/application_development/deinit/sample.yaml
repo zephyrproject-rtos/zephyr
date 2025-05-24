@@ -1,0 +1,11 @@
+sample:
+  name: Device deinit
+tests:
+  sample.application_development.deinit:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "sample complete"
