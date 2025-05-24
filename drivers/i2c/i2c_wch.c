@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(i2c_wch);
 
 #include "i2c-priv.h"
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 typedef void (*irq_config_func_t)(const struct device *port);
 
