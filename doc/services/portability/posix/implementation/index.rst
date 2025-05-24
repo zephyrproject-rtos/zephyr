@@ -67,7 +67,6 @@ Some general design considerations:
        libzfoo [fillcolor="#dae8fc"];
        libcommon [fillcolor="#f8cecc"];
 
-       libposix -> libzfoo;
        libposix -> libcommon;
        libzfoo -> libcommon;
    }
