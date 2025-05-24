@@ -11,7 +11,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 /* Each of the 4 channels uses 1 byte of CHCTLR{1,2} */
 #define CHCTLR_CHANNEL_MASK    0xFF
