@@ -1,0 +1,24 @@
+#
+# Copyright 2022-2025 NXP
+# Copyright (c) 2025 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: ubx_evk_iris_w1/rw612
+name: EVK-IRIS-W1-RW612
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 960
+flash: 65536
+supported:
+  - gpio
+  - i2c
+  - spi
+  - dma
+  - watchdog
+  - pwm
+  - hwinfo
+vendor: u-blox
