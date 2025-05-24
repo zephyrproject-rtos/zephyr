@@ -197,30 +197,25 @@ uint32_t z_nrf_rtc_timer_compare_read(int32_t chan)
 
 uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
 {
-	uint64_t curr_time;
-	int64_t curr_tick;
-	int64_t result;
 	int64_t abs_ticks;
-
-	do {
-		curr_time = z_nrf_rtc_timer_read();
-		curr_tick = sys_clock_tick_get();
-	} while (curr_time != z_nrf_rtc_timer_read());
 
 	abs_ticks = Z_TICK_ABS(t.ticks);
 	if (Z_IS_TIMEOUT_RELATIVE(t)) {
 		return (t.ticks > COUNTER_SPAN) ?
-			-EINVAL : (curr_time + t.ticks);
+			-EINVAL : (z_nrf_rtc_timer_read() + t.ticks * CYC_PER_TICK);
 	}
 
 	/* absolute timeout */
-	result = abs_ticks - curr_tick;
-
-	if (result > COUNTER_SPAN) {
+	/* abs_ticks is int64_t so it has 63 bits. If CYC_PER_TICK is <=2 then
+	 * any abs_ticks will fit in 64 bits after multiplying by CYC_PER_TICK
+	 * but if CYC_PER_TICK is higher then it is possible that abs_ticks cannot
+	 * be converted to RTC ticks and check for overflow is needed.
+	 */
+	if ((CYC_PER_TICK > 2) && (abs_ticks > (UINT64_MAX / CYC_PER_TICK))) {
 		return -EINVAL;
 	}
 
-	return curr_time + result;
+	return abs_ticks * CYC_PER_TICK;
 }
 
 /** @brief Function safely sets an alarm.
