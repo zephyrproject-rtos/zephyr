@@ -63,7 +63,6 @@ LOG_MODULE_REGISTER(bt_sdp);
 
 struct bt_sdp {
 	struct bt_l2cap_br_chan chan;
-	struct k_fifo           partial_resp_queue;
 	/* TODO: Allow more than one pending request */
 };
 
@@ -165,11 +164,9 @@ static void bt_sdp_connected(struct bt_l2cap_chan *chan)
 						   struct bt_l2cap_br_chan,
 						   chan);
 
-	struct bt_sdp *sdp = CONTAINER_OF(ch, struct bt_sdp, chan);
+	struct bt_sdp *sdp __unused = CONTAINER_OF(ch, struct bt_sdp, chan);
 
 	LOG_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
-
-	k_fifo_init(&sdp->partial_resp_queue);
 }
 
 /** @brief Callback for SDP disconnection
@@ -186,11 +183,9 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
 						   struct bt_l2cap_br_chan,
 						   chan);
 
-	struct bt_sdp *sdp = CONTAINER_OF(ch, struct bt_sdp, chan);
+	struct bt_sdp *sdp __unused = CONTAINER_OF(ch, struct bt_sdp, chan);
 
 	LOG_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
-
-	(void)memset(sdp, 0, sizeof(*sdp));
 }
 
 /* @brief Creates an SDP PDU
