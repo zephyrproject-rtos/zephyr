@@ -680,8 +680,7 @@ static void init(void)
 		.rank = 1,
 		.lockable = true,
 		/* Using the CSIP_SET_MEMBER test sample SIRK */
-		.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-			  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+		.sirk = TEST_SAMPLE_SIRK,
 	};
 	static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 		BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
