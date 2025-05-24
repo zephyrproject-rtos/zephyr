@@ -38,6 +38,15 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+#if defined(CONFIG_RISCV_HAS_PLIC) && defined(CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT)
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#define WA_TX_IRQ_SW_SOLUTION	1 /* support set_pending     */
+#else
+#define WA_TX_IRQ_SW_SOLUTION	0 /* not support set_pending */
+#endif
+#endif
+
 #include <zephyr/drivers/serial/uart_ns16550.h>
 #include <zephyr/logging/log.h>
 
@@ -367,6 +376,11 @@ struct uart_ns16550_dev_data {
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
 	uart_irq_callback_user_data_t cb;  /**< Callback function pointer */
 	void *cb_data;	/**< Callback function arg */
+#endif
+
+#ifdef WA_TX_IRQ_SW_SOLUTION
+	uint32_t irq_num;
+	uint8_t sw_tx_irq; /**< software tx ready flag */
 #endif
 
 #if UART_NS16550_DLF_ENABLED
@@ -933,6 +947,10 @@ static void uart_ns16550_poll_out(const struct device *dev,
 
 	ns16550_outbyte(dev_cfg, THR(dev), c);
 
+#ifdef WA_TX_IRQ_SW_SOLUTION
+	data->sw_tx_irq = 0; /**< clean up */
+#endif
+
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -979,6 +997,12 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 	for (i = 0; (i < size) && (i < data->fifo_size); i++) {
 		ns16550_outbyte(dev_cfg, THR(dev), tx_data[i]);
 	}
+
+#ifdef WA_TX_IRQ_SW_SOLUTION
+	if (i != 0) {
+		data->sw_tx_irq = 0; /**< clean up */
+	}
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1042,6 +1066,34 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 #endif
 	ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) | IER_TBE);
 
+#ifdef WA_TX_IRQ_SW_SOLUTION
+	if (ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_THRE) {
+#if WA_TX_IRQ_SW_SOLUTION
+		/*
+		 * The TX FIFO ready interrupt will be triggered if only if when the
+		 * pre-state is not empty. Thus, if the pre-state is already empty, try
+		 * to trigger a software interrupt to workaroudn it.
+		 */
+		data->sw_tx_irq = 1; /**< set tx ready */
+		riscv_plic_irq_set_pending(data->irq_num);
+#else
+		k_spin_unlock(&data->lock, key);
+		/*
+		 * Manually triggered interrupt is not supported.
+		 * To call the callback routine directly to instead it.
+		 */
+		int irq_lock_key = arch_irq_lock();
+
+		if (data->cb && (ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_THRE)) {
+			data->sw_tx_irq = 1; /**< set tx ready */
+			data->cb(dev, data->cb_data);
+		}
+		arch_irq_unlock(irq_lock_key);
+		return;
+#endif
+	}
+#endif /* WA_TX_IRQ_SW_SOLUTION */
+
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -1055,6 +1107,10 @@ static void uart_ns16550_irq_tx_disable(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+#ifdef WA_TX_IRQ_SW_SOLUTION
+	data->sw_tx_irq = 0; /**< clean up */
+#endif
 
 	ns16550_outbyte(dev_cfg, IER(dev),
 			ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_TBE));
@@ -1095,6 +1151,17 @@ static int uart_ns16550_irq_tx_ready(const struct device *dev)
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_THRE) ? 1 : 0;
+
+#ifdef WA_TX_IRQ_SW_SOLUTION
+	if (ret == 0 && data->sw_tx_irq) {
+		/**< replace resoult when there is a software solution */
+		const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+		if (ns16550_inbyte(dev_cfg, IER(dev)) & IER_TBE) {
+			ret = 1;
+		}
+	}
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1963,6 +2030,7 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, dlf),                            \
 			(.dlf = DT_INST_PROP_OR(n, dlf, 0),))			     \
 		DEV_DATA_ASYNC(n)						     \
+		IF_ENABLED(WA_TX_IRQ_SW_SOLUTION, (.irq_num = DT_INST_IRQN(n),))     \
 
 #define UART_NS16550_DEVICE_IO_MMIO_INIT(n)                                          \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \
