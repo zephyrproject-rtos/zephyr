@@ -3,6 +3,8 @@ common:
     - test_framework
   platform_type:
     - qemu
+  platform_key:
+    - arch
 tests:
   testing.ztest.ztress:
     integration_platforms:
