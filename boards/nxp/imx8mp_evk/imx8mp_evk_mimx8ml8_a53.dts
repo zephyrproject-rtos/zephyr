@@ -38,6 +38,22 @@
 		reg = <0xc0000000 DT_SIZE_M(1)>;
 	};
 
+	can_phy1: can-phy1{
+		compatible = "nxp,tja1048", "can-transceiver-gpio";
+		standby-gpios = <&gpio5 5 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "disabled";
+	};
+
+	can_phy2: can-phy2{
+		compatible = "nxp,tja1048", "can-transceiver-gpio";
+		enable-gpios = <&gpio_exp1 3 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpio4 27 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &enet {
@@ -62,6 +78,20 @@
 		reg = <1>;
 		status = "okay";
 	};
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default &flexcan1_stdby>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
+	status = "disabled";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default &flexcan2_stdby>;
+	pinctrl-names = "default";
+	phys = <&can_phy2>;
+	status = "disabled";
 };
 
 &uart4 {
