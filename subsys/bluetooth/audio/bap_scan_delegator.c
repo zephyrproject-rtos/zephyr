@@ -1072,6 +1072,7 @@ static int scan_delegator_broadcast_code(struct bt_conn *conn,
 					 struct net_buf_simple *buf)
 {
 	struct bass_recv_state_internal *internal_state;
+	struct bt_bap_scan_delegator_recv_state *state;
 	uint8_t src_id;
 	const uint8_t *broadcast_code;
 
@@ -1096,6 +1097,12 @@ static int scan_delegator_broadcast_code(struct bt_conn *conn,
 
 	LOG_DBG("Index %u: broadcast code added: %s", internal_state->index,
 		bt_hex(internal_state->broadcast_code, sizeof(internal_state->broadcast_code)));
+
+	state = &internal_state->state;
+
+	if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
+		state->encrypt_state = BT_BAP_BIG_ENC_STATE_DEC;
+	}
 
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->broadcast_code != NULL) {
