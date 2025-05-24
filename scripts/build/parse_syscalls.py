@@ -127,8 +127,11 @@ def analyze_headers(include_dir, scan_dir, file_list):
         try:
             to_emit = syscall_files[one_file]["emit"] | args.emit_all_syscalls
 
-            syscall_result = [(mo.groups(), fn, to_emit)
-                              for mo in syscall_regex.finditer(contents)]
+            syscall_result = []
+            for mo in syscall_regex.finditer(contents):
+                groups = mo.groups()
+                groups = [re.sub(r'\s+', ' ', group) for group in groups]
+                syscall_result.append((groups, fn, to_emit,))
             for tag in struct_tags:
                 tagged_struct_update(tagged_ret[tag], tag, contents)
         except Exception:
