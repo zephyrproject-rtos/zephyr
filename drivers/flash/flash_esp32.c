@@ -113,6 +113,26 @@ static bool flash_esp32_is_aligned(off_t address, void *buffer, size_t length)
 }
 #endif
 
+bool aligned_flash_read_(off_t address, void *buffer, size_t length, bool read_encrypted)
+{
+	int ret = 0;
+
+	if (read_encrypted) {
+		LOG_INF("Flash read ENCRYPTED - address 0x%lx size 0x%x", address, length);
+		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
+	} else {
+		LOG_INF("Flash read RAW - address 0x%lx size 0x%x", address, length);
+		ret = esp_flash_read(NULL, buffer, address, length);
+	}
+
+	if (ret != 0) {
+		LOG_ERR("Flash read error: %d", ret);
+		return false;
+	}
+
+	return true;
+}
+
 static int flash_esp32_read_check_enc(off_t address, void *buffer, size_t length)
 {
 	int ret = 0;
