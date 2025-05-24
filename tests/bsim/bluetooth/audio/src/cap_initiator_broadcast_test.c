@@ -248,25 +248,6 @@ static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	}
 }
 
-static void start_extended_adv(struct bt_le_ext_adv *adv)
-{
-	int err;
-
-	/* Start extended advertising */
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		FAIL("Failed to start extended advertising: %d\n", err);
-		return;
-	}
-
-	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(adv);
-	if (err) {
-		FAIL("Failed to enable periodic advertising: %d\n", err);
-		return;
-	}
-}
-
 static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 {
 	int err;
@@ -662,7 +643,7 @@ static void test_main_cap_initiator_broadcast(void)
 
 	setup_extended_adv_data(broadcast_source, adv);
 
-	start_extended_adv(adv);
+	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
@@ -708,7 +689,7 @@ static void test_main_cap_initiator_broadcast_inval(void)
 
 	setup_extended_adv_data(broadcast_source, adv);
 
-	start_extended_adv(adv);
+	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
@@ -754,7 +735,7 @@ static void test_main_cap_initiator_broadcast_update(void)
 
 	setup_extended_adv_data(broadcast_source, adv);
 
-	start_extended_adv(adv);
+	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
@@ -848,7 +829,7 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 
 	test_broadcast_audio_start(broadcast_source, adv);
 	setup_extended_adv_data(broadcast_source, adv);
-	start_extended_adv(adv);
+	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
