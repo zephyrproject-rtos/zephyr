@@ -48,6 +48,7 @@ struct mcux_lpadc_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	int32_t ref_supply_val;
+	int temperature_channel;
 };
 
 struct mcux_lpadc_data {
@@ -225,10 +226,18 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		}
 	} else if (channel_cfg->reference == ADC_REF_EXTERNAL0) {
 		LOG_DBG("ref external0");
+	} else if (channel_cfg->reference == ADC_REF_INTERNAL) {
+		LOG_DBG("ref internal");
 	} else {
 		LOG_DBG("ref not support");
 		return -EINVAL;
 	}
+
+# if defined(FSL_FEATURE_LPADC_HAS_INTERNAL_TEMP_SENSOR)
+	if (channel_num == config->temperature_channel) {
+		cmd->loopCount = FSL_FEATURE_LPADC_TEMP_SENS_BUFFER_SIZE - 1U;
+	}
+#endif
 
 	cmd->channelNumber = channel_num;
 	return 0;
@@ -580,6 +589,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 						DT_INST_NODE_HAS_PROP(n, nxp_references),\
 						(DT_PHA(DT_DRV_INST(n), nxp_references, vref_mv)), \
 						(0)),\
+		.temperature_channel = DT_INST_PROP_OR(n, nxp_temperature_channel, -1),	\
 	};									\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\
 		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),	\
