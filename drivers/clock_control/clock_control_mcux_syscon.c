@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2024 NXP
+ * Copyright 2020-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -621,11 +621,59 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	}
 }
 
+static int mcux_lpc_syscon_clock_control_configure(const struct device *dev,
+						   clock_control_subsys_t sub_system, void *data)
+{
+#ifdef CONFIG_SOC_SERIES_RW6XX
+#define FLEXCOMM_LP_CLK_DECODE(n) (n & 0x80)
+	uint32_t clock_name = (uint32_t)sub_system;
+	int flexcomm_num = -1;
+
+	switch (clock_name) {
+	case MCUX_FLEXCOMM0_CLK:
+	case MCUX_FLEXCOMM0_LP_CLK:
+		flexcomm_num = 0;
+		break;
+	case MCUX_FLEXCOMM1_CLK:
+	case MCUX_FLEXCOMM1_LP_CLK:
+		flexcomm_num = 1;
+		break;
+	case MCUX_FLEXCOMM2_CLK:
+	case MCUX_FLEXCOMM2_LP_CLK:
+		flexcomm_num = 2;
+		break;
+	case MCUX_FLEXCOMM3_CLK:
+	case MCUX_FLEXCOMM3_LP_CLK:
+		flexcomm_num = 3;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if (flexcomm_num >= 0) {
+		static uint32_t frgclksels[4];
+		static uint32_t frgctls[4];
+
+		if (FLEXCOMM_LP_CLK_DECODE(clock_name)) {
+			frgclksels[flexcomm_num] = CLKCTL1->FLEXCOMM[flexcomm_num].FRGCLKSEL;
+			frgctls[flexcomm_num] = CLKCTL1->FLEXCOMM[flexcomm_num].FRGCTL;
+			CLKCTL1->FLEXCOMM[flexcomm_num].FRGCLKSEL = 0;
+			CLKCTL1->FLEXCOMM[flexcomm_num].FRGCTL = 0;
+		} else {
+			CLKCTL1->FLEXCOMM[flexcomm_num].FRGCLKSEL = frgclksels[flexcomm_num];
+			CLKCTL1->FLEXCOMM[flexcomm_num].FRGCTL = frgctls[flexcomm_num];
+		}
+	}
+#endif
+	return 0;
+}
+
 static DEVICE_API(clock_control, mcux_lpc_syscon_api) = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
 	.get_rate = mcux_lpc_syscon_clock_control_get_subsys_rate,
 	.set_rate = mcux_lpc_syscon_clock_control_set_subsys_rate,
+	.configure = mcux_lpc_syscon_clock_control_configure,
 };
 
 #define LPC_CLOCK_INIT(n)                                                                          \
