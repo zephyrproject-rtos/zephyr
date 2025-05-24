@@ -1,11 +1,13 @@
 /*
  * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2025 GP Orcullo
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <soc_port.h>
+
+#include "pinctrl_sam0_port.h"
 
 /** Utility macro that expands to the PORT port address if it exists */
 #define SAM_PORT_ADDR_OR_NONE(nodelabel)					\
@@ -31,7 +33,7 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	__ASSERT_NO_MSG(port_idx < ARRAY_SIZE(sam_port_addrs));
 	port_func = SAM_PINMUX_FUNC_GET(pin);
 
-	soc_pin.regs = (PortGroup *) sam_port_addrs[port_idx];
+	soc_pin.regs = (uintptr_t)sam_port_addrs[port_idx];
 	soc_pin.pinum = SAM_PINMUX_PIN_GET(pin);
 	soc_pin.flags = SAM_PINCTRL_FLAGS_GET(pin) << SOC_PORT_FLAGS_POS;
 

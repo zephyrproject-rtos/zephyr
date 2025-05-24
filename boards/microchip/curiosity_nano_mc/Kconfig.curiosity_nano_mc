@@ -1,0 +1,5 @@
+# Copyright (c) 2025 GP Orcullo
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CURIOSITY_NANO_MC
+	select SOC_PIC32CM1216MC00032

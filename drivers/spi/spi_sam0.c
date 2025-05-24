@@ -21,13 +21,13 @@ LOG_MODULE_REGISTER(spi_sam0);
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
-#ifndef SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val
-#define SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val (0x3)
-#endif
+#include "spi_sam0.h"
+
+#define CTRLA_MODE_SPI_MASTER 0x3
 
 /* Device constant configuration parameters */
 struct spi_sam0_config {
-	SercomSpi *regs;
+	uintptr_t regs;
 	uint32_t pads;
 	const struct pinctrl_dev_config *pcfg;
 
@@ -54,18 +54,16 @@ struct spi_sam0_data {
 #endif
 };
 
-static void wait_synchronization(SercomSpi *regs)
+static void wait_synchronization(uintptr_t regs)
 {
-#if defined(SERCOM_SPI_SYNCBUSY_MASK)
+#ifndef CONFIG_SOC_SERIES_SAMD20
 	/* SYNCBUSY is a register */
-	while ((regs->SYNCBUSY.reg & SERCOM_SPI_SYNCBUSY_MASK) != 0) {
-	}
-#elif defined(SERCOM_SPI_STATUS_SYNCBUSY)
-	/* SYNCBUSY is a bit */
-	while ((regs->STATUS.reg & SERCOM_SPI_STATUS_SYNCBUSY) != 0) {
+	while ((sys_read32(regs + SYNCBUSY_OFFSET) & SYNCBUSY_MASK) != 0) {
 	}
 #else
-#error Unsupported device
+	/* SYNCBUSY is a bit */
+	while (sys_test_bit(regs + STATUS_OFFSET, STATUS_SYNCBUSY_BIT)) {
+	}
 #endif
 }
 
@@ -74,9 +72,9 @@ static int spi_sam0_configure(const struct device *dev,
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
-	SercomSpi *regs = cfg->regs;
-	SERCOM_SPI_CTRLA_Type ctrla = {.reg = 0};
-	SERCOM_SPI_CTRLB_Type ctrlb = {.reg = 0};
+	uintptr_t regs = cfg->regs;
+	uint32_t ctrla = 0;
+	uint32_t ctrlb = 0;
 	int div;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -93,53 +91,53 @@ static int spi_sam0_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ctrla.bit.MODE = SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val;
+	ctrla = CTRLA_MODE(CTRLA_MODE_SPI_MASTER);
 
 	if ((config->operation & SPI_TRANSFER_LSB) != 0U) {
-		ctrla.bit.DORD = 1;
+		WRITE_BIT(ctrla, CTRLA_DORD_BIT, 1);
 	}
 
 	if ((config->operation & SPI_MODE_CPOL) != 0U) {
-		ctrla.bit.CPOL = 1;
+		WRITE_BIT(ctrla, CTRLA_CPOL_BIT, 1);
 	}
 
 	if ((config->operation & SPI_MODE_CPHA) != 0U) {
-		ctrla.bit.CPHA = 1;
+		WRITE_BIT(ctrla, CTRLA_CPHA_BIT, 1);
 	}
 
-	ctrla.reg |= cfg->pads;
+	ctrla |= cfg->pads;
 
 	if ((config->operation & SPI_MODE_LOOP) != 0U) {
 		/* Put MISO and MOSI on the same pad */
-		ctrla.bit.DOPO = 0;
-		ctrla.bit.DIPO = 0;
+		ctrla &= ~(CTRLA_DOPO_MASK | CTRLA_DIPO_MASK);
 	}
 
-	ctrla.bit.ENABLE = 1;
-	ctrlb.bit.RXEN = 1;
+	WRITE_BIT(ctrla, CTRLA_ENABLE_BIT, 1);
+	WRITE_BIT(ctrlb, CTRLB_RXEN_BIT, 1);
 
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
 		return -ENOTSUP;
 	}
 
 	/* 8 bits per transfer */
-	ctrlb.bit.CHSIZE = 0;
+	ctrlb &= ~CTRLB_CHSIZE_MASK;
 
 	/* Use the requested or next highest possible frequency */
-	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2U - 1;
+	div = (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / config->frequency) / 2U - 1;
 	div = CLAMP(div, 0, UINT8_MAX);
 
 	/* Update the configuration only if it has changed */
-	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg ||
-	    regs->BAUD.reg != div) {
-		regs->CTRLA.bit.ENABLE = 0;
+	if (sys_read32(regs + CTRLA_OFFSET) != ctrla ||
+			sys_read32(regs + CTRLB_OFFSET) != ctrlb ||
+			sys_read8(regs + BAUD_OFFSET) != div) {
+		sys_clear_bit(regs + CTRLA_OFFSET, CTRLA_ENABLE_BIT);
 		wait_synchronization(regs);
 
-		regs->CTRLB = ctrlb;
+		sys_write32(ctrlb, regs + CTRLB_OFFSET);
 		wait_synchronization(regs);
-		regs->BAUD.reg = div;
+		sys_write8(div, regs + BAUD_OFFSET);
 		wait_synchronization(regs);
-		regs->CTRLA = ctrla;
+		sys_write32(ctrla, regs + CTRLA_OFFSET);
 		wait_synchronization(regs);
 	}
 
@@ -153,7 +151,7 @@ static bool spi_sam0_transfer_ongoing(struct spi_sam0_data *data)
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-static void spi_sam0_shift_master(SercomSpi *regs, struct spi_sam0_data *data)
+static void spi_sam0_shift_master(uintptr_t regs, struct spi_sam0_data *data)
 {
 	uint8_t tx;
 	uint8_t rx;
@@ -164,16 +162,16 @@ static void spi_sam0_shift_master(SercomSpi *regs, struct spi_sam0_data *data)
 		tx = 0U;
 	}
 
-	while (!regs->INTFLAG.bit.DRE) {
+	while (!(sys_read8(regs + INTFLAG_OFFSET) & INTFLAG_DRE)) {
 	}
 
-	regs->DATA.reg = tx;
+	sys_write8(tx, regs + DATA_OFFSET);
 	spi_context_update_tx(&data->ctx, 1, 1);
 
-	while (!regs->INTFLAG.bit.RXC) {
+	while (!(sys_read8(regs + INTFLAG_OFFSET) & INTFLAG_RXC)) {
 	}
 
-	rx = regs->DATA.reg;
+	rx = sys_read8(regs + DATA_OFFSET);
 
 	if (spi_context_rx_buf_on(&data->ctx)) {
 		*data->ctx.rx_buf = rx;
@@ -182,18 +180,18 @@ static void spi_sam0_shift_master(SercomSpi *regs, struct spi_sam0_data *data)
 }
 
 /* Finish any ongoing writes and drop any remaining read data */
-static void spi_sam0_finish(SercomSpi *regs)
+static void spi_sam0_finish(uintptr_t regs)
 {
-	while (!regs->INTFLAG.bit.TXC) {
+	while (!(sys_read8(regs + INTFLAG_OFFSET) & INTFLAG_TXC)) {
 	}
 
-	while (regs->INTFLAG.bit.RXC) {
-		(void)regs->DATA.reg;
+	while (sys_read8(regs + INTFLAG_OFFSET) & INTFLAG_RXC) {
+		(void)sys_read8(regs + DATA_OFFSET);
 	}
 }
 
 /* Fast path that transmits a buf */
-static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
+static void spi_sam0_fast_tx(uintptr_t regs, const struct spi_buf *tx_buf)
 {
 	const uint8_t *p = tx_buf->buf;
 	const uint8_t *pend = (uint8_t *)tx_buf->buf + tx_buf->len;
@@ -202,17 +200,17 @@ static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 	while (p != pend) {
 		ch = *p++;
 
-		while (!regs->INTFLAG.bit.DRE) {
+		while (!(sys_read8(regs + INTFLAG_OFFSET) & INTFLAG_DRE)) {
 		}
 
-		regs->DATA.reg = ch;
+		sys_write8(ch, regs + DATA_OFFSET);
 	}
 
 	spi_sam0_finish(regs);
 }
 
 /* Fast path that reads into a buf */
-static void spi_sam0_fast_rx(SercomSpi *regs, const struct spi_buf *rx_buf)
+static void spi_sam0_fast_rx(uintptr_t regs, const struct spi_buf *rx_buf)
 {
 	uint8_t *rx = rx_buf->buf;
 	int len = rx_buf->len;
@@ -223,20 +221,20 @@ static void spi_sam0_fast_rx(SercomSpi *regs, const struct spi_buf *rx_buf)
 
 	while (len) {
 		/* Send the next byte */
-		regs->DATA.reg = 0;
+		sys_write8(0, regs + DATA_OFFSET);
 		len--;
 
 		/* Wait for completion, and read */
-		while (!regs->INTFLAG.bit.RXC) {
+		while (!(sys_read8(regs + INTFLAG_OFFSET) & INTFLAG_RXC)) {
 		}
-		*rx++ = regs->DATA.reg;
+		*rx++ = sys_read8(regs + DATA_OFFSET);
 	}
 
 	spi_sam0_finish(regs);
 }
 
 /* Fast path that writes and reads bufs of the same length */
-static void spi_sam0_fast_txrx(SercomSpi *regs,
+static void spi_sam0_fast_txrx(uintptr_t regs,
 			       const struct spi_buf *tx_buf,
 			       const struct spi_buf *rx_buf)
 {
@@ -251,12 +249,12 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 
 	while (tx != txend) {
 		/* Send the next byte */
-		regs->DATA.reg = *tx++;
+		sys_write8(*tx++, regs + DATA_OFFSET);
 
 		/* Wait for completion, and read */
-		while (!regs->INTFLAG.bit.RXC) {
+		while (!(sys_read8(regs + INTFLAG_OFFSET) & INTFLAG_RXC)) {
 		}
-		*rx++ = regs->DATA.reg;
+		*rx++ = sys_read8(regs + DATA_OFFSET);
 	}
 
 	spi_sam0_finish(regs);
@@ -271,7 +269,7 @@ static void spi_sam0_fast_transceive(const struct device *dev,
 	const struct spi_sam0_config *cfg = dev->config;
 	size_t tx_count = 0;
 	size_t rx_count = 0;
-	SercomSpi *regs = cfg->regs;
+	uintptr_t regs = cfg->regs;
 	const struct spi_buf *tx = NULL;
 	const struct spi_buf *rx = NULL;
 
@@ -357,7 +355,7 @@ static int spi_sam0_transceive(const struct device *dev,
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
-	SercomSpi *regs = cfg->regs;
+	uintptr_t regs = cfg->regs;
 	int err;
 
 	spi_context_lock(&data->ctx, false, NULL, NULL, config);
@@ -409,7 +407,7 @@ static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
-	SercomSpi *regs = cfg->regs;
+	uintptr_t regs = cfg->regs;
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_blk = { 0 };
 	int retval;
@@ -434,7 +432,7 @@ static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	dma_blk.source_address = (uint32_t)(&(regs->DATA.reg));
+	dma_blk.source_address = (uint32_t)(regs + DATA_OFFSET);
 	dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 	retval = dma_config(cfg->dma_dev, cfg->rx_dma_channel,
@@ -450,7 +448,7 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config;
-	SercomSpi *regs = cfg->regs;
+	uintptr_t regs = cfg->regs;
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_blk = { 0 };
 	int retval;
@@ -473,7 +471,7 @@ static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	}
 
-	dma_blk.dest_address = (uint32_t)(&(regs->DATA.reg));
+	dma_blk.dest_address = (uint32_t)(regs + DATA_OFFSET);
 	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 	retval = dma_config(cfg->dma_dev, cfg->tx_dma_channel,
@@ -643,22 +641,24 @@ static int spi_sam0_init(const struct device *dev)
 {
 	int err;
 	const struct spi_sam0_config *cfg = dev->config;
+	const uintptr_t gclk = DT_REG_ADDR(DT_INST(0, atmel_sam0_gclk));
 	struct spi_sam0_data *data = dev->data;
-	SercomSpi *regs = cfg->regs;
+	uintptr_t regs = cfg->regs;
 
 	*cfg->mclk |= cfg->mclk_mask;
 
-#ifdef MCLK
-	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
-					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
+#if !defined(CONFIG_SOC_SERIES_SAMD20) && !defined(CONFIG_SOC_SERIES_SAMD21) &&                    \
+	!defined(CONFIG_SOC_SERIES_SAMR21)
+
+	sys_write32(PCHCTRL_CHEN | PCHCTRL_GEN(cfg->gclk_gen),
+		    gclk + PCHCTRL_OFFSET + (4 * cfg->gclk_id));
 #else
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN
-			  | GCLK_CLKCTRL_GEN(cfg->gclk_gen)
-			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
+	sys_write16(CLKCTRL_CLKEN | CLKCTRL_GEN(cfg->gclk_gen) | CLKCTRL_ID(cfg->gclk_id),
+		    gclk + CLKCTRL_OFFSET);
 #endif
 
 	/* Disable all SPI interrupts */
-	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
+	sys_write8(INTENCLR_MASK, regs + INTENCLR_OFFSET);
 	wait_synchronization(regs);
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -710,17 +710,34 @@ static DEVICE_API(spi, spi_sam0_driver_api) = {
 #endif
 
 #define SPI_SAM0_SERCOM_PADS(n) \
-	SERCOM_SPI_CTRLA_DIPO(DT_INST_PROP(n, dipo)) | \
-	SERCOM_SPI_CTRLA_DOPO(DT_INST_PROP(n, dopo))
+	CTRLA_DIPO(DT_INST_PROP(n, dipo)) | \
+	CTRLA_DOPO(DT_INST_PROP(n, dopo))
 
-#define ASSIGNED_CLOCKS_CELL_BY_NAME					\
-	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
+#ifndef ATMEL_SAM0_DT_INST_CELL_REG_ADDR_OFFSET
+#define ATMEL_SAM0_DT_INST_CELL_REG_ADDR_OFFSET(n, cell)		\
+	(volatile uint32_t *)						\
+	(DT_REG_ADDR(DT_INST_PHANDLE_BY_NAME(n, clocks, cell)) +	\
+	 DT_INST_CLOCKS_CELL_BY_NAME(n, cell, offset))
+#endif
 
-#ifdef MCLK
+#ifndef ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET
+#define ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n)			\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mclk)),	\
+		(ATMEL_SAM0_DT_INST_CELL_REG_ADDR_OFFSET(n, mclk)),	\
+		(ATMEL_SAM0_DT_INST_CELL_REG_ADDR_OFFSET(n, pm)))
+#endif
+
+#ifndef ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK
+#define ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, cell)			\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mclk)),	\
+		(BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, cell))),	\
+		(BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, cell))))
+#endif
+
 #define SPI_SAM0_DEFINE_CONFIG(n)					\
 static const struct spi_sam0_config spi_sam0_config_##n = {		\
-	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
-	.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+	.regs = DT_INST_REG_ADDR(n),					\
+	.gclk_gen = DT_PHA_BY_NAME(DT_DRV_INST(n), atmel_assigned_clocks, gclk, gen),	\
 	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
 	.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
 	.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
@@ -728,19 +745,6 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	SPI_SAM0_DMA_CHANNELS(n)					\
 }
-#else
-#define SPI_SAM0_DEFINE_CONFIG(n)					\
-static const struct spi_sam0_config spi_sam0_config_##n = {		\
-	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
-	.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
-	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
-	.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
-	.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
-	.pads = SPI_SAM0_SERCOM_PADS(n),				\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-	SPI_SAM0_DMA_CHANNELS(n)					\
-}
-#endif /* MCLK */
 
 #define SPI_SAM0_DEVICE_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
