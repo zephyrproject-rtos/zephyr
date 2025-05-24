@@ -9,6 +9,7 @@
 #include <renesas/r5f513083xfb.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include "rsk_rx130_512kb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Renesas RSK+RX130-512KB KIT";
