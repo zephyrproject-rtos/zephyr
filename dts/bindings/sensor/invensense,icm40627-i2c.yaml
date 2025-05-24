@@ -1,0 +1,8 @@
+# Copyright (c) 2025 PHYTEC America LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM-40627 motion tracking device
+
+compatible: "invensense,icm40627"
+
+include: [i2c-device.yaml, "invensense,icm40627.yaml"]
