@@ -8,9 +8,6 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
-#ifdef NRF_CLOCK
-#include <hal/nrf_clock.h>
-#endif
 #include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 
@@ -19,6 +16,8 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
+
+#include <hal/nrf_clock.h>
 
 /** @brief Clocks handled by the CLOCK peripheral.
  *
