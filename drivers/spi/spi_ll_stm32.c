@@ -1400,75 +1400,6 @@ static inline bool spi_stm32_is_subghzspi(const struct device *dev)
 #endif /* st_stm32_spi_subghz */
 }
 
-static int spi_stm32_init(const struct device *dev)
-{
-	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
-	const struct spi_stm32_config *cfg = dev->config;
-	int err;
-
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
-	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			       (clock_control_subsys_t) &cfg->pclken[0]);
-	if (err < 0) {
-		LOG_ERR("Could not enable SPI clock");
-		return err;
-	}
-
-	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
-		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					      (clock_control_subsys_t) &cfg->pclken[1],
-					      NULL);
-		if (err < 0) {
-			LOG_ERR("Could not select SPI domain clock");
-			return err;
-		}
-	}
-
-	if (!spi_stm32_is_subghzspi(dev)) {
-		/* Configure dt provided device signals when available */
-		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0) {
-			LOG_ERR("SPI pinctrl setup failed (%d)", err);
-			return err;
-		}
-	}
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	cfg->irq_config(dev);
-#endif /* CONFIG_SPI_STM32_INTERRUPT */
-
-#ifdef CONFIG_SPI_STM32_DMA
-	if ((data->dma_rx.dma_dev != NULL) &&
-				!device_is_ready(data->dma_rx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_rx.dma_dev->name);
-		return -ENODEV;
-	}
-
-	if ((data->dma_tx.dma_dev != NULL) &&
-				!device_is_ready(data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_tx.dma_dev->name);
-		return -ENODEV;
-	}
-
-	LOG_DBG("SPI with DMA transfer");
-
-#endif /* CONFIG_SPI_STM32_DMA */
-
-	err = spi_context_cs_configure_all(&data->ctx);
-	if (err < 0) {
-		return err;
-	}
-
-	spi_context_unlock_unconditionally(&data->ctx);
-
-	return pm_device_runtime_enable(dev);
-}
-
-#ifdef CONFIG_PM_DEVICE
 static int spi_stm32_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
@@ -1501,7 +1432,8 @@ static int spi_stm32_pm_action(const struct device *dev,
 			LOG_ERR("Could not disable SPI clock");
 			return err;
 		}
-
+		__fallthrough;
+	case PM_DEVICE_ACTION_TURN_ON:
 		if (!spi_stm32_is_subghzspi(dev)) {
 			/* Move pins to sleep state */
 			err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
@@ -1518,13 +1450,66 @@ static int spi_stm32_pm_action(const struct device *dev,
 			}
 		}
 		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
 	default:
 		return -ENOTSUP;
 	}
 
 	return 0;
 }
-#endif /* CONFIG_PM_DEVICE */
+
+static int spi_stm32_init(const struct device *dev)
+{
+	struct spi_stm32_data *data __attribute__((unused)) = dev->data;
+	const struct spi_stm32_config *cfg = dev->config;
+	int err;
+
+	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					      (clock_control_subsys_t) &cfg->pclken[1],
+					      NULL);
+		if (err < 0) {
+			LOG_ERR("Could not select SPI domain clock");
+			return err;
+		}
+	}
+
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+	cfg->irq_config(dev);
+#endif /* CONFIG_SPI_STM32_INTERRUPT */
+
+#ifdef CONFIG_SPI_STM32_DMA
+	if ((data->dma_rx.dma_dev != NULL) &&
+				!device_is_ready(data->dma_rx.dma_dev)) {
+		LOG_ERR("%s device not ready", data->dma_rx.dma_dev->name);
+		return -ENODEV;
+	}
+
+	if ((data->dma_tx.dma_dev != NULL) &&
+				!device_is_ready(data->dma_tx.dma_dev)) {
+		LOG_ERR("%s device not ready", data->dma_tx.dma_dev->name);
+		return -ENODEV;
+	}
+
+	LOG_DBG("SPI with DMA transfer");
+
+#endif /* CONFIG_SPI_STM32_DMA */
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
+	spi_context_unlock_unconditionally(&data->ctx);
+
+	return pm_device_driver_init(dev, spi_stm32_pm_action);
+}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
