@@ -1,0 +1,41 @@
+/* add the DALI-interface via Click-adapter-board */
+/* connect DALI Tx to D12 */
+/* connect DALI Rx to A0 */
+
+/ {
+	dali0: dali {
+		compatible = "zephyr,dali-pwm";
+		status = "okay";
+		pwms = <&pwm3 1 PWM_USEC(41) PWM_POLARITY_NORMAL>,
+		       <&pwm2 1 PWM_USEC(41) PWM_POLARITY_INVERTED>;
+		tx-flank-shift-us = <(-46)>;
+		rx-flank-shift-us = <(-56)>;
+		tx-rx-propagation-max-us = <2400>;
+		rx-finish-work-delay-us = <1000>;
+		rx-capture-work-delay-us = <200>;
+	};
+};
+
+&timers3 {
+	// set timebase to 1us/1MHz
+	st,prescaler = <47>;
+	status = "okay";
+
+	pwm3: pwm {
+		pinctrl-0 = <&tim3_ch1_pa6>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers2 {
+	// set timebase to 1us/1MHz
+	st,prescaler = <47>;
+	status = "okay";
+
+	pwm2: pwm {
+		pinctrl-0 = <&tim2_ch1_pa0>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
