@@ -120,6 +120,8 @@ New APIs and options
   * :kconfig:option:`ARCH_HAS_VECTOR_TABLE_RELOCATION`
   * :kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` moved from ``zephyr/Kconfig.zephyr`` to
     ``zephyr/arch/Kconfig`` and added dependencies to it.
+  * :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`
+  * :kconfig:option:`CONFIG_SRAM_ISR_EXEC_CONTEXT`
 
 * Kernel
 
