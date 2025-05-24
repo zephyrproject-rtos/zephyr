@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Dipak Shetty
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices TMC51XX Stepper Motor Controller (UART single-wire mode)
+
+  This binding supports the single-wire UART mode where:
+  - SWIOP is connected to the MCU's UART TX/RX pin
+  - SWION should be connected to half the IO level voltage (1.65V for 3.3V systems)
+  - SW_SEL must be HIGH (either via GPIO control or hardwired)
+
+  Example:
+
+    &uart2 {
+        current-speed = <115200>;
+        status = "okay";
+
+        tmc51xx: tmc51xx {
+            compatible = "adi,tmc51xx";
+            sw-sel-gpios = <&gpiob 0x01 GPIO_ACTIVE_HIGH>;
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(12)>;
+            en-pwm-mode;
+            invert-direction;
+            micro-step-res = <256>;
+
+            /* ADI TMC ramp generator as well as current settings */
+            vstart = <0>;
+            vstop = <10>;
+            a1 = <1000>;
+            v1 = <50000>;
+            d1 = <1400>;
+            vmax = <200000>;
+            amax = <50000>;
+            dmax = <700>;
+            tzerowait = <100>;
+            ihold = <10>;
+            irun = <31>;
+            iholddelay = <6>;
+        };
+    };
+
+compatible: "adi,tmc51xx"
+
+include: [uart-device.yaml, "adi,tmc51xx-base.yaml"]
+
+properties:
+  sw-sel-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the SW_SEL pin of TMC51XX.
+      Must be set HIGH for UART mode operation.
+      If not provided, it's assumed SW_SEL is hardwired to VCC/HIGH.
+
+  uart-device-addr:
+    type: int
+    description: |
+        UART device address for TMC51XX in UART mode.
+        Valid range: 0 - 253

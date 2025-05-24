@@ -1,5 +1,5 @@
 /**
- * @file drivers/stepper/adi/tmc_reg.h
+ * @file drivers/stepper/adi_tmc/adi_tmc_reg.h
  *
  * @brief TMC Registers
  *
@@ -56,12 +56,18 @@ extern "C" {
 #define TMC5XXX_CHOPCONF_MRES_MASK       GENMASK(27, 24)
 #define TMC5XXX_CHOPCONF_MRES_SHIFT      24
 
-#define TMC5XXX_RAMPSTAT_INT_MASK  GENMASK(7, 4)
+#define TMC5XXX_RAMPSTAT_INT_MASK  GENMASK(9, 4)
 #define TMC5XXX_RAMPSTAT_INT_SHIFT 4
+
+#define TMC5XXX_RAMPSTAT_POS_REACHED_MASK BIT(9)
+#define TMC5XXX_POS_REACHED									   \
+	(TMC5XXX_RAMPSTAT_POS_REACHED_MASK >> TMC5XXX_RAMPSTAT_INT_SHIFT)
 
 #define TMC5XXX_RAMPSTAT_POS_REACHED_EVENT_MASK BIT(7)
 #define TMC5XXX_POS_REACHED_EVENT                                                                  \
 	(TMC5XXX_RAMPSTAT_POS_REACHED_EVENT_MASK >> TMC5XXX_RAMPSTAT_INT_SHIFT)
+
+#define TMC5XXX_POS_REACHED_AND_EVENT (TMC5XXX_POS_REACHED | TMC5XXX_POS_REACHED_EVENT)
 
 #define TMC5XXX_RAMPSTAT_STOP_SG_EVENT_MASK BIT(6)
 #define TMC5XXX_STOP_SG_EVENT                                                                      \

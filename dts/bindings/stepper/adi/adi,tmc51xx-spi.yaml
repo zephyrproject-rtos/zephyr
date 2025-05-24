@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Dipak Shetty
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices TMC51XX Stepper Motor Controller (SPI mode)
+
+  Example:
+
+    &spi0 {
+        tmc51xx: tmc51xx@0 {
+            compatible = "adi,tmc51xx";
+            reg = <0>;
+            spi-max-frequency = <DT_FREQ_M(8)>;
+            diag0-gpios = <&gpio0 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; /* Diag0 pin */
+
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
+            en-pwm-mode;
+            invert-direction;
+            micro-step-res = <256>;
+
+            /* ADI TMC ramp generator as well as current settings */
+            vstart = <0>;
+            vstop = <10>;
+            a1 = <1000>;
+            v1 = <50000>;
+            d1 = <1400>;
+            vmax = <200000>;
+            amax = <50000>;
+            dmax = <700>;
+            tzerowait = <100>;
+            ihold = <10>;
+            irun = <31>;
+            iholddelay = <6>;
+        };
+    };
+
+compatible: "adi,tmc51xx"
+
+include: [spi-device.yaml, "adi,tmc51xx-base.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  diag0-gpios:
+    type: phandle-array
+    description: |
+      Diagnostics output DIAG0 pin. This pin enables interrupt-based
+      rampstat handling, allowing the driver to respond to motor events
+      like position reached or stall detection without polling.
+      Should be configured as push-pull output (active high).

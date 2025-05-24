@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/sys/util.h>
-#include "adi_tmc_spi.h"
+#include <adi_tmc_spi.h>
 
 #define BUFFER_SIZE 5U
 
