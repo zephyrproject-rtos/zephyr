@@ -1,4 +1,5 @@
 # Copyright (c) 2023, Antmicro <www.antmicro.com>
+# Copyright (c) 2025, Silicon Laboratories, Inc.
 #
 # Based on J-Link runner
 # Copyright (c) 2017 Linaro Limited.
@@ -18,7 +19,7 @@ DEFAULT_APP = 'commander'
 
 
 class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
-    def __init__(self, cfg, device, dev_id, commander, dt_flash, erase, speed, tool_opt):
+    def __init__(self, cfg, device, dev_id, commander, dt_flash, erase, speed, tool_opt, ip):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -31,6 +32,7 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
         self.dt_flash = dt_flash
         self.erase = erase
         self.speed = speed
+        self.ip = ip
 
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -67,6 +69,9 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--speed', default=None,
                             help='JTAG/SWD speed to use')
 
+        parser.add_argument('--ip', default=None,
+                            help='IP address of the device')
+
     @classmethod
     def do_create(cls, cfg, args):
         return SiLabsCommanderBinaryRunner(
@@ -76,7 +81,8 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
                 dt_flash=args.dt_flash,
                 erase=args.erase,
                 speed=args.speed,
-                tool_opt=args.tool_opt)
+                tool_opt=args.tool_opt,
+                ip=args.ip)
 
     def do_run(self, command, **kwargs):
         self.require(self.commander)
@@ -88,6 +94,8 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
             opts.extend(['--serialno', self.dev_id])
         if self.speed is not None:
             opts.extend(['--speed', self.speed])
+        if self.ip is not None:
+            opts.extend(['--ip', self.ip])
 
         # Get the build artifact to flash
 
