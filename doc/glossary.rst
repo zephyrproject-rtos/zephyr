@@ -107,6 +107,14 @@ Glossary of Terms
       architecture to implement an interrupt vector table. The IDT is used
       to determine the correct response to interrupts and exceptions.
 
+   internal API
+    Any internal function, structure or macro defined anywhere in the zephyr
+    source tree. Interal APIs are intended for use only between certain in-tree
+    :term:`software components <software component>` The context where the API
+    is called or implemented is well defined. For example, functions prefixed
+    with `arch_` are intended for use by the Zephyr kernel to invoke
+    architecture-specific code.
+
    ISR
       (Interrupt Service Routine) Also known as an interrupt handler, an ISR
       is a callback function whose execution is triggered by a hardware
@@ -127,6 +135,16 @@ Glossary of Terms
       Power gating reduces power consumption by shutting off areas of an
       integrated circuit that are not in use.
 
+   private API
+      Any private function, structure or macro defined anywhere in the zephyr source
+      tree. Private APIs are only intended for consumption inside the
+      :term:`software component` where they are defined.
+
+   public API
+      Any public function, structure or macro defined inside the ``include/zephyr``
+      folder. Public APIs are intended for consumption by any and all in-tree or
+      out-of-tree :term:`software components <software component>`.
+
    SoC
       A `System on a chip`_, that is, an integrated circuit that contains at
       least one :term:`CPU cluster` (in turn with at least one :term:`CPU core`),
@@ -139,6 +157,11 @@ Glossary of Terms
    SoC series
       A number of different :term:`SoCs <SoC>` that share similar characteristics and
       features, and that the vendor typically names and markets together.
+
+   software component
+      A software component is a self-contained, modular, and replaceable part of
+      the Zephyr source code. A driver, a subsystem or an applications are all
+      examples of software components present in Zephyr.
 
    subsystem
        A subsystem refers to a logically distinct part of the operating system
