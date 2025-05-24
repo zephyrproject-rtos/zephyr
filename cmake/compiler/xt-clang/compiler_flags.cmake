@@ -11,7 +11,7 @@ set_compiler_property(PROPERTY nostdinc_include)
 # For C++ code, re-add the standard includes directory which was
 # cleared up from nostdinc_inlcude in above lines with no
 # "include-fixed" this time"
-if(CONFIG_CPP)
+if(CONFIG_CPP AND NOT CONFIG_XTENSA_LIBC)
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=include/stddef.h
     OUTPUT_VARIABLE _OUTPUT
