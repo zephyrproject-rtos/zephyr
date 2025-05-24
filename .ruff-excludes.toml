@@ -1086,10 +1086,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/west_commands/completion.py" = [
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/west_commands/debug.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
