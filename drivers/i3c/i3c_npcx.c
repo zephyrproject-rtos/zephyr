@@ -1589,6 +1589,20 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		}
 	}
 
+	if (payload->ccc.id == I3C_CCC_RSTACT(true)) {
+		uint32_t val = 0;
+
+		LOG_WRN("Send target reset pattern");
+		SET_FIELD(val, NPCX_I3C_MCTRL_TYPE, MCTRL_TYPE_TGT_RESTART);
+		SET_FIELD(val, NPCX_I3C_MCTRL_REQUEST, MCTRL_REQUEST_FORCEEXIT);
+		ret = npcx_i3c_send_request(inst, val);
+		if (ret != 0) {
+			LOG_ERR("Sending target pattern error, %d", ret);
+			return ret;
+		}
+	}
+
+
 out_do_ccc:
 	npcx_i3c_request_emit_stop(inst);
 
