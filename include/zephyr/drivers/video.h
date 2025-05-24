@@ -238,36 +238,20 @@ enum video_signal_result {
 };
 
 /**
- * @typedef video_api_set_format_t
- * @brief Set video format
+ * @typedef video_api_format_t
+ * @brief Function pointer type for video_set/get_format()
  *
- * See video_set_format() for argument descriptions.
+ * See video_set/get_format() for argument descriptions.
  */
-typedef int (*video_api_set_format_t)(const struct device *dev, struct video_format *fmt);
+typedef int (*video_api_format_t)(const struct device *dev, struct video_format *fmt);
 
 /**
- * @typedef video_api_get_format_t
- * @brief Get current video format
+ * @typedef video_api_frmival_t
+ * @brief Function pointer type for video_set/get_frmival()
  *
- * See video_get_format() for argument descriptions.
+ * See video_set/get_frmival() for argument descriptions.
  */
-typedef int (*video_api_get_format_t)(const struct device *dev, struct video_format *fmt);
-
-/**
- * @typedef video_api_set_frmival_t
- * @brief Set video frame interval
- *
- * See video_set_frmival() for argument descriptions.
- */
-typedef int (*video_api_set_frmival_t)(const struct device *dev, struct video_frmival *frmival);
-
-/**
- * @typedef video_api_get_frmival_t
- * @brief Get current video frame interval
- *
- * See video_get_frmival() for argument descriptions.
- */
-typedef int (*video_api_get_frmival_t)(const struct device *dev, struct video_frmival *frmival);
+typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmival *frmival);
 
 /**
  * @typedef video_api_enum_frmival_t
@@ -345,8 +329,8 @@ typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_si
 
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
-	video_api_set_format_t set_format;
-	video_api_get_format_t get_format;
+	video_api_format_t set_format;
+	video_api_format_t get_format;
 	video_api_set_stream_t set_stream;
 	video_api_get_caps_t get_caps;
 	/* optional callbacks */
@@ -356,8 +340,8 @@ __subsystem struct video_driver_api {
 	video_api_ctrl_t set_ctrl;
 	video_api_ctrl_t get_volatile_ctrl;
 	video_api_set_signal_t set_signal;
-	video_api_set_frmival_t set_frmival;
-	video_api_get_frmival_t get_frmival;
+	video_api_frmival_t set_frmival;
+	video_api_frmival_t get_frmival;
 	video_api_enum_frmival_t enum_frmival;
 };
 
