@@ -20,6 +20,15 @@ LOG_MODULE_REGISTER(nxp_sdma);
 AT_NONCACHEABLE_SECTION_ALIGN(static sdma_context_data_t
 			      sdma_contexts[FSL_FEATURE_SDMA_MODULE_CHANNEL], 4);
 
+enum sdma_channel_state {
+	SDMA_CHAN_STATE_INIT = 0,
+	SDMA_CHAN_STATE_CONFIGURED,
+	SDMA_CHAN_STATE_STARTED,
+	SDMA_CHAN_STATE_STOPPED,
+	SDMA_CHAN_STATE_SUSPENDED,
+	SDMA_CHAN_STATE_RELEASING,
+};
+
 struct sdma_dev_cfg {
 	SDMAARM_Type *base;
 	void (*irq_config)(void);
@@ -32,6 +41,7 @@ struct sdma_channel_data {
 	uint32_t direction;
 	uint32_t index;
 	const struct device *dev;
+	enum sdma_channel_state state;
 	sdma_buffer_descriptor_t *bd_pool; /*pre-allocated list of BD used for transfer */
 	uint32_t bd_count; /* number of bd */
 	uint32_t capacity; /* total transfer capacity for this channel */
@@ -237,6 +247,8 @@ static void dma_nxp_sdma_setup_bd(const struct device *dev, uint32_t channel,
 
 	chan_data = &dev_data->chan[channel];
 
+	chan_data->capacity = 0;
+
 	/* initialize bd pool */
 	chan_data->bd_pool = &dev_data->bd_pool[channel][0];
 	chan_data->bd_count = config->block_count;
@@ -281,9 +293,14 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	dma_nxp_sdma_channel_init(dev, channel);
-
 	chan_data = &dev_data->chan[channel];
+
+	if (chan_data->state == SDMA_CHAN_STATE_STARTED) {
+		LOG_ERR("sdma_config() cannot configure channel while active");
+		return -EINVAL;
+	}
+
+	dma_nxp_sdma_channel_init(dev, channel);
 	chan_data->dev = dev;
 	chan_data->direction = config->channel_direction;
 
@@ -330,6 +347,7 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 	chan_data->transfer_cfg.isEventIgnore = false;
 	chan_data->transfer_cfg.isSoftTriggerIgnore = false;
 	SDMA_SubmitTransfer(&chan_data->handle, &chan_data->transfer_cfg);
+	chan_data->state = SDMA_CHAN_STATE_CONFIGURED;
 
 	return 0;
 }
@@ -347,8 +365,15 @@ static int dma_nxp_sdma_start(const struct device *dev, uint32_t channel)
 
 	chan_data = &dev_data->chan[channel];
 
+	if (chan_data->state != SDMA_CHAN_STATE_STOPPED &&
+	    chan_data->state != SDMA_CHAN_STATE_CONFIGURED) {
+		LOG_ERR("%s: invalid state %d", __func__, chan_data->state);
+		return -EINVAL;
+	}
+
 	SDMA_SetChannelPriority(dev_cfg->base, channel, DMA_NXP_SDMA_CHAN_DEFAULT_PRIO);
 	SDMA_StartChannelSoftware(dev_cfg->base, channel);
+	chan_data->state = SDMA_CHAN_STATE_STARTED;
 
 	return 0;
 }
@@ -366,6 +391,9 @@ static int dma_nxp_sdma_stop(const struct device *dev, uint32_t channel)
 	chan_data = &dev_data->chan[channel];
 
 	SDMA_StopTransfer(&chan_data->handle);
+
+	chan_data->state = SDMA_CHAN_STATE_STOPPED;
+
 	return 0;
 }
 
@@ -393,6 +421,12 @@ static int dma_nxp_sdma_reload(const struct device *dev, uint32_t channel, uint3
 
 	if (!size) {
 		return 0;
+	}
+
+	/* allow reload only for active channels */
+	if (chan_data->state != SDMA_CHAN_STATE_STARTED) {
+		LOG_ERR("%s: invalid state %d", __func__, chan_data->state);
+		return -EINVAL;
 	}
 
 	if (chan_data->direction == MEMORY_TO_PERIPHERAL) {
@@ -439,6 +473,7 @@ static bool sdma_channel_filter(const struct device *dev, int chan_id, void *par
 	dev_data->chan[chan_id].event_source = *((int *)param);
 	dev_data->chan[chan_id].index = chan_id;
 	dev_data->chan[chan_id].capacity = 0;
+	dev_data->chan[chan_id].state = SDMA_CHAN_STATE_INIT;
 
 	return true;
 }
