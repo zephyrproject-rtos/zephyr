@@ -4,17 +4,17 @@
 
 import argparse
 import os
-from pathlib import Path
 import sys
 import textwrap
+from pathlib import Path
 from urllib.parse import urlparse
 
 from west.commands import WestCommand
-
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import zephyr_module
+
 
 class Blobs(WestCommand):
 
@@ -203,6 +203,6 @@ class Blobs(WestCommand):
         subcmd = getattr(self, args.subcmd[0])
 
         if args.subcmd[0] != 'list' and args.format is not None:
-            self.die(f'unexpected --format argument; this is a "west blobs list" option')
+            self.die('unexpected --format argument; this is a "west blobs list" option')
 
         subcmd(args)
