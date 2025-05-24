@@ -113,6 +113,8 @@ DMA
 
 * Renamed the devicetree property ``nxp,a_on`` to ``nxp,a-on``.
 * Renamed the devicetree property ``dma_channels`` to ``dma-channels``.
+* The binding files for Xilinx DMA controllers have been renamed to use the proper vendor prefix
+  (``xlnx`` instead of ``xilinx``) and to match their compatible string.
 
 Regulator
 =========
