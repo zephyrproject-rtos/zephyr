@@ -1,0 +1,3 @@
+dut_spis: &rspi0{
+
+};
