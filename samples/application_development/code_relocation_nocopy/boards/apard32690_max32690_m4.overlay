@@ -1,0 +1,7 @@
+&spixf {
+	status = "okay";
+};
+
+&mx25u64 {
+	status = "okay";
+};
