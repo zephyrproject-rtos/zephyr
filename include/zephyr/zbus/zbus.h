@@ -120,6 +120,7 @@ enum __packed zbus_observer_type {
 	ZBUS_OBSERVER_LISTENER_TYPE,
 	ZBUS_OBSERVER_SUBSCRIBER_TYPE,
 	ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,
+	ZBUS_OBSERVER_ASYNC_LISTENER_TYPE,
 };
 
 struct zbus_observer_data {
@@ -171,6 +172,11 @@ struct zbus_observer {
 		 */
 		struct k_fifo *message_fifo;
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
+
+		/** Observer work. It turns the observer into an async listener. It only
+		 * exists if the @kconfig{CONFIG_ZBUS_ASYNC_LISTENER} is enabled.
+		 */
+		struct k_work *work;
 	};
 };
 
@@ -555,6 +561,53 @@ struct zbus_channel_observation {
  * @param[in] _name The subscriber's name.
  */
 #define ZBUS_MSG_SUBSCRIBER_DEFINE(_name) ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, true)
+
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+struct zbus_async_listener_work {
+	struct k_work work;
+	struct k_fifo *message_fifo;
+	void (*callback)(const struct zbus_channel *chan, const void *msg);
+};
+
+void async_listener_work_handler(struct k_work *item);
+
+/* clang-format off */
+/**
+ * @brief Define and initialize an async listener.
+ *
+ * FIXME: [rodrigopex] add this text and update the params
+ *
+ * @param[in] _name The async listener's name.
+ * @param[in] _cb The async listener's callback function.
+ * @param[in] _enable The async listener's initial state.
+ */
+#define ZBUS_ASYNC_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, _enable)               \
+	static K_FIFO_DEFINE(_zbus_observer_work_fifo_##_name);                   \
+	static struct zbus_async_listener_work _zbus_observer_work_##_name = {    \
+		.work = Z_WORK_INITIALIZER(async_listener_work_handler),          \
+		.message_fifo = &_CONCAT(_zbus_observer_work_fifo_, _name),       \
+		.callback = _cb,                                                  \
+	};                                                                        \
+	static struct zbus_observer_data _CONCAT(_zbus_obs_data_, _name) = {      \
+		.enabled = _enable,                                               \
+		IF_ENABLED(CONFIG_ZBUS_PRIORITY_BOOST, (                          \
+			.priority = ZBUS_MIN_THREAD_PRIORITY,                     \
+		))                                                                \
+	};                                                                        \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
+		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                   \
+		.type = ZBUS_OBSERVER_ASYNC_LISTENER_TYPE,                        \
+		.data = &_CONCAT(_zbus_obs_data_, _name),                         \
+		.work = &_CONCAT(_zbus_observer_work_, _name).work,               \
+	}
+
+// FIXME: [rodrigopex]: add comments
+#define ZBUS_ASYNC_LISTENER_DEFINE(_name, _cb)                    \
+	ZBUS_ASYNC_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, true)
+
+/* clang-format on */
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER */
+
 /**
  *
  * @brief Publish to a channel
