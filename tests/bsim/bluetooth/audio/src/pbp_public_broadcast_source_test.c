@@ -33,7 +33,7 @@
 
 #if defined(CONFIG_BT_PBP)
 /* PBS ASCII text */
-#define PBS_DEMO                'P', 'B', 'P'
+#define PBS_DEMO    'P', 'B', 'P'
 #define SEM_TIMEOUT K_SECONDS(2)
 
 extern enum bst_result_t bst_result;
@@ -41,9 +41,8 @@ extern enum bst_result_t bst_result;
 static const uint8_t pba_metadata[] = {
 	BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PROGRAM_INFO, PBS_DEMO)};
 
-static uint8_t bis_codec_data[] = {
-	BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
-			BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_48KHZ))};
+static uint8_t bis_codec_data[] = {BT_AUDIO_CODEC_DATA(
+	BT_AUDIO_CODEC_CFG_FREQ, BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_48KHZ))};
 
 static struct audio_test_stream broadcast_source_stream;
 static struct bt_cap_stream *broadcast_stream;
@@ -54,8 +53,7 @@ static struct bt_cap_initiator_broadcast_create_param create_param;
 static struct bt_cap_broadcast_source *broadcast_source;
 
 static struct bt_bap_lc3_preset broadcast_preset_48_2_1 =
-	BT_BAP_LC3_UNICAST_PRESET_48_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
-					 BT_AUDIO_CONTEXT_TYPE_MEDIA);
+	BT_BAP_LC3_UNICAST_PRESET_48_2_1(BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
 
 static K_SEM_DEFINE(sem_started, 0U, 1);
 static K_SEM_DEFINE(sem_stopped, 0U, 1);
@@ -175,29 +173,6 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	return 0;
 }
 
-static int start_extended_adv(struct bt_le_ext_adv *adv)
-{
-	int err;
-
-	/* Start extended advertising */
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		printk("Failed to start extended advertising: %d\n", err);
-
-		return err;
-	}
-
-	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(adv);
-	if (err) {
-		printk("Failed to enable periodic advertising: %d\n", err);
-
-		return err;
-	}
-
-	return 0;
-}
-
 static int stop_extended_adv(struct bt_le_ext_adv *adv)
 {
 	int err;
@@ -289,12 +264,7 @@ static void test_main(void)
 			FAIL("Public Broadcast source failed\n");
 		}
 
-		err = start_extended_adv(adv);
-		if (err != 0) {
-			printk("Unable to start extended advertiser: %d\n", err);
-			FAIL("Public Broadcast source failed\n");
-		}
-
+		start_broadcast_adv(adv);
 		k_sem_take(&sem_started, SEM_TIMEOUT);
 
 		/* Wait for other devices to let us know when we can stop the source */
@@ -330,14 +300,11 @@ static void test_main(void)
 }
 
 static const struct bst_test_instance test_pbp_broadcaster[] = {
-	{
-		.test_id = "public_broadcast_source",
-		.test_pre_init_f = test_init,
-		.test_tick_f = test_tick,
-		.test_main_f = test_main
-	},
-	BSTEST_END_MARKER
-};
+	{.test_id = "public_broadcast_source",
+	 .test_pre_init_f = test_init,
+	 .test_tick_f = test_tick,
+	 .test_main_f = test_main},
+	BSTEST_END_MARKER};
 
 struct bst_test_list *test_public_broadcast_source_install(struct bst_test_list *tests)
 {

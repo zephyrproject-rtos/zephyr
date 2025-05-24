@@ -48,3 +48,7 @@ config BT_CAP_COMMANDER
 		   BT_MCC
 	help
 	  Enabling this will enable the CAP Initiator role.
+
+config BT_CAP_HANDOVER_SUPPORTED
+	def_bool BT_CAP_COMMANDER && BT_CAP_INITIATOR && BT_BAP_BROADCAST_ASSISTANT && \
+		 BT_BAP_BROADCAST_SOURCE && BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
