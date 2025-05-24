@@ -122,6 +122,49 @@ To configure Segger RTT backend, add the following configurations to your build:
 Details on additional configuration settings are captured in:
 :zephyr_file:`samples/subsys/shell/shell_module/prj_minimal_rtt.conf`.
 
+.. _shell_rtt_west:
+
+Using west
+-----------
+
+* Attach to and configure RTT with:
+
+  .. code-block:: none
+
+     west rtt
+
+* If your default runner does not have support for RTT, use another runner:
+
+  .. code-block:: none
+
+     west rtt
+     ...
+     FATAL ERROR: runner <unsupported_runner> does not support command rtt
+
+     ...
+
+     echo "Supported RTT runners: $(
+       west rtt --context |
+       grep -A 1 "zephyr runners which support" |
+       tail -n 1 |
+       tr -d ' ' |
+       tr ',' '\n' |
+       sort |
+       comm -12 - <(
+         west rtt --context |
+         grep -A 1 "available runners in runners.yaml" |
+         tail -n 1 |
+         tr -d ' ' |
+         tr ',' '\n' |
+         sort
+       ) |
+       paste -sd ',' -
+     )"
+
+     ...
+
+     west rtt -r <your_supported_runner>
+
 .. _shell_rtt_putty:
 
 Using PuTTY
