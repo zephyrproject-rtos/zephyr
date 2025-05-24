@@ -541,8 +541,8 @@ SPI
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
 
-xSPI
-====
+qSPI/xSPI
+=========
 
 * On STM32 devices, external memories device tree descriptions for size and address are now split
   in two separate properties to comply with specification recommendations.
@@ -551,7 +551,7 @@ xSPI
   is changed to ``reg = <0>;`` ``size = <DT_SIZE_M(512)>; / 512 Mbits */``.
 
   Note that the property gives the actual size of the memory device in bits.
-  Previous mapping address information is now described in xspi node at SoC dtsi level.
+  Previous mapping address information is now described in xspi or qspi node at SoC dtsi level.
 
 Video
 =====
