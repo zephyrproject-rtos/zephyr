@@ -14,13 +14,13 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    that the provisioner has time observe that PB-ADV and PB-GATT beacons are cancelled.
 # 4. The provisioning procedure completes.
 
-overlay=overlay_gatt_conf_overlay_psa_conf
+overlay=overlay_gatt_conf
 RunTest mesh_prov_pb_cancel_adv \
 	prov_provisioner_pb_cancel \
 	prov_device_pb_cancel \
 	-- -argstest prov-bearer=3 prov-to-use=1
 
-overlay=overlay_gatt_conf_overlay_psa_conf
+overlay=overlay_gatt_conf
 RunTest mesh_prov_pb_cancel_gatt \
 	prov_provisioner_pb_cancel \
 	prov_device_pb_cancel \
