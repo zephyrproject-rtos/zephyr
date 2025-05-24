@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -114,6 +115,19 @@
 	};
 };
 
+&pll2 {
+	status = "okay";
+	clocks = <&xtal>;
+	div = <2>;
+	mul = <80 0>;
+
+	pll2p {
+		status = "okay";
+		freq = <DT_FREQ_M(400)>;
+		div = <2>;
+	};
+};
+
 &sciclk {
 	clocks = <&pllp>;
 	div = <4>;
@@ -128,6 +142,12 @@
 
 &lcdclk {
 	clocks = <&pll>;
+	div = <2>;
+	status = "okay";
+};
+
+&octaspiclk {
+	clocks = <&pll2p>;
 	div = <2>;
 	status = "okay";
 };
@@ -340,5 +360,50 @@ pmod_sd_shield: &sdhc1 {};
 
 	timer {
 		status = "okay";
+	};
+};
+
+&ospi0 {
+	pinctrl-0 = <&ospi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	s28hl512t: ospi-nor-flash@90000000 {
+		compatible = "renesas,ra-ospi-b-nor";
+		protocol-mode = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		ospi-max-frequency = <DT_FREQ_M(200)>;
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		write-block-size = <1>;
+		status = "okay";
+
+		pages_layout: pages_layout {
+
+			pages_layout_4k: pages_layout_4k {
+				pages-count = <32>;
+				pages-size = <DT_SIZE_K(4)>;
+			};
+
+			pages_layout_128k: pages_layout_128k {
+				pages-count = <1>;
+				pages-size = <DT_SIZE_K(128)>;
+			};
+
+			pages_layout_256k: pages_layout_256k {
+				pages-count = <255>;
+				pages-size = <DT_SIZE_K(256)>;
+			};
+		};
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "nor";
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
+		};
 	};
 };
