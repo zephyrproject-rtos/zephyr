@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# the prefix to transfer linker options from compiler
+set_ifndef(LINKERFLAGPREFIX -Wl)
+
 set_property(TARGET linker PROPERTY cpp_base -Hcplus)
 
 check_set_linker_property(TARGET linker PROPERTY baremetal
