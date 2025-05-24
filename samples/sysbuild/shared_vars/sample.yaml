@@ -1,0 +1,18 @@
+sample:
+  name: Passing variables from sysbuild.cmake to application cmake
+  description: |
+    Not even an application - just a cmake sample how to pass variables directly to cmake call
+    of the external project.
+
+common:
+  sysbuild: true
+  build_only: true
+
+tests:
+  sample.sysbuild.shared_vars:
+    platform_allow: native_posix
+    extra_args: >-
+      SHARE_ME_APP1=101
+      SHARE_ME_APP2=102
+      SHARE_ME_REMOTE1=201
+      SHARE_ME_REMOTE2=202
