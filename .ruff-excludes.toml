@@ -1090,10 +1090,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
 ]
-"./scripts/west_commands/flash.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
 "./scripts/west_commands/robot.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
