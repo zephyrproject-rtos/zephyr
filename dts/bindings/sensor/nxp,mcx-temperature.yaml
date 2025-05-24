@@ -1,0 +1,41 @@
+description: NXP MCX temperature sensor
+
+compatible: "nxp,mcx-temperature"
+
+include: sensor-device.yaml
+
+properties:
+  adc-channel:
+    type: int
+    required: true
+    description: ADC channel for temperature sensor
+
+  zephyr,gain:
+    type: string
+    required: true
+    description: Temperature sensor ADC channel gain selection
+
+  zephyr,reference:
+    type: string
+    required: true
+    description: Temperature sensor ADC channel reference selection
+
+  zephyr,acquisition-time:
+    type: int
+    required: true
+    description: Temperature sensor ADC channel acquisition-time selection
+
+  zephyr,input-positive:
+    type: int
+    required: true
+    description: Temperature sensor ADC channel input-positive selection
+
+  zephyr,resolution:
+    type: int
+    required: true
+    description: Temperature sensor ADC channel resolution selection
+
+  zephyr,oversampling:
+    type: int
+    required: true
+    description: Temperature sensor ADC channel oversampling selection
