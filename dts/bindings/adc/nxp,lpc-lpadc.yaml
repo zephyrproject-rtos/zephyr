@@ -77,6 +77,12 @@ properties:
     type: phandle-array
     description: References to required regulators which must be enabled for LPADC to function
 
+  nxp,temperature-channel:
+    type: int
+    description: |
+      The channel number of the internal temperature sensor. Has no effect if
+      FSL_FEATURE_LPADC_HAS_INTERNAL_TEMP_SENSOR is not defined.
+
   "#io-channel-cells":
     const: 1
 

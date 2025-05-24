@@ -310,6 +310,7 @@
 		offset-value-a = <10>;
 		offset-value-b = <10>;
 		#io-channel-cells = <1>;
+		nxp,temperature-channel = <26>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
