@@ -28,7 +28,7 @@ description: |
     hs-data-slew-lim = <0>;
     hs-data-strength-low = "0.5";
 
-  For best performances, user can tune the slope curves using an osciloscope.
+  For best performances, user can tune the slope curves using an oscilloscope.
   The tuning should be performed by groups defined <mode>-<line>.  The prefix
   std-<line> configures fast/fast-plus mode speeds and hs-<line> selects the
   high speed mode.  The tune should be performed for both clock and data lines
