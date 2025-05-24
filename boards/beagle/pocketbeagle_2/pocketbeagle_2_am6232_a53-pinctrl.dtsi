@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
+&pinctrl {
+	main_uart6_rx_default: main_uart6_rx_default {
+		pinmux = <K3_PINMUX(0x001c, PIN_INPUT, MUX_MODE_3)>;
+	};
+
+	main_uart6_tx_default: main_uart6_tx_default {
+		pinmux = <K3_PINMUX(0x0020, PIN_OUTPUT, MUX_MODE_3)>;
+	};
+};
