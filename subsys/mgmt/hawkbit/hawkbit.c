@@ -79,6 +79,9 @@ static struct hawkbit_config {
 	int32_t action_id;
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 	char server_addr[DNS_MAX_NAME_SIZE + 1];
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	char server_domain[CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN + 1];
+#endif
 	char server_port[sizeof(STRINGIFY(__UINT16_MAX__))];
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	char ddi_security_token[DDI_SECURITY_TOKEN_SIZE + 1];
@@ -90,11 +93,17 @@ static struct hawkbit_config {
 } hb_cfg;
 
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-#define HAWKBIT_SERVER hb_cfg.server_addr
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+#define HAWKBIT_SERVER_DOMAIN hb_cfg.server_domain
+#else
+#define HAWKBIT_SERVER_DOMAIN hb_cfg.server_addr
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
+#define HAWKBIT_SERVER_ADDR   hb_cfg.server_addr
 #define HAWKBIT_PORT hb_cfg.server_port
 #define HAWKBIT_PORT_INT atoi(hb_cfg.server_port)
 #else
-#define HAWKBIT_SERVER CONFIG_HAWKBIT_SERVER
+#define HAWKBIT_SERVER_ADDR   CONFIG_HAWKBIT_SERVER
+#define HAWKBIT_SERVER_DOMAIN CONFIG_HAWKBIT_SERVER
 #define HAWKBIT_PORT STRINGIFY(CONFIG_HAWKBIT_PORT)
 #define HAWKBIT_PORT_INT CONFIG_HAWKBIT_PORT
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
@@ -298,6 +307,22 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 		return rc;
 	}
 
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	if (settings_name_steq(name, "server_domain", &next) && !next) {
+		if (len != sizeof(hb_cfg.server_domain)) {
+			return -EINVAL;
+		}
+
+		rc = read_cb(cb_arg, &hb_cfg.server_domain, sizeof(hb_cfg.server_domain));
+		LOG_DBG("<%s> = %s", "hawkbit/server_domain", hb_cfg.server_domain);
+		if (rc >= 0) {
+			return 0;
+		}
+
+		return rc;
+	}
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
+
 	if (settings_name_steq(name, "server_port", &next) && !next) {
 		if (len != sizeof(uint16_t)) {
 			return -EINVAL;
@@ -336,6 +361,9 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 	}
 #else  /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 	if (settings_name_steq(name, "server_addr", NULL) ||
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	    settings_name_steq(name, "server_domain", NULL) ||
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 	    settings_name_steq(name, "server_port", NULL) ||
 	    settings_name_steq(name, "ddi_token", NULL)) {
 		rc = read_cb(cb_arg, NULL, 0);
@@ -359,6 +387,9 @@ static int hawkbit_settings_export(int (*cb)(const char *name, const void *value
 	(void)cb("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 	(void)cb("hawkbit/server_addr", &hb_cfg.server_addr, sizeof(hb_cfg.server_addr));
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	(void)cb("hawkbit/server_domain", &hb_cfg.server_domain, sizeof(hb_cfg.server_domain));
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 	uint16_t hawkbit_port = atoi(hb_cfg.server_port);
 	(void)cb("hawkbit/server_port", &hawkbit_port, sizeof(hawkbit_port));
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
@@ -439,7 +470,7 @@ static bool start_http_client(int *hb_sock)
 	}
 
 	while (resolve_attempts--) {
-		ret = zsock_getaddrinfo(HAWKBIT_SERVER, HAWKBIT_PORT, &hints, &addr);
+		ret = zsock_getaddrinfo(HAWKBIT_SERVER_ADDR, HAWKBIT_PORT, &hints, &addr);
 		if (ret == 0) {
 			break;
 		}
@@ -469,8 +500,8 @@ static bool start_http_client(int *hb_sock)
 		goto err_sock;
 	}
 
-	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_HOSTNAME, HAWKBIT_SERVER,
-			     sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
+	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_HOSTNAME, HAWKBIT_SERVER_DOMAIN,
+			     sizeof(HAWKBIT_SERVER_DOMAIN)) < 0) {
 		goto err_sock;
 	}
 #endif /* CONFIG_HAWKBIT_USE_TLS */
@@ -784,6 +815,20 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 				sizeof(hb_cfg.server_addr));
 			LOG_DBG("configured %s: %s", "hawkbit/server_addr", hb_cfg.server_addr);
 		}
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+		if (config->server_domain != NULL) {
+			if (strnlen(config->server_domain, CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN + 1)
+			    > CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN) {
+				LOG_ERR("%s too long: %s", "hawkbit/server_domain",
+					config->server_domain);
+				return -EINVAL;
+			}
+			strncpy(hb_cfg.server_domain, config->server_domain,
+				sizeof(hb_cfg.server_domain));
+			LOG_DBG("configured %s: %s", "hawkbit/server_domain",
+				hb_cfg.server_domain);
+		}
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 		if (config->server_port != 0) {
 			snprintf(hb_cfg.server_port, sizeof(hb_cfg.server_port), "%u",
 				 config->server_port);
@@ -817,7 +862,7 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 struct hawkbit_runtime_config hawkbit_get_config(void)
 {
 	struct hawkbit_runtime_config config = {
-		.server_addr = HAWKBIT_SERVER,
+		.server_addr = HAWKBIT_SERVER_ADDR,
 		.server_port = HAWKBIT_PORT_INT,
 		.auth_token = HAWKBIT_DDI_SECURITY_TOKEN,
 		.tls_tag = HAWKBIT_CERT_TAG,
@@ -1045,7 +1090,7 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
 	http_req.url = url_buffer;
-	http_req.host = HAWKBIT_SERVER;
+	http_req.host = HAWKBIT_SERVER_DOMAIN;
 	http_req.port = HAWKBIT_PORT;
 	http_req.protocol = "HTTP/1.1";
 	http_req.response = response_cb;
@@ -1159,7 +1204,7 @@ void hawkbit_reboot(void)
 
 static bool check_hawkbit_server(void)
 {
-	if (strlen(HAWKBIT_SERVER) == 0) {
+	if (strlen(HAWKBIT_SERVER_ADDR) == 0) {
 		if (sizeof(CONFIG_HAWKBIT_SERVER) > 1) {
 			hawkbit_set_server_addr(CONFIG_HAWKBIT_SERVER);
 		} else {
