@@ -94,3 +94,29 @@ bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid)
 
 	return false;
 }
+
+bool bt_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8_t ccids[],
+				 uint8_t ccid_cnt)
+{
+	for (uint8_t i = 0; i < ccid_cnt; i++) {
+		const uint8_t ccid = ccids[i];
+
+		if (!bt_cap_acceptor_ccid_exist(conn, ccid)) {
+			LOG_DBG("CCID %u is unknown", ccid);
+
+			/* TBD:
+			 * Should we reject the Metadata?
+			 *
+			 * Should unknown CCIDs trigger a
+			 * discovery procedure for TBS or MCS?
+			 *
+			 * Or should we just accept as is, and
+			 * then let the application decide?
+			 */
+			return false;
+		}
+	}
+
+	/* This will also return true if the ccid_cnt is 0 which is intended */
+	return true;
+}
