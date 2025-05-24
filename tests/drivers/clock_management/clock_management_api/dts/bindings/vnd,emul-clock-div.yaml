@@ -1,0 +1,26 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for emulated clock divider node. This divider will divide
+  the input clock by an integer value, up to the max divider value set
+  for the node. The node accepts one specifier, the integer value to divide
+  the clock by.
+
+compatible: "vnd,emul-clock-div"
+
+include: [clock-node.yaml]
+
+properties:
+  max-div:
+    type: int
+    required: true
+    description: |
+      Maximum divider value this node can support.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - divider

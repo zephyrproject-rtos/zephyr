@@ -28,19 +28,21 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			cpu-power-states = <&sleep>;
+			clock-outputs = <&system_clock>;
+			clock-output-names = "default";
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
 		};
-		cpu@1 {
+		cpu1: cpu@1 {
 			compatible = "arm,cortex-m33";
 			reg = <1>;
 		};
@@ -237,6 +239,8 @@
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom0_clock>;
+		clock-output-names = "default";
 	};
 
 	flexcomm1: flexcomm@87000 {
@@ -248,6 +252,8 @@
 		dmas = <&dma0 6 &dma0 7>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom1_clock>;
+		clock-output-names = "default";
 	};
 
 	flexcomm2: flexcomm@88000 {
@@ -259,6 +265,8 @@
 		dmas = <&dma0 10 &dma0 11>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom2_clock>;
+		clock-output-names = "default";
 	};
 
 	flexcomm3: flexcomm@89000 {
@@ -270,6 +278,8 @@
 		dmas = <&dma0 8 &dma0 9>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom3_clock>;
+		clock-output-names = "default";
 	};
 
 	flexcomm4: flexcomm@8a000 {
@@ -281,6 +291,8 @@
 		dmas = <&dma0 12 &dma0 13>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom4_clock>;
+		clock-output-names = "default";
 	};
 
 	flexcomm5: flexcomm@96000 {
@@ -292,6 +304,8 @@
 		dmas = <&dma0 14 &dma0 15>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom5_clock>;
+		clock-output-names = "default";
 	};
 
 	flexcomm6: flexcomm@97000 {
@@ -303,6 +317,8 @@
 		dmas = <&dma0 16 &dma0 17>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom6_clock>;
+		clock-output-names = "default";
 	};
 
 	flexcomm7: flexcomm@98000 {
@@ -314,6 +330,8 @@
 		dmas = <&dma0 18 &dma0 19>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&fxcom7_clock>;
+		clock-output-names = "default";
 	};
 
 	sdif: sdif@9b000 {
@@ -503,3 +521,5 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+#include "nxp_lpc55Sxx_clocks.dtsi"

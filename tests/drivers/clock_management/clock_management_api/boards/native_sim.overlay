@@ -1,0 +1,180 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Define clock tree with emulated clock nodes.
+ * These node labels are chosen so that they won't conflict with SOC clock
+ * tree nodelabels. The clock driver implementations used by this tree are
+ * stored within the test itself
+ */
+
+/ {
+	emul_clock_root {
+		emul_source1: emul-source1 {
+			compatible = "fixed-clock";
+			clock-frequency = <10000000>;
+			#clock-cells = <0>;
+
+			emul_div1: emul-div1 {
+				compatible = "vnd,emul-clock-div";
+				max-div = <64>;
+				#clock-cells = <1>;
+			};
+		};
+
+		emul_source2: emul-source2 {
+			compatible = "fixed-clock";
+			clock-frequency = <50000000>;
+			#clock-cells = <0>;
+
+			emul_div2: emul-div2 {
+				compatible = "vnd,emul-clock-div";
+				max-div = <256>;
+				#clock-cells = <1>;
+			};
+		};
+
+		emul_source3: emul-source3 {
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+
+		emul_mux1: emul-mux1 {
+			compatible = "vnd,emul-clock-mux";
+			inputs = <&emul_div1 &emul_div2>;
+			#clock-cells = <1>;
+
+			emul_dev1_out: emul-dev1-out {
+				compatible = "clock-output";
+				#clock-cells = <0>;
+
+				/* Expect a clock frequency of 3.333333 MHz */
+				dev1_3mhz: dev1-3mhz {
+					compatible = "clock-state";
+					clocks = <&emul_div1 3 &emul_mux1 0>;
+					clock-frequency = <3333333>;
+				};
+
+				/* Expect error when applying this invalid state */
+				invalid_dev1: invalid-dev1 {
+					compatible = "clock-state";
+					clocks = <&emul_div1 65 &emul_mux1 0>;
+					clock-frequency = <0>;
+				};
+
+				/* Expect notification on first device only,
+				 * as emul_mux2 is not selecting emul_mux1 as an
+				 * input. frequency should be 50 MHz
+				 */
+				shared_dev1: shared-dev1 {
+					compatible = "clock-state";
+					clocks = <&emul_mux1 1 &emul_div2 1>;
+					clock-frequency = <50000000>;
+				};
+
+				/* Setup a locking state, which will cause
+				 * this consumer to reject any changes to its
+				 * frequency.
+				 */
+				locking_dev1: locking-dev1 {
+					compatible = "clock-state";
+					clocks = <&emul_mux1 1 &emul_div2 1>;
+					clock-frequency = <50000000>;
+					locking-state;
+				};
+			};
+		};
+
+		emul_mux2: emul-mux2 {
+			compatible = "vnd,emul-clock-mux";
+			inputs = <&emul_mux1 &emul_source3>;
+			#clock-cells = <1>;
+
+			emul_dev2_out: emul-dev2-out {
+				compatible = "clock-output";
+				#clock-cells = <0>;
+
+				/* Expect a clock frequency of 100 MHz */
+				dev2_100mhz: dev2-100mhz {
+					compatible = "clock-state";
+					clocks = <&emul_mux2 1>;
+					clock-frequency = <100000000>;
+				};
+
+				/* Expect error when applying this invalid state */
+				invalid_dev2: invalid-dev2 {
+					compatible = "clock-state";
+					clocks = <&emul_div2 257 &emul_mux1 0>;
+					clock-frequency = <0>;
+				};
+
+				/* Expect notification on both devices with this
+				 * state. frequency should be 10 MHz for each
+				 */
+				shared_dev2: shared-dev2 {
+					compatible = "clock-state";
+					clocks = <&emul_mux2 0 &emul_mux1 0
+						&emul_div1 1>;
+					clock-frequency = <10000000>;
+				};
+
+				/* This state will fail to apply, as
+				 * it reconfigures clocks used by emul_dev1,
+				 * which has applied a locking state
+				 */
+				locking_dev2: locking-dev2 {
+					compatible = "clock-state";
+					clocks = <&emul_mux2 0 &emul_mux1 0
+						&emul_div1 1>;
+					clock-frequency = <10000000>;
+				};
+			};
+		};
+	};
+
+	/* Emulated device clock consumers */
+	emul_devices {
+		emul_dev1: emul-dev1 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&emul_dev1_out>;
+			clock-output-names = "default";
+			clock-state-0 = <&dev1_3mhz>;
+			default-freq = <3333333>;
+			clock-state-1 = <&invalid_dev1>;
+			clock-state-2 = <&shared_dev1>;
+			shared-freq = <10000000>;
+			clock-state-3 = <&locking_dev1>;
+			locking-freq = <50000000>;
+			freq-constraints-0 = <500000 900000>;
+			req-freq-0 = <892857>;
+			freq-constraints-1 = <40000000 50000000>;
+			/* Not used */
+			req-freq-1 = <0>;
+			clock-state-names = "default", "invalid", "shared",
+					"locking";
+		};
+
+		emul_dev2: emul-dev2 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&emul_dev2_out>;
+			clock-output-names = "default";
+			clock-state-0 = <&dev2_100mhz>;
+			default-freq = <100000000>;
+			clock-state-1 = <&invalid_dev2>;
+			clock-state-2 = <&shared_dev2>;
+			shared-freq = <10000000>;
+			clock-state-3 = <&locking_dev2>;
+			locking-freq = <0>;
+			freq-constraints-0 = <500000 750000>;
+			req-freq-0 = <746268>;
+			freq-constraints-1 = <75000000 100000000>;
+			req-freq-1 = <100000000>;
+			clock-state-names = "default", "invalid", "shared",
+					"locking";
+		};
+	};
+};
