@@ -13,17 +13,14 @@
 #include <zephyr/drivers/video-controls.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_TEST
 #include "check_test_pattern.h"
 
-#define LOG_LEVEL LOG_LEVEL_DBG
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #else
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #endif
-
-#define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
 
 #if DT_HAS_CHOSEN(zephyr_display)
 static inline int display_setup(const struct device *const display_dev, const uint32_t pixfmt)
@@ -92,6 +89,7 @@ int main(void)
 {
 	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 	struct video_buffer *vbuf = &(struct video_buffer){};
+	const struct device *video_dev;
 	struct video_format fmt;
 	struct video_caps caps;
 	struct video_frmival frmival;
@@ -108,21 +106,11 @@ int main(void)
 		return 0;
 	}
 
-#if DT_HAS_CHOSEN(zephyr_camera)
-	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
-
+	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	if (!device_is_ready(video_dev)) {
 		LOG_ERR("%s: video device is not ready", video_dev->name);
 		return 0;
 	}
-#else
-	const struct device *const video_dev = device_get_binding(VIDEO_DEV_SW);
-
-	if (video_dev == NULL) {
-		LOG_ERR("%s: video device not found or failed to initialized", VIDEO_DEV_SW);
-		return 0;
-	}
-#endif
 
 	LOG_INF("Video device: %s", video_dev->name);
 
