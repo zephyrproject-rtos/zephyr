@@ -8,15 +8,14 @@
 
 from textwrap import dedent
 
-from west.commands import WestCommand
-
 from run_common import add_parser_common, do_run_common
+from west.commands import WestCommand
 
 
 class Debug(WestCommand):
 
     def __init__(self):
-        super(Debug, self).__init__(
+        super().__init__(
             'debug',
             # Keep this in sync with the string in west-commands.yml.
             'flash and interactively debug a Zephyr application',
@@ -37,7 +36,7 @@ class Debug(WestCommand):
 class DebugServer(WestCommand):
 
     def __init__(self):
-        super(DebugServer, self).__init__(
+        super().__init__(
             'debugserver',
             # Keep this in sync with the string in west-commands.yml.
             'connect to board and launch a debug server',
@@ -61,7 +60,7 @@ class DebugServer(WestCommand):
 class Attach(WestCommand):
 
     def __init__(self):
-        super(Attach, self).__init__(
+        super().__init__(
             'attach',
             # Keep this in sync with the string in west-commands.yml.
             'interactively debug a board',
@@ -79,7 +78,7 @@ class Attach(WestCommand):
 class Rtt(WestCommand):
 
     def __init__(self):
-        super(Rtt, self).__init__(
+        super().__init__(
             'rtt',
             # Keep this in sync with the string in west-commands.yml.
             'open an rtt shell',
