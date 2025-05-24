@@ -1082,14 +1082,6 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
-"./scripts/west_commands/build.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/west_commands/build_helpers.py" = [
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
