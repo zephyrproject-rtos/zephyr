@@ -64,10 +64,34 @@
 		led1 = &orange_led_2;
 		sw0 = &wake_up;
 	};
+
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &gpiok 7 0>,	/* TOUCH_INT */
+			   <35 0 &gpioe 5 0>,	/* SCLK/MCLK */
+			   <39 0 &gpioe 6 0>,	/* I2S */
+			   <40 0 &gpiod 13 0>,	/* I2C4_SDA */
+			   <44 0 &gpiod 12 0>,	/* I2C4_SCL */
+			   <45 0 &gpioa 8 0>,	/* CEC_CLK */
+			   <47 0 &gpiob 6 0>,	/* CEC */
+			   <49 0 &gpioj 2 0>,	/* DSI_TE */
+			   <53 0 &gpioj 12 0>,	/* LCD_BL_CTRL */
+			   <57 0 &gpiog 3 0>;	/* DSI_RESET */
+	};
 };
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+qsh_030_i2c: &i2c4 {
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 };
 
