@@ -9,7 +9,7 @@
 #include <mem.h>
 
 / {
-	model = "Space Cubics OBC module 1";
+	model = "SC-OBC Module A1";
 
 	chosen {
 		zephyr,console = &uartlite0;
