@@ -1,0 +1,22 @@
+#
+#  Copyright (c) 2025 Netfeasa
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig HL78XX_EVT_MONITOR
+	bool "HL78XX AT notification monitor"
+
+if HL78XX_EVT_MONITOR
+
+config HL78XX_EVT_MONITOR_HEAP_SIZE
+	int "Heap size for notifications"
+	range 64 4096
+	default 256
+
+module=HL78XX_EVT_MONITOR
+module-dep=LOG
+module-str= Event notification monitor library
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif # HL78XX_EVT_MONITOR
