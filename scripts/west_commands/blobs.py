@@ -5,6 +5,7 @@
 import argparse
 import os
 from pathlib import Path
+import re
 import sys
 import textwrap
 from urllib.parse import urlparse
@@ -76,6 +77,12 @@ class Blobs(WestCommand):
         group.add_argument('-f', '--format',
                             help='''format string to use to list each blob;
                                     see FORMAT STRINGS below''')
+
+        group = parser.add_argument_group('west blob fetch options')
+        group.add_argument('-a', '--allow-regex',
+                            help='''Regex pattern to apply to the blob local path.
+                            Only local paths matching this regex will be fetched.
+                            Note that local paths are relative to the module directory''')
 
         return parser
 
@@ -151,6 +158,12 @@ class Blobs(WestCommand):
         for blob in blobs:
             if blob['status'] == zephyr_module.BLOB_PRESENT:
                 self.dbg('Blob {module}: {abspath} is up to date'.format(**blob))
+                continue
+
+            # if args.allow_regex is set, use it to filter the blob by path
+            if args.allow_regex and not re.match(args.allow_regex, blob['path']):
+                self.dbg('Blob {module}: {abspath} does not match regex '
+                         '{regex}, skipping'.format(regex=args.allow_regex, **blob))
                 continue
             self.inf('Fetching blob {module}: {abspath}'.format(**blob))
 
