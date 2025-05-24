@@ -294,7 +294,9 @@ ALIASES                = "kconfig{1}=\c \1" \
                          "pre_kernel_ok=\qualifier pre-kernel-ok" \
                          "async=\qualifier async" \
                          "atomic_api=As for all atomic APIs, includes a full/sequentially-consistent memory barrier (where applicable)." \
-                         "supervisor=\qualifier supervisor"
+                         "supervisor=\qualifier supervisor" \
+                         "driver_api{1}=\brief \htmlonly <span class=\"mlabel\">Driver API</span> \endhtmlonly \1 driver API \
+                                       \details This is the mandatory API any \1 driver needs to expose."
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
