@@ -72,6 +72,13 @@ static const uint8_t mock_iso_data[] = {
 	0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
 };
 
+/* The sample SIRK as defined by the CSIS spec Appendix A.1.
+ * Sample data is Big Endian, so we reverse it for little-endian
+ */
+#define TEST_SAMPLE_SIRK                                                                           \
+	{REVERSE_ARGS(0x45, 0x7d, 0x7d, 0x09, 0x21, 0xa1, 0xfd, 0x22, 0xce, 0xcd, 0x8c, 0x86,      \
+		      0xdd, 0x72, 0xcc, 0xcd)}
+
 #define MIN_SEND_COUNT 100
 #define WAIT_SECONDS   100                           /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
