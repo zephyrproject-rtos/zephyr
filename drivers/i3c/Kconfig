@@ -159,6 +159,11 @@ endif # I3C_CONTROLLER && I3C_TARGET
 
 if I3C_CONTROLLER
 
+config I3C_CALLBACK
+	bool "I3C asynchronous callback API"
+	help
+	  API and implementations of i3c_transfer_cb and i3c_do_ccc_cb.
+
 config I3C_RTIO
 	bool "I3C RTIO API"
 	select EXPERIMENTAL
