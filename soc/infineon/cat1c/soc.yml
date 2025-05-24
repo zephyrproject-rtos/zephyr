@@ -1,0 +1,27 @@
+family:
+- name: cat1c
+  series:
+  - name: xmc7200
+    socs:
+    - name: xmc7200_f176k8384
+    - name: xmc7200d_f176k8384
+    - name: xmc7200_e272k8384
+    - name: xmc7200d_e272k8384
+      cpuclusters:
+      - name: m0p
+      - name: m7_0
+      - name: m7_1
+  - name: cyt4bf
+    socs:
+    - name: cyt4bf8ces
+    - name: cyt4bf8cee
+    - name: cyt4bf8cds
+    - name: cyt4bf8cde
+    - name: cyt4bfbcjs
+    - name: cyt4bfbcje
+    - name: cyt4bfbchs
+    - name: cyt4bfbche
+    - name: cyt4bfccjs
+    - name: cyt4bfccje
+    - name: cyt4bfcchs
+    - name: cyt4bfcche
