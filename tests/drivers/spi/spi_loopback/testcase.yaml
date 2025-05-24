@@ -262,6 +262,12 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_fast_8mhz_port2:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_p2.overlay"
+      - CONFIG_NRF_REGTOOL_VERBOSITY=2
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
   drivers.spi.nrf54l_1mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_1mhz.overlay"
     platform_allow:
