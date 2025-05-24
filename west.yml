@@ -265,7 +265,7 @@ manifest:
       groups:
         - hal
     - name: hal_wch
-      revision: 941f5182b5577d168e0cbcc0c9dd26294c1806a5
+      revision: 6dd313768b5f4cc69baeac4ce6e59f2038eb8ce5
       path: modules/hal/wch
       groups:
         - hal
