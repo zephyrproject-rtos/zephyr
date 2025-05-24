@@ -37,6 +37,9 @@ enum rsc_table_entries {
 #if defined(CONFIG_RAM_CONSOLE)
 	RSC_TABLE_TRACE_ENTRY,
 #endif
+#if defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE_ENTRY)
+	RSC_TABLE_VENDOR_ENTRY,
+#endif
 	RSC_TABLE_NUM_ENTRY
 };
 
@@ -53,6 +56,11 @@ struct fw_resource_table {
 #if defined(CONFIG_RAM_CONSOLE)
 	/* rpmsg trace entry */
 	struct fw_rsc_trace cm_trace;
+#endif
+
+#if defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE_ENTRY)
+	/* vendor-specific resource type can be values 128-512 */
+	uint32_t vendor_type;
 #endif
 } METAL_PACKED_END;
 
