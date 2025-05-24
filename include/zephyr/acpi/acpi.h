@@ -299,4 +299,13 @@ ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num);
  */
 int acpi_invoke_method(char *path, ACPI_OBJECT_LIST *arg_list, ACPI_OBJECT *ret_obj);
 
+#if defined(CONFIG_ACPI_POWEROFF)
+/**
+ * @brief system level poweroff by setting it to soft off.
+ *
+ * @return return EINVAL of the pm1_cnt address is not available.
+ */
+int acpi_poweroff(void);
+#endif
+
 #endif
