@@ -11,3 +11,14 @@ if(NOT COMMAND toolchain_linker_finalize)
   macro(toolchain_linker_finalize)
   endmacro()
 endif()
+
+if(NOT COMMAND toolchain_linker_add_compiler_options)
+
+  # If the linker doesn't provide a method for mapping compiler options
+  # to linker options, then assume we can't. This matters when the linker
+  # is using additional compiler flags (like OPTIMIZATION_FLAG) when
+  # computing toolchain library paths.
+
+  function(toolchain_linker_add_compiler_options)
+  endfunction()
+endif()
