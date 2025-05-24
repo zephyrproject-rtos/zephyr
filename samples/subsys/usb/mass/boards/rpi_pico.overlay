@@ -5,6 +5,7 @@
  */
 
 /delete-node/ &code_partition;
+/delete-node/ &storage_partition;
 
 &flash0 {
 	partitions {

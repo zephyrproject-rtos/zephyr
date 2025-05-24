@@ -78,13 +78,24 @@
 		};
 
 		/*
-		 * Usable flash. Starts at 0x100, after the bootloader. The partition
-		 * size is 2MB minus the 0x100 bytes taken by the bootloader.
+		 * Usable flash. Starts at 0x100, after the bootloader. The code partition
+		 * size is flash size minus the 0x100 bytes taken by the bootloader, and
+		 * minus the size of the storage partition.
 		 */
 		code_partition: partition@100 {
 			label = "code-partition";
-			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			reg = <0x100 (DT_SIZE_M(2) - 0x100 - DT_SIZE_K(16))>;
 			read-only;
+		};
+
+		/*
+		 * Area for placing a file system for persistent storage. Starts at the end
+		 * of the code partition. The persistent storage size is chosen to have the
+		 * capacity for a minimal 'littlefs' file system with 4 blocks.
+		 */
+		storage_partition: partition@1fc000 {
+			label = "storage-partition";
+			reg = <0x1fc000 DT_SIZE_K(16)>;
 		};
 	};
 };
