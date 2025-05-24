@@ -34,6 +34,32 @@ LOG_MODULE_REGISTER(flash_esp32, CONFIG_FLASH_LOG_LEVEL);
 
 #define FLASH_SEM_TIMEOUT (k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
 
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+#define ENCRYPTION_IS_VIRTUAL (!efuse_hal_flash_encryption_enabled())
+#else
+#define ENCRYPTION_IS_VIRTUAL 0
+#endif
+
+#ifndef MIN
+#  define MIN(a, b)                 (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef ALIGN_UP
+#  define ALIGN_UP(num, align)      (((num) + ((align) - 1)) & ~((align) - 1))
+#endif
+
+#ifndef ALIGN_DOWN
+#  define ALIGN_DOWN(num, align)    ((num) & ~((align) - 1))
+#endif
+
+#ifndef ALIGN_OFFSET
+#  define ALIGN_OFFSET(num, align)  ((num) & ((align) - 1))
+#endif
+
+#ifndef IS_ALIGNED
+#  define IS_ALIGNED(num, align)    (ALIGN_OFFSET((num), (align)) == 0)
+#endif
+
 struct flash_esp32_dev_config {
 	spi_dev_t *controller;
 };
@@ -76,6 +102,8 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 #include <stdint.h>
 #include <string.h>
 
+static bool aligned_flash_erase(const struct device *dev, size_t addr, size_t size);
+
 #ifdef CONFIG_MCUBOOT
 #define READ_BUFFER_SIZE 32
 static bool flash_esp32_is_aligned(off_t address, void *buffer, size_t length)
@@ -84,6 +112,26 @@ static bool flash_esp32_is_aligned(off_t address, void *buffer, size_t length)
 	return ((address & 3) == 0) && (((uintptr_t)buffer & 3) == 0) && ((length & 3) == 0);
 }
 #endif
+
+static int flash_esp32_read_check_enc(off_t address, void *buffer, size_t length)
+{
+	int ret = 0;
+
+	if (esp_flash_encryption_enabled()) {
+		LOG_DBG("Flash read ENCRYPTED - address 0x%lx size 0x%x", address, length);
+		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
+	} else {
+		LOG_DBG("Flash read RAW - address 0x%lx size 0x%x", address, length);
+		ret = esp_flash_read(NULL, buffer, address, length);
+	}
+
+	if (ret != 0) {
+		LOG_ERR("Flash read error: %d", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
 
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
@@ -139,17 +187,33 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 #else
 	flash_esp32_sem_take(dev);
 
-	if (esp_flash_encryption_enabled()) {
-		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
-	} else {
-		ret = esp_flash_read(NULL, buffer, address, length);
-	}
+	ret = flash_esp32_read_check_enc(address, buffer, length);
 
 	flash_esp32_sem_give(dev);
 #endif
 
 	if (ret != 0) {
 		LOG_ERR("Flash read error: %d", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t length)
+{
+	int ret = 0;
+
+	if (esp_flash_encryption_enabled() && !ENCRYPTION_IS_VIRTUAL) {
+		LOG_DBG("Flash write ENCRYPTED - address 0x%lx size 0x%x", address, length);
+		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
+	} else {
+		LOG_DBG("Flash write RAW - address 0x%lx size 0x%x", address, length);
+		ret = esp_flash_write(NULL, buffer, address, length);
+	}
+
+	if (ret != 0) {
+		LOG_ERR("Flash write error: %d", ret);
 		return -EIO;
 	}
 
@@ -176,9 +240,17 @@ static int flash_esp32_write(const struct device *dev,
 	flash_esp32_sem_take(dev);
 
 	if (esp_flash_encryption_enabled()) {
-		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
-	} else {
-		ret = esp_flash_write(NULL, buffer, address, length);
+		/* Ensuring flash region has been erased before writing in order to
+		 * avoid inconsistences when hardware flash encryption is enabled.
+		 */
+		if (!aligned_flash_erase(dev, address, length)) {
+			LOG_ERR("%s: Flash erase before write failed", __func__);
+			ret = -1;
+		}
+	}
+
+	if (ret == 0) {
+		ret = flash_esp32_write_check_enc(address, buffer, length);
 	}
 
 	flash_esp32_sem_give(dev);
@@ -192,6 +264,71 @@ static int flash_esp32_write(const struct device *dev,
 	return 0;
 }
 
+static bool aligned_flash_erase(const struct device *dev, size_t addr, size_t size)
+{
+    if (IS_ALIGNED(addr, FLASH_SECTOR_SIZE) && IS_ALIGNED(size, FLASH_SECTOR_SIZE)) {
+        /* A single write operation is enough when all parameters are aligned */
+
+        return esp_flash_erase_region(NULL, addr, size) == ESP_OK;
+    }
+
+    const uint32_t aligned_addr = ALIGN_DOWN(addr, FLASH_SECTOR_SIZE);
+    const uint32_t addr_offset = ALIGN_OFFSET(addr, FLASH_SECTOR_SIZE);
+    uint32_t bytes_remaining = size;
+    uint8_t write_data[FLASH_SECTOR_SIZE] = {0};
+
+    /* Perform a read operation considering an offset not aligned to 4-byte boundary */
+
+    uint32_t bytes = MIN(bytes_remaining + addr_offset, sizeof(write_data));
+    if (flash_esp32_read_check_enc(aligned_addr, write_data, ALIGN_UP(bytes, FLASH_SECTOR_SIZE)) != ESP_OK) {
+        return false;
+    }
+
+    if (esp_flash_erase_region(NULL, aligned_addr, ALIGN_UP(bytes, FLASH_SECTOR_SIZE)) != ESP_OK) {
+        LOG_ERR("%s: Flash erase failed", __func__);
+        return -1;
+    }
+
+    uint32_t bytes_written = bytes - addr_offset;
+
+    /* Write first part of non-erased data */
+    if(addr_offset > 0) {
+        flash_esp32_write_check_enc(aligned_addr, write_data, addr_offset);
+    }
+
+    if(bytes < sizeof(write_data)) {
+        flash_esp32_write_check_enc(aligned_addr + bytes, write_data + bytes, sizeof(write_data) - bytes);
+    }
+
+    bytes_remaining -= bytes_written;
+
+    /* Write remaining data to Flash if any */
+
+    uint32_t offset = bytes;
+
+    while (bytes_remaining != 0) {
+        bytes = MIN(bytes_remaining, sizeof(write_data));
+        if (flash_esp32_read_check_enc(aligned_addr + offset, write_data, ALIGN_UP(bytes, FLASH_SECTOR_SIZE)) != ESP_OK) {
+            return false;
+        }
+
+        if (esp_flash_erase_region(NULL, aligned_addr + offset, ALIGN_UP(bytes, FLASH_SECTOR_SIZE)) != ESP_OK) {
+            LOG_ERR("%s: Flash erase failed", __func__);
+            return -1;
+        }
+
+        if(bytes < sizeof(write_data)) {
+            flash_esp32_write_check_enc(aligned_addr + offset + bytes, write_data + bytes, sizeof(write_data) - bytes);
+        }
+
+        offset += bytes;
+        bytes_written += bytes;
+        bytes_remaining -= bytes;
+    }
+
+    return true;
+}
+
 static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 {
 	int ret = 0;
@@ -200,7 +337,20 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 	ret = esp_rom_flash_erase_range(start, len);
 #else
 	flash_esp32_sem_take(dev);
-	ret = esp_flash_erase_region(NULL, start, len);
+
+    if ((len % FLASH_SECTOR_SIZE) != 0 || (start % FLASH_SECTOR_SIZE) != 0) {
+        LOG_DBG("%s: Not aligned on sector Offset: 0x%x Length: 0x%x",
+                     __func__, (int)start, (int)len);
+
+        if(!aligned_flash_erase(dev, start, len)) {
+			ret = -EIO;
+		}
+    } else {
+		LOG_DBG("%s: Aligned Addr: 0x%08x Length: %d", __func__, (int)start, (int)len);
+
+		ret = esp_flash_erase_region(NULL, start, len);
+	}
+
 	flash_esp32_sem_give(dev);
 #endif
 	if (ret != 0) {
