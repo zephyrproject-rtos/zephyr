@@ -274,9 +274,9 @@ static inline const char *bt_ascs_op_str(uint8_t op)
 		return "Update Metadata";
 	case BT_ASCS_RELEASE_OP:
 		return "Release";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 static inline const char *bt_ascs_rsp_str(uint8_t code)
@@ -312,9 +312,9 @@ static inline const char *bt_ascs_rsp_str(uint8_t code)
 		return "Insufficient Resources";
 	case BT_BAP_ASCS_RSP_CODE_UNSPECIFIED:
 		return "Unspecified Error";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 static inline const char *bt_ascs_reason_str(uint8_t reason)
@@ -342,9 +342,9 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 		return "Presentation Delay";
 	case BT_BAP_ASCS_REASON_CIS:
 		return "Invalid ASE CIS Mapping";
+	default:
+		return "Unknown";
 	}
-
-	return "Unknown";
 }
 
 int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
