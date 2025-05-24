@@ -14,7 +14,7 @@
 #include <zephyr/fff.h>
 #include <zephyr/bluetooth/audio/bap.h>
 
-extern const struct bt_bap_unicast_server_cb mock_bap_unicast_server_cb;
+extern struct bt_bap_unicast_server_cb mock_bap_unicast_server_cb;
 
 void mock_bap_unicast_server_init(void);
 void mock_bap_unicast_server_cleanup(void);
