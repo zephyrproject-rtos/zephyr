@@ -7,6 +7,9 @@
 #include <arm/renesas/ra/ra8/ra8x1.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 
+/delete-node/ &i2s0;
+/delete-node/ &i2s1;
+
 / {
 	clocks: clocks {
 		#address-cells = <1>;

@@ -11,4 +11,5 @@ supported:
   - gpio
   - uart
   - watchdog
+  - i2s
 vendor: renesas
