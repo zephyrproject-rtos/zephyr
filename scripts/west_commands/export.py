@@ -6,7 +6,6 @@ import argparse
 from pathlib import Path
 
 from west.commands import WestCommand
-
 from zcmake import run_cmake
 
 EXPORT_DESCRIPTION = '''\
