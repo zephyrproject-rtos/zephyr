@@ -10,7 +10,7 @@ pykwalify
 pylint>=3
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
-ruff==0.8.1
+ruff==0.11.11
 sphinx-lint
 unidiff
 yamllint
