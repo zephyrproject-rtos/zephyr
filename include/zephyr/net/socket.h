@@ -77,6 +77,8 @@ extern "C" {
 #define ZSOCK_MSG_DONTWAIT 0x40
 /** zsock_recv: block until the full amount of data can be returned */
 #define ZSOCK_MSG_WAITALL 0x100
+/** zsock_recv/zsock_send: Do not copy data to/from the socket buffer */
+#define ZSOCK_MSG_ZEROCOPY 0x4000000
 /** @} */
 
 /**

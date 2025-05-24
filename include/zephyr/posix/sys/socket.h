@@ -17,6 +17,7 @@
 #define MSG_TRUNC    ZSOCK_MSG_TRUNC
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
 #define MSG_WAITALL  ZSOCK_MSG_WAITALL
+#define MSG_ZEROCOPY ZSOCK_MSG_ZEROCOPY
 
 #ifdef __cplusplus
 extern "C" {
