@@ -21,9 +21,11 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <errno.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -540,6 +542,61 @@ static inline int z_impl_stepper_is_moving(const struct device *dev, bool *is_mo
 	return api->is_moving(dev, is_moving);
 }
 
+#ifdef CONFIG_STEPPER_EVENT_HANDLER
+
+/**
+ * @brief Stepper Event Data
+ *
+ * This structure is used to hold the event data for stepper events.
+ */
+struct stepper_event_data {
+	enum stepper_event event;
+	stepper_event_callback_t event_cb;
+	void *user_data;
+};
+
+/**
+ * @brief Stepper Event Handler
+ *
+ * This structure is used to handle stepper events in a queue-based manner.
+ * It allows for asynchronous handling of stepper events.
+ */
+struct stepper_event_handler {
+	const struct device *dev;
+	struct k_work event_callback_work;
+	struct k_msgq event_msgq;
+	uint8_t event_msgq_buffer[CONFIG_STEPPER_EVENT_HANDLER_QUEUE_LEN *
+				  sizeof(struct stepper_event_data)];
+};
+
+#define STEPPER_EVENT_HANDLER_INITIALIZER(_dev)                                                    \
+	{                                                                                          \
+		.dev = _dev,                                                                       \
+	}
+
+#define STEPPER_EVENT_HANDLER_DEFINE(name, ...)                                                    \
+	static const STRUCT_SECTION_ITERABLE(stepper_event_handler, name) =                        \
+		STEPPER_EVENT_HANDLER_INITIALIZER(__VA_ARGS__)
+
+#define STEPPER_DT_NAME(node_id) _CONCAT(__stepper_event_handler, DEVICE_DT_NAME_GET(node_id))
+
+#define STEPPER_EVENT_HANDLER_DT_DEFINE(node_id)                                                   \
+	STEPPER_EVENT_HANDLER_DEFINE(STEPPER_DT_NAME(node_id), DEVICE_DT_GET(node_id))
+
+#else
+
+#define STEPPER_EVENT_HANDLER_DT_DEFINE(node_id)
+
+#endif /* CONFIG_STEPPER_EVENT_HANDLER */
+
+#define STEPPER_DEVICE_DT_DEFINE(node_id, init_fn, pm_device, data_ptr, cfg_ptr, level, prio,      \
+				 api_ptr, ...)                                                     \
+	DEVICE_DT_DEFINE(node_id, init_fn, pm_device, data_ptr, cfg_ptr, level, prio, api_ptr,     \
+			 __VA_ARGS__);                                                             \
+	STEPPER_EVENT_HANDLER_DT_DEFINE(node_id);
+
+#define STEPPER_DEVICE_DT_INST_DEFINE(inst, ...)                                                   \
+	STEPPER_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 /**
  * @}
  */

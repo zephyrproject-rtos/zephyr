@@ -5,6 +5,7 @@
 
 #include "step_dir_stepper_common.h"
 
+#include <zephyr/drivers/stepper/stepper_event_handler.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(step_dir_stepper, CONFIG_STEPPER_LOG_LEVEL);
 
@@ -62,7 +63,7 @@ void stepper_trigger_callback(const struct device *dev, enum stepper_event event
 		return;
 	}
 
-	data->callback(dev, event, data->event_cb_user_data);
+	stepper_post_event(dev, data->callback, event, data->event_cb_user_data);
 }
 
 static void update_remaining_steps(struct step_dir_stepper_common_data *data)

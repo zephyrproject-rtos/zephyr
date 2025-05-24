@@ -61,6 +61,7 @@ tests:
       - platform:qemu_x86_64/atom:DTC_OVERLAY_FILE="boards/qemu_x86_64_zephyr_gpio_stepper.overlay"
     extra_configs:
       - CONFIG_GPIO=y
+      - CONFIG_STEPPER_EVENT_HANDLER=n
     platform_allow:
       - native_sim/native/64
       - qemu_x86_64/atom

@@ -12,6 +12,8 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/sys/__assert.h>
 
+#include <zephyr/drivers/stepper/stepper_event_handler.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_stepper_motor_controller, CONFIG_STEPPER_LOG_LEVEL);
 
@@ -141,10 +143,8 @@ static void position_mode_task(const struct device *dev)
 	if (data->step_count) {
 		(void)k_work_reschedule(&data->stepper_dwork, K_NSEC(data->delay_in_ns));
 	} else {
-		if (data->callback) {
-			data->callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED,
-				       data->event_cb_user_data);
-		}
+		stepper_post_event(data->dev, data->callback, STEPPER_EVENT_STEPS_COMPLETED,
+				   data->event_cb_user_data);
 		(void)k_work_cancel_delayable(&data->stepper_dwork);
 	}
 }
@@ -359,7 +359,8 @@ static int gpio_stepper_stop(const struct device *dev)
 		err = energize_coils(dev, true);
 
 		if (data->callback && !err) {
-			data->callback(data->dev, STEPPER_EVENT_STOPPED, data->event_cb_user_data);
+			stepper_post_event(data->dev, data->callback, STEPPER_EVENT_STOPPED,
+					   data->event_cb_user_data);
 		}
 	}
 	return err;
@@ -409,7 +410,7 @@ static DEVICE_API(stepper, gpio_stepper_api) = {
 	};											\
 	BUILD_ASSERT(DT_INST_PROP(inst, micro_step_res) <= STEPPER_MICRO_STEP_2,		\
 		     "gpio_stepper_controller driver supports up to 2 micro steps");		\
-	DEVICE_DT_INST_DEFINE(inst, gpio_stepper_init, NULL, &gpio_stepper_data_##inst,		\
+	STEPPER_DEVICE_DT_INST_DEFINE(inst, gpio_stepper_init, NULL, &gpio_stepper_data_##inst,	\
 			      &gpio_stepper_config_##inst, POST_KERNEL,				\
 			      CONFIG_STEPPER_INIT_PRIORITY, &gpio_stepper_api);
 
