@@ -1073,11 +1073,6 @@
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/west_commands/bindesc.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
-]
 "./scripts/west_commands/blobs.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
