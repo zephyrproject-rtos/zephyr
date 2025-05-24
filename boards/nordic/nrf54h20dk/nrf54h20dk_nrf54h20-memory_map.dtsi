@@ -195,7 +195,7 @@
 		#size-cells = <1>;
 
 		cpurad_slot0_partition: partition@54000 {
-			reg = <0x54000 DT_SIZE_K(256)>;
+			reg = <0x54000 DT_SIZE_K(320)>;
 		};
 	};
 
@@ -206,16 +206,16 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		cpuapp_slot0_partition: partition@94000 {
-			reg = <0x94000 DT_SIZE_K(320)>;
+		cpuapp_slot0_partition: partition@a4000 {
+			reg = <0xa4000 DT_SIZE_K(320)>;
 		};
 
-		cpuppr_code_partition: partition@e4000 {
-			reg = <0xe4000 DT_SIZE_K(64)>;
+		cpuppr_code_partition: partition@f4000 {
+			reg = <0xf4000 DT_SIZE_K(64)>;
 		};
 
-		cpuflpr_code_partition: partition@f4000 {
-			reg = <0xf4000 DT_SIZE_K(48)>;
+		cpuflpr_code_partition: partition@104000 {
+			reg = <0x104000 DT_SIZE_K(48)>;
 		};
 	};
 
@@ -226,8 +226,8 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		dfu_partition: partition@100000 {
-			reg = < 0x100000 DT_SIZE_K(908) >;
+		dfu_partition: partition@110000 {
+			reg = < 0x110000 DT_SIZE_K(844) >;
 		};
 
 		storage_partition: partition@1e3000 {
