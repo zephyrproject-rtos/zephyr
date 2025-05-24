@@ -171,3 +171,7 @@
 		status = "disabled";
 	};
 };
+
+&exti {
+	num-lines = <64>;
+};
