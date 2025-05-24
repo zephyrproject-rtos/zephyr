@@ -94,6 +94,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config PM_DEVICE_POWER_DOMAIN
 	bool "Power domain"
 	depends on PM_DEVICE
+	select DEVICE_DEPS
 	default y
 	help
 	  Enable support for Power Domain. With power domain enabled,
