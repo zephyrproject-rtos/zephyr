@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/device.h>
 #include <zephyr/debug/sparse.h>
@@ -81,17 +82,17 @@ void power_down(bool disable_lpsram, bool disable_hpsram, bool response_to_ipc);
  */
 extern void platform_context_restore(void);
 
-/*
+/**
  * @brief pointer to a persistent storage space, to be set by platform code
  */
 uint8_t *global_imr_ram_storage;
 
-/*8
- * @biref a d3 restore boot entry point
+/**
+ * @brief a d3 restore boot entry point
  */
 extern void boot_entry_d3_restore(void);
 
-/*
+/**
  * @brief re-enables IDC interrupt for all cores after exiting D3 state
  *
  * Called once from core 0
@@ -100,8 +101,8 @@ extern void soc_mp_on_d3_exit(void);
 
 #else
 
-/*
- * @biref FW entry point called by ROM during normal boot flow
+/**
+ * @brief FW entry point called by ROM during normal boot flow
  */
 extern void rom_entry(void);
 
@@ -342,6 +343,10 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* do power down - this function won't return */
 			power_down(true, IS_ENABLED(CONFIG_ADSP_POWER_DOWN_HPSRAM), true);
 		} else {
+			/* When all secondary cores are turned off, power gating for the primary
+			 * core will be re-enabled.
+			 */
+			pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
 			power_gate_entry(cpu);
 		}
 		break;
