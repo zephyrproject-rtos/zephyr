@@ -94,7 +94,11 @@ static int pwm_wch_gptm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	if (period_cycles != 0) {
-		regs->ATRLR = period_cycles;
+		/*
+		 * Note that the period is ATRLR+1. The earlier checks handle the case where
+		 * pulse_cycles is zero or equal to period_cycles.
+		 */
+		regs->ATRLR = period_cycles - 1;
 	}
 
 	/* Set the polarity and enable */
