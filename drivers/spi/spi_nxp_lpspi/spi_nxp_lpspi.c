@@ -215,7 +215,7 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 		lpspi_data->fill_len -= this_buf_words_sent;
 	}
 
-	lpspi_next_tx_fill(data->dev);
+	lpspi_next_tx_fill(dev);
 }
 
 static inline void lpspi_end_xfer(const struct device *dev)
@@ -274,7 +274,7 @@ static void lpspi_isr(const struct device *dev)
 		lpspi_data->fill_len = fill_len;
 	}
 
-	if (spi_context_rx_len_left(ctx) == 1 && (LPSPI_VERID_MAJOR(base->VERID) < 2)) {
+	if (spi_context_rx_len_left(ctx) == 1 && (data->major_version < 2)) {
 		/* Due to stalling behavior on older LPSPI,
 		 * need to end xfer in order to get last bit clocked out on bus.
 		 */
@@ -309,7 +309,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
 
-	ret = spi_mcux_configure(dev, spi_cfg);
+	ret = lpspi_configure(dev, spi_cfg);
 	if (ret) {
 		goto error;
 	}
@@ -335,7 +335,10 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		base->TCR |= LPSPI_TCR_CONT_MASK;
 	}
 	/* tcr is written to tx fifo */
-	lpspi_wait_tx_fifo_empty(dev);
+	ret = lpspi_wait_tx_fifo_empty(dev);
+	if (ret) {
+		return ret;
+	}
 
 	/* start the transfer sequence which are handled by irqs */
 	lpspi_next_tx_fill(dev);
@@ -422,7 +425,7 @@ static int lpspi_init(const struct device *dev)
 #define SPI_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
 
 #define SPI_LPSPI_INIT(n)                                                                     \
-	COND_CODE_1(CONFIG_SPI_MCUX_LPSPI_DMA,				   \
+	COND_CODE_1(CONFIG_SPI_NXP_LPSPI_DMA,				   \
 						(SPI_LPSPI_INIT_IF_DMA(n)), (LPSPI_INIT(n)))
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_LPSPI_INIT)
