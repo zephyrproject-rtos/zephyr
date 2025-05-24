@@ -4,6 +4,7 @@ sphinx<8.3.0
 sphinx_rtd_theme~=3.0
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
+sphinxcontrib-moderncmakedomain
 pygments>=2.9,!=2.19.0
 sphinx-notfound-page
 sphinx-copybutton
