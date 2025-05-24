@@ -1190,9 +1190,6 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/west_commands/zspdx/cmakecache.py" = [
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./scripts/west_commands/zspdx/cmakefileapi.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
