@@ -16,7 +16,7 @@ from zspdx.util import getHashes
 # Document scanning should occur.
 class ScannerConfig:
     def __init__(self):
-        super(ScannerConfig, self).__init__()
+        super().__init__()
 
         # when assembling a Package's data, should we auto-conclude the
         # Package's license, based on the licenses of its Files?
@@ -63,11 +63,9 @@ def getExpressionData(filePath, numLines):
     """
     log.dbg(f"  - getting licenses for {filePath}")
 
-    with open(filePath, "r") as f:
+    with open(filePath) as f:
         try:
-            lineno = 0
-            for line in f:
-                lineno += 1
+            for lineno, line in enumerate(f, start=1):
                 if lineno > numLines > 0:
                     break
                 expression = parseLineForExpression(line)
