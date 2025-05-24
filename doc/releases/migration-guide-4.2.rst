@@ -277,6 +277,28 @@ Timer
   :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER` has been deprecated in favor of
   :kconfig:option:`CONFIG_NATIVE_SIM_TIMER`, (:github:`86612`).
 
+* :dtcompatible:`andestech,machine-timer`, :dtcompatible:`neorv32-machine-timer`,
+  :dtcompatible:`telink,machine-timer`, :dtcompatible:`lowrisc,machine-timer`,
+  :dtcompatible:`niosv-machine-timer`, and :dtcompatible:`scr,machine-timer` have
+  been unified under :dtcompatible:`riscv,machine-timer`.
+
+  The addresses of both ``MTIME`` and ``MTIMECMP`` registers must now be explicitly
+  specified using the ``reg`` and ``reg-names`` properties. The ``reg-names`` property
+  is now **required**, and must list names corresponding one-to-one with each entry
+  in ``reg``. (:github:`84175` and :github:`89847`)
+
+  Example:
+
+  .. code-block:: devicetree
+
+    mtimer: timer@d1000000 {
+        compatible = "riscv,machine-timer";
+        interrupts-extended = <&cpu0_intc 7>;
+        reg = <0xd1000000 0x8
+               0xd1000008 0x8>;
+        reg-names = "mtime", "mtimecmp";
+    };
+
 Modem
 =====
 
