@@ -748,6 +748,12 @@ New Drivers
    * :dtcompatible:`silabs,siwx91x-wdt`
    * :dtcompatible:`wch,iwdg`
 
+Devicetree
+**********
+
+* Add a ``title`` keyword to the binding syntax to serve as a concise
+  title when the ``description`` field is too long.
+
 New Samples
 ***********
 
