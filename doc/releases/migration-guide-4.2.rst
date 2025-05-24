@@ -565,6 +565,8 @@ SPI
 
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
+* The binding file for :dtcompatible:`andestech,atcspi200` has been renamed to have a name
+  matching the compatible string.
 
 xSPI
 ====
