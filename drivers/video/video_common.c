@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
@@ -364,4 +365,43 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 	}
 
 	return 0;
+}
+
+int64_t video_get_link_frequency(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	int ret;
+
+	struct video_control ctrl = {
+		.id = VIDEO_CID_LINK_FREQUENCY,
+	};
+	struct video_ctrl_query ctrl_query = {
+		.id = VIDEO_CID_LINK_FREQUENCY,
+	};
+
+	/* Try to get the LINK_FREQUENCY value from the source device */
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		goto fallback;
+	}
+
+	ret = video_query_ctrl(dev, &ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (ctrl.val < ctrl_query.range.min || ctrl.val > ctrl_query.range.max) {
+		return -EIO;
+	}
+
+	return (int64_t)ctrl_query.int_menu[ctrl.val];
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQUENCY is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ctrl.id = VIDEO_CID_PIXEL_RATE;
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ctrl.val64 * bpp / (2 * lane_nb);
 }
