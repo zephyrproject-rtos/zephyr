@@ -30,14 +30,14 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_equal(fnmatch("a*.c", "a/x.c", FNM_PATHNAME), FNM_NOMATCH);
 	zassert_ok(fnmatch("*/foo", "/foo", FNM_PATHNAME));
 	zassert_ok(fnmatch("-O[01]", "-O1", 0));
-	/* zassert_ok(fnmatch("[[?*\\]", "\\", 0)); */
-	/* zassert_ok(fnmatch("[]?*\\]", "]", 0)); */
+	zassert_ok(fnmatch("[[?*\\]", "\\", 0));
+	zassert_ok(fnmatch("[]?*\\]", "]", 0));
 	zassert_ok(fnmatch("[!]a-]", "b", 0));
 	zassert_ok(fnmatch("[]-_]", "^", 0));
 	zassert_ok(fnmatch("[!]-_]", "X", 0));
 	zassert_equal(fnmatch("??", "-", 0), FNM_NOMATCH);
 	zassert_equal(fnmatch("*LIB*", "lib", FNM_PERIOD), FNM_NOMATCH);
-	/* zassert_ok(fnmatch("a[/]b", "a/b", 0)); */
+	zassert_ok(fnmatch("a[/]b", "a/b", 0));
 	zassert_equal(fnmatch("a[/]b", "a/b", FNM_PATHNAME), FNM_NOMATCH);
 	zassert_ok(fnmatch("[a-z]/[a-z]", "a/b", 0));
 	zassert_equal(fnmatch("*", "a/b", FNM_PATHNAME), FNM_NOMATCH);
@@ -64,8 +64,8 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_equal(fnmatch("a/?b", "a/.b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH);
 	zassert_equal(fnmatch("*a/b", ".a/b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH);
 	zassert_equal(fnmatch("a/*b", "a/.b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH);
-	/* zassert_equal(fnmatch("[.]a/b", ".a/b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH); */
-	/* zassert_equal(fnmatch("a/[.]b", "a/.b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH); */
+	zassert_equal(fnmatch("[.]a/b", ".a/b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH);
+	zassert_equal(fnmatch("a/[.]b", "a/.b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH);
 	zassert_ok(fnmatch("*/?", "a/b", FNM_PATHNAME | FNM_PERIOD));
 	zassert_ok(fnmatch("?/*", "a/b", FNM_PATHNAME | FNM_PERIOD));
 	zassert_ok(fnmatch(".*/?", ".a/b", FNM_PATHNAME | FNM_PERIOD));
