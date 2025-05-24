@@ -185,6 +185,12 @@ config CPU_HAS_NRF_IDAU
 	  (IDAU: "Implementation-Defined Attribution Unit", in accordance with
 	  ARM terminology).
 
+config CPU_HAS_RENESAS_RA_IDAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the ARM Implementation-Defined Attribution Unit (IDAU).
+
 config HAS_SWO
 	bool
 	help

@@ -9,6 +9,12 @@ if SOC_FAMILY_RENESAS_RA
 config SERIES_SPECIFIC_SOC_INIT
 	bool "Use series specific initialize"
 
+config OUTPUT_RPD
+	bool "Build a Renesas Partition Data in rpd format"
+	help
+	  Build a partition data zephyr/zephyr.rpd in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_RENESAS_RA
