@@ -5,3 +5,10 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
 	default 4096 if BOARD_XIAO_ESP32C6_ESP32C6_HPCORE
 	default 256 if BOARD_XIAO_ESP32C6_ESP32C6_LPCORE
+
+config XIAO_ESP32C6_EXT_ANTENNA
+	bool "XIAO ESP32C6 External Antenna Selector"
+	select BOARD_LATE_INIT_HOOK
+	help
+	  Select the external antenna of the XIAO ESP32-C6.
+	  By default, the onboard antenna is used.
