@@ -114,24 +114,44 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 				    const struct video_frmival *desired,
 				    struct video_frmival *match)
 {
-	uint64_t min = stepwise->min.numerator;
-	uint64_t max = stepwise->max.numerator;
-	uint64_t step = stepwise->step.numerator;
-	uint64_t goal = desired->numerator;
+	uint64_t min_nsec = video_frmival_nsec(&stepwise->min);
+	uint64_t max_nsec = video_frmival_nsec(&stepwise->max);
+	uint64_t step_nsec = video_frmival_nsec(&stepwise->step);
+	uint64_t goal_nsec = video_frmival_nsec(desired);
+	uint64_t denominator;
+	uint64_t numerator;
+	uint32_t num_steps;
 
-	/* Set a common denominator to all values */
-	min *= stepwise->max.denominator * stepwise->step.denominator * desired->denominator;
-	max *= stepwise->min.denominator * stepwise->step.denominator * desired->denominator;
-	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
-	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
+	/* Compare the values with the min */
+	if (goal_nsec <= min_nsec) {
+		match->numerator = stepwise->min.numerator;
+		match->denominator = stepwise->min.denominator;
+		return;
+	}
 
-	/* Saturate the desired value to the min/max supported */
-	goal = CLAMP(goal, min, max);
+	/* Compare the values with the max */
+	if (goal_nsec >= max_nsec) {
+		match->numerator = stepwise->max.numerator;
+		match->denominator = stepwise->max.denominator;
+		return;
+	}
 
-	/* Compute a numerator and denominator */
-	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
-	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
-			     stepwise->step.denominator * desired->denominator;
+	/* Compute the number of steps on top of the minimum value */
+	num_steps = DIV_ROUND_CLOSEST(goal_nsec - min_nsec, step_nsec);
+
+	/* Apply the step to the minimum value, put under the same denominator */
+	numerator = stepwise->min.numerator * stepwise->step.denominator +
+		    stepwise->min.denominator * stepwise->step.numerator * num_steps;
+	denominator = stepwise->min.denominator * stepwise->step.denominator;
+
+	/* Loose precision until landing within 32-bit range */
+	while (numerator > UINT32_MAX || denominator > UINT32_MAX) {
+		numerator /= 2;
+		denominator /= 2;
+	}
+
+	match->numerator = numerator;
+	match->denominator = denominator;
 }
 
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
