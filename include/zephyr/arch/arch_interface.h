@@ -1069,6 +1069,15 @@ int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 			       uintptr_t addr, uint32_t kind);
 
+/**
+ * @brief Post processing after memory write.
+ *
+ * @param[in] addr  Starting address of the memory region
+ * @param[in] len   Size of the memory region
+ * @param[in] align Write alignment of memory region
+ */
+void arch_gdb_post_memory_write(uintptr_t addr, size_t len, uint8_t align);
+
 #endif
 /** @} */
 
