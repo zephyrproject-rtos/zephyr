@@ -11,7 +11,7 @@
 #include <zephyr/sys_clock.h>
 #include <errno.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 static int iwdg_wch_setup(const struct device *dev, uint8_t options)
 {
