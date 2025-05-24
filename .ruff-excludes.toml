@@ -1190,12 +1190,6 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/west_commands/zspdx/sbom.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
 "./scripts/west_commands/zspdx/scanner.py" = [
     "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
