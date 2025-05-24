@@ -1592,9 +1592,44 @@ void bt_le_adv_resume(void)
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 			   struct bt_le_ext_adv_info *info)
 {
+	if (adv == NULL) {
+		LOG_DBG("adv is NULL");
+		return -EINVAL;
+	}
+
+	if (info == NULL) {
+		LOG_DBG("info is NULL");
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(adv->flags, BT_ADV_CREATED)) {
+		LOG_DBG("Advertising set %p is not created", adv);
+		return -ENXIO;
+	}
+
+	(void)memset(info, 0, sizeof(*info));
+
 	info->id = adv->id;
 	info->tx_power = adv->tx_power;
 	info->addr = &adv->random_addr;
+
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		info->ext_adv_state = BT_LE_EXT_ADV_STATE_STARTED;
+	} else if (atomic_test_bit(adv->flags, BT_ADV_PAUSED)) {
+		info->ext_adv_state = BT_LE_EXT_ADV_STATE_PAUSED;
+	} else {
+		info->ext_adv_state = BT_LE_EXT_ADV_STATE_CREATED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV)) {
+		if (atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_CONFIGURED;
+		} else if (atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED)) {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_STARTED;
+		} else {
+			info->per_adv_state = BT_LE_PER_ADV_STATE_NONE;
+		}
+	}
 
 	return 0;
 }
