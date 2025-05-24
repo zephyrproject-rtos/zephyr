@@ -1190,11 +1190,6 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/west_commands/zspdx/getincludes.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
-    "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
-]
 "./scripts/west_commands/zspdx/sbom.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
