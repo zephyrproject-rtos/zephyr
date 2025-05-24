@@ -368,7 +368,7 @@ static void bt_rx_thread(void *p1, void *p2, void *p3)
 }
 
 K_THREAD_DEFINE(nxp_hci_rx_thread, CONFIG_BT_DRV_RX_STACK_SIZE, bt_rx_thread, NULL, NULL, NULL,
-		K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, 0);
+		K_PRIO_COOP(CONFIG_BT_RX_HIGH_PRIO), 0, 0);
 
 static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 {
