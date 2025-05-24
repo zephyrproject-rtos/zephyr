@@ -752,7 +752,14 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 		}
 	}
 
+LOG_ERR("slot = %d", slot);
+//if (slot == 0 || slot == 1) {
+//rc = img_mgmt_set_next_boot_slot_common(slot, int active_slot, confirm);
+//rc = img_mgmt_set_next_boot_slot_common(slot, slot, confirm);
+rc = img_mgmt_set_next_boot_slot_common((slot+1), (slot+2), confirm);
+/*} else {
 	rc = img_mgmt_set_next_boot_slot(slot, confirm);
+}*/
 	if (rc != 0) {
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, rc);
 		goto end;
