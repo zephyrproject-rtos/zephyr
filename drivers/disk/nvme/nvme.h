@@ -6,7 +6,7 @@
  * with contributions from Alexander Motin and Wojciech Macek
  */
 
-#ifndef ZEPHYR_DRIVERS_DISK_NVME_NHME_H_
+#ifndef ZEPHYR_DRIVERS_DISK_NVME_NVME_H_
 #define ZEPHYR_DRIVERS_DISK_NVME_NVME_H_
 
 #include "nvme_helpers.h"
@@ -476,4 +476,4 @@ static inline void nvme_unlock(const struct device *dev)
 	k_mutex_unlock(&nvme_ctrlr->lock);
 }
 
-#endif /* ZEPHYR_DRIVERS_DISK_NVME_NHME_H_ */
+#endif /* ZEPHYR_DRIVERS_DISK_NVME_NVME_H_ */
