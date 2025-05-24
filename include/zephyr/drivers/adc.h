@@ -768,6 +768,7 @@ static inline int adc_channel_setup_dt(const struct adc_dt_spec *spec)
  *                  interval was too small. All requested samples are written
  *                  in the buffer, but at least some of them were taken with
  *                  an extra delay compared to what was scheduled.
+ * @retval <0       Any other negative value indicates an error condition.
  */
 __syscall int adc_read(const struct device *dev,
 		       const struct adc_sequence *sequence);
