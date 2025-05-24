@@ -18,6 +18,8 @@ source "drivers/espi/Kconfig.espi_emul"
 
 source "drivers/espi/Kconfig.it8xxx2"
 
+source "drivers/espi/Kconfig.rts5912"
+
 module = ESPI
 module-str = espi
 source "subsys/logging/Kconfig.template.log_config"
