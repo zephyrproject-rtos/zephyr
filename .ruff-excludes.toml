@@ -1078,11 +1078,6 @@
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/west_commands/build_helpers.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/west_commands/debug.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
