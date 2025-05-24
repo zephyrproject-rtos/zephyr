@@ -42,6 +42,9 @@ Current supported displays
 | Waveshare 240x240    | st7789v_waveshare_240x240    |
 | 1.3inch IPS LCD      |                              |
 +----------------------+------------------------------+
+| Fanke 1.54, 1.69,    | st7789v_fanke                |
+| 2.0inch IPS LCD      |                              |
++----------------------+------------------------------+
 
 Requirements
 ************
