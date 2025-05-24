@@ -86,3 +86,11 @@ tests:
       - CONFIG_PM_DEVICE=y
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+
+  drivers.spi.spi_cross_domain:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+      - CONFIG_NRFX_POWER=y
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
