@@ -1,6 +1,6 @@
 board:
-  name: scobc_module1
-  full_name: OBC module 1
+  name: scobc_a1
+  full_name: SC-OBC Module A1
   vendor: sc
   socs:
   - name: designstart_fpga_cortex_m3
