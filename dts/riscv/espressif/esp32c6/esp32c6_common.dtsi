@@ -24,6 +24,7 @@
 		zephyr,canbus = &twai0;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	cpus {
@@ -61,6 +62,11 @@
 	pinctrl: pin-controller {
 		compatible = "espressif,esp32-pinctrl";
 		status = "okay";
+	};
+
+	esp32_bt_hci: esp32_bt_hci {
+		compatible = "espressif,esp32-bt-hci";
+		status = "disabled";
 	};
 
 	clock: clock {

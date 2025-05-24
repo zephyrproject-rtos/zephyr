@@ -4,7 +4,8 @@ if BT_ESP32
 
 config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	int
-	default 25600 if ESP_BT_HEAP_SYSTEM
+	default 50000 if SOC_SERIES_ESP32C6
+	default 25600
 	default 0
 	help
 	  Additional heap size reserved for Bluetooth driver usage.
@@ -267,5 +268,445 @@ config ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EFF
 	default 0 if ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
 endmenu # ESP32 Bluetooth Controller Configuration
+
+if SOC_SERIES_ESP32C6
+
+menu "Espressif HCI Config"
+
+choice ESP32_BT_LE_HCI_INTERFACE
+	prompt "HCI mode"
+	default ESP32_BT_LE_HCI_INTERFACE_USE_RAM
+
+config ESP32_BT_LE_HCI_INTERFACE_USE_RAM
+	bool "VHCI"
+	help
+	  Use RAM-based HCI interface.
+
+endchoice
+
+endmenu
+
+menuconfig ESP32_BT_LE_50_FEATURE_SUPPORT
+	bool "BLE 5 feature support"
+	default y
+	help
+	  Support features introduced in Bluetooth 5.0, including extended advertising,
+	  2M PHY, and coded PHY.
+
+config ESP32_BT_LE_LL_CFG_FEAT_LE_2M_PHY
+	bool "2M PHY support"
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	default y
+	help
+	  Allow use of 2M PHY for higher data rates in BLE connections.
+
+config ESP32_BT_LE_LL_CFG_FEAT_LE_CODED_PHY
+	bool "Coded PHY support"
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	default y
+	help
+	  Enable coded PHY (LE Coded) for extended-range BLE connections.
+
+config ESP32_BT_LE_EXT_ADV
+	bool "Extended advertising support"
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	default y
+	help
+	  Support extended advertising features from Bluetooth 5.0.
+
+if ESP32_BT_LE_EXT_ADV
+
+config ESP32_BT_LE_MAX_EXT_ADV_INSTANCES
+	int "Maximum extended advertising instances"
+	range 0 4
+	default 1
+	help
+	  Number of extended advertising instances (min 1). Each uses ~0.5 KB of DRAM.
+
+config ESP32_BT_LE_EXT_ADV_MAX_SIZE
+	int "Maximum extended advertising data length"
+	range 0 1650
+	default 1650
+	help
+	  Maximum length of extended advertising data (≤ 1650 bytes).
+
+config ESP32_BT_LE_ENABLE_PERIODIC_ADV
+	bool "Periodic advertising support"
+	default y
+	help
+	  Enable periodic advertising to synchronize broadcast events.
+
+config ESP32_BT_LE_PERIODIC_ADV_SYNC_TRANSFER
+	bool "Periodic sync event transfer"
+	depends on ESP32_BT_LE_ENABLE_PERIODIC_ADV
+	default y
+	help
+	  Allow controller to transfer periodic sync events to the host.
+
+endif
+
+config ESP32_BT_LE_MAX_PERIODIC_SYNCS
+	int "Maximum periodic advertising syncs"
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	range 0 8
+	default 1 if ESP32_BT_LE_ENABLE_PERIODIC_ADV
+	default 0
+	help
+	  Upper limit for periodic advertising sync connections.
+
+config ESP32_BT_LE_MAX_PERIODIC_ADVERTISER_LIST
+	int "Maximum periodic advertiser list entries"
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	range 1 5
+	default 5
+	help
+	  Upper limit for the list of periodic advertisers.
+
+config ESP32_BT_LE_POWER_CONTROL_ENABLED
+	bool "Controller BLE power control"
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	help
+	  Allow controller to adjust transmit power based on link quality.
+
+menu "Memory Settings"
+
+config ESP32_BT_LE_MSYS_1_BLOCK_COUNT
+	int "MSYS_1 block count"
+	default 12
+	help
+	  Number of blocks in the MSYS_1 pool for prepare write and responses.
+
+config ESP32_BT_LE_MSYS_1_BLOCK_SIZE
+	int "MSYS_1 block size"
+	default 256
+	help
+	  Size of each block in the MSYS_1 pool.
+
+config ESP32_BT_LE_MSYS_2_BLOCK_COUNT
+	int "MSYS_2 block count"
+	default 24
+	help
+	  Number of blocks in the MSYS_2 pool.
+
+config ESP32_BT_LE_MSYS_2_BLOCK_SIZE
+	int "MSYS_2 block size"
+	default 320
+	help
+	  Size of each block in the MSYS_2 pool.
+
+config ESP32_BT_LE_MSYS_BUF_FROM_HEAP
+	bool "Msys mbuf from heap"
+	default y
+	depends on ESP32_BT_LE_MSYS_INIT_IN_CONTROLLER
+	help
+	  Allocate MSYS mbufs from heap instead of mempool when set.
+
+config ESP32_BT_LE_ACL_BUF_COUNT
+	int "ACL buffer count"
+	default 10
+	help
+	  Number of HCI ACL data buffers.
+
+config ESP32_BT_LE_ACL_BUF_SIZE
+	int "ACL buffer size"
+	default 517
+	help
+	  Maximum data size of each HCI ACL packet (excludes 4 B header).
+
+config ESP32_BT_LE_HCI_EVT_BUF_SIZE
+	int "HCI event buffer size"
+	default 257 if ESP32_BT_LE_EXT_ADV
+	default 70
+	help
+	  Size of each HCI event buffer; use 257 B for extended advertising.
+
+config ESP32_BT_LE_HCI_EVT_HI_BUF_COUNT
+	int "High-priority HCI event buffer count"
+	default 30
+	help
+	  Count of high-priority HCI event buffers (excluding advertising reports).
+
+config ESP32_BT_LE_HCI_EVT_LO_BUF_COUNT
+	int "Low-priority HCI event buffer count"
+	default 8
+	help
+	  Count of low-priority HCI event buffers for advertising reports.
+
+endmenu
+
+config ESP32_BT_LE_CONTROLLER_TASK_STACK_SIZE
+	int "Controller task stack size"
+	default 4096
+	help
+	  Stack size for the BLE controller task.
+
+config ESP32_BT_LE_LL_RESOLV_LIST_SIZE
+	int "BLE resolving list size"
+	range 1 5
+	default 4
+	help
+	  Number of entries in the link-layer resolving list.
+
+menuconfig ESP32_BT_LE_SECURITY_ENABLE
+	bool "BLE security manager"
+	depends on BT_CRYPTO
+	default y
+	help
+	  Enable Security Manager features for BLE pairing and encryption.
+
+config ESP32_BT_LE_SM_LEGACY
+	bool "Legacy pairing"
+	depends on ESP32_BT_LE_SECURITY_ENABLE
+	default y
+	help
+	  Use legacy pairing procedure (pre-Bluetooth 4.2).
+
+config ESP32_BT_LE_SM_SC
+	bool "Secure connections (LE SC)"
+	depends on ESP32_BT_LE_SECURITY_ENABLE
+	default y
+	help
+	  Use Secure Connections pairing (Bluetooth 4.2+).
+
+config ESP32_BT_LE_SM_SC_DEBUG_KEYS
+	bool "Predefined DH key pair"
+	depends on ESP32_BT_LE_SECURITY_ENABLE && ESP32_BT_LE_SM_SC
+	help
+	  Use predefined debug keys for DH exchange (testing only).
+
+config ESP32_BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
+	bool "LE encryption"
+	depends on ESP32_BT_LE_SECURITY_ENABLE
+	default y
+	help
+	  Support link-layer encryption for BLE connections.
+
+config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
+	bool "mbedTLS crypto stack"
+	depends on ESP32_BT_LE_SECURITY_ENABLE
+	default y
+	select MBEDTLS
+	select MBEDTLS_ECP_C
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+	select MBEDTLS_ECDH_C
+	select MBEDTLS_ENTROPY_C
+	select MBEDTLS_PSA_CRYPTO_C
+	help
+	  Use mbedTLS library for BLE cryptographic operations.
+
+config ESP32_BT_LE_WHITELIST_SIZE
+	int "BLE whitelist size"
+	range 1 31
+	default 12
+	help
+	  Number of entries in the BLE whitelist.
+
+config ESP32_BT_LE_LL_DUP_SCAN_LIST_COUNT
+	int "Duplicate scan list count"
+	range 5 100
+	default 20
+	help
+	  Maximum entries in the duplicate scan list.
+
+config ESP32_BT_LE_LL_SCA
+	int "BLE sleep clock accuracy (ppm)"
+	range 0 500
+	default 60
+	help
+	  Sleep clock accuracy in parts per million.
+
+config ESP32_BT_LE_LL_PEER_SCA_SET_ENABLE
+	bool "Use constant peer SCA"
+	help
+	  Enable setting of constant peer SCA, use this if peer device has SCA larger than 500 PPM.
+	  Enable this option, the controller will always use ESP32_BT_LE_LL_PEER_SCA as the peer SCA value
+	  to calculate the window widening instead of the value received from peer device.
+
+
+config ESP32_BT_LE_LL_PEER_SCA
+	int "Constant peer sleep clock accuracy value"
+	range 0 10000
+	depends on ESP32_BT_LE_LL_PEER_SCA_SET_ENABLE
+	default 0
+	help
+	  Set the sleep clock accuracy of peer device
+
+config ESP32_BT_LE_MAX_CONNECTIONS
+	int "Max concurrent connections"
+	range 1 70
+	default 3
+	help
+	  Maximum number of BLE connections. Each uses ~1 KB of DRAM.
+
+choice ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM
+	prompt "Coexistence coded PHY TX/RX time limit"
+	default ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
+	depends on ESP32_SW_COEXIST_ENABLE
+	help
+	  Apply a time limit on coded PHY TX/RX to reduce Wi-Fi interference.
+
+config ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
+	bool "Apply limit"
+
+config ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
+	bool "No limit"
+
+endchoice
+
+config ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
+	int
+	default 0 if !ESP32_SW_COEXIST_ENABLE
+	default 1 if ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
+	default 0 if ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
+
+config ESP32_BT_LE_SLEEP_ENABLE
+	bool "BLE sleep mode"
+	help
+	  Allow controller to enter low-power sleep during idle periods.
+
+choice ESP32_BT_LE_LP_CLK_SRC
+	prompt "BLE low-power clock source"
+	default ESP32_BT_LE_LP_CLK_SRC_MAIN_XTAL
+
+config ESP32_BT_LE_LP_CLK_SRC_MAIN_XTAL
+	bool "Main XTAL as RTC clock"
+	help
+	  Use the main XTAL as RTC clock source when no external 32.768 kHz crystal is available.
+
+config ESP32_BT_LE_LP_CLK_SRC_DEFAULT
+	bool "System RTC slow clock"
+	help
+	  Use system RTC slow clock source; supports only legacy ADV/SCAN due to lower accuracy.
+
+endchoice
+
+config ESP32_BT_LE_USE_ESP_TIMER
+	bool "Use esp-timer for callouts"
+	default y
+	help
+	  Use high-priority esp-timer for controller callouts.
+
+config ESP32_BT_LE_SCAN_DUPL
+	bool "BLE scan duplicate filtering"
+	default y
+	help
+	  Enable scanning filters to avoid reporting duplicate advertisements.
+
+choice ESP32_BT_LE_SCAN_DUPL_TYPE
+	prompt "Scan duplicate filter type"
+	default ESP32_BT_LE_SCAN_DUPL_TYPE_DEVICE
+	depends on ESP32_BT_LE_SCAN_DUPL
+	help
+	  Select filtering method for duplicate scan results.
+
+config ESP32_BT_LE_SCAN_DUPL_TYPE_DEVICE
+	bool "By device address"
+	help
+	  Filter duplicates by device address only.
+
+config ESP32_BT_LE_SCAN_DUPL_TYPE_DATA
+	bool "By advertising data"
+	help
+	  Filter duplicates by advertising data only.
+
+config ESP32_BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
+	bool "By address and data"
+	help
+	  Filter duplicates by both device address and advertising data.
+
+endchoice
+
+config ESP32_BT_LE_SCAN_DUPL_TYPE
+	int
+	depends on ESP32_BT_LE_SCAN_DUPL
+	default 0 if ESP32_BT_LE_SCAN_DUPL_TYPE_DEVICE
+	default 1 if ESP32_BT_LE_SCAN_DUPL_TYPE_DATA
+	default 2 if ESP32_BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
+	default 0
+
+config ESP32_BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
+	int "Duplicate cache refresh period (s)"
+	depends on ESP32_BT_LE_SCAN_DUPL
+	range 0 1000
+	default 0
+	help
+	  Interval (s) to clear duplicate scan cache; zero disables periodic clearing.
+
+config ESP32_BT_LE_MSYS_INIT_IN_CONTROLLER
+	bool "Init MSYS mbuf in controller"
+	default y
+	help
+	  Allocate MSYS mbufs within the controller instead of the host.
+
+config ESP32_BT_LE_TX_CCA_ENABLED
+	bool "TX CCA feature"
+	help
+	  Cancel packet transmission when RSSI exceeds the CCA threshold.
+
+config ESP32_BT_LE_CCA_RSSI_THRESH
+	int "CCA RSSI threshold (-1 dBm unit)"
+	depends on ESP32_BT_LE_TX_CCA_ENABLED
+	range 20 100
+	default 65
+	help
+	  RSSI threshold value for TX CCA in units of –1 dBm.
+
+config ESP32_BT_LE_CTLR_CHECK_CONNECT_IND_ACCESS_ADDRESS
+	bool "Enhanced Access Address check in CONNECT_IND"
+	help
+	  Strictly verify Access Address in CONNECT_IND PDUs for improved security.
+
+menu "BLE ACL Configurations"
+
+config ESP32_BT_LE_CTLR_LLCP_CONN_UPDATE
+	bool "BLE ACL connection update procedure"
+	help
+	  If this option is enabled, Controller will terminate the connection
+	  when Instant Passed (0x28) error occurs during connection update procedure.
+
+config ESP32_BT_LE_CTLR_LLCP_CHAN_MAP_UPDATE
+	bool "BLE ACL channel map update procedure"
+	help
+	  If this option is enabled, Controller will terminate the connection
+	  when Instant Passed (0x28) error occurs in channel map update procedure.
+
+config ESP32_BT_LE_CTLR_LLCP_PHY_UPDATE
+	bool "BLE ACL PHY update procedure"
+	help
+	  If this option is enabled, Controller will terminate the connection
+	  when Instant Passed (0x28) error occurs in PHY update procedure.
+endmenu
+
+config BT_CTLR_SCAN_BACKOFF_UPPERLIMITMAX
+	int "Scan backoff upper limit value"
+	range 1 256
+	default 32
+	help
+	  Upperlimitmax value (power of 2) for scan backoff procedure.
+
+config ESP32_BT_LE_CTLR_CHAN_ASS_EN
+	bool "Channel assessment (experimental)"
+	help
+	  Record channel quality and update map periodically for better link reliability.
+
+config ESP32_BT_LE_CTLR_ADV_DATA_LENGTH_ZERO_AUX
+	bool "Aux packet for zero-length extended advertising (experimental)"
+	default y
+	help
+	  Include AUX PDUs for zero‐length non-connectable, non-scannable extended advertising.
+
+config ESP32_BT_LE_RXBUF_OPT_ENABLED
+	bool "RX buffer optimization"
+	default y
+	help
+	  Optimize RX buffer allocation to reduce host memory usage.
+
+config ESP32_BT_LE_CTLR_FAST_CONN_DATA_TX_EN
+	bool "Fast connection data transmission"
+	default y
+	help
+	  Continue sending empty PDUs immediately after data to maintain timing.
+
+endif # SOC_SERIES_ESP32C6
 
 endif # BT_ESP32
