@@ -1,0 +1,33 @@
+/ {
+	aliases {
+		gwu0 = &wakeup_pin_0;
+	};
+	gpiof {
+		wakeup-source;
+	};
+	gpio_keys {
+		wakeup_pin_0: wakeup_pin_0 {
+			gpios = < &gpiof 0x4 GPIO_ACTIVE_HIGH >;
+			label = "GPIO wake-up pin 0";
+		};
+	};
+};
+
+&stop0{
+	compatible = "zephyr,power-state";
+	power-state-name = "suspend-to-idle";
+	substate-id = <1>;
+	min-residency-us = <500000>;
+};
+&stop1{
+	compatible = "zephyr,power-state";
+	power-state-name = "suspend-to-idle";
+	substate-id = <2>;
+	min-residency-us = <1000000>;
+};
+&stop2{
+	compatible = "zephyr,power-state";
+	power-state-name = "suspend-to-idle";
+	substate-id = <3>;
+	min-residency-us = <1500000>;
+};

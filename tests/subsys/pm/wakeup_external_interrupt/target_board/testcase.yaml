@@ -1,0 +1,27 @@
+tests:
+  pm.wakeup_external_interrupt.target_board:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - pm
+      - gpio
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      pytest_args: [--controller=<path_to_controller>,
+                    --power-monitor=<path_to_power_monitor>,
+                    --expected_values=<path_to>/stm32l562e_dk.yaml]
+  pm.wakeup_external_interrupt.target_board.pm_device:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - pm
+      - gpio
+    extra_args:
+      - CONFIG_PM_DEVICE=y
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      pytest_args: [--controller=<path_to_controller>,
+                    --power-monitor=<path_to_power_monitor>,
+                    --expected_values=<path_to>/stm32l562e_dk.yaml]
