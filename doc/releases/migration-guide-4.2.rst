@@ -108,6 +108,12 @@ DAI
 * Renamed the devicetree property ``quad_ch`` to ``quad-ch``.
 * Renamed the devicetree property ``int_odd`` to ``int-odd``.
 
+Devicetree
+==========
+
+* The :c:macro:`DT_ENUM_HAS_VALUE` and :c:macro:`DT_INST_ENUM_HAS_VALUE` macros are now
+  checking all values, when used on an array, not just the first one (:github:`88411`).
+
 DMA
 ===
 
