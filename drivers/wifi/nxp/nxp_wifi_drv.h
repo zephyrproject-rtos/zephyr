@@ -7,7 +7,7 @@
  * Wi-Fi L2 layer
  */
 
-#ifndef ZEPHYR_DRIVERS_WIFI_NNP_WIFI_DRV_H_
+#ifndef ZEPHYR_DRIVERS_WIFI_NXP_WIFI_DRV_H_
 #define ZEPHYR_DRIVERS_WIFI_NXP_WIFI_DRV_H_
 
 #include <zephyr/kernel.h>
@@ -83,4 +83,4 @@ void nxp_wifi_shell_register(struct nxp_wifi_dev *dev);
 #define nxp_wifi_shell_register(dev)
 #endif
 
-#endif
+#endif /* ZEPHYR_DRIVERS_WIFI_NXP_WIFI_DRV_H_ */
