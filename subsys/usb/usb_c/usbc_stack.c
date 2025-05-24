@@ -45,6 +45,8 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 	}
 }
 
+/* format makes the backslashes exceed 100 lines: */
+/* clang-format off */
 #define USBC_SUBSYS_INIT(inst)                                                                     \
 	K_THREAD_STACK_DEFINE(my_stack_area_##inst, CONFIG_USBC_STACK_SIZE);                       \
                                                                                                    \
@@ -91,7 +93,7 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 	DEVICE_DT_INST_DEFINE(inst, &usbc_subsys_init, NULL, &usbc_port_data_##inst,               \
 			      &usbc_port_config_##inst, POST_KERNEL,                               \
 			      CONFIG_USBC_STACK_INIT_PRIORITY, NULL);
-
+/* clang-format on */
 DT_INST_FOREACH_STATUS_OKAY(USBC_SUBSYS_INIT)
 
 /**
@@ -207,8 +209,8 @@ void usbc_set_policy_cb_get_rdo(const struct device *dev,
  * @brief Set the callback for checking if Sink Power Supply is at
  *	  default level
  */
-void usbc_set_policy_cb_is_snk_at_default(const struct device *dev,
-				const policy_cb_is_snk_at_default_t policy_cb_is_snk_at_default)
+void usbc_set_policy_cb_is_snk_at_default(
+	const struct device *dev, const policy_cb_is_snk_at_default_t policy_cb_is_snk_at_default)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -221,7 +223,7 @@ void usbc_set_policy_cb_is_snk_at_default(const struct device *dev,
  * @brief Set the callback for sending the Sink Caps to the DPM
  */
 void usbc_set_policy_cb_set_port_partner_snk_cap(const struct device *dev,
-				    const policy_cb_set_port_partner_snk_cap_t cb)
+						 const policy_cb_set_port_partner_snk_cap_t cb)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -232,8 +234,7 @@ void usbc_set_policy_cb_set_port_partner_snk_cap(const struct device *dev,
  * @brief Set the callback that gets the Source Capabilities from the
  *        Device Policy Manager
  */
-void usbc_set_policy_cb_get_src_caps(const struct device *dev,
-				     const policy_cb_get_src_caps_t cb)
+void usbc_set_policy_cb_get_src_caps(const struct device *dev, const policy_cb_get_src_caps_t cb)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -256,8 +257,7 @@ void usbc_set_policy_cb_get_src_rp(const struct device *dev,
  * @brief Set the callback that controls the sourcing of VBUS from the
  *        Device Policy Manager
  */
-void usbc_set_policy_cb_src_en(const struct device *dev,
-			       const policy_cb_src_en_t policy_cb_src_en)
+void usbc_set_policy_cb_src_en(const struct device *dev, const policy_cb_src_en_t policy_cb_src_en)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -278,8 +278,7 @@ void usbc_set_policy_cb_check_sink_request(const struct device *dev,
 /**
  * @brief Set the callback for checking if the Source Power Supply is ready
  */
-void usbc_set_policy_cb_is_ps_ready(const struct device *dev,
-					const policy_cb_is_ps_ready_t cb)
+void usbc_set_policy_cb_is_ps_ready(const struct device *dev, const policy_cb_is_ps_ready_t cb)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -290,7 +289,7 @@ void usbc_set_policy_cb_is_ps_ready(const struct device *dev,
  * @brief Set the callback for checking if the Present Contract is still valid
  */
 void usbc_set_policy_cb_present_contract_is_valid(const struct device *dev,
-					const policy_cb_present_contract_is_valid_t cb)
+						  const policy_cb_present_contract_is_valid_t cb)
 {
 	struct usbc_port_data *data = dev->data;
 
@@ -313,8 +312,7 @@ void usbc_set_policy_cb_change_src_caps(const struct device *dev,
  * @brief Set the callback that controls the sourcing of VCONN from the
  *        Device Policy Manager
  */
-void usbc_set_vconn_control_cb(const struct device *dev,
-			       const tcpc_vconn_control_cb_t cb)
+void usbc_set_vconn_control_cb(const struct device *dev, const tcpc_vconn_control_cb_t cb)
 {
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
@@ -326,8 +324,7 @@ void usbc_set_vconn_control_cb(const struct device *dev,
  * @brief Set the callback that discharges VCONN from the
  *        Device Policy Manager
  */
-void usbc_set_vconn_discharge(const struct device *dev,
-			      const tcpc_vconn_discharge_cb_t cb)
+void usbc_set_vconn_discharge(const struct device *dev, const tcpc_vconn_discharge_cb_t cb)
 {
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
