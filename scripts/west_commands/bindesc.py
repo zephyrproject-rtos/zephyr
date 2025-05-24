@@ -2,11 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from textwrap import dedent
 import struct
+from textwrap import dedent
 
 from west.commands import WestCommand
-
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -28,7 +27,7 @@ def convert_from_uf2(cmd, buf):
         block = buf[ptr:ptr + 512]
         hd = struct.unpack(b'<IIIIIIII', block[0:32])
         if hd[0] != UF2_MAGIC_START0 or hd[1] != UF2_MAGIC_START1:
-            cmd.inf('Skipping block at ' + ptr + '; bad magic')
+            cmd.inf(f'Skipping block at {ptr}; bad magic')
             continue
         if hd[2] & 1:
             # NO-flash flag set; skip block
@@ -124,7 +123,8 @@ class Bindesc(WestCommand):
         search_parser = subparsers.add_parser('search', help='Search for a specific descriptor')
         search_parser.add_argument('descriptor', type=str, help='Descriptor name')
         search_parser.add_argument('file', type=str, help='Executable file')
-        search_parser.add_argument('--file-type', type=str, choices=self.EXTENSIONS, help='File type')
+        search_parser.add_argument('--file-type', type=str, choices=self.EXTENSIONS,
+                                   help='File type')
         search_parser.add_argument('-b', '--big-endian', action='store_true',
                                    help='Target CPU is big endian')
         search_parser.set_defaults(subcmd='search', big_endian=False)
@@ -144,7 +144,8 @@ class Bindesc(WestCommand):
         list_parser = subparsers.add_parser('list', help='List all known descriptors')
         list_parser.set_defaults(subcmd='list', big_endian=False)
 
-        get_offset_parser = subparsers.add_parser('get_offset', help='Get the offset of the descriptors')
+        get_offset_parser = subparsers.add_parser('get_offset',
+                                                  help='Get the offset of the descriptors')
         get_offset_parser.add_argument('file', type=str, help='Executable file')
         get_offset_parser.add_argument('--file-type', type=str, choices=self.EXTENSIONS,
                                           help='File type')
@@ -329,5 +330,5 @@ class Bindesc(WestCommand):
     def bindesc_repr(value):
         if isinstance(value, str):
             return f'"{value}"'
-        if isinstance(value, (int, bytes)):
+        if isinstance(value, int | bytes):
             return f'{value}'
