@@ -989,6 +989,105 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
+{
+	char addr_str[BT_ADDR_STR_LEN];
+	struct bt_conn *conn;
+	bt_addr_t addr;
+	int err;
+
+	err = bt_addr_from_str(argv[1], &addr);
+	if (err) {
+		shell_error(sh, "Invalid peer address (err %d)", err);
+		return err;
+	}
+
+	conn = bt_conn_lookup_addr_br(&addr);
+	if (!conn) {
+		shell_error(sh, "No matching connection found");
+		return -ENOEXEC;
+	}
+
+	if (default_conn != NULL) {
+		bt_conn_unref(default_conn);
+	}
+
+	default_conn = conn;
+
+	bt_addr_to_str(&addr, addr_str, sizeof(addr_str));
+	shell_print(sh, "Selected conn is now: %s", addr_str);
+
+	return 0;
+}
+
+static const char *get_conn_type_str(uint8_t type)
+{
+	switch (type) {
+	case BT_CONN_TYPE_LE: return "LE";
+	case BT_CONN_TYPE_BR: return "BR/EDR";
+	case BT_CONN_TYPE_SCO: return "SCO";
+	default: return "Invalid";
+	}
+}
+
+static const char *get_conn_role_str(uint8_t role)
+{
+	switch (role) {
+	case BT_CONN_ROLE_CENTRAL: return "central";
+	case BT_CONN_ROLE_PERIPHERAL: return "peripheral";
+	default: return "Invalid";
+	}
+}
+
+static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_conn *conn = NULL;
+	struct bt_conn_info info;
+	bt_addr_t addr;
+	int err;
+
+	if (argc > 1) {
+		err = bt_addr_from_str(argv[1], &addr);
+		if (err) {
+			shell_error(sh, "Invalid peer address (err %d)", err);
+			return err;
+		}
+		conn = bt_conn_lookup_addr_br(&addr);
+	} else {
+		if (default_conn) {
+			conn = bt_conn_ref(default_conn);
+		}
+	}
+
+	if (!conn) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	err = bt_conn_get_info(conn, &info);
+	if (err) {
+		shell_print(sh, "Failed to get info");
+		goto done;
+	}
+
+	shell_print(sh, "Type: %s, Role: %s, Id: %u",
+		    get_conn_type_str(info.type),
+		    get_conn_role_str(info.role),
+		    info.id);
+
+	if (info.type == BT_CONN_TYPE_BR) {
+		char addr_str[BT_ADDR_STR_LEN];
+
+		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
+		shell_print(sh, "Peer address %s", addr_str);
+	}
+
+done:
+	bt_conn_unref(conn);
+
+	return err;
+}
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -1033,6 +1132,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR"]", cmd_clear, 2, 0),
+	SHELL_CMD_ARG(select, NULL, HELP_ADDR, cmd_select, 2, 0),
+	SHELL_CMD_ARG(info, NULL, HELP_ADDR, cmd_info, 1, 1),
 	SHELL_CMD_ARG(discovery, NULL, "<value: on, off> [length: 1-48] [mode: limited]",
 		      cmd_discovery, 2, 2),
 	SHELL_CMD_ARG(iscan, NULL, "<value: on, off> [mode: limited]",
