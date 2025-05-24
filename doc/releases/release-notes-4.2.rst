@@ -124,6 +124,14 @@ New APIs and options
 * Kernel
 
  * :c:macro:`K_TIMEOUT_ABS_SEC`
+ * :c:func:`timespec_add`
+ * :c:func:`timespec_compare`
+ * :c:func:`timespec_equal`
+ * :c:func:`timespec_is_valid`
+ * :c:func:`timespec_negate`
+ * :c:func:`timespec_normalize`
+ * :c:func:`timespec_from_timeout`
+ * :c:func:`timespec_to_timeout`
 
 * I2C
 
