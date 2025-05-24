@@ -201,6 +201,8 @@ static bool is_valid_gap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		} else {
 			return false;
 		}
+	case BTP_GAP_EV_ENCRYPTION_CHANGE:
+		return buf_simple->len == sizeof(struct btp_gap_encryption_change_ev);
 	default:
 		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
