@@ -1073,15 +1073,6 @@
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/west_commands/bindesc.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
-]
-"./scripts/west_commands/blobs.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/west_commands/build.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1095,16 +1086,9 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/west_commands/completion.py" = [
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
 "./scripts/west_commands/debug.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
-"./scripts/west_commands/export.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/west_commands/fetchers/__init__.py" = [
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
