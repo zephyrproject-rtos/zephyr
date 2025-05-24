@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32wba65i_dk1.dts"
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+
+&flash0 {
+	/delete-node/ partitions;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootstage";
+			reg = <0 DT_SIZE_K(144)>;
+		};
+
+		slot0_secure_partition: partition@24000 {
+			label = "image-secure";
+			reg = <0x24000 DT_SIZE_K(384)>;
+		};
+
+		slot0_ns_partition: partition@84000 {
+			label = "image-non-secure";
+			reg = <0x84000 DT_SIZE_K(384)>;
+		};
+
+		storage_partition: partition@e4000 {
+			label = "storage";
+			reg = <0xe4000 (DT_SIZE_K(112) + DT_SIZE_M(1))>;
+		};
+	};
+};
