@@ -363,6 +363,7 @@ struct bt_hci_cmd_hdr {
 
 /* OpCode Group Fields */
 #define BT_OGF_LINK_CTRL                        0x01
+#define BT_OGF_LINK_POLICY                      0x02
 #define BT_OGF_BASEBAND                         0x03
 #define BT_OGF_INFO                             0x04
 #define BT_OGF_STATUS                           0x05
@@ -556,6 +557,14 @@ struct bt_hci_cp_user_passkey_neg_reply {
 struct bt_hci_cp_io_capability_neg_reply {
 	bt_addr_t bdaddr;
 	uint8_t   reason;
+} __packed;
+
+#define BT_HCI_SWITCH_ROLE_CENTRAL              0
+#define BT_HCI_SWITCH_ROLE_PERIPHERAL           1
+#define BT_HCI_OP_SWITCH_ROLE                   BT_OP(BT_OGF_LINK_POLICY, 0x000b)
+struct bt_hci_cp_switch_role {
+	bt_addr_t bdaddr;
+	uint8_t   role;
 } __packed;
 
 #define BT_HCI_OP_SET_EVENT_MASK                BT_OP(BT_OGF_BASEBAND, 0x0001) /* 0x0c01 */
