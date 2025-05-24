@@ -4,10 +4,11 @@
 
 from enum import Enum
 
+
 class Codemodel:
 
     def __init__(self):
-        super(Codemodel, self).__init__()
+        super().__init__()
 
         self.paths_source = ""
         self.paths_build = ""
@@ -20,7 +21,7 @@ class Codemodel:
 class Config:
 
     def __init__(self):
-        super(Config, self).__init__()
+        super().__init__()
 
         self.name = ""
         self.directories = []
@@ -29,7 +30,7 @@ class Config:
 
     def __repr__(self):
         if self.name == "":
-            return f"Config: [no name]"
+            return "Config: [no name]"
         else:
             return f"Config: {self.name}"
 
@@ -37,7 +38,7 @@ class Config:
 class ConfigDir:
 
     def __init__(self):
-        super(ConfigDir, self).__init__()
+        super().__init__()
 
         self.source = ""
         self.build = ""
@@ -61,7 +62,7 @@ class ConfigDir:
 class ConfigProject:
 
     def __init__(self):
-        super(ConfigProject, self).__init__()
+        super().__init__()
 
         self.name = ""
         self.parentIndex = -1
@@ -82,7 +83,7 @@ class ConfigProject:
 class ConfigTarget:
 
     def __init__(self):
-        super(ConfigTarget, self).__init__()
+        super().__init__()
 
         self.name = ""
         self.id = ""
@@ -114,7 +115,7 @@ class TargetType(Enum):
 class TargetInstallDestination:
 
     def __init__(self):
-        super(TargetInstallDestination, self).__init__()
+        super().__init__()
 
         self.path = ""
         self.backtrace = -1
@@ -127,7 +128,7 @@ class TargetInstallDestination:
 class TargetCommandFragment:
 
     def __init__(self):
-        super(TargetCommandFragment, self).__init__()
+        super().__init__()
 
         self.fragment = ""
         self.role = ""
@@ -139,7 +140,7 @@ class TargetCommandFragment:
 class TargetDependency:
 
     def __init__(self):
-        super(TargetDependency, self).__init__()
+        super().__init__()
 
         self.id = ""
         self.backtrace = -1
@@ -151,7 +152,7 @@ class TargetDependency:
 class TargetSource:
 
     def __init__(self):
-        super(TargetSource, self).__init__()
+        super().__init__()
 
         self.path = ""
         self.compileGroupIndex = -1
@@ -170,7 +171,7 @@ class TargetSource:
 class TargetSourceGroup:
 
     def __init__(self):
-        super(TargetSourceGroup, self).__init__()
+        super().__init__()
 
         self.name = ""
         self.sourceIndexes = []
@@ -185,7 +186,7 @@ class TargetSourceGroup:
 class TargetCompileGroupInclude:
 
     def __init__(self):
-        super(TargetCompileGroupInclude, self).__init__()
+        super().__init__()
 
         self.path = ""
         self.isSystem = False
@@ -198,7 +199,7 @@ class TargetCompileGroupInclude:
 class TargetCompileGroupPrecompileHeader:
 
     def __init__(self):
-        super(TargetCompileGroupPrecompileHeader, self).__init__()
+        super().__init__()
 
         self.header = ""
         self.backtrace = -1
@@ -210,7 +211,7 @@ class TargetCompileGroupPrecompileHeader:
 class TargetCompileGroupDefine:
 
     def __init__(self):
-        super(TargetCompileGroupDefine, self).__init__()
+        super().__init__()
 
         self.define = ""
         self.backtrace = -1
@@ -222,7 +223,7 @@ class TargetCompileGroupDefine:
 class TargetCompileGroup:
 
     def __init__(self):
-        super(TargetCompileGroup, self).__init__()
+        super().__init__()
 
         self.sourceIndexes = []
         self.language = ""
@@ -242,7 +243,7 @@ class TargetCompileGroup:
 class TargetBacktraceGraphNode:
 
     def __init__(self):
-        super(TargetBacktraceGraphNode, self).__init__()
+        super().__init__()
 
         self.file = -1
         self.line = -1
@@ -257,7 +258,7 @@ class TargetBacktraceGraphNode:
 class Target:
 
     def __init__(self):
-        super(Target, self).__init__()
+        super().__init__()
 
         self.name = ""
         self.id = ""
