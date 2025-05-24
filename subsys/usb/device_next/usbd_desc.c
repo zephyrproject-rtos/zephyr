@@ -119,14 +119,15 @@ int usbd_desc_remove_all(struct usbd_context *const uds_ctx)
 int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 			struct usbd_desc_node *const desc_nd)
 {
-	struct usb_device_descriptor *hs_desc, *fs_desc;
+	struct usb_device_descriptor *ss_desc, *hs_desc, *fs_desc;
 	int ret = 0;
 
 	usbd_device_lock(uds_ctx);
 
+	ss_desc = uds_ctx->ss_desc;
 	hs_desc = uds_ctx->hs_desc;
 	fs_desc = uds_ctx->fs_desc;
-	if (!fs_desc || !hs_desc || usbd_is_initialized(uds_ctx)) {
+	if (!fs_desc || !hs_desc || !ss_desc || usbd_is_initialized(uds_ctx)) {
 		ret = -EPERM;
 		goto add_descriptor_error;
 	}
@@ -164,14 +165,17 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 		case USBD_DUT_STRING_LANG:
 			break;
 		case USBD_DUT_STRING_MANUFACTURER:
+			ss_desc->iManufacturer = desc_nd->str.idx;
 			hs_desc->iManufacturer = desc_nd->str.idx;
 			fs_desc->iManufacturer = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_PRODUCT:
+			ss_desc->iProduct = desc_nd->str.idx;
 			hs_desc->iProduct = desc_nd->str.idx;
 			fs_desc->iProduct = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_SERIAL_NUMBER:
+			ss_desc->iSerialNumber = desc_nd->str.idx;
 			hs_desc->iSerialNumber = desc_nd->str.idx;
 			fs_desc->iSerialNumber = desc_nd->str.idx;
 			break;

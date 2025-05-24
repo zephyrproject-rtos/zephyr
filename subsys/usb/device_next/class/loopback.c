@@ -48,15 +48,31 @@ struct loopback_desc {
 	struct usb_ep_descriptor if0_in_ep;
 	struct usb_ep_descriptor if0_hs_out_ep;
 	struct usb_ep_descriptor if0_hs_in_ep;
+	struct usb_ep_descriptor if0_ss_out_ep;
+	struct usb_ss_endpoint_companion_descriptor if0_ss_out_ep_co;
+	struct usb_ep_descriptor if0_ss_in_ep;
+	struct usb_ss_endpoint_companion_descriptor if0_ss_in_ep_co;
 	struct usb_if_descriptor if1;
 	struct usb_ep_descriptor if1_int_out_ep;
 	struct usb_ep_descriptor if1_int_in_ep;
+	struct usb_ep_descriptor if1_int_ss_out_ep;
+	struct usb_ss_endpoint_companion_descriptor if1_int_ss_out_ep_co;
+	struct usb_ep_descriptor if1_int_ss_in_ep;
+	struct usb_ss_endpoint_companion_descriptor if1_int_ss_in_ep_co;
 	struct usb_if_descriptor if2_0;
 	struct usb_ep_descriptor if2_0_iso_in_ep;
 	struct usb_ep_descriptor if2_0_iso_out_ep;
+	struct usb_ep_descriptor if2_0_iso_ss_in_ep;
+	struct usb_ss_endpoint_companion_descriptor if2_0_iso_ss_in_ep_co;
+	struct usb_ep_descriptor if2_0_iso_ss_out_ep;
+	struct usb_ss_endpoint_companion_descriptor if2_0_iso_ss_out_ep_co;
 	struct usb_if_descriptor if2_1;
 	struct usb_ep_descriptor if2_1_iso_in_ep;
 	struct usb_ep_descriptor if2_1_iso_out_ep;
+	struct usb_ep_descriptor if2_1_iso_ss_in_ep;
+	struct usb_ss_endpoint_companion_descriptor if2_1_iso_ss_in_ep_co;
+	struct usb_ep_descriptor if2_1_iso_ss_out_ep;
+	struct usb_ss_endpoint_companion_descriptor if2_1_iso_ss_out_ep_co;
 	struct usb_desc_header nil_desc;
 };
 
@@ -64,6 +80,7 @@ struct lb_data {
 	struct loopback_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
 	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header **const ss_desc;
 	atomic_t state;
 };
 
@@ -257,6 +274,9 @@ static void *lb_get_desc(struct usbd_class_data *const c_data,
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return data->hs_desc;
 	}
+	if (speed == USBD_SPEED_SS) {
+		return data->ss_desc;
+	}
 
 	return data->fs_desc;
 }
@@ -365,6 +385,44 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bInterval = 0x00,						\
 	},									\
 										\
+	/* Data Endpoint OUT */							\
+	.if0_ss_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x01,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = 0x00,						\
+	},									\
+										\
+	/* Data Endpoint Companion OUT */					\
+	.if0_ss_out_ep_co = {							\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
+	},									\
+										\
+	/* Data Endpoint IN */							\
+	.if0_hs_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = 0x00,						\
+	},									\
+										\
+	/* Data Endpoint Companion IN */					\
+	.if0_ss_in_ep_co = {							\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
+	},									\
+										\
 	/* Interface descriptor 1 */						\
 	.if1 = {								\
 		.bLength = sizeof(struct usb_if_descriptor),			\
@@ -388,7 +446,7 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bInterval = 0x01,						\
 	},									\
 										\
-	/* Interrupt Interrupt Endpoint IN */					\
+	/* Interface Interrupt Endpoint IN */					\
 	.if1_int_in_ep = {							\
 		.bLength = sizeof(struct usb_ep_descriptor),			\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
@@ -396,6 +454,44 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
 		.wMaxPacketSize = sys_cpu_to_le16(64),				\
 		.bInterval = 0x01,						\
+	},									\
+										\
+	/* Interface Interrupt Endpoint OUT */					\
+	.if1_int_ss_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x02,					\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = 0x01,						\
+	},									\
+										\
+	/* Interface Interrupt Endpoint Companion OUT */			\
+	.if1_int_ss_out_ep_co = {						\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
+	},									\
+										\
+	/* Interface Interrupt Endpoint IN */					\
+	.if1_int_ss_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x82,					\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
+		.wMaxPacketSize = sys_cpu_to_le16(64),				\
+		.bInterval = 0x01,						\
+	},									\
+										\
+	/* Interface Interrupt Endpoint Companion IN */				\
+	.if1_int_ss_in_ep_co = {						\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
 	},									\
 										\
 	.if2_0 = {								\
@@ -428,6 +524,40 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bInterval = LB_ISO_EP_INTERVAL,				\
 	},									\
 										\
+	.if2_0_iso_ss_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x83,					\
+		.bmAttributes = USB_EP_TYPE_ISO,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = LB_ISO_EP_INTERVAL,				\
+	},									\
+										\
+	.if2_0_iso_ss_in_ep_co = {						\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
+	},									\
+										\
+	.if2_0_iso_ss_out_ep = {						\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x03,					\
+		.bmAttributes = USB_EP_TYPE_ISO,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = LB_ISO_EP_INTERVAL,				\
+	},									\
+										\
+	.if2_0_iso_ss_out_ep_co = {						\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
+	},									\
+										\
 	.if2_1 = {								\
 		.bLength = sizeof(struct usb_if_descriptor),			\
 		.bDescriptorType = USB_DESC_INTERFACE,				\
@@ -456,6 +586,40 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bmAttributes = USB_EP_TYPE_ISO,				\
 		.wMaxPacketSize = sys_cpu_to_le16(LB_ISO_EP_MPS),		\
 		.bInterval = LB_ISO_EP_INTERVAL,				\
+	},									\
+										\
+	.if2_1_iso_ss_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x83,					\
+		.bmAttributes = USB_EP_TYPE_ISO,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = LB_ISO_EP_INTERVAL,				\
+	},									\
+										\
+	.if2_1_iso_ss_in_ep_co = {						\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
+	},									\
+										\
+	.if2_1_iso_ss_out_ep = {						\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x03,					\
+		.bmAttributes = USB_EP_TYPE_ISO,				\
+		.wMaxPacketSize = sys_cpu_to_le16(1024),			\
+		.bInterval = LB_ISO_EP_INTERVAL,				\
+	},									\
+										\
+	.if2_1_iso_ss_out_ep_co = {						\
+		.bLength = sizeof(struct usb_ss_endpoint_companion_descriptor),	\
+		.bDescriptorType = USB_DESC_ENDPOINT_COMPANION,			\
+		.bMaxBurst = 15,						\
+		.bmAttributes = 0x00,						\
+		.wBytesPerInterval = 0x00,					\
 	},									\
 										\
 	/* Termination descriptor */						\
@@ -497,14 +661,37 @@ const static struct usb_desc_header *lb_hs_desc_##x[] = {			\
 	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_in_ep,		\
 	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_out_ep,		\
 	(struct usb_desc_header *) &lb_desc_##x.nil_desc,			\
+};										\
+										\
+const static struct usb_desc_header *lb_ss_desc_##x[] = {			\
+	(struct usb_desc_header *) &lb_desc_##x.iad,				\
+	(struct usb_desc_header *) &lb_desc_##x.if0,				\
+	(struct usb_desc_header *) &lb_desc_##x.if0_ss_in_ep,			\
+	(struct usb_desc_header *) &lb_desc_##x.if0_ss_out_ep,			\
+	(struct usb_desc_header *) &lb_desc_##x.if1,				\
+	(struct usb_desc_header *) &lb_desc_##x.if1_int_ss_in_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if1_int_ss_in_ep_co,		\
+	(struct usb_desc_header *) &lb_desc_##x.if1_int_ss_out_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if1_int_ss_out_ep_co,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_0,				\
+	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_ss_in_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_ss_in_ep_co,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_ss_out_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_ss_out_ep_co,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_1,				\
+	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_ss_in_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_ss_in_ep_co,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_ss_out_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_ss_out_ep_co,		\
+	(struct usb_desc_header *) &lb_desc_##x.nil_desc,			\
 };
-
 
 #define DEFINE_LOOPBACK_CLASS_DATA(x, _)					\
 	static struct lb_data lb_data_##x = {					\
 		.desc = &lb_desc_##x,						\
 		.fs_desc = lb_fs_desc_##x,					\
 		.hs_desc = lb_hs_desc_##x,					\
+		.ss_desc = lb_ss_desc_##x,					\
 	};									\
 										\
 	USBD_DEFINE_CLASS(loopback_##x, &lb_api, &lb_data_##x, &lb_vregs);
