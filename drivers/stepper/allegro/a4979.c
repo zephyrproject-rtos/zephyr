@@ -296,7 +296,8 @@ static DEVICE_API(stepper, a4979_stepper_api) = {
 		.micro_step_res = DT_INST_PROP(inst, micro_step_res),                              \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, a4979_init, NULL, &a4979_data_##inst, &a4979_config_##inst,    \
-			      POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY, &a4979_stepper_api);
+	STEPPER_DEVICE_DT_INST_DEFINE(inst, a4979_init, NULL, &a4979_data_##inst,                  \
+				      &a4979_config_##inst, POST_KERNEL,                           \
+				      CONFIG_STEPPER_INIT_PRIORITY, &a4979_stepper_api);
 
 DT_INST_FOREACH_STATUS_OKAY(A4979_DEVICE)

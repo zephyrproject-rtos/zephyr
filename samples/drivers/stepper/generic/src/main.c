@@ -36,6 +36,7 @@ static void stepper_callback(const struct device *dev, const enum stepper_event 
 {
 	switch (event) {
 	case STEPPER_EVENT_STEPS_COMPLETED:
+		LOG_DBG("Steps completed for device %s", dev->name);
 		k_sem_give(&stepper_generic_sem);
 		break;
 	default:

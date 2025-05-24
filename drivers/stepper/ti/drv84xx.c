@@ -508,8 +508,8 @@ static DEVICE_API(stepper, drv84xx_stepper_api) = {
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &drv84xx_init, NULL, &drv84xx_data_##inst,                     \
-			      &drv84xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
-			      &drv84xx_stepper_api);
+	STEPPER_DEVICE_DT_INST_DEFINE(inst, &drv84xx_init, NULL, &drv84xx_data_##inst,             \
+				      &drv84xx_config_##inst, POST_KERNEL,                         \
+				      CONFIG_STEPPER_INIT_PRIORITY, &drv84xx_stepper_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DRV84XX_DEVICE)
