@@ -304,4 +304,14 @@ config WINSTREAM_CONSOLE_STATIC_SIZE
 
 endif # WINSTREAM_CONSOLE
 
+config QINGKE_DEBUG_CONSOLE
+	bool "QingKe Debug Module console"
+	depends on DT_HAS_WCH_QINGKE_DEBUG_ENABLED
+	select CONSOLE_HAS_DRIVER
+	help
+	  Emit console messages to the host via the debug module. These
+	  can be displayed by a SDI compatible debugger such as `minichlink`.
+	  Text is buffered and, in the worst case, flushed when a space
+	  or ASCII control character is printed.
+
 endif # CONSOLE
