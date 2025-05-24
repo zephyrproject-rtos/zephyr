@@ -606,6 +606,12 @@ Video
   ``video_stream_start``
   ``video_stream_stop``
 
+Audio
+=====
+
+* The binding file for :dtcompatible:`cirrus,cs43l22` has been renamed to have a name
+  matching the compatible string.
+
 Other subsystems
 ****************
 
