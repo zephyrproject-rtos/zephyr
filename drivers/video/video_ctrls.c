@@ -120,8 +120,11 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	uint32_t flags;
 	enum video_ctrl_type type;
 	struct video_ctrl *vc;
-	struct video_device *vdev = video_find_vdev(dev);
+	struct video_device *vdev;
 
+	__ASSERT(dev && ctrl, "Invalid arguments");
+
+	vdev = video_find_vdev(dev);
 	if (!vdev) {
 		return -EINVAL;
 	}
@@ -261,6 +264,8 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 {
 	struct video_ctrl *ctrl = NULL;
 
+	__ASSERT(dev && control, "Invalid arguments");
+
 	int ret = video_find_ctrl(dev, control->id, &ctrl);
 
 	if (ret) {
@@ -299,11 +304,14 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 int video_set_ctrl(const struct device *dev, struct video_control *control)
 {
 	struct video_ctrl *ctrl = NULL;
-	int ret = video_find_ctrl(dev, control->id, &ctrl);
+	int ret;
 	uint8_t i = 0;
 	int32_t val = 0;
 	int64_t val64 = 0;
 
+	__ASSERT(dev && control, "Invalid arguments");
+
+	ret = video_find_ctrl(dev, control->id, &ctrl);
 	if (ret) {
 		return ret;
 	}
@@ -515,6 +523,8 @@ int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq)
 	int ret;
 	struct video_device *vdev;
 	struct video_ctrl *ctrl = NULL;
+
+	__ASSERT(dev && cq, "Invalid arguments");
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
 		vdev = video_find_vdev(dev);

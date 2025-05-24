@@ -210,10 +210,6 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_forma
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret;
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
-
 	/* Align DCMI format with the one provided by the sensor */
 	ret = video_get_format(config->sensor_dev, fmt);
 	if (ret < 0) {

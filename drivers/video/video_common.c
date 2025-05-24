@@ -82,6 +82,8 @@ void video_buffer_release(struct video_buffer *vbuf)
 	struct mem_block *block = NULL;
 	int i;
 
+	__ASSERT(vbuf, "Invalid arguments");
+
 	/* vbuf to block */
 	for (i = 0; i < ARRAY_SIZE(video_block); i++) {
 		if (video_block[i].data == vbuf->buffer) {
@@ -99,6 +101,8 @@ void video_buffer_release(struct video_buffer *vbuf)
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
 			    size_t *idx)
 {
+	__ASSERT(fmts && fmt && idx, "Invalid arguments");
+
 	for (int i = 0; fmts[i].pixelformat != 0; i++) {
 		if (fmts[i].pixelformat == fmt->pixelformat &&
 		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
@@ -114,6 +118,8 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 				    const struct video_frmival *desired,
 				    struct video_frmival *match)
 {
+	__ASSERT(stepwise && desired && match, "Invalid arguments");
+
 	uint64_t min = stepwise->min.numerator;
 	uint64_t max = stepwise->max.numerator;
 	uint64_t step = stepwise->step.numerator;
@@ -136,6 +142,8 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
 {
+	__ASSERT(dev && match, "Invalid arguments");
+
 	struct video_frmival desired = match->discrete;
 	struct video_frmival_enum fie = {.format = match->format};
 	uint64_t best_diff_nsec = INT32_MAX;
