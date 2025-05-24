@@ -2,13 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import re
 from datetime import datetime
 
 from west import log
 
 from zspdx.util import getHashes
-
-import re
 
 CPE23TYPE_REGEX = (
     r'^cpe:2\.3:[aho\*\-](:(((\?*|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^'
@@ -26,7 +25,10 @@ def _normalize_spdx_name(name):
 #   1) f: file handle for SPDX document
 #   2) rln: Relationship object being described
 def writeRelationshipSPDX(f, rln):
-    f.write(f"Relationship: {_normalize_spdx_name(rln.refA)} {rln.rlnType} {_normalize_spdx_name(rln.refB)}\n")
+    f.write(
+        f"Relationship: {_normalize_spdx_name(rln.refA)} {rln.rlnType} "
+        f"{_normalize_spdx_name(rln.refB)}\n"
+    )
 
 # Output tag-value SPDX 2.3 content for the given File object.
 # Arguments:
@@ -45,7 +47,7 @@ FileChecksum: SHA1: {bf.sha1}
         f.write(f"FileChecksum: MD5: {bf.md5}\n")
     f.write(f"LicenseConcluded: {bf.concludedLicense}\n")
     if len(bf.licenseInfoInFile) == 0:
-        f.write(f"LicenseInfoInFile: NONE\n")
+        f.write("LicenseInfoInFile: NONE\n")
     else:
         for licInfoInFile in bf.licenseInfoInFile:
             f.write(f"LicenseInfoInFile: {licInfoInFile}\n")
@@ -111,10 +113,10 @@ PackageCopyrightText: {pkg.cfg.copyrightText}
             for licFromFiles in pkg.licenseInfoFromFiles:
                 f.write(f"PackageLicenseInfoFromFiles: {licFromFiles}\n")
         else:
-            f.write(f"PackageLicenseInfoFromFiles: NOASSERTION\n")
+            f.write("PackageLicenseInfoFromFiles: NOASSERTION\n")
         f.write(f"FilesAnalyzed: true\nPackageVerificationCode: {pkg.verificationCode}\n\n")
     else:
-        f.write(f"FilesAnalyzed: false\nPackageComment: Utility target; no files\n\n")
+        f.write("FilesAnalyzed: false\nPackageComment: Utility target; no files\n\n")
 
     # write package relationships
     if len(pkg.rlns) > 0:
@@ -162,14 +164,17 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
         extDocs = list(doc.externalDocuments)
         extDocs.sort(key = lambda x: x.cfg.docRefID)
         for extDoc in extDocs:
-            f.write(f"ExternalDocumentRef: {extDoc.cfg.docRefID} {extDoc.cfg.namespace} SHA1: {extDoc.myDocSHA1}\n")
-        f.write(f"\n")
+            f.write(
+                f"ExternalDocumentRef: {extDoc.cfg.docRefID} {extDoc.cfg.namespace} "
+                f"SHA1: {extDoc.myDocSHA1}\n"
+            )
+        f.write("\n")
 
     # write relationships owned by this Document (not by its Packages, etc.), if any
     if len(doc.relationships) > 0:
         for rln in doc.relationships:
             writeRelationshipSPDX(f, rln)
-        f.write(f"\n")
+        f.write("\n")
 
     # write packages
     for pkg in doc.pkgs.values():
@@ -198,7 +203,7 @@ def writeSPDX(spdxPath, doc):
     # calculate hash of the document we just wrote
     hashes = getHashes(spdxPath)
     if not hashes:
-        log.err(f"Error: created document but unable to calculate hash values")
+        log.err("Error: created document but unable to calculate hash values")
         return False
     doc.myDocSHA1 = hashes[0]
 
