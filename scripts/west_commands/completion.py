@@ -88,7 +88,7 @@ class Completion(WestCommand):
         cf += '.' + self._EXT_MAPPING[args.shell[0]]
 
         try:
-            with open(cf, 'r') as f:
+            with open(cf) as f:
                 print(f.read())
         except FileNotFoundError as e:
-            self.die('Unable to find completion file: {}'.format(e))
+            self.die(f'Unable to find completion file: {e}')
