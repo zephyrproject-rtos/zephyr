@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Nova Dynamics LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC temperature sensor
+
+compatible: "nxp,lpc-temperature"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: This should point to an ADC channel (e.g., <&adc0 0>). That
+      will be used for reading from the internal temperature sensor.

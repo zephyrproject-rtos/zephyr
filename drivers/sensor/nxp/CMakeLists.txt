@@ -13,4 +13,5 @@ add_subdirectory_ifdef(CONFIG_QDEC_NXP_S32 qdec_nxp_s32)
 add_subdirectory_ifdef(CONFIG_QDEC_TPM qdec_tpm)
 add_subdirectory_ifdef(CONFIG_SENSOR_MCUX_ACMP mcux_acmp)
 add_subdirectory_ifdef(CONFIG_TEMP_KINETIS nxp_kinetis_temp)
+add_subdirectory_ifdef(CONFIG_TEMP_LPC nxp_lpc_temp)
 # zephyr-keep-sorted-stop
