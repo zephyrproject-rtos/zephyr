@@ -271,6 +271,8 @@ static int adxl345_attr_set(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return adxl345_attr_set_odr(dev, chan, attr, val);
+	case SENSOR_ATTR_UPPER_THRESH:
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, val->val1);
 	default:
 		return -ENOTSUP;
 	}
@@ -482,6 +484,10 @@ static int adxl345_init(const struct device *dev)
 		return rc;
 	}
 	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
+	if (rc) {
+		return rc;
+	}
+	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_ACT_MSK);
 	if (rc) {
 		return rc;
 	}
