@@ -809,12 +809,7 @@ static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *use
 	}
 
 	if (info.state == BT_CONN_STATE_CONNECTED) {
-		char addr_str[BT_ADDR_LE_STR_LEN];
-
 		default_conn = bt_conn_ref(conn);
-
-		bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
-		bt_shell_print("Selected conn is now: %s", addr_str);
 	}
 }
 
@@ -826,17 +821,33 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_shell_print("Disconnected: %s (reason 0x%02x)", addr, reason);
 
 	if (default_conn == conn) {
+		struct bt_conn_info info;
+		enum bt_conn_type conn_type = BT_CONN_TYPE_LE;
+
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			conn_type |= BT_CONN_TYPE_BR;
+		}
+
+		bt_conn_get_info(conn, &info);
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
 		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconnected_set_new_default_conn_cb, NULL);
+		bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+		if (default_conn == NULL) {
+			bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
+		}
+
+		if (default_conn != NULL) {
+			conn_addr_str(default_conn, addr, sizeof(addr));
+			bt_shell_print("Selected conn is now: %s", addr);
+		}
 	}
 }
 
 static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	bt_shell_print("LE conn  param req: int (0x%04x, 0x%04x) lat %d to %d",
+	bt_shell_print("LE conn param req: int (0x%04x, 0x%04x) lat %d to %d",
 		       param->interval_min, param->interval_max,
 		       param->latency, param->timeout);
 
@@ -3847,7 +3858,7 @@ static int cmd_security(const struct shell *sh, size_t argc, char *argv[])
 	sec = *argv[1] - '0';
 
 	if ((info.type == BT_CONN_TYPE_BR &&
-	    (sec < BT_SECURITY_L0 || sec > BT_SECURITY_L3))) {
+	    (sec < BT_SECURITY_L0 || sec > BT_SECURITY_L4))) {
 		shell_error(sh, "Invalid BR/EDR security level (%d)", sec);
 		return -ENOEXEC;
 	}
@@ -5121,7 +5132,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
-	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
+	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 4, "
 				      "LE: 1 - 4> [force-pair]",
 		      cmd_security, 1, 2),
 	SHELL_CMD_ARG(bondable, NULL, HELP_ONOFF, cmd_bondable,
