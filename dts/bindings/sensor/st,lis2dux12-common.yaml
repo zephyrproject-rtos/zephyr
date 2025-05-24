@@ -93,3 +93,45 @@ properties:
       - 11 # LIS2DUX12_DT_ODR_800Hz
 
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+  fifo-watermark:
+    type: int
+    default: 32
+    description: |
+      Specify the default FIFO watermark threshold. Every unit indicates a FIFO row (1 byte of TAG +
+      6 bytes of data). (min 0; max 255)
+      A typical threshold value is 32 which is then used as default.
+
+  accel-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer FIFO batch data rate expressed as a fraction of the odr.
+      The values are taken in accordance to lis2dux12_bdr_xl_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0x0 # LIS2DUX12_DT_BDR_XL_ODR
+      - 0x1 # LIS2DUX12_DT_BDR_XL_ODR_DIV_2
+      - 0x2 # LIS2DUX12_DT_BDR_XL_ODR_DIV_4
+      - 0x3 # LIS2DUX12_DT_BDR_XL_ODR_DIV_8
+      - 0x4 # LIS2DUX12_DT_BDR_XL_ODR_DIV_16
+      - 0x5 # LIS2DUX12_DT_BDR_XL_ODR_DIV_32
+      - 0x6 # LIS2DUX12_DT_BDR_XL_ODR_DIV_64
+      - 0x7 # LIS2DUX12_DT_BDR_XL_ODR_OFF
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]
+
+  timestamp-fifo-batch-rate:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default timestamp FIFO batch data rate expressed as a fraction od the odr.
+      The values are taken in accordance to lis2dux12_dec_ts_t enumerative in hal/st module.
+      Default is power-up configuration.
+
+      - 0x0 # LIS2DUX12_DT_DEC_TS_OFF
+      - 0x1 # LIS2DUX12_DT_DEC_TS_1
+      - 0x2 # LIS2DUX12_DT_DEC_TS_8
+      - 0x3 # LIS2DUX12_DT_DEC_TS_32
+
+    enum: [0x00, 0x01, 0x02, 0x03]
