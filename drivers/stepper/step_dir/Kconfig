@@ -15,8 +15,4 @@ config STEP_DIR_STEPPER_COUNTER_TIMING
 	help
 	  Enable usage of a counter device for accurate stepping.
 
-module = STEP_DIR
-module-str = step_dir
-rsource "../Kconfig.stepper_event_template"
-
 endif # STEP_DIR_STEPPER

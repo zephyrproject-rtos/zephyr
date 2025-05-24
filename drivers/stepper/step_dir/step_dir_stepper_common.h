@@ -83,13 +83,6 @@ struct step_dir_stepper_common_data {
 	struct counter_top_cfg counter_top_cfg;
 	bool counter_running;
 #endif /* CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING */
-
-#ifdef CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS
-	struct k_work event_callback_work;
-	struct k_msgq event_msgq;
-	uint8_t event_msgq_buffer[CONFIG_STEPPER_STEP_DIR_EVENT_QUEUE_LEN *
-				  sizeof(enum stepper_event)];
-#endif /* CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS */
 };
 
 /**
