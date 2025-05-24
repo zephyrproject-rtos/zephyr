@@ -9,6 +9,7 @@ import logging
 import struct
 
 from gdbstubs.gdbstub import GdbStub
+from x86_shared import ExceptionVectors
 
 
 logger = logging.getLogger("gdbstub")
@@ -45,32 +46,6 @@ class RegNum():
     K_GS_BASE = 26
 
 
-class ExceptionVectors():
-    # Matches arch/x86/include/kernel_arch_data.h
-    IV_DIVIDE_ERROR = 0
-    IV_DEBUG = 1
-    IV_NON_MASKABLE_INTERRUPT = 2
-    IV_BREAKPOINT = 3
-    IV_OVERFLOW = 4
-    IV_BOUND_RANGE = 5
-    IV_INVALID_OPCODE = 6
-    IV_DEVICE_NOT_AVAILABLE = 7
-    IV_DOUBLE_FAULT = 8
-    IV_COPROC_SEGMENT_OVERRUN = 9
-    IV_INVALID_TSS = 10
-    IV_SEGMENT_NOT_PRESENT = 11
-    IV_STACK_FAULT = 12
-    IV_GENERAL_PROTECTION = 13
-    IV_PAGE_FAULT = 14
-    IV_RESERVED = 15
-    IV_X87_FPU_FP_ERROR = 16
-    IV_ALIGNMENT_CHECK = 17
-    IV_MACHINE_CHECK = 18
-    IV_SIMD_FP = 19
-    IV_VIRT_EXCEPTION = 20
-    IV_SECURITY_EXCEPTION = 30
-
-
 class GdbStub_x86_64(GdbStub):
     GDB_SIGNAL_DEFAULT = 7
 
@@ -105,8 +80,8 @@ class GdbStub_x86_64(GdbStub):
         RegNum.GS,
     }
 
-    def __init__(self, logfile, elffile):
-        super().__init__(logfile=logfile, elffile=elffile)
+    def __init__(self, logfile, elffiles):
+        super().__init__(logfile=logfile, elffiles=elffiles)
         self.registers = None
         self.exception_vector = None
         self.exception_code = None

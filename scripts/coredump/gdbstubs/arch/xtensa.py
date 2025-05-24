@@ -139,8 +139,8 @@ class GdbStub_Xtensa(GdbStub):
 
     reg_fmt = "<I"
 
-    def __init__(self, logfile, elffile):
-        super().__init__(logfile=logfile, elffile=elffile)
+    def __init__(self, logfile, elffiles):
+        super().__init__(logfile=logfile, elffiles=elffiles)
 
         self.registers = None
         self.exception_code = None
