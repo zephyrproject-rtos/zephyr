@@ -163,6 +163,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_mcp3204: mcp3204@0 {
@@ -385,6 +386,18 @@
 				reg = <0x19>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
+			};
+
+			test_spi_mcp356xr: mcp356xr@18 {
+				compatible = "microchip,mcp356xr";
+				reg = <0x1a>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+
+				address = <1>;
+				analog-clock-prescaler = <0>;
+				boost-current-bias = <0>;
+				irq-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};
