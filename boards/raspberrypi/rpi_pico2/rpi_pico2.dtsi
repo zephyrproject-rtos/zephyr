@@ -114,13 +114,6 @@ gpio0_lo: &gpio0 {
 	status = "okay";
 };
 
-&i2c1 {
-	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c1_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
 &adc {
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
