@@ -8,16 +8,36 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/settings/settings.h>
+
 #include <canopennode.h>
+#ifdef CONFIG_CANOPENNODE_STORAGE
+#include <storage/CO_storage.h>
+#endif
+#include "OD.h"
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
 #define CAN_INTERFACE DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
-#define CAN_BITRATE (DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bitrate, \
-					  DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bus_speed, \
-						     CONFIG_CAN_DEFAULT_BITRATE)) / 1000)
+#define CAN_BITRATE \
+	(DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bitrate, \
+		    DT_PROP_OR(DT_CHOSEN(zephyr_canbus), bus_speed, \
+					 CONFIG_CAN_DEFAULT_BITRATE)) / 1000U)
+
+/* default values for CO_CANopenInit as enums for debugger symbols */
+enum {
+	NMT_CONTROL =
+		CO_NMT_STARTUP_TO_OPERATIONAL |
+		CO_NMT_ERR_ON_ERR_REG |
+		CO_ERR_REG_GENERIC_ERR |
+		CO_ERR_REG_COMMUNICATION,
+	FIRST_HB_TIME = 500, /* ms */
+	SDO_SRV_TIMEOUT_TIME = 1000, /* ms */
+	SDO_CLI_TIMEOUT_TIME = 500, /* ms */
+	SDO_CLI_BLOCK = false, /* block transfer */
+};
+
 
 static struct gpio_dt_spec led_green_gpio = GPIO_DT_SPEC_GET_OR(
 		DT_ALIAS(green_led), gpios, {0});
@@ -34,6 +54,7 @@ struct led_indicator {
 };
 
 static uint32_t counter;
+static OD_extension_t OD_2102_buttonPressCounter_extension;
 
 /**
  * @brief Callback for setting LED indicator state.
@@ -60,7 +81,7 @@ static void led_callback(bool value, void *arg)
  *
  * @param nmt CANopenNode NMT object.
  */
-static void config_leds(CO_NMT_t *nmt)
+static void config_leds(struct canopen_context *ctx)
 {
 	int err;
 
@@ -92,7 +113,7 @@ static void config_leds(CO_NMT_t *nmt)
 		}
 	}
 
-	canopen_leds_init(nmt,
+	canopen_leds_init(ctx,
 			  led_callback, &led_green_gpio,
 			  led_callback, &led_red_gpio);
 }
@@ -107,30 +128,22 @@ static void config_leds(CO_NMT_t *nmt)
  *
  * @return SDO abort code.
  */
-static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
+static ODR_t OD_write_2102(OD_stream_t *stream, const void *buf,
+			   OD_size_t count, OD_size_t *written)
 {
-	uint32_t value;
-
-	value = CO_getUint32(odf_arg->data);
-
-	if (odf_arg->reading) {
-		return CO_SDO_AB_NONE;
+	if (stream == NULL || stream->subIndex != 0 ||
+	    buf == NULL || count != sizeof(uint32_t) || written == NULL) {
+		return ODR_DEV_INCOMPAT;
 	}
 
-	if (odf_arg->subIndex != 0U) {
-		return CO_SDO_AB_NONE;
+	uint32_t value = CO_getUint32(buf);
+	if (value == 0) {
+		LOG_INF("Resetting button press counter");
+		counter = 0;
 	}
 
-	if (value != 0) {
-		/* Preserve old value */
-		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
-		return CO_SDO_AB_DATA_TRANSF;
-	}
-
-	LOG_INF("Resetting button press counter");
-	counter = 0;
-
-	return CO_SDO_AB_NONE;
+	/* Preserve old value */
+	return OD_writeOriginal(stream, buf, count, written);
 }
 
 /**
@@ -199,93 +212,186 @@ int main(void)
 {
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	CO_ReturnError_t err;
-	struct canopen_context can;
-	uint16_t timeout;
+	uint32_t errinfo;
+	uint32_t timeout;
 	uint32_t elapsed;
 	int64_t timestamp;
 #ifdef CONFIG_CANOPENNODE_STORAGE
 	int ret;
+	OD_entry_t *OD_1010;
+	OD_entry_t *OD_1011;
+	CO_storage_entry_t storage_entries[] = {
+		{
+			.addr = &OD_ROM,
+			.len = sizeof(OD_ROM),
+			.subIndexOD = 2,
+			.attr = CO_storage_cmd | CO_storage_restore,
+			.type = CANOPEN_STORAGE_ROM
+		},
+		{
+			.addr = &OD_EEPROM,
+			.len = sizeof(OD_EEPROM),
+			.subIndexOD = 3,
+			.attr = CO_storage_cmd | CO_storage_restore,
+			.type = CANOPEN_STORAGE_EEPROM
+		}
+	};
+	OD_size_t storage_entries_count = ARRAY_SIZE(storage_entries);
 #endif /* CONFIG_CANOPENNODE_STORAGE */
 
-	can.dev = CAN_INTERFACE;
-	if (!device_is_ready(can.dev)) {
+	struct canopen_context canctx = {
+		.dev = CAN_INTERFACE,
+		.pending_nodeid = CONFIG_CANOPEN_NODE_ID,
+		.pending_bitrate = CAN_BITRATE
+	};
+	if (!device_is_ready(canctx.dev)) {
 		LOG_ERR("CAN interface not ready");
 		return 0;
 	}
 
+	/*
+	 * This canopen module defaults to using globals, so there is no
+	 * allocation and the CO_new will just init the object.
+	 */
+	canctx.co = CO_new(NULL, NULL);
+	if (canctx.co == NULL) {
+		LOG_ERR("CANopen init failed");
+		return 0;
+	}
+
+	OD_set_u32(OD_ENTRY_H2102_buttonPressCounter, 0, 1, true);
+	OD_2102_buttonPressCounter_extension.object = &canctx;
+	OD_2102_buttonPressCounter_extension.read = OD_readOriginal;
+	OD_2102_buttonPressCounter_extension.write = OD_write_2102;
+	OD_extension_init(OD_ENTRY_H2102_buttonPressCounter,
+			  &OD_2102_buttonPressCounter_extension);
+
 #ifdef CONFIG_CANOPENNODE_STORAGE
 	ret = settings_subsys_init();
 	if (ret) {
-		LOG_ERR("failed to initialize settings subsystem (err = %d)",
-			ret);
+		LOG_ERR("settings_subsys_init failed (err = %d)", ret);
 		return 0;
 	}
 
 	ret = settings_load();
 	if (ret) {
-		LOG_ERR("failed to load settings (err = %d)", ret);
+		LOG_ERR("settings_load failed (err = %d)", ret);
 		return 0;
 	}
 #endif /* CONFIG_CANOPENNODE_STORAGE */
 
-	OD_powerOnCounter++;
-
 	config_button();
 
 	while (reset != CO_RESET_APP) {
-		elapsed =  0U; /* milliseconds */
+		elapsed = 0U; /* milliseconds */
 
-		err = CO_init(&can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
+		CO_CANmodule_disable(canctx.co->CANmodule);
+
+		err = CO_CANinit(canctx.co, &canctx, canctx.pending_bitrate);
 		if (err != CO_ERROR_NO) {
-			LOG_ERR("CO_init failed (err = %d)", err);
+			LOG_ERR("CO_CANinit failed (err = %d)", err);
+			return 0;
+		}
+
+		CO_LSS_address_t lss_address = {.identity = {
+			.vendorID = OD_ROM.x1018_identity.vendor_ID,
+			.productCode = OD_ROM.x1018_identity.productCode,
+			.revisionNumber = OD_ROM.x1018_identity.revisionNumber,
+			.serialNumber = OD_ROM.x1018_identity.serialNumber
+		}};
+		err = CO_LSSinit(canctx.co, &lss_address,
+				 &canctx.pending_nodeid,
+				 &canctx.pending_bitrate);
+		if (err != CO_ERROR_NO) {
+			LOG_ERR("CO_LSSinit failed (err = %d)", err);
+			return 0;
+		}
+		canctx.active_nodeid = canctx.pending_nodeid;
+		canctx.active_bitrate = canctx.pending_bitrate;
+		canctx.pending_nodeid = CONFIG_CANOPEN_NODE_ID;
+		canctx.pending_bitrate = CAN_BITRATE;
+
+		err = CO_CANopenInit(canctx.co, /* CANopen object */
+				     NULL,      /* alternate NMT */
+				     NULL,      /* alternate em */
+				     OD,        /* Object dictionary */
+				     NULL,      /* Optional status bits */
+				     NMT_CONTROL,    /* CO_NMT_control_t */
+				     FIRST_HB_TIME,  /* First heartbeat */
+				     SDO_SRV_TIMEOUT_TIME, /* Server timeout */
+				     SDO_CLI_TIMEOUT_TIME, /* Client timeout */
+				     SDO_CLI_BLOCK,  /* Client block transfer */
+				     canctx.active_nodeid,
+				     &errinfo);
+		if (err == CO_ERROR_OD_PARAMETERS) {
+			LOG_ERR("CO_CANopenInit OD entry 0x%X\n", errinfo);
+			return 0;
+		} else if (err != CO_ERROR_NO &&
+			   err != CO_ERROR_NODE_ID_UNCONFIGURED_LSS) {
+			LOG_ERR("CO_CANopenInit failed (err = %d)", err);
+			return 0;
+		}
+
+		err = CO_CANopenInitPDO(canctx.co, canctx.co->em, OD,
+					canctx.active_nodeid, &errinfo);
+		if (err == CO_ERROR_OD_PARAMETERS) {
+			LOG_ERR("CO_CANopenInitPDO OD entry 0x%X\n", errinfo);
+			return 0;
+		} else if (err != CO_ERROR_NO) {
+			LOG_ERR("CO_CANopenInitPDO failed (err = %d)", err);
 			return 0;
 		}
 
 		LOG_INF("CANopen stack initialized");
 
 #ifdef CONFIG_CANOPENNODE_STORAGE
-		canopen_storage_attach(CO->SDO[0], CO->em);
-#endif /* CONFIG_CANOPENNODE_STORAGE */
-
-		config_leds(CO->NMT);
-		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter,
-				odf_2102, NULL, 0U, 0U);
-
-		if (IS_ENABLED(CONFIG_CANOPENNODE_PROGRAM_DOWNLOAD)) {
-			canopen_program_download_attach(CO->NMT, CO->SDO[0],
-							CO->em);
+		OD_1010 = OD_find(OD, OD_H1010_STORE_PARAMETERS);
+		if (OD_1010 == NULL) {
+			LOG_ERR("OD find entry 0x1010 failed");
+			return 0;
+		}
+		OD_1011 = OD_find(OD, OD_H1011_RESTORE_DEFAULT);
+		if (OD_1011 == NULL) {
+			LOG_ERR("OD find entry 0x1011 failed");
+			return 0;
 		}
 
-		CO_CANsetNormalMode(CO->CANmodule[0]);
+		canopen_storage_attach(&canctx, OD_1010, OD_1011,
+				       storage_entries, storage_entries_count);
+#endif /* CONFIG_CANOPENNODE_STORAGE */
 
-		while (true) {
+		config_leds(&canctx);
+
+		if (IS_ENABLED(CONFIG_CANOPENNODE_PROGRAM_DOWNLOAD)) {
+			canopen_program_download_attach(&canctx);
+		}
+
+		/* Start CAN stack */
+		CO_CANsetNormalMode(canctx.co->CANmodule);
+		LOG_INF("CANopen stack running");
+
+		for (;;) {
 			timeout = 1U; /* default timeout in milliseconds */
 			timestamp = k_uptime_get();
-			reset = CO_process(CO, (uint16_t)elapsed, &timeout);
 
+			reset = CO_process(canctx.co, false, elapsed, &timeout);
 			if (reset != CO_RESET_NOT) {
 				break;
 			}
 
-			if (timeout > 0) {
-				CO_LOCK_OD();
-				OD_buttonPressCounter = counter;
-				CO_UNLOCK_OD();
+			canopen_leds_update(&canctx);
 
-#ifdef CONFIG_CANOPENNODE_STORAGE
-				ret = canopen_storage_save(
-					CANOPEN_STORAGE_EEPROM);
-				if (ret) {
-					LOG_ERR("failed to save EEPROM");
-				}
-#endif /* CONFIG_CANOPENNODE_STORAGE */
+			if (timeout > 0) {
+				OD_set_u32(OD_ENTRY_H2102_buttonPressCounter,
+					   0, counter, true);
+
 				/*
 				 * Try to sleep for as long as the
 				 * stack requested and calculate the
 				 * exact time elapsed.
 				 */
 				k_sleep(K_MSEC(timeout));
-				elapsed = (uint32_t)k_uptime_delta(&timestamp);
+				elapsed = k_uptime_delta(&timestamp);
 			} else {
 				/*
 				 * Do not sleep, more processing to be
@@ -302,6 +408,6 @@ int main(void)
 
 	LOG_INF("Resetting device");
 
-	CO_delete(&can);
+	CO_delete(canctx.co);
 	sys_reboot(SYS_REBOOT_COLD);
 }
