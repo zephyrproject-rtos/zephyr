@@ -14,6 +14,6 @@ board_runner_args(pyocd "--target=mimxrt1160_cm4")
 board_runner_args(jlink "--device=MIMXRT1166xxx6_M4")
 endif()
 
-include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
