@@ -585,10 +585,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/logging/dictionary/log_parser.py" = [
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./scripts/make_bugs_pickle.py" = [
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
