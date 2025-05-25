@@ -1,12 +1,12 @@
-identifier: bluepillplus_ch32v203
-name: WeActStudio BluePill Plus CH32V203
+identifier: ch32v303vct6_evt
+name: WCH CH32V303VCT6-EVT Evaluation Board
 type: mcu
 arch: riscv
 toolchain:
   - cross-compile
   - zephyr
-ram: 20
-flash: 224
+ram: 32
+flash: 480
 supported:
   - gpio
   - i2c
