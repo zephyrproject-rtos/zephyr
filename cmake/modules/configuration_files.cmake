@@ -65,11 +65,30 @@ zephyr_boilerplate_watch(CONF_FILE)
 
 zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 
-# If DTC_OVERLAY_FILE is not set by the user, look for SoC and board-specific overlays
+# If DTC_OVERLAY_FILE is not set by the user, look for SoC and board/shield-specific overlays
 # in the 'boards' and `soc` configuration subdirectories.
 if(NOT DEFINED DTC_OVERLAY_FILE)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
+
+  if(DEFINED SHIELD_AS_LIST)
+    foreach(shield_name ${SHIELD_AS_LIST})
+      set(shield_overlay_path ${APPLICATION_CONFIG_DIR}/boards/shields/${shield_name}.overlay)
+
+      if(EXISTS ${shield_overlay_path})
+        list(APPEND DTC_OVERLAY_FILE ${shield_overlay_path})
+      endif()
+
+      # Also check for shield overlays with suffix support
+      if(DEFINED FILE_SUFFIX)
+        set(shield_overlay_suffix_path ${APPLICATION_CONFIG_DIR}/boards/shields/${shield_name}_${FILE_SUFFIX}.overlay)
+
+        if(EXISTS ${shield_overlay_suffix_path})
+          list(APPEND DTC_OVERLAY_FILE ${shield_overlay_suffix_path})
+        endif()
+      endif()
+    endforeach()
+  endif()
 endif()
 
 # If still not found, search for other overlays in the configuration directory.
