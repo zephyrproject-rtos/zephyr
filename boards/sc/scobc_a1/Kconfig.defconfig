@@ -12,6 +12,6 @@ config CPU_HAS_ARM_MPU
 	default y
 
 config NUM_IRQS
-	default 7
+	default 32
 
 endif # BOARD_SCOBC_A1
