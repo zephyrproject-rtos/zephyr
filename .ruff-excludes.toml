@@ -568,9 +568,6 @@
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
-"./scripts/logging/dictionary/dictionary_parser/utils.py" = [
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./scripts/logging/dictionary/log_parser.py" = [
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
