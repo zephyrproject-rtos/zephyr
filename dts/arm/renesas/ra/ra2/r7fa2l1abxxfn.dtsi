@@ -1,12 +1,14 @@
 /**
- * Copyright (c) 2024 MUNIC SA
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
- * Renesas R7FA2AL1AxxxFP MCU device tree for 100 pins socket
+ * Renesas R7FA2AL1ABxxFN MCU device tree for 256KB code flash 80 pins
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  */
+
+#include <arm/renesas/ra/ra2/ra2l1.dtsi>
+#include <arm/renesas/ra/ra2/r7fa2l1xb.dtsi>
 
 &ioport0 {
 	port-irqs = <&port_irq2 &port_irq3 &port_irq6
