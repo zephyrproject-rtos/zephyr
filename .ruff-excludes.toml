@@ -585,12 +585,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/logging/dictionary/dictionary_parser/log_database.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./scripts/logging/dictionary/dictionary_parser/log_parser.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
