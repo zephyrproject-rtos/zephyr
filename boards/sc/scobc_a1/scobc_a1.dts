@@ -46,6 +46,16 @@
 			interrupts = <0 0>;
 			reg = <0x4f010000 0x10000>;
 		};
+
+		sysreg: sysreg@4f000000 {
+			compatible = "sc,sysreg";
+			reg = <0x4f000000 0x10000>;
+		};
+
+		sysmon: sysmon@4f040000 {
+			compatible = "sc,sysmon";
+			reg = <0x4f040000 0x1000>;
+		};
 	};
 };
 
