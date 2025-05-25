@@ -568,16 +568,6 @@
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
-"./scripts/list_boards.py" = [
-    "E731",     # https://docs.astral.sh/ruff/rules/lambda-assignment
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-]
 "./scripts/list_hardware.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation

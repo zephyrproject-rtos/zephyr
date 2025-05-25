@@ -4,15 +4,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-from collections import defaultdict, Counter
-from dataclasses import dataclass, field
 import itertools
-from pathlib import Path
-import pykwalify.core
 import sys
-from typing import List, Union
-import yaml
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from pathlib import Path
+
 import list_hardware
+import pykwalify.core
+import yaml
 from list_hardware import unique_paths
 
 try:
@@ -21,7 +21,7 @@ except ImportError:
     from yaml import SafeLoader
 
 BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
-with open(BOARD_SCHEMA_PATH, 'r') as f:
+with open(BOARD_SCHEMA_PATH) as f:
     board_schema = yaml.load(f.read(), Loader=SafeLoader)
 
 BOARD_YML = 'board.yml'
@@ -39,7 +39,7 @@ BOARD_YML = 'board.yml'
 @dataclass
 class Revision:
     name: str
-    variants: List[str] = field(default_factory=list)
+    variants: list[str] = field(default_factory=list)
 
     @staticmethod
     def from_dict(revision):
@@ -52,7 +52,7 @@ class Revision:
 @dataclass
 class Variant:
     name: str
-    variants: List[str] = field(default_factory=list)
+    variants: list[str] = field(default_factory=list)
 
     @staticmethod
     def from_dict(variant):
@@ -65,14 +65,14 @@ class Variant:
 @dataclass
 class Cpucluster:
     name: str
-    variants: List[str] = field(default_factory=list)
+    variants: list[str] = field(default_factory=list)
 
 
 @dataclass
 class Soc:
     name: str
-    cpuclusters: List[str] = field(default_factory=list)
-    variants: List[str] = field(default_factory=list)
+    cpuclusters: list[str] = field(default_factory=list)
+    variants: list[str] = field(default_factory=list)
 
     @staticmethod
     def from_soc(soc, variants):
@@ -92,7 +92,7 @@ class Soc:
 class Board:
     name: str
     # HWMv1 only supports a single Path, and requires Board dataclass to be hashable.
-    directories: Union[Path, List[Path]]
+    directories: Path | list[Path]
     hwm: str
     full_name: str = None
     arch: str = None
@@ -100,9 +100,9 @@ class Board:
     revision_format: str = None
     revision_default: str = None
     revision_exact: bool = False
-    revisions: List[str] = field(default_factory=list, compare=False)
-    socs: List[Soc] = field(default_factory=list, compare=False)
-    variants: List[str] = field(default_factory=list, compare=False)
+    revisions: list[str] = field(default_factory=list, compare=False)
+    socs: list[Soc] = field(default_factory=list, compare=False)
+    variants: list[str] = field(default_factory=list, compare=False)
 
     @property
     def dir(self):
@@ -123,15 +123,14 @@ class Board:
                     node = s
                     break
 
-        if n > 1:
-            if node.cpuclusters:
-                cpu_qualifier = qualifiers_list.pop(0)
-                for c in node.cpuclusters:
-                    if c.name == cpu_qualifier:
-                        node = c
-                        break
-                else:
-                    node = Variant(None)
+        if n > 1 and node.cpuclusters:
+            cpu_qualifier = qualifiers_list.pop(0)
+            for c in node.cpuclusters:
+                if c.name == cpu_qualifier:
+                    node = c
+                    break
+            else:
+                node = Variant(None)
 
         for q in qualifiers_list:
             for v in node.variants:
@@ -232,8 +231,7 @@ def load_v2_boards(board_name, board_yml, systems):
         try:
             pykwalify.core.Core(source_data=b, schema_data=board_schema).validate()
         except pykwalify.errors.SchemaError as e:
-            sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                     .format(board_yml.as_posix(), e))
+            sys.exit(f'ERROR: Malformed "build" section in file: {board_yml.as_posix()}\n{e}')
 
         mutual_exclusive = {'board', 'boards'}
         if len(mutual_exclusive - b.keys()) < 1:
@@ -254,10 +252,9 @@ def load_v2_boards(board_name, board_yml, systems):
                 continue
 
             # Create board
-            if board_name is not None:
-                if board['name'] != board_name:
-                    # Not the board we're looking for, ignore.
-                    continue
+            if board_name is not None and board['name'] != board_name:
+                # Not the board we're looking for, ignore.
+                continue
 
             board_revision = board.get('revision')
             if board_revision is not None and board_revision.get('format') != 'custom':
@@ -418,7 +415,8 @@ def dump_v2_boards(args):
     for b in boards.values():
         qualifiers_list = board_v2_qualifiers(b)
         if args.cmakeformat is not None:
-            notfound = lambda x: x or 'NOTFOUND'
+            def notfound(x):
+                return x or 'NOTFOUND'
             info = args.cmakeformat.format(
                 NAME='NAME;' + b.name,
                 DIR='DIR;' + ';'.join(
