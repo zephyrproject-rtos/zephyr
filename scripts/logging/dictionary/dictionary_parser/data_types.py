@@ -11,7 +11,8 @@ dictionary logging.
 
 import struct
 
-class DataTypes():
+
+class DataTypes:
     """Class regarding data types, their alignments and sizes"""
     INT = 0
     UINT = 1

@@ -568,10 +568,6 @@
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
-"./scripts/logging/dictionary/dictionary_parser/data_types.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./scripts/logging/dictionary/dictionary_parser/log_database.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
