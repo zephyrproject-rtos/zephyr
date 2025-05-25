@@ -14,6 +14,7 @@
 #include "adi_tmc_spi.h"
 #include "adi_tmc5xxx_common.h"
 
+#include <zephyr/drivers/stepper/stepper_event_handler.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc50xx, CONFIG_STEPPER_LOG_LEVEL);
 
@@ -175,18 +176,6 @@ static void stallguard_work_handler(struct k_work *work)
 	}
 }
 
-
-static void execute_callback(const struct device *dev, const enum stepper_event event)
-{
-	struct tmc50xx_stepper_data *data = dev->data;
-
-	if (!data->callback) {
-		LOG_WRN_ONCE("No callback registered");
-		return;
-	}
-	data->callback(dev, event, data->event_cb_user_data);
-}
-
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_STALLGUARD_LOG
 
 static void log_stallguard(struct tmc50xx_stepper_data *stepper_data, const uint32_t drv_status)
@@ -204,8 +193,8 @@ static void log_stallguard(struct tmc50xx_stepper_data *stepper_data, const uint
 	const uint8_t sg_result = FIELD_GET(TMC5XXX_DRV_STATUS_SG_RESULT_MASK, drv_status);
 	const bool sg_status = FIELD_GET(TMC5XXX_DRV_STATUS_SG_STATUS_MASK, drv_status);
 
-	LOG_DBG("%s position: %d | sg result: %3d status: %d",
-		stepper_data->stepper->name, position, sg_result, sg_status);
+	LOG_DBG("%s position: %d | sg result: %3d status: %d", stepper_data->stepper->name,
+		position, sg_result, sg_status);
 }
 
 #endif
@@ -213,7 +202,7 @@ static void log_stallguard(struct tmc50xx_stepper_data *stepper_data, const uint
 static void rampstat_work_reschedule(struct k_work_delayable *rampstat_callback_dwork)
 {
 	k_work_reschedule(rampstat_callback_dwork,
-		K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+			  K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
 }
 
 static void rampstat_work_handler(struct k_work *work)
@@ -265,25 +254,31 @@ static void rampstat_work_handler(struct k_work *work)
 
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", stepper_data->stepper->name);
-			execute_callback(stepper_data->stepper,
-					 STEPPER_EVENT_LEFT_END_STOP_DETECTED);
+			stepper_post_event(stepper_data->stepper, stepper_data->callback,
+					   STEPPER_EVENT_LEFT_END_STOP_DETECTED,
+					   stepper_data->event_cb_user_data);
 			break;
 
 		case TMC5XXX_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", stepper_data->stepper->name);
-			execute_callback(stepper_data->stepper,
-					 STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
+			stepper_post_event(stepper_data->stepper, stepper_data->callback,
+					   STEPPER_EVENT_RIGHT_END_STOP_DETECTED,
+					   stepper_data->event_cb_user_data);
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", stepper_data->stepper->name);
-			execute_callback(stepper_data->stepper, STEPPER_EVENT_STEPS_COMPLETED);
+			stepper_post_event(stepper_data->stepper, stepper_data->callback,
+					   STEPPER_EVENT_STEPS_COMPLETED,
+					   stepper_data->event_cb_user_data);
 			break;
 
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", stepper_data->stepper->name);
 			stallguard_enable(stepper_data->stepper, false);
-			execute_callback(stepper_data->stepper, STEPPER_EVENT_STALL_DETECTED);
+			stepper_post_event(stepper_data->stepper, stepper_data->callback,
+					   STEPPER_EVENT_STALL_DETECTED,
+					   stepper_data->event_cb_user_data);
 			break;
 		default:
 			LOG_ERR("Illegal ramp stat bit field");
@@ -733,10 +728,10 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 	static struct tmc50xx_stepper_data tmc50xx_stepper_data_##child = {			\
 		.stepper = DEVICE_DT_GET(child),};
 
-#define TMC50XX_STEPPER_DEFINE(child)								\
-	DEVICE_DT_DEFINE(child, tmc50xx_stepper_init, NULL, &tmc50xx_stepper_data_##child,	\
-			 &tmc50xx_stepper_config_##child, POST_KERNEL,				\
-			 CONFIG_STEPPER_INIT_PRIORITY, &tmc50xx_stepper_api);
+#define TMC50XX_STEPPER_DEFINE(child)                                                              \
+	STEPPER_DEVICE_DT_DEFINE(child, tmc50xx_stepper_init, NULL, &tmc50xx_stepper_data_##child, \
+				 &tmc50xx_stepper_config_##child, POST_KERNEL,                     \
+				 CONFIG_STEPPER_INIT_PRIORITY, &tmc50xx_stepper_api);
 
 #define TMC50XX_DEFINE(inst)									\
 	BUILD_ASSERT(DT_INST_CHILD_NUM(inst) <= 2, "tmc50xx can drive two steppers at max");	\
