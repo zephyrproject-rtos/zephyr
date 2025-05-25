@@ -568,15 +568,6 @@
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
-"./scripts/logging/dictionary/database_gen.py" = [
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-    "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
 "./scripts/logging/dictionary/dictionary_parser/data_types.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses

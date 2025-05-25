@@ -21,22 +21,15 @@ import struct
 import sys
 
 import dictionary_parser.log_database
-from dictionary_parser.log_database import LogDatabase
-from dictionary_parser.utils import extract_one_string_in_section
-from dictionary_parser.utils import find_string_in_mappings
-
 import elftools
+from dictionary_parser.log_database import LogDatabase
+from dictionary_parser.utils import extract_one_string_in_section, find_string_in_mappings
+from elftools.dwarf.descriptions import describe_DWARF_expr
+from elftools.dwarf.locationlists import LocationExpr, LocationParser
 from elftools.elf.constants import SH_FLAGS
-from elftools.elf.elffile import ELFFile
 from elftools.elf.descriptions import describe_ei_data
+from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from elftools.dwarf.descriptions import (
-    describe_DWARF_expr
-)
-from elftools.dwarf.locationlists import (
-    LocationExpr, LocationParser
-)
-
 
 LOGGER_FORMAT = "%(name)s: %(levelname)s: %(message)s"
 logger = logging.getLogger(os.path.basename(sys.argv[0]))
@@ -309,7 +302,7 @@ def find_die_var_base_type(compile_unit, die, is_const):
         return die.attributes['DW_AT_name'].value.decode('ascii'), is_const
 
     # Not a type, cannot continue
-    if not 'DW_AT_type' in die.attributes:
+    if 'DW_AT_type' not in die.attributes:
         return None, None
 
     if die.tag == 'DW_TAG_const_type':
@@ -334,10 +327,7 @@ def is_die_var_const_char(compile_unit, die):
     """
     var_type, is_const = find_die_var_base_type(compile_unit, die, False)
 
-    if var_type is not None and var_type.endswith('char') and is_const:
-        return True
-
-    return False
+    return bool(var_type is not None and var_type.endswith('char') and is_const)
 
 
 def extract_string_variables(elf):
@@ -357,32 +347,31 @@ def extract_string_variables(elf):
         for die in compile_unit.iter_DIEs():
             # Only care about variables with location information
             # and of type "char"
-            if die.tag == 'DW_TAG_variable':
-                if ('DW_AT_type' in die.attributes
-                    and 'DW_AT_location' in die.attributes
-                    and is_die_var_const_char(compile_unit, die)
-                ):
-                    # Extract location information, which is
-                    # its address in memory.
-                    loc_attr = die.attributes['DW_AT_location']
-                    if loc_parser.attribute_has_location(loc_attr, die.cu['version']):
-                        loc = loc_parser.parse_from_attribute(loc_attr, die.cu['version'], die)
-                        if isinstance(loc, LocationExpr):
-                            try:
-                                addr = describe_DWARF_expr(loc.loc_expr,
-                                                        dwarf_info.structs)
+            if die.tag == 'DW_TAG_variable' and ('DW_AT_type' in die.attributes
+                and 'DW_AT_location' in die.attributes
+                and is_die_var_const_char(compile_unit, die)
+            ):
+                # Extract location information, which is
+                # its address in memory.
+                loc_attr = die.attributes['DW_AT_location']
+                if loc_parser.attribute_has_location(loc_attr, die.cu['version']):
+                    loc = loc_parser.parse_from_attribute(loc_attr, die.cu['version'], die)
+                    if isinstance(loc, LocationExpr):
+                        try:
+                            addr = describe_DWARF_expr(loc.loc_expr,
+                                                    dwarf_info.structs)
 
-                                matcher = DT_LOCATION_REGEX.match(addr)
-                                if matcher:
-                                    addr = int(matcher.group(1), 16)
-                                    if addr > 0:
-                                        strings.append({
-                                            'name': die.attributes['DW_AT_name'].value,
-                                            'addr': addr,
-                                            'die': die
-                                        })
-                            except KeyError:
-                                pass
+                            matcher = DT_LOCATION_REGEX.match(addr)
+                            if matcher:
+                                addr = int(matcher.group(1), 16)
+                                if addr > 0:
+                                    strings.append({
+                                        'name': die.attributes['DW_AT_name'].value,
+                                        'addr': addr,
+                                        'die': die
+                                    })
+                        except KeyError:
+                            pass
 
     return strings
 
@@ -408,9 +397,8 @@ def is_printable(b):
 def extract_strings_in_one_section(section, str_mappings):
     """Extract NULL-terminated strings in one ELF section"""
     data = section['data']
-    idx = 0
     start = None
-    for x in data:
+    for idx, x in enumerate(data):
         if is_printable(chr(x)):
             # Printable character, potential part of string
             if start is None:
@@ -449,7 +437,6 @@ def extract_strings_in_one_section(section, str_mappings):
         else:
             # Non-printable byte, remove start location
             start = None
-        idx += 1
 
     return str_mappings
 
@@ -508,7 +495,7 @@ def main():
     elif args.verbose:
         logger.setLevel(logging.INFO)
 
-    elffile = open(args.elffile, "rb")
+    elffile = open(args.elffile, "rb")  # noqa: SIM115
     if not elffile:
         logger.error("ERROR: Cannot open ELF file: %s, exiting...", args.elffile)
         sys.exit(1)
@@ -529,8 +516,8 @@ def main():
 
     if args.build_header:
         with open(args.build_header) as f:
-            for l in f:
-                match = re.match(r'\s*#define\s+BUILD_VERSION\s+(.*)', l)
+            for line in f:
+                match = re.match(r'\s*#define\s+BUILD_VERSION\s+(.*)', line)
                 if match:
                     database.set_build_id(match.group(1))
                     break
@@ -570,17 +557,15 @@ def main():
     extract_logging_subsys_information(elf, database, string_mappings)
 
     # Write database file
-    if args.json:
-        if not LogDatabase.write_json_database(args.json, database):
-            logger.error("ERROR: Cannot open database file for write: %s, exiting...",
-                         args.json)
-            sys.exit(1)
+    if args.json and not LogDatabase.write_json_database(args.json, database):
+        logger.error("ERROR: Cannot open database file for write: %s, exiting...",
+                     args.json)
+        sys.exit(1)
 
-    if args.syst:
-        if not LogDatabase.write_syst_database(args.syst, database):
-            logger.error("ERROR: Cannot open database file for write: %s, exiting...",
-                         args.syst)
-            sys.exit(1)
+    if args.syst and not LogDatabase.write_syst_database(args.syst, database):
+        logger.error("ERROR: Cannot open database file for write: %s, exiting...",
+                     args.syst)
+        sys.exit(1)
 
     elffile.close()
 
