@@ -11,6 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_DRV84XX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_DRV84XX_H_
+
 #include <stdint.h>
 #include <zephyr/drivers/stepper.h>
 
@@ -31,3 +34,5 @@ int drv84xx_microstep_recovery(const struct device *dev);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_DRV84XX_H_ */
