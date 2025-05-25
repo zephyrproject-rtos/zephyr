@@ -14,6 +14,7 @@ common:
       - "Waiting for reset..."
       - "Watchdog sample application"
   depends_on: watchdog
+  min_ram: 8
 tests:
   sample.drivers.watchdog:
     filter: not (CONFIG_SOC_FAMILY_STM32 or CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)
