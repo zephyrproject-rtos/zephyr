@@ -568,13 +568,6 @@
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
-"./scripts/list_hardware.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-]
 "./scripts/logging/dictionary/database_gen.py" = [
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
