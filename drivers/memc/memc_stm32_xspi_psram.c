@@ -40,12 +40,17 @@ LOG_MODULE_REGISTER(memc_stm32_xspi_psram, CONFIG_MEMC_LOG_LEVEL);
 #define DUMMY_CLK_CYCLES_READ	6U
 #define DUMMY_CLK_CYCLES_WRITE	6U
 
+#define STM32_XSPI_CLOCK_PRESCALER_MIN  0U
+#define STM32_XSPI_CLOCK_PRESCALER_MAX  255U
+#define STM32_XSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
+
 struct memc_stm32_xspi_psram_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct stm32_pclken pclken;
 	const struct stm32_pclken pclken_ker;
 	const struct stm32_pclken pclken_mgr;
 	size_t memory_size;
+	uint32_t max_frequency;
 };
 
 struct memc_stm32_xspi_psram_data {
@@ -201,11 +206,11 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	const struct memc_stm32_xspi_psram_config *dev_cfg = dev->config;
 	struct memc_stm32_xspi_psram_data *dev_data = dev->data;
 	XSPI_HandleTypeDef hxspi = dev_data->hxspi;
-	XSPI_TypeDef *xspi = hxspi.Instance;
 	uint32_t ahb_clock_freq;
 	XSPIM_CfgTypeDef cfg = {0};
 	XSPI_RegularCmdTypeDef cmd = {0};
 	XSPI_MemoryMappedTypeDef mem_mapped_cfg = {0};
+	uint32_t prescaler = STM32_XSPI_CLOCK_PRESCALER_MIN;
 	int ret;
 
 	/* Signals configuration */
@@ -259,6 +264,20 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 #endif
 
+	for (; prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX; prescaler++) {
+		uint32_t clk = STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
+
+		if (clk <= dev_cfg->max_frequency) {
+			break;
+		}
+	}
+
+	if (prescaler > STM32_XSPI_CLOCK_PRESCALER_MAX) {
+		LOG_ERR("XSPI could not find valid prescaler value");
+		return -EINVAL;
+	}
+
+	hxspi.Init.ClockPrescaler = prescaler;
 	hxspi.Init.MemorySize = find_msb_set(dev_cfg->memory_size) - 2;
 
 	if (HAL_XSPI_Init(&hxspi) != HAL_OK) {
@@ -312,14 +331,21 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 
 	mem_mapped_cfg.TimeOutActivation = HAL_XSPI_TIMEOUT_COUNTER_DISABLE;
+
+#if defined(XSPI_CR_NOPREF)
 	mem_mapped_cfg.NoPrefetchData = HAL_XSPI_AUTOMATIC_PREFETCH_ENABLE;
+#endif
+#if defined(XSPI_CR_NOPREF_AXI)
 	mem_mapped_cfg.NoPrefetchAXI = HAL_XSPI_AXI_PREFETCH_DISABLE;
+#endif
 
 	if (HAL_XSPI_MemoryMapped(&hxspi, &mem_mapped_cfg) != HAL_OK) {
 		return -EIO;
 	}
 
-	MODIFY_REG(xspi->CR, XSPI_CR_NOPREF, HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
+#if defined(XSPI_CR_NOPREF)
+	MODIFY_REG(hxspi.Instance->CR, XSPI_CR_NOPREF, HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
+#endif
 
 	return 0;
 }
@@ -338,7 +364,8 @@ static const struct memc_stm32_xspi_psram_config memc_stm32_xspi_cfg = {
 	.pclken_mgr = {.bus = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bus),
 		       .enr = DT_CLOCKS_CELL_BY_NAME(STM32_XSPI_NODE, xspi_mgr, bits)},
 #endif
-	.memory_size = DT_INST_REG_ADDR_BY_IDX(0, 1),
+	.memory_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
+	.max_frequency = DT_INST_PROP(0, max_frequency),
 };
 
 static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
@@ -354,7 +381,6 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
 			.ClockMode = HAL_XSPI_CLOCK_MODE_0,
 			.WrapSize = HAL_XSPI_WRAP_NOT_SUPPORTED,
-			.ClockPrescaler = 3U,
 			.SampleShifting = HAL_XSPI_SAMPLE_SHIFT_NONE,
 			.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE,
 			.ChipSelectBoundary = HAL_XSPI_BONDARYOF_16KB,

@@ -126,10 +126,8 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 			LOG_ERR("Failed to allocate the buffer for RX: ACL ");
 			return;
 		}
-		bt_buf_set_type(buf, BT_BUF_ACL_IN);
 
 		break;
-
 	default:
 		LOG_WRN("Unsupported HCI Packet Received");
 		return;
@@ -168,20 +166,9 @@ static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 
 	memset(&hci_tx_pkt, 0, sizeof(cy_stc_ble_hci_tx_packet_info_t));
 
+	hci_tx_pkt.packetType = net_buf_pull_u8(buf);
 	hci_tx_pkt.dataLength = buf->len;
 	hci_tx_pkt.data = buf->data;
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		hci_tx_pkt.packetType = BT_HCI_H4_ACL;
-		break;
-	case BT_BUF_CMD:
-		hci_tx_pkt.packetType = BT_HCI_H4_CMD;
-		break;
-	default:
-		net_buf_unref(buf);
-		return -ENOTSUP;
-	}
 
 	if (k_sem_take(&psoc6_bless_operation_sem, K_MSEC(BLE_LOCK_TMOUT_MS)) != 0) {
 		LOG_ERR("Failed to acquire BLE DRV Semaphore");

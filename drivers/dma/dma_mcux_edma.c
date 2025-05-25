@@ -659,8 +659,9 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 
 		/* Previous TCD index in circular list */
 		pre_idx = data->transfer_settings.write_idx - 1;
-		if (pre_idx >= CONFIG_DMA_TCD_QUEUE_SIZE)
+		if (pre_idx >= CONFIG_DMA_TCD_QUEUE_SIZE) {
 			pre_idx = CONFIG_DMA_TCD_QUEUE_SIZE - 1;
+		}
 
 		/* Configure a TCD for the transfer */
 		tcd = &(DEV_CFG(dev)->tcdpool[channel][data->transfer_settings.write_idx]);
@@ -986,7 +987,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-			      &dma_mcux_edma_init, NULL,			\
+			      dma_mcux_edma_init, NULL,				\
 			      &dma_data_##n, &dma_config_##n,			\
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
 			      &dma_mcux_edma_api);				\

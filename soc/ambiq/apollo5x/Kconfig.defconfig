@@ -9,9 +9,14 @@ rsource "Kconfig.defconfig.apollo5*"
 config CACHE_MANAGEMENT
 	default y
 
-config AMBIQ_CACHEABLE_DMA_BUFFER_ALIGNMENT
-	int
-	default DCACHE_LINE_SIZE
+config DCACHE_LINE_SIZE
+	default 32
+
+config DCACHE
+	default y
+
+config ICACHE
+	default y
 
 # Need to enlarge the IDLE stack size because the power
 # management operations are executed in the idle task

@@ -467,3 +467,6 @@ device.
        :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD`,
        this property is used to tell MCUboot the load address of the image, which
        will be the ``reg`` of the chosen node.
+   * - zephyr,boot-mode
+     - Used for :ref:`boot_mode_api` selection, part of :ref:`retention_api`, which specifies
+       what image on a device should be booted.

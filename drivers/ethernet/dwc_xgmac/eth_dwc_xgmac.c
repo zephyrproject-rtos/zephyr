@@ -1029,16 +1029,16 @@ static void phy_link_state_change_callback(const struct device *phy_dev,
 	if (is_up) {
 		/* Announce link up status */
 		switch (state->speed) {
-		case LINK_HALF_1000BASE_T:
-		case LINK_FULL_1000BASE_T:
+		case LINK_HALF_1000BASE:
+		case LINK_FULL_1000BASE:
 			dev_data->link_speed = LINK_1GBIT;
 			break;
-		case LINK_HALF_100BASE_T:
-		case LINK_FULL_100BASE_T:
+		case LINK_HALF_100BASE:
+		case LINK_FULL_100BASE:
 			dev_data->link_speed = LINK_100MBIT;
 			break;
-		case LINK_HALF_10BASE_T:
-		case LINK_FULL_10BASE_T:
+		case LINK_HALF_10BASE:
+		case LINK_FULL_10BASE:
 		default:
 			dev_data->link_speed = LINK_10MBIT;
 		}
@@ -1484,30 +1484,30 @@ static enum phy_link_speed get_phy_adv_speeds(bool auto_neg, bool duplex_mode,
 	enum phy_link_speed adv_speeds = 0u;
 
 	if (auto_neg) {
-		adv_speeds = LINK_HALF_1000BASE_T | LINK_HALF_1000BASE_T | LINK_HALF_100BASE_T |
-			     LINK_FULL_100BASE_T | LINK_HALF_10BASE_T | LINK_FULL_10BASE_T;
+		adv_speeds = LINK_HALF_1000BASE | LINK_HALF_1000BASE | LINK_HALF_100BASE |
+			     LINK_FULL_100BASE | LINK_HALF_10BASE | LINK_FULL_10BASE;
 	} else {
 		if (duplex_mode) {
 			switch (link_speed) {
 			case LINK_1GBIT:
-				adv_speeds = LINK_FULL_1000BASE_T;
+				adv_speeds = LINK_FULL_1000BASE;
 				break;
 			case LINK_100MBIT:
-				adv_speeds = LINK_FULL_100BASE_T;
+				adv_speeds = LINK_FULL_100BASE;
 				break;
 			default:
-				adv_speeds = LINK_FULL_10BASE_T;
+				adv_speeds = LINK_FULL_10BASE;
 			}
 		} else {
 			switch (link_speed) {
 			case LINK_1GBIT:
-				adv_speeds = LINK_HALF_1000BASE_T;
+				adv_speeds = LINK_HALF_1000BASE;
 				break;
 			case LINK_100MBIT:
-				adv_speeds = LINK_HALF_100BASE_T;
+				adv_speeds = LINK_HALF_100BASE;
 				break;
 			default:
-				adv_speeds = LINK_HALF_10BASE_T;
+				adv_speeds = LINK_HALF_10BASE;
 			}
 		}
 	}
@@ -1727,7 +1727,7 @@ static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device 
 	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
-	caps = (ETHERNET_LINK_1000BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_10BASE_T |
+	caps = (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE |
 		ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_DUPLEX_SET);
 
 #ifdef CONFIG_ETH_DWC_XGMAC_RX_CS_OFFLOAD

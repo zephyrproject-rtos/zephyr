@@ -18,18 +18,12 @@ menuconfig SPI_AMBIQ_SPIC
 
 if SPI_AMBIQ_SPIC
 
-config SPI_AMBIQ_DMA
-	bool "AMBIQ APOLLO SPI DMA Support"
-	depends on SPI_AMBIQ_SPIC
+config SPI_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in spi driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
 	help
-	  Enable DMA for Ambiq SPI.
-
-config SPI_DMA_TCB_BUFFER_SIZE
-	int "DMA Transfer Control Buffer size in words."
-	default 1024
-	depends on SPI_AMBIQ_DMA
-	help
-	  DMA Transfer Control Buffer size in words
+	  Disable this if cache has been handled in upper layers.
 
 endif # SPI_AMBIQ_SPIC
 

@@ -380,12 +380,6 @@ static struct net_pkt *prepare_fin_ack_packet(sa_family_t af, uint16_t src_port,
 				      NULL, 0U);
 }
 
-static struct net_pkt *prepare_fin_packet(sa_family_t af, uint16_t src_port,
-					  uint16_t dst_port)
-{
-	return tester_prepare_tcp_pkt(af, src_port, dst_port, FIN, NULL, 0U);
-}
-
 static struct net_pkt *prepare_rst_packet(sa_family_t af, uint16_t src_port,
 					  uint16_t dst_port)
 {
@@ -1166,7 +1160,7 @@ send_next:
 		break;
 	case T_FIN_2:
 		t_state = T_FIN_ACK;
-		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT), th->th_sport);
 		break;
 	case T_FIN_ACK:
 		test_verify_flags(th, ACK);
@@ -1459,7 +1453,7 @@ send_next:
 		break;
 	case T_FIN_2:
 		t_state = T_FIN_ACK;
-		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT), th->th_sport);
 		break;
 	case T_FIN_ACK:
 		test_verify_flags(th, ACK);
@@ -1813,12 +1807,12 @@ static void handle_client_closing_failure_test(sa_family_t af, struct tcphdr *th
 	case T_FIN:
 		test_verify_flags(th, FIN | ACK);
 		t_state = T_FIN_1;
-		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT), th->th_sport);
 		break;
 	case T_FIN_1:
 		test_verify_flags(th, FIN | ACK);
 		t_state = T_CLOSING;
-		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT), th->th_sport);
 		break;
 	case T_CLOSING:
 		test_verify_flags(th, FIN | ACK);
@@ -2208,7 +2202,7 @@ static void handle_server_rst_on_closed_port(sa_family_t af, struct tcphdr *th)
 		/* Port was closed so expect RST instead of SYN */
 		test_verify_flags(th, RST | ACK);
 		zassert_equal(ntohl(th->th_seq), 0, "Invalid SEQ value");
-		zassert_equal(ntohl(th->th_ack), seq, "Invalid ACK value");
+		zassert_equal(ntohl(th->th_ack), seq + 1, "Invalid ACK value");
 		t_state = T_CLOSING;
 		test_sem_give();
 		break;
@@ -2418,7 +2412,6 @@ ZTEST(net_tcp, test_client_rst_on_unexpected_ack_on_syn)
 #define TEST_FIN_DATA "test_data"
 
 static enum fin_data_variant {
-	FIN_DATA_FIN,
 	FIN_DATA_FIN_ACK,
 	FIN_DATA_FIN_ACK_PSH,
 } test_fin_data_variant;
@@ -2458,10 +2451,6 @@ static void handle_client_fin_ack_with_data_test(sa_family_t af, struct tcphdr *
 		return;
 	case T_DATA:
 		switch (test_fin_data_variant) {
-		case FIN_DATA_FIN:
-			flags = FIN;
-			t_state = T_FIN;
-			break;
 		case FIN_DATA_FIN_ACK:
 			flags = FIN | ACK;
 			t_state = T_FIN_ACK;
@@ -2500,7 +2489,7 @@ static void handle_client_fin_ack_with_data_test(sa_family_t af, struct tcphdr *
 		break;
 
 	case T_CLOSING:
-		test_verify_flags(th, FIN);
+		test_verify_flags(th, FIN | ACK);
 		zassert_equal(get_rel_seq(th), 1, "Unexpected SEQ number in T_CLOSING, got %d",
 			      get_rel_seq(th));
 
@@ -2568,7 +2557,7 @@ ZTEST(net_tcp, test_client_fin_ack_with_data)
 
 	k_work_init_delayable(&test_fin_data_work, test_fin_data_handler);
 
-	for (enum fin_data_variant variant = FIN_DATA_FIN;
+	for (enum fin_data_variant variant = FIN_DATA_FIN_ACK;
 	     variant <= FIN_DATA_FIN_ACK_PSH; variant++) {
 		test_fin_data_variant = variant;
 		t_state = T_SYN;

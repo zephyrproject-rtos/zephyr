@@ -43,6 +43,7 @@ def main():
 
     try:
         edt = edtlib.EDT(args.dts, args.bindings_dirs,
+                         workspace_dir=args.workspace_dir,
                          # Suppress this warning if it's suppressed in dtc
                          warn_reg_unit_address_mismatch=
                              "-Wno-simple_bus_reg" not in args.dtc_flags,
@@ -71,6 +72,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bindings-dirs", nargs='+', required=True,
                         help="directory with bindings in YAML format, "
                         "we allow multiple")
+    parser.add_argument("--workspace-dir", default=os.getcwd(),
+                        help="directory to be used as reference for generated "
+                        "relative paths (e.g. WEST_TOPDIR)")
     parser.add_argument("--dts-out", required=True,
                         help="path to write merged DTS source code to (e.g. "
                              "as a debugging aid)")

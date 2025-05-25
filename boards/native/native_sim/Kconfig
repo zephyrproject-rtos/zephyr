@@ -1,4 +1,5 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 GARDENA GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_NATIVE_SIM
@@ -49,6 +50,12 @@ config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	help
 	  Transitional option which allows applications which targeted native_posix
 	  to set the correct native_sim option (CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
+
+config NATIVE_SIM_REBOOT
+	bool "Reboot support"
+	depends on REBOOT
+	help
+	  Enables the reboot implementation for the native sim executable.
 
 source "boards/native/common/sdl/Kconfig"
 source "boards/native/common/extra_args/Kconfig"

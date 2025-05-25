@@ -116,6 +116,34 @@
 	pinctrl-names = "default";
 };
 
+&edma0 {
+	status = "okay";
+};
+
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+};
+
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+};
+
 &flash {
 	partitions {
 		compatible = "fixed-partitions";
@@ -144,4 +172,18 @@
 
 &wwdt0 {
 	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&lpuart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-names = "default";
 };

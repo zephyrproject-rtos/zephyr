@@ -95,7 +95,7 @@
 };
 
 &switch_port0 {
-	local-mac-address = [00 00 00 01 04 00];
+	zephyr,random-mac-address;
 	pinctrl-0 = <&eth0_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
@@ -104,7 +104,7 @@
 };
 
 &switch_port1 {
-	local-mac-address = [00 00 00 01 05 00];
+	zephyr,random-mac-address;
 	pinctrl-0 = <&eth1_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy1>;
@@ -113,7 +113,7 @@
 };
 
 &switch_port2 {
-	local-mac-address = [00 00 00 01 06 00];
+	zephyr,random-mac-address;
 	pinctrl-0 = <&eth2_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy2>;
@@ -122,7 +122,7 @@
 };
 
 &switch_port3 {
-	local-mac-address = [00 00 00 01 07 00];
+	zephyr,random-mac-address;
 	pinctrl-0 = <&eth3_default>;
 	pinctrl-names = "default";
 	phy-handle = <&phy3>;
@@ -132,7 +132,7 @@
 
 /* Internal port */
 &switch_port4 {
-	local-mac-address = [00 00 00 01 06 00];
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
@@ -199,24 +199,25 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 3 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
+				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
-			slot1_partition: partition@723000 {
+			slot1_partition: partition@720000 {
 				label = "image-1";
-				reg = <0x00723000 DT_SIZE_M(7)>;
+				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@E23000 {
+			storage_partition: partition@E20000 {
 				label = "storage";
-				reg = <0x00E23000 (DT_SIZE_M(2) - DT_SIZE_K(140))>;
+				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
 	};

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_CC23X0_LGPT
+	bool "CC23x0 Counter driver based on the LGPT Timer"
+	default y
+	depends on DT_HAS_TI_CC23X0_LGPT_ENABLED
+	help
+	  Enable counter driver based on LGPT timer for cc23x0

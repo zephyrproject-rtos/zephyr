@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH Independent Watchdog (IWDG)
+
+compatible: "wch,iwdg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

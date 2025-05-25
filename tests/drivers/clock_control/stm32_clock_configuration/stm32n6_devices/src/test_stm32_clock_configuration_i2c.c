@@ -25,28 +25,28 @@ static void i2c_set_clock(const struct stm32_pclken *clk)
 	switch (clk->bus) {
 	case STM32_SRC_HSI_DIV:
 		zassert_equal(dev_actual_clk_src, RCC_I2C1CLKSOURCE_HSI,
-				"Expected I2C src: HSI_DIV (0x%lx). Actual I2C src: 0x%x",
-				RCC_I2C1CLKSOURCE_HSI, dev_actual_clk_src);
+				"Expected I2C src: HSI_DIV (0x%x). Actual I2C src: 0x%x",
+				(uint32_t)RCC_I2C1CLKSOURCE_HSI, dev_actual_clk_src);
 		break;
 	case STM32_SRC_MSI:
 		zassert_equal(dev_actual_clk_src, RCC_I2C1CLKSOURCE_MSI,
-				"Expected I2C src: MSI (0x%lx). Actual I2C src: 0x%x",
-				RCC_I2C1CLKSOURCE_MSI, dev_actual_clk_src);
+				"Expected I2C src: MSI (0x%x). Actual I2C src: 0x%x",
+				(uint32_t)RCC_I2C1CLKSOURCE_MSI, dev_actual_clk_src);
 		break;
 	case STM32_SRC_CKPER:
 		zassert_equal(dev_actual_clk_src, RCC_I2C1CLKSOURCE_CLKP,
-				"Expected I2C src: CKPER (0x%lx). Actual I2C src: 0x%x",
-				RCC_I2C1CLKSOURCE_CLKP, dev_actual_clk_src);
+				"Expected I2C src: CKPER (0x%x). Actual I2C src: 0x%x",
+				(uint32_t)RCC_I2C1CLKSOURCE_CLKP, dev_actual_clk_src);
 		break;
 	case STM32_SRC_IC10:
 		zassert_equal(dev_actual_clk_src, RCC_I2C1CLKSOURCE_IC10,
-				"Expected I2C src: IC10 (0x%lx). Actual I2C src: 0x%x",
-				RCC_I2C1CLKSOURCE_IC10, dev_actual_clk_src);
+				"Expected I2C src: IC10 (0x%x). Actual I2C src: 0x%x",
+				(uint32_t)RCC_I2C1CLKSOURCE_IC10, dev_actual_clk_src);
 		break;
 	case STM32_SRC_IC15:
 		zassert_equal(dev_actual_clk_src, RCC_I2C1CLKSOURCE_IC15,
-				"Expected I2C src: IC15 (0x%lx). Actual I2C src: 0x%x",
-				RCC_I2C1CLKSOURCE_IC15, dev_actual_clk_src);
+				"Expected I2C src: IC15 (0x%x). Actual I2C src: 0x%x",
+				(uint32_t)RCC_I2C1CLKSOURCE_IC15, dev_actual_clk_src);
 		break;
 	default:
 		zassert_true(0, "Unexpected domain clk (0x%x)", dev_actual_clk_src);

@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings_basic_test);
 
-#if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS)
+#if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS) || defined(CONFIG_SETTINGS_ZMS)
 #include <zephyr/storage/flash_map.h>
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
 #define TEST_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
@@ -240,12 +240,21 @@ ZTEST(settings_functional, test_register_and_loading)
 {
 	int rc, err;
 	uint8_t val = 0;
+	ssize_t val_len = 0;
 
 	rc = settings_subsys_init();
 	zassert_true(rc == 0, "subsys init failed");
 
 
+	/* Check that key that corresponds to val2 do not exist in storage */
+	val_len = settings_get_val_len("ps/ss/ss/val2");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/ss/ss/val2", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val2 exists in storage */
+	val_len = settings_get_val_len("ps/ss/ss/val2");
+	zassert_true((val_len == 1), "Failure: key should exist");
 
 	memset(&data, 0, sizeof(struct stored_data));
 
@@ -279,7 +288,16 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	/* Check that key that corresponds to val3 do not exist in storage */
+	val_len = settings_get_val_len("ps/ss/val3");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/ss/val3", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val3 exists in storage */
+	val_len = settings_get_val_len("ps/ss/val3");
+	zassert_true((val_len == 1), "Failure: key should exist");
+
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings now data.val2 and data.val1 should receive a
 	 * value
@@ -310,7 +328,16 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (data.en1) && (data.en2) && (data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	/* Check that key that corresponds to val1 do not exist in storage */
+	val_len = settings_get_val_len("ps/val1");
+	zassert_true((val_len == 0), "Failure: key should not exist");
+
 	settings_save_one("ps/val1", &val, sizeof(uint8_t));
+
+	/* Check that the key that corresponds to val1 exists in storage */
+	val_len = settings_get_val_len("ps/val1");
+	zassert_true((val_len == 1), "Failure: key should exist");
+
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings all data should receive a value loaded */
 	rc = settings_load();
@@ -344,6 +371,17 @@ ZTEST(settings_functional, test_register_and_loading)
 	/* commit is called only for val2_settings */
 	err = (!data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
+
+	memset(&data, 0, sizeof(struct stored_data));
+	/* test load_one: path "ps/ss/ss/val2". Only data.val2 should
+	 * receive a value
+	 */
+	val = 2;
+	settings_save_one("ps/ss/ss/val2", &val, sizeof(uint8_t));
+	rc = settings_load_one("ps/ss/ss/val2", &data.val2, sizeof(uint8_t));
+	zassert_true(rc >= 0, "settings_load_one failed");
+	err = (data.val1 == 0) && (data.val2 == 2) && (data.val3 == 0);
+	zassert_true(err, "wrong data value found %u != 2", data.val2);
 
 	/* clean up by deregistering settings_handler */
 	rc = settings_deregister(&val1_settings);
@@ -412,7 +450,7 @@ int direct_loader(
 	zassert_is_null(key, "Unexpected key: %s", key);
 
 
-	zassert_not_null(cb_arg, NULL);
+	zassert_not_null(cb_arg);
 	rc = read_cb(cb_arg, &val, sizeof(val));
 	zassert_equal(sizeof(val), rc);
 
@@ -512,7 +550,7 @@ static int filtered_loader(
 		}
 	}
 	zassert_not_null(ldata->n, "Unexpected data name: %s", key);
-	zassert_is_null(next, NULL);
+	zassert_is_null(next);
 	zassert_equal(strlen(ldata->v) + 1, len, "e: \"%s\", a:\"%s\"", ldata->v, buf);
 	zassert_true(len <= sizeof(buf));
 

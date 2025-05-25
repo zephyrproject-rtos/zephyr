@@ -71,27 +71,27 @@ static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx)
 static void convert_phy_to_mac_config(Gmac_Ip_ConfigType *gmac_cfg, enum phy_link_speed phy_speed)
 {
 	switch (phy_speed) {
-	case LINK_HALF_10BASE_T:
+	case LINK_HALF_10BASE:
 		gmac_cfg->Speed = GMAC_SPEED_10M;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_10BASE_T:
+	case LINK_FULL_10BASE:
 		gmac_cfg->Speed = GMAC_SPEED_10M;
 		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
 		break;
-	case LINK_HALF_100BASE_T:
+	case LINK_HALF_100BASE:
 		gmac_cfg->Speed = GMAC_SPEED_100M;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_100BASE_T:
+	case LINK_FULL_100BASE:
 		gmac_cfg->Speed = GMAC_SPEED_100M;
 		gmac_cfg->Duplex = GMAC_FULL_DUPLEX;
 		break;
-	case LINK_HALF_1000BASE_T:
+	case LINK_HALF_1000BASE:
 		gmac_cfg->Speed = GMAC_SPEED_1G;
 		gmac_cfg->Duplex = GMAC_HALF_DUPLEX;
 		break;
-	case LINK_FULL_1000BASE_T:
+	case LINK_FULL_1000BASE:
 		__fallthrough;
 	default:
 		gmac_cfg->Speed = GMAC_SPEED_1G;
@@ -559,10 +559,10 @@ static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *d
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_LINK_10BASE_T
-		| ETHERNET_LINK_100BASE_T
+	return (ETHERNET_LINK_10BASE
+		| ETHERNET_LINK_100BASE
 #if (FEATURE_GMAC_RGMII_EN == 1U)
-		| ETHERNET_LINK_1000BASE_T
+		| ETHERNET_LINK_1000BASE
 #endif
 		| ETHERNET_DUPLEX_SET
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD

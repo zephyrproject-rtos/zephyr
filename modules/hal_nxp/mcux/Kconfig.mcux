@@ -4,16 +4,6 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SDKNG_UNSUPPORTED
-	bool
-	help
-	  Indicates whether the SDKNG supports the current SoC
-
-config MCUX_HW_DEVICE_CORE
-	string
-	help
-	  Indicates the current device core id
-
 config HAS_MCUX
 	bool
 	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
@@ -341,6 +331,12 @@ config HAS_MCUX_RCM
 	bool
 	help
 	  Set if the Reset Control Module (RCM) module is present in
+	  the SoC.
+
+config HAS_MCUX_MCX_CMC
+	bool
+	help
+	  Set if the Core Mode Controller (CMC) module is present in
 	  the SoC.
 
 config HAS_MCUX_CTIMER

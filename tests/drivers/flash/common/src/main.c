@@ -169,14 +169,14 @@ ZTEST(flash_driver, test_read_unaligned_address)
 						expected + ad_o,
 						len),
 					0, "Flash read failed at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 				/* check buffer guards */
 				zassert_equal(buf[buf_o - 1], canary,
 					"Buffer underflow at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 				zassert_equal(buf[buf_o + len], canary,
 					"Buffer overflow at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 			}
 		}
 	}
@@ -408,7 +408,7 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 	actual_result = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
 	zassert_equal(actual_result, expected_result,
 		      "flash_copy(%p, %lx, %p, %lx, %zu, %p, %zu) failed: expected: %d actual: %d",
-		      src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size,
+		      src_dev, src_offset, dst_dev, dst_offset, (size_t)size, buf, buf_size,
 		      expected_result, actual_result);
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
@@ -462,8 +462,8 @@ ZTEST(flash_driver, test_flash_copy)
 
 	/* copy with overlapping ranges should fail */
 	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
-			      page_info.start_offset + 32, page_info.size - 32, buf, sizeof(buf),
-			      -EINVAL);
+			      page_info.start_offset + (page_info.size / 4),
+			      page_info.size - (page_info.size / 4), buf, sizeof(buf), -EINVAL);
 }
 
 ZTEST_SUITE(flash_driver, NULL, NULL, flash_driver_before, NULL, NULL);

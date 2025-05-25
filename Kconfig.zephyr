@@ -215,12 +215,6 @@ config LINKER_SORT_BY_ALIGNMENT
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
 
-config SRAM_VECTOR_TABLE
-	bool "Place the vector table in SRAM instead of flash"
-	help
-	  The option specifies that the vector table should be placed at the
-	  start of SRAM instead of the start of flash.
-
 config HAS_SRAM_OFFSET
 	bool
 	help
@@ -548,8 +542,17 @@ config LTO
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
+	depends on !DEPRECATION_TEST
 	help
 	  Turn on "warning as error" toolchain flags
+
+config DEPRECATION_TEST
+	bool "Indicate test for deprecated feature"
+	help
+	  This option is selected by tests which check functionality of
+	  deprecated features. It ensures that COMPILER_WARNINGS_AS_ERRORS
+	  is not selected as that would generate errors when the deprecated
+	  features are used.
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
@@ -789,6 +792,12 @@ config BUILD_OUTPUT_UF2
 	depends on BUILD_OUTPUT_BIN
 	help
 	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_MOT
+	bool "Build a binary in MOT format"
+	help
+	  Build a MOT binary zephyr/zephyr.mot in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
 if BUILD_OUTPUT_UF2

@@ -7,6 +7,7 @@
 
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Prevas A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,15 +50,28 @@ extern "C" {
 #define TMC_RAMP_VSTOP_MIN      1
 #define TMC_RAMP_TZEROWAIT_MAX  (GENMASK(15, 0) - 512)
 #define TMC_RAMP_TZEROWAIT_MIN  0
-#define TMC_RAMP_VCOOLTHRS_MAX  GENMASK(22, 0)
-#define TMC_RAMP_VCOOLTHRS_MIN  0
-#define TMC_RAMP_VHIGH_MAX      GENMASK(22, 0)
-#define TMC_RAMP_VHIGH_MIN      0
 #define TMC_RAMP_IHOLD_IRUN_MAX GENMASK(4, 0)
 #define TMC_RAMP_IHOLD_IRUN_MIN 0
 #define TMC_RAMP_IHOLDDELAY_MAX GENMASK(3, 0)
 #define TMC_RAMP_IHOLDDELAY_MIN 0
 #define TMC_RAMP_VACTUAL_SHIFT  22
+#define TMC_RAMP_XACTUAL_SHIFT  31
+
+/* TMC50XX specific */
+#define TMC_RAMP_VCOOLTHRS_MAX  GENMASK(22, 0)
+#define TMC_RAMP_VCOOLTHRS_MIN  0
+#define TMC_RAMP_VHIGH_MAX      GENMASK(22, 0)
+#define TMC_RAMP_VHIGH_MIN      0
+
+/* TMC51XX specific */
+#define TMC_RAMP_TPOWERDOWN_MAX	GENMASK(7, 0)
+#define TMC_RAMP_TPOWERDOWN_MIN	0
+#define TMC_RAMP_TPWMTHRS_MAX	GENMASK(19, 0)
+#define TMC_RAMP_TPWMTHRS_MIN	0
+#define TMC_RAMP_TCOOLTHRS_MAX	GENMASK(19, 0)
+#define TMC_RAMP_TCOOLTHRS_MIN	0
+#define TMC_RAMP_THIGH_MAX	GENMASK(19, 0)
+#define TMC_RAMP_THIGH_MIN	0
 
 /**
  * @brief Trinamic Stepper Ramp Generator data
@@ -72,9 +86,21 @@ struct tmc_ramp_generator_data {
 	uint16_t dmax;
 	uint32_t vstop;
 	uint16_t tzerowait;
-	uint32_t vcoolthrs;
-	uint32_t vhigh;
 	uint32_t iholdrun;
+	union {
+		/* TMC50XX specific */
+		struct {
+			uint32_t vcoolthrs;
+			uint32_t vhigh;
+		};
+		/* TMC51XX specific */
+		struct {
+			uint32_t tpowerdown;
+			uint32_t tpwmthrs;
+			uint32_t tcoolthrs;
+			uint32_t thigh;
+		};
+	};
 };
 
 /**
@@ -108,12 +134,6 @@ struct tmc_ramp_generator_data {
 	COND_CODE_1(DT_PROP_EXISTS(node, tzerowait),					\
 	BUILD_ASSERT(IN_RANGE(DT_PROP(node, tzerowait), TMC_RAMP_TZEROWAIT_MIN,		\
 			      TMC_RAMP_TZEROWAIT_MAX), "tzerowait out of range"), ());	\
-	COND_CODE_1(DT_PROP_EXISTS(node, vcoolthrs),					\
-	BUILD_ASSERT(IN_RANGE(DT_PROP(node, vcoolthrs), TMC_RAMP_VCOOLTHRS_MIN,		\
-			      TMC_RAMP_VCOOLTHRS_MAX), "vcoolthrs out of range"), ());	\
-	COND_CODE_1(DT_PROP_EXISTS(node, vhigh),					\
-	BUILD_ASSERT(IN_RANGE(DT_PROP(node, vhigh), TMC_RAMP_VHIGH_MIN,			\
-			      TMC_RAMP_VHIGH_MAX), "vhigh out of range"), ());		\
 	COND_CODE_1(DT_PROP_EXISTS(node, ihold),					\
 	BUILD_ASSERT(IN_RANGE(DT_PROP(node, ihold), TMC_RAMP_IHOLD_IRUN_MIN,		\
 			      TMC_RAMP_IHOLD_IRUN_MAX), "ihold out of range"), ());	\
@@ -122,7 +142,27 @@ struct tmc_ramp_generator_data {
 			      TMC_RAMP_IHOLD_IRUN_MAX), "irun out of range"), ());	\
 	COND_CODE_1(DT_PROP_EXISTS(node, iholddelay),					\
 	BUILD_ASSERT(IN_RANGE(DT_PROP(node, iholddelay), TMC_RAMP_IHOLDDELAY_MIN,	\
-			      TMC_RAMP_IHOLDDELAY_MAX), "iholddelay out of range"), ());
+			      TMC_RAMP_IHOLDDELAY_MAX), "iholddelay out of range"), ());\
+	/* TMC50XX specific */								\
+	COND_CODE_1(DT_PROP_EXISTS(node, vcoolthrs),					\
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node, vcoolthrs), TMC_RAMP_VCOOLTHRS_MIN,		\
+			      TMC_RAMP_VCOOLTHRS_MAX), "vcoolthrs out of range"), ());	\
+	COND_CODE_1(DT_PROP_EXISTS(node, vhigh),					\
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node, vhigh), TMC_RAMP_VHIGH_MIN,			\
+			      TMC_RAMP_VHIGH_MAX), "vhigh out of range"), ());		\
+	/* TMC51XX specific */								\
+	COND_CODE_1(DT_PROP_EXISTS(node, tpowerdown),					\
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node, tpowerdown), TMC_RAMP_TPOWERDOWN_MIN,	\
+			      TMC_RAMP_TPOWERDOWN_MAX), "tpowerdown out of range"), ());\
+	COND_CODE_1(DT_PROP_EXISTS(node, tpwmthrs),					\
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node, tpwmthrs), TMC_RAMP_TPWMTHRS_MIN,		\
+			      TMC_RAMP_TPWMTHRS_MAX), "tpwmthrs out of range"), ());	\
+	COND_CODE_1(DT_PROP_EXISTS(node, tcoolthrs),					\
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node, tcoolthrs), TMC_RAMP_TCOOLTHRS_MIN,		\
+			      TMC_RAMP_TCOOLTHRS_MAX), "tcoolthrs out of range"), ());	\
+	COND_CODE_1(DT_PROP_EXISTS(node, thigh),					\
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node, thigh), TMC_RAMP_THIGH_MIN,			\
+			      TMC_RAMP_THIGH_MAX), "thigh out of range"), ());
 
 /**
  * @brief Get Trinamic Stepper Ramp Generator data from DT
@@ -131,8 +171,7 @@ struct tmc_ramp_generator_data {
  *
  * @return struct tmc_ramp_generator_data
  */
-#define TMC_RAMP_DT_SPEC_GET(node)						\
-	{									\
+#define TMC_RAMP_DT_SPEC_GET_COMMON(node)					\
 		.vstart = DT_PROP(node, vstart),				\
 		.v1 = DT_PROP(node, v1),					\
 		.vmax = DT_PROP(node, vmax),					\
@@ -142,11 +181,24 @@ struct tmc_ramp_generator_data {
 		.dmax = DT_PROP(node, dmax),					\
 		.vstop = DT_PROP(node, vstop),					\
 		.tzerowait = DT_PROP(node, tzerowait),				\
-		.vcoolthrs = DT_PROP(node, vcoolthrs),				\
-		.vhigh = DT_PROP(node, vhigh),					\
 		.iholdrun = (TMC5XXX_IRUN(DT_PROP(node, irun)) |		\
 			     TMC5XXX_IHOLD(DT_PROP(node, ihold)) |		\
-			     TMC5XXX_IHOLDDELAY(DT_PROP(node, iholddelay))),	\
+			     TMC5XXX_IHOLDDELAY(DT_PROP(node, iholddelay))),
+
+#define TMC_RAMP_DT_SPEC_GET_TMC50XX(node)					\
+	{									\
+		TMC_RAMP_DT_SPEC_GET_COMMON(node)				\
+		.vhigh = DT_PROP(node, vhigh),					\
+		.vcoolthrs = DT_PROP(node, vcoolthrs),				\
+	}
+
+#define TMC_RAMP_DT_SPEC_GET_TMC51XX(node)					\
+	{									\
+		TMC_RAMP_DT_SPEC_GET_COMMON(DT_DRV_INST(node))			\
+		.tpowerdown = DT_INST_PROP(node, tpowerdown),			\
+		.tpwmthrs = DT_INST_PROP(node, tpwmthrs),			\
+		.tcoolthrs = DT_INST_PROP(node, tcoolthrs),			\
+		.thigh = DT_INST_PROP(node, thigh),				\
 	}
 
 /**

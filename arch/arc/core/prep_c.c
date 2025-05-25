@@ -92,8 +92,8 @@ static void arc_cluster_scm_enable(void)
 	/* Invalidate SCM before enabling. */
 	arc_cln_write_reg_nolock(ARC_CLN_CACHE_CMD,
 				 ARC_CLN_CACHE_CMD_OP_REG_INV | ARC_CLN_CACHE_CMD_INCR);
-	while (arc_cln_read_reg_nolock(ARC_CLN_CACHE_STATUS) & ARC_CLN_CACHE_STATUS_BUSY)
-		;
+	while (arc_cln_read_reg_nolock(ARC_CLN_CACHE_STATUS) & ARC_CLN_CACHE_STATUS_BUSY) {
+	}
 
 	arc_cln_write_reg_nolock(ARC_CLN_CACHE_STATUS, ARC_CLN_CACHE_STATUS_EN);
 }

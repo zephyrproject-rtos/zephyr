@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC51XX
+	bool "Activate trinamic tmc51xx stepper driver"
+	depends on DT_HAS_ADI_TMC51XX_ENABLED && STEPPER_ADI_TMC
+	select STEPPER_ADI_TMC_SPI
+	default y
+
+module = TMC51XX
+module-str = tmc51xx
+rsource "Kconfig.tmc_rampgen_template"

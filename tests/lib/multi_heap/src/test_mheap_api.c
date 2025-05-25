@@ -54,7 +54,7 @@ static void malloc_free_handler(void *p1, void *p2, void *p3)
 
 	block_fail = k_malloc(BLK_SIZE_MIN);
 	/** TESTPOINT: Return NULL if fail.*/
-	zassert_is_null(block_fail, NULL);
+	zassert_is_null(block_fail);
 
 	for (int i = 0; i < nb; i++) {
 		/**
@@ -69,7 +69,7 @@ static void malloc_free_handler(void *p1, void *p2, void *p3)
 
 	/** TESTPOINT: Return NULL if fail.*/
 	block_fail = k_malloc(OVERFLOW_SIZE);
-	zassert_is_null(block_fail, NULL);
+	zassert_is_null(block_fail);
 }
 
 static void tIsr_malloc_and_free(void *data)
@@ -180,7 +180,7 @@ static void realloc_handler(void *p1, void *p2, void *p3)
 /**
  * @brief Test to demonstrate k_malloc() and k_free() API usage
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test allocates 4 blocks from heap memory pool
  * using k_malloc() API. It also tries to allocate a block of size
@@ -225,7 +225,7 @@ ZTEST(mheap_api, test_mheap_realloc)
 /**
  * @brief Test to demonstrate k_calloc() API functionality.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test validates k_calloc() API. When requesting a
  * huge size of space or a space larger than heap memory,
@@ -278,7 +278,7 @@ ZTEST(mheap_api, test_k_aligned_alloc)
 	zassert_not_equal(NULL, r, "aligned alloc of 1 byte failed");
 	/* r is suitably aligned */
 	zassert_equal(0, (uintptr_t)r % sizeof(void *),
-		"%p not %u-byte-aligned",
+		"%p not %zu-byte-aligned",
 		r, sizeof(void *));
 	k_free(r);
 
@@ -299,7 +299,7 @@ ZTEST(mheap_api, test_k_aligned_alloc)
  * a block of memory smaller than the pool and will fail when alloc
  * a block of memory larger than the pool.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @see k_thread_system_pool_assign(), z_thread_malloc(), k_free()
  */
@@ -328,7 +328,7 @@ ZTEST(mheap_api, test_sys_heap_mem_pool_assign)
  * memory because in this situation, the kernel will assign the heap memory
  * as resource pool.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @see z_thread_malloc(), k_free()
  */
@@ -347,7 +347,7 @@ ZTEST(mheap_api, test_malloc_in_isr)
  *
  * @details When a thread's resource pool is not assigned, alloc memory will fail.
  *
- * @ingroup kernel_heap_tests
+ * @ingroup k_heap_api_tests
  *
  * @see z_thread_malloc()
  */

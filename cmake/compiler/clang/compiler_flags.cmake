@@ -6,6 +6,7 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 # No property flag, clang doesn't understand fortify at all
 set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)
+set_compiler_property(PROPERTY optimization_fast -O3 -ffast-math)
 
 # No printf-return-value optimizations in clang
 set_compiler_property(PROPERTY no_printf_return_value)
@@ -105,7 +106,6 @@ check_set_compiler_property(PROPERTY warning_extended
                             -Wno-address-of-packed-member
                             -Wno-initializer-overrides
                             -Wno-section
-                            -Wno-unused-variable
                             -Wno-gnu
 )
 

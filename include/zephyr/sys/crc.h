@@ -445,8 +445,9 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 	case CRC24_PGP: {
 		uint32_t crc = crc24_pgp_update(seed, src, len);
 
-		if (last)
+		if (last) {
 			crc &= CRC24_FINAL_VALUE_MASK;
+		}
 		return crc;
 	}
 	case CRC32_C:

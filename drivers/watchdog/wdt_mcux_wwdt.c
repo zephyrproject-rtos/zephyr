@@ -3,7 +3,7 @@
  *
  * Based on wdt_mcux_wdog32.c, which is:
  * Copyright (c) 2019 Vestas Wind Systems A/S
- * Copyright (c) 2018, NXP
+ * Copyright 2018, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/pm/device.h>
 #include <fsl_wwdt.h>
 #include <fsl_clock.h>
 
@@ -32,6 +33,7 @@ struct mcux_wwdt_data {
 	wdt_callback_t callback;
 	wwdt_config_t wwdt_config;
 	bool timeout_valid;
+	bool active_before_sleep;
 };
 
 static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
@@ -59,6 +61,7 @@ static int mcux_wwdt_disable(const struct device *dev)
 
 	WWDT_Deinit(base);
 	data->timeout_valid = false;
+	data->active_before_sleep = false;
 	LOG_DBG("Disabled the watchdog");
 
 	return 0;
@@ -167,13 +170,52 @@ static void mcux_wwdt_isr(const struct device *dev)
 	}
 }
 
+/*
+ * Power Management:
+ * When the system enters sleep mode, this driver maintains awareness
+ * of whether the WWDT was active. After wake up, the WDT counter
+ * resets to its reload value.
+ */
+static int mcux_wwdt_driver_pm_action(const struct device *dev,
+				      enum pm_device_action action)
+{
+	const struct mcux_wwdt_config *config = dev->config;
+	struct mcux_wwdt_data *data = dev->data;
+	int err = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		if (data->active_before_sleep) {
+			err = mcux_wwdt_setup(dev, 0);
+			data->active_before_sleep = false;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		if (config->base->MOD & WWDT_MOD_WDEN_MASK) {
+			data->active_before_sleep = true;
+		}
+		break;
+	default:
+		err = -ENOTSUP;
+	}
+
+	return err;
+}
+
 static int mcux_wwdt_init(const struct device *dev)
 {
 	const struct mcux_wwdt_config *config = dev->config;
 
+	/* The rest of the device init is done from the
+	 * PM_DEVICE_ACTION_TURN_ON in the pm callback
+	 * which is invoked by pm_device_driver_init.
+	 */
 	config->irq_config_func(dev);
-
-	return 0;
+	return pm_device_driver_init(dev, mcux_wwdt_driver_pm_action);
 }
 
 static DEVICE_API(wdt, mcux_wwdt_api) = {
@@ -194,8 +236,10 @@ static const struct mcux_wwdt_config mcux_wwdt_config_0 = {
 
 static struct mcux_wwdt_data mcux_wwdt_data_0;
 
+PM_DEVICE_DT_INST_DEFINE(0, mcux_wwdt_driver_pm_action);
+
 DEVICE_DT_INST_DEFINE(0, &mcux_wwdt_init,
-		    NULL, &mcux_wwdt_data_0,
+		    PM_DEVICE_DT_INST_GET(0), &mcux_wwdt_data_0,
 		    &mcux_wwdt_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_wwdt_api);

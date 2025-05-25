@@ -14,10 +14,11 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #define WCH_RCC_CLOCK_ID_OFFSET(id) (((id) >> 5) & 0xFF)
 #define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)
+#define WCH_RCC_SYSCLK              DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
 
 #if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock) ||                          \
 	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock)
@@ -78,6 +79,33 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 	return 0;
 }
 
+static void clock_control_wch_rcc_setup_flash(void)
+{
+#if defined(FLASH_ACTLR_LATENCY)
+	uint32_t latency;
+
+#if defined(CONFIG_SOC_CH32V003)
+	if (WCH_RCC_SYSCLK <= 24000000) {
+		latency = FLASH_ACTLR_LATENCY_0;
+	} else {
+		latency = FLASH_ACTLR_LATENCY_1;
+	}
+#elif defined(CONFIG_SOC_SERIES_CH32V00X)
+	if (WCH_RCC_SYSCLK <= 15000000) {
+		latency = FLASH_ACTLR_LATENCY_0;
+	} else if (WCH_RCC_SYSCLK <= 24000000) {
+		latency = FLASH_ACTLR_LATENCY_1;
+	} else {
+		latency = FLASH_ACTLR_LATENCY_2;
+	}
+	FLASH->ACTLR = (FLASH->ACTLR & ~FLASH_ACTLR_LATENCY) | latency;
+#else
+#error Unrecognised SOC family
+#endif
+	FLASH->ACTLR = (FLASH->ACTLR & ~FLASH_ACTLR_LATENCY) | latency;
+#endif
+}
+
 static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.on = clock_control_wch_rcc_on,
 	.get_rate = clock_control_wch_rcc_get_rate,
@@ -86,6 +114,8 @@ static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 static int clock_control_wch_rcc_init(const struct device *dev)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
+
+	clock_control_wch_rcc_setup_flash();
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
 	    IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)) {
@@ -145,10 +175,6 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	RCC->INTR = RCC_CSSC | RCC_PLLRDYC | RCC_HSERDYC | RCC_LSIRDYC;
 	/* HCLK = SYSCLK = APB1 */
 	RCC->CFGR0 = (RCC->CFGR0 & ~RCC_HPRE) | RCC_HPRE_DIV1;
-#if defined(CONFIG_SOC_CH32V003)
-	/* Set the Flash to 0 wait state */
-	FLASH->ACTLR = (FLASH->ACTLR & ~FLASH_ACTLR_LATENCY) | FLASH_ACTLR_LATENCY_1;
-#endif
 
 	return 0;
 }

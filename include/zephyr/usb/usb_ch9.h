@@ -41,12 +41,12 @@ struct usb_setup_packet {
 	union {
 		uint8_t bmRequestType;
 		struct usb_req_type_field RequestType;
-	};
+	} __packed;
 	uint8_t bRequest;
 	uint16_t wValue;
 	uint16_t wIndex;
 	uint16_t wLength;
-};
+} __packed;
 
 /** USB Setup packet RequestType Direction values (from Table 9-2) */
 #define USB_REQTYPE_DIR_TO_DEVICE	0

@@ -34,7 +34,6 @@ struct ll_conn_iso_stream {
 		struct {
 			uint8_t  c_rtn;
 			uint8_t  p_rtn;
-			uint16_t instant;
 		} central;
 	};
 

@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/ptp_clock.h>
 #endif
 
-#ifdef CONFIG_NET_DSA
+#ifdef CONFIG_NET_DSA_DEPRECATED
 #include <zephyr/net/dsa.h>
 #endif
 
@@ -106,8 +106,7 @@ struct nxp_enet_mac_data {
 	struct k_mutex tx_frame_buf_mutex;
 	struct k_mutex rx_frame_buf_mutex;
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
-	struct k_sem ptp_ts_sem;
-	struct k_mutex *ptp_mutex; /* created in PTP driver */
+	struct nxp_enet_ptp_data ptp;
 #endif
 	uint8_t *tx_frame_buf;
 	uint8_t *rx_frame_buf;
@@ -165,15 +164,16 @@ static inline void ts_register_tx_event(const struct device *dev,
 
 	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
 		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt) && frameinfo->isTsAvail) {
-			k_mutex_lock(data->ptp_mutex, K_FOREVER);
-
+			/* Timestamp is written to packet in ISR.
+			 * Semaphore ensures sequential execution of writing
+			 * the timestamp here and subsequently reading the timestamp
+			 * after waiting for the semaphore in eth_wait_for_ptp_ts().
+			 */
 			pkt->timestamp.nanosecond = frameinfo->timeStamp.nanosecond;
 			pkt->timestamp.second = frameinfo->timeStamp.second;
 
 			net_if_add_tx_timestamp(pkt);
-			k_sem_give(&data->ptp_ts_sem);
-
-			k_mutex_unlock(data->ptp_mutex);
+			k_sem_give(&data->ptp.ptp_ts_sem);
 		}
 		net_pkt_unref(pkt);
 	}
@@ -184,7 +184,7 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 	struct nxp_enet_mac_data *data = dev->data;
 
 	net_pkt_ref(pkt);
-	k_sem_take(&data->ptp_ts_sem, K_FOREVER);
+	k_sem_take(&data->ptp.ptp_ts_sem, K_FOREVER);
 }
 #else
 #define eth_get_ptp_data(...) false
@@ -252,7 +252,7 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #endif
 	enum ethernet_hw_caps caps;
 
-	caps = ETHERNET_LINK_10BASE_T |
+	caps = ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
@@ -260,18 +260,18 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 		ETHERNET_PTP |
 #endif
-#if defined(CONFIG_NET_DSA)
-		ETHERNET_DSA_MASTER_PORT |
+#if defined(CONFIG_NET_DSA_DEPRECATED)
+		ETHERNET_DSA_CONDUIT_PORT |
 #endif
 #if defined(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD |
 #endif
-		ETHERNET_LINK_100BASE_T;
+		ETHERNET_LINK_100BASE;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (config->phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		caps |= ETHERNET_LINK_1000BASE_T;
+		caps |= ETHERNET_LINK_1000BASE;
 	}
 
 	return caps;
@@ -389,7 +389,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	k_mutex_lock(data->ptp_mutex, K_FOREVER);
+	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
 
 	/* Invalid value by default. */
 	pkt->timestamp.nanosecond = UINT32_MAX;
@@ -411,11 +411,11 @@ static int eth_nxp_enet_rx(const struct device *dev)
 		pkt->timestamp.nanosecond = ts;
 		pkt->timestamp.second = ptp_time.second;
 	}
-	k_mutex_unlock(data->ptp_mutex);
+	k_mutex_unlock(data->ptp.ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data);
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	iface = dsa_net_recv(iface, &pkt);
 #endif
 	if (net_recv_data(iface, pkt) < 0) {
@@ -459,14 +459,14 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 
 static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 {
-	enum phy_link_speed speeds = LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-				       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T;
+	enum phy_link_speed speeds = LINK_HALF_10BASE | LINK_FULL_10BASE |
+				     LINK_HALF_100BASE | LINK_FULL_100BASE;
 	int ret;
 	struct phy_link_state state;
 
 	if (COND_CODE_1(IS_ENABLED(CONFIG_ETH_NXP_ENET_1G),
 	   (phy_mode == NXP_ENET_RGMII_MODE), (0))) {
-		speeds |= (LINK_HALF_1000BASE_T | LINK_FULL_1000BASE_T);
+		speeds |= (LINK_HALF_1000BASE | LINK_FULL_1000BASE);
 	}
 
 	/* Configure the PHY */
@@ -525,10 +525,6 @@ static void nxp_enet_phy_cb(const struct device *phy,
 		ENET_SetMII(data->base, speed, duplex);
 	}
 
-	if (!data->iface) {
-		return;
-	}
-
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 
 	if (!state->is_up) {
@@ -544,8 +540,6 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct nxp_enet_mac_data *data = dev->data;
 	const struct nxp_enet_mac_config *config = dev->config;
-	const struct device *phy_dev = config->phy_dev;
-	struct phy_link_state state;
 
 	net_if_set_link_addr(iface, data->mac_addr,
 			     sizeof(data->mac_addr),
@@ -555,42 +549,18 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 		data->iface = iface;
 	}
 
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 	dsa_register_master_tx(iface, &eth_nxp_enet_tx);
 #endif
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
-	/* In case the phy driver doesn't report a state change due to link being up
-	 * before calling phy_configure, we should check the state ourself, and then do a
-	 * pseudo-callback
-	 */
-	phy_get_link_state(phy_dev, &state);
-
-	nxp_enet_phy_cb(phy_dev, &state, (void *)dev);
+	phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
 
 	config->irq_config_func();
 
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
-}
-
-static int nxp_enet_phy_init(const struct device *dev)
-{
-	const struct nxp_enet_mac_config *config = dev->config;
-	int ret = 0;
-
-	ret = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
-	if (ret) {
-		return ret;
-	}
-
-	ret = phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
-	if (ret) {
-		return ret;
-	}
-
-	return ret;
 }
 
 void nxp_enet_driver_cb(const struct device *dev, enum nxp_enet_driver dev_type,
@@ -657,6 +627,9 @@ static void eth_nxp_enet_isr(const struct device *dev)
 		nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT, NULL);
 	}
 
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
+	ENET_TimeStampIRQHandler(data->base, &data->enet_handle);
+#endif
 	irq_unlock(irq_lock_key);
 }
 
@@ -739,7 +712,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_sem_init(&data->tx_buf_sem,
 		   CONFIG_ETH_NXP_ENET_TX_BUFFERS, CONFIG_ETH_NXP_ENET_TX_BUFFERS);
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	k_sem_init(&data->ptp_ts_sem, 0, 1);
+	k_sem_init(&data->ptp.ptp_ts_sem, 0, 1);
 #endif
 	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
 
@@ -811,14 +784,15 @@ static int eth_nxp_enet_init(const struct device *dev)
 	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_MODULE_RESET, NULL);
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	data->ptp.enet = &data->enet_handle;
 	nxp_enet_driver_cb(config->ptp_clock, NXP_ENET_PTP_CLOCK,
-				NXP_ENET_MODULE_RESET, &data->ptp_mutex);
+				NXP_ENET_MODULE_RESET, &data->ptp);
 	ENET_SetTxReclaim(&data->enet_handle, true, 0);
 #endif
 
 	ENET_ActiveRead(data->base);
 
-	err = nxp_enet_phy_init(dev);
+	err = nxp_enet_phy_configure(config->phy_dev, config->phy_mode);
 	if (err) {
 		return err;
 	}
@@ -876,11 +850,11 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 #define ETH_NXP_ENET_PM_DEVICE_GET(n) NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
-#ifdef CONFIG_NET_DSA
+#ifdef CONFIG_NET_DSA_DEPRECATED
 #define NXP_ENET_SEND_FUNC dsa_tx
 #else
 #define NXP_ENET_SEND_FUNC eth_nxp_enet_tx
-#endif /* CONFIG_NET_DSA */
+#endif /* CONFIG_NET_DSA_DEPRECATED */
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_nxp_enet_iface_init,

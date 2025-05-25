@@ -48,6 +48,8 @@ source "drivers/pwm/Kconfig.mcux_ftm"
 
 source "drivers/pwm/Kconfig.imx"
 
+source "drivers/pwm/Kconfig.it51xxx"
+
 source "drivers/pwm/Kconfig.it8xxx2"
 
 source "drivers/pwm/Kconfig.it8801"
@@ -121,5 +123,11 @@ source "drivers/pwm/Kconfig.ifx_cat1"
 source "drivers/pwm/Kconfig.fake"
 
 source "drivers/pwm/Kconfig.renesas_rz"
+
+source "drivers/pwm/Kconfig.rts5912"
+
+source "drivers/pwm/Kconfig.neorv32"
+
+source "drivers/pwm/Kconfig.wch"
 
 endif # PWM

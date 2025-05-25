@@ -414,6 +414,7 @@ def check_expected(tool, test_case, check_fn, get_snr, tmpdir, runner_config):
 def test_init(check_call, popen, get_snr, require, tool, test_case,
               runner_config, tmpdir):
     popen.return_value.__enter__.return_value.stdout = io.BytesIO(b'')
+    popen.return_value.__enter__.return_value.returncode = 0
 
     require.side_effect = functools.partial(require_patch, tool)
     runner_config = fix_up_runner_config(test_case, runner_config, tmpdir)
@@ -447,6 +448,7 @@ def test_init(check_call, popen, get_snr, require, tool, test_case,
 def test_create(check_call, popen, get_snr, require, tool, test_case,
                 runner_config, tmpdir):
     popen.return_value.__enter__.return_value.stdout = io.BytesIO(b'')
+    popen.return_value.__enter__.return_value.returncode = 0
 
     require.side_effect = functools.partial(require_patch, tool)
     runner_config = fix_up_runner_config(test_case, runner_config, tmpdir)

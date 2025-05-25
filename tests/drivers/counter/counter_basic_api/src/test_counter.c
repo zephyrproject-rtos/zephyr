@@ -84,7 +84,7 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC_1HZ
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
-#ifdef CONFIG_COUNTER_MCUX_LPC_RTC_HIGHRES
+#ifdef CONFIG_TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc_highres)
 #endif
 #ifdef CONFIG_COUNTER_GECKO_RTCC
@@ -131,6 +131,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_ITE_IT8XXX2
 	DEVS_FOR_DT_COMPAT(ite_it8xxx2_counter)
+#endif
+#ifdef CONFIG_COUNTER_NEORV32_GPTMR
+	DEVS_FOR_DT_COMPAT(neorv32_gptmr)
 #endif
 };
 
@@ -386,7 +389,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 			"Unexpected distance between reported alarm value(%u) "
 			"and actual counter value (%u), top:%d (processing "
 			"time limit (%d us) might be exceeded?",
-			counter, now, top, processing_limit_us);
+			counter, now, top, (int)processing_limit_us);
 
 	if (user_data) {
 		zassert_true(&cntr_alarm_cfg == user_data,
@@ -731,16 +734,16 @@ static void test_valid_function_without_alarm(const struct device *dev)
 	ticks_tol = ticks_expected / 10;
 	ticks_tol = ticks_tol < 2 ? 2 : ticks_tol;
 
-	if (!counter_is_counting_up(dev)) {
-		ticks_expected = counter_get_top_value(dev) - ticks_expected;
-	}
-
 	err = counter_start(dev);
 	zassert_equal(0, err, "%s: counter failed to start", dev->name);
 
 	/* counter might not start from 0, use current value as offset */
 	counter_get_value(dev, &tick_current);
-	ticks_expected += tick_current;
+	if (counter_is_counting_up(dev)) {
+		ticks_expected += tick_current;
+	} else {
+		ticks_expected = tick_current - ticks_expected;
+	}
 
 	k_busy_wait(wait_for_us);
 

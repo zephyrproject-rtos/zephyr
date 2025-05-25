@@ -649,6 +649,62 @@ ZTEST(rtio_api, test_rtio_cqe_count_overflow)
 	}
 }
 
+#define RTIO_DELAY_NUM_ELEMS 10
+
+RTIO_DEFINE(r_delay, RTIO_DELAY_NUM_ELEMS, RTIO_DELAY_NUM_ELEMS);
+
+ZTEST(rtio_api, test_rtio_delay)
+{
+	int res;
+	struct rtio *r = &r_delay;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+
+	uint8_t expected_expiration_order[RTIO_DELAY_NUM_ELEMS] = {4, 3, 2, 1, 0, 5, 6, 7, 8, 9};
+
+	for (size_t i = 0; i < RTIO_DELAY_NUM_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+
+		/** Half of the delays will be earlier than the previous one submitted.
+		 * The other half will be later.
+		 */
+		if (i < (RTIO_DELAY_NUM_ELEMS / 2)) {
+			rtio_sqe_prep_delay(sqe, K_SECONDS(10 - i), (void *)i);
+		} else {
+			rtio_sqe_prep_delay(sqe, K_SECONDS(10 - 4 + i), (void *)i);
+		}
+	}
+
+	res = rtio_submit(r, 0);
+	zassert_ok(res, "Should return ok from rtio_execute");
+
+	cqe = rtio_cqe_consume(r);
+	zassert_is_null(cqe, "There should not be a cqe since delay has not expired");
+
+	/** Wait until we expect delays start expiring */
+	k_sleep(K_SECONDS(10 - (RTIO_DELAY_NUM_ELEMS / 2)));
+
+	for (int i = 0; i < RTIO_DELAY_NUM_ELEMS; i++) {
+		k_sleep(K_SECONDS(1));
+
+		TC_PRINT("consume %d\n", i);
+		cqe = rtio_cqe_consume(r);
+		zassert_not_null(cqe, "Expected a valid cqe");
+		zassert_ok(cqe->result, "Result should be ok");
+
+		size_t expired_id = (size_t)(cqe->userdata);
+
+		zassert_equal(expected_expiration_order[i], expired_id,
+			      "Expected order not valid. Obtained: %d, expected: %d",
+			      (int)expired_id, (int)expected_expiration_order[i]);
+
+		rtio_cqe_release(r, cqe);
+
+		cqe = rtio_cqe_consume(r);
+		zassert_is_null(cqe, "There should not be a cqe since next delay has not expired");
+	}
+}
 
 #define THROUGHPUT_ITERS 100000
 RTIO_DEFINE(r_throughput, SQE_POOL_SIZE, CQE_POOL_SIZE);
@@ -778,6 +834,84 @@ void test_rtio_callback_chaining_(struct rtio *r)
 ZTEST(rtio_api, test_rtio_callback_chaining)
 {
 	test_rtio_callback_chaining_(&r_callback_chaining);
+}
+
+RTIO_DEFINE(r_await0, SQE_POOL_SIZE, CQE_POOL_SIZE);
+RTIO_DEFINE(r_await1, SQE_POOL_SIZE, CQE_POOL_SIZE);
+RTIO_IODEV_TEST_DEFINE(iodev_test_await0);
+
+/**
+ * @brief Test await requests
+ *
+ * Ensures we can block execution of an RTIO context using the AWAIT operation,
+ * and unblock it by calling rtio_seq_signal(), and that the AWAIT operation
+ * will be skipped if rtio_seq_signal() was called before the AWAIT SQE is
+ * executed.
+ */
+void test_rtio_await_(struct rtio *rtio0, struct rtio *rtio1)
+{
+	int res;
+	int32_t userdata[3] = {0, 1, 2};
+	struct rtio_sqe *await_sqe;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+
+	rtio_iodev_test_init(&iodev_test_await0);
+
+	sqe = rtio_sqe_acquire(rtio0);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_await0, &userdata[0]);
+	sqe->flags = RTIO_SQE_CHAINED;
+
+	await_sqe = rtio_sqe_acquire(rtio0);
+	zassert_not_null(await_sqe, "Expected a valid sqe");
+	rtio_sqe_prep_await(await_sqe, &iodev_test_await0, RTIO_PRIO_LOW, &userdata[1]);
+	await_sqe->flags = 0;
+
+	sqe = rtio_sqe_acquire(rtio1);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_await0, &userdata[2]);
+	sqe->prio = RTIO_PRIO_HIGH;
+	sqe->flags = 0;
+
+	TC_PRINT("Submitting await sqe from rtio0\n");
+	res = rtio_submit(rtio0, 0);
+	zassert_ok(res, "Submission failed");
+
+	TC_PRINT("Wait for nop sqe from rtio0 completed\n");
+	cqe = rtio_cqe_consume_block(rtio0);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	zassert_equal(cqe->userdata, &userdata[0]);
+	rtio_cqe_release(rtio0, cqe);
+
+	TC_PRINT("Submitting sqe from rtio1\n");
+	res = rtio_submit(rtio1, 0);
+	zassert_ok(res, "Submission failed");
+
+	TC_PRINT("Ensure sqe from rtio1 not completed\n");
+	k_sleep(K_MSEC(100));
+	cqe = rtio_cqe_consume(rtio1);
+	zassert_equal(cqe, NULL, "Expected no valid cqe");
+
+	TC_PRINT("Signal await sqe from rtio0\n");
+	rtio_sqe_signal(await_sqe);
+
+	TC_PRINT("Ensure sqe from rtio0 completed\n");
+	cqe = rtio_cqe_consume_block(rtio0);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata[1]);
+	rtio_cqe_release(rtio0, cqe);
+
+	TC_PRINT("Ensure sqe from rtio1 completed\n");
+	cqe = rtio_cqe_consume_block(rtio1);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_equal(cqe->userdata, &userdata[2]);
+	rtio_cqe_release(rtio1, cqe);
+}
+
+ZTEST(rtio_api, test_rtio_await)
+{
+	test_rtio_await_(&r_await0, &r_await1);
 }
 
 static void *rtio_api_setup(void)

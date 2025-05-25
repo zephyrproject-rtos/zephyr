@@ -33,4 +33,7 @@ config POSIX_SEM_NAMELEN_MAX
 	  Maximum length of name for a named semaphore.
 	  The max value of 255 corresponds to {NAME_MAX}.
 
+config HEAP_MEM_POOL_ADD_SIZE_POSIX_SEMAPHORES
+	def_int 256
+
 endif # POSIX_SEMAPHORES

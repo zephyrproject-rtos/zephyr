@@ -25,17 +25,6 @@
 
 LOG_MODULE_REGISTER(LSM6DSV16X, CONFIG_SENSOR_LOG_LEVEL);
 
-bool lsm6dsv16x_is_active(const struct device *dev)
-{
-#if defined(CONFIG_PM_DEVICE)
-	enum pm_device_state state;
-	(void)pm_device_state_get(dev, &state);
-	return (state == PM_DEVICE_STATE_ACTIVE);
-#else
-	return true;
-#endif /* CONFIG_PM_DEVICE*/
-}
-
 /*
  * values taken from lsm6dsv16x_data_rate_t in hal/st module. The mode/accuracy
  * should be selected through accel-odr property in DT
@@ -437,10 +426,6 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 	struct lsm6dsv16x_data *data = dev->data;
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm6dsv16x_accel_config(dev, chan, attr, val);
@@ -640,10 +625,6 @@ static int lsm6dsv16x_gyro_get_config(const struct device *dev,
 static int lsm6dsv16x_attr_get(const struct device *dev, enum sensor_channel chan,
 			       enum sensor_attribute attr, struct sensor_value *val)
 {
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm6dsv16x_accel_get_config(dev, chan, attr, val);
@@ -723,10 +704,6 @@ static int lsm6dsv16x_sample_fetch(const struct device *dev,
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 	struct lsm6dsv16x_data *data = dev->data;
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
-
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -998,10 +975,6 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 			       struct sensor_value *val)
 {
 	struct lsm6dsv16x_data *data = dev->data;
-
-	if (!lsm6dsv16x_is_active(dev)) {
-		return -EBUSY;
-	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:

@@ -245,12 +245,12 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 {
 	uint32_t unsigned_value;
 	int32_t signed_value;
-	bool is_hires = FIELD_GET(FIFO_HEADER_ACCEL, pkt[0]) == 1;
+	bool is_hires = FIELD_GET(FIFO_HEADER_20, pkt[0]) == 1;
 	int offset = 1 + (axis_offset * 2);
 
 	const uint32_t scale[2][2] = {
 		/* low-res,	hi-res */
-		{35744,		8936}, /* gyro */
+		{35744,		2235}, /* gyro */
 		{40168,		2511}, /* accel */
 	};
 
@@ -265,6 +265,19 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 		offset = 17 + axis_offset;
 		unsigned_value = (unsigned_value << 4) | FIELD_GET(mask, pkt[offset]);
 		signed_value = unsigned_value | (0 - (unsigned_value & BIT(19)));
+
+		/*
+		 * By default, INTF_CONFIG0 is set to 0x30 and thus FIFO_HOLD_LAST_DATA_EN is set to
+		 * 0. For 20-bit FIFO packets, -524288 indicates invalid data.
+		 *
+		 * At the time of writing, INTF_CONFIG0 is not configured explicitly.
+		 *
+		 * TODO: Enable/disable this check based on FIFO_HOLD_LAST_DATA_EN if INTF_CONFIG0
+		 * is configured explicitly.
+		 */
+		if (signed_value == -524288) {
+			return -ENODATA;
+		}
 	} else {
 		signed_value = unsigned_value | (0 - (unsigned_value & BIT(16)));
 	}
@@ -277,7 +290,7 @@ static uint32_t accel_period_ns[] = {
 	[ICM42688_DT_ACCEL_ODR_1_5625] = UINT32_C(10000000000000) / 15625,
 	[ICM42688_DT_ACCEL_ODR_3_125] = UINT32_C(10000000000000) / 31250,
 	[ICM42688_DT_ACCEL_ODR_6_25] = UINT32_C(10000000000000) / 62500,
-	[ICM42688_DT_ACCEL_ODR_12_5] = UINT32_C(10000000000000) / 12500,
+	[ICM42688_DT_ACCEL_ODR_12_5] = UINT32_C(10000000000000) / 125000,
 	[ICM42688_DT_ACCEL_ODR_25] = UINT32_C(1000000000) / 25,
 	[ICM42688_DT_ACCEL_ODR_50] = UINT32_C(1000000000) / 50,
 	[ICM42688_DT_ACCEL_ODR_100] = UINT32_C(1000000000) / 100,
@@ -292,7 +305,7 @@ static uint32_t accel_period_ns[] = {
 };
 
 static uint32_t gyro_period_ns[] = {
-	[ICM42688_DT_GYRO_ODR_12_5] = UINT32_C(10000000000000) / 12500,
+	[ICM42688_DT_GYRO_ODR_12_5] = UINT32_C(10000000000000) / 125000,
 	[ICM42688_DT_GYRO_ODR_25] = UINT32_C(1000000000) / 25,
 	[ICM42688_DT_GYRO_ODR_50] = UINT32_C(1000000000) / 50,
 	[ICM42688_DT_GYRO_ODR_100] = UINT32_C(1000000000) / 100,
@@ -305,6 +318,28 @@ static uint32_t gyro_period_ns[] = {
 	[ICM42688_DT_GYRO_ODR_16000] = UINT32_C(1000000) / 16,
 	[ICM42688_DT_GYRO_ODR_32000] = UINT32_C(1000000) / 32,
 };
+
+static int icm42688_calc_timestamp_delta(int rtc_freq, int chan_type, int dt_odr, int frame_count,
+					 uint64_t *out_delta)
+{
+	uint32_t period;
+
+	if (IS_ACCEL(chan_type)) {
+		period = accel_period_ns[dt_odr];
+	} else if (IS_GYRO(chan_type)) {
+		period = gyro_period_ns[dt_odr];
+	} else {
+		return -EINVAL;
+	}
+
+	/*
+	 * When ODR is set to r and an external clock with frequency f is used,
+	 * the actual ODR = f * r / 32000.
+	 */
+	*out_delta = (uint64_t)period * frame_count * 32000 / rtc_freq;
+
+	return 0;
+}
 
 static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				uint32_t *fit, uint16_t max_count, void *data_out)
@@ -350,27 +385,66 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 		}
 		if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
 			struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
+			uint64_t ts_delta;
+
+			if (has_accel) {
+				rc = icm42688_calc_timestamp_delta(
+					edata->rtc_freq, SENSOR_CHAN_ACCEL_XYZ, edata->accel_odr,
+					accel_frame_count - 1, &ts_delta);
+			} else {
+				rc = icm42688_calc_timestamp_delta(
+					edata->rtc_freq, SENSOR_CHAN_GYRO_XYZ, edata->gyro_odr,
+					gyro_frame_count - 1, &ts_delta);
+			}
+			if (rc < 0) {
+				buffer = frame_end;
+				continue;
+			}
+
+			/*
+			 * TODO: For some extreme combination of ODR and FIFO count, using uint32_t
+			 * to store timestamp delta will overflow. Better error reporting?
+			 */
+			if (ts_delta > UINT32_MAX) {
+				LOG_ERR("Timestamp delta overflow");
+				buffer = frame_end;
+				continue;
+			}
+
+			data->readings[count].timestamp_delta = ts_delta;
 
 			data->shift = 9;
-			if (has_accel) {
-				data->readings[count].timestamp_delta =
-					accel_period_ns[edata->accel_odr] * (accel_frame_count - 1);
-			} else {
-				data->readings[count].timestamp_delta =
-					gyro_period_ns[edata->gyro_odr] * (gyro_frame_count - 1);
-			}
 			data->readings[count].temperature =
 				icm42688_read_temperature_from_packet(buffer);
 		} else if (IS_ACCEL(chan_spec.chan_type) && has_accel) {
 			/* Decode accel */
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
-			uint64_t period_ns = accel_period_ns[edata->accel_odr];
+			uint64_t ts_delta;
 
 			icm42688_get_shift(SENSOR_CHAN_ACCEL_XYZ, edata->header.accel_fs,
 					   edata->header.gyro_fs, &data->shift);
 
-			data->readings[count].timestamp_delta = (accel_frame_count - 1) * period_ns;
+			rc = icm42688_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_ACCEL_XYZ,
+							   edata->accel_odr, accel_frame_count - 1,
+							   &ts_delta);
+			if (rc < 0) {
+				buffer = frame_end;
+				continue;
+			}
+
+			/*
+			 * TODO: For some extreme combination of ODR and FIFO count, using uint32_t
+			 * to store timestamp delta will overflow. Better error reporting?
+			 */
+			if (ts_delta > UINT32_MAX) {
+				LOG_ERR("Timestamp delta overflow");
+				buffer = frame_end;
+				continue;
+			}
+
+			data->readings[count].timestamp_delta = ts_delta;
+
 			rc = icm42688_read_imu_from_packet(buffer, true, edata->header.accel_fs, 0,
 							   &data->readings[count].x);
 			rc |= icm42688_read_imu_from_packet(buffer, true, edata->header.accel_fs, 1,
@@ -386,12 +460,31 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			/* Decode gyro */
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
-			uint64_t period_ns = gyro_period_ns[edata->gyro_odr];
+			uint64_t ts_delta;
 
 			icm42688_get_shift(SENSOR_CHAN_GYRO_XYZ, edata->header.accel_fs,
 					   edata->header.gyro_fs, &data->shift);
 
-			data->readings[count].timestamp_delta = (gyro_frame_count - 1) * period_ns;
+			rc = icm42688_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_GYRO_XYZ,
+							   edata->gyro_odr, gyro_frame_count - 1,
+							   &ts_delta);
+			if (rc < 0) {
+				buffer = frame_end;
+				continue;
+			}
+
+			/*
+			 * TODO: For some extreme combination of ODR and FIFO count, using uint32_t
+			 * to store timestamp delta will overflow. Better error reporting?
+			 */
+			if (ts_delta > UINT32_MAX) {
+				LOG_ERR("Timestamp delta overflow");
+				buffer = frame_end;
+				continue;
+			}
+
+			data->readings[count].timestamp_delta = ts_delta;
+
 			rc = icm42688_read_imu_from_packet(buffer, false, edata->header.gyro_fs, 0,
 							   &data->readings[count].x);
 			rc |= icm42688_read_imu_from_packet(buffer, false, edata->header.gyro_fs, 1,

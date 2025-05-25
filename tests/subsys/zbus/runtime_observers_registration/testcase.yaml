@@ -1,5 +1,13 @@
 tests:
-  message_bus.zbus.runtime_obs_reg.add_and_remove_observers:
+  message_bus.zbus.runtime_obs_reg.add_and_remove_observers_dynamic_memory:
     tags: zbus
     integration_platforms:
-      - native_sim
+      - qemu_x86
+    extra_configs:
+      - CONFIG_HEAP_MEM_POOL_SIZE=2048
+  message_bus.zbus.runtime_obs_reg.add_and_remove_observers_static_memory:
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE=6

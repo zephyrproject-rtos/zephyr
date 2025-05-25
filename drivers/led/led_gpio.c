@@ -30,23 +30,13 @@ static int led_gpio_set_brightness(const struct device *dev, uint32_t led, uint8
 	const struct led_gpio_config *config = dev->config;
 	const struct gpio_dt_spec *led_gpio;
 
-	if ((led >= config->num_leds) || (value > 100)) {
+	if (led >= config->num_leds) {
 		return -EINVAL;
 	}
 
 	led_gpio = &config->led[led];
 
 	return gpio_pin_set_dt(led_gpio, value > 0);
-}
-
-static int led_gpio_on(const struct device *dev, uint32_t led)
-{
-	return led_gpio_set_brightness(dev, led, 100);
-}
-
-static int led_gpio_off(const struct device *dev, uint32_t led)
-{
-	return led_gpio_set_brightness(dev, led, 0);
 }
 
 static int led_gpio_init(const struct device *dev)
@@ -78,8 +68,6 @@ static int led_gpio_init(const struct device *dev)
 }
 
 static DEVICE_API(led, led_gpio_api) = {
-	.on		= led_gpio_on,
-	.off		= led_gpio_off,
 	.set_brightness	= led_gpio_set_brightness,
 };
 

@@ -1,0 +1,19 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_CC23X0
+	bool "Watchdog Driver for CC23x0 family of MCUs"
+	default y
+	depends on DT_HAS_TI_CC23X0_WDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable watchdog for CC23x0 family of MCUs
+
+config WDT_CC23X0_INITIAL_TIMEOUT
+	int "Value for initial WDT timeout in ms"
+	depends on WDT_CC23X0
+	default 2000
+	range 1 131072
+	help
+	  The CC23x0 watchdog timer is sourced from the LFOSC 32.768 clock
+	  Resolution is 32768 ticks per ms

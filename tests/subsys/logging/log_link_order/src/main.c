@@ -55,7 +55,7 @@ static void log_setup(void)
 
 	timestamp = 0;
 	err = log_set_timestamp_func(timestamp_get, 0);
-	zassert_equal(err, 0, NULL);
+	zassert_equal(err, 0);
 
 	(void)z_log_links_activate(0xFFFFFFFF, &offset);
 

@@ -29,7 +29,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     if: github.repository_owner == 'zephyrproject-rtos'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.0.20250523
       options: '--entrypoint /bin/bash'
     defaults:
       run:
@@ -69,7 +69,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: 3.12
           cache: pip

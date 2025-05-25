@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_SAM0
+	bool "Driver for SAM0 family USB device controller"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
+	select PINCTRL
+	select SYS_MEM_BLOCKS
+	select EVENTS
+	help
+	  Driver for SAM0 family USB device controller.
+
+if UDC_SAM0
+
+config UDC_SAM0_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_SAM0_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_SAM0

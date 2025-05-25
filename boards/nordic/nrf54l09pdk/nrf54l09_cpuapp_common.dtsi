@@ -54,26 +54,32 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x10000 DT_SIZE_K(212)>;
 		};
+
 		slot0_ns_partition: partition@45000 {
 			label = "image-0-nonsecure";
 			reg = <0x45000 DT_SIZE_K(212)>;
 		};
+
 		slot1_partition: partition@7a000 {
 			label = "image-1";
 			reg = <0x7a000 DT_SIZE_K(212)>;
 		};
+
 		slot1_ns_partition: partition@af000 {
 			label = "image-1-nonsecure";
 			reg = <0xaf000 DT_SIZE_K(212)>;
 		};
+
 		storage_partition: partition@e4000 {
 			label = "storage";
 			reg = <0xe4000 DT_SIZE_K(36)>;

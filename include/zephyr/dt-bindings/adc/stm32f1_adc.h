@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_STM32F1_ADC_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_STM32F1_ADC_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_STM32F1_ADC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_STM32F1_ADC_H_
 
 #include <zephyr/dt-bindings/adc/stm32_adc.h>
 
@@ -23,4 +23,4 @@
 #define STM32F1_ADC_RES(resolution)	\
 	STM32_ADC_RES(resolution, STM32_ADC_RES_REG_VAL)
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_STM32F1_ADC_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_STM32F1_ADC_H_ */

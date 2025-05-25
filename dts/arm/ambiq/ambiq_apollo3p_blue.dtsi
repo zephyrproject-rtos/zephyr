@@ -108,12 +108,6 @@
 			};
 		};
 
-		pwrcfg: pwrcfg@40021000 {
-			compatible = "ambiq,pwrctrl";
-			reg = <0x40021000 0x400>;
-			#pwrcfg-cells = <2>;
-		};
-
 		stimer0: stimer@40008140 {
 			compatible = "ambiq,stimer";
 			reg = <0x40008140 0x80>;
@@ -194,24 +188,22 @@
 		};
 
 		uart0: uart@4001c000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <15 0>;
 			interrupt-names = "UART0";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x80>;
 			zephyr,pm-device-runtime-auto;
 		};
 
 		uart1: uart@4001d000 {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001d000 0x1000>;
 			interrupts = <16 0>;
 			interrupt-names = "UART1";
 			status = "disabled";
 			clocks = <&uartclk>;
-			ambiq,pwrcfg = <&pwrcfg 0x8 0x100>;
 			zephyr,pm-device-runtime-auto;
 		};
 

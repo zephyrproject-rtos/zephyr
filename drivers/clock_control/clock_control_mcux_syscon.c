@@ -122,11 +122,9 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay)
-#if CONFIG_SOC_SERIES_IMXRT5XX
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
 	CLOCK_EnableOsc32K(true);
-#elif CONFIG_SOC_SERIES_IMXRT6XX
-	/* No configuration */
-#else /* !CONFIG_SOC_SERIES_IMXRT5XX | !CONFIG_SOC_SERIES_IMXRT6XX */
+#elif CONFIG_SOC_SERIES_MCXN
 /* 0x0 Clock Select Value Set IRTC to use FRO 16K Clk */
 #if DT_PROP(DT_NODELABEL(rtc), clock_select) == 0x0
 	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVbat | kCLOCK_Clk16KToMain);
@@ -135,7 +133,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVbat | kCLOCK_Osc32kToMain);
 #endif /* DT_PROP(DT_NODELABEL(rtc), clock_select) */
 	CLOCK_EnableClock(kCLOCK_Rtc0);
-#endif /* CONFIG_SOC_SERIES_IMXRT5XX */
+#endif /* CONFIG_SOC_SERIES_MCXN */
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay) */
 
 	return 0;
@@ -402,7 +400,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetMipiDphyEscTxClkFreq();
 		break;
 	case MCUX_LCDIF_PIXEL_CLK:
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+		*rate = CLOCK_GetLcdifClkFreq();
+#else
 		*rate = CLOCK_GetDcPixelClkFreq();
+#endif
 		break;
 #endif
 #if defined(CONFIG_AUDIO_DMIC_MCUX)
@@ -521,6 +523,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif /* defined(CONFIG_UART_MCUX_LPUART) */
 
 #if (defined(CONFIG_I2C_MCUX_LPI2C) && CONFIG_SOC_SERIES_MCXA)
+#if (defined(FSL_FEATURE_SOC_LPI2C_COUNT) && (FSL_FEATURE_SOC_LPI2C_COUNT == 1))
+	case MCUX_LPI2C0_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq();
+		break;
+#else
 	case MCUX_LPI2C0_CLK:
 		*rate = CLOCK_GetLpi2cClkFreq(0);
 		break;
@@ -533,6 +540,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_LPI2C3_CLK:
 		*rate = CLOCK_GetLpi2cClkFreq(3);
 		break;
+#endif /* defined(FSL_FEATURE_SOC_LPI2C_COUNT) */
 #endif /* defined(CONFIG_I2C_MCUX_LPI2C) */
 
 #if defined(CONFIG_DT_HAS_NXP_XSPI_ENABLED)

@@ -54,6 +54,8 @@ static int ifx_cat1_pwm_init(const struct device *dev)
 		.runMode = CY_TCPWM_PWM_CONTINUOUS,
 		.countInputMode = CY_TCPWM_INPUT_LEVEL,
 		.countInput = CY_TCPWM_INPUT_1,
+		.enableCompareSwap = true,
+		.enablePeriodSwap = true,
 	};
 
 	/* Configure PWM clock */
@@ -110,8 +112,14 @@ static int ifx_cat1_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	if ((period_cycles == 0) || (pulse_cycles == 0)) {
 		Cy_TCPWM_PWM_Disable(PWM_REG_BASE, data->pwm_num);
 	} else {
-		Cy_TCPWM_PWM_SetPeriod0(PWM_REG_BASE, data->pwm_num, period_cycles);
-		Cy_TCPWM_PWM_SetCompare0Val(PWM_REG_BASE, data->pwm_num, pulse_cycles);
+		/* Update period and compare values using buffer registers so the new values
+		 * take effect on the next TC event
+		 */
+		Cy_TCPWM_PWM_SetPeriod1(PWM_REG_BASE, data->pwm_num, period_cycles);
+		Cy_TCPWM_PWM_SetCompare0BufVal(PWM_REG_BASE, data->pwm_num, pulse_cycles);
+
+		/* Trigger the swap by writing to the SW trigger command register. */
+		Cy_TCPWM_TriggerCaptureOrSwap_Single(PWM_REG_BASE, data->pwm_num);
 
 		if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED) {
 			config->reg_addr->CTRL &= ~TCPWM_GRP_CNT_V2_CTRL_QUAD_ENCODING_MODE_Msk;

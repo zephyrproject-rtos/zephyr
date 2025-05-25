@@ -554,7 +554,7 @@ def write_pinctrls(node: edtlib.Node) -> None:
 def write_fixed_partitions(node: edtlib.Node) -> None:
     # Macros for child nodes of each fixed-partitions node.
 
-    if not (node.parent and "fixed-partitions" in node.parent.compats):
+    if not (node.parent and ("fixed-partitions" in node.parent.compats or "fixed-subpartitions" in node.parent.compats)):
         return
 
     global flash_area_num

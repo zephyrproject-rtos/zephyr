@@ -66,6 +66,11 @@ int tmp11x_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
 	return tmp11x_reg_write(dev, TMP11X_REG_CFGR, config);
 }
 
+static inline bool tmp11x_is_offset_supported(const struct tmp11x_data *drv_data)
+{
+	return drv_data->id == TMP117_DEVICE_ID || drv_data->id == TMP119_DEVICE_ID;
+}
+
 static bool check_eeprom_bounds(const struct device *dev, off_t offset,
 			       size_t len)
 {
@@ -220,24 +225,30 @@ static int tmp11x_sample_fetch(const struct device *dev,
 	return 0;
 }
 
+/*
+ * See datasheet "Temperature Results and Limits" section for more
+ * details on processing sample data.
+ */
+static void tmp11x_temperature_to_sensor_value(int16_t temperature, struct sensor_value *val)
+{
+	int32_t tmp;
+
+	tmp = (temperature * (int32_t)TMP11X_RESOLUTION) / 10;
+	val->val1 = tmp / 1000000; /* uCelsius */
+	val->val2 = tmp % 1000000;
+}
+
 static int tmp11x_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct tmp11x_data *drv_data = dev->data;
-	int32_t tmp;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 
-	/*
-	 * See datasheet "Temperature Results and Limits" section for more
-	 * details on processing sample data.
-	 */
-	tmp = ((int16_t)drv_data->sample * (int32_t)TMP11X_RESOLUTION) / 10;
-	val->val1 = tmp / 1000000; /* uCelsius */
-	val->val2 = tmp % 1000000;
+	tmp11x_temperature_to_sensor_value(drv_data->sample, val);
 
 	return 0;
 }
@@ -292,9 +303,8 @@ static int tmp11x_attr_set(const struct device *dev,
 		return tmp11x_write_config(dev, TMP11X_CFGR_CONV, value);
 
 	case SENSOR_ATTR_OFFSET:
-		if (drv_data->id != TMP117_DEVICE_ID && drv_data->id != TMP119_DEVICE_ID) {
-			LOG_ERR("%s: Offset is only supported by TMP117 and TMP119",
-			dev->name);
+		if (!tmp11x_is_offset_supported(drv_data)) {
+			LOG_ERR("%s: Offset is not supported", dev->name);
 			return -EINVAL;
 		}
 		/*
@@ -355,18 +365,29 @@ static int tmp11x_attr_get(const struct device *dev, enum sensor_channel chan,
 	switch (attr) {
 	case SENSOR_ATTR_CONFIGURATION:
 		rc = tmp11x_reg_read(dev, TMP11X_REG_CFGR, &data);
-		if (rc < 0) {
-			return rc;
+
+		if (rc == 0) {
+			val->val1 = data;
+			val->val2 = 0;
 		}
-		break;
+
+		return rc;
+
+	case SENSOR_ATTR_OFFSET:
+		if (!tmp11x_is_offset_supported(dev->data)) {
+			LOG_ERR("%s: Offset is not supported", dev->name);
+			return -EINVAL;
+		}
+
+		rc = tmp11x_reg_read(dev, TMP117_REG_TEMP_OFFSET, &data);
+		if (rc == 0) {
+			tmp11x_temperature_to_sensor_value(data, val);
+		}
+
+		return rc;
 	default:
 		return -ENOTSUP;
 	}
-
-	val->val1 = data;
-	val->val2 = 0;
-
-	return 0;
 }
 
 static DEVICE_API(sensor, tmp11x_driver_api) = {

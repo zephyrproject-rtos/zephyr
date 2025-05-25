@@ -27,10 +27,35 @@ tests:
       - b_l4s5i_iot01a                  # lsm6dsl
       - sensortile_box                  # lis2dw12, lsm6dso, iisdhhc
       - thingy53/nrf5340/cpuapp         # adxl362, bmi270
+  sample.sensor.accel_polling.adxl345-stream:
+    extra_args:
+      - SHIELD=pmod_acl
+      - EXTRA_CONF_FILE=adxl345-stream.conf
+      - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
+    platform_allow:
+      - apard32690/max32690/m4
   sample.sensor.accel_polling.adxl362-stream:
     extra_args:
       - SHIELD=eval_adxl362_ardz
       - EXTRA_CONF_FILE=adxl362-stream.conf
       - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
+    platform_allow:
+      - apard32690/max32690/m4
+  sample.sensor.accel_polling.adxl367-stream:
+    extra_args:
+      - SHIELD="eval_adxl367_ardz"
+      - EXTRA_CONF_FILE="adxl367-stream.conf"
+      - SNIPPET="rtt-tracing;rtt-console"
+    platform_allow:
+      - apard32690/max32690/m4
+  sample.sensor.accel_polling.adxl372-stream:
+    extra_args:
+      - SHIELD="eval_adxl372_ardz"
+      - EXTRA_CONF_FILE="adxl372-stream.conf"
+      - SNIPPET="rtt-tracing;rtt-console"
     platform_allow:
       - apard32690/max32690/m4

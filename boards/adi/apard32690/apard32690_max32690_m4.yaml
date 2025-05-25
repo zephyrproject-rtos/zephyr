@@ -11,11 +11,13 @@ supported:
   - arduino_serial
   - arduino_spi
   - pmod_spi
+  - pmod_gpio
   - gpio
   - serial
   - spi
   - trng
   - counter
   - w1
+  - memc
 ram: 1024
 flash: 3072

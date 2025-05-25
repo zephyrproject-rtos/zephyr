@@ -22,7 +22,7 @@
 #include "usb.h"
 #endif
 
-#include "memc_nxp_flexram.h"
+#include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
 #include <cmsis_core.h>
 
@@ -367,7 +367,7 @@ void soc_reset_hook(void)
 
 #if defined(FLEXRAM_RUNTIME_BANKS_USED)
 	/* Configure flexram if not running from RAM */
-	memc_flexram_dt_partition();
+	flexram_dt_partition();
 #endif
 }
 #endif

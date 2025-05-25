@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
@@ -1076,6 +1077,27 @@
 		clocks = <&clkctl0 MCUX_SCTIMER_CLK>;
 		prescaler = <8>;
 		#pwm-cells = <3>;
+	};
+
+	lcdif: lcdif@480000 {
+		compatible = "nxp,mipi-dbi-dcnano-lcdif";
+		reg = <0x480000 0x1000>;
+		interrupts = <56 0>;
+		status = "disabled";
+	};
+
+	mipi_dsi: mipi_dsi@417000 {
+		compatible = "nxp,mipi-dsi-2l";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x417000 0x1000>;
+		interrupts = <58 0>;
+		clocks = <&clkctl4 MCUX_MIPI_DSI_DPHY_CLK>,
+				 <&clkctl4 MCUX_MIPI_DSI_ESC_CLK>,
+				 <&clkctl4 MCUX_LCDIF_PIXEL_CLK>;
+		clock-names = "dphy", "esc", "pixel";
+		ulps-control;
+		status = "disabled";
 	};
 };
 

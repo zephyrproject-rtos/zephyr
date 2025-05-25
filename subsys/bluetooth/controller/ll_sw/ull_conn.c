@@ -622,9 +622,9 @@ void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 #else /* CONFIG_BT_CTLR_PHY && CONFIG_BT_CTLR_PHY_CODED */
 #define PHY (PHY_1M)
 #endif /* CONFIG_BT_CTLR_PHY && CONFIG_BT_CTLR_PHY_CODED */
-	*max_tx_octets = LL_LENGTH_OCTETS_RX_MAX;
+	*max_tx_octets = LL_LENGTH_OCTETS_TX_MAX;
 	*max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
-	*max_tx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY);
+	*max_tx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY);
 	*max_rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY);
 #undef PHY
 }
@@ -2107,9 +2107,9 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 	mic_size = 0U;
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
-	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
+	time_incoming = (LL_LENGTH_OCTETS_TX_MAX << 3) *
 			1000000UL / tx_rate;
-	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy,
+	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_TX_MAX, mic_size, phy,
 				  phy_flags) +
 			PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) +
 			(EVENT_IFS_US << 1);
@@ -2362,6 +2362,14 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	switch (lll->role) {
 #if defined(CONFIG_BT_PERIPHERAL)
 	case BT_HCI_ROLE_PERIPHERAL:
+		/* Since LLL prepare doesn't get to run, accumulate window widening here */
+		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+							  (conn->llcp.prep.lazy + 1);
+		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+			lll->periph.window_widening_prepare_us =
+				lll->periph.window_widening_max_us;
+		}
+
 		lll->periph.window_widening_prepare_us -=
 			lll->periph.window_widening_periodic_us * instant_latency;
 
@@ -2498,7 +2506,7 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	tx_time = MIN(conn->lll.dle.default_tx_time,
-		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
+		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, phy_select));
 #else /* !CONFIG_BT_CTLR_PHY */
 	tx_time = PDU_DC_MAX_US(conn->lll.dle.default_tx_octets, phy_select);
 #endif /* !CONFIG_BT_CTLR_PHY */

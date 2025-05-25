@@ -11,6 +11,7 @@
 
 #include <zephyr/dt-bindings/clock/stm32mp13_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/reset/stm32mp13_reset.h>
 
@@ -23,6 +24,18 @@
 			compatible = "arm,cortex-a7";
 			device_type = "cpu";
 			reg = <0>;
+		};
+	};
+
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+
+		mco2: mco2 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
 		};
 	};
 
@@ -166,6 +179,71 @@
 				      <8 1>, <9 1>, <10 1>, <11 1>,
 				      <12 1>, <13 1>, <14 1>, <15 1>;
 		};
+
+		i2c1: i2c@40012000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40012000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c2: i2c@40013000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c3: i2c@4c004000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c004000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB6, 4)>;
+			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c4: i2c@4c005000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c005000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB6, 5)>;
+			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 94 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c5: i2c@4c006000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4c006000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB6, 6)>;
+			interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
 	};
 
 	gic: gic@A0021000 {
@@ -208,6 +286,24 @@
 		};
 
 		pll1: pll: pll {
+			#clock-cells = <0>;
+			compatible = "st,stm32mp13-pll-clock";
+			status = "disabled";
+		};
+
+		pll2: pll2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32mp13-pll-clock";
+			status = "disabled";
+		};
+
+		pll3: pll3 {
+			#clock-cells = <0>;
+			compatible = "st,stm32mp13-pll-clock";
+			status = "disabled";
+		};
+
+		pll4: pll4 {
 			#clock-cells = <0>;
 			compatible = "st,stm32mp13-pll-clock";
 			status = "disabled";

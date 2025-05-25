@@ -79,7 +79,7 @@ ZTEST(sys_mm_bank_api, test_sys_mm_drv_bank)
 
 	count = sys_mm_drv_bank_page_unmapped(&bank_data);
 	zassert_equal(count, BANK_PAGES - 1,
-		      "MM Page Unmapped Error: Pages mapped = %u, not 1\n",
+		      "MM Page Unmapped Error: Pages mapped = %u, not %u\n",
 		      count, BANK_PAGES - 1);
 	expected.free_bytes = EXPECTED(BANK_PAGES - 1);
 	expected.allocated_bytes = EXPECTED(1);

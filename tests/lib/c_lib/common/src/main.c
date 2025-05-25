@@ -65,17 +65,17 @@ volatile long long_max = LONG_MAX;
 volatile long long_one = 1L;
 
 /**
- *
  * @brief Test implementation-defined constants library
- * @defgroup libc_api
+ * @defgroup libc_api C Library APIs
  * @ingroup all_tests
  * @{
  *
  */
-
+/**
+ * @brief Test c library limits
+ */
 ZTEST(libc_common, test_limits)
 {
-
 	zassert_true((long_max + long_one == LONG_MIN));
 }
 
@@ -84,13 +84,15 @@ static ssize_t foobar(void)
 	return -1;
 }
 
+/**
+ * @brief Test C library ssize_t
+ */
 ZTEST(libc_common, test_ssize_t)
 {
 	zassert_true(foobar() < 0);
 }
 
 /**
- *
  * @brief Test boolean types and values library
  *
  */
@@ -110,7 +112,6 @@ volatile long long_variable;
 volatile size_t size_of_long_variable = sizeof(long_variable);
 
 /**
- *
  * @brief Test standard type definitions library
  *
  */
@@ -132,7 +133,6 @@ volatile uint8_t unsigned_byte = 0xff;
 volatile uint32_t unsigned_int = 0xffffff00;
 
 /**
- *
  * @brief Test integer types library
  *
  */
@@ -157,7 +157,6 @@ ZTEST(libc_common, test_stdint)
 }
 
 /**
- *
  * @brief Test time_t to make sure it is at least 64 bits
  *
  */
@@ -179,7 +178,6 @@ ZTEST(libc_common, test_time_t)
 char buffer[BUFSIZE];
 
 /**
- *
  * @brief Test string memset
  *
  */
@@ -199,7 +197,6 @@ ZTEST(libc_common, test_memset)
 }
 
 /**
- *
  * @brief Test string length function
  *
  * @see strlen(), strnlen().
@@ -216,7 +213,6 @@ ZTEST(libc_common, test_strlen)
 }
 
 /**
- *
  * @brief Test string compare function
  *
  * @see strcmp(), strncasecmp().
@@ -260,7 +256,7 @@ ZTEST(libc_common, test_strncmp)
 	/* test compare the same strings */
 	buffer[BUFSIZE - 1] = '\0';
 	zassert_true((strncmp(buffer, buffer, BUFSIZE) == 0),
-				 "strncmp 10 with \0");
+				 "strncmp 10 with \\0");
 }
 
 
@@ -542,7 +538,7 @@ ZTEST(libc_common, test_memchr)
 
 	/* verify the character inside the count scope */
 	zassert_not_null(memchr(str, 'e', strlen(str)), "memchr serach e");
-	zassert_not_null(memchr(str, '\0', strlen(str)+1), "memchr serach \0");
+	zassert_not_null(memchr(str, '\0', strlen(str)+1), "memchr serach \\0");
 
 	/* verify when the count parm is zero */
 	zassert_is_null(memchr(str, 't', 0), "memchr count 0 error");
@@ -662,14 +658,14 @@ ZTEST(libc_common, test_str_operate)
 	zassert_is_null(strstr(str1, "ayz"), "strstr aabbccd with ayz failed");
 	zassert_not_null(strstr(str1, str2), "strstr aabbccd with b succeed");
 	zassert_not_null(strstr(str1, "bb"), "strstr aabbccd with bb succeed");
-	zassert_not_null(strstr(str1, ""), "strstr aabbccd with \0 failed");
+	zassert_not_null(strstr(str1, ""), "strstr aabbccd with \\0 failed");
 }
 
 /**
  *
  * @brief test strtol function
  *
- * @detail   in 32bit system:
+ * @details   in 32bit system:
  *	when base is 10, [-2147483648..2147483647]
  *		   in 64bit system:
  *	when base is 10,
@@ -913,7 +909,7 @@ void test_strtoll(void)
 	ret = strtoll(border4, NULL, 10);
 	zassert_equal(ret, LLONG_MAX, "strtoll base = 10 failed");
 	ret = strtoull(border5, NULL, 16);
-	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%x", border5, ret);
+	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%llx", border5, ret);
 	ret = strtoull(border6, NULL, 10);
 	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border6, ret);
 	ret = strtoull(border7, NULL, 10);
@@ -991,7 +987,7 @@ void test_strtoull(void)
 	ret = strtoull(border3, NULL, 10);
 	zassert_equal(ret, ULLONG_MAX, "strtoull base = 10 failed");
 	ret = strtoull(border4, NULL, 16);
-	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%x", border4, ret);
+	zassert_equal(ret, 1, "strtoull base = 16 failed, %s != 0x%llx", border4, ret);
 	ret = strtoull(border5, NULL, 10);
 	zassert_equal(errno, ERANGE, "strtoull base = 10 failed, %s != %lld", border5, ret);
 	ret = strtoull(border6, NULL, 10);
@@ -1330,3 +1326,6 @@ ZTEST(libc_common, test_exit)
 	zassert_equal(a, 0, "exit failed");
 #endif
 }
+/**
+ * @}
+ */

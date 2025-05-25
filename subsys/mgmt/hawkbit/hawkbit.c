@@ -638,7 +638,7 @@ static int hawkbit_find_cancel_action_id(struct hawkbit_ctl_res *res,
 		return -EINVAL;
 	}
 
-	helper += sizeof("cancelAction/");
+	helper += sizeof("cancelAction/") - 1;
 
 	*cancel_action_id = strtol(helper, NULL, 10);
 	if (*cancel_action_id <= 0) {
@@ -864,6 +864,8 @@ int hawkbit_init(void)
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
 		}
+
+		hawkbit_event_raise(HAWKBIT_EVENT_CONFIRMED_CURRENT_IMAGE);
 	}
 	hawkbit_initialized = true;
 
@@ -994,7 +996,7 @@ static void response_download_cb(struct http_response *rsp, enum http_final_call
 	}
 }
 
-static void response_cb(struct http_response *rsp, enum http_final_call final_data, void *userdata)
+static int response_cb(struct http_response *rsp, enum http_final_call final_data, void *userdata)
 {
 	struct hawkbit_context *hb_context = userdata;
 
@@ -1005,7 +1007,7 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 		} else {
 			hb_context->code_status = HAWKBIT_METADATA_ERROR;
 		}
-		return;
+		return 0;
 	}
 
 	switch (hb_context->type) {
@@ -1021,6 +1023,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 	default:
 		break;
 	}
+
+	return 0;
 }
 
 static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_request type,

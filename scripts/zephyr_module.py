@@ -143,6 +143,10 @@ mapping:
           license-path:
             required: true
             type: str
+          click-through:
+            required: false
+            type: bool
+            default: false
           url:
             required: true
             type: str
@@ -341,6 +345,7 @@ def process_blobs(module, meta):
     for blob in mblobs:
         blob['module'] = meta.get('name', None)
         blob['abspath'] = blobs_path / Path(blob['path'])
+        blob['license-abspath'] = Path(module) / Path(blob['license-path'])
         blob['status'] = get_blob_status(blob['abspath'], blob['sha256'])
         blobs.append(blob)
 
@@ -453,6 +458,13 @@ def process_twister(module, meta):
 
     return out
 
+def is_valid_git_revision(revision):
+    """
+    Returns True if the given string is a valid git revision hash (40 hex digits).
+    """
+    if not isinstance(revision, str):
+        return False
+    return bool(re.fullmatch(r'[0-9a-fA-F]{40}', revision))
 
 def _create_meta_project(project_path):
     def git_revision(path):
@@ -480,7 +492,7 @@ def _create_meta_project(project_path):
                 if rc:
                     return revision + '-dirty', True
                 return revision, False
-        return None, False
+        return "unknown", False
 
     def git_remote(path):
         popen = subprocess.Popen(['git', 'remote'],
@@ -575,7 +587,7 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
     workspace_extra = extra_modules is not None
     workspace_off = zephyr_off
 
-    if zephyr_off:
+    if zephyr_off and is_valid_git_revision(zephyr_project['revision']):
         zephyr_project['revision'] += '-off'
 
     meta['zephyr'] = zephyr_project
@@ -607,7 +619,7 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
             manifest_project, manifest_dirty = _create_meta_project(
                 projects[0].posixpath)
             manifest_off = manifest_project.get("remote") is None
-            if manifest_off:
+            if manifest_off and is_valid_git_revision(manifest_project['revision']):
                 manifest_project["revision"] +=  "-off"
 
         if manifest_project:
@@ -630,7 +642,8 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
                 off = True
 
             if off:
-                meta_project['revision'] += '-off'
+                if is_valid_git_revision(meta_project['revision']):
+                    meta_project['revision'] += '-off'
                 workspace_off |= off
 
             # If manifest is in project, updates related variables
@@ -667,22 +680,24 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
 
     if propagate_state:
         zephyr_revision = zephyr_project['revision']
-        if workspace_dirty and not zephyr_dirty:
-            zephyr_revision += '-dirty'
-        if workspace_extra:
-            zephyr_revision += '-extra'
-        if workspace_off and not zephyr_off:
-            zephyr_revision += '-off'
+        if is_valid_git_revision(zephyr_revision):
+            if workspace_dirty and not zephyr_dirty:
+                zephyr_revision += '-dirty'
+            if workspace_extra:
+                zephyr_revision += '-extra'
+            if workspace_off and not zephyr_off:
+                zephyr_revision += '-off'
         zephyr_project.update({'revision': zephyr_revision})
 
         if west_projs is not None:
             manifest_revision = manifest_project['revision']
-            if workspace_dirty and not manifest_dirty:
-                manifest_revision += '-dirty'
-            if workspace_extra:
-                manifest_revision += '-extra'
-            if workspace_off and not manifest_off:
-                manifest_revision += '-off'
+            if is_valid_git_revision(manifest_revision):
+                if workspace_dirty and not manifest_dirty:
+                    manifest_revision += '-dirty'
+                if workspace_extra:
+                    manifest_revision += '-extra'
+                if workspace_off and not manifest_off:
+                    manifest_revision += '-off'
             manifest_project.update({'revision': manifest_revision})
 
     return meta

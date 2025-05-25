@@ -1,4 +1,12 @@
+&gpregret1 {
+	/delete-node/ boot_mode@0;
+};
+
 / {
+	chosen {
+		/delete-property/ zephyr,boot-mode;
+	};
+
 	sram@2003FC00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2003FC00 DT_SIZE_K(1)>;

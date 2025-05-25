@@ -189,6 +189,12 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
+		if (frame_size >= sizeof(frame)) {
+			LOG_ERR("HCI Packet is too big for frame (%d "
+				"bytes). Dropping data", sizeof(frame));
+			frame_size = 0; /* Drop buffer */
+		}
+
 		LOG_DBG("calling read()");
 
 		len = nsi_host_read(uc->fd, frame + frame_size, sizeof(frame) - frame_size);
@@ -218,14 +224,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			}
 
 			if (decoded_len == 0) {
-				if (frame_size == sizeof(frame)) {
-					LOG_ERR("HCI Packet (%d bytes) is too big for frame (%d "
-						"bytes)",
-						decoded_len, sizeof(frame));
-					frame_size = 0; /* Drop buffer */
-					break;
-				}
-				if (frame_start != frame) {
+				if ((frame_start != frame) && (frame_size < sizeof(frame))) {
 					memmove(frame, frame_start, frame_size);
 				}
 				/* Read more */
@@ -268,29 +267,11 @@ static int uc_send(const struct device *dev, struct net_buf *buf)
 {
 	struct uc_data *uc = dev->data;
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	if (uc->fd < 0) {
 		LOG_ERR("User channel not open");
 		return -EIO;
-	}
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, BT_HCI_H4_ACL);
-		break;
-	case BT_BUF_CMD:
-		net_buf_push_u8(buf, BT_HCI_H4_CMD);
-		break;
-	case BT_BUF_ISO_OUT:
-		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			net_buf_push_u8(buf, BT_HCI_H4_ISO);
-			break;
-		}
-		__fallthrough;
-	default:
-		LOG_ERR("Unknown buffer type");
-		return -EINVAL;
 	}
 
 	if (nsi_host_write(uc->fd, buf->data, buf->len) < 0) {

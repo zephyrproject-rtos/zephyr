@@ -2392,6 +2392,8 @@ __syscall void k_event_init(struct k_event *event);
  * Posting differs from setting in that posted events are merged together with
  * the current set of events tracked by the event object.
  *
+ * @funcprops \isr_ok
+ *
  * @param event Address of the event object
  * @param events Set of events to post to @a event
  *
@@ -2409,6 +2411,8 @@ __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
  * Setting differs from posting in that set events replace the current set of
  * events tracked by the event object.
  *
+ * @funcprops \isr_ok
+ *
  * @param event Address of the event object
  * @param events Set of events to set in @a event
  *
@@ -2424,6 +2428,8 @@ __syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
  * become met by this immediately unpend. Unlike @ref k_event_set, this routine
  * allows specific event bits to be set and cleared as determined by the mask.
  *
+ * @funcprops \isr_ok
+ *
  * @param event Address of the event object
  * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
@@ -2437,6 +2443,8 @@ __syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
  * @brief Clear the events in an event object
  *
  * This routine clears (resets) the specified events stored in an event object.
+ *
+ * @funcprops \isr_ok
  *
  * @param event Address of the event object
  * @param events Set of events to clear in @a event
@@ -2455,6 +2463,9 @@ __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
  *
  * @note The caller must be careful when resetting if there are multiple threads
  * waiting for the event object @a event.
+ *
+ * @note This function may be called from ISR context only when @a timeout is
+ * set to K_NO_WAIT.
  *
  * @param event Address of the event object
  * @param events Set of desired events on which to wait
@@ -2480,6 +2491,9 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  * @note The caller must be careful when resetting if there are multiple threads
  * waiting for the event object @a event.
  *
+ * @note This function may be called from ISR context only when @a timeout is
+ * set to K_NO_WAIT.
+ *
  * @param event Address of the event object
  * @param events Set of desired events on which to wait
  * @param reset If true, clear the set of events tracked by the event object
@@ -2495,6 +2509,8 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 
 /**
  * @brief Test the events currently tracked in the event object
+ *
+ * @funcprops \isr_ok
  *
  * @param event Address of the event object
  * @param events_mask Set of desired events to test
