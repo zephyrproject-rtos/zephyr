@@ -585,9 +585,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/logging/dictionary/dictionary_parser/log_parser.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/logging/dictionary/dictionary_parser/log_parser_v1.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
