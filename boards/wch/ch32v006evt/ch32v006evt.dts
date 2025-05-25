@@ -57,6 +57,7 @@
 		led0 = &blue_led1;
 		led1 = &blue_led2;
 		pwm-led0 = &blue_pwm2;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -87,4 +88,8 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+};
+
+&iwdg {
+	status = "okay";
 };
