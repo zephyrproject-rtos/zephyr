@@ -9,7 +9,39 @@ config SOC_R7FA2L1A9XXFP
 	bool
 	select SOC_SERIES_RA2L1
 
+config SOC_R7FA2L1A9XXFN
+	bool
+	select SOC_SERIES_RA2L1
+
+config SOC_R7FA2L1A9XXFM
+	bool
+	select SOC_SERIES_RA2L1
+
+config SOC_R7FA2L1A9XXFL
+	bool
+	select SOC_SERIES_RA2L1
+
+config SOC_R7FA2L1A9XXNE
+	bool
+	select SOC_SERIES_RA2L1
+
 config SOC_R7FA2L1ABXXFP
+	bool
+	select SOC_SERIES_RA2L1
+
+config SOC_R7FA2L1ABXXFN
+	bool
+	select SOC_SERIES_RA2L1
+
+config SOC_R7FA2L1ABXXFM
+	bool
+	select SOC_SERIES_RA2L1
+
+config SOC_R7FA2L1ABXXFL
+	bool
+	select SOC_SERIES_RA2L1
+
+config SOC_R7FA2L1ABXXNE
 	bool
 	select SOC_SERIES_RA2L1
 
@@ -18,4 +50,12 @@ config SOC_SERIES
 
 config SOC
 	default "r7fa2l1a9xxfp" if SOC_R7FA2L1A9XXFP
+	default "r7fa2l1a9xxfn" if SOC_R7FA2L1A9XXFN
+	default "r7fa2l1a9xxfm" if SOC_R7FA2L1A9XXFM
+	default "r7fa2l1a9xxfl" if SOC_R7FA2L1A9XXFL
+	default "r7fa2l1a9xxne" if SOC_R7FA2L1A9XXNE
 	default "r7fa2l1abxxfp" if SOC_R7FA2L1ABXXFP
+	default "r7fa2l1abxxfn" if SOC_R7FA2L1ABXXFN
+	default "r7fa2l1abxxfm" if SOC_R7FA2L1ABXXFM
+	default "r7fa2l1abxxfl" if SOC_R7FA2L1ABXXFL
+	default "r7fa2l1abxxne" if SOC_R7FA2L1ABXXNE
