@@ -10,3 +10,7 @@ flash: 128
 supported:
   - dma
   - gpio
+  - i2c
+  - pwm
+  - uart
+  - watchdog
