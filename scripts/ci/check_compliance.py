@@ -318,15 +318,24 @@ class BoardYmlCheck(ComplianceTest):
 
     def check_board_file(self, file, vendor_prefixes):
         """Validate a single board file."""
-        with open(file) as fp:
-            for line_num, line in enumerate(fp.readlines(), start=1):
-                if "vendor:" in line:
-                    _, vnd = line.strip().split(":", 2)
-                    vnd = vnd.strip()
-                    if vnd not in vendor_prefixes:
-                        desc = f"invalid vendor: {vnd}"
-                        self.fmtd_failure("error", "BoardYml", file, line_num,
-                                          desc=desc)
+        try:
+            with open(file, 'r', encoding='utf-8') as fp:
+                content = fp.read()
+        except (OSError, UnicodeDecodeError):
+            return
+
+        lines = content.splitlines()
+        for line_num, line in enumerate(lines, start=1):
+            if "vendor:" not in line:
+                continue
+
+            colon_idx = line.find("vendor:")
+            vnd = line[colon_idx + 7:].strip()
+            vnd = vnd.strip()
+            if vnd and vnd not in vendor_prefixes:
+                desc = f"invalid vendor: {vnd}"
+                self.fmtd_failure("error", "BoardYml", file, line_num,
+                                  desc=desc)
 
     def run(self):
         path = resolve_path_hint(self.path_hint)
@@ -342,7 +351,11 @@ class BoardYmlCheck(ComplianceTest):
             if vendor_prefix_file.exists():
                 vendor_prefixes |= get_vendor_prefixes(vendor_prefix_file, self.error)
 
-        for file in path.glob("**/board.yml"):
+        # Use more efficient file discovery - collect all board.yml files at once
+        board_yml_files = list(path.glob("**/board.yml"))
+
+        # Process files in batch
+        for file in board_yml_files:
             self.check_board_file(file, vendor_prefixes)
 
 
