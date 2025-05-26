@@ -21,6 +21,11 @@ schema;shield-schema:
       required: true
       type: str
       desc: Manufacturer/vendor of the shield
+    supported_features:
+      required: false
+      sequence:
+        - type: str
+          desc: A hardware feature the shield supports (see dts/bindings/binding-types.txt)
 
 type: map
 range:
