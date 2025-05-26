@@ -1,7 +1,4 @@
-.. _at_start_f405_board:
-
-AT-START-F405
-################
+.. zephyr:board:: at_start_f405
 
 Overview
 ********
@@ -29,47 +26,63 @@ Hardware
 Supported Features
 ==================
 
-The following features are supported:
+.. zephyr:board-supported-hw::
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc controller                      |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | reset and clock control             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c port/controller                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | SPI port/controller                 |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
+Serial Port
+===========
 
-The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/at/at_start_f405/at_start_f405_defconfig`
-
+The AT-START-F405 board has one serial communication port. The default port
+is USART1 with TX connected at PA9 and RX at PA10.
 
 Programming and Debugging
 *************************
 
+.. zephyr:board-supported-runners::
 
-Flashing
-========
+Using ATLink or J-Link
+=======================
+The board comes with an embedded AT-Link programmer.
+You need to install CMSIS-Pack which is required by pyOCD
+when programming or debugging by the AT-Link programmer.
+Execute the following command to install CMSIS-Pack for AT32F405CCT7
+if not installed yet.
 
+   .. code-block:: console
 
-Debugging
-=========
+      pyocd pack install at32f405cct7
 
-Use SWD with a AT-LINK/J-Link
+Also, J-Link can be used to program the board via the SWD interface
+(PA13/SWDIO and PA14/SWCLK).
+
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/basic/blinky
+      :board: at_start_f405
+      :goals: build
+      :compact:
+
+#. To flash an image:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/basic/blinky
+      :board: at_start_f405
+      :goals: flash
+      :compact:
+
+   When using J-Link, append ``--runner jlink`` option after ``west flash``.
+
+   You should see blink LED2 on board AT-START-F405.
+
+#. To debug an image:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/basic/blinky
+      :board: at_start_f405
+      :goals: debug
+      :compact:
+
+   When using J-Link, append ``--runner jlink`` option after ``west debug``.
 
 References
 **********
