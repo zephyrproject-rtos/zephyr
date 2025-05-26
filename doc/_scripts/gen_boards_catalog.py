@@ -416,6 +416,7 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
             "vendor": shield.vendor or "others",
             "doc_page": doc_page_path,
             "image": guess_image(shield),
+            "supported_features": shield.supported_features or [],
         }
 
     return {
