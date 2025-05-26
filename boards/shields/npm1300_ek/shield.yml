@@ -2,3 +2,10 @@ shield:
   name: npm1300_ek
   full_name: nPM1300 EK
   vendor: nordic
+  supported_features:
+    - mfd
+    - input
+    - gpio
+    - led
+    - regulator
+    - sensor

@@ -2,3 +2,5 @@ shield:
   name: mikroe_adc_click
   full_name: ADC Click
   vendor: mikroe
+  supported_features:
+    - adc

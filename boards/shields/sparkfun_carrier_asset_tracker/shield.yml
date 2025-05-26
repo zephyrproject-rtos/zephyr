@@ -2,3 +2,7 @@ shield:
   name: sparkfun_carrier_asset_tracker
   full_name: SparkFun MicroMod Asset Tracker Shield
   vendor: sparkfun
+  supported_features:
+    - modem
+    - sdhc
+    - fuel-gauge
