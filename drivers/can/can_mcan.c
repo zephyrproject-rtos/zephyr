@@ -1390,11 +1390,9 @@ int can_mcan_init(const struct device *dev)
 	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, cbs->num_tx, cbs->num_tx);
 
-	if (config->common.phy != NULL) {
-		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
-			return -ENODEV;
-		}
+	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
+		LOG_ERR("CAN transceiver not ready");
+		return -ENODEV;
 	}
 
 	err = can_mcan_exit_sleep_mode(dev);
