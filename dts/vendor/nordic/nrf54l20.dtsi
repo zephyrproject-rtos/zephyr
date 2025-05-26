@@ -55,7 +55,7 @@
 		};
 
 		lfxo: lfxo {
-			compatible = "nordic,nrf-lfxo";
+			compatible = "nordic,nrf54l-lfxo";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
 		};
