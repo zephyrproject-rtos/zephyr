@@ -85,6 +85,20 @@ choice LOG_MODE
 endchoice
 endif # WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 
+config WIFI_NM_WPA_SUPPLICANT_DEBUG_ALLOC
+	bool "Debug memory allocation in hostap"
+	help
+	  Enables printing of network packet and buffer allocations and frees for
+	  each allocation. This can produce lot of output so it is disabled by
+	  default.
+
+config WIFI_NM_WPA_SUPPLICANT_DEBUG_ALLOC_LEN
+	int "Max number of allocation tracking entries"
+	default 200
+	depends on WIFI_NM_WPA_SUPPLICANT_DEBUG_ALLOC
+	help
+	  Each entry can track one allocation. Increase this if needed.
+
 # Memory optimizations
 config WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
 	bool "Advanced features"

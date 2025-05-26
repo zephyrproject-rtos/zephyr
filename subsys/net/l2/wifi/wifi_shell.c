@@ -2913,6 +2913,63 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	}
 }
 
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_ALLOC)
+#include <src/utils/os.h>
+
+static void mem_alloc_cb(void *data,
+			 size_t size,
+			 const char *file_alloc,
+			 const char *func_alloc,
+			 int line_alloc,
+			 const char *file_free,
+			 const char *func_free,
+			 int line_free,
+			 bool in_use,
+			 void *user_data)
+{
+	const struct shell *sh = (const struct shell *)user_data;
+
+	if (in_use) {
+		if (func_free != NULL) {
+			PR("Alloc: %zu bytes at %s():%d, free at %s():%d\n",
+			   size, func_alloc, line_alloc, func_free, line_free);
+		} else {
+			PR("Alloc: %zu bytes at %s():%d (%s)\n",
+			   size, func_alloc, line_alloc, file_alloc);
+		}
+	} else {
+		if (size > 0) {
+			PR("Free: %zu bytes at %s():%d (%s)\n",
+			   size, func_free, line_free, file_free);
+		}
+	}
+}
+#endif
+
+static int cmd_wifi_mem(const struct shell *sh, size_t argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_ALLOC)
+	int64_t total_usage;
+
+	total_usage = hostap_get_total_allocs();
+
+	PR("Total heap memory usage: %lld bytes\n", total_usage);
+	PR("Max heap memory usage: %zu bytes\n\n", hostap_get_max_allocs());
+
+	hostap_allocs_foreach(mem_alloc_cb, (void *)sh);
+
+	return 0;
+#else
+	PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_ALLOC", "hostap memory usage");
+
+	return -ENOEXEC;
+#endif
+}
+
 static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface;
@@ -4053,6 +4110,11 @@ SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_disconnect,
 		 1, 2);
+
+SHELL_SUBCMD_ADD((wifi), mem, NULL,
+		 "Show memory allocations in hostap.\n",
+		 cmd_wifi_mem,
+		 1, 0);
 
 SHELL_SUBCMD_ADD((wifi), mode, NULL,
 		 "mode operational setting\n"
