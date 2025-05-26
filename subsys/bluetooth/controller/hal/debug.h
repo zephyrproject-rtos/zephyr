@@ -27,6 +27,25 @@ void bt_ctlr_assert_handle(char *file, uint32_t line);
 		BT_ASSERT_MSG(cond, fmt, ##__VA_ARGS__)
 #endif
 
+/* Fatal asserts.
+ * The Controller will otherwise misbehave causing memory leak or system-wide memory corruptions due
+ * to uncontrolled DMA transfers etc.
+ * It is not safe to disable these assertion checks.
+ */
+#define LL_ASSERT_ERR(cond) LL_ASSERT(cond)
+
+/* Development asserts.
+ * The Controller will continue to function without memory leak or corruption with these assertion
+ * checks disabled. Example, run-time mis-aligned memory access etc. which do otherwise implicitly
+ * cause CPU fault during development testing. But these type of asserted are essentially required
+ * for debugging, code and unit test coverage during development cycle.
+ */
+#if defined(CONFIG_BT_CTLR_ASSERT_DEBUG)
+#define LL_ASSERT_DBG(cond) LL_ASSERT(cond)
+#else /* !CONFIG_BT_CTLR_ASSERT_DEBUG */
+#define LL_ASSERT_DBG(cond) ARG_UNUSED((cond))
+#endif /* !CONFIG_BT_CTLR_ASSERT_DEBUG */
+
 #if defined(CONFIG_BT_CTLR_ASSERT_VENDOR)
 #define LL_ASSERT_INFO1(cond, param) \
 		BT_ASSERT_VND(cond, param, 0)
