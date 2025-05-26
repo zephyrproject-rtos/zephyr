@@ -9,7 +9,15 @@ else()
   board_runner_args(stm32cubeprogrammer "--port=swd")
   board_runner_args(stm32cubeprogrammer "--tool-opt= mode=HOTPLUG ap=1")
   board_runner_args(stm32cubeprogrammer "--extload=MX66UW1G45G_STM32N6570-DK.stldr")
-  board_runner_args(stm32cubeprogrammer "--download-address=0x70000000")
+
+  set(app_base_addr 0x70000000)
+  if(CONFIG_BOOTLOADER_MCUBOOT)
+    dt_nodelabel(slot0_partition NODELABEL "slot0_partition" REQUIRED)
+    dt_reg_addr(slot0_partition_addr PATH ${slot0_partition})
+    math(EXPR app_base_addr "${app_base_addr} + ${slot0_partition_addr}")
+  endif()
+    board_runner_args(stm32cubeprogrammer "--download-address=${app_base_addr}")
 endif()
+
 
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
