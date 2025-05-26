@@ -202,7 +202,6 @@ static void mcp2515_convert_canframe_to_mcp2515frame(const struct can_frame
 {
 	uint8_t rtr;
 	uint8_t dlc;
-	uint8_t data_idx;
 
 	if ((source->flags & CAN_FRAME_IDE) != 0) {
 		target[MCP2515_FRAME_OFFSET_SIDH] = source->id >> 21;
@@ -223,7 +222,7 @@ static void mcp2515_convert_canframe_to_mcp2515frame(const struct can_frame
 	target[MCP2515_FRAME_OFFSET_DLC] = rtr | dlc;
 
 	if (rtr == 0U) {
-		for (data_idx = 0U; data_idx < dlc; data_idx++) {
+		for (uint8_t data_idx = 0U; data_idx < dlc; data_idx++) {
 			target[MCP2515_FRAME_OFFSET_D0 + data_idx] =
 				source->data[data_idx];
 		}
@@ -233,8 +232,6 @@ static void mcp2515_convert_canframe_to_mcp2515frame(const struct can_frame
 static void mcp2515_convert_mcp2515frame_to_canframe(const uint8_t *source,
 						     struct can_frame *target)
 {
-	uint8_t data_idx;
-
 	memset(target, 0, sizeof(*target));
 
 	if (source[MCP2515_FRAME_OFFSET_SIDL] & BIT(3)) {
@@ -255,7 +252,7 @@ static void mcp2515_convert_mcp2515frame_to_canframe(const uint8_t *source,
 	if ((source[MCP2515_FRAME_OFFSET_DLC] & BIT(6)) != 0) {
 		target->flags |= CAN_FRAME_RTR;
 	} else {
-		for (data_idx = 0U; data_idx < target->dlc; data_idx++) {
+		for (uint8_t data_idx = 0U; data_idx < target->dlc; data_idx++) {
 			target->data[data_idx] = source[MCP2515_FRAME_OFFSET_D0 +
 							data_idx];
 		}
