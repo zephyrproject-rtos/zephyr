@@ -918,11 +918,9 @@ static int mcp2515_init(const struct device *dev)
 	k_mutex_init(&dev_data->mutex);
 	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
 
-	if (dev_cfg->common.phy != NULL) {
-		if (!device_is_ready(dev_cfg->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
-			return -ENODEV;
-		}
+	if (dev_cfg->common.phy != NULL && !device_is_ready(dev_cfg->common.phy)) {
+		LOG_ERR("CAN transceiver not ready");
+		return -ENODEV;
 	}
 
 	if (!spi_is_ready_dt(&dev_cfg->bus)) {
