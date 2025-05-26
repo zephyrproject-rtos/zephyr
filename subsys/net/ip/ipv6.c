@@ -1030,6 +1030,12 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 
 			break;
 		case 8:
+			if (sizeof(lladdr->addr) < 8) {
+				NET_ERR("Invalid link layer address length %zu, expecting 8",
+					sizeof(lladdr->addr));
+				return -EINVAL;
+			}
+
 			memcpy(&tmp_addr.s6_addr[8], lladdr->addr, lladdr->len);
 			tmp_addr.s6_addr[8] ^= 0x02;
 			break;
