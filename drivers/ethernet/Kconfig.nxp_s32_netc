@@ -1,4 +1,4 @@
-# Copyright 2022-2023 NXP
+# Copyright 2022-2023, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_NXP_S32_NETC
@@ -91,6 +91,13 @@ config ETH_NXP_S32_MAC_FILTER_TABLE_SIZE
 	range 8 128
 	help
 	  Maximum number of entries supported in the MAC filter hash table.
+
+config ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE
+	int "Multicast MAC filter hash table size"
+	default 8
+	range 0 8
+	help
+	  Maximum number of entries supported in the Multicast MAC filter hash table.
 
 config ETH_NXP_S32_VSI_INIT_PRIORITY
 	int
