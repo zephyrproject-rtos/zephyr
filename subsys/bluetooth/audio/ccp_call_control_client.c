@@ -55,6 +55,8 @@ static struct bt_ccp_call_control_client clients[CONFIG_BT_MAX_CONN];
 
 static struct bt_ccp_call_control_client *get_client_by_conn(const struct bt_conn *conn)
 {
+	__ASSERT(bt_conn_is_type(conn, BT_CONN_TYPE_LE), "Invalid connection type for %p", conn);
+
 	return &clients[bt_conn_index(conn)];
 }
 
@@ -173,6 +175,11 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 	CHECKIF(out_client == NULL) {
 		LOG_DBG("client is NULL");
 
+		return -EINVAL;
+	}
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		LOG_DBG("Invalid connection type for %p", conn);
 		return -EINVAL;
 	}
 
