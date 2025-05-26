@@ -3,7 +3,7 @@
 Overview
 ********
 
-The `WCH`_ LinkW hardware provides support for QingKe 32-bit RISC-V4C
+The `WCH`_ LinkW hardware provides support for QingKe V4C 32-bit RISC-V
 processor and the following devices:
 
 * CLOCK
@@ -17,7 +17,7 @@ The `WCH webpage on LinkW`_ contains the LinkW's schematic.
 Hardware
 ********
 
-The QingKe 32-bit RISC-V4C processor of the WCH LinkW is clocked by an external
+The QingKe V4C 32-bit RISC-V processor of the WCH LinkW is clocked by an external
 32 MHz crystal or the internal 8 MHz oscillator and runs up to 144 MHz.
 The CH32V208 SoC Features 4 USART, 4 GPIO ports, 2 SPI, 2 I2C, ADC, RTC,
 CAN, 2 USB Device, USB Host, OPA, ETH with PHY, several timers, and BLE 5.3.

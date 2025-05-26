@@ -13,7 +13,7 @@ information and the datasheet.
 Hardware
 ********
 
-The QingKe 32-bit RISC-V2C processor of the WCH CH32V006EVT is clocked by an
+The QingKe V2C 32-bit RISC-V processor of the WCH CH32V006EVT is clocked by an
 external crystal and runs at 48 MHz.
 
 Supported Features
