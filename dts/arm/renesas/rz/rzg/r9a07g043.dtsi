@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	compatible = "renesas,r9a07g043";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(200)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		scif0: serial@4004b800 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <0>;
+			reg = <0x4004b800 DT_SIZE_K(1)>;
+			interrupts = <380 1>, <381 1>, <382 1>, <383 1>, <384 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif1: serial@4004bc00 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <1>;
+			reg = <0x4004bc00 DT_SIZE_K(1)>;
+			interrupts = <385 1>, <386 1>, <387 1>, <388 1>, <389 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif2: serial@4004c000 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <2>;
+			reg = <0x4004c000 DT_SIZE_K(1)>;
+			interrupts = <390 1>, <391 1>, <392 1>, <393 1>, <394 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif3: serial@4004c400 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <3>;
+			reg = <0x4004c400 DT_SIZE_K(1)>;
+			interrupts = <395 1>, <396 1>, <397 1>, <398 1>, <399 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif4: serial@4004c800 {
+			compatible = "renesas,rz-scif-uart";
+			channel = <4>;
+			reg = <0x4004c800 DT_SIZE_K(1)>;
+			interrupts = <400 1>, <401 1>, <402 1>, <403 1>, <404 1>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <7>;
+};
