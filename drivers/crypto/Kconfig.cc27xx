@@ -1,0 +1,25 @@
+# CC27XX AES accelerator configuration options
+
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_CC27XX
+	bool "CC27XX AES accelerator driver"
+	default y
+	depends on DT_HAS_TI_CC27XX_AES_ENABLED
+	help
+	  Enable TI CC27XX AES accelerator driver.
+	  This driver supports the following modes:
+	  - ECB (Electronic Code Book) encryption only (decryption not supported by the hardware)
+	  - CTR (Counter)
+	  - CCM (CTR with CBC-MAC)
+	  - CTR-DRBG (Counter - Deterministic Random Bit Generator)
+
+config CRYPTO_CC27XX_DMA_DRIVEN
+	bool "DMA support for TI CC27XX AES accelerator devices"
+	depends on CRYPTO_CC27XX
+	select DMA
+	help
+	  DMA driven transactions for the AES peripheral.
+	  DMA driven mode offloads data transfer tasks from the CPU
+	  and requires fewer interrupts to handle the AES operations.
