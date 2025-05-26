@@ -1119,7 +1119,7 @@ static int adc_ad7124_get_read_chan_id(const struct device *dev, uint16_t *chan_
 
 static int adc_ad7124_perform_read(const struct device *dev)
 {
-	int ret;
+	int ret = 0;
 	struct adc_ad7124_data *data = dev->data;
 	uint16_t ch_idx = -1;
 	uint16_t prev_ch_idx = -1;
