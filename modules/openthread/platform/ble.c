@@ -19,8 +19,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-/* Zephyr OpenThread integration Library */
-#include <zephyr/net/openthread.h>
+#include <openthread.h>
 
 /* OpenThread BLE driver API */
 #include <openthread/error.h>
@@ -163,7 +162,7 @@ static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3)
 			ring_buf_get(&ot_plat_ble_ring_buf, ot_plat_ble_msg_buf, len);
 		}
 
-		openthread_api_mutex_lock(openthread_get_default_context());
+		openthread_mutex_lock();
 
 		if (len <= PLAT_BLE_MSG_DATA_MAX) {
 			/* The packet parameter in otPlatBleGattServerOnWriteRequest is not const.
@@ -178,7 +177,7 @@ static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3)
 		} else if (len == PLAT_BLE_MSG_DISCONNECT) {
 			otPlatBleGapOnDisconnected(ble_openthread_instance, 0);
 		}
-		openthread_api_mutex_unlock(openthread_get_default_context());
+		openthread_mutex_unlock();
 	}
 }
 

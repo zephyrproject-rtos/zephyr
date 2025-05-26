@@ -17,9 +17,10 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #include <zephyr/init.h>
 #include <zephyr/version.h>
 #include <zephyr/sys/check.h>
-#include <zephyr/net/openthread.h>
 
 #include "platform/platform-zephyr.h"
+
+#include <openthread.h>
 
 #include <openthread/child_supervision.h>
 #include <openthread/cli.h>
