@@ -157,6 +157,13 @@ config WIFI_SILABS_SIWX91X_ENABLE_THREE_SSL_SOCKETS
 	  over the network, utilizing the Network Co-Processor available in
 	  the SiWx91x series.
 
+config WIFI_SILABS_SIWX91X_SSL_HIGH_STREAMING
+	bool "Offloaded implementation for SSL/TLS high speed"
+	help
+	  Enable this option to achieve high-throughput SSL/TLS streaming,
+	  This implementation is provided by the Network Co-Processor present
+	  on SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y

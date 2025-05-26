@@ -127,6 +127,9 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 	}
 
 	boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_SSL_HIGH_STREAMING)) {
+		boot_config->feature_bit_map |= SL_SI91X_FEAT_SSL_HIGH_STREAMING_BIT;
+	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_SNTP_CLIENT)) {
 		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_SNTP_CLIENT;
 	}
