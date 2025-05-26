@@ -260,7 +260,7 @@ static void cu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	piggy_back = (ntf->hdr.type != NODE_RX_TYPE_RETAIN);
 
@@ -300,7 +300,7 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	if (!tx) {
 		/* Allocate tx node if non pre-alloc'ed */
 		tx = llcp_tx_alloc(conn, ctx);
-		LL_ASSERT(tx);
+		LL_ASSERT_DBG(tx);
 	}
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -323,7 +323,7 @@ static void lp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 #endif /* CONFIG_BT_CENTRAL */
 	default:
 		/* Unknown opcode */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -408,7 +408,7 @@ static void lp_cu_send_conn_param_req(struct ll_conn *conn, struct proc_ctx *ctx
 #endif /* CONFIG_BT_PERIPHERAL */
 		default:
 			/* Unknown role */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 	}
@@ -491,7 +491,7 @@ static void lp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 #endif /* CONFIG_BT_CENTRAL */
 		default:
 			/* Unknown procedure */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -761,7 +761,7 @@ static void lp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }
@@ -815,7 +815,7 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	if (!tx) {
 		/* Allocate tx node if non pre-alloc'ed */
 		tx = llcp_tx_alloc(conn, ctx);
-		LL_ASSERT(tx);
+		LL_ASSERT_DBG(tx);
 	}
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -841,7 +841,7 @@ static void rp_cu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 		break;
 	default:
 		/* Unknown opcode */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -869,7 +869,7 @@ static void rp_cu_conn_param_req_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	piggy_back = (ntf->hdr.type != NODE_RX_TYPE_RETAIN);
 
@@ -903,7 +903,7 @@ static void rp_cu_send_conn_update_ind_finalize(struct ll_conn *conn, struct pro
 						uint8_t evt, void *param)
 {
 	/* Central role path, should not get here with !=NULL rx-node reference */
-	LL_ASSERT(ctx->node_ref.rx == NULL);
+	LL_ASSERT_DBG(ctx->node_ref.rx == NULL);
 	/* We pre-alloc NTF node */
 	ctx->node_ref.rx = llcp_ntf_alloc();
 
@@ -1015,7 +1015,7 @@ static void rp_cu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 			break;
 		default:
 			/* Unknown procedure */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -1162,7 +1162,7 @@ static void rp_cu_state_wait_conn_param_req_reply_continue(struct ll_conn *conn,
 			}
 		} else {
 			/* Unknown role */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 		}
 		break;
 	default:
@@ -1313,7 +1313,7 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 			break;
 		default:
 			/* Unknown role */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 		}
 	default:
 		/* Ignore other evts */
@@ -1382,7 +1382,7 @@ static void rp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }

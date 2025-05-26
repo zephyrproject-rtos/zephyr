@@ -158,7 +158,7 @@ void ull_peripheral_iso_release(uint16_t cis_handle)
 	struct ll_conn_iso_group *cig;
 
 	cis = ll_conn_iso_stream_get(cis_handle);
-	LL_ASSERT(cis);
+	LL_ASSERT_DBG(cis);
 
 	cig = cis->group;
 
@@ -318,7 +318,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	}
 
 	conn = ll_conn_get(cis->lll.acl_handle);
-	LL_ASSERT(conn != NULL);
+	LL_ASSERT_DBG(conn != NULL);
 
 	cis_offset = sys_get_le24(ind->cis_offset);
 
@@ -366,7 +366,7 @@ static void ticker_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
@@ -378,8 +378,8 @@ void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
 	uint8_t ticker_id_cig = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
 	uint32_t ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 				    ticker_id_cig, ticker_op_cb, NULL);
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
 
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
@@ -393,8 +393,8 @@ void ull_peripheral_iso_update_ticker(struct ll_conn_iso_group *cig,
 				     ull_conn_iso_ticker_cb, cig,
 				     ticker_op_cb, NULL);
 
-	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-		  (ticker_status == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
 
 }
 
@@ -412,8 +412,9 @@ void ull_peripheral_iso_update_peer_sca(struct ll_conn *acl)
 		if (!cig || !cig->lll.num_cis) {
 			continue;
 		}
+
 		cis = ll_conn_iso_stream_get_by_group(cig, NULL);
-		LL_ASSERT(cis);
+		LL_ASSERT_DBG(cis);
 
 		uint16_t cis_handle = cis->lll.handle;
 

@@ -159,7 +159,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -218,7 +218,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	ctx->tx_opcode = pdu->llctrl.opcode;
@@ -255,7 +255,7 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 		break;
 	default:
 		/* Unexpected PDU, should not get through, so ASSERT */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -268,7 +268,7 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 		break;
 	default:
 		/* Unexpected PDU, should not get through, so ASSERT */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -305,7 +305,7 @@ static void lp_comm_ntf_cte_req(struct ll_conn *conn, struct proc_ctx *ctx, stru
 		break;
 	default:
 		/* Unexpected PDU, should not get through, so ASSERT */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -393,7 +393,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	if (!ntf) {
 		/* Allocate ntf node */
 		ntf = llcp_ntf_alloc();
-		LL_ASSERT(ntf);
+		LL_ASSERT_DBG(ntf);
 		piggy_back = 0U;
 	}
 
@@ -424,7 +424,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -585,7 +585,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -716,7 +716,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -819,7 +819,7 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		/* No response expected */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
@@ -844,7 +844,7 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 	default:
 		/* Unknown opcode */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -889,7 +889,7 @@ static void lp_comm_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx
 			 * out of the ones handled in ull_llcp_common should end up waiting for
 			 * non-piggy-back'ed NTF
 			 */
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 		break;
@@ -919,7 +919,7 @@ static void lp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -1034,7 +1034,7 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown opcode */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -1045,7 +1045,7 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Allocate tx node */
 	tx = llcp_tx_alloc(conn, ctx);
-	LL_ASSERT(tx);
+	LL_ASSERT_DBG(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
 
@@ -1115,7 +1115,7 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	ctx->tx_opcode = pdu->llctrl.opcode;
@@ -1147,10 +1147,10 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
 	ctx->node_ref.rx = NULL;
-	LL_ASSERT(ntf);
+	LL_ASSERT_DBG(ntf);
 
 	/* This should be an 'old' RX node, so put/sched when done */
-	LL_ASSERT(ntf->hdr.type == NODE_RX_TYPE_RETAIN);
+	LL_ASSERT_DBG(ntf->hdr.type == NODE_RX_TYPE_RETAIN);
 
 	/* And release memory if no NTF to be generated */
 	ntf->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -1159,7 +1159,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 		ntf->hdr.handle = conn->lll.handle;
 		pdu = (struct pdu_data *)ntf->pdu;
-		LL_ASSERT(ctx->proc == PROC_DATA_LENGTH_UPDATE);
+		LL_ASSERT_DBG(ctx->proc == PROC_DATA_LENGTH_UPDATE);
 		llcp_ntf_encode_length_change(conn, pdu);
 	}
 
@@ -1291,7 +1291,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -1313,7 +1313,7 @@ static void rp_comm_st_postpone_terminate(struct ll_conn *conn, struct proc_ctx 
 {
 	switch (evt) {
 	case RP_COMMON_EVT_RUN:
-		LL_ASSERT(ctx->proc == PROC_TERMINATE);
+		LL_ASSERT_DBG(ctx->proc == PROC_TERMINATE);
 
 		/* Note: now we terminate, mimicking legacy LLCP behaviour
 		 * A check should be added to ensure that the ack of the terminate_ind was
@@ -1415,7 +1415,7 @@ static void rp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
