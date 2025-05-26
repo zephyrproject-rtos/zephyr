@@ -2023,7 +2023,10 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 				struct ll_conn *conn;
 
 				cis = ll_conn_iso_stream_get(stream_handle);
+
 				conn = ll_conn_get(cis->lll.acl_handle);
+				LL_ASSERT(conn != NULL);
+
 				phy = conn->lll.phy_rx;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
