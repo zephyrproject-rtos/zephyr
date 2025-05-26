@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,6 +133,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_vsi) == 1, "Only one VSI enabl
 		}										\
 	};											\
 												\
+	IF_ENABLED(CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE,				\
+		(static const Netc_Eth_Ip_SiMulticastMACHashFilterDataType			\
+		nxp_s32_eth##n##_multicast_entry_init						\
+		[CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE];))				\
+												\
 	static const Netc_Eth_Ip_StationInterfaceConfigType nxp_s32_eth##n##_si_cfg = {		\
 		.NumberOfRxBDR = 1,								\
 		.NumberOfTxBDR = 1,								\
@@ -141,7 +146,10 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_vsi) == 1, "Only one VSI enabl
 		.EnableSIMsgInterrupt = true,							\
 		.RxInterrupts = (uint32_t)true,							\
 		.TxInterrupts = (uint32_t)false,						\
-		.MACFilterTableMaxNumOfEntries = CONFIG_ETH_NXP_S32_MAC_FILTER_TABLE_SIZE,	\
+IF_ENABLED(CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE,					\
+		(.NumberOfConfiguredMulticastMacHashFilterEntries =				\
+					CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE,	\
+		.MulticastMACFilterEntries = &nxp_s32_eth##n##_multicast_entry_init,))		\
 		.VSItoPSIMsgCommand = &nxp_s32_eth##n##_vsi2psi_msg,				\
 	};											\
 												\
