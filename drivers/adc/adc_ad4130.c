@@ -822,7 +822,7 @@ static int adc_ad4130_wait_for_conv_ready(const struct device *dev)
 
 static int adc_ad4130_perform_read(const struct device *dev)
 {
-	int ret;
+	int ret = 0;
 	struct adc_ad4130_data *data = dev->data;
 	uint16_t ch_idx = AD4130_INVALID_CHANNEL;
 	uint16_t prev_ch_idx = AD4130_INVALID_CHANNEL;
