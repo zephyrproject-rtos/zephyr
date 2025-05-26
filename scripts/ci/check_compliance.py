@@ -6,6 +6,8 @@
 
 import argparse
 import collections
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import functools
 from itertools import takewhile
 import json
 import logging
@@ -69,8 +71,12 @@ def get_shas(refspec):
     return git('rev-list',
                f'--max-count={-1 if "." in refspec else 1}', refspec).split()
 
+@functools.lru_cache(maxsize=128)
 def get_files(filter=None, paths=None):
     filter_arg = (f'--diff-filter={filter}',) if filter else ()
+    # Convert paths to tuple if it's a list/iterable for cache compatibility
+    if paths is not None and not isinstance(paths, tuple):
+        paths = tuple(paths)
     paths_arg = ('--', *paths) if paths else ()
     out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
     files = out.splitlines()
