@@ -35,6 +35,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT renesas_smartbond_crypto
 #elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc23x0_aes)
 #define CRYPTO_DEV_COMPAT ti_cc23x0_aes
+#elif DT_HAS_COMPAT_STATUS_OKAY(ti_cc27xx_aes)
+#define CRYPTO_DEV_COMPAT ti_cc27xx_aes
 #elif CONFIG_CRYPTO_SI32
 #define CRYPTO_DEV_COMPAT silabs_si32_aes
 #elif CONFIG_CRYPTO_ESP32_AES
