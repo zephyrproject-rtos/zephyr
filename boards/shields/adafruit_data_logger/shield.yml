@@ -6,3 +6,6 @@ shield:
   name: adafruit_data_logger
   full_name: Adafruit Data Logger Shield
   vendor: adafruit
+  supported_features:
+    - rtc
+    - sdhc
