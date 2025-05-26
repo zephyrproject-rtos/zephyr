@@ -28,7 +28,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line);
 #endif
 
 #define LL_ASSERT_ERR(cond) LL_ASSERT(cond)
-#define LL_ASSERT_DBG(cond) LL_ASSERT(cond)
+#define LL_ASSERT_DBG(cond)
 
 #if defined(CONFIG_BT_CTLR_ASSERT_VENDOR)
 #define LL_ASSERT_INFO1(cond, param) \
