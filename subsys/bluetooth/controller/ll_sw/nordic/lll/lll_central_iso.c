@@ -96,11 +96,11 @@ void lll_central_iso_prepare(void *param)
 
 	/* Initiate HF clock start up */
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0U, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static int init_reset(void)
@@ -142,7 +142,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		cis_lll = ull_conn_iso_lll_stream_get_by_group(cig_lll, &cis_handle_curr);
 	} while (cis_lll && !cis_lll->active);
 
-	LL_ASSERT(cis_lll);
+	LL_ASSERT_DBG(cis_lll);
 
 	/* Unconditionally set the prepared flag.
 	 * This flag ensures current CIG event does not pick up a new CIS becoming active when the
@@ -155,7 +155,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
-	LL_ASSERT(conn_lll != NULL);
+	LL_ASSERT_DBG(conn_lll != NULL);
 
 	/* Pick the event_count calculated in the ULL prepare */
 	cis_lll->event_count = cis_lll->event_count_prepare;
@@ -394,7 +394,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Prepare is done */
 	ret = lll_prepare_done(cig_lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_M(1);
 
@@ -434,7 +434,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		/* Get reference to ACL context */
 		const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
-		LL_ASSERT(conn_lll != NULL);
+		LL_ASSERT_DBG(conn_lll != NULL);
 
 		if (conn_lll->enc_rx) {
 			radio_ccm_disable();
@@ -448,7 +448,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Get reference to CIG LLL context */
 	cig_lll = prepare_param->param;
@@ -477,13 +477,13 @@ static void isr_tx(void *param)
 
 	/* Acquire rx node for reception */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
-	LL_ASSERT(conn_lll != NULL);
+	LL_ASSERT_DBG(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */
@@ -526,7 +526,7 @@ static void isr_tx(void *param)
 	}
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	LL_ASSERT_ERR(!radio_is_ready());
 
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + cis_lll->tifs_us +
@@ -584,12 +584,12 @@ static void isr_tx(void *param)
 			       (cis_lll->sub_interval * se_curr);
 
 		start_us = radio_tmr_start_us(1U, subevent_us);
-		LL_ASSERT(start_us == (subevent_us + 1U));
+		LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 		/* Get reference to ACL context */
 		evt_conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
-		LL_ASSERT(evt_conn_lll != NULL);
+		LL_ASSERT_DBG(evt_conn_lll != NULL);
 
 		/* Calculate the radio channel to use for next subevent */
 		data_chan_id = lll_chan_id(cis_lll->access_addr);
@@ -628,7 +628,7 @@ static void isr_tx(void *param)
 		subevent_us += next_cis_lll->offset - cis_offset_first;
 
 		start_us = radio_tmr_start_us(1U, subevent_us);
-		LL_ASSERT(start_us == (subevent_us + 1U));
+		LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 		/* Event counter value,  0-15 bit of cisEventCounter */
@@ -636,7 +636,7 @@ static void isr_tx(void *param)
 
 		/* Get reference to ACL context */
 		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
-		LL_ASSERT(next_conn_lll != NULL);
+		LL_ASSERT_DBG(next_conn_lll != NULL);
 
 		/* Calculate the radio channel to use for ISO event */
 		data_chan_id = lll_chan_id(next_cis_lll->access_addr);
@@ -744,7 +744,7 @@ static void isr_rx(void *param)
 
 		/* Get reference to received PDU */
 		node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-		LL_ASSERT(node_rx);
+		LL_ASSERT_DBG(node_rx);
 		pdu_rx = (void *)node_rx->pdu;
 
 		/* Tx ACK */
@@ -777,7 +777,7 @@ static void isr_rx(void *param)
 			/* Get reference to ACL context */
 			const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
-			LL_ASSERT(conn_lll != NULL);
+			LL_ASSERT_DBG(conn_lll != NULL);
 
 			/* If required, wait for CCM to finish
 			 */
@@ -785,7 +785,7 @@ static void isr_rx(void *param)
 				uint32_t done;
 
 				done = radio_ccm_is_done();
-				LL_ASSERT(done);
+				LL_ASSERT_ERR(done);
 
 				if (!radio_ccm_mic_is_valid()) {
 					/* Record MIC invalid */
@@ -866,7 +866,7 @@ isr_rx_next_subevent:
 
 		/* Get reference to ACL context */
 		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
-		LL_ASSERT(next_conn_lll != NULL);
+		LL_ASSERT_DBG(next_conn_lll != NULL);
 
 		/* Calculate CIS channel if not already calculated */
 		if (se_curr < cis_lll->nse) {
@@ -884,7 +884,7 @@ isr_rx_next_subevent:
 			subevent_us += next_cis_lll->offset - cis_offset_first;
 
 			start_us = radio_tmr_start_us(1U, subevent_us);
-			LL_ASSERT(start_us == (subevent_us + 1U));
+			LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 			/* Event counter value,  0-15 bit of cisEventCounter */
@@ -1043,7 +1043,7 @@ static void isr_prepare_subevent(void *param)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
-	LL_ASSERT(conn_lll != NULL);
+	LL_ASSERT_DBG(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */
@@ -1102,7 +1102,7 @@ static void isr_prepare_subevent(void *param)
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	start_us = radio_tmr_start_us(1U, subevent_us);
-	LL_ASSERT(start_us == (subevent_us + 1U));
+	LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	/* Compensate for the 1 us added by radio_tmr_start_us() */
@@ -1134,7 +1134,7 @@ static void isr_prepare_subevent(void *param)
 #endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	/* assert if radio packet ptr is not set and radio started tx */
-	LL_ASSERT(!radio_is_ready());
+	LL_ASSERT_ERR(!radio_is_ready());
 
 	radio_isr_set(isr_tx, param);
 
@@ -1155,7 +1155,7 @@ static void isr_done(void *param)
 	payload_count_flush_or_inc_on_close(cis_lll);
 
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_CIS;
 	e->trx_performed_bitmask = trx_performed_bitmask;

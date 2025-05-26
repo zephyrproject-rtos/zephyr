@@ -42,7 +42,7 @@ void mayfly_enable_cb(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 		break;
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }
@@ -62,7 +62,7 @@ uint32_t mayfly_is_enabled(uint8_t caller_id, uint8_t callee_id)
 		return irq_is_enabled(HAL_SWI_JOB_IRQ);
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -120,7 +120,7 @@ void mayfly_pend(uint8_t caller_id, uint8_t callee_id)
 		break;
 
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }
