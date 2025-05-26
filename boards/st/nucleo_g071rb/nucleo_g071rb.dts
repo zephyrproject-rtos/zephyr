@@ -173,8 +173,8 @@
 
 		/* Set 4KB of storage at the end of 128KB flash */
 		storage_partition: partition@1f000 {
-			label = "storage";
 			reg = <0x0001f000 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };

@@ -227,19 +227,19 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
-			label = "image-0";
 			reg = <0x10000 DT_SIZE_K(928)>;
+			label = "image-0";
 		};
 
 		storage_partition: partition@f8000 {
-			label = "storage";
 			reg = <0xf8000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };
@@ -338,13 +338,13 @@ zephyr_udc0: &usbotg_fs {
 			#size-cells = <1>;
 
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(864)>;
+				label = "image-1";
 			};
 
 			slot2_partition: partition@d8000 {
-				label = "image-3";
 				reg = <0x000d8000 DT_SIZE_M(7)>;
+				label = "image-3";
 			};
 		};
 	};

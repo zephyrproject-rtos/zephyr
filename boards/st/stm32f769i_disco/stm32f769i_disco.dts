@@ -207,13 +207,13 @@ arduino_serial: &usart6 {};
 			#size-cells = <1>;
 
 			slot1_partition: partition@0 {
-				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(16)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@1a0000 {
-				label = "storage";
 				reg = <0x001a0000 DT_SIZE_M(62)>;
+				label = "storage";
 			};
 		};
 	};

@@ -161,8 +161,8 @@ stm32_lp_tick_source: &lptim1 {
 		#size-cells = <1>;
 
 		storage_partition: partition@1c0000 {
-			label = "storage";
 			reg = <0x001c0000 DT_SIZE_K(256)>;
+			label = "storage";
 		};
 	};
 };

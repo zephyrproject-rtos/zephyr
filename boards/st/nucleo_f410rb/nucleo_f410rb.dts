@@ -128,8 +128,8 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -138,8 +138,8 @@
 		 * 0x0000ffff
 		 */
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(32)>;
+			label = "image-0";
 		};
 
 		/*
@@ -147,13 +147,13 @@
 		 * 0x001ffff
 		 */
 		slot1_partition: partition@10000 {
-			label = "image-1";
 			reg = <0x00010000 DT_SIZE_K(32)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@18000 {
-			label = "image-scratch";
 			reg = <0x00018000 DT_SIZE_K(32)>;
+			label = "image-scratch";
 		};
 	};
 };

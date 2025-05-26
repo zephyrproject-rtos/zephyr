@@ -175,8 +175,8 @@
 
 		/* Set 8KB of storage at the end of 192KB flash */
 		storage_partition: partition@2e000 {
-			label = "storage";
 			reg = <0x0002e000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

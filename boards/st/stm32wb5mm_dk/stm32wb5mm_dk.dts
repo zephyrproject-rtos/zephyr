@@ -146,28 +146,28 @@ zephyr_udc0: &usb {
 		 */
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(400)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@70000 {
-			label = "image-1";
 			reg = <0x00070000 DT_SIZE_K(400)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@d4000 {
-			label = "image-scratch";
 			reg = <0x000d4000 DT_SIZE_K(16)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@d8000 {
-			label = "storage";
 			reg = <0x000d8000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

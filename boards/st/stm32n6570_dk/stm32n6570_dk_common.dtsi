@@ -336,8 +336,8 @@ zephyr_udc0: &usbotg_hs1 {
 			#size-cells = <1>;
 
 			storage_partition: partition@7ff0000 {
-				label = "storage";
 				reg = <0x7ff0000 DT_SIZE_K(64)>;
+				label = "storage";
 			};
 		};
 	};

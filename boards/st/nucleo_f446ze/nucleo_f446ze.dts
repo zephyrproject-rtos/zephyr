@@ -194,8 +194,8 @@ zephyr_udc0: &usbotg_fs {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -205,21 +205,23 @@ zephyr_udc0: &usbotg_fs {
 		 * by the application.
 		 */
 		storage_partition: partition@10000 {
-			label = "storage";
 			reg = <0x00010000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(128)>;
+			label = "image-0";
 		};
+
 		slot1_partition: partition@40000 {
-			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(128)>;
+			label = "image-1";
 		};
+
 		scratch_partition: partition@60000 {
-			label = "image-scratch";
 			reg = <0x00060000 DT_SIZE_K(128)>;
+			label = "image-scratch";
 		};
 	};
 };
