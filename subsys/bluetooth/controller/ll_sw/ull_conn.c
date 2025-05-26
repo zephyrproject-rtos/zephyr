@@ -180,6 +180,10 @@ uint16_t ll_conn_handle_get(struct ll_conn *conn)
 
 struct ll_conn *ll_conn_get(uint16_t handle)
 {
+	if (handle >= CONFIG_BT_MAX_CONN) {
+		return NULL;
+	}
+
 	return mem_get(conn_pool, sizeof(struct ll_conn), handle);
 }
 
@@ -187,12 +191,8 @@ struct ll_conn *ll_connected_get(uint16_t handle)
 {
 	struct ll_conn *conn;
 
-	if (handle >= CONFIG_BT_MAX_CONN) {
-		return NULL;
-	}
-
 	conn = ll_conn_get(handle);
-	if (conn->lll.handle != handle) {
+	if ((conn == NULL) || (conn->lll.handle != handle)) {
 		return NULL;
 	}
 
@@ -429,6 +429,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 		}
 		return 0;
 	}
+
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	if (IS_CIS_HANDLE(handle)) {
 		cis = ll_iso_stream_connected_get(handle);
@@ -445,6 +446,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 
 				} else if (cis->group->state == CIG_STATE_INITIATING) {
 					conn = ll_connected_get(cis->lll.acl_handle);
+					LL_ASSERT(conn != NULL);
 
 					/* CIS is not yet established - try to cancel procedure */
 					if (ull_cp_cc_cancel(conn)) {
@@ -805,6 +807,9 @@ struct lll_conn *ull_conn_lll_get(uint16_t handle)
 	struct ll_conn *conn;
 
 	conn = ll_conn_get(handle);
+	if (conn == NULL) {
+		return NULL;
+	}
 
 	return &conn->lll;
 }
@@ -1553,22 +1558,32 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		if (handle != LLL_HANDLE_INVALID) {
 			struct ll_conn *conn = ll_conn_get(handle);
 
+			LL_ASSERT(conn != NULL);
+
 			ull_cp_tx_ack(conn, tx);
 		}
 
 		/* release ctrl mem if points to itself */
 		if (link->next == (void *)tx) {
+			struct ll_conn *conn;
+
+			/* Tx Node not re-used, ensure link->next is non-NULL */
 			LL_ASSERT(link->next);
 
-			struct ll_conn *conn = ll_connected_get(handle);
+			conn = ll_connected_get(handle);
+			LL_ASSERT(conn != NULL);
 
 			ull_cp_release_tx(conn, tx);
+
 			return;
+
 		} else if (!tx) {
 			/* Tx Node re-used to enqueue new ctrl PDU */
 			return;
 		}
+
 		LL_ASSERT(!link->next);
+
 	} else if (handle == LLL_HANDLE_INVALID) {
 		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
 	} else {
@@ -1672,6 +1687,7 @@ static int init_reset(void)
 	for (uint16_t handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
 		struct ll_conn *conn;
 
+		/* handle in valid range, conn will be non-NULL */
 		conn = ll_conn_get(handle);
 		conn->lll.handle = LLL_HANDLE_INVALID;
 	}
@@ -1840,6 +1856,7 @@ static inline void disable(uint16_t handle)
 	int err;
 
 	conn = ll_conn_get(handle);
+	LL_ASSERT(conn != NULL);
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_BASE + handle,
 					conn, &conn->lll);

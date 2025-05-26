@@ -485,6 +485,8 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 				if (!cis->event_expire) {
 					struct ll_conn *conn = ll_conn_get(cis->lll.acl_handle);
 
+					LL_ASSERT(conn != NULL);
+
 					cis->event_expire = RADIO_CONN_EVENTS(
 							conn->supervision_timeout * 10U * 1000U,
 							cig->iso_interval * CONN_INT_UNIT_US);
@@ -526,8 +528,11 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 	if (cis && (ticks_drift_plus || ticks_drift_minus)) {
 		uint8_t ticker_id = TICKER_ID_CONN_ISO_BASE +
 				    ll_conn_iso_group_handle_get(cig);
-		struct ll_conn *conn = ll_connected_get(cis->lll.acl_handle);
 		uint32_t ticker_status;
+		struct ll_conn *conn;
+
+		conn = ll_connected_get(cis->lll.acl_handle);
+		LL_ASSERT(conn != NULL);
 
 		ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
 					      TICKER_USER_ID_ULL_HIGH,
@@ -1252,6 +1257,8 @@ static void cis_disabled_cb(void *param)
 			ll_iso_stream_released_cb_t cis_released_cb;
 
 			conn = ll_conn_get(cis->lll.acl_handle);
+			LL_ASSERT(conn != NULL);
+
 			cis_released_cb = cis->released_cb;
 			cis->released_cb = NULL;
 
@@ -1314,6 +1321,7 @@ static void cis_disabled_cb(void *param)
 				ll_rx_put_sched(node_terminate->hdr.link, node_terminate);
 			} else {
 				conn = ll_conn_get(cis->lll.acl_handle);
+				LL_ASSERT(conn != NULL);
 
 				/* CIS was not established - complete the procedure with error */
 				if (ull_cp_cc_awaiting_established(conn)) {
