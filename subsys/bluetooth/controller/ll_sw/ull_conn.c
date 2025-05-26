@@ -1570,8 +1570,8 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 			/* Tx Node not re-used, ensure link->next is non-NULL */
 			LL_ASSERT(link->next);
 
+			/* Pass conn as-is to ull_cp_release_tx(), NULL check is done there */
 			conn = ll_connected_get(handle);
-			LL_ASSERT(conn != NULL);
 
 			ull_cp_release_tx(conn, tx);
 
