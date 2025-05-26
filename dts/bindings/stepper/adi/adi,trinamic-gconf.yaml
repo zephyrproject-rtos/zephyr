@@ -81,3 +81,5 @@ properties:
          (depending on velocity thresholds). Switch from
          off to on state while in stand-still and at IHOLD=
          nominal IRUN current, only.
+         Note that some motors have issues with a combination of stealth-chop and
+         high current, forcing a reduction of irun
