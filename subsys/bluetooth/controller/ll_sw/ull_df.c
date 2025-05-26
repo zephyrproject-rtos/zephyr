@@ -451,7 +451,7 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 
 #if defined(CONFIG_BT_CTLR_DF_DEBUG_ENABLE)
 		/* When CTE is enabled there should be no iq report allocated */
-		IF_SINGLE_ADV_SYNC_SET(LL_ASSERT(iq_report_alloc_count == 0));
+		IF_SINGLE_ADV_SYNC_SET(LL_ASSERT_DBG(iq_report_alloc_count == 0));
 #endif /* CONFIG_BT_CTLR_DF_DEBUG_ENABLE */
 
 		/* Enable of already enabled CTE updates AoA configuration */
@@ -510,7 +510,7 @@ uint8_t ll_df_set_cl_iq_sampling_enable(uint16_t handle,
 		 * Periodic sync lost event also disables the CTE sampling.
 		 */
 		err = ull_sync_slot_update(sync, slot_plus_us, slot_minus_us);
-		LL_ASSERT(err == 0 || err == -ENOENT);
+		LL_ASSERT_DBG(err == 0 || err == -ENOENT);
 	}
 
 	return 0;
@@ -580,7 +580,7 @@ void ull_df_iq_report_mem_release(struct node_rx_pdu *rx)
 
 void ull_iq_report_link_inc_quota(int8_t delta)
 {
-	LL_ASSERT(delta <= 0 || mem_link_iq_report_quota_pdu < (IQ_REPORT_CNT));
+	LL_ASSERT_DBG(delta <= 0 || mem_link_iq_report_quota_pdu < (IQ_REPORT_CNT));
 
 	mem_link_iq_report_quota_pdu += delta;
 }
