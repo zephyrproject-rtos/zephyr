@@ -5,11 +5,31 @@
 
 <form class="filter-form" aria-label="Filter boards & shields by name, architecture, and vendor">
 
-  <div class="form-group" style="flex-basis: 100%">
+  <div class="form-group" style="flex-basis: 60%">
     <label for="name">Name</label>
     <input type="text" id="name"
       placeholder='Name (or partial name) of the board/shield, e.g. "reel board", "nucleo", &hellip;'
       oninput="filterBoards()" />
+  </div>
+
+  <div class="form-group">
+    <label>Showing</label>
+    <div class="visibility-toggles">
+      <div class="toggle-group">
+        <input type="checkbox" id="show-boards" checked>
+        <label for="show-boards" class="toggle-label">
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Boards</span>
+        </label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="show-shields" checked>
+        <label for="show-shields" class="toggle-label">
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Shields</span>
+        </label>
+      </div>
+    </div>
   </div>
 
   <div class="form-group">
