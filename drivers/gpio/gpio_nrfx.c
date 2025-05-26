@@ -258,8 +258,10 @@ static int gpio_nrfx_pin_get_config(const struct device *port, gpio_pin_t pin,
 	switch (pull) {
 	case NRF_GPIO_PIN_PULLUP:
 		*flags |= GPIO_PULL_UP;
+		break;
 	case NRF_GPIO_PIN_PULLDOWN:
 		*flags |= GPIO_PULL_DOWN;
+		break;
 	default:
 		break;
 	}
