@@ -141,9 +141,9 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 		reason = K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_2ND_LEVEL;
 		LOG_ERR("2nd Level Synchronous External Abort Translation Table @ 0x%08x", addr);
 		break;
-	case FSR_FS_TLB_CONFLICT_FAULT:
-		reason = K_ERR_ARM_TLB_CONFLICT_FAULT;
-		LOG_ERR("Table Conflict Fault @ 0x%08x", addr);
+	case FSR_FS_TLB_CONFLICT_ABORT:
+		reason = K_ERR_ARM_TLB_CONFLICT_ABORT;
+		LOG_ERR("TLB Conflict Abort @ 0x%08x", addr);
 		break;
 	case FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL:
 		reason = K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL;
