@@ -22,10 +22,8 @@ static bool hrf_ntf_enabled;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-		      BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
-		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
-		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL), BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
 #if defined(CONFIG_BT_EXT_ADV)
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 #endif /* CONFIG_BT_EXT_ADV */
@@ -63,7 +61,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	(void)atomic_set_bit(state, STATE_DISCONNECTED);
 }
 
-static void recycled(void) {
+static void recycled(void)
+{
 	printk("connection recycled. Restart advertising a connection");
 	const int err = start_adv();
 	if (err) {
@@ -81,8 +80,7 @@ static void hrs_ntf_changed(bool enabled)
 {
 	hrf_ntf_enabled = enabled;
 
-	printk("HRS notification status changed: %s\n",
-	       enabled ? "enabled" : "disabled");
+	printk("HRS notification status changed: %s\n", enabled ? "enabled" : "disabled");
 }
 
 static struct bt_hrs_cb hrs_cb = {
@@ -136,12 +134,12 @@ static void hrs_notify(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(LED0_NODE)
 #include <zephyr/drivers/gpio.h>
-#define HAS_LED     1
+#define HAS_LED 1
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 #define BLINK_ONOFF K_MSEC(500)
 
 static struct k_work_delayable blink_work;
-static bool                  led_is_on;
+static bool led_is_on;
 
 static void blink_timeout(struct k_work *work)
 {
@@ -197,7 +195,8 @@ static void blink_stop(void)
 #endif /* LED0_NODE */
 #endif /* CONFIG_GPIO */
 
-static int start_adv(void) {
+static int start_adv(void)
+{
 #if !defined(CONFIG_BT_EXT_ADV)
 	printk("Starting Legacy Advertising (connectable and scannable)\n");
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
@@ -206,7 +205,7 @@ static int start_adv(void) {
 		return err;
 	}
 
-#else /* CONFIG_BT_EXT_ADV */
+#else  /* CONFIG_BT_EXT_ADV */
 	struct bt_le_adv_param adv_param = {
 		.id = BT_ID_DEFAULT,
 		.sid = 0U,
@@ -265,7 +264,7 @@ int main(void)
 
 	bt_hrs_cb_register(&hrs_cb);
 
-	err == start_adv();
+	err = start_adv();
 	if (0 == err) {
 		printk("Advertising successfully started\n");
 	} else {
@@ -307,7 +306,7 @@ int main(void)
 				return 0;
 			}
 
-#else /* CONFIG_BT_EXT_ADV */
+#else  /* CONFIG_BT_EXT_ADV */
 			printk("Starting Extended Advertising (connectable and non-scannable)\n");
 			err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 			if (err) {
