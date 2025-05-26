@@ -62,7 +62,7 @@
 		};
 
 		hfxo: hfxo {
-			compatible = "nordic,nrf-hfxo";
+			compatible = "nordic,nrf54l-hfxo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
