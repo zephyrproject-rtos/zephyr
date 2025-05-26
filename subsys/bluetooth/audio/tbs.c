@@ -2323,10 +2323,17 @@ int bt_tbs_unregister_bearer(uint8_t bearer_index)
 int bt_tbs_accept(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_acc ccp = {.call_index = call_index,
-					       .opcode = BT_TBS_CALL_OPCODE_ACCEPT};
+	const struct bt_tbs_call_cp_acc ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_ACCEPT,
+	};
 	int err;
+	int ret;
+
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+	}
 
 	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
 	if (err != 0) {
@@ -2334,105 +2341,111 @@ int bt_tbs_accept(uint8_t call_index)
 		return -EBUSY;
 	}
 
-	if (inst != NULL) {
-		status = accept_call(inst, &ccp);
-	}
-
-	if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+	ret = accept_call(inst, &ccp);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(inst);
 	}
 
 	err = k_mutex_unlock(&inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return status;
+	return ret;
 }
 
 int bt_tbs_hold(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_hold ccp = {.call_index = call_index,
-						.opcode = BT_TBS_CALL_OPCODE_HOLD};
+	const struct bt_tbs_call_cp_hold ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_HOLD,
+	};
+	int ret;
+	int err;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		status = tbs_hold_call(inst, &ccp);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = tbs_hold_call(inst, &ccp);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_retrieve(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_retrieve ccp = {.call_index = call_index,
-						    .opcode = BT_TBS_CALL_OPCODE_RETRIEVE};
+	const struct bt_tbs_call_cp_retrieve ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_RETRIEVE,
+	};
+	int ret;
+	int err;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		status = retrieve_call(inst, &ccp);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = retrieve_call(inst, &ccp);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_terminate(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_term ccp = {.call_index = call_index,
-						.opcode = BT_TBS_CALL_OPCODE_TERMINATE};
+	const struct bt_tbs_call_cp_term ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_TERMINATE,
+	};
+	int ret;
+	int err;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		status = terminate_call(inst, &ccp, BT_TBS_REASON_SERVER_ENDED_CALL);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = terminate_call(inst, &ccp, BT_TBS_REASON_SERVER_ENDED_CALL);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_originate(uint8_t bearer_index, char *remote_uri, uint8_t *call_index)
@@ -2481,38 +2494,44 @@ int bt_tbs_join(uint8_t call_index_cnt, uint8_t *call_indexes)
 	struct tbs_inst *inst;
 	uint8_t buf[CONFIG_BT_TBS_MAX_CALLS + sizeof(struct bt_tbs_call_cp_join)];
 	struct bt_tbs_call_cp_join *ccp = (struct bt_tbs_call_cp_join *)buf;
-	int status = -EINVAL;
+	int err;
+	int ret;
 
-	if (call_index_cnt != 0 && call_indexes != 0) {
-		inst = lookup_inst_by_call_index(call_indexes[0]);
-	} else {
-		return status;
+	if (call_index_cnt == 0U) {
+		LOG_DBG("call_index_cnt is 0");
+		return -EINVAL;
 	}
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-
-		ccp->opcode = BT_TBS_CALL_OPCODE_JOIN;
-		(void)memcpy(ccp->call_indexes, call_indexes,
-			     MIN(call_index_cnt, CONFIG_BT_TBS_MAX_CALLS));
-
-		status = join_calls(inst, ccp, call_index_cnt);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (call_indexes == NULL) {
+		LOG_DBG("call_indexes is NULL");
+		return -EINVAL;
 	}
 
-	return status;
+	inst = lookup_inst_by_call_index(call_indexes[0]);
+
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_indexes[0]);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+	}
+
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ccp->opcode = BT_TBS_CALL_OPCODE_JOIN;
+	(void)memcpy(ccp->call_indexes, call_indexes, MIN(call_index_cnt, CONFIG_BT_TBS_MAX_CALLS));
+
+	ret = join_calls(inst, ccp, call_index_cnt);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 int bt_tbs_remote_answer(uint8_t call_index)
@@ -2523,12 +2542,7 @@ int bt_tbs_remote_answer(uint8_t call_index)
 	int ret;
 
 	if (inst == NULL) {
-		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
-	}
-
-	call = lookup_call_in_inst(inst, call_index);
-
-	if (call == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
@@ -2538,7 +2552,10 @@ int bt_tbs_remote_answer(uint8_t call_index)
 		return -EBUSY;
 	}
 
-	if (call->state == BT_TBS_CALL_STATE_ALERTING) {
+	call = lookup_call_in_inst(inst, call_index);
+	if (call == NULL) {
+		ret = BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+	} else if (call->state == BT_TBS_CALL_STATE_ALERTING) {
 		call->state = BT_TBS_CALL_STATE_ACTIVE;
 		notify_calls(inst);
 		ret = BT_TBS_RESULT_CODE_SUCCESS;
@@ -2558,15 +2575,14 @@ int bt_tbs_remote_hold(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
 	struct bt_tbs_call *call;
-	uint8_t status;
 	int err;
+	int ret;
 
 	if (inst == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
 	call = lookup_call_in_inst(inst, call_index);
-
 	if (call == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
@@ -2579,37 +2595,36 @@ int bt_tbs_remote_hold(uint8_t call_index)
 
 	if (call->state == BT_TBS_CALL_STATE_ACTIVE) {
 		call->state = BT_TBS_CALL_STATE_REMOTELY_HELD;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else if (call->state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
 		call->state = BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else {
-		status = BT_TBS_RESULT_CODE_STATE_MISMATCH;
+		ret = BT_TBS_RESULT_CODE_STATE_MISMATCH;
 	}
 
-	if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(inst);
 	}
 
 	err = k_mutex_unlock(&inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return status;
+	return ret;
 }
 
 int bt_tbs_remote_retrieve(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
 	struct bt_tbs_call *call;
-	int status;
 	int err;
+	int ret;
 
 	if (inst == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
 	call = lookup_call_in_inst(inst, call_index);
-
 	if (call == NULL) {
 		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
@@ -2621,50 +2636,54 @@ int bt_tbs_remote_retrieve(uint8_t call_index)
 	}
 	if (call->state == BT_TBS_CALL_STATE_REMOTELY_HELD) {
 		call->state = BT_TBS_CALL_STATE_ACTIVE;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else if (call->state == BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD) {
 		call->state = BT_TBS_CALL_STATE_LOCALLY_HELD;
-		status = BT_TBS_RESULT_CODE_SUCCESS;
+		ret = BT_TBS_RESULT_CODE_SUCCESS;
 	} else {
-		status = BT_TBS_RESULT_CODE_STATE_MISMATCH;
+		ret = BT_TBS_RESULT_CODE_STATE_MISMATCH;
 	}
 
-	if (status == BT_TBS_RESULT_CODE_SUCCESS) {
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(inst);
 	}
 
 	err = k_mutex_unlock(&inst->mutex);
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-	return status;
+	return ret;
 }
 
 int bt_tbs_remote_terminate(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);
-	int status = -EINVAL;
-	const struct bt_tbs_call_cp_term ccp = {.call_index = call_index,
-						.opcode = BT_TBS_CALL_OPCODE_TERMINATE};
+	const struct bt_tbs_call_cp_term ccp = {
+		.call_index = call_index,
+		.opcode = BT_TBS_CALL_OPCODE_TERMINATE,
+	};
+	int err;
+	int ret;
 
-	if (inst != NULL) {
-		int err;
-
-		err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
-		if (err != 0) {
-			LOG_DBG("Failed to lock mutex");
-			return -EBUSY;
-		}
-		status = terminate_call(inst, &ccp, BT_TBS_REASON_REMOTE_ENDED_CALL);
-
-		if (status == BT_TBS_RESULT_CODE_SUCCESS) {
-			notify_calls(inst);
-		}
-
-		err = k_mutex_unlock(&inst->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (inst == NULL) {
+		LOG_DBG("Could not lookup inst from call index %u", call_index);
+		return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
 	}
 
-	return status;
+	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
+	}
+
+	ret = terminate_call(inst, &ccp, BT_TBS_REASON_REMOTE_ENDED_CALL);
+	if (ret == BT_TBS_RESULT_CODE_SUCCESS) {
+		notify_calls(inst);
+	}
+
+	err = k_mutex_unlock(&inst->mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
 }
 
 static void set_incoming_call_target_bearer_uri_changed_cb(struct tbs_flags *flags)
