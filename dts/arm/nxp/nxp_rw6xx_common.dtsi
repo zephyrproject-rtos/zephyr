@@ -297,7 +297,7 @@
 		status = "disabled";
 	};
 
-	flexcomm14: flexcom@126000 {
+	flexcomm14: flexcomm@126000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x126000 0x2000>;
 		interrupts = <20 0>;
