@@ -13,7 +13,15 @@
   aria-label="Open the documentation page for {{ shield.full_name }}"
   data-name="{{ shield.full_name}}"
   data-vendor="{{ shield.vendor }}"
-  tabindex="0">
+  data-supported-features="
+    {%- set feature_types = [] -%}
+    {%- for feature in shield.supported_features -%}
+      {%- if feature not in feature_types -%}
+        {%- set _ = feature_types.append(feature) -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{- feature_types|join(' ') -}}
+  " tabindex="0">
   <div class="vendor">{{ vendors[shield.vendor] }}</div>
   {% if shield.image -%}
   <img alt="A picture of the {{ shield.full_name }} shield"
