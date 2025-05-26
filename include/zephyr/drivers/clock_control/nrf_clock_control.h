@@ -162,6 +162,13 @@ void z_nrf_clock_bt_ctlr_hf_request(void);
  */
 void z_nrf_clock_bt_ctlr_hf_release(void);
 
+/**
+ * @brief Get clock startup time
+ *
+ * @retval HFCLK startup time in microseconds
+ */
+uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
+
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
 
 
