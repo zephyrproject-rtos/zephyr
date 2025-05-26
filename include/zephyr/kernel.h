@@ -3261,10 +3261,21 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
  */
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @defgroup semaphore_apis Semaphore APIs
+ * @ingroup kernel_apis
+ * @{
  */
 
+/**
+ * @brief Semaphore structure
+ *
+ * This structure is used to represent a semaphore.
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_sem {
+	/**
+	 * @cond INTERNAL_HIDDEN
+	 */
 	_wait_q_t wait_q;
 	unsigned int count;
 	unsigned int limit;
@@ -3276,7 +3287,12 @@ struct k_sem {
 #ifdef CONFIG_OBJ_CORE_SEM
 	struct k_obj_core  obj_core;
 #endif
+	/** @endcond */
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
 	{ \
@@ -3287,13 +3303,7 @@ struct k_sem {
 	}
 
 /**
- * INTERNAL_HIDDEN @endcond
- */
-
-/**
- * @defgroup semaphore_apis Semaphore APIs
- * @ingroup kernel_apis
- * @{
+ * @endcond
  */
 
 /**
