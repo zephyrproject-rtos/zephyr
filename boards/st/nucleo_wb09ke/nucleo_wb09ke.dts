@@ -148,15 +148,15 @@
 &spi3 {
 	pinctrl-0 = <&spi3_nss_pa9 &spi3_sck_pb3 &spi3_miso_pa8 &spi3_mosi_pa11>;
 	pinctrl-names = "default";
-	status = "okay";
 	/* Select 64MHz clock for SPI3 */
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 14)>,
 		<&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
+	status = "okay";
 };
 
 &timers2 {
-	status = "okay";
 	st,prescaler = <10000>;
+	status = "okay";
 
 	pwm2: pwm {
 		/* PWM on red_led_1 */

@@ -67,12 +67,12 @@
 };
 
 &i2c2 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB1, 22)>,
 		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
 	pinctrl-0 = <&i2c2_scl_pd14 &i2c2_sda_pd4>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
@@ -237,7 +237,6 @@ csi_22pins_i2c: &i2c1 {
 };
 
 &sdmmc2 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(AHB5, 7)>,
 		 <&rcc STM32_SRC_IC4 SDMMC2_SEL(2)>;
 	pinctrl-0 = <&sdmmc2_d0_pc4 &sdmmc2_d1_pc5
@@ -248,6 +247,7 @@ csi_22pins_i2c: &i2c1 {
 	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &spi5 {
@@ -344,7 +344,6 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth1_rgmii_gtx_clk_pf0
 		     &eth1_rgmii_clk125_pf2
 		     &eth1_rgmii_rx_clk_pf7
@@ -362,12 +361,13 @@ zephyr_udc0: &usbotg_hs1 {
 	pinctrl-names = "default";
 	phy-connection-type = "rgmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth1_mdio_pd12 &eth1_mdc_pd1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -386,16 +386,16 @@ zephyr_udc0: &usbotg_hs1 {
 			&ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
 			&ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
 	pinctrl-names = "default";
-	disp-on-gpios = <&gpioq 3 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioq 6 GPIO_ACTIVE_HIGH>;
-
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+	disp-on-gpios = <&gpioq 3 GPIO_ACTIVE_HIGH>;
 	ext-sdram = <&psram>;
-
-	status = "okay";
-
-	width = <800>;
 	height = <480>;
+	width = <800>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -410,10 +410,6 @@ zephyr_udc0: &usbotg_hs1 {
 		hfront-porch = <8>;
 		vfront-porch = <8>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
 
 csi_22pins_interface: &dcmipp {

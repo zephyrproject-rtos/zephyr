@@ -147,20 +147,20 @@
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pa4 &spi2_sck_pa5 &spi2_miso_pa7 &spi2_mosi_pa6>;
 	pinctrl-names = "default";
-	status = "okay";
 	/* Select 32MHz clock for SPI2 */
 	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
 		<&rcc STM32_SRC_SYSCLK SPI2_I2S2_SEL(1)>;
+	status = "okay";
 };
 
 &timers1 {
-	status = "okay";
 	st,prescaler = <10000>;
+	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch3_pb2>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

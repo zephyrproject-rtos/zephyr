@@ -123,9 +123,9 @@
 };
 
 zephyr_udc0: &usb {
-	status = "okay";
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &aes1 {
@@ -184,8 +184,8 @@ zephyr_udc0: &usb {
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pb13 &i2c3_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	vl53l0x@29 {
 		compatible = "st,vl53l0x";

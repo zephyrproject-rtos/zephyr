@@ -67,17 +67,15 @@
 			&ltdc_b4_pd0 &ltdc_b5_pd1 &ltdc_b6_pe7 &ltdc_b7_pe8
 			&ltdc_de_pd6 &ltdc_clk_pd3 &ltdc_hsync_pe0 &ltdc_vsync_pd13>;
 	pinctrl-names = "default";
-	disp-on-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
-	status = "okay";
-
-	width = <800>;
-	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
-
 	def-back-color-red = <0x00>;
 	def-back-color-green = <0x00>;
 	def-back-color-blue = <0x00>;
+	disp-on-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+	height = <480>;
+	width = <800>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -104,9 +102,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>; /* 4MHz (reset value) */
 	msi-pll-mode;
+	status = "okay";
 };
 
 &clk_lse {
@@ -169,15 +167,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &spi1 {
@@ -192,9 +190,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch2_pe11>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -203,9 +201,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

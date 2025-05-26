@@ -105,18 +105,17 @@
 		&ltdc_b4_pk3 &ltdc_b5_pk4 &ltdc_b6_pk5 &ltdc_b7_pk6
 		&ltdc_de_pk7 &ltdc_clk_pi14 &ltdc_hsync_pi12 &ltdc_vsync_pi9>;
 	pinctrl-names = "default";
-
-	disp-on-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
-
-	ext-sdram = <&sdram2>;
-	status = "okay";
-
 	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>,
 		<&rcc STM32_SRC_PLL3_R NO_SEL>;
-
-	width = <480>;
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+	disp-on-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&sdram2>;
 	height = <272>;
+	width = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -131,10 +130,6 @@
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
 
 &pll {
@@ -241,11 +236,11 @@
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;

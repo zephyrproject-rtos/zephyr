@@ -91,9 +91,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &gpioi {
@@ -155,8 +155,9 @@ stm32_lp_tick_source: &lptim1 {
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
 	status = "okay";
+
+	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
 
 	hci_spi: bluenrg-lp@0 {
 		compatible = "st,hci-spi-v2";
@@ -206,32 +207,32 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &timers4 {
-	status = "okay";
 	st,prescaler = <1>;
+	status = "okay";
 
 	pwm4: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim4_ch1_pb6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &timers3 {
-	status = "okay";
 	st,prescaler = <255>;
+	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pe4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	lps22df@5d {
 		compatible = "st,lps22df";
@@ -258,8 +259,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &aes {
@@ -317,7 +318,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2
@@ -329,6 +329,7 @@ zephyr_udc0: &usbotg_fs {
 	bus-width = <4>;
 	clk-div = <4>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &flash0 {

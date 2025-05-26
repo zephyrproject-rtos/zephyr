@@ -138,8 +138,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&spi2_mosi_pc3 &spi2_sck_pb13>;
-	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 

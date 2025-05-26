@@ -87,9 +87,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>; /* 4MHz (reset value) */
 	msi-pll-mode;
+	status = "okay";
 };
 
 &clk_lse {
@@ -139,22 +139,22 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pg14 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &i2c6 {
 	pinctrl-0 = <&i2c6_scl_pd1 &i2c6_sda_pd0>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };
 
 &spi2 {
@@ -176,9 +176,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch2_pe11>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -187,9 +187,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

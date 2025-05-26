@@ -136,9 +136,9 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
@@ -159,9 +159,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
