@@ -170,7 +170,9 @@ SECTIONS {
    * .text.
    */
   .imrdata : ALIGN(4096) {
+    __imr_data_start = .;
     *(.imrdata .imrdata.*)
+    __imr_data_end = .;
   } >imr
 
   /* Cold code in IMR memory */
