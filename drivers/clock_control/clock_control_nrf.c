@@ -436,6 +436,13 @@ void z_nrf_clock_bt_ctlr_hf_release(void)
 	irq_unlock(key);
 }
 
+#if DT_NODE_EXISTS(DT_NODELABEL(hfxo))
+uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void)
+{
+	return DT_PROP(DT_NODELABEL(hfxo), startup_time_us);
+}
+#endif
+
 static int stop(const struct device *dev, clock_control_subsys_t subsys,
 		uint32_t ctx)
 {
