@@ -120,8 +120,8 @@
 
 		/* Reserve the final 16 KiB for file system partition */
 		storage_partition: partition@7c000 {
-			label = "storage";
 			reg = <0x0007c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };

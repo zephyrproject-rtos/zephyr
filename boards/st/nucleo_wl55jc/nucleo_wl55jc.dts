@@ -204,19 +204,19 @@ stm32_lp_tick_source: &lptim1 {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@8000 {
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(104)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@22000 {
-			label = "image-1";
 			reg = <0x00022000 DT_SIZE_K(104)>;
+			label = "image-1";
 		};
 
 		/*
@@ -224,8 +224,8 @@ stm32_lp_tick_source: &lptim1 {
 		 * flash.
 		 */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

@@ -180,27 +180,27 @@ zephyr_udc0: &usbotg_fs {
 		 * there is no way to make the part smaller.
 		 */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(256)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@40000 {
-			label = "image-0";
 			reg = <0x00040000 DT_SIZE_K(256)>;
+			label = "image-0";
 		};
 
 		/* backup slot: 256KB */
 		slot1_partition: partition@80000 {
-			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(256)>;
+			label = "image-1";
 		};
 
 		/* scratch slot: 256KB */
 		scratch_partition: partition@C0000 {
-			label = "image-scratch";
 			reg = <0x000C0000 DT_SIZE_K(256)>;
+			label = "image-scratch";
 		};
 	};
 };

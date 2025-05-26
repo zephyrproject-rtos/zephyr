@@ -211,8 +211,8 @@ zephyr_udc0: &usbotg_fs {
 
 		/* 32KB for bootloader */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -230,20 +230,20 @@ zephyr_udc0: &usbotg_fs {
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(256)>;
+			label = "image-0";
 		};
 
 		/* backup slot: 256KB */
 		slot1_partition: partition@60000 {
-			label = "image-1";
 			reg = <0x00060000 DT_SIZE_K(256)>;
+			label = "image-1";
 		};
 
 		/* swap slot: 128KB */
 		scratch_partition: partition@a0000 {
-			label = "image-scratch";
 			reg = <0x000a0000 DT_SIZE_K(128)>;
+			label = "image-scratch";
 		};
 	};
 };

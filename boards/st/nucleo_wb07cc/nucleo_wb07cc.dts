@@ -172,8 +172,8 @@
 
 		/* Set aside 16KB of storage at the end of 256KB flash */
 		storage_partition: partition@3c000 {
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

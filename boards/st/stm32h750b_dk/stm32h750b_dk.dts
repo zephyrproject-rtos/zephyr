@@ -90,8 +90,8 @@
 
 		/* Flash has 128KB sector size */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 		};
 	};
 };
@@ -201,18 +201,18 @@
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
-				label = "image-0";
 				reg = <0x00000000 DT_SIZE_K(2048)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@200000 {
-				label = "image-1";
 				reg = <0x00200000 DT_SIZE_K(2048)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@400000 {
-				label = "storage";
 				reg = <0x00400000 DT_SIZE_K(128)>;
+				label = "storage";
 			};
 		};
 	};
