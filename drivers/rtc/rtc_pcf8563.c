@@ -335,22 +335,22 @@ static int pcf8563_alarm_get_time(const struct device *dev, uint16_t id, uint16_
 	*mask = 0U;
 
 	/* The first bit is the enabled flag */
-	if (regs[0] & BIT(7)) {
+	if (!(regs[0] & BIT(7))) {
 		timeptr->tm_min = bcd2bin(regs[0] & GENMASK(6, 0));
 		*mask |= RTC_ALARM_TIME_MASK_MINUTE;
 	}
 
-	if (regs[1] & BIT(7)) {
+	if (!(regs[1] & BIT(7))) {
 		timeptr->tm_hour = bcd2bin(regs[1] & GENMASK(5, 0));
 		*mask |= RTC_ALARM_TIME_MASK_HOUR;
 	}
 
-	if (regs[2] & BIT(7)) {
+	if (!(regs[2] & BIT(7))) {
 		timeptr->tm_mday = bcd2bin(regs[2] & GENMASK(5, 0));
 		*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
 	}
 
-	if (regs[3] & BIT(7)) {
+	if (!(regs[3] & BIT(7))) {
 		timeptr->tm_wday = bcd2bin(regs[3] & GENMASK(2, 0));
 		*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
 	}
