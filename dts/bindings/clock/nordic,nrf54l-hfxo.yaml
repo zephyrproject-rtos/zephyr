@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nordic nRF high-frequency crystal oscillator
+description: Nordic nRF high-frequency crystal oscillator (nRF54L series)
 
-compatible: "nordic,nrf-hfxo"
+compatible: "nordic,nrf54l-hfxo"
 
 include: fixed-clock.yaml
 
