@@ -146,9 +146,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -198,7 +198,7 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };

@@ -147,9 +147,9 @@
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -177,7 +177,6 @@
 		     &octospim_p1_io6_pg9 &octospim_p1_io7_pd7
 		     &octospim_p1_dqs_pb2>;
 	pinctrl-names = "default";
-
 	status = "okay";
 
 	mx25lm51245: ospi-nor-flash@90000000 {
@@ -249,7 +248,7 @@
 };
 
 zephyr_udc0: &usbotg_hs {
-	status = "okay";
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };

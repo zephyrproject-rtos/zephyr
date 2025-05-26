@@ -102,15 +102,15 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	lis3mdl-magn@1e {
 		compatible = "st,lis3mdl-magn";
@@ -208,9 +208,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa15>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -240,10 +240,8 @@ zephyr_udc0: &usbotg_fs {
 		     &octospim_p1_io0_pe12 &octospim_p1_io1_pe13
 		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
 	pinctrl-names = "default";
-
 	dmas = <&dma1 0 40 STM32_DMA_PERIPH_RX>; /* request 40 for OCTOSPI1 */
 	dma-names = "tx_rx";
-
 	status = "okay";
 
 	mx25r6435f: ospi-nor-flash@90000000 {
@@ -253,7 +251,6 @@ zephyr_udc0: &usbotg_fs {
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc="PP_1_4_4";
-
 		status = "okay";
 
 		partitions {

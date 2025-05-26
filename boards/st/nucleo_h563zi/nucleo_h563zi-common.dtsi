@@ -124,9 +124,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch3_pb0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

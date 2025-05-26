@@ -140,8 +140,8 @@ zephyr_udc0: &usbotg_fs {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &timers12 {
@@ -149,9 +149,9 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm12: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim12_ch1_pb14>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -196,7 +196,6 @@ zephyr_udc0: &usbotg_fs {
  *          must be in ON state.
  */
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -207,12 +206,13 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -221,10 +221,10 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
 };
 
 &flash0 {

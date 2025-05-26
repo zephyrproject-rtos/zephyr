@@ -122,10 +122,10 @@
 };
 
 &rtc {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>,
 			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	prescaler = <32768>;
+	status = "okay";
 };
 
 &usart1 {
@@ -165,8 +165,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb1>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &adc4 {
@@ -186,9 +186,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pa9>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

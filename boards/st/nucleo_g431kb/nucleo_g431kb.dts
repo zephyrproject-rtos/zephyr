@@ -90,9 +90,9 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	pwm4: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim4_ch3_pb8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

@@ -82,9 +82,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &pll1 {
@@ -187,6 +187,7 @@ stm32_lp_tick_source: &lptim1 {
 	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pb4 &spi3_mosi_pb5>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	cs-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 
 	hci_spi: bluenrg-2@0 {
@@ -204,8 +205,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	stts22h@3f {
 		compatible = "st,stts22h";
@@ -233,9 +234,9 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	pwm5: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim5_ch3_ph12>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -291,7 +292,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &sdmmc1 {
-	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
@@ -300,6 +300,7 @@ zephyr_udc0: &usbotg_fs {
 	bus-width = <4>;
 	clk-div = <4>;
 	disk-name = "SD";
+	status = "okay";
 };
 
 &flash0 {
