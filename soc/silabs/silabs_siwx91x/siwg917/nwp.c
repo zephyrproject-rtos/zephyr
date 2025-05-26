@@ -151,6 +151,10 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT)) {
 		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_EMB_MQTT_ENABLE;
 	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENABLE_THREE_SSL_SOCKETS)) {
+		boot_config->ext_tcp_ip_feature_bit_map |=
+			SL_SI91X_EXT_TCP_IP_FEAT_SSL_THREE_SOCKETS;
+	}
 	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
 	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
 

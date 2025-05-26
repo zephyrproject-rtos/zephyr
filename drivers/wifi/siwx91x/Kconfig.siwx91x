@@ -150,6 +150,13 @@ config WIFI_SILABS_SIWX91X_ENABLE_SINGLE_TLS_SOCKET
 	  implementation over the network provided by the Network
 	  Co-Processor present on SiWx91x series.
 
+config WIFI_SILABS_SIWX91X_ENABLE_THREE_SSL_SOCKETS
+	bool "Offloaded implementation of 3 SSL/TLS sockets"
+	help
+	  Enable this option to support up to three SSL socket implementations
+	  over the network, utilizing the Network Co-Processor available in
+	  the SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
