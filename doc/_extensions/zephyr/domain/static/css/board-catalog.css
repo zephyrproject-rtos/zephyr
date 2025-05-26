@@ -125,6 +125,58 @@
   background-color: transparent;
 }
 
+.visibility-toggles {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-group input {
+  display: none;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.toggle-switch {
+  width: 36px;
+  height: 18px;
+  background: #ccc;
+  border-radius: 18px;
+  position: relative;
+  transition: 0.3s;
+}
+
+.toggle-switch::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
+}
+
+.toggle-text {
+  font-size: 14px;
+  text-transform: none;
+}
+
+input:checked + .toggle-label .toggle-switch {
+  background: var(--admonition-note-title-background-color);
+}
+
+input:checked + .toggle-label .toggle-switch::before {
+  left: 20px;
+}
+
 #catalog {
   display: flex;
   flex-wrap: wrap;
