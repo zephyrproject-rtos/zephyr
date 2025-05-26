@@ -6,10 +6,11 @@
 
 #include <zephyr/kernel.h>
 #include <stdio.h>
-#include <zephyr/net/openthread.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
+
+#include <openthread.h>
 
 #include <openthread/cli.h>
 #include <openthread/instance.h>
