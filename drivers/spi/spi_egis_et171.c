@@ -12,13 +12,30 @@
 #define DT_DRV_COMPAT egis_et171_spi
 
 typedef void (*et171_cfg_func_t)(void);
+#ifdef CONFIG_DCACHE
 #ifdef CONFIG_CACHE_MANAGEMENT
 #include <zephyr/cache.h>
+#define IS_ALIGN(x)          (((uintptr_t)(x) & (sys_cache_data_line_size_get() - 1)) == 0)
 #define DRAM_START	     CONFIG_SRAM_BASE_ADDRESS
 #define DRAM_SIZE	     KB(CONFIG_SRAM_SIZE)
 #define DRAM_END	     (DRAM_START + DRAM_SIZE - 1)
 #define IS_ADDR_IN_RAM(addr) (((addr) >= DRAM_START) && ((addr) <= DRAM_END))
 #endif
+
+struct revert_info {
+	void *dst_buf;
+	void *src_buf;
+	size_t len;
+};
+
+struct dma_align_context {
+	struct spi_buf *rx_bufs;
+	size_t count;
+	struct revert_info *revert_infos;
+	void *align_buffer;
+};
+#endif
+
 #ifdef CONFIG_EGIS_SPI_DMA_MODE
 
 #define EGIS_SPI_DMA_ERROR_FLAG 0x01
@@ -50,6 +67,10 @@ struct spi_et171_data {
 #ifdef CONFIG_EGIS_SPI_DMA_MODE
 	struct stream dma_rx;
 	struct stream dma_tx;
+#endif
+#ifdef CONFIG_DCACHE
+	struct dma_align_context dma_buf_ctx;
+	struct spi_buf_set aligned_rx_bufs;
 #endif
 };
 
@@ -621,13 +642,8 @@ static int spi_transfer_dma(const struct device *dev)
 }
 #endif
 
-static int transceive(const struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs,
-			  bool asynchronous,
-			  spi_callback_t cb,
-			  void *userdata)
+static int transceive(const struct device *dev, const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_et171_cfg *const cfg = dev->config;
 	struct spi_et171_data * const data = dev->data;
@@ -635,69 +651,335 @@ static int transceive(const struct device *dev,
 	int error, dfs;
 	size_t chunk_len;
 
-	spi_context_lock(ctx, asynchronous, cb, userdata, config);
 	error = configure(dev, config);
-
-	if (error == 0) {
-		data->busy = true;
-
-		dfs = SPI_WORD_SIZE_GET(ctx->config->operation) >> 3;
-		spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, dfs);
-		spi_context_cs_control(ctx, true);
-
-		sys_set_bits(SPI_CTRL(cfg->base), CTRL_TX_FIFO_RST_MSK);
-		sys_set_bits(SPI_CTRL(cfg->base), CTRL_RX_FIFO_RST_MSK);
-
-		if (!spi_context_rx_on(ctx)) {
-			chunk_len = spi_context_total_tx_len(ctx);
-		} else if (!spi_context_tx_on(ctx)) {
-			chunk_len = spi_context_total_rx_len(ctx);
-		} else {
-			size_t rx_len = spi_context_total_rx_len(ctx);
-			size_t tx_len = spi_context_total_tx_len(ctx);
-
-			chunk_len = MIN(rx_len, tx_len);
-		}
-
-		data->chunk_len = chunk_len;
-
-#ifdef CONFIG_EGIS_SPI_DMA_MODE
-		if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
-			error = spi_transfer_dma(dev);
-			if (error != 0) {
-				spi_context_cs_control(ctx, false);
-				goto out;
-			}
-		} else {
-#endif /* CONFIG_EGIS_SPI_DMA_MODE */
-
-			error = spi_transfer(dev);
-			if (error != 0) {
-				spi_context_cs_control(ctx, false);
-				goto out;
-			}
-
-#ifdef CONFIG_EGIS_SPI_DMA_MODE
-		}
-#endif /* CONFIG_EGIS_SPI_DMA_MODE */
-		error = spi_context_wait_for_completion(ctx);
-		spi_context_cs_control(ctx, false);
+	if (error != 0) {
+		goto out;
 	}
-out:
-	spi_context_release(ctx, error);
 
+	data->busy = true;
+
+	dfs = SPI_WORD_SIZE_GET(ctx->config->operation) >> 3;
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, dfs);
+	spi_context_cs_control(ctx, true);
+
+	sys_set_bits(SPI_CTRL(cfg->base), CTRL_TX_FIFO_RST_MSK);
+	sys_set_bits(SPI_CTRL(cfg->base), CTRL_RX_FIFO_RST_MSK);
+
+	if (!spi_context_rx_on(ctx)) {
+		chunk_len = spi_context_total_tx_len(ctx);
+	} else if (!spi_context_tx_on(ctx)) {
+		chunk_len = spi_context_total_rx_len(ctx);
+	} else {
+		size_t rx_len = spi_context_total_rx_len(ctx);
+		size_t tx_len = spi_context_total_tx_len(ctx);
+
+		chunk_len = MIN(rx_len, tx_len);
+	}
+
+	data->chunk_len = chunk_len;
+
+#ifdef CONFIG_EGIS_SPI_DMA_MODE
+	if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
+		error = spi_transfer_dma(dev);
+		if (error != 0) {
+			spi_context_cs_control(ctx, false);
+			goto out;
+		}
+	} else {
+#endif /* CONFIG_EGIS_SPI_DMA_MODE */
+
+		error = spi_transfer(dev);
+		if (error != 0) {
+			spi_context_cs_control(ctx, false);
+			goto out;
+		}
+
+#ifdef CONFIG_EGIS_SPI_DMA_MODE
+	}
+#endif /* CONFIG_EGIS_SPI_DMA_MODE */
+	error = spi_context_wait_for_completion(ctx);
+	spi_context_cs_control(ctx, false);
+out:
 	return error;
 }
 
-int spi_et171_transceive(const struct device *dev,
-			const struct spi_config *config,
-			const struct spi_buf_set *tx_bufs,
-			const struct spi_buf_set *rx_bufs)
+#ifdef CONFIG_DCACHE
+int is_need_alignment(const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      int *extend_count, int *frag_size)
 {
+	int cache_line_size = sys_cache_data_line_size_get();
+	*extend_count = 0;
+	*frag_size = 0;
+
+	if (!rx_bufs) {
+		return false;
+	}
+
+	for (int i = 0; i < rx_bufs->count; i++) {
+		const struct spi_buf *const rx_buf = &rx_bufs->buffers[i];
+
+		if (rx_buf->buf == NULL) {
+			continue;
+		}
+		if (!IS_ALIGN(rx_buf->buf)) {
+			if (rx_buf->len <= (2 * cache_line_size)) {
+				/* move all */
+				*frag_size += rx_buf->len;
+			} else {
+				/* head */
+				*frag_size += ROUND_UP((size_t)rx_buf->buf, cache_line_size) -
+					      (size_t)rx_buf->buf;
+				*extend_count += 1;
+				/* tail */
+				if (((size_t)rx_buf->buf + rx_buf->len) !=
+				    ROUND_DOWN((size_t)rx_buf->buf + rx_buf->len,
+					       cache_line_size)) {
+					*frag_size += ((size_t)rx_buf->buf + rx_buf->len) -
+						      ROUND_DOWN((size_t)rx_buf->buf + rx_buf->len,
+								 cache_line_size);
+					*extend_count += 1;
+				}
+			}
+			continue;
+		}
+
+		if (!IS_ALIGN(rx_buf->len)) {
+			if (rx_buf->len <= (2 * cache_line_size)) {
+				/* move all */
+				*frag_size += rx_buf->len;
+			} else {
+				/* tail */
+				*frag_size += ((size_t)rx_buf->buf + rx_buf->len) -
+					      ROUND_DOWN((size_t)rx_buf->buf + rx_buf->len,
+							 cache_line_size);
+				*extend_count += 1;
+			}
+		}
+	}
+
+	if (*frag_size) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+static int allocate_dma_buffers(struct dma_align_context *ctx, int buf_count, size_t align_buf_size,
+				size_t cache_line_size)
+{
+	ctx->rx_bufs = k_malloc(sizeof(struct spi_buf) * buf_count);
+	ctx->revert_infos = k_malloc(sizeof(struct revert_info) * buf_count);
+	ctx->align_buffer = k_aligned_alloc(cache_line_size, align_buf_size);
+
+	if (!ctx->rx_bufs || !ctx->revert_infos || !ctx->align_buffer) {
+		printk("alloc memory fail\n");
+		return -ENOMEM;
+	}
+
+	memset(ctx->rx_bufs, 0, sizeof(struct spi_buf) * buf_count);
+	memset(ctx->revert_infos, 0, sizeof(struct revert_info) * buf_count);
+	memset(ctx->align_buffer, 0xFF, align_buf_size);
+
+	return 0;
+}
+
+static void free_dma_buffers(struct dma_align_context *ctx)
+{
+	ctx->count = 0;
+	if (ctx->align_buffer) {
+		k_free(ctx->align_buffer);
+		ctx->align_buffer = NULL;
+	}
+	if (ctx->rx_bufs) {
+		k_free(ctx->rx_bufs);
+		ctx->rx_bufs = NULL;
+	}
+	if (ctx->revert_infos) {
+		k_free(ctx->revert_infos);
+		ctx->revert_infos = NULL;
+	}
+}
+
+void revert_dma_buffers(struct revert_info *infos, int count)
+{
+	for (int i = 0; i < count; i++) {
+		if (infos[i].len > 0) {
+			memcpy(infos[i].dst_buf, infos[i].src_buf, infos[i].len);
+		}
+	}
+}
+
+void process_rx_buf(const struct spi_buf *rx_buf, uint8_t **p_buf, struct spi_buf **rx_buf_ptr,
+		    struct revert_info **revert_ptr, size_t cache_line_size)
+{
+	if (!rx_buf->buf) {
+		(*revert_ptr)->len = 0;
+		**rx_buf_ptr = *rx_buf;
+
+		(*rx_buf_ptr)++;
+		(*revert_ptr)++;
+		return;
+	}
+
+	uintptr_t buf_start = (uintptr_t)rx_buf->buf;
+	uintptr_t buf_end = buf_start + rx_buf->len;
+	uintptr_t aligned_start = ROUND_UP(buf_start, cache_line_size);
+	uintptr_t aligned_end = ROUND_DOWN(buf_end, cache_line_size);
+
+	if (!IS_ALIGN(rx_buf->buf)) {
+		if (rx_buf->len <= (2 * cache_line_size)) {
+			/* move all */
+			(*revert_ptr)->dst_buf = rx_buf->buf;
+			(*revert_ptr)->src_buf = (*rx_buf_ptr)->buf = *p_buf;
+			(*rx_buf_ptr)->len = (*revert_ptr)->len = rx_buf->len;
+			*p_buf += rx_buf->len;
+
+			(*revert_ptr)++;
+			(*rx_buf_ptr)++;
+
+		} else {
+			/* head */
+			size_t head_len = aligned_start - buf_start;
+			(*revert_ptr)->dst_buf = rx_buf->buf;
+			(*revert_ptr)->src_buf = (*rx_buf_ptr)->buf = *p_buf;
+			(*rx_buf_ptr)->len = (*revert_ptr)->len = head_len;
+			*p_buf += head_len;
+
+			(*rx_buf_ptr)++;
+			(*revert_ptr)++;
+
+			/* body */
+			size_t body_len = aligned_end - aligned_start;
+			(*revert_ptr)->len = 0;
+			(*rx_buf_ptr)->buf = (void *)aligned_start;
+			(*rx_buf_ptr)->len = body_len;
+
+			(*rx_buf_ptr)++;
+			(*revert_ptr)++;
+
+			/* tail */
+			if (aligned_end != buf_end) {
+				size_t tail_len = buf_end - aligned_end;
+				(*revert_ptr)->dst_buf = (void *)aligned_end;
+				(*revert_ptr)->src_buf = (*rx_buf_ptr)->buf = *p_buf;
+				(*rx_buf_ptr)->len = (*revert_ptr)->len = tail_len;
+				*p_buf += tail_len;
+
+				(*rx_buf_ptr)++;
+				(*revert_ptr)++;
+			}
+			return;
+		}
+	} else if (!IS_ALIGN(rx_buf->len)) {
+		if (rx_buf->len <= (2 * cache_line_size)) {
+			(*revert_ptr)->dst_buf = rx_buf->buf;
+			(*revert_ptr)->src_buf = (*rx_buf_ptr)->buf = *p_buf;
+			(*rx_buf_ptr)->len = (*revert_ptr)->len = rx_buf->len;
+			*p_buf += rx_buf->len;
+
+			(*revert_ptr)++;
+			(*rx_buf_ptr)++;
+		} else {
+			/* body */
+			size_t body_len = aligned_end - aligned_start;
+			(*revert_ptr)->len = 0;
+			(*rx_buf_ptr)->buf = rx_buf->buf;
+			(*rx_buf_ptr)->len = body_len;
+
+			(*rx_buf_ptr)++;
+			(*revert_ptr)++;
+
+			/* tail */
+			if (aligned_end != buf_end) {
+				size_t tail_len = buf_end - aligned_end;
+				(*revert_ptr)->dst_buf = (void *)aligned_end;
+				(*revert_ptr)->src_buf = (*rx_buf_ptr)->buf = *p_buf;
+				(*rx_buf_ptr)->len = (*revert_ptr)->len = tail_len;
+				*p_buf += (*rx_buf_ptr)->len;
+
+				(*rx_buf_ptr)++;
+				(*revert_ptr)++;
+			}
+			return;
+		}
+	} else {
+		(*revert_ptr)->len = 0;
+		**rx_buf_ptr = *rx_buf;
+
+		(*rx_buf_ptr)++;
+		(*revert_ptr)++;
+	}
+}
+
+int transceive_with_extend_buffer(const struct device *dev, const struct spi_config *config,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs, int extend_count,
+				  int frag_size)
+{
+	int ret = 0;
+	struct spi_et171_data *const data = dev->data;
+	int cache_line_size = sys_cache_data_line_size_get();
+	int new_count = rx_bufs->count + extend_count;
+	int align_buf_size = ROUND_UP(frag_size, cache_line_size);
+
+	ret = allocate_dma_buffers(&data->dma_buf_ctx, new_count, align_buf_size, cache_line_size);
+
+	if (ret != 0) {
+		free_dma_buffers(&data->dma_buf_ctx);
+		data->aligned_rx_bufs.buffers = NULL;
+		data->aligned_rx_bufs.count = 0;
+		goto out;
+	}
+
+	data->dma_buf_ctx.count = new_count;
+
+	struct spi_buf *rx_ptr = data->dma_buf_ctx.rx_bufs;
+	struct revert_info *rev_ptr = data->dma_buf_ctx.revert_infos;
+	uint8_t *p_buf = (uint8_t *)data->dma_buf_ctx.align_buffer;
+
+	for (int i = 0; i < rx_bufs->count; i++) {
+		const struct spi_buf *const rx_buf = &rx_bufs->buffers[i];
+
+		process_rx_buf(rx_buf, &p_buf, &rx_ptr, &rev_ptr, cache_line_size);
+	}
+
+	data->aligned_rx_bufs.buffers = data->dma_buf_ctx.rx_bufs;
+	data->aligned_rx_bufs.count = data->dma_buf_ctx.count;
+	ret = transceive(dev, config, tx_bufs, &data->aligned_rx_bufs);
+
+out:
+	return ret;
+}
+
+#endif
+
+int spi_et171_transceive(const struct device *dev, const struct spi_config *config,
+			 const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
+{
+	int ret = 0;
+	struct spi_et171_data *const data = dev->data;
+	struct spi_context *const ctx = &data->ctx;
+
 	if (!spi_transfer_needed(tx_bufs, rx_bufs)) {
 		return 0;
 	}
-	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+
+	spi_context_lock(ctx, false, NULL, NULL, config);
+#if !defined(CONFIG_DCACHE) || !defined(CONFIG_EGIS_SPI_DMA_MODE)
+	ret = transceive(dev, config, tx_bufs, rx_bufs);
+#else
+	int extend_count = 0, frag_size = 0;
+	int need_align = is_need_alignment(tx_bufs, rx_bufs, &extend_count, &frag_size);
+
+	if (need_align == false) {
+		ret = transceive(dev, config, tx_bufs, rx_bufs);
+	} else {
+		ret = transceive_with_extend_buffer(dev, config, tx_bufs, rx_bufs, extend_count,
+						    frag_size);
+	}
+#endif
+	spi_context_release(ctx, ret);
+	return ret;
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -708,10 +990,30 @@ int spi_et171_transceive_async(const struct device *dev,
 				spi_callback_t cb,
 				void *userdata)
 {
+	int ret = 0;
+	struct spi_et171_data *const data = dev->data;
+	struct spi_context *const ctx = &data->ctx;
+
 	if (!spi_transfer_needed(tx_bufs, rx_bufs)) {
 		return 0;
 	}
-	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
+
+	spi_context_lock(ctx, true, cb, userdata, config);
+#if !defined(CONFIG_DCACHE) || !defined(CONFIG_EGIS_SPI_DMA_MODE)
+	ret = transceive(dev, config, tx_bufs, rx_bufs);
+#else
+	int extend_count = 0, frag_size = 0;
+	int need_align = is_need_alignment(tx_bufs, rx_bufs, &extend_count, &frag_size);
+
+	if (need_align == false) {
+		ret = transceive(dev, config, tx_bufs, rx_bufs);
+	} else {
+		ret = transceive_with_extend_buffer(dev, config, tx_bufs, rx_bufs, extend_count,
+						    frag_size);
+	}
+#endif
+	spi_context_release(ctx, ret);
+	return ret;
 }
 #endif
 
@@ -720,6 +1022,10 @@ int spi_et171_release(const struct device *dev,
 {
 
 	struct spi_et171_data * const data = dev->data;
+
+	if (!spi_context_configured(&data->ctx, config)) {
+		return -EINVAL;
+	}
 
 	if (data->busy) {
 		return -EBUSY;
@@ -784,9 +1090,9 @@ static int spi_et171_prepare_fifo_tx_data(struct spi_context *ctx, uint32_t *tx_
 {
 	if (spi_context_tx_buf_on(ctx)) {
 		if (dfs == 1) {
-			*tx_data = *ctx->tx_buf;
+			*tx_data = UNALIGNED_GET((const uint8_t *)ctx->tx_buf);
 		} else {
-			*tx_data = *(const uint16_t *)ctx->tx_buf;
+			*tx_data = UNALIGNED_GET((const uint16_t *)ctx->tx_buf);
 		}
 	} else if (spi_context_tx_on(ctx)) {
 		*tx_data = 0;
@@ -800,9 +1106,9 @@ static int spi_et171_handle_fifo_rx_data(struct spi_context *ctx, uint32_t *rx_d
 {
 	if (spi_context_rx_buf_on(ctx)) {
 		if (dfs == 1) {
-			*ctx->rx_buf = *rx_data;
+			UNALIGNED_PUT(*rx_data, (uint8_t *)ctx->rx_buf);
 		} else {
-			*(uint16_t *)ctx->rx_buf = *rx_data;
+			UNALIGNED_PUT(*rx_data, (uint16_t *)ctx->rx_buf);
 		}
 		return true;
 	} else if (!spi_context_rx_on(ctx)) {
@@ -830,6 +1136,15 @@ static void spi_et171_dma_finalize(const struct device *dev)
 		data->dma_rx.block_idx = 0;
 		data->dma_rx.dma_blk_cfg.next_block = NULL;
 	}
+
+#ifdef CONFIG_DCACHE
+	if (data->dma_buf_ctx.count) {
+		revert_dma_buffers(data->dma_buf_ctx.revert_infos, data->dma_buf_ctx.count);
+		free_dma_buffers(&data->dma_buf_ctx);
+		data->aligned_rx_bufs.buffers = NULL;
+		data->aligned_rx_bufs.count = 0;
+	}
+#endif
 }
 #endif /* CONFIG_EGIS_SPI_DMA_MODE */
 
