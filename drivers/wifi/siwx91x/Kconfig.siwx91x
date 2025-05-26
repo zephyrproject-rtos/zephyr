@@ -142,6 +142,14 @@ config WIFI_SILABS_SIWX91X_ENABLE_TLS
 	  present on SiWx91x series. This implementation usually require less
 	  resources than the Zephyr one.
 
+config WIFI_SILABS_SIWX91X_ENABLE_SINGLE_TLS_SOCKET
+	bool "Offloaded implementation of single TLS socket"
+	depends on WIFI_SILABS_SIWX91X_ENABLE_TLS
+	help
+	  Enable this option to allow to use the single TLS socket
+	  implementation over the network provided by the Network
+	  Co-Processor present on SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y

@@ -145,6 +145,9 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENABLE_TLS)) {
 		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_SSL;
 	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENABLE_SINGLE_TLS_SOCKET)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_SINGLE_SSL_SOCKET;
+	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT)) {
 		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_EMB_MQTT_ENABLE;
 	}
