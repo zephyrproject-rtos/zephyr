@@ -44,6 +44,13 @@ static void *read_cb(uint16_t obj_inst_id,
 	return &value;
 }
 
+/* A read callback with error returns NULL. */
+static void *read_cb_with_error(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
+				size_t *data_len)
+{
+	return NULL;
+}
+
 static int validate_cb(uint16_t obj_inst_id, uint16_t res_id,
 		       uint16_t res_inst_id, uint8_t *data, uint16_t data_len,
 		       bool last_block, size_t total_size, size_t offset)
@@ -406,6 +413,10 @@ ZTEST(lwm2m_registry, test_callbacks)
 	ret = lwm2m_get_f64(&LWM2M_OBJ(3303, 0, 5700), &sensor_val);
 	zassert_equal(ret, 0);
 	zassert_equal(callback_checker, 0x5F);
+
+	zassert_ok(lwm2m_register_read_callback(&LWM2M_OBJ(3303, 0, 5700), read_cb_with_error));
+	ret = lwm2m_get_f64(&LWM2M_OBJ(3303, 0, 5700), &sensor_val);
+	zassert_equal(ret, -ENOMEM);
 
 	ret = lwm2m_delete_object_inst(&LWM2M_OBJ(3303, 0));
 	zassert_equal(ret, 0);
