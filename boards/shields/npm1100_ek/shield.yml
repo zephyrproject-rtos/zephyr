@@ -2,3 +2,5 @@ shield:
   name: npm1100_ek
   full_name: nPM1100 EK
   vendor: nordic
+  supported_features:
+    - regulator

@@ -2,3 +2,5 @@ shield:
   name: renesas_us159_da14531evz
   full_name: US159-DA14531EVZ Pmod
   vendor: renesas
+  supported_features:
+    - bluetooth

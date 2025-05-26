@@ -2,3 +2,5 @@ shield:
   name: adafruit_winc1500
   full_name: Adafruit WINC1500 WiFi Shield
   vendor: adafruit
+  supported_features:
+    - wifi
