@@ -134,6 +134,14 @@ config WIFI_SILABS_SIWX91X_DNS_CLIENT
 	  resources than the Zephyr one. See also sl_net_dns.h in Silabs
 	  HAL for more information about the API.
 
+config WIFI_SILABS_SIWX91X_ENABLE_TLS
+	bool "Offloaded implementation of TLS"
+	help
+	  Enable this option to allow to use the TLS(Transport layer Security)
+	  implementation over the network provided by the Network Co-Processor
+	  present on SiWx91x series. This implementation usually require less
+	  resources than the Zephyr one.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
