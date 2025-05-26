@@ -26,18 +26,20 @@
 
 	chosen {
 		zephyr,console = &usart0;
-		zephyr,shell-uart = &usart0;
-		zephyr,uart-pipe = &usart0;
-		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpiod 8 0>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpiod 9 0>;
 			label = "LED 1";
@@ -46,12 +48,14 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			/* gpio flags need validation */
 			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			/* gpio flags need validation */
 			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
@@ -62,7 +66,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
-		status = "okay";
+
 		pwm_led0: pwm_led0 {
 			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
@@ -86,9 +90,9 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	location-clk = <GECKO_LOCATION(18) GECKO_PORT_F GECKO_PIN(7)>;
 	location-rx = <GECKO_LOCATION(30) GECKO_PORT_K GECKO_PIN(2)>;
 	location-tx = <GECKO_LOCATION(29) GECKO_PORT_K GECKO_PIN(0)>;
-	location-clk = <GECKO_LOCATION(18) GECKO_PORT_F GECKO_PIN(7)>;
 
 	cs-gpios = <&gpiok 1 GPIO_ACTIVE_LOW>;
 
@@ -97,8 +101,6 @@
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
-		size = <0x800000>;
 		jedec-id = [c2 28 14];
 		sfdp-bfp = [
 			 e5 20 f1 ff  ff ff 7f 00  44 eb 08 6b  08 3b 04 bb
@@ -106,6 +108,8 @@
 			 10 d8 00 ff  23 72 f5 00  82 ed 04 b7  44 83 38 44
 			 30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
 		];
+		size = <0x800000>;
+		spi-max-frequency = <80000000>;
 	};
 };
 
@@ -158,14 +162,14 @@
 
 	/* This set selects for ENV_I2C supporting Si7021, Si11330, BMP280 */
 	/*
-	location-sda = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(4)>;
 	location-scl = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(5)>;
+	location-sda = <GECKO_LOCATION(17) GECKO_PORT_C GECKO_PIN(4)>;
 	*/
 
 	/* This set selects for HALL_I2C supporting Si7210 */
 	/*
-	location-sda = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(8)>;
 	location-scl = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(9)>;
+	location-sda = <GECKO_LOCATION(8) GECKO_PORT_B GECKO_PIN(8)>;
 	*/
 };
 
@@ -178,9 +182,9 @@
 	status = "okay";
 
 	pwm0: pwm {
-		status = "okay";
 		pin-location = <GECKO_LOCATION(17) GECKO_PORT_D GECKO_PIN(9)>;
 		prescaler = <1024>;
+		status = "okay";
 	};
 };
 
@@ -214,7 +218,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -222,13 +225,13 @@
 
 		/* Set 6Kb of storage at the end of the 1024Kb of flash */
 		storage_partition: partition@fe800 {
-			label = "storage";
 			reg = <0x000fe800 0x00001800>;
+			label = "storage";
 		};
 
 	};
 };
 
 &trng0 {
-		status = "okay";
+	status = "okay";
 };
