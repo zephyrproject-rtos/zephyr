@@ -104,7 +104,7 @@ void lll_sync_create_prepare(void *param)
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 void lll_sync_prepare(void *param)
@@ -115,7 +115,7 @@ void lll_sync_prepare(void *param)
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static void prepare(void *param)
@@ -126,7 +126,7 @@ static void prepare(void *param)
 
 	/* Request to start HF Clock */
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	p = param;
 
@@ -158,7 +158,7 @@ void lll_sync_aux_prepare_cb(struct lll_sync *lll,
 			    RADIO_PKT_CONF_PHY(lll_aux->phy));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -468,7 +468,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	lll_chan_set(chan_idx);
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -522,7 +522,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_O(1);
 
@@ -629,7 +629,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
@@ -637,7 +637,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
 	e->trx_cnt = 0U;
@@ -747,7 +747,7 @@ static void isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
-	LL_ASSERT(start_us == (aux_start_us + 1U));
+	LL_ASSERT_ERR(start_us == (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;
@@ -953,7 +953,7 @@ static void isr_rx_adv_sync_estab(void *param)
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-		LL_ASSERT(!lll->node_cte_incomplete);
+		LL_ASSERT_DBG(!lll->node_cte_incomplete);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 		goto isr_rx_done;
@@ -1139,7 +1139,7 @@ isr_rx_aux_chain_done:
 		 * generated thereafter by HCI as incomplete.
 		 */
 		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
+		LL_ASSERT_ERR(node_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
@@ -1190,7 +1190,7 @@ static void isr_rx_done_cleanup(struct lll_sync *lll, uint8_t crc_ok, bool sync_
 
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
 	e->trx_cnt = trx_cnt;
@@ -1242,7 +1242,7 @@ static void isr_done(void *param)
 		 * generated thereafter by HCI as incomplete.
 		 */
 		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
+		LL_ASSERT_ERR(node_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
@@ -1327,7 +1327,7 @@ static int iq_report_create_put(struct lll_sync *lll, uint8_t rssi_ready, uint8_
 		if (!lll->is_cte_incomplete &&
 		    is_max_cte_reached(cfg->max_cte_count, cfg->cte_count)) {
 			iq_report = ull_df_iq_report_alloc();
-			LL_ASSERT(iq_report);
+			LL_ASSERT_ERR(iq_report);
 
 			iq_report_create(lll, rssi_ready, packet_status,
 					 cfg->slot_durations, iq_report);
