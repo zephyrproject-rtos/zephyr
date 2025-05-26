@@ -28,6 +28,7 @@ tests:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
   portability.xsi.single_process.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
+    min_ram: 24
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE=256
