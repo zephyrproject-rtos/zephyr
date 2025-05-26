@@ -7,11 +7,14 @@
 import argparse
 import collections
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import nullcontext, suppress
 import functools
 from itertools import takewhile
 import json
 import logging
+import multiprocessing
 import os
+import threading
 from pathlib import Path
 import platform
 import re
@@ -174,8 +177,14 @@ class ComplianceTest:
       magic strings below:
       - "<zephyr-base>" can be used to refer to the environment variable
         ZEPHYR_BASE or, when missing, the calculated base of the zephyr tree.
+
+    supports_parallel:
+      Whether this test can run in parallel with other tests. Default is True.
+      Set to False for tests that modify global state (e.g., environment variables)
+      or have other concurrency issues.
     """
     path_hint = "<git-top>"
+    supports_parallel = True
 
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
@@ -420,6 +429,7 @@ class KconfigCheck(ComplianceTest):
     """
     name = "Kconfig"
     doc = "See https://docs.zephyrproject.org/latest/build/kconfig/tips.html for more details."
+    supports_parallel = False  # Modifies global environment variables
 
     # Top-level Kconfig file. The path can be relative to srctree (ZEPHYR_BASE).
     FILENAME = "Kconfig"
@@ -1200,6 +1210,7 @@ class SysbuildKconfigCheck(KconfigCheck):
     for example using undefined Kconfig variables.
     """
     name = "SysbuildKconfig"
+    supports_parallel = False  # Modifies global environment variables
 
     FILENAME = "share/sysbuild/Kconfig"
     CONFIG_ = "SB_CONFIG_"
@@ -1900,6 +1911,36 @@ def resolve_path_hint(hint):
         return hint
 
 
+# Global lock for tests that don't support parallel execution
+_non_parallel_lock = threading.Lock()
+
+def run_single_test(testcase_class, annotate_enabled):
+    """
+    Run a single compliance test and return the test case.
+    This function is designed to be run in parallel.
+    """
+    test = testcase_class()
+
+    print(f"Running {test.name:30} tests in "
+          f"{resolve_path_hint(test.path_hint)} ...")
+
+    # Tests that don't support parallel execution need to be serialized
+    if test.supports_parallel:
+        context_manager = nullcontext()
+    else:
+        context_manager = _non_parallel_lock
+
+    with context_manager, suppress(EndTest):
+        test.run()
+
+    # Annotate if required
+    if annotate_enabled:
+        for res in test.fmtd_failures:
+            annotate(res)
+
+    return test.case
+
+
 def parse_args(argv):
 
     default_range = 'HEAD~1..HEAD'
@@ -1929,6 +1970,9 @@ def parse_args(argv):
                         from a previous run and combine with new results.''')
     parser.add_argument('--annotate', action="store_true",
                         help="Print GitHub Actions-compatible annotations.")
+    parser.add_argument('-p', '--parallel-jobs', type=int, default=0,
+                        help='''Number of parallel jobs to run (0 = auto-detect
+                        based on CPU count, 1 = sequential)''')
 
     return parser.parse_args(argv)
 
@@ -1987,6 +2031,8 @@ def _main(args):
     included = list(map(lambda x: x.lower(), args.module))
     excluded = list(map(lambda x: x.lower(), args.exclude_module))
 
+    # Collect testcases to run
+    testcases_to_run = []
     for testcase in inheritors(ComplianceTest):
         # "Modules" and "testcases" are the same thing. Better flags would have
         # been --tests and --exclude-tests or the like, but it's awkward to
@@ -1999,20 +2045,35 @@ def _main(args):
             print("Skipping " + testcase.name)
             continue
 
-        test = testcase()
-        try:
-            print(f"Running {test.name:16} tests in "
-                  f"{resolve_path_hint(test.path_hint)} ...")
-            test.run()
-        except EndTest:
-            pass
+        testcases_to_run.append(testcase)
 
-        # Annotate if required
-        if args.annotate:
-            for res in test.fmtd_failures:
-                annotate(res)
+    if args.parallel_jobs == 0:
+        max_workers = min(multiprocessing.cpu_count(), len(testcases_to_run))
+    elif args.parallel_jobs == 1:
+        # Sequential execution
+        max_workers = 1
+    else:
+        max_workers = min(args.parallel_jobs, len(testcases_to_run))
 
-        suite.add_testcase(test.case)
+    # Run tests in parallel or sequentially
+    if max_workers == 1:
+        # Sequential execution (original behavior)
+        for testcase in testcases_to_run:
+            test_case = run_single_test(testcase, args.annotate)
+            suite.add_testcase(test_case)
+    else:
+        # Parallel execution
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tests
+            future_to_testcase = {
+                executor.submit(run_single_test, testcase, args.annotate): testcase
+                for testcase in testcases_to_run
+            }
+
+            # Collect results as they complete
+            for future in as_completed(future_to_testcase):
+                test_case = future.result()
+                suite.add_testcase(test_case)
 
     if args.output:
         xml = JUnitXml()
@@ -2053,6 +2114,7 @@ def _main(args):
 
     if args.output:
         print(f"\nComplete results in {args.output}")
+
     return n_fails
 
 
