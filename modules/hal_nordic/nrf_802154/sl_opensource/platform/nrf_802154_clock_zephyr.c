@@ -44,19 +44,6 @@ static void hfclk_on_callback(struct onoff_manager *mgr,
 }
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
-
-#if defined(NRF54LM20A_ENGA_XXAA)
-/* HF clock time to ramp-up. */
-#define MAX_HFXO_RAMP_UP_TIME_US 550
-
-static void hfclk_started_timer_handler(struct k_timer *dummy)
-{
-	hfclk_on_callback(NULL, NULL, 0, 0);
-}
-
-K_TIMER_DEFINE(hfclk_started_timer, hfclk_started_timer_handler, NULL);
-#endif
-
 void nrf_802154_clock_hfclk_start(void)
 {
 	struct onoff_manager *mgr =
@@ -77,15 +64,6 @@ void nrf_802154_clock_hfclk_start(void)
 	int ret = onoff_request(mgr, &hfclk_cli);
 	__ASSERT_NO_MSG(ret >= 0);
 	(void)ret;
-
-	#if defined(NRF54LM20A_ENGA_XXAA)
-		/*
-		 * Right now, the power_clock_irq is not available on nRF54LM20A.
-		 * Since the onoff mechanism relies on the irq, the timer is used
-		 * to emit the hfclk_ready callback.
-		 */
-		k_timer_start(&hfclk_started_timer, K_USEC(MAX_HFXO_RAMP_UP_TIME_US), K_NO_WAIT);
-	#endif
 }
 
 void nrf_802154_clock_hfclk_stop(void)
