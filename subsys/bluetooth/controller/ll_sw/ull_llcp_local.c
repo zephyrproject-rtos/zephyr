@@ -79,13 +79,13 @@ void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		struct proc_ctx *ctx_header;
 
 		ctx_header = llcp_lr_peek(conn);
-		LL_ASSERT(ctx_header == ctx);
+		LL_ASSERT_DBG(ctx_header == ctx);
 
 		/* If we have a node rx it must not be marked RETAIN as
 		 * the memory referenced would leak
 		 */
-		LL_ASSERT(ctx->node_ref.rx == NULL ||
-			  ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
+		LL_ASSERT_DBG(ctx->node_ref.rx == NULL ||
+			      ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
 
 		lr_dequeue(conn);
 
@@ -326,7 +326,7 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -475,7 +475,7 @@ static void lr_act_run(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 	default:
 		/* Unknown procedure */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 
@@ -487,7 +487,7 @@ static void lr_act_complete(struct ll_conn *conn)
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	LL_ASSERT(ctx != NULL);
+	LL_ASSERT_DBG(ctx != NULL);
 
 	/* Stop procedure response timeout timer */
 	llcp_lr_prt_stop(conn);
@@ -617,7 +617,7 @@ static void lr_execute_fsm(struct ll_conn *conn, uint8_t evt, void *param)
 		break;
 	default:
 		/* Unknown state */
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
