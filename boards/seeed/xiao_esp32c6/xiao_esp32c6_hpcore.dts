@@ -38,6 +38,11 @@
 		watchdog0 = &wdt0;
 	};
 
+	rf_switch: rf_switch {
+		compatible = "seeed,xiao-gpio-rf-switch";
+		enable-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		select-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &trng0 {
