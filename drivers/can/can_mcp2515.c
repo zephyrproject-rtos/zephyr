@@ -847,6 +847,8 @@ static void mcp2515_handle_interrupts(const struct device *dev)
 		} else if (ret == 0) {
 			/* All interrupt flags handled */
 			break;
+		} else {
+			/* Interrupts still pending */
 		}
 	}
 }
