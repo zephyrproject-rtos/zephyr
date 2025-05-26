@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <hal/nrf_power.h>
+#include <hal/nrf_clock.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
@@ -24,6 +25,12 @@
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+#if DT_NODE_HAS_PROP(DT_NODELABEL(hfxo), debounce_us)
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(hfxo), debounce_us));
+BUILD_ASSERT(DT_PROP(DT_NODELABEL(hfxo), debounce_us) > 0);
+BUILD_ASSERT(DT_PROP(DT_NODELABEL(hfxo), debounce_us) % 16 == 0);
+#endif
 
 static int nordicsemi_nrf52_init(void)
 {
@@ -39,6 +46,10 @@ static int nordicsemi_nrf52_init(void)
 #if NRF_POWER_HAS_DCDCEN_VDDH && (defined(CONFIG_SOC_DCDC_NRF52X_HV) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52x_regulator_hv)))
 	nrf_power_dcdcen_vddh_set(NRF_POWER, true);
+#endif
+
+#if DT_NODE_HAS_PROP(DT_NODELABEL(hfxo), debounce_us)
+	NRF_CLOCK->HFXODEBOUNCE = DT_PROP(DT_NODELABEL(hfxo), debounce_us) / 16;
 #endif
 
 	return 0;
