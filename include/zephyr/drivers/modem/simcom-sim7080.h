@@ -230,6 +230,13 @@ int mdm_sim7080_power_on(void);
 int mdm_sim7080_power_off(void);
 
 /**
+ * Forcefully reset the modem by pulling pwrkey for 15 seconds.
+ * @note The state of the modem may be undefined after calling
+ * 		 this function. Call mdm_sim7080_power_on after force reset.
+ */
+void mdm_sim7080_force_reset(void);
+
+/**
  * @brief Activates the network operation mode of the modem.
  *
  * @return 0 on success. Otherwise <0 is returned.

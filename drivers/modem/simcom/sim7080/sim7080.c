@@ -717,6 +717,14 @@ out:
 	return ret;
 }
 
+void mdm_sim7080_force_reset(void)
+{
+	LOG_DBG("Forcefully resetting modem");
+	gpio_pin_set_dt(&power_gpio, 1);
+	k_sleep(K_SECONDS(15));
+	gpio_pin_set_dt(&power_gpio, 0);
+}
+
 const char *mdm_sim7080_get_manufacturer(void)
 {
 	return mdata.mdm_manufacturer;
