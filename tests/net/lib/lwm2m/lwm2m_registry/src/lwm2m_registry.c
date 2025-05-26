@@ -437,7 +437,7 @@ ZTEST(lwm2m_registry, test_strings)
 	zassert_equal(ret, 0);
 	memset(p, 0xff, len); /* Pre-fill buffer to check */
 
-	/* Handle strings in string resources */
+	/* Handle strings in string resources. */
 	ret = lwm2m_set_string(&path, uri);
 	zassert_equal(ret, 0);
 	ret = lwm2m_get_res_buf(&path, (void **)&p, NULL, &len, NULL);
@@ -480,6 +480,129 @@ ZTEST(lwm2m_registry, test_strings)
 	/* but because we request as a string, it must have room for terminator. */
 	ret = lwm2m_get_string(&path, buf, len, NULL);
 	zassert_equal(ret, -ENOMEM);
+}
+
+ZTEST(lwm2m_registry, test_opaque)
+{
+	int ret;
+	struct lwm2m_obj_path path = LWM2M_OBJ(0, 0, 0);
+
+	uint16_t res_maxlen;
+	uint16_t res_len;
+	void *res_buf;
+
+	zassert_ok(lwm2m_get_res_buf(&path, (void **)&res_buf, &res_maxlen, &res_len, NULL));
+	/* test cases are not useful when the resource is too small */
+	zassert_true(res_maxlen >= 6);
+
+	const char pattern_set = 0xA5;
+	char buf_set[res_maxlen];
+	const char pattern_get = 0x5A;
+	char buf_get[res_maxlen];
+
+	struct testcases {
+		char *name;
+		uint16_t set_len;
+		int set_ret;
+		uint16_t get_len;
+		int get_ret;
+		bool res_len_null;
+		bool set_ptr_null;
+		bool get_ptr_null;
+		uint32_t checks;
+	};
+
+	const struct testcases tc[] = {
+		/* upper buffer boarder */
+		{.name = "max buffer",
+		 .set_len = sizeof(buf_set),
+		 .get_len = sizeof(buf_get),
+		 .checks = 0x17},
+		{.name = "set overflow",
+		 .set_len = sizeof(buf_set) + 1,
+		 .set_ret = -ENOMEM,
+		 .checks = 0x1},
+		{.name = "get underflow",
+		 .set_len = sizeof(buf_set),
+		 .get_len = sizeof(buf_get) - 1,
+		 .get_ret = -ENOMEM,
+		 .checks = 0x3},
+		/* lower buffer boundary */
+		{.name = "min buffer", .set_len = 0, .get_len = sizeof(buf_get), .checks = 0x1F},
+		/* edge case: zero sized resource fits into zero sized buffer */
+		{.name = "zero buffer", .set_len = 0, .get_len = 0, .checks = 0x1F},
+		/* edge case 2: zero sized resource fits into a null pointer */
+		{.name = "null get buffer",
+		 .set_len = 0,
+		 .get_len = 0,
+		 .get_ptr_null = true,
+		 .checks = 0x1F},
+		{.name = "null set buffer",
+		 .set_len = 0,
+		 .get_len = 0,
+		 .set_ptr_null = true,
+		 .checks = 0x1F},
+		/* something in between the buffer boundary */
+		{.name = "mid buffer",
+		 .set_len = sizeof(buf_set) / 2,
+		 .get_len = sizeof(buf_get),
+		 .checks = 0x1F},
+		/* The `res_len` is optional an can be null */
+		{.name = "null resource len",
+		 .set_len = sizeof(buf_set) / 3,
+		 .get_len = sizeof(buf_get),
+		 .res_len_null = true,
+		 .checks = 0xF},
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(tc); i++) {
+		/* reset  */
+		uint32_t checks = 0;
+		const uint16_t buf_set_len = tc[i].set_len;
+		char *tc_buf_set = tc[i].set_ptr_null ? NULL : buf_set;
+		char *tc_buf_get = tc[i].get_ptr_null ? NULL : buf_get;
+		uint16_t buf_get_len = UINT16_MAX;
+		uint16_t *tc_buf_get_len = tc[i].res_len_null ? NULL : &buf_get_len;
+
+		memset(res_buf, 0, res_maxlen);
+		memset(buf_set, pattern_set, res_maxlen);
+		memset(buf_get, pattern_get, res_maxlen);
+
+		/* set */
+		ret = lwm2m_set_opaque(&path, tc_buf_set, buf_set_len);
+		zassert_equal(ret, tc[i].set_ret, "case %d: %s", i, tc[i].name);
+		WRITE_BIT(checks, 0, 1);
+		if (tc[i].set_ret != 0) {
+			goto finally;
+		}
+
+		/* get */
+		ret = lwm2m_get_opaque(&path, tc_buf_get, tc[i].get_len, tc_buf_get_len);
+		zassert_equal(ret, tc[i].get_ret, "case %d: %s", i, tc[i].name);
+		WRITE_BIT(checks, 1, 1);
+		if (tc[i].get_ret != 0) {
+			goto finally;
+		}
+
+		/* check memory */
+		zassert_mem_equal(buf_set, buf_get, buf_set_len, "case %d: %s", i, tc[i].name);
+		WRITE_BIT(checks, 2, 1);
+		if (buf_set_len < sizeof(buf_set)) {
+			/* written too much? */
+			zassert_equal(buf_get[buf_set_len], pattern_get, "case %d: %s", i,
+				      tc[i].name);
+			WRITE_BIT(checks, 3, 1);
+		}
+
+		/* check resource length */
+		if (!tc[i].res_len_null) {
+			zassert_equal(buf_get_len, tc[i].set_len, "case %d: %s", i, tc[i].name);
+			WRITE_BIT(checks, 4, 1);
+		}
+finally:
+		zassert_equal(checks, tc[i].checks, "case %d: %s: checks: %x != %x", i, tc[i].name,
+			      checks, tc[i].checks);
+	}
 }
 
 ZTEST(lwm2m_registry, test_lock_unlock)
