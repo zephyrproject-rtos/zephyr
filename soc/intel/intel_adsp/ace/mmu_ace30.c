@@ -21,6 +21,8 @@ extern char __common_ram_region_start[];
 extern char __common_ram_region_end[];
 extern char __cold_start[];
 extern char __cold_end[];
+extern char __imr_data_start[];
+extern char __imr_data_end[];
 extern char __coldrodata_start[];
 
 
@@ -132,6 +134,12 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		.start = (uint32_t)__coldrodata_start,
 		.end   = (uint32_t)_imr_end,
 		.name = "imr coldrodata",
+	},
+	{
+		.start = (uint32_t)__imr_data_start,
+		.end   = (uint32_t)__imr_data_end,
+		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
+		.name = "imr data",
 	},
 	{
 		.start = (uint32_t)IMR_L3_HEAP_BASE,
