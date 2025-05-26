@@ -15,9 +15,9 @@
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,flash = &flash0;
+		zephyr,ppp-uart = &usart0;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
-		zephyr,ppp-uart = &usart0;
 	};
 };
 
@@ -41,9 +41,9 @@
 
 &usart0 {
 	current-speed = <500000>;
+	hw-flow-control;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
-	hw-flow-control;
 	status = "okay";
 };
 
@@ -80,13 +80,13 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x00000000 DT_SIZE_K(192)>;
+			label = "image-0";
 		};
 
 		storage_partition: partition@30000 {
-			label = "storage";
 			reg = <0x00030000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

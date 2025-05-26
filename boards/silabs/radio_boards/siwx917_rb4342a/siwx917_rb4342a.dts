@@ -17,18 +17,18 @@
 	compatible = "silabs,x917_rb4342a", "silabs,siwg917";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,bt-hci = &bt_hci0;
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &ulpuart;
 		zephyr,shell-uart = &ulpuart;
+		zephyr,sram = &sram0;
 		zephyr,uart-pipe = &ulpuart;
-		zephyr,bt-hci = &bt_hci0;
 	};
 
 	aliases {
+		dht0 = &si7021;
 		led0 = &led0;
 		sw0 = &button0;
-		dht0 = &si7021;
 	};
 
 	leds {
@@ -61,33 +61,34 @@
 		};
 	};
 
-	ulpuart_default: ulpuart_default {
-		out {
-			pinmux = <ULPUART_TX_ULP11>;
-		};
-		in {
-			pinmux = <ULPUART_RX_ULP9>;
-		};
-	};
-
 	ulpi2c_default: ulpi2c_default {
 		group {
 			pinmux = <ULPI2C_SDA_ULP6>, <ULPI2C_SCL_ULP7>;
 		};
 	};
+
+	ulpuart_default: ulpuart_default {
+		out {
+			pinmux = <ULPUART_TX_ULP11>;
+		};
+
+		in {
+			pinmux = <ULPUART_RX_ULP9>;
+		};
+	};
 };
 
 &ulpuart {
-	status = "okay";
 	pinctrl-0 = <&ulpuart_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ulpi2c {
-	status = "okay";
+	clock-frequency = <DT_FREQ_K(100)>;
 	pinctrl-0 = <&ulpi2c_default>;
 	pinctrl-names = "default";
-	clock-frequency = <DT_FREQ_K(100)>;
+	status = "okay";
 
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
@@ -102,31 +103,31 @@
 		#size-cells = <1>;
 
 		code_partition: partition@0 {
-			label = "code_partition";
 			reg = <0x0000000 DT_SIZE_K(2008)>;
+			label = "code_partition";
 		};
 
 		storage_partition: partition@1f6000 {
-			label = "storage";
 			reg = <0x001f6000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };
 
 &psramctrl0 {
-	status = "okay";
 	clocks = <&clock0 SIWX91X_CLK_QSPI>;
 	pinctrl-0 = <&psram_default>;
 	pinctrl-names = "default";
 	device-id = [ 0d 5d 00 00 00 00 00 00 ];
-	normal-freq = <DT_FREQ_M(33)>;
 	fast-freq = <DT_FREQ_M(144)>;
+	normal-freq = <DT_FREQ_M(33)>;
+	status = "okay";
 
 	psram: psram@a000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa000000 DT_SIZE_M(8)>;
-		zephyr,memory-region = "psram";
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-region = "psram";
 	};
 };
 
