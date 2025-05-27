@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv32x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
 #include <zephyr/dt-bindings/sensor/lps22hh.h>
@@ -756,9 +757,9 @@ test_i2c_lsm6dsv16x: lsm6dsv16x@69 {
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
 	accel-range = <LSM6DSV16X_DT_FS_8G>;
-	accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 	gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
-	gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };
 
 test_i2c_mcp9600: mcp9600@6a {
