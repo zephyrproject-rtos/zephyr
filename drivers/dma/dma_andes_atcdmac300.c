@@ -12,6 +12,12 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
 
+#ifdef CONFIG_DCACHE
+#ifdef CONFIG_CACHE_MANAGEMENT
+#include <zephyr/cache.h>
+#endif
+#endif
+
 #define DT_DRV_COMPAT andestech_atcdmac300
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
@@ -392,6 +398,15 @@ static int dma_atcdmac300_config(const struct device *dev, uint32_t channel,
 		sys_write32(0, DMA_CH_LL_PTR_L(dev, channel));
 		sys_write32(0, DMA_CH_LL_PTR_H(dev, channel));
 	}
+
+#ifdef CONFIG_DCACHE
+#ifdef CONFIG_CACHE_MANAGEMENT
+	cache_data_flush_range((void *)&dma_chain, sizeof(dma_chain));
+#else
+#error "Data cache is enabled; please flush the cache after \
+setting dma_chain to ensure memory coherence."
+#endif
+#endif
 
 end:
 	return ret;
