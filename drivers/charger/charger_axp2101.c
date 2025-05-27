@@ -257,7 +257,7 @@ static int get_status(const struct device *dev, union charger_propval *val)
 	}
 
 	tmp = tmp & CHARGING_STATUS;
-	if ((tmp >= TRICKLE_CHARGE) && (tmp <= CONSTANT_VOLTAGE)) {
+	if (tmp <= CONSTANT_VOLTAGE) {
 		val->status = CHARGER_STATUS_CHARGING;
 	} else if (tmp == CHARGE_DONE) {
 		val->status = CHARGER_STATUS_FULL;
