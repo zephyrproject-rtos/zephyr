@@ -8,6 +8,7 @@
 #include <soc.h>
 #include <soc_init.h>
 #include <flash_init.h>
+#include <esp_efuse.h>
 #include <esp_private/cache_utils.h>
 #include <esp_private/system_internal.h>
 #include <esp_timer.h>
@@ -24,6 +25,15 @@ void IRAM_ATTR __esp_platform_app_start(void)
 	esp_timer_early_init();
 
 	esp_flash_config();
+
+#if CONFIG_ESP32_EFUSE_VIRTUAL
+#if CONFIG_ESP32_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	esp_efuse_init_virtual_mode_in_flash(CONFIG_EFUSE_VIRTUAL_OFFSET,
+					     CONFIG_EFUSE_VIRTUAL_SIZE);
+#else
+	esp_efuse_init_virtual_mode_in_ram();
+#endif
+#endif
 
 	/* Start Zephyr */
 	z_cstart();
