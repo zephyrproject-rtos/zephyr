@@ -41,6 +41,7 @@
 		mtimer: machine-timer@f0020000 {
 			compatible = "riscv,machine-timer";
 			reg = <0xf0020000 0x8 0xf0020008 0x8>;
+			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&hlic 7>;
 			status = "okay";
 		};
