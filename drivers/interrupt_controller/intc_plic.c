@@ -196,13 +196,6 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, u
 	return config->reg + (get_hart_context(dev, hartid) * CONTEXT_SIZE);
 }
 
-static ALWAYS_INLINE uint32_t local_irq_to_irq(const struct device *dev, uint32_t local_irq)
-{
-	const struct plic_config *config = dev->config;
-
-	return irq_to_level_2(local_irq) | config->irq;
-}
-
 #ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
 static inline mem_addr_t get_pending_reg(const struct device *dev, uint32_t local_irq)
 {
@@ -718,6 +711,13 @@ static int cmd_stats_clear(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_PLIC_SHELL_IRQ_COUNT */
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_AFFINITY
+static ALWAYS_INLINE uint32_t local_irq_to_irq(const struct device *dev, uint32_t local_irq)
+{
+	const struct plic_config *config = dev->config;
+
+	return irq_to_level_2(local_irq) | config->irq;
+}
+
 static int cmd_affinity_set(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
