@@ -203,6 +203,42 @@ static int start_adv(void)
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
+		return 0;
+	}
+
+#else  /* CONFIG_BT_EXT_ADV */
+	printk("Starting Extended Advertising (connectable and non-scannable)\n");
+	err = bt_le_ext_adv_start(ad, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		printk("Failed to start extended advertising set (err %d)\n", err);
+		return 0;
+	}
+#endif /* CONFIG_BT_EXT_ADV */
+
+	return 0;
+}
+
+int main(void)
+{
+	int err;
+
+	err = bt_enable(NULL);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return 0;
+	}
+
+	printk("Bluetooth initialized\n");
+
+	bt_conn_auth_cb_register(&auth_cb_display);
+
+	bt_hrs_cb_register(&hrs_cb);
+
+#if !defined(CONFIG_BT_EXT_ADV)
+	printk("Starting Legacy Advertising (connectable and scannable)\n");
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
 		return err;
 	}
 
@@ -246,31 +282,8 @@ static int start_adv(void)
 		return err;
 	}
 #endif /* CONFIG_BT_EXT_ADV */
-	return 0;
-}
 
-int main(void)
-{
-	int err;
-
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return 0;
-	}
-
-	printk("Bluetooth initialized\n");
-
-	bt_conn_auth_cb_register(&auth_cb_display);
-
-	bt_hrs_cb_register(&hrs_cb);
-
-	err = start_adv();
-	if (0 == err) {
-		printk("Advertising successfully started\n");
-	} else {
-		printk("Advertising failed to start\n");
-	}
+	printk("Advertising successfully started\n");
 
 #if defined(HAS_LED)
 	err = blink_setup();
@@ -298,24 +311,7 @@ int main(void)
 			blink_stop();
 #endif /* HAS_LED */
 		} else if (atomic_test_and_clear_bit(state, STATE_DISCONNECTED)) {
-#if !defined(CONFIG_BT_EXT_ADV)
-			printk("Starting Legacy Advertising (connectable and scannable)\n");
-			err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd,
-					      ARRAY_SIZE(sd));
-			if (err) {
-				printk("Advertising failed to start (err %d)\n", err);
-				return 0;
-			}
-
-#else  /* CONFIG_BT_EXT_ADV */
-			printk("Starting Extended Advertising (connectable and non-scannable)\n");
-			err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-			if (err) {
-				printk("Failed to start extended advertising set (err %d)\n", err);
-				return 0;
-			}
-#endif /* CONFIG_BT_EXT_ADV */
-
+			start_adv();
 #if defined(HAS_LED)
 			blink_start();
 #endif /* HAS_LED */
