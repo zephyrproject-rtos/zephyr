@@ -204,6 +204,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
+#ifdef CONFIG_PMP_STACK_GUARD
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -231,6 +232,7 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 
 	return ok;
 }
+#endif /* CONFIG_PMP_STACK_GUARD */
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -447,6 +449,7 @@ void z_riscv_pmp_init(void)
 /**
  * @Brief Initialize the per-thread PMP register copy with global values.
  */
+#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || defined(CONFIG_USERSPACE)
 static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 						   unsigned long *pmp_cfg,
 						   unsigned int index_limit)
@@ -466,6 +469,7 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 
 	return global_pmp_end_index;
 }
+#endif
 
 #ifdef CONFIG_PMP_STACK_GUARD
 
