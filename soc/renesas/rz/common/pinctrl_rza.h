@@ -65,7 +65,7 @@ typedef struct pinctrl_soc_pin {
 
 #define RZA_GET_FILCLKSEL(node_id) (DT_PROP(node_id, renesas_filter) & 0x3)
 
-#define RZA_FILTER_ON_OFF(node_id) COND_CODE_0(DT_PROP(node_id, renesas_filter), (0), (1))
+#define RZA_FILTER_ON_OFF(node_id) COND_CODE_0(DT_NODE_HAS_PROP(node_id, renesas_filter), (0), (1))
 
 /* Process pinmux cfg */
 #define Z_PINCTRL_PINMUX_INIT(node_id, state_prop, idx)                                            \
