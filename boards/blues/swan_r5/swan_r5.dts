@@ -38,9 +38,10 @@
 		};
 	};
 
-
+	// PE6 can be used to discharge the 3v3 net. Disabled by default.
 	zephyr,user {
 		dischrg-gpios = <&gpioe 6 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		status = "disabled";
 	};
 
 	supply-3v3 {
