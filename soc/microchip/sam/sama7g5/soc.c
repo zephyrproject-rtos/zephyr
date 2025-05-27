@@ -107,6 +107,14 @@ void soc_early_init_hook(void)
 		}
 	}
 
+	/* Enable generic clock for GMAC0, frequency ETHPLL / (4 + 1) = 125MHz */
+	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gmac0))) {
+		PMC_REGS->PMC_PCR = PMC_PCR_PID(ID_GMAC0);
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD_Msk | PMC_PCR_GCLKEN_Msk | PMC_PCR_EN_Msk |
+				    PMC_PCR_GCLKDIV(4) | PMC_PCR_MCKID(1) |
+				    PMC_PCR_GCLKCSS_ETHPLL | PMC_PCR_PID(ID_GMAC0);
+	}
+
 	/* Enable generic clock for GMAC1, frequency ETHPLL / (4 + 1) = 125MHz */
 	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gmac1))) {
 		PMC_REGS->PMC_PCR = PMC_PCR_PID(ID_GMAC1);
