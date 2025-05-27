@@ -3026,7 +3026,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			accept_cb(conn->context, &conn->context->remote,
 				  net_context_get_family(context) == AF_INET6 ?
 				  sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
-				  0, context);
+				  0, context->user_data);
 
 			next = TCP_ESTABLISHED;
 
