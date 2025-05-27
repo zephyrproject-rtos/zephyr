@@ -39,3 +39,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&main_i2c2 {
+	pinctrl-0 = <&main_i2c2_sda_default &main_i2c2_scl_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
