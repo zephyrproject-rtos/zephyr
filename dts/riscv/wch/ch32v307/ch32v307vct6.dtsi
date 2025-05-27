@@ -5,11 +5,3 @@
  */
 
 #include <wch/ch32v307/ch32v307.dtsi>
-
-&gpioc {
-	gpio-reserved-ranges = <0 13>;
-};
-
-&gpiod {
-	gpio-reserved-ranges = <0 16>;
-};

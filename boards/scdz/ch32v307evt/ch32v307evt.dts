@@ -38,15 +38,16 @@
 	buttons {
 		compatible = "gpio-keys";
 
-		boot: sw0 {
-			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_1>;
+		user_button0: sw0 {
+            label = "User SW0";
+			gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	aliases {
 		led0 = &red_led;
-        sw0 = &boot;
+        sw0 = &user_button0;
 	};
 };
 
@@ -64,9 +65,6 @@
 	clocks = <&pll>;
 };
 
-&gpioa {
-	status = "okay";
-};
 
 &gpioc {
 	status = "okay";
