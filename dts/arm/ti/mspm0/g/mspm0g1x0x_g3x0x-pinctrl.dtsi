@@ -1,0 +1,23 @@
+#include <dt-bindings/pinctrl/mspm0-pinctrl.h>
+
+&pinctrl {
+	/omit-if-no-ref/ uart0_tx_pa10: uart_tx_pa10 {
+		pinmux = <MSP_PINMUX(21,MSPM0_PIN_FUNCTION_2)>;
+		drive-strength = <20>;
+	};
+
+	/omit-if-no-ref/ uart0_rx_pa11: uart_rx_pa11 {
+		pinmux = <MSP_PINMUX(22,MSPM0_PIN_FUNCTION_2)>;
+		drive-strength = <20>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uart0_rts_pa8: uart0_rts_pa8 {
+		pinmux = <MSP_PINMUX(19,MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uart0_cts_pb19: uart0_cts_pb19 {
+		pinmux = <MSP_PINMUX(19,MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+};
