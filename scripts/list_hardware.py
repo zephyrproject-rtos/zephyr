@@ -22,9 +22,13 @@ SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.yml')
 with open(SOC_SCHEMA_PATH, 'r') as f:
     soc_schema = yaml.load(f.read(), Loader=SafeLoader)
 
+SOC_VALIDATOR = pykwalify.core.Core(schema_data=soc_schema, source_data={})
+
 ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yml')
 with open(ARCH_SCHEMA_PATH, 'r') as f:
     arch_schema = yaml.load(f.read(), Loader=SafeLoader)
+
+ARCH_VALIDATOR = pykwalify.core.Core(schema_data=arch_schema, source_data={})
 
 SOC_YML = 'soc.yml'
 ARCHS_YML_PATH = PurePath('arch/archs.yml')
@@ -42,8 +46,8 @@ class Systems:
 
         try:
             data = yaml.load(soc_yaml, Loader=SafeLoader)
-            pykwalify.core.Core(source_data=data,
-                                schema_data=soc_schema).validate()
+            SOC_VALIDATOR.source = data
+            SOC_VALIDATOR.validate()
         except (yaml.YAMLError, pykwalify.errors.SchemaError) as e:
             sys.exit(f'ERROR: Malformed yaml {soc_yaml.as_posix()}', e)
 
@@ -214,7 +218,8 @@ def find_v2_archs(args):
                 archs = yaml.load(f.read(), Loader=SafeLoader)
 
             try:
-                pykwalify.core.Core(source_data=archs, schema_data=arch_schema).validate()
+                ARCH_VALIDATOR.source = archs
+                ARCH_VALIDATOR.validate()
             except pykwalify.errors.SchemaError as e:
                 sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
                          .format(archs_yml.as_posix(), e))
