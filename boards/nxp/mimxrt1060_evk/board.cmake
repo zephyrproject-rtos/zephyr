@@ -27,6 +27,6 @@ elseif ("${BOARD_QUALIFIERS}" MATCHES "hyperflash")
   board_runner_args(jlink "--loader=BankAddr=0x60000000&Loader=HyperFlash")
 endif()
 
+include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
-include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
