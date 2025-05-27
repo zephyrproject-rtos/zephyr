@@ -15,6 +15,9 @@ family:
     socs:
     - name: corstone300
     - name: corstone310
+  - name: mps4
+    socs:
+    - name: corstone320
   - name: musca
     socs:
     - name: musca_b1
