@@ -830,7 +830,7 @@ static int can_rcar_recover(const struct device *dev, k_timeout_t timeout)
 	const struct can_rcar_cfg *config = dev->config;
 	struct can_rcar_data *data = dev->data;
 	int64_t start_time;
-	int ret;
+	int ret = 0;
 
 	if (!data->common.started) {
 		return -ENETDOWN;
