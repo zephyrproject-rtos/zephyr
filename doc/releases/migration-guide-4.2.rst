@@ -502,6 +502,14 @@ Networking
   the previously used ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` and
   ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` options.
 
+LwM2M
+=====
+
+* Accelerometer object: optional resources Y value, Z value, min range value,
+  max range value can now be used optionally as per the accelerometer object's
+  specification. Users of these resources will now need to provide a read
+  buffer.
+
 OpenThread
 ==========
 
