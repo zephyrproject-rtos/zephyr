@@ -755,7 +755,7 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
  */
 static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
 {
-	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
+	return MAX(1, (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator);
 }
 
 /**
