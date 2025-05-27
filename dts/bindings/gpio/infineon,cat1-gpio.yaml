@@ -8,14 +8,17 @@ description: Infineon CAT1 GPIO Port
 
 compatible: "infineon,cat1-gpio"
 
-include: ["gpio-controller.yaml", "base.yaml"]
+include: [gpio-controller.yaml, base.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
   reg:
     required: true
 
   interrupts:
-    required: true
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices
 
   "#gpio-cells":
     const: 2
