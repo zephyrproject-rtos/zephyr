@@ -1232,11 +1232,11 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSV16X_DT_ODR_OFF) < 0) {
+		if (lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
 			LOG_ERR("failed to disable accelerometer");
 			ret = -EIO;
 		}
-		if (lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSV16X_DT_ODR_OFF) < 0) {
+		if (lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
 			LOG_ERR("failed to disable gyroscope");
 			ret = -EIO;
 		}
