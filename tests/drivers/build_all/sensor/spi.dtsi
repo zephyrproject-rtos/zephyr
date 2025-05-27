@@ -6,6 +6,8 @@
  * Application overlay for spi devices
  */
 
+#include <zephyr/dt-bindings/sensor/iis3dwb.h>
+
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
  ***************************************/
@@ -428,4 +430,15 @@ test_spi_icp201xx: icp201xx@34 {
 	int-gpios = <&test_gpio 0 0>;
 	op-mode = "mode0";
 	drive-strength = "current_12mA_1_8V";
+};
+
+test_spi_iis3dwb: iis3dwb@35 {
+	compatible = "st,iis3dwb";
+	reg = <0x35>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <IIS3DWB_DT_FS_16G>;
+	odr = <IIS3DWB_DT_ODR_26k7Hz>;
+	filter = <IIS3DWB_DT_HP_ODR_DIV_800>;
 };
