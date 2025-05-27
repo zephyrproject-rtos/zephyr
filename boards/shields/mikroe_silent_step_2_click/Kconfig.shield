@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_SILENT_STEP_2_CLICK
+	def_bool $(shields_list_contains,mikroe_silent_step_2_click)
