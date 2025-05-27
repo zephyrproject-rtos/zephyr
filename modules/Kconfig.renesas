@@ -30,6 +30,11 @@ config USE_RA_FSP_I3C
 	help
 	  Enable RA FSP I3C driver
 
+config USE_RA_FSP_DMA
+	bool
+	help
+	  Enable RA FSP DMA driver
+
 config USE_RA_FSP_DTC
 	bool
 	help
