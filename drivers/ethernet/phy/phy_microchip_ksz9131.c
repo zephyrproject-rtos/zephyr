@@ -21,11 +21,17 @@ LOG_MODULE_REGISTER(phy_mchp_ksz9131, CONFIG_PHY_LOG_LEVEL);
 struct mchp_ksz9131_config {
 	uint8_t phy_addr;
 	const struct device *const mdio;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	const struct gpio_dt_spec interrupt_gpio;
+#endif
 };
 
 struct mchp_ksz9131_data {
 	const struct device *dev;
 	phy_callback_t cb;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	struct gpio_callback gpio_callback;
+#endif
 	void *cb_data;
 	struct k_work_delayable monitor_work;
 	struct phy_link_state state;
@@ -127,6 +133,64 @@ static int phy_check_ksz9131_id(const struct device *dev)
 	return ret;
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static int phy_mchp_ksz9131_clear_interrupt(struct mchp_ksz9131_data *data)
+{
+	const struct device *dev = data->dev;
+	const struct mchp_ksz9131_config *cfg = dev->config;
+	uint16_t reg_val;
+	int ret;
+
+	k_sem_take(&data->sem, K_FOREVER);
+
+	/* Read/clear PHY interrupt status register */
+	ret = ksz9131_read(dev, PHY_KSZ9131_ICS_REG, &reg_val);
+	if (ret < 0) {
+		LOG_ERR("Error reading phy (%d) interrupt status register", cfg->phy_addr);
+	}
+
+	k_sem_give(&data->sem);
+
+	return ret;
+}
+
+static int phy_mchp_ksz9131_config_interrupt(const struct device *dev)
+{
+	struct mchp_ksz9131_data *data = dev->data;
+	uint16_t reg_val;
+	int ret;
+
+	/* Read Interrupt Control/Status register to write back */
+	ret = ksz9131_read(dev, PHY_KSZ9131_ICS_REG, &reg_val);
+	if (ret < 0) {
+		return ret;
+	}
+	reg_val |= PHY_KSZ9131_ICS_LINK_UP_IE_MASK | PHY_KSZ9131_ICS_LINK_DOWN_IE_MASK;
+
+	/* Write settings to Interrupt Control/Status register */
+	ret = ksz9131_write(dev, PHY_KSZ9131_ICS_REG, reg_val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Clear interrupt */
+	ret = phy_mchp_ksz9131_clear_interrupt(data);
+
+	return ret;
+}
+
+static void phy_mchp_ksz9131_interrupt_handler(const struct device *port, struct gpio_callback *cb,
+					       gpio_port_pins_t pins)
+{
+	struct mchp_ksz9131_data *data = CONTAINER_OF(cb, struct mchp_ksz9131_data, gpio_callback);
+	int ret = k_work_reschedule(&data->monitor_work, K_NO_WAIT);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to schedule monitor_work from ISR");
+	}
+}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
+
 static int phy_mchp_ksz9131_autonegotiate(const struct device *dev)
 {
 	const struct mchp_ksz9131_config *const cfg = dev->config;
@@ -187,6 +251,9 @@ static int phy_mchp_ksz9131_autonegotiate(const struct device *dev)
 static int phy_mchp_ksz9131_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				     enum phy_cfg_link_flag flags)
 {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	const struct mchp_ksz9131_config *const cfg = dev->config;
+#endif
 	struct mchp_ksz9131_data *const data = dev->data;
 	uint16_t anar;
 	uint16_t c1kt;
@@ -200,7 +267,13 @@ static int phy_mchp_ksz9131_cfg_link(const struct device *dev, enum phy_link_spe
 	k_sem_take(&data->sem, K_FOREVER);
 
 	/* We are going to reconfigure the phy, don't need to monitor until done */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (!cfg->interrupt_gpio.port) {
+		k_work_cancel_delayable(&data->monitor_work);
+	}
+#else
 	k_work_cancel_delayable(&data->monitor_work);
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
 	ret = ksz9131_read(dev, MII_ANAR, &anar);
 	if (ret < 0) {
@@ -261,6 +334,12 @@ static int phy_mchp_ksz9131_cfg_link(const struct device *dev, enum phy_link_spe
 	ret = phy_mchp_ksz9131_autonegotiate(dev);
 done:
 	k_sem_give(&data->sem);
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (cfg->interrupt_gpio.port) {
+		return ret;
+	}
+#endif
 
 	/* Start monitoring */
 	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
@@ -361,8 +440,20 @@ static void phy_mchp_ksz9131_monitor_work_handler(struct k_work *work)
 	struct mchp_ksz9131_data *const data =
 		CONTAINER_OF(dwork, struct mchp_ksz9131_data, monitor_work);
 	const struct device *dev = data->dev;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	const struct mchp_ksz9131_config *cfg = dev->config;
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 	struct phy_link_state state = {};
 	int ret;
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (cfg->interrupt_gpio.port) {
+		ret = phy_mchp_ksz9131_clear_interrupt(data);
+		if (ret < 0) {
+			return;
+		}
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
 	ret = phy_mchp_ksz9131_get_link(dev, &state);
 	if (ret == 0 && (state.speed != data->state.speed || state.is_up != data->state.is_up)) {
@@ -371,6 +462,12 @@ static void phy_mchp_ksz9131_monitor_work_handler(struct k_work *work)
 			data->cb(dev, &data->state, data->cb_data);
 		}
 	}
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (cfg->interrupt_gpio.port) {
+		return;
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
 	/* Submit delayed work */
 	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
@@ -401,7 +498,36 @@ static int phy_mchp_ksz9131_init(const struct device *dev)
 
 	k_work_init_delayable(&data->monitor_work, phy_mchp_ksz9131_monitor_work_handler);
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (!cfg->interrupt_gpio.port) {
+		phy_mchp_ksz9131_monitor_work_handler(&data->monitor_work.work);
+		goto done;
+	}
+
+	/* Configure interrupt pin */
+	ret = gpio_pin_configure_dt(&cfg->interrupt_gpio, GPIO_INPUT);
+	if (ret < 0) {
+		goto done;
+	}
+
+	gpio_init_callback(&data->gpio_callback, phy_mchp_ksz9131_interrupt_handler,
+			   BIT(cfg->interrupt_gpio.pin));
+
+	ret = gpio_add_callback_dt(&cfg->interrupt_gpio, &data->gpio_callback);
+	if (ret < 0) {
+		goto done;
+	}
+
+	ret = phy_mchp_ksz9131_config_interrupt(dev);
+	if (ret < 0) {
+		goto done;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+done:
+#else
 	phy_mchp_ksz9131_monitor_work_handler(&data->monitor_work.work);
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
 	if (ret < 0) {
 		LOG_ERR("PHY (%d) init failed", cfg->phy_addr);
@@ -418,10 +544,17 @@ static DEVICE_API(ethphy, mchp_ksz9131_phy_api) = {
 	.write = phy_mchp_ksz9131_write,
 };
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+#define INTERRUPT_GPIO(n) .interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),
+#else
+#define INTERRUPT_GPIO(n)
+#endif /* interrupt gpio */
+
 #define MICROCHIP_KSZ9131_INIT(n)						\
 	static const struct mchp_ksz9131_config mchp_ksz9131_##n##_config = {	\
 		.phy_addr = DT_INST_REG_ADDR(n),				\
 		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),				\
+		INTERRUPT_GPIO(n)						\
 	};									\
 										\
 	static struct mchp_ksz9131_data mchp_ksz9131_##n##_data;		\
