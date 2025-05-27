@@ -390,10 +390,6 @@ static int video_sw_generator_set_frmival(const struct device *dev, struct video
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (frmival->denominator == 0 || frmival->numerator == 0) {
-		return -EINVAL;
-	}
-
 	data->frame_rate = CLAMP(DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator),
 				 MIN_FRAME_RATE, MAX_FRAME_RATE);
 	frmival->numerator = 1;
