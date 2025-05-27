@@ -12,4 +12,5 @@ supported:
   - uart
   - watchdog
   - usbd
+  - i2s
 vendor: renesas
