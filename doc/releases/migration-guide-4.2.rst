@@ -465,6 +465,14 @@ Networking
   need to update their response callback implementations. To retain current
   behavior, simply return 0 from the callback.
 
+LwM2M
+=====
+
+* Accelerometer object: optional resources Y value, Z value, min range value,
+  max range value can now be used optionally as per the accelerometer object's
+  specification. Users of these resources will now need to provide a read
+  buffer.
+
 OpenThread
 ==========
 
