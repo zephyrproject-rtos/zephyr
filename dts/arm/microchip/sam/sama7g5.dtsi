@@ -577,5 +577,28 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 97>;
 			status = "disabled";
 		};
+
+		ethernet@e2804000 {
+			compatible = "microchip,sam-ethernet-controller";
+			reg = <0xe2804000 0x4000>;
+			clocks = <&pmc PMC_TYPE_GCK 52>;
+
+			gmac1: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 121 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-names = "gmac", "q1";
+				num-queues = <2>;
+				status = "disabled";
+			};
+
+			gmac1_mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
 	};
 };
