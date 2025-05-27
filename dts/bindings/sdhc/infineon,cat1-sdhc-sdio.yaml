@@ -7,7 +7,7 @@ description: Infineon CAT1 SDHC/SDIO controller
 
 compatible: "infineon,cat1-sdhc-sdio"
 
-include: [sdhc.yaml, pinctrl-device.yaml]
+include: [sdhc.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
   reg:
@@ -18,3 +18,9 @@ properties:
 
   pinctrl-names:
     required: true
+
+  interrupts:
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices

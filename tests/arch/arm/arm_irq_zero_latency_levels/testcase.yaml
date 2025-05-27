@@ -10,6 +10,9 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     integration_platforms:
       - mps2/an521/cpu1
+    platform_exclude:
+      - kit_xmc72_evk/xmc7200d_e272k8384/m7_0
+      - kit_xmc72_evk/xmc7200d_e272k8384/m7_1
   arch.arm.irq_zero_latency_levels.secure_fw:
     filter: CONFIG_TRUSTED_EXECUTION_SECURE
     integration_platforms:
