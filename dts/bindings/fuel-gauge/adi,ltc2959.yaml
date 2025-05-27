@@ -17,10 +17,8 @@ properties:
     required: true
 
   alert-gpios:
-    required: false
     type: phandle-array
     description: |
       Optional GPIO used for ALERT output. The LTC2959 pulls this pin low
       when thresholds are crossed or charge events occur. Typically wired
       to a host interrupt-capable GPIO pin.
-
