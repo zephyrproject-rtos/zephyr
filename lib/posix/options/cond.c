@@ -108,7 +108,7 @@ static int cond_wait(pthread_cond_t *cond, pthread_mutex_t *mu, const struct tim
 		timeout = K_MSEC(timespec_to_timeoutms(cv->attr.clock, abstime));
 	}
 
-	LOG_DBG("Waiting on cond %p with timeout %llx", cv, timeout.ticks);
+	LOG_DBG("Waiting on cond %p with timeout %" PRIx64, cv, (int64_t)timeout.ticks);
 	ret = k_condvar_wait(&cv->condvar, m, timeout);
 	if (ret == -EAGAIN) {
 		LOG_DBG("Timeout waiting on cond %p", cv);
