@@ -2,25 +2,10 @@
 
 include(${ZEPHYR_BASE}/cmake/compiler/clang/compiler_flags.cmake)
 
-# nostdinc_include contains path to llvm headers and also relative
-# path of "include-fixed".
-# Clear "nostdinc" and nostdinc_include
+# nostdinc needs to be cleared as it is needed for xtensa/config/core.h.
+# nostdinc_include contains path to llvm headers.
 set_compiler_property(PROPERTY nostdinc)
-set_compiler_property(PROPERTY nostdinc_include)
-
-# For C++ code, re-add the standard includes directory which was
-# cleared up from nostdinc_inlcude in above lines with no
-# "include-fixed" this time"
-if(CONFIG_CPP)
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} --print-file-name=include/stddef.h
-    OUTPUT_VARIABLE _OUTPUT
-    COMMAND_ERROR_IS_FATAL ANY
-    )
-  get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
-  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
-  set_compiler_property(PROPERTY nostdinc_include "${_OUTPUT}")
-endif()
+set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 
 if($ENV{XCC_NO_G_FLAG})
   # Older xcc/clang cannot use "-g" due to this bug:
