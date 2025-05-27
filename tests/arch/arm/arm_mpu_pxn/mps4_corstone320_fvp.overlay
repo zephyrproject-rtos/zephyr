@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+
+/ {
+	dtcm: dtcm@30000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x30000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "DTCM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_PXN) )>;
+	};
+};
