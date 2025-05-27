@@ -172,6 +172,14 @@ config WIFI_SILABS_SIWX91X_SSL_VERSIONS_SUPPORT
 	  SSL/TLS versions.This implementation is provided by the Network
 	  Co-Processor present on SiWx91x series.
 
+config WIFI_SILABS_SIWX91X_ENABLE_SSL_16K_RECORD
+	bool "Offloaded implementation to support SSL 16K record"
+	help
+	  Enable this option to support for 16K SSL record sizes, which improves
+	  performance for SSL connections that use larger record sizes. This
+	  implementation is provided by the Network Co-Processor present on
+	  SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
