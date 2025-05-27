@@ -501,5 +501,27 @@
 			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
 			clock-names = "td_slck", "md_slck", "main_xtal";
 		};
+
+		gmac1: ethernet@e2804000 {
+			compatible = "atmel,sam-gmac";
+			reg = <0xe2804000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 121 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "gmac", "q1";
+			clocks = <&pmc PMC_TYPE_GCK 52>;
+			clock-names = "gclk";
+			num-queues = <2>;
+			status = "disabled";
+		};
+
+		gmac1_mdio: mdio@e2804000 {
+			compatible = "atmel,sam-mdio";
+			reg = <0xe2804000 0x4000>;
+			clocks = <&pmc PMC_TYPE_GCK 52>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
