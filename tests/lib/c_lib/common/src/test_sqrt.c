@@ -29,8 +29,7 @@ static float test_floats[] = {
 	};
 #define	NUM_TEST_FLOATS	(sizeof(test_floats)/sizeof(float))
 
-#if __SIZEOF_DOUBLE__ == 8
-	static double test_doubles[] = {
+static double test_doubles[] = {
 		1.0, 2.0, 3.0, 4.0,
 		5.0, 6.0, 7.0, 8.0, 9.0,	/* numbers across the decade */
 		3.14159265359, 2.718281828,	/* irrational numbers pi and e */
@@ -60,7 +59,6 @@ static int isnan(double x)
 		((ieee754.u & 0x000fffffffffffff) != 0);
 }
 #endif
-#endif /* __SIZEOF_DOUBLE__ == 8 */
 
 #ifndef	isinff
 static int isinff(float x)
