@@ -149,12 +149,58 @@
 	};
 };
 
+&gmac1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gmac1_default>;
+	phy-connection-type = "mii";
+	phy-handle = <&gmac1_phy>;
+	ref-clk-source = "external";
+};
+
+&gmac1_mdio {
+	status = "okay";
+
+	pinctrl-0 = <&pinctrl_gmac1_mdio_default>;
+	pinctrl-names = "default";
+
+	gmac1_phy: ethernet-phy@0 {
+		compatible = "microchip,ksz8081";
+		status = "okay";
+		reg = <0>;
+		int-gpios = <&pioa 21 GPIO_ACTIVE_LOW>;
+		microchip,interface-type = "rmii-25MHz";
+	};
+};
+
 &pinctrl {
 	pinctrl_flx3_default: flx3_default {
 		group1 {
 			pinmux = <PIN_PD16__FLEXCOM3_IO0>,
 				 <PIN_PD17__FLEXCOM3_IO1>;
 			bias-pull-up;
+		};
+	};
+
+	pinctrl_gmac1_default: gmac1_default {
+		group1 {
+			pinmux = <PIN_PD30__G1_TXCK>,
+				 <PIN_PD22__G1_TX0>,
+				 <PIN_PD23__G1_TX1>,
+				 <PIN_PD21__G1_TXEN>,
+				 <PIN_PD25__G1_RX0>,
+				 <PIN_PD26__G1_RX1>,
+				 <PIN_PD27__G1_RXER>,
+				 <PIN_PD24__G1_RXDV>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_gmac1_mdio_default: gmac1_mdio_default {
+		group1 {
+			pinmux = <PIN_PD28__G1_MDC>,
+				 <PIN_PD29__G1_MDIO>;
+			bias-disable;
 		};
 	};
 
