@@ -1,6 +1,23 @@
 # Copyright (c) 2023 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+description: |
+    When setting the accel-range, accel-odr, gyro-range, gyro-odr properties in
+    a .dts or .dtsi file you may include lsm6dsv16x.h and use the macros
+    defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+
+    lsm6dsv16x: lsm6dsv16x@0 {
+      ...
+
+      accel-range = <LSM6DSV16X_DT_FS_8G>;
+      accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+      gyro-range = <LSM6DSV16X_DT_FS_4000DPS>;
+      gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+    };
+
 include: st,lsm6dsvxxx-common.yaml
 
 properties:
@@ -16,3 +33,18 @@ properties:
       - 16 # LSM6DSV16X_DT_FS_16G (0.488 mg/LSB)
 
     enum: [2, 4, 8, 16]
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+
+      - 0x0 # LSM6DSV16X_DT_FS_125DPS  (4.375 mdps/LSB)
+      - 0x1 # LSM6DSV16X_DT_FS_250DPS  (8.75 mdps/LSB)
+      - 0x2 # LSM6DSV16X_DT_FS_500DPS  (17.50 mdps/LSB)
+      - 0x3 # LSM6DSV16X_DT_FS_1000DPS (35 mdps/LSB)
+      - 0x4 # LSM6DSV16X_DT_FS_2000DPS (70 mdps/LSB)
+      - 0xc # LSM6DSV16X_DT_FS_4000DPS (140 mdps/LSB)
+
+    enum: [0x0, 0x1, 0x2, 0x3, 0x4, 0xc]
