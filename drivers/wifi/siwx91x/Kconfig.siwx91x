@@ -180,6 +180,14 @@ config WIFI_SILABS_SIWX91X_ENABLE_SSL_16K_RECORD
 	  implementation is provided by the Network Co-Processor present on
 	  SiWx91x series.
 
+config WIFI_SILABS_SIWX91X_SSL_MEMORY_CLOUD
+	bool "Offloaded implementation for the SSL/TLS cloud connections"
+	help
+	  Enable this option to allocate additional memory for SSL/TLS
+	  connections, typically required for connections to cloud servers,
+	  to avoid handshake failure.This implementation is provided by the
+	  Network Co-Processor present on SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
