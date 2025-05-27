@@ -24,6 +24,8 @@ BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
 with open(BOARD_SCHEMA_PATH, 'r') as f:
     board_schema = yaml.load(f.read(), Loader=SafeLoader)
 
+BOARD_VALIDATOR = pykwalify.core.Core(schema_data=board_schema, source_data={})
+
 BOARD_YML = 'board.yml'
 
 #
@@ -230,7 +232,8 @@ def load_v2_boards(board_name, board_yml, systems):
             b = yaml.load(f.read(), Loader=SafeLoader)
 
         try:
-            pykwalify.core.Core(source_data=b, schema_data=board_schema).validate()
+            BOARD_VALIDATOR.source = b
+            BOARD_VALIDATOR.validate()
         except pykwalify.errors.SchemaError as e:
             sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
                      .format(board_yml.as_posix(), e))
