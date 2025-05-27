@@ -31,6 +31,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
@@ -95,6 +96,13 @@ static inline void dcache_clean(void *addr, uint32_t size)
 #define dcache_is_enabled()
 #define dcache_invalidate(addr, size)
 #define dcache_clean(addr, size)
+#endif
+
+#ifdef CONFIG_DCACHE
+#undef dcache_invalidate
+#undef dcache_clean
+#define dcache_invalidate sys_cache_data_invd_range
+#define dcache_clean sys_cache_data_flush_range
 #endif
 
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
@@ -1905,7 +1913,6 @@ static void eth0_iface_init(struct net_if *iface)
 
 		phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed,
 				      (void *)dev);
-
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
