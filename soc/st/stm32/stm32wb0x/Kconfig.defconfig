@@ -19,9 +19,6 @@ config BT_AUTO_DATA_LEN_UPDATE
 config BT_HCI_ACL_FLOW_CONTROL
 	default n
 
-config MAIN_STACK_SIZE
-	default 1600
-
 endif # BT
 
 endif # SOC_SERIES_STM32WB0X
