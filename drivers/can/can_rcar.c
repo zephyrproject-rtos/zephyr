@@ -1023,11 +1023,9 @@ static int can_rcar_init(const struct device *dev)
 	data->common.state_change_cb = NULL;
 	data->common.state_change_cb_user_data = NULL;
 
-	if (config->common.phy != NULL) {
-		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
-			return -ENODEV;
-		}
+	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
+		LOG_ERR("CAN transceiver not ready");
+		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
