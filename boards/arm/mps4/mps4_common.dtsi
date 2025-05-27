@@ -117,3 +117,5 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+#include "mps4-pinctrl.dtsi"
