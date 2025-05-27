@@ -38,6 +38,13 @@ config I2S_TEST_ALLOWED_DATA_OFFSET
 	  Maximum allowed offset between sent and received samples. Non-zero
 	  value of this option may be needed when GPIO loopback is used.
 
+config I2S_TEST_FRAME_CLOCK_TOLERANCE_PPM
+	int "Allowed tolerance for the frame clock frequency deviation"
+	default 1000
+	help
+	  Maximum allowed tolerance for the frame clock frequency deviation
+	  in ppm.
+
 config I2S_TEST_SKIP_SAMPLERATE_8000
 	bool "Skip short transfer tests at 8000 samples per socond"
 	help

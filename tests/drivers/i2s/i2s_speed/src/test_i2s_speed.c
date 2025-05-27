@@ -7,6 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -74,6 +75,12 @@ static const struct device *dev_i2s_rx;
 static const struct device *dev_i2s_tx;
 static const struct device *dev_i2s_rxtx;
 static bool dir_both_supported;
+
+static const struct gpio_dt_spec frame_clk_sense_gpio =
+	GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), test_gpios, {0});
+static bool frame_clk_sense_enabled;
+
+#define NUMBER_OF_FRAMES_FOR_MEASURE_FREQUENCY (2 * SAMPLE_NO - 8)
 
 static void fill_buf(int16_t *tx_block, int att)
 {
@@ -178,6 +185,44 @@ static int configure_stream(const struct device *dev_i2s, enum i2s_dir dir, uint
 	return TC_PASS;
 }
 
+/* Return time it takes to send NUMBER_OF_FRAMES_FOR_MEASURE_FREQUENCY in microseconds */
+static uint32_t frame_clock_polling(void)
+{
+	uint32_t start_time, stop_time, counter = 0;
+
+	while (gpio_pin_get_dt(&frame_clk_sense_gpio) == 1) {
+	}
+	while (gpio_pin_get_dt(&frame_clk_sense_gpio) == 0) {
+	}
+	start_time = k_cycle_get_32();
+	while (counter < NUMBER_OF_FRAMES_FOR_MEASURE_FREQUENCY) {
+		while (gpio_pin_get_dt(&frame_clk_sense_gpio) == 1) {
+		}
+		while (gpio_pin_get_dt(&frame_clk_sense_gpio) == 0) {
+		}
+		counter++;
+	}
+	stop_time = k_cycle_get_32();
+	return k_cyc_to_us_ceil32(stop_time - start_time);
+}
+
+void verify_frame_clock_frequency(uint32_t elapsed, uint32_t expected_freq)
+{
+	uint32_t measured_freq;
+	uint32_t deviation;
+
+	measured_freq = NUMBER_OF_FRAMES_FOR_MEASURE_FREQUENCY * 1000000 / elapsed;
+	deviation =
+		(uint32_t)(((uint64_t)(expected_freq)*CONFIG_I2S_TEST_FRAME_CLOCK_TOLERANCE_PPM) /
+			   1000000);
+
+	TC_PRINT("%d frames captured in %d[us] --> measured frequency: %d[Hz]\n",
+		 NUMBER_OF_FRAMES_FOR_MEASURE_FREQUENCY, elapsed, measured_freq);
+	zassert_between_inclusive(measured_freq, expected_freq - deviation,
+				  expected_freq + deviation,
+				  "Measured frame clock frequency out of tolerance");
+}
+
 static void i2s_transfer_short(uint32_t frame_clk_freq)
 {
 	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
@@ -190,6 +235,7 @@ static void i2s_transfer_short(uint32_t frame_clk_freq)
 	void *tx_block;
 	size_t rx_size;
 	int ret;
+	uint32_t elapsed = 0;
 
 	/* Configure I2S TX and I2S RX transfer. */
 	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX, frame_clk_freq);
@@ -220,6 +266,10 @@ static void i2s_transfer_short(uint32_t frame_clk_freq)
 	/* All data written, drain TX queue and stop the transmission */
 	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
+
+	if (frame_clk_sense_enabled) {
+		elapsed = frame_clock_polling();
+	}
 
 	ret = i2s_read(dev_i2s_rx, &rx_block[0], &rx_size);
 	zassert_equal(ret, 0);
@@ -252,6 +302,9 @@ static void i2s_transfer_short(uint32_t frame_clk_freq)
 	zassert_equal(ret, 0);
 	k_mem_slab_free(&rx_0_mem_slab, rx_block[2]);
 	TC_PRINT("%d<-OK\n", 3);
+	if (frame_clk_sense_enabled) {
+		verify_frame_clock_frequency(elapsed, frame_clk_freq);
+	}
 }
 
 /** @brief Short I2S transfer at 8000 samples per second.
@@ -383,6 +436,7 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_long_44100)
 	int num_verified;
 	int ret;
 	uint32_t frame_clk_freq = 44100;
+	uint32_t elapsed = 0;
 
 	/* Configure I2S TX and I2S RX transfer. */
 	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX, frame_clk_freq);
@@ -428,6 +482,10 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_long_44100)
 	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
 
+	if (frame_clk_sense_enabled) {
+		elapsed = frame_clock_polling();
+	}
+
 	ret = i2s_read(dev_i2s_rx, &rx_block[rx_idx++], &rx_size);
 	zassert_equal(ret, 0);
 	zassert_equal(rx_size, BLOCK_SIZE);
@@ -455,6 +513,9 @@ ZTEST(drivers_i2s_speed, test_i2s_transfer_long_44100)
 		k_mem_slab_free(&rx_0_mem_slab, rx_block[rx_idx]);
 	}
 	zassert_equal(num_verified, NUM_BLOCKS, "Invalid RX blocks received");
+	if (frame_clk_sense_enabled) {
+		verify_frame_clock_frequency(elapsed, frame_clk_freq);
+	}
 }
 
 static void i2s_dir_both_transfer_short(uint32_t frame_clk_freq)
@@ -469,6 +530,7 @@ static void i2s_dir_both_transfer_short(uint32_t frame_clk_freq)
 	void *tx_block;
 	size_t rx_size;
 	int ret;
+	uint32_t elapsed = 0;
 
 	/* Configure I2S Dir Both transfer. */
 	ret = configure_stream(dev_i2s_rxtx, I2S_DIR_BOTH, frame_clk_freq);
@@ -492,6 +554,10 @@ static void i2s_dir_both_transfer_short(uint32_t frame_clk_freq)
 	/* All data written, drain TX queue and stop both streams. */
 	ret = i2s_trigger(dev_i2s_rxtx, I2S_DIR_BOTH, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "RX/TX DRAIN trigger failed");
+
+	if (frame_clk_sense_enabled) {
+		elapsed = frame_clock_polling();
+	}
 
 	ret = i2s_read(dev_i2s_rxtx, &rx_block[0], &rx_size);
 	zassert_equal(ret, 0);
@@ -520,6 +586,9 @@ static void i2s_dir_both_transfer_short(uint32_t frame_clk_freq)
 	zassert_equal(ret, 0);
 	k_mem_slab_free(&rx_0_mem_slab, rx_block[2]);
 	TC_PRINT("%d<-OK\n", 3);
+	if (frame_clk_sense_enabled) {
+		verify_frame_clock_frequency(elapsed, frame_clk_freq);
+	}
 }
 
 /** @brief Short I2S transfer using I2S_DIR_BOTH and sample rate of 8000.
@@ -635,6 +704,7 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long_44100)
 	int num_verified;
 	int ret;
 	uint32_t frame_clk_freq = 44100;
+	uint32_t elapsed = 0;
 
 	/* Configure I2S Dir Both transfer. */
 	ret = configure_stream(dev_i2s_rxtx, I2S_DIR_BOTH, frame_clk_freq);
@@ -673,6 +743,10 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long_44100)
 	ret = i2s_trigger(dev_i2s_rxtx, I2S_DIR_BOTH, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "RX/TX DRAIN trigger failed");
 
+	if (frame_clk_sense_enabled) {
+		elapsed = frame_clock_polling();
+	}
+
 	ret = i2s_read(dev_i2s_rxtx, &rx_block[rx_idx++], &rx_size);
 	zassert_equal(ret, 0);
 	zassert_equal(rx_size, BLOCK_SIZE);
@@ -696,6 +770,9 @@ ZTEST(drivers_i2s_speed_both_rxtx, test_i2s_dir_both_transfer_long_44100)
 		k_mem_slab_free(&rx_0_mem_slab, rx_block[rx_idx]);
 	}
 	zassert_equal(num_verified, NUM_BLOCKS, "Invalid RX blocks received");
+	if (frame_clk_sense_enabled) {
+		verify_frame_clock_frequency(elapsed, frame_clk_freq);
+	}
 }
 
 static void *test_i2s_speed_configure(void)
@@ -736,9 +813,16 @@ static void *test_i2s_speed_rxtx_configure(void)
 			     "I2S_DIR_BOTH value is supposed to be supported.");
 	}
 
+	if (device_is_ready(frame_clk_sense_gpio.port)) {
+		ret = gpio_pin_configure_dt(&frame_clk_sense_gpio, GPIO_INPUT);
+		zassert_ok(ret, "Configure frame clock sense (input GPIO) failed");
+		frame_clk_sense_enabled = true;
+	} else {
+		frame_clk_sense_enabled = false;
+	}
+
 	return 0;
 }
-
 
 ZTEST_SUITE(drivers_i2s_speed, NULL, test_i2s_speed_configure, NULL, NULL, NULL);
 ZTEST_SUITE(drivers_i2s_speed_both_rxtx, NULL, test_i2s_speed_rxtx_configure, NULL, NULL, NULL);

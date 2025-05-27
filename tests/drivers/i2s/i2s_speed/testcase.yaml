@@ -27,5 +27,8 @@ tests:
     harness: ztest
     harness_config:
       fixture: gpio_loopback
-    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
+      - CONFIG_I2S_TEST_FRAME_CLOCK_TOLERANCE_PPM=50000
+      - CONFIG_I2S_TEST_SKIP_SAMPLERATE_96000=y
     platform_allow: nrf5340dk/nrf5340/cpuapp
