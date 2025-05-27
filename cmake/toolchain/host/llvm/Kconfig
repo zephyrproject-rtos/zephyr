@@ -1,9 +1,9 @@
-# Copyright (c) 2023 Intel Corporation
+# Copyright The Zephyr Project Contributors
+# Copyright (c) 2024 Basalte bv
 # SPDX-License-Identifier: Apache-2.0
-
+#
 choice LLVM_LINKER
 	prompt "LLVM Linker"
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
 	default LLVM_USE_LD
 
 config LLVM_USE_LD
