@@ -15,7 +15,9 @@
  * XCC does not support using deprecated attribute in enum,
  * so just nullify it here to avoid compilation errors.
  */
+#ifndef __deprecated
 #define __deprecated
+#endif
 
 #define __in_section_unique(seg) \
 	__attribute__((section("." STRINGIFY(seg) "." STRINGIFY(__COUNTER__))))
