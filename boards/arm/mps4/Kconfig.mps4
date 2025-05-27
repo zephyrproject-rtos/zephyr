@@ -1,0 +1,6 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPS4
+	select SOC_SERIES_MPS4
+	select SOC_MPS4_CORSTONE320 if BOARD_MPS4_CORSTONE320_FVP || BOARD_MPS4_CORSTONE320_FVP_NS

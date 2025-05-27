@@ -1,0 +1,23 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MPS4_CORSTONE320_FVP
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+if ROMSTART_RELOCATION_ROM && BOARD_MPS4_CORSTONE320_FVP
+
+config ROMSTART_REGION_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,itcm)
+
+config ROMSTART_REGION_SIZE
+	default $(dt_nodelabel_reg_size_hex,itcm,0,k)
+
+endif
+
+endif
