@@ -149,20 +149,20 @@ enum ethernet_hw_caps {
 	/** VLAN supported */
 	ETHERNET_HW_VLAN		= BIT(2),
 
-	/** Enabling/disabling auto negotiation supported */
-	ETHERNET_AUTO_NEGOTIATION_SET	= BIT(3),
-
 	/** 10 Mbits link supported */
-	ETHERNET_LINK_10BASE		= BIT(4),
+	ETHERNET_LINK_10BASE		= BIT(3),
 
 	/** 100 Mbits link supported */
-	ETHERNET_LINK_100BASE		= BIT(5),
+	ETHERNET_LINK_100BASE		= BIT(4),
 
 	/** 1 Gbits link supported */
-	ETHERNET_LINK_1000BASE	= BIT(6),
+	ETHERNET_LINK_1000BASE		= BIT(5),
 
-	/** Changing duplex (half/full) supported */
-	ETHERNET_DUPLEX_SET		= BIT(7),
+	/** 2.5 Gbits link supported */
+	ETHERNET_LINK_2500BASE		= BIT(6),
+
+	/** 5 Gbits link supported */
+	ETHERNET_LINK_5000BASE		= BIT(7),
 
 	/** IEEE 802.1AS (gPTP) clock supported */
 	ETHERNET_PTP			= BIT(8),
@@ -202,20 +202,11 @@ enum ethernet_hw_caps {
 
 	/** TX-Injection supported */
 	ETHERNET_TXINJECTION_MODE	= BIT(20),
-
-	/** 2.5 Gbits link supported */
-	ETHERNET_LINK_2500BASE	= BIT(21),
-
-	/** 5 Gbits link supported */
-	ETHERNET_LINK_5000BASE	= BIT(22),
 };
 
 /** @cond INTERNAL_HIDDEN */
 
 enum ethernet_config_type {
-	ETHERNET_CONFIG_TYPE_AUTO_NEG,
-	ETHERNET_CONFIG_TYPE_LINK,
-	ETHERNET_CONFIG_TYPE_DUPLEX,
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
 	ETHERNET_CONFIG_TYPE_QAV_PARAM,
 	ETHERNET_CONFIG_TYPE_QBV_PARAM,
@@ -499,16 +490,8 @@ enum ethernet_checksum_support {
 
 struct ethernet_config {
 	union {
-		bool auto_negotiation;
-		bool full_duplex;
 		bool promisc_mode;
 		bool txinjection_mode;
-
-		struct {
-			bool link_10bt;
-			bool link_100bt;
-			bool link_1000bt;
-		} l;
 
 		struct net_eth_addr mac_address;
 

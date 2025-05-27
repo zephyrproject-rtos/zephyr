@@ -649,10 +649,6 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 		caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
 	}
 
-	if (dev_conf->enable_fdx) {
-		caps |= ETHERNET_DUPLEX_SET;
-	}
-
 	caps |= ETHERNET_PROMISC_MODE;
 
 	return caps;
