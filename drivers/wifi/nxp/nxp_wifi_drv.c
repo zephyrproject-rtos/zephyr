@@ -76,6 +76,8 @@ extern const rtos_wpa_supp_dev_ops wpa_supp_ops;
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_NXP_RW610)
 extern int is_hs_handshake_done;
 extern int wlan_host_sleep_state;
+extern bool skip_hs_handshake;
+extern void wlan_hs_hanshake_cfg(bool skip);
 #endif
 
 static int nxp_wifi_recv(struct net_if *iface, struct net_pkt *pkt);
@@ -2102,16 +2104,33 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 		 * User can use this time to issue other commands.
 		 */
 		if (is_hs_handshake_done == WLAN_HOSTSLEEP_SUCCESS) {
-			ret = wlan_hs_send_event(HOST_SLEEP_EXIT, NULL);
-			if (ret != 0) {
-				return -EFAULT;
+			/* If we are not woken up by WLAN, skip posting host sleep exit event.
+			 * And skip host sleep handshake next time we are about to sleep.
+			 */
+			if (POWER_GetWakeupStatus(WL_MCI_WAKEUP0_IRQn)) {
+				ret = wlan_hs_send_event(HOST_SLEEP_EXIT, NULL);
+				if (ret != 0) {
+					return -EFAULT;
+				}
+				wlan_hs_hanshake_cfg(false);
+			} else {
+				wlan_hs_hanshake_cfg(true);
 			}
+
 			device_pm_dump_wakeup_source();
-			/* reset hs hanshake flag after waking up */
-			is_hs_handshake_done = 0;
 			if (wlan_host_sleep_state == HOST_SLEEP_ONESHOT) {
 				wlan_host_sleep_state = HOST_SLEEP_DISABLE;
+				wlan_hs_hanshake_cfg(false);
 			}
+#ifndef CONFIG_BT
+			if (skip_hs_handshake == true &&
+			    is_hs_handshake_done == WLAN_HOSTSLEEP_SUCCESS) {
+				ret = wlan_hs_send_event(HOST_SLEEP_HANDSHAKE_SKIP, NULL);
+				if (ret != 0) {
+					return -EFAULT;
+				}
+			}
+#endif
 		}
 		break;
 	default:
