@@ -220,7 +220,7 @@ static int get_constant_charge_voltage_uv(const struct device *dev, union charge
 		return ret;
 	}
 
-	if (tmp > ARRAY_SIZE(constant_charge_voltage_lut)) {
+	if (tmp >= ARRAY_SIZE(constant_charge_voltage_lut)) {
 		return -EINVAL;
 	}
 
