@@ -1667,51 +1667,6 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 
 	return retval;
 }
-/**
- * @brief XGMAC get config function
- * XGMAC get config function facilitates to read the existing MAC settings
- *
- * @param dev Pointer to the ethernet device
- * @param type Type of configuration
- * @param config Pointer to configuration data
- * @retval 0 get configuration successful
- *         -ENOTSUP for invalid config type
- */
-static int eth_dwc_xgmac_get_config(const struct device *dev, enum ethernet_config_type type,
-				    struct ethernet_config *config)
-{
-	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
-
-	switch (type) {
-	case ETHERNET_CONFIG_TYPE_AUTO_NEG:
-		config->auto_negotiation = dev_data->auto_neg;
-		break;
-	case ETHERNET_CONFIG_TYPE_LINK:
-		if (dev_data->link_speed == LINK_1GBIT) {
-			config->l.link_1000bt = true;
-		} else if (dev_data->link_speed == LINK_100MBIT) {
-			config->l.link_100bt = true;
-		} else if (dev_data->link_speed == LINK_10MBIT) {
-			config->l.link_10bt = true;
-		}
-		break;
-	case ETHERNET_CONFIG_TYPE_DUPLEX:
-		config->full_duplex = dev_data->enable_full_duplex;
-		break;
-	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(config->mac_address.addr, dev_data->mac_addr, 6);
-		break;
-#if (!CONFIG_ETH_DWC_XGMAC_PROMISCUOUS_EXCEPTION && CONFIG_NET_PROMISCUOUS_MODE)
-	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		config->promisc_mode = dev_data->promisc_mode;
-		break;
-#endif
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
 
 /**
  * @brief XGMAC capability request function
