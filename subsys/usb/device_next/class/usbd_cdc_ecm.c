@@ -546,13 +546,6 @@ static int cdc_ecm_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int cdc_ecm_get_config(const struct device *dev,
-			      enum ethernet_config_type type,
-			      struct ethernet_config *config)
-{
-	return -ENOTSUP;
-}
-
 static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -639,7 +632,6 @@ static struct usbd_class_api usbd_cdc_ecm_api = {
 
 static const struct ethernet_api cdc_ecm_eth_api = {
 	.iface_api.init = cdc_ecm_iface_init,
-	.get_config = cdc_ecm_get_config,
 	.set_config = cdc_ecm_set_config,
 	.get_capabilities = cdc_ecm_get_capabilities,
 	.send = cdc_ecm_send,
