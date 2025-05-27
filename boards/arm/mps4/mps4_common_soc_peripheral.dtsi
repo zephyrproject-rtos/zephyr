@@ -187,6 +187,8 @@ uart3: uart@8206000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
 };
 
 uart4: uart@8207000 {
@@ -196,6 +198,8 @@ uart4: uart@8207000 {
 	interrupt-names = "tx", "rx";
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
 };
 
 uart5: uart@8208000 {
@@ -206,4 +210,9 @@ uart5: uart@8208000 {
 	interrupts = <126 3 125 3>;
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+};
+
+pinctrl: pinctrl {
+	compatible = "arm,mps4-pinctrl";
+	status = "okay";
 };
