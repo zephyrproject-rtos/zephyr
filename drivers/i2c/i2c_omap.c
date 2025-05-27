@@ -31,28 +31,28 @@ LOG_MODULE_REGISTER(omap_i2c, CONFIG_I2C_LOG_LEVEL);
 typedef struct {
 	uint8_t RESERVED_0[0x10]; /**< Reserved, offset: 0x0 */
 
-	__IO uint32_t SYSC;          /**< System Configuration, offset: 0x10 */
+	uint32_t SYSC;          /**< System Configuration, offset: 0x10 */
 	uint8_t RESERVED_1[0x18];    /**< Reserved, offset: 0x14 - 0x2C */
-	__IO uint32_t IRQENABLE_SET; /**< Interrupt Enable Set, offset: 0x2C */
+	uint32_t IRQENABLE_SET; /**< Interrupt Enable Set, offset: 0x2C */
 	uint8_t RESERVED_2[0x4];     /**< Reserved, offset: 0x30 - 0x34 */
-	__IO uint32_t WE;            /**< Wakeup Enable, offset: 0x34 */
+	uint32_t WE;            /**< Wakeup Enable, offset: 0x34 */
 	uint8_t RESERVED_3[0x4C];    /**< Reserved, offset: 0x38 - 0x84 */
-	__IO uint32_t IE;            /**< Interrupt Enable (Legacy), offset: 0x84 */
-	__IO uint32_t STAT;          /**< Status, offset: 0x88 */
+	uint32_t IE;            /**< Interrupt Enable (Legacy), offset: 0x84 */
+	uint32_t STAT;          /**< Status, offset: 0x88 */
 	uint8_t RESERVED_4[0x4];     /**< Reserved, offset: 0x8C - 0x90 */
-	__IO uint32_t SYSS;          /**< System Status, offset: 0x90 */
-	__IO uint32_t BUF;           /**< Buffer, offset: 0x94 */
-	__IO uint32_t CNT;           /**< Data Count, offset: 0x98 */
-	__IO uint32_t DATA;          /**< Data Access, offset: 0x9C */
+	uint32_t SYSS;          /**< System Status, offset: 0x90 */
+	uint32_t BUF;           /**< Buffer, offset: 0x94 */
+	uint32_t CNT;           /**< Data Count, offset: 0x98 */
+	uint32_t DATA;          /**< Data Access, offset: 0x9C */
 	uint8_t RESERVED_5[0x4];     /**< Reserved, offset: 0xA0 - 0xA4 */
-	__IO uint32_t CON;           /**< Configuration, offset: 0xA4 */
-	__IO uint32_t OA;            /**< Own Address, offset: 0xA8 */
-	__IO uint32_t SA;            /**< Target Address, offset: 0xAC */
-	__IO uint32_t PSC;           /**< Clock Prescaler, offset: 0xB0 */
-	__IO uint32_t SCLL;          /**< SCL Low Time, offset: 0xB4 */
-	__IO uint32_t SCLH;          /**< SCL High Time, offset: 0xB8 */
-	__IO uint32_t SYSTEST;       /**< System Test, offset: 0xBC */
-	__IO uint32_t BUFSTAT;       /**< Buffer Status, offset: 0xC0 */
+	uint32_t CON;           /**< Configuration, offset: 0xA4 */
+	uint32_t OA;            /**< Own Address, offset: 0xA8 */
+	uint32_t SA;            /**< Target Address, offset: 0xAC */
+	uint32_t PSC;           /**< Clock Prescaler, offset: 0xB0 */
+	uint32_t SCLL;          /**< SCL Low Time, offset: 0xB4 */
+	uint32_t SCLH;          /**< SCL High Time, offset: 0xB8 */
+	uint32_t SYSTEST;       /**< System Test, offset: 0xBC */
+	uint32_t BUFSTAT;       /**< Buffer Status, offset: 0xC0 */
 } i2c_omap_regs_t;
 
 /* I2C Configuration Register (I2C_OMAP_CON) */
