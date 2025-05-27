@@ -31,6 +31,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
@@ -59,12 +60,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/gptp.h>
 #include <zephyr/irq.h>
 
-#ifdef __DCACHE_PRESENT
+#if defined(__DCACHE_PRESENT) || defined(CONFIG_DCACHE)
 static bool dcache_enabled;
 
 static inline void dcache_is_enabled(void)
 {
+#ifdef __DCACHE_PRESENT
 	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
+#else
+	dcache_enabled = true;
+#endif
 }
 static inline void dcache_invalidate(uint32_t addr, uint32_t size)
 {
@@ -76,7 +81,7 @@ static inline void dcache_invalidate(uint32_t addr, uint32_t size)
 	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	uint32_t size_full = size + addr - start_addr;
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
+	sys_cache_data_invd_range((uint32_t *)start_addr, size_full);
 }
 
 static inline void dcache_clean(uint32_t addr, uint32_t size)
@@ -89,7 +94,7 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	uint32_t size_full = size + addr - start_addr;
 
-	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
+	sys_cache_data_flush_range((uint32_t *)start_addr, size_full);
 }
 #else
 #define dcache_is_enabled()
