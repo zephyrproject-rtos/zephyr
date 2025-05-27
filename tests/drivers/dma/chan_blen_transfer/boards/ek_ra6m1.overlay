@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma0 {
+	status = "okay";
+	interrupts = <95 1>, <94 1>;
+	interrupt-names = "ch0", "ch1";
+};
+
+tst_dma0: &dma0 {};
