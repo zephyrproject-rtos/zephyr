@@ -188,6 +188,23 @@ config WIFI_SILABS_SIWX91X_SSL_MEMORY_CLOUD
 	  to avoid handshake failure.This implementation is provided by the
 	  Network Co-Processor present on SiWx91x series.
 
+config WIFI_SILABS_SIWX91X_SOCKET_SELECT
+	bool "Offloaded implementation for socket select"
+	help
+	  Enable this option for the configuration of socket select
+	  implementation over the network provided by the Network
+	  Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_SOCKET_SELECT_COUNT
+	int "Offloaded implementation of select"
+	default 10
+	range 1 10
+	depends on WIFI_SILABS_SIWX91X_SOCKET_SELECT
+	help
+	  Configure this option for the number of select operations the
+	  device can handle, with a maximum value of 10. This implementation
+	  is provided by the Network Co-Processor present on SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
