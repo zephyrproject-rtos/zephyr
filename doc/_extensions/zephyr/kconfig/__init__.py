@@ -233,13 +233,26 @@ class _FindKconfigSearchDirectiveVisitor(nodes.NodeVisitor):
         return self._found
 
 
+class KconfigRegexRole(XRefRole):
+    """Role for creating links to Kconfig regex searches."""
+
+    def process_link(self, env: BuildEnvironment, refnode: nodes.Element, has_explicit_title: bool,
+                     title: str, target: str) -> tuple[str, str]:
+        # render as "normal" text when explicit title is provided, literal otherwise
+        if has_explicit_title:
+            self.innernodeclass = nodes.inline
+        else:
+            self.innernodeclass = nodes.literal
+        return title, target
+
+
 class KconfigDomain(Domain):
     """Kconfig domain"""
 
     name = "kconfig"
     label = "Kconfig"
     object_types = {"option": ObjType("option", "option")}
-    roles = {"option": XRefRole()}
+    roles = {"option": XRefRole(), "option-regex": KconfigRegexRole()}
     directives = {"search": KconfigSearch}
     initial_data: dict[str, Any] = {"options": set()}
 
@@ -259,20 +272,56 @@ class KconfigDomain(Domain):
         node: pending_xref,
         contnode: nodes.Element,
     ) -> nodes.Element | None:
-        match = [
-            (docname, anchor)
-            for name, _, _, docname, anchor, _ in self.get_objects()
-            if name == target
-        ]
-
-        if match:
-            todocname, anchor = match[0]
-
-            return make_refnode(
-                builder, fromdocname, todocname, anchor, contnode, anchor
-            )
+        if typ == "option-regex":
+            # Handle regex search links
+            search_docname = self._find_search_docname(env)
+            if search_docname:
+                # Create a reference to the search page with the regex as a fragment
+                ref_uri = builder.get_relative_uri(fromdocname, search_docname) + f"#!{target}"
+                ref_node = nodes.reference('', '', refuri=ref_uri, internal=True)
+                ref_node.append(contnode)
+                return ref_node
+            else:
+                # Fallback to plain text if no search page is found
+                return contnode
         else:
-            return None
+            # Handle regular option links
+            match = [
+                (docname, anchor)
+                for name, _, _, docname, anchor, _ in self.get_objects()
+                if name == target
+            ]
+
+            if match:
+                todocname, anchor = match[0]
+
+                return make_refnode(
+                    builder, fromdocname, todocname, anchor, contnode, anchor
+                )
+            else:
+                return None
+
+    def _find_search_docname(self, env: BuildEnvironment) -> str | None:
+        """Find the document containing the kconfig search directive."""
+        # Cache the result to avoid repeated searches
+        if hasattr(env, '_kconfig_search_docname'):
+            return env._kconfig_search_docname
+
+        for docname in env.all_docs:
+            try:
+                doctree = env.get_doctree(docname)
+                visitor = _FindKconfigSearchDirectiveVisitor(doctree)
+                doctree.walk(visitor)
+                if visitor.found_kconfig_search_directive:
+                    env._kconfig_search_docname = docname
+                    return docname
+            except Exception:
+                # Skip documents that can't be loaded
+                continue
+
+        # No search directive found
+        env._kconfig_search_docname = None
+        return None
 
     def add_option(self, option):
         """Register a new Kconfig option to the domain."""
