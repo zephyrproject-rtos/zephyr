@@ -101,8 +101,8 @@ config FULL_LIBCPP_SUPPORTED
 choice LIBCPP_IMPLEMENTATION
 	prompt "C++ Standard Library Implementation"
 	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_BUILD
-	default LIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(TOOLCHAIN_HAS_LIBCXX)" = "y"
-	default GLIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(TOOLCHAIN_HAS_GLIBCXX)" = "y"
+	default LIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(TOOLCHAIN_HAS_LIBCXX)" = "y" && "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm"
+	default GLIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP
 	default MINIMAL_LIBCPP
 
 config MINIMAL_LIBCPP
@@ -128,6 +128,7 @@ config LIBCXX_LIBCPP
 	bool "LLVM C++ Standard Library"
 	depends on "$(TOOLCHAIN_HAS_LIBCXX)" = "y"
 	depends on NEWLIB_LIBC || PICOLIBC
+	depends on "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm"
 	select FULL_LIBCPP_SUPPORTED
 	help
 	  Build with LLVM C++ Standard Library (libc++) provided by LLVM
