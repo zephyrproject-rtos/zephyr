@@ -23,6 +23,7 @@
 		zephyr,console = &uart8;
 		zephyr,shell-uart = &uart8;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -161,5 +162,9 @@
 };
 
 &wdt {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

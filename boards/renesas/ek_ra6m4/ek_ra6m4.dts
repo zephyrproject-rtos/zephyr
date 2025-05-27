@@ -23,6 +23,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -246,5 +247,9 @@ mikrobus_i2c: &iic1 {};
 mikrobus_spi: &spi0 {};
 
 &wdt {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

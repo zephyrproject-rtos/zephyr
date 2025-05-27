@@ -10,5 +10,6 @@ toolchain:
 supported:
   - gpio
   - usbd
+  - crc
   - watchdog
 vendor: renesas

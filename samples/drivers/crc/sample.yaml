@@ -1,0 +1,13 @@
+sample:
+  name: CRC Sample
+tests:
+  sample.drivers.crc:
+    depends_on: crc
+    tags:
+      - drivers
+      - crc
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "CRC verification succeeded"
