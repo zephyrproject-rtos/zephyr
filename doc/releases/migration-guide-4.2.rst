@@ -187,6 +187,12 @@ Ethernet
   :c:enumerator:`ETHERNET_LINK_1000BASE`, :c:enumerator:`ETHERNET_LINK_2500BASE` and
   :c:enumerator:`ETHERNET_LINK_5000BASE` respectively (:github:`87194`).
 
+* ``ETHERNET_CONFIG_TYPE_LINK``, ``ETHERNET_CONFIG_TYPE_DUPLEX``, ``ETHERNET_CONFIG_TYPE_AUTO_NEG``
+  and the related ``NET_REQUEST_ETHERNET_SET_LINK``, ``NET_REQUEST_ETHERNET_SET_DUPLEX``,
+  ``NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION`` have been removed. :c:func:`phy_configure_link`
+  together with :c:func:`net_eth_get_phy` should be used instead to configure the link
+  (:github:`90652`).
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
