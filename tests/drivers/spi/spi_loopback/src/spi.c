@@ -570,6 +570,13 @@ ZTEST(spi_loopback, test_spi_null_rx_buf_set)
 	spi_loopback_transceive(spec, &tx, NULL);
 }
 
+ZTEST(spi_loopback, test_spi_null_tx_rx_buf_set)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_transceive(spec, NULL, NULL);
+}
+
 ZTEST(spi_loopback, test_nop_nil_bufs)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
