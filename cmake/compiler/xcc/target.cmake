@@ -37,7 +37,22 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
   get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
   string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
-  list(APPEND NOSTDINC ${_OUTPUT})
+  # Need to make sure the path exists before we add it to ${NOSTDINC}.
+  # For example, include-fixed is in xcc but not xt-clang.
+  if(EXISTS "${_OUTPUT}")
+    list(APPEND NOSTDINC ${_OUTPUT})
+
+    if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xt-clang")
+      # This forcibly adds -isystem so that the xt-clang system
+      # include paths are before the xcc include paths.
+      # For some reason, xt-clang places xcc include paths before
+      # xt-clang ones so we need to force it.
+      #
+      # Some modules ignores the compiler property nostdinc_include
+      # so we need to make sure -isystem is used there.
+      add_compile_options(-isystem ${_OUTPUT})
+    endif()
+  endif()
 endforeach()
 
 # This libgcc code is partially duplicated in compiler/*/target.cmake
