@@ -158,6 +158,10 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 		boot_config->ext_tcp_ip_feature_bit_map |=
 			SL_SI91X_EXT_TCP_IP_FEAT_SSL_THREE_SOCKETS;
 	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_SSL_VERSIONS_SUPPORT)) {
+		boot_config->ext_custom_feature_bit_map |=
+			SL_SI91X_EXT_FEAT_SSL_VERSIONS_SUPPORT;
+	}
 	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
 	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
 

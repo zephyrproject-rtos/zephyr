@@ -164,6 +164,14 @@ config WIFI_SILABS_SIWX91X_SSL_HIGH_STREAMING
 	  This implementation is provided by the Network Co-Processor present
 	  on SiWx91x series.
 
+config WIFI_SILABS_SIWX91X_SSL_VERSIONS_SUPPORT
+	bool "Offloaded implementation of SSL/TLS multiple versions support"
+	help
+	  Enable this option to allow the device to support multiple versions
+	  of SSL/TLS over TCP, providing flexibility in handling different
+	  SSL/TLS versions.This implementation is provided by the Network
+	  Co-Processor present on SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
