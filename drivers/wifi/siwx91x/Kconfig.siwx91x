@@ -205,6 +205,23 @@ config WIFI_SILABS_SIWX91X_SOCKET_SELECT_COUNT
 	  device can handle, with a maximum value of 10. This implementation
 	  is provided by the Network Co-Processor present on SiWx91x series.
 
+config WIFI_SILABS_SIWX91X_SOCKETS
+	bool "Offloaded implementation to configure sockets"
+	help
+	  Enable this option to configure the number of sockets in SiWx91x.
+	  over the network .This implementation is provided by the Network
+	  Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_TOTAL_SOCKETS
+	int "Offloaded implementation for maximum number of sockets"
+	default 10
+	range 1 10
+	depends on WIFI_SILABS_SIWX91X_SOCKETS
+	help
+	  Configure this option for total number of sockets to use. A maximum
+	  of 10 sockets are allowed to use. This implementation is provided
+	  by the Network Co-Processor present on SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
