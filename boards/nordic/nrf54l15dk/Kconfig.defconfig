@@ -5,6 +5,11 @@
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
 
+# The 54L has a HFXO latency which is better than the default.
+config MPSL_HFCLK_LATENCY
+	int
+	default 854 if MPSL
+
 if BOARD_NRF54L15DK_NRF54L05_CPUAPP || BOARD_NRF54L15DK_NRF54L10_CPUAPP || \
 	BOARD_NRF54L15DK_NRF54L15_CPUAPP
 
