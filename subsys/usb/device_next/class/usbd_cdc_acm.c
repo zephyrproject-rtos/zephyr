@@ -34,10 +34,6 @@
 #endif
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
-UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
-		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
-
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
 #define CDC_ACM_DEFAULT_INT_EP_MPS	16
 #define CDC_ACM_INTERVAL_DEFAULT	10000UL
@@ -131,8 +127,15 @@ struct cdc_acm_uart_data {
 
 static void cdc_acm_irq_rx_enable(const struct device *dev);
 
-struct net_buf *cdc_acm_buf_alloc(const uint8_t ep)
+#if CONFIG_USBD_CDC_ACM_BUF_POOL
+UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
+		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
+
+static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
+					 const uint8_t ep)
 {
+	ARG_UNUSED(c_data);
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
@@ -146,6 +149,17 @@ struct net_buf *cdc_acm_buf_alloc(const uint8_t ep)
 
 	return buf;
 }
+#else
+/*
+ * The required buffer is 128 bytes per instance on a full-speed device. Use
+ * common (UDC) buffer, as this results in a smaller footprint.
+ */
+static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
+					 const uint8_t ep)
+{
+	return usbd_ep_buf_alloc(c_data, ep, USBD_MAX_BULK_MPS);
+}
+#endif /* CONFIG_USBD_CDC_ACM_BUF_POOL */
 
 #if CONFIG_USBD_CDC_ACM_WORKQUEUE
 static struct k_work_q cdc_acm_work_q;
@@ -635,7 +649,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_data));
+	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_in(c_data));
 	if (buf == NULL) {
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
@@ -669,7 +683,6 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
-	uint8_t ep;
 	int ret;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
@@ -692,8 +705,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	ep = cdc_acm_get_bulk_out(c_data);
-	buf = cdc_acm_buf_alloc(ep);
+	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_out(c_data));
 	if (buf == NULL) {
 		return;
 	}
@@ -703,7 +715,8 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERR("Failed to enqueue net_buf for 0x%02x",
+			cdc_acm_get_bulk_out(c_data));
 		net_buf_unref(buf);
 	}
 }
