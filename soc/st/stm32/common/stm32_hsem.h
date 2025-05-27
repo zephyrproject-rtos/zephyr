@@ -28,9 +28,13 @@
 /* Index of the semaphore used to access the RCC */
 #define CFG_HW_RCC_SEMID                                        3U
 
-/* Index of the semaphore used to manage the entry Stop Mode procedure */
+/**
+ * Index of the semaphore used to manage the entry Stop Mode procedure.
+ * On STM32H7, this semaphore is instead used to gate the Cortex-M4 core
+ * until Cortex-M7 has finished initializing the system, and remains owned
+ * by CM7 afterwards.
+ */
 #define CFG_HW_ENTRY_STOP_MODE_SEMID                            4U
-#define CFG_HW_ENTRY_STOP_MODE_MASK_SEMID   (1U << CFG_HW_ENTRY_STOP_MODE_SEMID)
 
 /**
  *  Index of the semaphore used to manage the CLK48 clock configuration
