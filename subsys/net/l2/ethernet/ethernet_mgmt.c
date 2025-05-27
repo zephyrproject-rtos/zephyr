@@ -47,46 +47,7 @@ static int ethernet_set_config(uint32_t mgmt_request,
 		return -EINVAL;
 	}
 
-	if (mgmt_request == NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION) {
-		if (!is_hw_caps_supported(dev,
-					  ETHERNET_AUTO_NEGOTIATION_SET)) {
-			return -ENOTSUP;
-		}
-
-		config.auto_negotiation = params->auto_negotiation;
-		type = ETHERNET_CONFIG_TYPE_AUTO_NEG;
-	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_LINK) {
-		if (params->l.link_10bt) {
-			if (!is_hw_caps_supported(dev, ETHERNET_LINK_10BASE)) {
-				return -ENOTSUP;
-			}
-
-			config.l.link_10bt = true;
-		} else if (params->l.link_100bt) {
-			if (!is_hw_caps_supported(dev, ETHERNET_LINK_100BASE)) {
-				return -ENOTSUP;
-			}
-
-			config.l.link_100bt = true;
-		} else if (params->l.link_1000bt) {
-			if (!is_hw_caps_supported(dev, ETHERNET_LINK_1000BASE)) {
-				return -ENOTSUP;
-			}
-
-			config.l.link_1000bt = true;
-		} else {
-			return -EINVAL;
-		}
-
-		type = ETHERNET_CONFIG_TYPE_LINK;
-	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_DUPLEX) {
-		if (!is_hw_caps_supported(dev, ETHERNET_DUPLEX_SET)) {
-			return -ENOTSUP;
-		}
-
-		config.full_duplex = params->full_duplex;
-		type = ETHERNET_CONFIG_TYPE_DUPLEX;
-	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_MAC_ADDRESS) {
+	if (mgmt_request == NET_REQUEST_ETHERNET_SET_MAC_ADDRESS) {
 		if (net_if_is_admin_up(iface)) {
 			return -EACCES;
 		}
@@ -218,15 +179,6 @@ static int ethernet_set_config(uint32_t mgmt_request,
 
 	return api->set_config(net_if_get_device(iface), type, &config);
 }
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION,
-				  ethernet_set_config);
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_LINK,
-				  ethernet_set_config);
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_DUPLEX,
-				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
 				  ethernet_set_config);
