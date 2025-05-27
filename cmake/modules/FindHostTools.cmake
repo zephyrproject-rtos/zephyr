@@ -75,7 +75,7 @@ endif()
 # or they are clearly trying to cross-compile a native simulator based target
 if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
    OR ("${BOARD}" STREQUAL "unit_testing"))
-  if((NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm") AND
+  if((NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host/llvm") AND
      (NOT ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "cross-compile" AND DEFINED NATIVE_TARGET_HOST)))
     set(ZEPHYR_TOOLCHAIN_VARIANT "host")
   endif()
@@ -104,6 +104,16 @@ endif()
 
 set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root" FORCE)
 assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")
+
+
+# Check if ZEPHYR_TOOLCHAIN_VARIANT follows "<variant_name>/<compiler>" pattern
+if("${ZEPHYR_TOOLCHAIN_VARIANT}" MATCHES "^([^/]+)/([^/]+)$")
+  set(_variant "${CMAKE_MATCH_1}")
+  set(_compiler "${CMAKE_MATCH_2}")
+  set(ZEPHYR_TOOLCHAIN_VARIANT "${_variant}")
+  set(TOOLCHAIN_VARIANT_COMPILER "${_compiler}")
+  set(TOOLCHAIN_VARIANT_COMPILER ${_compiler} CACHE STRING "compiler used by the toolchain variant" FORCE)
+endif()
 
 # Set cached ZEPHYR_TOOLCHAIN_VARIANT.
 set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant")
