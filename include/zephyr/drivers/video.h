@@ -421,6 +421,10 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(frmival != NULL);
 
+	if (frmival->numerator == 0 || frmival->denominator == 0) {
+		return -EINVAL;
+	}
+
 	api = (const struct video_driver_api *)dev->api;
 	if (api->set_frmival == NULL) {
 		return -ENOSYS;
@@ -803,6 +807,7 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
 static inline uint64_t video_frmival_nsec(const struct video_frmival *frmival)
 {
 	__ASSERT_NO_MSG(frmival != NULL);
+	__ASSERT_NO_MSG(frmival->denominator != 0);
 
 	return (uint64_t)NSEC_PER_SEC * frmival->numerator / frmival->denominator;
 }
