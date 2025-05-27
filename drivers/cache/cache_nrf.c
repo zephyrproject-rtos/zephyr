@@ -94,6 +94,7 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 	return 0;
 }
 
+#if NRF_CACHE_HAS_LINEADDR
 static inline void _cache_line(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, uintptr_t line_addr)
 {
 	do {
@@ -155,6 +156,7 @@ static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, vo
 
 	return 0;
 }
+#endif /* NRF_CACHE_HAS_LINEADDR */
 
 static inline int _cache_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, void *addr,
 				size_t size, bool is_range)
@@ -173,7 +175,11 @@ static inline int _cache_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, v
 		return -EINVAL;
 	}
 
+#if NRF_CACHE_HAS_LINEADDR
 	return _cache_range(cache, op, addr, size);
+#else
+	return 0;
+#endif
 }
 
 #if defined(NRF_DCACHE) && NRF_CACHE_HAS_TASKS
