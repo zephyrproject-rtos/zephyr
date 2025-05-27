@@ -26,6 +26,7 @@ common:
     - frdm_kl25z
     - frdm_mcxc242
     - frdm_mcxc444
+    - frdm_mcxa153
     - frdm_mcxa156
     - lpcxpresso55s69/lpc55s69/cpu0
     - stm32l562e_dk/stm32l562xx/ns
