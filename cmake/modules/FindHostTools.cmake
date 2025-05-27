@@ -95,7 +95,7 @@ zephyr_file(APPLICATION_ROOT TOOLCHAIN_ROOT)
 
 # Host-tools don't unconditionally set TOOLCHAIN_HOME anymore,
 # but in case Zephyr's SDK toolchain is used, set TOOLCHAIN_HOME
-if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
+if("${ZEPHYR_TOOLCHAIN_VARIANT}" MATCHES "^zephyr/?")
   set(TOOLCHAIN_HOME ${HOST_TOOLS_HOME})
 endif()
 
@@ -108,12 +108,11 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" MATCHES "^([^/]+)/([^/]+)$")
   set(_variant "${CMAKE_MATCH_1}")
   set(_compiler "${CMAKE_MATCH_2}")
   set(ZEPHYR_TOOLCHAIN_VARIANT "${_variant}")
-  set(TOOLCHAIN_VARIANT_COMPILER "${_compiler}")
   set(TOOLCHAIN_VARIANT_COMPILER ${_compiler} CACHE STRING "compiler used by the toolchain variant" FORCE)
 endif()
 
 # Set cached ZEPHYR_TOOLCHAIN_VARIANT.
-set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant")
+set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant" FORCE)
 
 # Configure the toolchain based on what SDK/toolchain is in use.
 include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}/generic.cmake)
