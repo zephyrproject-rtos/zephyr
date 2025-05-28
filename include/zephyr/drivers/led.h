@@ -207,9 +207,10 @@ static inline int z_impl_led_set_brightness(const struct device *dev,
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
 
-	if (api->set_brightness == NULL &&
-	    api->on == NULL && api->off == NULL) {
-		return -ENOSYS;
+	if (api->set_brightness == NULL) {
+		if (api->on == NULL || api->off == NULL) {
+			return -ENOSYS;
+		}
 	}
 
 	if (value > LED_BRIGTHNESS_MAX) {
