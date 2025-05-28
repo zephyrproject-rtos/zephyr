@@ -24,8 +24,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 16000 if MCUX_LPTMR_TIMER
 	default 150000000 if CORTEX_M_SYSTICK
 
+config MCUX_FLASH_K4_API
+	default y if (SOC_MCXN947 || SOC_MCXN547) # Initially, only Nx4x uses the k4 driver
+
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE
+	default 16 if (SOC_MCXN947 || SOC_MCXN547) # Initially, only Nx4x uses the k4 driver
 	default 128
 
 # The existing SAI diver cannot initialize the PLL on the board,
