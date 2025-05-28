@@ -34,7 +34,8 @@ To use the shield, below requirements needs to be satisfied.
 Integration Platform
 ********************
 
-This shield works with below host platform,
+This shield is validated and tested for use with the host platform listed below. It can be used with
+other host platforms, but the functionality is not guaranteed.
 
 - :zephyr:board:`mimxrt1060_evk` Rev-C.
 
@@ -70,3 +71,38 @@ For example:
    :board: mimxrt1060_evk@C//qspi
    :shield: nxp_m2_2el_wifi_bt
    :goals: build
+   :gen-args: -DEXTRA_CONF_FILE="nxp/overlay_hosted_mcu.conf"
+
+.. note::
+   To build Wi-Fi application, "nxp/overlay_hosted_mcu.conf" config file
+   must be passed along with default conf file as mentioned in above build command.
+
+Hardware Rework to Enable M.2 Interfaces
+****************************************
+
+Rework for MIMXRT1060EVK Rev-C
+==============================
+
+Bluetooth HCI UART
+------------------
+
+- Mount R93, R96.
+- Remove R193.
+- Connect J109, connect J76 2-3.
+
+I2S For BT SCO
+--------------
+
+- Remove J54 and J55, connect J56, and J57.
+- Remove R220.
+- Connect J103.
+
+.. note::
+   When J103 is connected, flash cannot be downloaded. So, remove the connection when downloading flash
+   and reconnect it after downloading.
+
+.. figure:: mimxrt1060evkc_m2_bt_rework.webp
+   :align: center
+   :alt: MIMXRT1060EVK Rev-C BT Rework for M.2
+
+   MIMXRT1060EVK Rev-C BT Rework for M.2 Modules
