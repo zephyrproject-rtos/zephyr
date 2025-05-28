@@ -37,10 +37,4 @@ config NRF_IRONSIDE_CPUCONF_SERVICE
 	help
 	  Service used to boot local domain cores.
 
-config NRF_IRONSIDE_UPDATE_SERVICE
-	bool "IRONside update service"
-	select NRF_IRONSIDE_CALL
-	help
-	  Service used to update the IRONside SE firmware.
-
 endmenu
