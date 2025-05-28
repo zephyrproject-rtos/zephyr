@@ -15,11 +15,38 @@ Building and Running
 
 Verify that the board and chip you are targeting provide IEEE 802.15.4 support.
 
-For instance you can use Nordic's nRF52840 DK.
+There are configuration files for different boards and setups in the shell directory:
+
+- :file:`prj.conf`
+  Generic config file.
+
+- :file:`overlay-ot-rcp-host-nxp.conf`
+  This overlay config enables support of OpenThread RCP host running on NXP chips over IMU interface.
+
+Build shell application like this:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/shell
+   :board: <board to use>
+   :conf: <config file to use>
+   :goals: build
+   :compact:
+
+Example building for Nordic's nRF52840 DK.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/openthread/shell
    :board: nrf52840dk/nrf52840
+   :conf: "prj.conf"
+   :goals: build
+   :compact:
+
+Example building for NXP's RW612 FRDM (RCP host).
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/shell
+   :board: frdm_rw612
+   :conf: "prj.conf overlay-ot-rcp-host-nxp.conf"
    :goals: build
    :compact:
 
