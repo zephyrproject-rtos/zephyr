@@ -1,0 +1,13 @@
+# ST Microelectronics LSM6DSVXXX accelerometer sensor
+#
+# Copyright (c) 2025 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+zephyr_library()
+
+zephyr_library_sources(lsm6dsvxxx.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_LSM6DSV320X_ENABLED lsm6dsv320x.c)
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API lsm6dsvxxx_decoder.c)
+
+zephyr_library_include_directories(../stmemsc)
