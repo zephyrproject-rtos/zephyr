@@ -75,7 +75,7 @@ See :zephyr_file:`share/zephyr-package/cmake` for details.
 Software bill of materials: ``west spdx``
 *****************************************
 
-This command generates SPDX 2.3 tag-value documents, creating relationships
+This command generates SPDX 2.2 or 2.3 tag-value documents, creating relationships
 from source files to the corresponding generated build files.
 ``SPDX-License-Identifier`` comments in source files are scanned and filled
 into the SPDX documents.
@@ -104,6 +104,12 @@ To use this command:
    .. code-block:: bash
 
       west spdx -d BUILD_DIR
+
+   By default, this generates SPDX 2.3 documents. To generate SPDX 2.2 documents instead:
+
+   .. code-block:: bash
+
+      west spdx -d BUILD_DIR --spdx-version 2.2
 
 .. note::
 
@@ -143,6 +149,10 @@ source files that are compiled to generate the built library files.
 
 - ``-s SPDX_DIR``: specifies an alternate directory where the SPDX documents
   should be written instead of :file:`BUILD_DIR/spdx/`.
+
+- ``--spdx-version {2.2,2.3}``: specifies which SPDX specification version to use.
+  Defaults to ``2.3``. SPDX 2.3 includes additional fields like ``PrimaryPackagePurpose``
+  that are not available in SPDX 2.2.
 
 - ``--analyze-includes``: in addition to recording the compiled source code
   files (e.g. ``.c``, ``.S``) in the bills-of-materials, also attempt to
