@@ -8,6 +8,7 @@ from datetime import datetime
 from west import log
 
 from zspdx.util import getHashes
+from zspdx.version import SPDX_VERSION_2_3
 
 CPE23TYPE_REGEX = (
     r'^cpe:2\.3:[aho\*\-](:(((\?*|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^'
@@ -67,11 +68,12 @@ def generateDowloadUrl(url, revision):
 
     return f'git+{url}@{revision}'
 
-# Output tag-value SPDX 2.3 content for the given Package object.
+# Output tag-value SPDX content for the given Package object.
 # Arguments:
 #   1) f: file handle for SPDX document
 #   2) pkg: Package object being described
-def writePackageSPDX(f, pkg):
+#   3) spdx_version: SPDX specification version
+def writePackageSPDX(f, pkg, spdx_version=SPDX_VERSION_2_3):
     spdx_normalized_name = _normalize_spdx_name(pkg.cfg.name)
     spdx_normalize_spdx_id = _normalize_spdx_name(pkg.cfg.spdxID)
 
@@ -85,7 +87,8 @@ PackageLicenseConcluded: {pkg.concludedLicense}
 PackageCopyrightText: {pkg.cfg.copyrightText}
 """)
 
-    if pkg.cfg.primaryPurpose != "":
+    # PrimaryPackagePurpose is only available in SPDX 2.3 and later
+    if spdx_version >= SPDX_VERSION_2_3 and pkg.cfg.primaryPurpose != "":
         f.write(f"PrimaryPackagePurpose: {pkg.cfg.primaryPurpose}\n")
 
     if len(pkg.cfg.url) > 0:
@@ -142,14 +145,15 @@ LicenseName: {lic}
 LicenseComment: Corresponds to the license ID `{lic}` detected in an SPDX-License-Identifier: tag.
 """)
 
-# Output tag-value SPDX 2.3 content for the given Document object.
+# Output tag-value SPDX content for the given Document object.
 # Arguments:
 #   1) f: file handle for SPDX document
 #   2) doc: Document object being described
-def writeDocumentSPDX(f, doc):
+#   3) spdx_version: SPDX specification version
+def writeDocumentSPDX(f, doc, spdx_version=SPDX_VERSION_2_3):
     spdx_normalized_name = _normalize_spdx_name(doc.cfg.name)
 
-    f.write(f"""SPDXVersion: SPDX-2.3
+    f.write(f"""SPDXVersion: SPDX-{spdx_version}
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
 DocumentName: {spdx_normalized_name}
@@ -178,7 +182,7 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
 
     # write packages
     for pkg in doc.pkgs.values():
-        writePackageSPDX(f, pkg)
+        writePackageSPDX(f, pkg, spdx_version)
 
     # write other license info, if any
     if len(doc.customLicenseIDs) > 0:
@@ -190,12 +194,13 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
 # Arguments:
 #   1) spdxPath: path to write SPDX document
 #   2) doc: SPDX Document object to write
-def writeSPDX(spdxPath, doc):
+#   3) spdx_version: SPDX specification version
+def writeSPDX(spdxPath, doc, spdx_version=SPDX_VERSION_2_3):
     # create and write document to disk
     try:
-        log.inf(f"Writing SPDX document {doc.cfg.name} to {spdxPath}")
+        log.inf(f"Writing SPDX {spdx_version} document {doc.cfg.name} to {spdxPath}")
         with open(spdxPath, "w") as f:
-            writeDocumentSPDX(f, doc)
+            writeDocumentSPDX(f, doc, spdx_version)
     except OSError as e:
         log.err(f"Error: Unable to write to {spdxPath}: {str(e)}")
         return False
