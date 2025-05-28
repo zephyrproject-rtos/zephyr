@@ -767,10 +767,12 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		usbd_class_fs, usbd_class_node, class_name##_fs) = {		\
 		.c_data = &class_name,						\
 	};									\
+	IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (					\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
 		usbd_class_hs, usbd_class_node, class_name##_hs) = {		\
 		.c_data = &class_name,						\
-	}
+	}									\
+	))
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req
  *
