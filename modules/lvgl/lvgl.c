@@ -269,12 +269,12 @@ int lvgl_init(void)
 		}
 	}
 
+	lv_init();
+	lv_tick_set_cb(k_uptime_get_32);
+
 #if CONFIG_LV_Z_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
 #endif
-
-	lv_init();
-	lv_tick_set_cb(k_uptime_get_32);
 
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 	lvgl_fs_init();
