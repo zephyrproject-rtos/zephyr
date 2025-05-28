@@ -3,8 +3,9 @@
 Overview
 ********
 
-The Raspberry Pi Pico 2 is the second-generation product in the Raspberry Pi
+The Raspberry Pi Pico 2 and Pico 2W are second-generation products in the Raspberry Pi
 Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html>`_ is referred to as Pico 2.
+
 
 There are many limitations of the board currently. Including but not limited to:
 - The Zephyr build only supports configuring the RP2350A with the Cortex-M33 cores.
@@ -23,6 +24,7 @@ Hardware
 - 2 Timer with 4 alarms, 1 AON Timer
 - Temperature sensor
 - 3 Programmable IO (PIO) blocks, 12 state machines total for custom peripheral support
+- Infineon CYW43439 2.4 GHz Wi-Fi chip (Pico 2W only)
 
   - Flexible, user-programmable high-speed IO
   - Can emulate interfaces such as SD Card and VGA
@@ -48,10 +50,18 @@ See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` docume
 Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: rpi_pico2/rp2350a/m33
-   :goals: build flash
-   :flash-args: --openocd /usr/local/bin/openocd
+    :zephyr-app: samples/basic/blinky
+    :board: rpi_pico2/rp2350a/m33
+    :goals: build flash
+    :flash-args: --openocd /usr/local/bin/openocd
+
+The blinky sample is not yet supported on Pico 2W, so try the :zephyr:code-sample:`wifi-shell` application to connect to the network:
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/net/wifi/shell
+    :board: rpi_pico2/rp2350a/m33/w
+    :goals: build flash
+    :flash-args: --openocd /usr/local/bin/openocd
 
 References
 **********
