@@ -697,6 +697,12 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 		ret = coap_service_remove_observer(service, resource, addr, token, tkl);
 		if (ret < 0) {
 			LOG_WRN("Failed to remove observer (%d)", ret);
+			goto unlock;
+		}
+
+		if (ret == 0) {
+			/* Observer not found */
+			ret = -ENOENT;
 		}
 	}
 
