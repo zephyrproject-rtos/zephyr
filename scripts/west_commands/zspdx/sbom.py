@@ -113,19 +113,19 @@ def makeSPDX(cfg):
         return False
 
     # write zephyr document
-    writeSPDX(os.path.join(cfg.spdxDir, "zephyr.spdx"), w.docZephyr)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "zephyr.spdx"), w.docZephyr)
     if not retval:
         log.err("SPDX writer failed for zephyr document; bailing")
         return False
 
     # write build document
-    writeSPDX(os.path.join(cfg.spdxDir, "build.spdx"), w.docBuild)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "build.spdx"), w.docBuild)
     if not retval:
         log.err("SPDX writer failed for build document; bailing")
         return False
 
     # write modules document
-    writeSPDX(os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs)
     if not retval:
         log.err("SPDX writer failed for modules-deps document; bailing")
         return False
