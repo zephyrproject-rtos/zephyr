@@ -118,7 +118,7 @@ static volatile uint32_t last_elapsed;
 static volatile uint32_t last_ticks;
 
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 4, irq);
+const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 3, irq);
 #endif
 
 static uint32_t read_timer_obser(enum ext_timer_idx timer_idx)
