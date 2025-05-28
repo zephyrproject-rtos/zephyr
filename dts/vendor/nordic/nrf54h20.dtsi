@@ -218,6 +218,15 @@
 		#power-domain-cells = <1>;
 	};
 
+	swext: swext {
+		compatible = "nordic,nrfs-swext";
+		max-current-ua = <10000>;
+		current-limit-ua = <10000>;
+		zephyr,pm-device-runtime-auto;
+		#power-domain-cells = <0>;
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
