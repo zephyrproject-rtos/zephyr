@@ -428,6 +428,27 @@ void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, co
 			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr);
 
 /**
+ * @brief Initialize LLEXT heap dynamically
+ *
+ * Use the provided memory block as the LLEXT heap at runtime.
+ *
+ * @param mem Pointer to memory.
+ * @param bytes Size of memory region, in bytes
+ *
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported
+ */
+int llext_heap_init(void *mem, size_t bytes);
+
+/**
+ * @brief Mark LLEXT heap as uninitialized.
+ *
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_LLEXT_HEAP_DYNAMIC} is not enabled or supported
+ * @retval -EBUSY On heap not empty
+ */
+int llext_heap_uninit(void);
+/**
  * @}
  */
 
