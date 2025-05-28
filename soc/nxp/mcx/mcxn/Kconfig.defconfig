@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MCXN
@@ -14,6 +14,7 @@ config NUM_IRQS
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x1000 if !BOOTLOADER_MCUBOOT && FLASH_MCUX_FLEXSPI_XIP
 
 config MCUX_LPTMR_TIMER
 	default n if (DT_HAS_NXP_OS_TIMER_ENABLED || DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED)
