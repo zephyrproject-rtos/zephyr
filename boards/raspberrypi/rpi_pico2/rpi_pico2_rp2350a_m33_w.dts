@@ -1,13 +1,25 @@
 /*
- * Copyright (c) 2023 Dave Rensberger - Beechwoods Software
- * Copyright (c) 2024 Steve Boylan <stephen.boylan@beechwoods.com>
+ * Copyright (c) 2025 Magpie Embedded
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include "rpi_pico-common.dtsi"
+/* The build system assumes that there's a cpucluster-specific file.
+ *
+ * This file provides composition of the device tree:
+ * 1. The common features of the SoC
+ * 2. Core-specific configuration.
+ * 3. Board-specific configuration.
+ */
+#include <raspberrypi/rpi_pico/rp2350a.dtsi>
+#include <raspberrypi/rpi_pico/m33.dtsi>
+
+/* there's nothing specific to the Cortex-M33 cores vs the (not yet
+ * implemented) Hazard3 cores.
+ */
+#include "rpi_pico2.dtsi"
 
 &pinctrl {
 	pio0_spi0_default: pio0_spi0_default {
@@ -48,6 +60,7 @@
 		pinctrl-0 = <&pio0_spi0_default>;
 		pinctrl-names = "default";
 		status = "okay";
+
 		airoc-wifi@0 {
 			compatible = "infineon,airoc-wifi";
 			reg = < 0 >;

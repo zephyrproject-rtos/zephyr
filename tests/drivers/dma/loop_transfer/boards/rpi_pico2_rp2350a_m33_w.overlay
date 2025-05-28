@@ -1,0 +1,8 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Magpie Embedded
+ */
+
+/* Pico 2 is compatible with the Pico 1, so reuse. */
+#include "rpi_pico.overlay"
