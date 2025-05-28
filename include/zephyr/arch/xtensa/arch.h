@@ -6,8 +6,10 @@
 /**
  * @file
  * @brief Xtensa specific kernel interface header
- * This header contains the Xtensa specific kernel interface.  It is included
- * by the generic kernel interface header (include/zephyr/arch/cpu.h)
+ *
+ * This header contains the Xtensa specific kernel interface.  It is
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_

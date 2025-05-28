@@ -7,8 +7,9 @@
 /**
  * @file
  * @brief IA-32 specific kernel interface header
- * This header contains the IA-32 specific kernel interface.  It is included
- * by the generic kernel interface header (include/arch/cpu.h)
+ *
+ * This header contains the IA-32 portion of the X86 specific kernel
+ * interface (see include/zephyr/arch/x86/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_

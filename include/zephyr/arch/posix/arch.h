@@ -8,11 +8,11 @@
 /**
  * @file
  * @brief POSIX arch specific kernel interface header
- * This header contains the POSIX arch specific kernel interface.
- * It is included by the generic kernel interface header (include/arch/cpu.h)
  *
+ * This header contains the POSIX arch specific kernel interface. It is
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
-
 
 #ifndef ZEPHYR_INCLUDE_ARCH_POSIX_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_POSIX_ARCH_H_

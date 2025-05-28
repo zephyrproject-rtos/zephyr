@@ -4,6 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Renesas RX specific kernel interface header
+ *
+ * This header contains the Renesas RX specific kernel interface.  It is
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
+ */
+
 #ifndef ZEPHYR_INCLUDE_ARCH_RX_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RX_ARCH_H_
 
