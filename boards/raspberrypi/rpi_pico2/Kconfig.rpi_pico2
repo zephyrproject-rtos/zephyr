@@ -1,5 +1,20 @@
 # Copyright (c) 2024 Andrew Featherstone
+# Copyright (c) 2025 Magpie Embedded
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_RPI_PICO2
-	select SOC_RP2350A_M33 if BOARD_RPI_PICO2_RP2350A_M33
+	select SOC_RP2350A_M33 if BOARD_RPI_PICO2_RP2350A_M33  || BOARD_RPI_PICO2_RP2350A_M33_W
+
+if BOARD_RPI_PICO2_RP2350A_M33_W && WIFI_AIROC
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 16384
+
+# Default networking configuration
+CONFIG_CYW43439=y
+
+endif # BOARD_RPI_PICO2_RP2350A_M33_W && WIFI_AIROC
