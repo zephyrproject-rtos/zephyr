@@ -126,7 +126,7 @@ bool z_arm_on_enter_cpu_idle(void)
 }
 #endif
 
-void soc_early_init_hook(void)
+static int nordicsemi_nrf54h_init(void)
 {
 	int err;
 
@@ -138,7 +138,9 @@ void soc_early_init_hook(void)
 	trim_hsfll();
 
 	err = dmm_init();
-	__ASSERT_NO_MSG(err == 0);
+	if (err < 0) {
+		return err;
+	}
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ccm030))
 	/* DMASEC is set to non-secure by default, which prevents CCM from
@@ -154,9 +156,13 @@ void soc_early_init_hook(void)
 	    DT_PROP_OR(DT_NODELABEL(nfct), nfct_pins_as_gpios, 0)) {
 		nrf_nfct_pad_config_enable_set(NRF_NFCT, false);
 	}
+
+	return 0;
 }
 
 void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }
+
+SYS_INIT(nordicsemi_nrf54h_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

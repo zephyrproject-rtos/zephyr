@@ -228,5 +228,4 @@ int dmm_test_prepare(void)
 	return 0;
 }
 
-/* Needs to execute before DMM initialization. */
-SYS_INIT(dmm_test_prepare, EARLY, 0);
+SYS_INIT(dmm_test_prepare, PRE_KERNEL_1, 0);
