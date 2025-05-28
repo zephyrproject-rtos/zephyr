@@ -27,7 +27,12 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define LLEXT_PAGE_SIZE 32
 #endif
 
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+struct k_heap llext_heap;
+bool llext_heap_inited;
+#else
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
+#endif
 
 /*
  * Initialize the memory partition associated with the specified memory region
@@ -315,6 +320,43 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 	}
 
 	return ret;
+#else
+	return -ENOSYS;
+#endif
+}
+
+int llext_heap_init(void *mem, size_t bytes)
+{
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+	if (llext_heap_inited) {
+		return -EEXIST;
+	}
+	k_heap_init(&llext_heap, mem, bytes);
+	llext_heap_inited = true;
+	return 0;
+#else
+	return -ENOSYS;
+#endif
+}
+
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+static int llext_loaded(struct llext *ext, void *arg)
+{
+	return 1;
+}
+#endif
+
+int llext_heap_uninit(void)
+{
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+	if (!llext_heap_inited) {
+		return -EEXIST;
+	}
+	if (llext_iterate(llext_loaded, NULL)) {
+		return -EBUSY;
+	}
+	llext_heap_inited = false;
+	return 0;
 #else
 	return -ENOSYS;
 #endif
