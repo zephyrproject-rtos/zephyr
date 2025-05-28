@@ -116,6 +116,15 @@ __weak void clock_init(void)
 #endif
 }
 
+#if defined(CONFIG_WDOG_INIT)
+void z_arm_watchdog_init(void)
+{
+	/* COP control registers are write-once, so they must be configured
+	 * only once, using the Watchdog driver API from the application.
+	 */
+}
+#endif /* CONFIG_WDOG_INIT */
+
 void soc_early_init_hook(void)
 {
 #ifdef CONFIG_TEMP_KINETIS
