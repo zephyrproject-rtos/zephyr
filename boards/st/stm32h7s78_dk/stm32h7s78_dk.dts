@@ -145,6 +145,12 @@
 	};
 };
 
+zephyr_udc0: &usbotg_hs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_hs_dm_pm5 &usb_otg_hs_dp_pm6>;
+	pinctrl-names = "default";
+};
+
 &rng {
 	status = "okay";
 };
