@@ -44,8 +44,21 @@ config LLEXT_TYPE_ELF_SHAREDLIB
 
 endchoice
 
+config LLEXT_HEAP_DYNAMIC
+	bool "Do not allocate static LLEXT heap"
+	help
+	  Some applications require loading extensions into the memory which does not
+	  exist during the boot time and cannot be allocated statically. Make the application
+	  responsible for LLEXT heap allocation. Do not allocate LLEXT heap statically.
+
+	  Application must call llext_heap_init() in order to assign a buffer to be used
+	  as the LLEXT heap, otherwise LLEXT modules will not load. When the application
+	  does not need LLEXT functionality any more, it should call llext_heap_uninit(),
+	  which releases control of the buffer back to the application.
+
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC
 	default 8
 	help
 	  Heap size in kilobytes available to llext for dynamic allocation
