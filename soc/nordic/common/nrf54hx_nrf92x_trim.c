@@ -19,6 +19,9 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 	DT_REG_ADDR(DT_PHANDLE_BY_NAME(node_id, nordic_ficrs, name)) +				\
 	DT_PHA_BY_NAME(node_id, nordic_ficrs, name, offset)
 
+#define FICR_EXISTS(node_id, name) \
+	DT_PROP_HAS_NAME(node_id, nordic_ficrs, name)
+
 #if defined(CONFIG_SOC_NRF54H20_CPUAPP) || defined(CONFIG_SOC_NRF9280_CPUAPP)
 #define LOCAL_HSFLL_NODE DT_NODELABEL(cpuapp_hsfll)
 #elif defined(CONFIG_SOC_NRF54H20_CPURAD) || defined(CONFIG_SOC_NRF9280_CPURAD)
@@ -33,12 +36,20 @@ static void trim_local_hsfll(void)
 	nrf_hsfll_trim_t trim = {
 		.vsup = sys_read32(FICR_ADDR_GET_BY_NAME(LOCAL_HSFLL_NODE, vsup)),
 		.coarse = sys_read32(FICR_ADDR_GET_BY_NAME(LOCAL_HSFLL_NODE, coarse)),
-		.fine = sys_read32(FICR_ADDR_GET_BY_NAME(LOCAL_HSFLL_NODE, fine))
+		.fine = sys_read32(FICR_ADDR_GET_BY_NAME(LOCAL_HSFLL_NODE, fine)),
+		IF_ENABLED(
+			FICR_EXISTS(node_id, tcoef),
+			(.tcoef = sys_read32(FICR_ADDR_GET_BY_NAME(node_id, tcoef)))
+		)
 	};
 
 	LOG_DBG("Trim: HSFLL VSUP: 0x%.8x", trim.vsup);
 	LOG_DBG("Trim: HSFLL COARSE: 0x%.8x", trim.coarse);
 	LOG_DBG("Trim: HSFLL FINE: 0x%.8x", trim.fine);
+	IF_ENABLED(
+		FICR_EXISTS(node, tcoef),
+		(LOG_DBG("Trim: HSFLL TCOEF: 0x%.8x", trim.tcoef);)
+	)
 
 	nrf_hsfll_clkctrl_mult_set(hsfll,
 				   DT_PROP(LOCAL_HSFLL_NODE, clock_frequency) /
@@ -52,6 +63,10 @@ static void trim_local_hsfll(void)
 	LOG_DBG("NRF_HSFLL->TRIM.VSUP = %d", hsfll->TRIM.VSUP);
 	LOG_DBG("NRF_HSFLL->TRIM.COARSE = %d", hsfll->TRIM.COARSE);
 	LOG_DBG("NRF_HSFLL->TRIM.FINE = %d", hsfll->TRIM.FINE);
+	IF_ENABLED(
+		FICR_EXISTS(node, tcoef),
+		(LOG_DBG("NRF_HSFLL->TRIM.TCOEF = %d", hsfll->TRIM.FINE);)
+	)
 }
 
 #define TRIM_NRF_AUXPLL_DEFINE(node_id)								\

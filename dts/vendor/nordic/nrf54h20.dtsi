@@ -284,8 +284,9 @@
 				nordic,ficrs =
 					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
 					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
-				nordic,ficr-names = "vsup", "coarse", "fine";
+					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>,
+					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_TCOEF>;
+				nordic,ficr-names = "vsup", "coarse", "fine", "tcoef";
 			};
 
 			cpuapp_ipct: ipct@13000 {
