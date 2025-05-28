@@ -656,7 +656,7 @@ static isoal_status_t ll_iso_test_sdu_alloc(const struct isoal_sink *sink_ctx,
 			struct ll_conn_iso_stream *cis;
 
 			cis = ll_iso_stream_connected_get(sink_ctx->session.handle);
-			LL_ASSERT(cis);
+			LL_ASSERT_DBG(cis);
 
 			/* For unframed, SDU counter is the payload number */
 			cis->hdr.test_mode.rx.sdu_counter =
@@ -669,7 +669,7 @@ static isoal_status_t ll_iso_test_sdu_alloc(const struct isoal_sink *sink_ctx,
 
 			stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
 			sync_stream = ull_sync_iso_stream_get(stream_handle);
-			LL_ASSERT(sync_stream);
+			LL_ASSERT_DBG(sync_stream);
 
 			sync_stream->test_mode->sdu_counter =
 				(uint32_t)valid_pdu->meta->payload_number;
@@ -703,7 +703,7 @@ static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink             *
 		struct ll_conn_iso_stream *cis;
 
 		cis = ll_iso_stream_connected_get(sink_ctx->session.handle);
-		LL_ASSERT(cis);
+		LL_ASSERT_DBG(cis);
 
 		test_mode_rx = &cis->hdr.test_mode.rx;
 		max_sdu = cis->c_max_sdu;
@@ -715,7 +715,7 @@ static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink             *
 
 		stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
 		sync_stream = ull_sync_iso_stream_get(stream_handle);
-		LL_ASSERT(sync_stream);
+		LL_ASSERT_DBG(sync_stream);
 
 		sync_iso = ull_sync_iso_by_stream_get(stream_handle);
 
@@ -784,7 +784,7 @@ static isoal_status_t ll_iso_test_sdu_emit(const struct isoal_sink             *
 			break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			return ISOAL_STATUS_ERR_SDU_EMIT;
 		}
 		break;
@@ -1099,7 +1099,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		uint8_t rand_8;
 
 		cis = ll_iso_stream_connected_get(handle);
-		LL_ASSERT(cis);
+		LL_ASSERT_DBG(cis);
 
 		if (!cis->hdr.test_mode.tx.enabled) {
 			/* Transmit Test Mode not enabled */
@@ -1124,12 +1124,12 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 			break;
 
 		case BT_HCI_ISO_TEST_MAX_SIZE_SDU:
-			LL_ASSERT(max_sdu > ISO_TEST_PACKET_COUNTER_SIZE);
+			LL_ASSERT_DBG(max_sdu > ISO_TEST_PACKET_COUNTER_SIZE);
 			remaining_tx = max_sdu;
 			break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			return;
 		}
 
@@ -1200,7 +1200,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 
 			/* Send to ISOAL */
 			err = isoal_tx_sdu_fragment(source_handle, &sdu);
-			LL_ASSERT(!err);
+			LL_ASSERT_DBG(!err);
 
 			remaining_tx -= sdu.size;
 
@@ -1216,7 +1216,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
 		/* FIXME: Implement for broadcaster */
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
@@ -1497,7 +1497,7 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		ll_tx_ack_put(handle, (void *)node_tx);
 		ll_rx_sched();
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 
@@ -1532,7 +1532,7 @@ void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count)
 			isoal_tx_event_prepare(dp->source_hdl, event_count);
 		}
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
@@ -1686,7 +1686,7 @@ static void iso_rx_demux(void *param)
 					const isoal_status_t err =
 						isoal_rx_pdu_recombine(dp->sink_hdl, &pckt_meta);
 
-					LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
+					LL_ASSERT_ERR(err == ISOAL_STATUS_OK); /* TODO handle err */
 				}
 #endif /* CONFIG_BT_CTLR_CONN_ISO || CONFIG_BT_CTLR_SYNC_ISO */
 
@@ -1696,7 +1696,7 @@ static void iso_rx_demux(void *param)
 				break;
 
 			default:
-				LL_ASSERT(0);
+				LL_ASSERT_DBG(0);
 				break;
 			}
 		}
@@ -1743,7 +1743,7 @@ void ll_iso_rx_dequeue(void)
 
 	link = memq_dequeue(memq_ll_iso_rx.tail, &memq_ll_iso_rx.head,
 			    (void **)&rx);
-	LL_ASSERT(link);
+	LL_ASSERT_DBG(link);
 
 	mem_release(link, &mem_link_iso_rx.free);
 
@@ -1752,7 +1752,7 @@ void ll_iso_rx_dequeue(void)
 	case NODE_RX_TYPE_ISO_PDU:
 		break;
 	default:
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 		break;
 	}
 }
@@ -1819,7 +1819,7 @@ static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
 		/* TODO: Report overflow to HCI and remove assert
 		 * data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO)
 		 */
-		LL_ASSERT(0);
+		LL_ASSERT_ERR(0);
 		return ISOAL_STATUS_ERR_PDU_ALLOC;
 	}
 
@@ -1854,9 +1854,9 @@ static isoal_status_t ll_iso_pdu_write(struct isoal_pdu_buffer *pdu_buffer,
 	ARG_UNUSED(pdu_offset);
 	ARG_UNUSED(consume_len);
 
-	LL_ASSERT(pdu_buffer);
-	LL_ASSERT(pdu_buffer->pdu);
-	LL_ASSERT(sdu_payload);
+	LL_ASSERT_DBG(pdu_buffer);
+	LL_ASSERT_DBG(pdu_buffer->pdu);
+	LL_ASSERT_DBG(sdu_payload);
 
 	if ((pdu_offset + consume_len) > pdu_buffer->size) {
 		/* Exceeded PDU buffer */
@@ -1881,7 +1881,7 @@ static isoal_status_t ll_iso_pdu_emit(struct node_tx_iso *node_tx,
 	memq_link_t *link;
 
 	link = mem_acquire(&mem_link_iso_tx.free);
-	LL_ASSERT(link);
+	LL_ASSERT_ERR(link);
 
 	if (ll_iso_tx_mem_enqueue(handle, node_tx, link)) {
 		return ISOAL_STATUS_ERR_PDU_EMIT;
@@ -1941,7 +1941,7 @@ static int init_reset(void)
 
 	/* Acquire a link to initialize ull rx memq */
 	link = mem_acquire(&mem_link_iso_rx.free);
-	LL_ASSERT(link);
+	LL_ASSERT_DBG(link);
 
 #if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
 	/* Initialize ull rx memq */
@@ -1950,7 +1950,7 @@ static int init_reset(void)
 
 	/* Acquire a link to initialize ll_iso_rx memq */
 	link = mem_acquire(&mem_link_iso_rx.free);
-	LL_ASSERT(link);
+	LL_ASSERT_DBG(link);
 
 	/* Initialize ll_iso_rx memq */
 	MEMQ_INIT(ll_iso_rx, link);
@@ -2006,7 +2006,7 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 		ticker_id = TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE + group_handle;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 	} else {
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 	}
 
 	if (role == BT_HCI_ROLE_PERIPHERAL) {
@@ -2036,7 +2036,7 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 				phy = sync_iso->lll.phy;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 			} else {
-				LL_ASSERT(0);
+				LL_ASSERT_DBG(0);
 			}
 
 			resume_delay_us +=
@@ -2049,7 +2049,7 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 	}
 
 	resume_offset_us = (int32_t)(resume_timeout - resume_delay_us);
-	LL_ASSERT(resume_offset_us >= 0);
+	LL_ASSERT_DBG(resume_offset_us >= 0);
 
 	/* Setup resume timeout as single-shot */
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
@@ -2064,15 +2064,15 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 			   ticker_resume_cb, resume_event,
 			   ticker_resume_op_cb, NULL);
 
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_BUSY));
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 
 static void ticker_resume_op_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
@@ -2085,7 +2085,7 @@ static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	uint32_t ret;
 
 	ARG_UNUSED(ticks_drift);
-	LL_ASSERT(lazy == 0);
+	LL_ASSERT_DBG(lazy == 0);
 
 	resume_event = param;
 
@@ -2100,6 +2100,6 @@ static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &mfy);
 
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 #endif /* CONFIG_BT_CTLR_CONN_ISO || CONFIG_BT_CTLR_SYNC_ISO */
