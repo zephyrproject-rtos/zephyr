@@ -631,6 +631,10 @@ static int sreq_get_desc_dev(struct usbd_context *const uds_ctx,
 		return 0;
 	}
 
+	if (head == NULL) {
+		return -EINVAL;
+	}
+
 	net_buf_add_mem(buf, head, MIN(len, head->bLength));
 
 	return 0;
@@ -748,6 +752,10 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	default:
 		errno = -ENOTSUP;
 		return 0;
+	}
+
+	if (dev_dsc == NULL) {
+		return -EINVAL;
 	}
 
 	if (sys_le16_to_cpu(dev_dsc->bcdUSB) < 0x0201U) {
