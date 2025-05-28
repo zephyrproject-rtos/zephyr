@@ -641,11 +641,16 @@ class Property:
                 elif marker_type is _MarkerType.PHANDLE:
                     s += " &" + ref
                     pos += 4
+                    if pos != len(self.value) and len(s) - array_start > 80:  # noqa: F821
+                        s += array_newline                                    # noqa: F821
+                        array_start = len(s)
                     # Subtle: There might be more data between the phandle and
                     # the next marker, so we can't 'continue' here
                 else:  # marker_type is _MarkerType.UINT*
                     elm_size = _TYPE_TO_N_BYTES[marker_type]
                     s += _N_BYTES_TO_START_STR[elm_size]
+                    array_start = len(s)
+                    array_newline = "\n" + " " * array_start
 
                 while pos != end:
                     num = int.from_bytes(self.value[pos:pos + elm_size],
@@ -656,6 +661,9 @@ class Property:
                         s += f" {hex(num)}"
 
                     pos += elm_size
+                    if pos != len(self.value) and len(s) - array_start > 80:
+                        s += array_newline
+                        array_start = len(s)
 
                 if (pos != 0
                     and (not next_marker
