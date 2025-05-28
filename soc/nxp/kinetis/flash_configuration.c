@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
 
-uint8_t __kinetis_flash_config_section __kinetis_flash_config[] = {
+uint8_t __used __kinetis_flash_config_section __kinetis_flash_config[] = {
 	/* Backdoor Comparison Key (unused) */
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 
