@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 Kelly Lord
+ * Copyright (c) 2025 Beechwoods Software, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example on how to use a different storage partition:
+ */
+/delete-node/ &storage_partition;
+
+#include <raspberrypi/partitions_2M_storage.dtsi>
+
+/ {
+	chosen {
+		zephyr,code-partition = &code_partition;
+	};
+}
+
+/*
+ * Setup the flash disk to use the storage partition:
+ */
+/ {
+	msc_disk0 {
+		compatible = "zephyr,flash-disk";
+		partition = <&storage_partition>;
+		disk-name = "NAND";
+		cache-size = <4096>;
+	};
+};
