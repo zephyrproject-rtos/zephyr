@@ -1,0 +1,51 @@
+# Texas Instruments AM261x MCU series
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_SERIES_AM261X
+	bool "TI AM261x Series MCU"
+	select SOC_FAMILY_TI_AM26X
+	help
+	  Enable support for TI AM261x MCU series
+
+config SOC_SERIES_AM261X_R5F
+	bool
+	select SOC_SERIES_AM261X
+	help
+	  Enable support for TI AM261X R5 MCU
+
+config SOC_AM261X_R5F0_0
+	bool "TI AM261X R5F Core 0"
+	select SOC_SERIES_AM261X_R5F
+	help
+	  Enable support for TI AM261X R5F Core 0
+
+config SOC_AM261X_R5F0_1
+	bool "TI AM261X R5F Core 1"
+	select SOC_SERIES_AM261X_R5F
+	help
+	  Enable support for TI AM261X R5F Core 1
+
+config SOC_AM2612_R5F
+	bool
+	default y if SOC_AM261X_R5F0_0 || SOC_AM261X_R5F0_1
+
+config SOC_SERIES_AM261X_PACKAGE
+	string
+	default "ZFG" if SOC_PACKAGE_ZFG
+	help
+	  This option specifies the package variant
+
+config SOC_PACKAGE_ZFG
+	bool "ZFG package variant"
+	help
+	  Package variant with 500MHz R5F cores
+
+config SOC_SERIES
+	default "am261x" if SOC_SERIES_AM261X
+
+config SOC
+	default "am2612" if SOC_AM2612_R5F

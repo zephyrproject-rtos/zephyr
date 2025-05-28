@@ -1,0 +1,263 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <arm/armv7-r.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5f";
+			d-cache-line-size = <32>;
+			i-cache-line-size = <32>;
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(500)>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5f";
+			d-cache-line-size = <32>;
+			i-cache-line-size = <32>;
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(500)>;
+		};
+	};
+
+	sram0: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_K((1536))>;
+		zephyr,memory-region = "RAM";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		pinctrl: pinctrl@53100000 {
+			compatible = "ti,am26x-pinctrl";
+			reg = <0x53100000 0x2a0>;
+			status = "disabled";
+		};
+
+		vim: interrupt-controller@50f00000 {
+			compatible = "ti,vim";
+			reg = <0x50f00000 DT_SIZE_K(16)>;
+			interrupt-controller;
+			#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+			#address-cells = <1>;  /* Added for interrupt provider */
+		};
+
+		rti0: timer@52180000 {
+			compatible = "ti,am26-rtitimer";
+			reg = <0x52180000 0x100>;
+			status = "disabled";
+			/* Using Compare Block 0 match interrupt */
+			interrupts = <0 124 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+		};
+
+		rti1: timer@52181000 {
+			compatible = "ti,am26-rtitimer";
+			reg = <0x52181000 0x100>;
+			status = "disabled";
+			/* Using Compare Block 0 match interrupt */
+			interrupts = <0 130 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+		};
+
+		rti2: timer@52182000 {
+			compatible = "ti,am26-rtitimer";
+			reg = <0x52182000 0x100>;
+			status = "disabled";
+			/* Using Compare Block 0 match interrupt */
+			interrupts = <0 136 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+		};
+
+		rti3: timer@52183000 {
+			compatible = "ti,am26-rtitimer";
+			reg = <0x52183000 0x100>;
+			status = "disabled";
+			/* Using Compare Block 0 match interrupt */
+			interrupts = <0 142 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+		};
+
+		uart0: uart@52300000 {
+			compatible = "ns16550";
+			reg = <0x52300000 0x200>;
+			/* SBL defaults to HSDIV0_CLKOUT2 (160MHz freq) */
+			clock-frequency = <DT_FREQ_M(160)>;
+			reg-shift = <2>;
+			status = "disabled";
+			interrupts = <0 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+			};
+
+		uart1: uart@52301000 {
+			compatible = "ns16550";
+			reg = <0x52301000 0x200>;
+			/* SBL defaults to HSDIV0_CLKOUT2 (160MHz freq) */
+			clock-frequency = <DT_FREQ_M(160)>;
+			reg-shift = <2>;
+			status = "disabled";
+			interrupts = <0 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+			};
+
+		uart2: uart@52302000 {
+			compatible = "ns16550";
+			reg = <0x52302000 0x200>;
+			/* SBL defaults to HSDIV0_CLKOUT2 (160MHz freq) */
+			clock-frequency = <DT_FREQ_M(160)>;
+			reg-shift = <2>;
+			status = "disabled";
+			interrupts = <0 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+			};
+
+		uart3: uart@52303000 {
+			compatible = "ns16550";
+			reg = <0x52303000 0x200>;
+			/* SBL defaults to HSDIV0_CLKOUT2 (160MHz freq) */
+			clock-frequency = <DT_FREQ_M(160)>;
+			reg-shift = <2>;
+			status = "disabled";
+			interrupts = <0 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+			};
+
+		uart4: uart@52304000 {
+			compatible = "ns16550";
+			reg = <0x52304000 0x200>;
+			/* SBL defaults to HSDIV0_CLKOUT2 (160MHz freq) */
+			clock-frequency = <DT_FREQ_M(160)>;
+			reg-shift = <2>;
+			status = "disabled";
+			interrupts = <0 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+			};
+
+		uart5: uart@52305000 {
+			compatible = "ns16550";
+			reg = <0x52305000 0x200>;
+			/* SBL defaults to HSDIV0_CLKOUT2 (160MHz freq) */
+			clock-frequency = <DT_FREQ_M(160)>;
+			reg-shift = <2>;
+			status = "disabled";
+			interrupts = <0 78 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&vim>;
+			};
+
+		gpio0{
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			compatible = "simple-bus";
+
+			gpio0_bank_0_1: gpio@52000000 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52000000 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio0_bank_2_3: gpio@52000028 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52000028 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio0_bank_4_5: gpio@52000050 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52000050 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio0_bank_6_7: gpio@52000078 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52000078 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio0_bank_8: gpio@520000a0 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x520000a0 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+		};
+
+		gpio1{
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			compatible = "simple-bus";
+
+			gpio1_bank_0_1: gpio@52001000 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52001000 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio1_bank_2_3: gpio@52001028 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52001028 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio1_bank_4_5: gpio@52001050 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52001050 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio1_bank_6_7: gpio@52001078 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x52001078 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+			gpio1_bank_8: gpio@520010a0 {
+				compatible = "ti,davinci-gpio";
+				reg = <0x520010a0 0x28>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+		};
+	};
+};

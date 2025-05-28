@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am26x/am261x_r5f0_1.dtsi>
+#include <zephyr/dt-bindings/pinctrl/ti-am26x-pinctrl.h>
+
+/ {
+	model = "TI AM261X LP Development Board R5F0_1";
+	compatible = "ti,am261x-lp";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,code-partition = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		systick-timer = &rti0;
+		led0 = &led0;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			/* gpio 84 is in bank 5, so 20th pin in the bank4-5 set */
+			gpios = <&gpio1_bank_4_5 20 1>;
+			label = "GPIO LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+				/* Replace with the correct GPIO pin for your button */
+				gpios = <&gpio1_bank_6_7 28 1>;
+				label = "User Button";
+		};
+	};
+};
+
+&rti0 {
+	status = "okay";
+};
+
+&pinctrl {
+	status = "okay";
+
+	uart0_rx: uart0_rx_default {
+		pinmux = <TI_AM26X_PINMUX(PIN_GPIO(27),
+			(PIN_MODE(0) | PIN_PULL_DISABLE | PIN_SLEW_RATE_LOW))>;
+	};
+
+	uart0_tx: uart0_tx_default {
+		pinmux = <TI_AM26X_PINMUX(PIN_GPIO(28),
+			(PIN_MODE(0) | PIN_PULL_DISABLE | PIN_SLEW_RATE_LOW))>;
+	};
+
+	led0_pinctl: led0_default {
+		pinmux = <TI_AM26X_PINMUX(PIN_GPIO(84),
+			(PIN_MODE(7) | PIN_PULL_DISABLE | PIN_SLEW_RATE_LOW | PIN_GPIO_R5SS0_1))>;
+	};
+
+	user_button_pinctl: user_button_default {
+		pinmux = <TI_AM26X_PINMUX(PIN_GPIO(124),
+			(PIN_MODE(7) | PIN_PULL_DISABLE | PIN_SLEW_RATE_LOW | PIN_GPIO_R5SS0_1))>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_tx &uart0_rx>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&gpio1_bank_4_5 {
+	status = "okay";
+	mux-hog {
+		gpio-hog;
+		gpios = <20 1>;
+		output-high;
+	};
+	pinctrl-names = "default";
+	pinctrl-0 = <&led0_pinctl>;
+};
+
+&gpio1_bank_6_7 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&user_button_pinctl>;
+};

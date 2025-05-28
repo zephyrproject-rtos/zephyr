@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "am261x.dtsi"
+
+/ {
+
+	cpus {
+		/delete-node/ cpu0;
+	};
+
+	atcm: memory@0 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region";
+		reg = <0x0 DT_SIZE_K(128)>;
+		zephyr,memory-region = "ATCM";
+	};
+
+	btcm: memory@80000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region";
+		reg = <0x80000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "BTCM";
+	};
+
+	soc {
+		/delete-node/ gpio0;
+	};
+};
