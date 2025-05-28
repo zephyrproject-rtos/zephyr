@@ -97,6 +97,13 @@
 					reset-gpios = <&test_gpio 0 0>;
 					int-gpios = <&test_gpio 0 0>;
 				};
+
+				ethernet-phy@9 {
+					reg = <0x9>;
+					compatible = "microchip,ksz9131";
+					status = "okay";
+					int-gpios = <&test_gpio 0 0>;
+				};
 			};
 		};
 	};
