@@ -52,14 +52,6 @@ config MCUBOOT_TRAILER_SWAP_TYPE
 	  Disable this option if need to be compatible with earlier version
 	  of MCUBoot.
 
-config MCUBOOT_UPDATE_FOOTER_SIZE
-	hex "Estimated update footer size"
-	default 0x0
-	help
-	  Estimated size of update image data, which is used to prevent loading of firmware updates
-	  that MCUboot cannot update due to being too large. This should be set from sysbuild, only
-	  used when MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD is enabled.
-
 config IMG_BLOCK_BUF_SIZE
 	int "Image writer buffer size"
 	default 512
@@ -103,3 +95,17 @@ config UPDATEABLE_IMAGE_NUMBER
 endif
 
 endif # IMG_MANAGER
+
+if BOOTLOADER_MCUBOOT
+# This option is defined regardless of whether IMG_MANAGER is enabled to prevent
+# build warnings when IMG_MANAGER is not selected - as it is being unconditionally
+# set in MCUBOOT.
+config MCUBOOT_UPDATE_FOOTER_SIZE
+	hex "Estimated update footer size"
+	default 0x0
+	help
+	  Estimated size of update image data, which is used to prevent loading of firmware updates
+	  that MCUboot cannot update due to being too large. This should be set from sysbuild, only
+	  used when MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD is enabled.
+
+endif #BOOTLOADER_MCUBOOT
