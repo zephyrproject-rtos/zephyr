@@ -117,13 +117,13 @@ typedef int (*led_api_write_channels)(const struct device *dev,
  * @brief LED driver API
  */
 __subsystem struct led_driver_api {
-	/* Mandatory callbacks. */
+	/* Mandatory callbacks, either on/off or set_brightness. */
 	led_api_on on;
 	led_api_off off;
+	led_api_set_brightness set_brightness;
 	/* Optional callbacks. */
 	led_api_blink blink;
 	led_api_get_info get_info;
-	led_api_set_brightness set_brightness;
 	led_api_set_color set_color;
 	led_api_write_channels write_channels;
 };
