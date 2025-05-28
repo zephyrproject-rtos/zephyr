@@ -25,6 +25,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -33,6 +34,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -101,6 +103,7 @@
 &timers3 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;

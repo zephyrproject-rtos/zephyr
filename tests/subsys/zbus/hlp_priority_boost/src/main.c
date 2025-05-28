@@ -152,7 +152,7 @@ ZTEST(hlp_priority_boost, test_priority_elevation)
 	bool is_masked;
 
 	zbus_obs_is_chan_notification_masked(&msub1, &chan_testing_01, &is_masked);
-	zassert_true(is_masked, NULL);
+	zassert_true(is_masked);
 	_pub_and_sync();
 	zassert_true(prio == 2, "The priority must be 2, but it is %d", prio);
 	zbus_obs_set_chan_notification_mask(&msub1, &chan_testing_01, false);

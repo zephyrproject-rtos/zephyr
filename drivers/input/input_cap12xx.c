@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(cap12xx, CONFIG_INPUT_LOG_LEVEL);
 #define REG_CALIB_SENSITIVITY_CONFIG2 0x81
 #define CALSENS_BITS                  2
 #define NUM_CALSENS_PER_REG           4
+#define MAX_CALSENS_GAIN              4
 
 struct cap12xx_config {
 	struct i2c_dt_spec i2c;
@@ -107,6 +108,9 @@ static int cap12xx_set_calsens(const struct i2c_dt_spec *i2c, const uint8_t *cal
 	for (uint8_t i = 0; i < channels; i += NUM_CALSENS_PER_REG) {
 		regval = 0;
 		for (uint8_t j = 0; j < NUM_CALSENS_PER_REG && i + j < channels; j++) {
+			if (calsens[i + j] > MAX_CALSENS_GAIN) {
+				return -EINVAL;
+			}
 			/* Convert the enumerated sensitivity to the corresponding register value */
 			regval |= (ilog2(calsens[i + j]) << (CALSENS_BITS * j));
 		}

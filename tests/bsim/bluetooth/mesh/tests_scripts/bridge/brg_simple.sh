@@ -39,7 +39,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 RunTest mesh_brg_simple \
 	brg_tester_simple brg_bridge_simple brg_device_simple brg_device_simple
-
-overlay=overlay_psa_conf
-RunTest mesh_brg_simple_psa \
-	brg_tester_simple brg_bridge_simple brg_device_simple brg_device_simple

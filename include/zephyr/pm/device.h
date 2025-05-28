@@ -170,8 +170,10 @@ struct pm_device {
 	struct k_sem lock;
 	/** Event var to listen to the sync request events */
 	struct k_event event;
+#if defined(CONFIG_PM_DEVICE_RUNTIME_ASYNC) || defined(__DOXYGEN__)
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
 };
 

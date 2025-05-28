@@ -1,0 +1,6 @@
+shields:
+  - name: sparkfun_max3421e
+    full_name: SparkFun USB Host Shield
+    vendor: sparkfun
+    supported_features:
+      - usb

@@ -198,6 +198,13 @@ struct scfg_reg {
 #define NPCX_JEN_CTL1_JEN_ENABLE  0x9
 #define NPCX_JEN_CTL1_JEN_DISABLE 0x6
 
+#define NPCX_JEN_CTL2_OFFSET 0x121
+#define NPCX_JEN_CTL2(base)  (*(volatile uint8_t *)(base + (NPCX_JEN_CTL2_OFFSET)))
+
+#define NPCX_JEN_CTL2_CCDEV_SEL_EN     FIELD(0, 4)
+#define NPCX_JEN_CTL2_CCDEV_SEL_ENABLE  0x9
+#define NPCX_JEN_CTL2_CCDEV_SEL_DISABLE 0x6
+
 /* SCFG register fields */
 #define NPCX_DEVCNT_F_SPI_TRIS         6
 #define NPCX_DEVCNT_HIF_TYP_SEL_FIELD  FIELD(2, 2)

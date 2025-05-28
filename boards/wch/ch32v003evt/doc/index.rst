@@ -3,7 +3,7 @@
 Overview
 ********
 
-The `WCH`_ CH32V003EVT hardware provides support for QingKe 32-bit RISC-V2A
+The `WCH`_ CH32V003EVT hardware provides support for QingKe V2A 32-bit RISC-V
 processor and the following devices:
 
 * CLOCK
@@ -16,7 +16,7 @@ the processor's information and the datasheet.
 Hardware
 ********
 
-The QingKe 32-bit RISC-V2A processor of the WCH CH32V003EVT is clocked by an
+The QingKe V2A 32-bit RISC-V processor of the WCH CH32V003EVT is clocked by an
 external crystal and runs at 48 MHz.
 
 Supported Features

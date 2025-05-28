@@ -11,7 +11,4 @@ overlay=overlay_workq_sys_conf
 RunTest mesh_adv_tx_cb_single_workq adv_tx_cb_single adv_rx_xmit
 
 overlay="overlay_multi_adv_sets_conf"
-RunTest mesh_adv_tx_cb_single_psa_multi_adv_sets adv_tx_cb_single adv_rx_xmit
-
-overlay=overlay_psa_conf
-RunTest mesh_adv_tx_cb_single_psa adv_tx_cb_single adv_rx_xmit
+RunTest mesh_adv_tx_cb_single_multi_adv_sets adv_tx_cb_single adv_rx_xmit

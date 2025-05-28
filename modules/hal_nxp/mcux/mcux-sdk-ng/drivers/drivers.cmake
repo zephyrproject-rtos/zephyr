@@ -78,6 +78,7 @@ set_variable_ifdef(CONFIG_COMPARATOR_MCUX_ACMP  CONFIG_MCUX_COMPONENT_driver.acm
 set_variable_ifdef(CONFIG_PWM_MCUX_FTM          CONFIG_MCUX_COMPONENT_driver.ftm)
 set_variable_ifdef(CONFIG_PWM_MCUX_TPM          CONFIG_MCUX_COMPONENT_driver.tpm)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_TPM      CONFIG_MCUX_COMPONENT_driver.tpm)
+set_variable_ifdef(CONFIG_QDEC_TPM              CONFIG_MCUX_COMPONENT_driver.tpm)
 set_variable_ifdef(CONFIG_PWM_MCUX_PWT          CONFIG_MCUX_COMPONENT_driver.pwt)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_QTMR     CONFIG_MCUX_COMPONENT_driver.qtmr_1)
 set_variable_ifdef(CONFIG_PWM_MCUX_QTMR         CONFIG_MCUX_COMPONENT_driver.qtmr_1)

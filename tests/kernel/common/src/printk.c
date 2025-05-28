@@ -65,7 +65,7 @@ char expected_32[] = "22 113 10000 32768 40000 22\n"
 	"42 42 42 42\n"
 	"42 42 42 42\n"
 	"25542abcdef  42\n"
-#if defined(_WANT_MINIMAL_IO_LONG_LONG)
+#if defined(_WANT_MINIMAL_IO_LONG_LONG) || defined(__IO_MINIMAL_LONG_LONG)
 	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
 #else
 	"-1 -1 4294967295 ffffffff\n"

@@ -10,5 +10,7 @@ include: base.yaml
 properties:
   reg:
     required: true
+  reg-names:
+    required: true
   interrupts-extended:
     required: true

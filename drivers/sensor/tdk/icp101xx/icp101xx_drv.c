@@ -176,10 +176,6 @@ static int icp101xx_channel_get(const struct device *dev, enum sensor_channel ch
 	val->val1 = 0;
 	val->val2 = 0;
 
-	if (!((chan == SENSOR_CHAN_AMBIENT_TEMP) || (chan == SENSOR_CHAN_PRESS) ||
-	      (chan == SENSOR_CHAN_ALTITUDE))) {
-		return -ENOTSUP;
-	}
 	/* Zephyr expects kPa while ICP101xx returns Pa */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 #ifdef ICP101XX_DRV_USE_FLOATS

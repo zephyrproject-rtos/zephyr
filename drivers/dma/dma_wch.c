@@ -8,7 +8,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #define DMA_WCH_MAX_CHAN      11
 #define DMA_WCH_MAX_CHAN_BASE 8

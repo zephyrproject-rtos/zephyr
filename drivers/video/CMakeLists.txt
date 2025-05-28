@@ -21,5 +21,6 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_ESP32		video_esp32_dvp.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_SDMA	video_mcux_smartdma.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_IMAGER	video_emul_imager.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_RX	video_emul_rx.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_IMX335	imx335.c)
 
 zephyr_linker_sources(DATA_SECTIONS video.ld)

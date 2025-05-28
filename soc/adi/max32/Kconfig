@@ -26,6 +26,7 @@ config SOC_FAMILY_MAX32_M4
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
+	select HAS_PM
 
 config SOC_MAX32655_M4
 	select MAX32_HAS_SECONDARY_RV32
@@ -46,7 +47,7 @@ if SOC_FAMILY_MAX32
 
 config MAX32_ON_ENTER_CPU_IDLE_HOOK
 	bool "CPU idle hook enable"
-	default y
+	default y if !PM
 	imply ARM_ON_ENTER_CPU_IDLE_HOOK
 	help
 	  Enables a hook (z_arm_on_enter_cpu_idle()) that is called when

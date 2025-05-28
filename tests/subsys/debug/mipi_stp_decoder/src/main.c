@@ -20,16 +20,15 @@ static void cb(enum mipi_stp_decoder_ctrl_type type, union mipi_stp_decoder_data
 	zassert_equal(exp_type[d_cnt], type, "Expected: %d got:%d", exp_type[d_cnt], type);
 
 	if (exp_ts[d_cnt] == UINT64_MAX) {
-		zassert_equal(ts, NULL, NULL);
+		zassert_equal(ts, NULL);
 	} else {
-		zassert_true(ts != NULL, NULL);
+		zassert_true(ts != NULL);
 		zassert_equal(exp_ts[d_cnt], *ts, "exp:%llx got:%llx", exp_ts[d_cnt], *ts);
 	}
 
-	zassert_equal(exp_marked[d_cnt], marked, NULL);
+	zassert_equal(exp_marked[d_cnt], marked);
 	zassert_equal(
-		memcmp((uint8_t *)&exp_data[d_cnt], (uint8_t *)&data.data, exp_data_len[d_cnt]), 0,
-		NULL);
+		memcmp((uint8_t *)&exp_data[d_cnt], (uint8_t *)&data.data, exp_data_len[d_cnt]), 0);
 	d_cnt++;
 }
 
@@ -56,7 +55,7 @@ ZTEST(mipi_stp_decoder_test, test_chunk_null)
 	ADD_ITEM(cnt, STP_DECODER_NULL, UINT64_MAX, false, (uint8_t)0);
 
 	mipi_stp_decoder_decode(data, sizeof(data));
-	zassert_equal(cnt, d_cnt, NULL);
+	zassert_equal(cnt, d_cnt);
 }
 
 ZTEST(mipi_stp_decoder_test, test_chunk_major)
@@ -69,7 +68,7 @@ ZTEST(mipi_stp_decoder_test, test_chunk_major)
 	ADD_ITEM(cnt, STP_DECODER_MAJOR, UINT64_MAX, false, (uint16_t)0x4321);
 
 	mipi_stp_decoder_decode(data, sizeof(data));
-	zassert_equal(cnt, d_cnt, NULL);
+	zassert_equal(cnt, d_cnt);
 }
 
 ZTEST(mipi_stp_decoder_test, test_chunk_channel)

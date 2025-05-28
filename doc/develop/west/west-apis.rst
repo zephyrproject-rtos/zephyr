@@ -409,11 +409,19 @@ Manifest and sub-objects
    Additional methods:
 
    .. automethod:: as_dict
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. versionadded:: 0.7.0
    .. automethod:: as_frozen_dict
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. automethod:: as_yaml
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. versionadded:: 0.7.0
    .. automethod:: as_frozen_yaml
+   .. versionadded:: 1.4.0
+      The *active_only* argument.
    .. versionadded:: 0.7.0
    .. automethod:: is_active
    .. versionadded:: 0.9.0

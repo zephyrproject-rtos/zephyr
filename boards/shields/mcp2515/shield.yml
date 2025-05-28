@@ -1,0 +1,18 @@
+shields:
+  - name: adafruit_can_picowbell
+    full_name: PiCowbell CAN Bus for Pico
+    vendor: adafruit
+    supported_features:
+      - can
+
+  - name: dfrobot_can_bus_v2_0
+    full_name: CAN-BUS Shield V2
+    vendor: dfrobot
+    supported_features:
+      - can
+
+  - name: keyestudio_can_bus_ks0411
+    full_name: Keyestudio CAN-BUS Shield
+    vendor: others
+    supported_features:
+      - can

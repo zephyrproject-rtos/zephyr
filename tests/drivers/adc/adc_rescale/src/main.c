@@ -18,6 +18,7 @@
 #define ADC_TEST_NODE_0 DT_NODELABEL(sensor0)
 #define ADC_TEST_NODE_1 DT_NODELABEL(sensor1)
 #define ADC_TEST_NODE_2 DT_NODELABEL(sensor2)
+#define ADC_TEST_NODE_3 DT_NODELABEL(sensor3)
 
 /**
  * @brief Get ADC emulated device
@@ -167,6 +168,36 @@ static int test_task_current_sense_amplifier(void)
 ZTEST_USER(adc_rescale, test_adc_current_sense_amplifier)
 {
 	zassert_true(test_task_current_sense_amplifier() == TC_PASS);
+}
+
+ZTEST(adc_rescale, test_adc_current_sense_amplifier_with_offset)
+{
+	int32_t v_to_i;
+	const struct current_sense_amplifier_dt_spec amplifier_spec =
+		CURRENT_SENSE_AMPLIFIER_DT_SPEC_GET(ADC_TEST_NODE_3);
+
+	/**
+	 * test a voltage that corresponds to 0 mA
+	 */
+	v_to_i = amplifier_spec.zero_current_voltage_mv;
+	current_sense_amplifier_scale_dt(&amplifier_spec, &v_to_i);
+	zassert_equal(v_to_i, 0);
+
+	/**
+	 * test a voltage that corresponds to 200 mA
+	 */
+	v_to_i = (200 * amplifier_spec.sense_gain_mult / amplifier_spec.sense_gain_div) / 1000;
+	v_to_i = v_to_i + amplifier_spec.zero_current_voltage_mv;
+	current_sense_amplifier_scale_dt(&amplifier_spec, &v_to_i);
+	zassert_equal(v_to_i, 200);
+
+	/**
+	 * test a voltage that corresponds to -1100 mA
+	 */
+	v_to_i = (-1100 * amplifier_spec.sense_gain_mult / amplifier_spec.sense_gain_div) / 1000;
+	v_to_i = v_to_i + amplifier_spec.zero_current_voltage_mv;
+	current_sense_amplifier_scale_dt(&amplifier_spec, &v_to_i);
+	zassert_equal(v_to_i, -1100);
 }
 
 void *adc_rescale_setup(void)

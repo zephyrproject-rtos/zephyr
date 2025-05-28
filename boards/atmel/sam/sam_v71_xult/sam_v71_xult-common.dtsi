@@ -21,6 +21,7 @@
 		sw0 = &sw0_user_button;
 		sw1 = &sw1_user_button;
 		watchdog0 = &wdt;
+		sdhc0 = &hsmci;
 	};
 
 	chosen {
@@ -339,6 +340,20 @@ zephyr_udc0: &usbhs {
 
 &rtc {
 	status = "okay";
+};
+
+&hsmci {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&hsmci_default>;
+	cd-gpios = <&piod 18 GPIO_ACTIVE_LOW>;
+
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
 
 ext1_spi: &spi0 {

@@ -1,0 +1,6 @@
+family:
+- name: microchip_sam
+  series:
+  - name: sama7g5
+    socs:
+    - name: sama7g54

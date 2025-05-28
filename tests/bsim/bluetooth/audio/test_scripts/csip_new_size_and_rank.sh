@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-#
 # Copyright (c) 2025 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
 
 # CSIP test where a set coordinator connects a set members and then waits for a set size

@@ -1,0 +1,13 @@
+# Copyright (C) 2025 Olivier Lalonde
+# SPDX-License-Identifier: Apache-2.0
+
+description: Simcom A76XX modem
+
+compatible: "simcom,a76xx"
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true

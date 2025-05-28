@@ -122,12 +122,6 @@ set(GEN_DRIVER_KCONFIG_SCRIPT   ${DT_SCRIPTS}/gen_driver_kconfig_dts.py)
 # Generated Kconfig symbols go here.
 set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
 
-# This generates DT information needed by the CMake APIs.
-set(GEN_DTS_CMAKE_SCRIPT        ${DT_SCRIPTS}/gen_dts_cmake.py)
-# The generated information itself, which we include() after
-# creating it.
-set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
-
 # The location of a file containing known vendor prefixes, relative to
 # each element of DTS_ROOT. Users can define their own in their own
 # modules.
@@ -283,7 +277,6 @@ set_property(DIRECTORY APPEND PROPERTY
   ${GEN_EDT_SCRIPT}
   ${GEN_DEFINES_SCRIPT}
   ${GEN_DRIVER_KCONFIG_SCRIPT}
-  ${GEN_DTS_CMAKE_SCRIPT}
   )
 
 #
@@ -356,31 +349,12 @@ if(NOT "${ret}" STREQUAL "0")
 endif()
 
 #
-# Run GEN_DTS_CMAKE_SCRIPT.
+# Import devicetree contents into CMake.
+# This enables the CMake dt_* API.
 #
-# A temporary file is copied to the original file if it differs. This prevents issue such as a
-# cycle when sysbuild is used of configuring and building multiple times due to the dts.cmake file
-# of images having a newer modification time than the sysbuild build.ninja file, despite the
-# output having not changed
-#
-set(dts_cmake_tmp ${DTS_CMAKE}.new)
 
-execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} ${GEN_DTS_CMAKE_SCRIPT}
-  --edt-pickle ${EDT_PICKLE}
-  --cmake-out ${dts_cmake_tmp}
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  RESULT_VARIABLE ret
-  )
-if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "gen_dts_cmake.py failed with return code: ${ret}")
-else()
-  zephyr_file_copy(${dts_cmake_tmp} ${DTS_CMAKE} ONLY_IF_DIFFERENT)
-  file(REMOVE ${dts_cmake_tmp})
-  set(dts_cmake_tmp)
-  message(STATUS "Including generated dts.cmake file: ${DTS_CMAKE}")
-  include(${DTS_CMAKE})
-endif()
+add_custom_target(devicetree_target)
+zephyr_dt_import(EDT_PICKLE_FILE ${EDT_PICKLE} TARGET devicetree_target)
 
 #
 # Run dtc if it was found.

@@ -12,14 +12,17 @@
 / {
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&gpioj 2 GPIO_ACTIVE_HIGH>;
 			label = "User LD7";
 		};
+
 		red_led: led_2 {
 			gpios = <&gpioi 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD6";
 		};
+
 		green_led_2: led_3 {
 			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
 			label = "User LD8";
@@ -28,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "User SB1";

@@ -15,8 +15,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_lpn_disable_check \
 	friendship_friend_no_est \
 	friendship_lpn_disable
-
-overlay=overlay_psa_conf
-RunTest mesh_lpn_disable_check_psa \
-	friendship_friend_no_est \
-	friendship_lpn_disable

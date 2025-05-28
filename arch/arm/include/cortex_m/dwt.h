@@ -32,12 +32,18 @@ extern "C" {
 /* Define DWT LSR masks which are currently not defined by the CMSIS V5.1.2.
  * (LSR register is defined but not its bitfields).
  * Reuse ITM LSR mask as it is the same offset than DWT LSR one.
+ * TODO: update these to use only CMSIS_6 when all of zephyr and modules have
+ * update to CMSIS_6.
  */
 #if !defined DWT_LSR_Present_Msk
-#define DWT_LSR_Present_Msk ITM_LSR_Present_Msk
+#define DWT_LSR_Present_Msk \
+	IF_ENABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_Present_Msk)) \
+	IF_DISABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_PRESENT_Msk))
 #endif
 #if !defined DWT_LSR_Access_Msk
-#define DWT_LSR_Access_Msk ITM_LSR_Access_Msk
+#define DWT_LSR_Access_Msk \
+	IF_ENABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_Access_Msk)) \
+	IF_DISABLED(CONFIG_ZEPHYR_CMSIS_MODULE, (ITM_LSR_ACCESS_Msk))
 #endif
 
 static inline void dwt_access(bool ena)

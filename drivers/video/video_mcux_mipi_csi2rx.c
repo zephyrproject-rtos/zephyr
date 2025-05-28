@@ -130,10 +130,6 @@ static int mipi_csi2rx_get_fmt(const struct device *dev, struct video_format *fm
 {
 	const struct mipi_csi2rx_config *config = dev->config;
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
-
 	if (video_get_format(config->sensor_dev, fmt)) {
 		return -EIO;
 	}

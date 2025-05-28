@@ -296,13 +296,12 @@ ZTEST(fff_fake_contexts_tests, test_code_under_test)
 		 */
 		if (tc->expected_call_history != NULL) {
 			for (int j = 0; j < fff.call_history_idx; ++j) {
-				zassert_equal(fff.call_history[j],
-						tc->expected_call_history[j], NULL);
+				zassert_not_null(tc->expected_call_history[j]);
+				zassert_equal(fff.call_history[j], tc->expected_call_history[j]);
 			}
-			zassert_is_null(tc->expected_call_history[
-						fff.call_history_idx], NULL);
+			zassert_is_null(tc->expected_call_history[fff.call_history_idx]);
 		} else {
-			zassert_equal(fff.call_history_idx, 0, NULL);
+			zassert_equal(fff.call_history_idx, 0);
 		}
 
 
@@ -311,9 +310,9 @@ ZTEST(fff_fake_contexts_tests, test_code_under_test)
 			 tc->called_API_open_custom_fake_contexts_len - 1;
 
 		zassert_equal(called_API_open_fake.call_count,
-			      called_API_open_fake_call_count_expected, NULL);
+			      called_API_open_fake_call_count_expected);
 		for (int j = 0; j < called_API_open_fake_call_count_expected; ++j) {
-			zassert_not_null(called_API_open_fake.arg0_history[j], NULL);
+			zassert_not_null(called_API_open_fake.arg0_history[j]);
 		}
 
 
@@ -322,16 +321,16 @@ ZTEST(fff_fake_contexts_tests, test_code_under_test)
 			 tc->called_API_close_fake_return_val_seq_len - 1;
 
 		zassert_equal(called_API_close_fake.call_count,
-			called_API_close_fake_call_count_expected, NULL);
+			called_API_close_fake_call_count_expected);
 		for (int j = 0; j < called_API_close_fake_call_count_expected; ++j) {
 			/* Verify code_under_test returns value provided by open. */
 			zassert_equal(called_API_close_fake.arg0_history[j],
 				tc->called_API_open_custom_fake_contexts[j]
-					.instance_out, NULL);
+					.instance_out);
 		}
 
 
-		zassert_equal(result, tc->result_expected, NULL);
+		zassert_equal(result, tc->result_expected);
 	}
 }
 

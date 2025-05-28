@@ -23,18 +23,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_4: led4 {
 			gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
 			label = "TO_REC";
 		};
+
 		red_led_5: led5 {
 			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
 			label = "TO_PLUG";
 		};
+
 		green_led_6: led6 {
 			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
 			label = "SINK_SPY";
 		};
+
 		green_led_7: led7 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
 			label = "SOURCE";
@@ -43,26 +47,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		joy_sel: button0 {
 			label = "JOY_SEL";
 			gpios = <&gpioc 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+
 		joy_left: button1 {
 			label = "JOY_LEFT";
 			gpios = <&gpioc 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
+
 		joy_down: button2 {
 			label = "JOY_DOWN";
 			gpios = <&gpioc 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joy_right: button3 {
 			label = "JOY_RIGHT";
 			gpios = <&gpioc 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
+
 		joy_up: button4 {
 			label = "JOY_UP";
 			gpios = <&gpioc 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -72,6 +81,7 @@
 
 	cc_config {
 		compatible = "gpio-leds";
+
 		encc1 {
 			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 			label = "ENCC1";

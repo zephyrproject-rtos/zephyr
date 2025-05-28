@@ -94,10 +94,13 @@ typedef int (*http_header_cb_t)(int sock,
  * @param final_data Does this data buffer contain all the data or
  *        is there still more data to come.
  * @param user_data User specified data specified in http_client_req()
+ *
+ * @return 0  if http_client_req() should proceed with the download,
+ *         <0 if http_client_req() should abort the download.
  */
-typedef void (*http_response_cb_t)(struct http_response *rsp,
-				   enum http_final_call final_data,
-				   void *user_data);
+typedef int (*http_response_cb_t)(struct http_response *rsp,
+				  enum http_final_call final_data,
+				  void *user_data);
 
 /**
  * HTTP response from the server.

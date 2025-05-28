@@ -38,7 +38,7 @@ ZTEST(kernel_apis, test_kernel_start)
 		 * with 'main'. The kernel is in this case already started.
 		 */
 		zassert_true(!osKernelInitialize() && !osKernelStart()
-			     && osKernelRunning(), NULL);
+			     && osKernelRunning());
 	} else {
 		/* When osFeature_MainThread is 0 the kernel requires
 		 * explicit start with osKernelStart.

@@ -147,6 +147,7 @@
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -160,6 +161,7 @@
 		hfront-porch = <32>;
 		vfront-porch = <2>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

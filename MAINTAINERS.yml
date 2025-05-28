@@ -1995,7 +1995,9 @@ Release Notes:
     - sample.drivers.espi.ps2
 
 "Drivers: PTP Clock":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - yangbolu1991
   files:
     - drivers/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
@@ -2148,6 +2150,7 @@ Release Notes:
     - jbehrensnx
   files:
     - drivers/stepper/
+    - include/zephyr/drivers/stepper/
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper.rst
@@ -2174,11 +2177,12 @@ Release Notes:
     - "area: Timer"
 
 "Drivers: Video":
-  status: odd fixes
-  collaborators:
-    - loicpoulain
+  status: maintained
+  maintainers:
     - josuah
     - ngphibang
+  collaborators:
+    - loicpoulain
     - avolmat-st
   files:
     - drivers/video/
@@ -3781,7 +3785,7 @@ Intel Platforms (Agilex):
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
-NXP Drivers:
+NXP Platform Drivers:
   status: maintained
   maintainers:
     - dleach02
@@ -3822,7 +3826,7 @@ NXP Drivers:
     - "platform: NXP Drivers"
   description: NXP Drivers
 
-NXP Wireless:
+NXP Platform Wireless:
   status: maintained
   maintainers:
     - dleach02
@@ -3838,7 +3842,7 @@ NXP Wireless:
   labels:
     - "platform: NXP Drivers"
 
-NXP MCUX USB:
+NXP Platform MCUX USB:
   status: maintained
   maintainers:
     - mmahadevan108
@@ -3918,6 +3922,8 @@ NXP Platforms (MPU):
     - dleach02
     - dbaluta
     - iuliana-prodan
+    - yangbolu1991
+    - Zhiqiang-Hou
   files:
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*

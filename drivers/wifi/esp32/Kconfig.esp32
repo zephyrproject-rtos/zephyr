@@ -24,7 +24,7 @@ if WIFI_ESP32
 config HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
 	int
 	default 40960 if ESP_WIFI_HEAP_SYSTEM
-	default 0
+	default 19456 if ESP_WIFI_HEAP_SPIRAM
 	help
 	  Make sure there is a minimal heap available for Wi-Fi driver.
 
@@ -32,8 +32,11 @@ choice ESP_WIFI_HEAP
 	prompt "Wi-Fi adapter heap memory"
 	default ESP_WIFI_HEAP_SYSTEM
 
-	config ESP_WIFI_HEAP_SYSTEM
-		bool "Wi-Fi adapter use kernel mempool heap (k_malloc)"
+config ESP_WIFI_HEAP_SYSTEM
+	bool "Wi-Fi adapter use kernel mempool heap (k_malloc)"
+
+config ESP_WIFI_HEAP_SPIRAM
+	bool "Wi-Fi adapter use spiram mempool heap (smh_malloc)"
 
 endchoice # ESP_WIFI_HEAP
 
@@ -131,11 +134,13 @@ choice ESP32_WIFI_TX_BUFFER
 	  WiFi TX buffers. If PSRAM is disabled, "Dynamic" should be selected
 	  to improve the utilization of RAM.
 
-	config ESP32_WIFI_STATIC_TX_BUFFER
-		bool "Static"
-	config ESP32_WIFI_DYNAMIC_TX_BUFFER
-		bool "Dynamic"
-endchoice
+config ESP32_WIFI_STATIC_TX_BUFFER
+	bool "Static"
+
+config ESP32_WIFI_DYNAMIC_TX_BUFFER
+	bool "Dynamic"
+
+endchoice # ESP32_WIFI_TX_BUFFER
 
 config ESP32_WIFI_TX_BUFFER_TYPE
 	int
@@ -200,11 +205,13 @@ choice ESP32_WIFI_MGMT_RX_BUFFER
 	  If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
 	  received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
 
-	config ESP32_WIFI_STATIC_RX_MGMT_BUFFER
-		bool "Static"
-	config ESP32_WIFI_DYNAMIC_RX_MGMT_BUFFER
-		bool "Dynamic"
-endchoice
+config ESP32_WIFI_STATIC_RX_MGMT_BUFFER
+	bool "Static"
+
+config ESP32_WIFI_DYNAMIC_RX_MGMT_BUFFER
+	bool "Dynamic"
+
+endchoice # ESP32_WIFI_MGMT_RX_BUFFER
 
 config ESP32_WIFI_DYNAMIC_RX_MGMT_BUF
 	int

@@ -1,0 +1,22 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Microchip Power Management Controller (PMC)
+
+compatible: "microchip,sam-pmc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+clock-cells:
+  - clock-type
+  - peripheral-id

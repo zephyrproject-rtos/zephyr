@@ -237,6 +237,29 @@ extern "C" {
  *  will take place in consecutive send()/recv() call.
  */
 #define TLS_DTLS_HANDSHAKE_ON_CONNECT 18
+/** Read-only socket option to obtain the result of the certificate verification
+ *  from the most recent handshake if TLS_PEER_VERIFY_OPTIONAL was set on the
+ *  socket.
+ *  The option accepts a pointer to a 32-bit unsigned integer, holding the
+ *  verification result on return. A result of 0 indicates that verification
+ *  was successful, otherwise the verification result is indicated by a set of
+ *  flags. For mbed TLS backend, the flags are defined in "X509 Verify codes"
+ *  section of x509.h header.
+ */
+#define TLS_CERT_VERIFY_RESULT 19
+/** Write-only socket option to configure a certificate verification callback for
+ *  the socket. The option accepts a pointer to a @ref tls_cert_verify_cb
+ *  structure, which contains pointers to the actual callback function and
+ *  application-defined context.
+ *
+ *  If set, the certificate verification is delegated to the registered callback.
+ *  In such case it's the application's responsibility to verify the provided
+ *  certificates and decide whether to proceed or abort the handshake.
+ *
+ *  The option is only available if CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
+ *  Kconfig option is enabled.
+ */
+#define TLS_CERT_VERIFY_CALLBACK 20
 
 /* Valid values for @ref TLS_PEER_VERIFY option */
 #define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
@@ -265,6 +288,19 @@ extern "C" {
 #define TLS_DTLS_CID_STATUS_DOWNLINK		1 /**< CID is in use by us */
 #define TLS_DTLS_CID_STATUS_UPLINK		2 /**< CID is in use by peer */
 #define TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3 /**< CID is in use by us and peer */
+
+/** Data structure for @ref TLS_CERT_VERIFY_CALLBACK socket option. */
+struct tls_cert_verify_cb {
+	/** A pointer to the certificate verification callback function.
+	 *
+	 *  The actual callback function type is defined by mbed TLS, see
+	 *  documentation of mbedtls_x509_crt_verify() function.
+	 */
+	void *cb;
+
+	/** A pointer to an opaque context passed to the callback. */
+	void *ctx;
+};
 /** @} */ /* for @name */
 /** @} */ /* for @defgroup */
 

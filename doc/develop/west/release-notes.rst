@@ -3,6 +3,84 @@
 West Release Notes
 ##################
 
+v1.4.0
+******
+
+Changes:
+
+- Allow appending data to configuration strings.
+  To append to a value for ``<name>``, type: ``west config -a <name> <value>``.
+
+- Add ``--untracked`` argument option to ``west manifest``.
+  Run ``west manifest --untracked`` in a workspace to print all files and
+  directories that are not tracked or managed by west.
+
+- Add ``--inactive`` argument option to ``west list`` to support printing inactive projects.
+
+- Support ``--active-only`` argument option for the ``west manifest --resolve`` and
+  ``west manifest --freeze`` commands.
+  This allows freezing workspaces with active project or group filters.
+
+API changes:
+
+- ``west.manifest.Manifest`` methods ``as_dict()``, ``as_frozen_dict()``, ``as_yaml()`` and
+  ``as_frozen_yaml()`` now have an optional ``active_only`` argument (defaults to ``False``)
+  to return an object containing all projects or only the active ones.
+
+v1.3.0
+******
+
+Major changes:
+
+- Added support for :ref:`west-aliases` commands.
+
+- Adopt the `pyproject TOML specification`_ for packaging.
+
+.. _pyproject TOML specification:
+   https://packaging.python.org/en/latest/specifications/pyproject-toml/
+
+Other changes:
+
+- Add cache support for submodules.
+
+- Decode manifest files as UTF-8 by default.
+
+- Pass unknown arguments for ``west diff`` and ``west status`` to underlying ``git`` commands.
+
+- Added ``--manifest`` argument to ``west diff`` to allow comparing
+  the current workspace to the manifest revisions.
+
+- Environment variables can be used with west forall
+  The following are defined:
+
+  - ``WEST_PROJECT_NAME``
+  - ``WEST_PROJECT_PATH``
+  - ``WEST_PROJECT_ABSPATH``
+  - ``WEST_PROJECT_REVISION``
+  - ``WEST_PROJECT_URL``
+  - ``WEST_PROJECT_REMOTE``
+
+- Added support for early argument ``-q/--quiet`` to reduce verbosity.
+
+- Added ``-o/--clone-opt`` argument to ``west init`` to pass to ``git clone``.
+
+- Support Python 3.13 and drop support for Python 3.8.
+
+- Prevent manifests from having projects in the ``.west`` directory.
+
+- Add NTFS workarounds and ``--rename-delay`` for ``west init``.
+
+- Print a stack trace when calling die in debug ``-vvv``.
+
+Bug fixes:
+
+- Use ``'backslashreplace'`` not to crash on malformed UTF from subprocess.
+
+- Fix handling in ``west diff`` for repositories with merge conflicts.
+  Additionally improve error printing and handle ``git diff`` return codes.
+
+- Fix ``--freeze`` and ``--resolve`` for the ``west manifest`` command when git submodules are used.
+
 v1.2.0
 ******
 

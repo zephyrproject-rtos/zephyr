@@ -13,6 +13,7 @@
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <USART0_RX_PA6>;
 			input-enable;

@@ -33,6 +33,23 @@
 
 /* MAX32655 extra peripherals. */
 / {
+	cpus {
+		cpu@0 {
+			cpu-power-states = <&idle &suspend &standby>;
+		};
+
+		power-states {
+			/* Standby Mode */
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <1000>;
+				/* Typical value is 14.7us as per of Datasheet */
+				exit-latency-us = <30>;
+			};
+		};
+	};
+
 	soc {
 		sram1: memory@20008000 {
 			compatible = "mmio-sram";

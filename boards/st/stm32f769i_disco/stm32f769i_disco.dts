@@ -40,14 +40,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_1:led_1 {
 			gpios = <&gpioj 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		green_led_2:led_2 {
 			gpios = <&gpioj 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		green_led_3:led_3 {
 			gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -56,6 +59,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
@@ -205,7 +209,7 @@ arduino_serial: &usart6 {};
 			slot1_partition: partition@0 {
 				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(16)>;
-				};
+			};
 
 			storage_partition: partition@1a0000 {
 				label = "storage";

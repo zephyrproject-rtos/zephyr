@@ -121,6 +121,7 @@ static int a4979_stepper_set_micro_step_res(const struct device *dev,
 	case STEPPER_MICRO_STEP_4:
 		m0_value = 0;
 		m1_value = 1;
+		break;
 	case STEPPER_MICRO_STEP_16:
 		m0_value = 1;
 		m1_value = 1;

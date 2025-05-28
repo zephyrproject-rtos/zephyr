@@ -56,9 +56,9 @@ The following is an example of a very simple response handling function:
 
 .. code-block:: c
 
-    static void response_cb(struct http_response *rsp,
-                            enum http_final_call final_data,
-                            void *user_data)
+    static int response_cb(struct http_response *rsp,
+                           enum http_final_call final_data,
+                           void *user_data)
     {
         if (final_data == HTTP_DATA_MORE) {
             LOG_INF("Partial data received (%zd bytes)", rsp->data_len);
@@ -67,6 +67,8 @@ The following is an example of a very simple response handling function:
         }
 
         LOG_INF("Response status %s", rsp->http_status);
+
+        return 0;
     }
 
 See :zephyr:code-sample:`HTTP client sample application <sockets-http-client>` for

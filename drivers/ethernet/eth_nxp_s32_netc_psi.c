@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -236,7 +236,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_psi) == 1, "Only one PSI enabl
 	BUILD_ASSERT((DT_PROP_BY_IDX(node, prop, idx) > NETC_ETH_IP_PSI_INDEX)			\
 		&& (DT_PROP_BY_IDX(node, prop, idx) <= FEATURE_NETC_ETH_NUM_OF_VIRTUAL_CTRLS),	\
 		"Invalid VSI index");								\
-	static Netc_Eth_Ip_VsiToPsiMsgType							\
+	static __nocache Netc_Eth_Ip_VsiToPsiMsgType						\
 	_CONCAT3(nxp_s32_eth##n##_vsi, DT_PROP_BY_IDX(node, prop, idx), _rx_msg_buf)		\
 		__aligned(FEATURE_NETC_ETH_VSI_MSG_ALIGNMENT)
 
@@ -363,6 +363,11 @@ static const Netc_Eth_Ip_EnetcGeneralConfigType nxp_s32_eth##n##_enetc_general_c
 	.maskVLANAllowUntaggedEnable =	(uint32)0x30000U,				\
 };											\
 											\
+IF_ENABLED(CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE,				\
+(static const Netc_Eth_Ip_SiMulticastMACHashFilterDataType				\
+	nxp_s32_eth##n##_multicast_entry_init						\
+	[CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE];))				\
+											\
 static const Netc_Eth_Ip_StationInterfaceConfigType nxp_s32_eth##n##_si_cfg = {		\
 	.NumberOfRxBDR = 1,								\
 	.NumberOfTxBDR = 2,								\
@@ -373,7 +378,10 @@ static const Netc_Eth_Ip_StationInterfaceConfigType nxp_s32_eth##n##_si_cfg = {	
 	.EnableSIMsgInterrupt = true,							\
 	.RxInterrupts = (uint32_t)true,							\
 	.TxInterrupts = (uint32_t)false,						\
-	.MACFilterTableMaxNumOfEntries = CONFIG_ETH_NXP_S32_MAC_FILTER_TABLE_SIZE,	\
+IF_ENABLED(CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE,				\
+	(.NumberOfConfiguredMulticastMacHashFilterEntries =				\
+				CONFIG_ETH_NXP_S32_MULTICAST_MAC_FILTER_TABLE_SIZE,	\
+	.MulticastMACFilterEntries = &nxp_s32_eth##n##_multicast_entry_init))		\
 };											\
 											\
 static uint8_t nxp_s32_eth##n##_switch_vlandr2dei_cfg[NETC_ETHSWT_IP_NUMBER_OF_DR];	\

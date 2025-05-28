@@ -11,5 +11,4 @@
 / {
 	model = "Silicon Labs EFM32JG12 STK3402A board ";
 	compatible = "silabs,slstk3402a_jg", "silabs,efm32jg12b";
-
 };

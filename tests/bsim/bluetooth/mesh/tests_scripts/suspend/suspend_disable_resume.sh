@@ -22,7 +22,3 @@ RunTest mesh_suspend_disable_resume \
 overlay=overlay_low_lat_conf
 RunTest mesh_suspend_disable_resume_low_lat \
 	suspend_dut_suspend_disable_resume suspend_tester_pub
-
-overlay=overlay_psa_conf
-RunTest mesh_suspend_disable_resume_psa \
-	suspend_dut_suspend_disable_resume suspend_tester_pub

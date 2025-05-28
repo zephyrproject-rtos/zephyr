@@ -233,8 +233,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_declare_pow2)
 ZTEST(ringbuffer_api, test_ringbuffer_declare_size)
 {
 	zassert_true(ring_buf_is_empty(&ringbuf_size));
-	zassert_equal(ring_buf_item_space_get(&ringbuf_size), RINGBUFFER_SIZE,
-		      NULL);
+	zassert_equal(ring_buf_item_space_get(&ringbuf_size), RINGBUFFER_SIZE);
 }
 
 /**
@@ -501,8 +500,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_raw)
 
 		zassert_true(in_size == RINGBUFFER_SIZE - 2);
 		zassert_true(in_size == out_size);
-		zassert_true(memcmp(inbuf, outbuf, RINGBUFFER_SIZE - 2) == 0,
-			     NULL);
+		zassert_true(memcmp(inbuf, outbuf, RINGBUFFER_SIZE - 2) == 0);
 	}
 
 	memset(outbuf, 0, sizeof(outbuf));
@@ -634,10 +632,8 @@ ZTEST(ringbuffer_api, test_byte_put_free)
 			granted = ring_buf_get_claim(&ringbuf_raw, &data,
 						       RINGBUFFER_SIZE);
 
-			zassert_true((granted + granted_1) ==
-					RINGBUFFER_SIZE - 2, NULL);
-			zassert_true(memcmp(&indata[granted_1], data, granted)
-					== 0, NULL);
+			zassert_true((granted + granted_1) == RINGBUFFER_SIZE - 2);
+			zassert_true(memcmp(&indata[granted_1], data, granted) == 0);
 		} else {
 			zassert_true(false);
 		}
@@ -682,7 +678,7 @@ ZTEST(ringbuffer_api, test_size)
 	ring_buf_reset(&ringbuf_raw);
 	ring_buf_put(&ringbuf_raw, buf, sizeof(buf));
 	size = ring_buf_size_get(&ringbuf_raw);
-	zassert_equal(sizeof(buf), size, "wrong size: exp: %u: actual: %u", sizeof(buf), size);
+	zassert_equal(sizeof(buf), size, "wrong size: exp: %zu: actual: %u", sizeof(buf), size);
 
 	/* Test N - 2 with wrap-around */
 	ring_buf_put(&ringbuf_raw, buf, sizeof(buf));
@@ -690,7 +686,7 @@ ZTEST(ringbuffer_api, test_size)
 	ring_buf_put(&ringbuf_raw, "x", 1);
 
 	size = ring_buf_size_get(&ringbuf_raw);
-	zassert_equal(sizeof(buf) - 2, size, "wrong size: exp: %u: actual: %u", sizeof(buf) - 2,
+	zassert_equal(sizeof(buf) - 2, size, "wrong size: exp: %zu: actual: %u", sizeof(buf) - 2,
 		      size);
 }
 
@@ -724,9 +720,10 @@ ZTEST(ringbuffer_api, test_peek)
 	memset(buf, '*', sizeof(buf)); /* fill with pattern */
 
 	size = ring_buf_peek(&ringbuf_raw, buf, sizeof(buf));
-	zassert_equal(sizeof(buf), size, "wrong peek size: exp: %u: actual: %u", sizeof(buf), size);
+	zassert_equal(sizeof(buf), size,
+			"wrong peek size: exp: %zu: actual: %u", sizeof(buf), size);
 	size = ring_buf_size_get(&ringbuf_raw);
-	zassert_equal(sizeof(buf), size, "wrong buffer size: exp: %u: actual: %u", sizeof(buf),
+	zassert_equal(sizeof(buf), size, "wrong buffer size: exp: %zu: actual: %u", sizeof(buf),
 		      size);
 
 	for (size = 0; size < sizeof(buf); ++size) {
@@ -835,8 +832,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_array_perf)
 	}
 
 	/*Data from the end of the ringbuf can be copied into the array*/
-	zassert_true(ring_buf_item_get(&buf_ii, &type, &value,
-				output, &size) == 0, NULL);
+	zassert_true(ring_buf_item_get(&buf_ii, &type, &value, output, &size) == 0);
 
 	/*Verify the ringbuf defined is working*/
 	for (int i = 0; i < 3; i++) {

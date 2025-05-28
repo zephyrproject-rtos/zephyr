@@ -2,7 +2,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/secure_storage/its/store.h>
-#include <zephyr/secure_storage/its/transform.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 

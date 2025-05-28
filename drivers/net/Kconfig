@@ -269,6 +269,20 @@ config NET_NATIVE_OFFLOADED_SOCKETS_EPOLL_WAIT_INTERVAL
 	  Decrease that value when lower network traffic latency is expected, at the expense of more
 	  CPU processing overhead.
 
+config NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM
+	bool "Support for the network connectivity API"
+	help
+	  Simulate an interface that transitions through the dormant state based on calls
+	  to the network connectivity API, after some delay.
+
+config NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM_AUTO_CONNECT
+	bool "Automatically connect"
+	depends on NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM
+	help
+	  If this option is set the Connection Manager will automatically call connect after the
+	  network interface has been brought up. This option sets the default value, the option has
+	  a corresponding flag that can be set at run time by calling conn_mgr_if_set_flag().
+
 endif # NET_NATIVE_OFFLOADED_SOCKETS
 
 endif # NET_DRIVERS

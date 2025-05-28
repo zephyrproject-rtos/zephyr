@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024, Nordic Semiconductor ASA
+
+shield:
+  name: adafruit_data_logger
+  full_name: Adafruit Data Logger Shield
+  vendor: adafruit
+  supported_features:
+    - rtc
+    - sdhc

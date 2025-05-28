@@ -111,6 +111,16 @@ nrfx_uart_num = 22
 rsource "Kconfig.nrfx_uart_instance"
 endif
 
+if HAS_HW_NRF_UARTE23
+nrfx_uart_num = 23
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE24
+nrfx_uart_num = 24
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
 if HAS_HW_NRF_UARTE30
 nrfx_uart_num = 30
 rsource "Kconfig.nrfx_uart_instance"

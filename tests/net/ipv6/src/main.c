@@ -1377,7 +1377,7 @@ ZTEST(net_ipv6, test_address_lifetime)
 
 	/* The address should be expired now */
 	zassert_equal(ifaddr->lifetime.timer_timeout, 0,
-		      "Timer timeout set wrong (%llu vs %llu)",
+		      "Timer timeout set wrong (%u vs %u)",
 		      ifaddr->lifetime.timer_timeout, 0);
 	zassert_equal(ifaddr->lifetime.wrap_counter, 0,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);

@@ -114,7 +114,7 @@ extern const void *x86_irq_args[];
 
 	/**TESTPOINT: pass word-sized parameter to interrupt */
 	zassert_equal(handler_test_result, ISR_DYN_ARG,
-			"parameter(0x%lx) in handler is not correct",
+			"parameter(0x%" PRIxPTR ") in handler is not correct",
 			handler_test_result);
 
 	trigger_irq(vector_num);

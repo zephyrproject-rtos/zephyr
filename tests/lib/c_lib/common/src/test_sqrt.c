@@ -29,6 +29,7 @@ static float test_floats[] = {
 	};
 #define	NUM_TEST_FLOATS	(sizeof(test_floats)/sizeof(float))
 
+#if __SIZEOF_DOUBLE__ == 8
 	static double test_doubles[] = {
 		1.0, 2.0, 3.0, 4.0,
 		5.0, 6.0, 7.0, 8.0, 9.0,	/* numbers across the decade */
@@ -59,6 +60,7 @@ static int isnan(double x)
 		((ieee754.u & 0x000fffffffffffff) != 0);
 }
 #endif
+#endif /* __SIZEOF_DOUBLE__ == 8 */
 
 #ifndef	isinff
 static int isinff(float x)
@@ -147,6 +149,9 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 
 ZTEST(libc_common, test_sqrt)
 {
+	if (sizeof(double) != 8) {
+		ztest_test_skip();
+	}
 int i;
 double	resd, error, square, root_squared, exponent;
 uint64_t max_error;

@@ -1,0 +1,36 @@
+# FIXME: this should be under tests/unit/timeutil but will not work due to #90029
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - timeutils
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  integration_platforms:
+    - native_sim/native/64
+tests:
+  libraries.timespec_utils: {}
+  libraries.timespec_utils.speed:
+    extra_configs:
+      - CONFIG_SPEED_OPTIMIZATIONS=y
+  libraries.timespec_utils.armclang_std_libc:
+    toolchain_allow: armclang
+    extra_configs:
+      - CONFIG_ARMCLANG_STD_LIBC=y
+  libraries.timespec_utils.arcmwdtlib:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
+  libraries.timespec_utils.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  libraries.timespec_utils.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  libraries.timespec_utils.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y

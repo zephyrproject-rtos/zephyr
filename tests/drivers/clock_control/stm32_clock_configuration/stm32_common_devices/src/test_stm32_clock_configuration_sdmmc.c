@@ -65,11 +65,11 @@ ZTEST(stm32_common_devices_clocks, test_sdmmc_clk_config)
 
 	if (pclken[1].bus == STM32_SRC_CK48) {
 		zassert_equal(dev_actual_clk_src, RCC_SDIOCLKSOURCE_CLK48,
-				"Expected SDMMC src: CLK 48 (0x%lx). Actual src: 0x%x",
+				"Expected SDMMC src: CLK 48 (0x%x). Actual src: 0x%x",
 				RCC_SDIOCLKSOURCE_CLK48, dev_actual_clk_src);
 	} else if (pclken[1].bus == STM32_SRC_SYSCLK) {
 		zassert_equal(dev_actual_clk_src, RCC_SDIOCLKSOURCE_SYSCLK,
-				"Expected SDMMC src: SYSCLK (0x%lx). Actual src: 0x%x",
+				"Expected SDMMC src: SYSCLK (0x%x). Actual src: 0x%x",
 				RCC_SDIOCLKSOURCE_SYSCLK, dev_actual_clk_src);
 	} else {
 		zassert_true(0, "Unexpected domain clk (0x%x)", dev_actual_clk_src);

@@ -1,0 +1,33 @@
+{#
+  Copyright (c) 2024-2025, The Linux Foundation.
+  SPDX-License-Identifier: Apache-2.0
+#}
+
+<a
+  class="board-card shield"
+  {% if shield.doc_page -%}
+  href="../{{ shield.doc_page | replace(".rst", ".html") }}"
+  {% else -%}
+  href="#"
+  {% endif -%}
+  aria-label="Open the documentation page for {{ shield.full_name }}"
+  data-name="{{ shield.full_name}}"
+  data-vendor="{{ shield.vendor }}"
+  data-supported-features="
+    {%- set feature_types = [] -%}
+    {%- for feature in shield.supported_features -%}
+      {%- if feature not in feature_types -%}
+        {%- set _ = feature_types.append(feature) -%}
+      {%- endif -%}
+    {%- endfor -%}
+    {{- feature_types|join(' ') -}}
+  " tabindex="0">
+  <div class="vendor">{{ vendors[shield.vendor] }}</div>
+  {% if shield.image -%}
+  <img alt="A picture of the {{ shield.full_name }} shield"
+    src="../_images/{{ shield.image.split('/')[-1] }}" class="picture" />
+  {% else -%}
+  <div class="no-picture fa fa-microchip picture"></div>
+  {% endif -%}
+  <div class="board-name">{{ shield.full_name }}</div>
+</a>

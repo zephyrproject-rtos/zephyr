@@ -27,6 +27,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_4 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -35,6 +36,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -115,6 +117,7 @@ zephyr_udc0: &usb {
 &timers3 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
@@ -125,6 +128,7 @@ zephyr_udc0: &usb {
 &timers15 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm15: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim15_ch1_pb14>;
@@ -205,14 +209,17 @@ zephyr_udc0: &usb {
 			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
+
 		slot0_partition: partition@C000 {
 			label = "image-0";
 			reg = <0x0000C000 DT_SIZE_K(200)>;
 		};
+
 		slot1_partition: partition@3E000 {
 			label = "image-1";
 			reg = <0x0003E000 DT_SIZE_K(200)>;
 		};
+
 		/* final 64KiB reserved for app storage partition */
 		storage_partition: partition@70000 {
 			label = "storage";

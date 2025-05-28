@@ -1,0 +1,7 @@
+shield:
+  name: x_nucleo_53l0a1
+  full_name: X-NUCLEO-53L0A1
+  vendor: st
+  supported_features:
+    - gpio
+    - sensor

@@ -1,0 +1,6 @@
+shield:
+  name: m5stack_core2_ext
+  full_name: M5Stack-Core2 base shield
+  vendor: m5stack
+  supported_features:
+    - sensor

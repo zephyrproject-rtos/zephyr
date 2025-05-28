@@ -859,6 +859,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 
 	/* ACL connection of the new CIS */
 	conn = ll_conn_get(cis->lll.acl_handle);
+	LL_ASSERT(conn != NULL);
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint16_t event_counter;
@@ -982,6 +983,7 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 	LL_ASSERT(cis);
 
 	conn = ll_conn_get(cis->lll.acl_handle);
+	LL_ASSERT(conn != NULL);
 
 	/* `ull_conn_llcp()` (caller of this function) is called before `ull_ref_inc()` hence we do
 	 * not need to use `ull_conn_event_counter()`.
@@ -1060,10 +1062,12 @@ static void mfy_cig_offset_get(void *param)
 			(EVENT_TICKER_RES_MARGIN_US << 2U);
 	offset_min_us += cig->sync_delay - cis->sync_delay;
 
+	conn = ll_conn_get(cis->lll.acl_handle);
+	LL_ASSERT(conn != NULL);
+
 	/* Ensure the offset is not greater than the ACL interval, considering
 	 * the minimum CIS offset requirement.
 	 */
-	conn = ll_conn_get(cis->lll.acl_handle);
 	conn_interval_us = (uint32_t)conn->lll.interval * CONN_INT_UNIT_US;
 	offset_limit_us = conn_interval_us + PDU_CIS_OFFSET_MIN_US;
 	while (offset_min_us >= offset_limit_us) {
@@ -1170,10 +1174,12 @@ static void mfy_cis_offset_get(void *param)
 	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
 	cig_remainder_us = remainder;
 
+	conn = ll_conn_get(cis->lll.acl_handle);
+	LL_ASSERT(conn != NULL);
+
 	/* Add a tick for negative remainder and return positive remainder
 	 * value.
 	 */
-	conn = ll_conn_get(cis->lll.acl_handle);
 	remainder = conn->llcp.prep.remainder;
 	hal_ticker_add_jitter(&ticks_to_expire, &remainder);
 	acl_remainder_us = remainder;

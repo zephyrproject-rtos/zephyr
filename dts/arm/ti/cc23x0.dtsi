@@ -116,6 +116,50 @@
 			interrupts = <3 0>;
 			status = "disabled";
 		};
+
+		lgpt0: lgpt@40060000 {
+			compatible = "ti,cc23x0-lgpt";
+			reg = <0x40060000 0x1d2>;
+			max-top-value = <0xffff>;
+			interrupts = <13 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+		};
+
+		lgpt1: lgpt@40061000 {
+			compatible = "ti,cc23x0-lgpt";
+			reg = <0x40061000 0x1d2>;
+			max-top-value = <0xffff>;
+			interrupts = <14 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+		};
+
+		lgpt2: lgpt@40062000 {
+			compatible = "ti,cc23x0-lgpt";
+			reg = <0x40062000 0x1d2>;
+			max-top-value = <0xffff>;
+			interrupts = <17 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+		};
+
+		lgpt3: lgpt@40063000 {
+			compatible = "ti,cc23x0-lgpt";
+			reg = <0x40063000 0x1d2>;
+			max-top-value = <0xffffff>;
+			interrupts = <18 0>;
+			clk-prescale = <0>;
+			status = "disabled";
+		};
+
+		adc0: adc@40050000 {
+			compatible = "ti,cc23x0-adc";
+			reg = <0x40050000 0xe30>;
+			interrupts = <15 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 

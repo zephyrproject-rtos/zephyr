@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Olivier Lalonde
+# SPDX-License-Identifier: Apache-2.0
+
+# Configuration options for cellular modem sample
+
+mainmenu "Cellular modem sample application"
+
+config SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
+	string "Endpoint hostname"
+	default "test-endpoint.com"
+
+source "Kconfig.zephyr"

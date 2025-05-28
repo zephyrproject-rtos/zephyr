@@ -14,6 +14,24 @@ config WIFI_SILABS_SIWX91X
 
 if WIFI_SILABS_SIWX91X
 
+config WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP
+	bool "Enhanced Max PSP Support"
+	default y
+	help
+	  Enable this option to allow the device to configure
+	  Enhanced Maximum Power Save (PSP) support during
+	  device initialization.
+
+	  **Advantages:**
+	  - Reduces power consumption during low traffic periods.
+	  - Automatically transitions to Fast PSP for improved responsiveness
+	    when traffic is high.
+
+	  **Limitations:**
+	  - Initially uses PS-Poll frames for power management, even if the
+	    user configures NULL frame-based.
+	  - Switches to NULL frame-based only when traffic increases.
+
 choice
 	prompt "Network stack"
 	default WIFI_SILABS_SIWX91X_NET_STACK_NATIVE

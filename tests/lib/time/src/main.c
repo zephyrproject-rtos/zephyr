@@ -29,7 +29,7 @@ ZTEST(libc_time, test_time_passing)
 	time_initial = time(NULL);
 	zassert_equal(time_initial, time_initial_unaligned + 1,
 		      "Time (%d) should be one second larger than initially (%d)",
-		      time_initial, time_initial_unaligned);
+		      (int)time_initial, (int)time_initial_unaligned);
 
 	for (i = 1; i <= 10; i++) {
 		k_sleep(K_SECONDS(1));

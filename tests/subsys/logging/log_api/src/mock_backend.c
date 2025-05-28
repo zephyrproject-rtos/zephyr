@@ -160,7 +160,7 @@ static void process(const struct log_backend *const backend,
 		source_id = log_source_id(source);
 	}
 
-	zassert_equal(source_id, exp->source_id, "source_id:%p (exp: %d)",
+	zassert_equal(source_id, exp->source_id, "source_id:%d (exp: %d)",
 		      source_id, exp->source_id);
 
 	size_t len;

@@ -21,6 +21,7 @@ struct siwx91x_dev {
 	enum wifi_iface_state scan_prev_state;
 	scan_result_cb_t scan_res_cb;
 	uint16_t scan_max_bss_cnt;
+	struct wifi_ps_params ps_params;
 	uint8_t max_num_sta;
 	bool reboot_needed;
 	bool hidden_ssid;

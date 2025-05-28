@@ -13,10 +13,12 @@
 / {
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioh 7 GPIO_ACTIVE_LOW>;
 			label = "User LD7";
 		};
+
 		red_led_1: led_3 {
 			gpios = <&gpioh 6 GPIO_ACTIVE_LOW>;
 			label = "User LD6";
@@ -25,6 +27,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -104,6 +107,7 @@ stm32_lp_tick_source: &lptim1 {
 &timers4 {
 	status = "okay";
 	st,prescaler = <1>;
+
 	pwm4: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim4_ch1_pb6>;
@@ -114,6 +118,7 @@ stm32_lp_tick_source: &lptim1 {
 &timers3 {
 	status = "okay";
 	st,prescaler = <255>;
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pe4>;
