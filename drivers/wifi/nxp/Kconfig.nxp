@@ -858,6 +858,29 @@ config NXP_WIFI_MMSF
 
 endif # NXP_RW610 || NXP_IW610
 
+if NXP_RW610 || NXP_IW61X
+
+config NXP_OVERRIDE_CALIBRATION_DATA
+	bool "override default calibriation data"
+	help
+	  This option is used to override default calibration data.
+
+endif # NXP_RW610 || NXP_IW61X
+
+if NXP_IW61X
+
+config WLAN_CALDATA_2ANT_HI_ISO
+	bool "Select 2ANT HIGH ISOLATION"
+	help
+	  This option is used to select 2ANT High Isolation Caldata.
+
+config WLAN_CALDATA_2ANT_LO_ISO
+	bool "Select 2ANT LOW ISOLATION"
+	help
+	  This option is used to select 2ANT Low Isolation Caldata.
+
+endif # NXP_IW61X
+
 if NXP_RW610
 
 config NXP_WIFI_FW_VDLLV2
@@ -944,11 +967,6 @@ config NXP_WIFI_WLAN_CALDATA_3ANT_DIVERSITY
 	bool "Three antenna diversity"
 	help
 	  This option is used to enable three antenna diversity.
-
-config NXP_OVERRIDE_CALIBRATION_DATA
-	bool "override default calibriation data"
-	help
-	  This option is used to override default calibration data.
 
 endif # NXP_RW610
 
