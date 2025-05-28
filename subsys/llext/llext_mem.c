@@ -27,7 +27,9 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define LLEXT_PAGE_SIZE 32
 #endif
 
+#ifndef CONFIG_LLEXT_HEAP_DYNAMIC
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
+#endif
 
 /*
  * Initialize the memory partition associated with the specified memory region
