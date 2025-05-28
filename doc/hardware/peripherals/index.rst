@@ -52,6 +52,7 @@ Peripherals
    regulators.rst
    reset.rst
    retained_mem.rst
+   saej2716.rst
    sdhc.rst
    sensor/index.rst
    spi.rst

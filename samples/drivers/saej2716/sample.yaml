@@ -1,0 +1,11 @@
+sample:
+  name: SAEJ2716 driver sample
+
+tests:
+  sample.drivers.saej2716:
+    tags:
+      - drivers
+      - saej2716
+    depends_on: saej2716
+    filter: dt_alias_exists("saej2716-node")
+    harness: sensor
