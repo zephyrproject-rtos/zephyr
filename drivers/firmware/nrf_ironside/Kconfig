@@ -3,7 +3,7 @@
 
 config NRF_IRONSIDE
 	bool
-	depends on SOC_NRF54H20_IRON
+	depends on SOC_NRF54H20_IRON || SOC_NRF9280_IRON
 	help
 	  This is selected by drivers interacting with Nordic IRONside firmware.
 
@@ -28,11 +28,11 @@ config NRF_IRONSIDE_CALL_INIT_PRIORITY
 endif # NRF_IRONSIDE_CALL
 
 menu "Nordic IRONside services"
-	depends on SOC_NRF54H20_IRON
+	depends on SOC_NRF54H20_IRON || SOC_NRF9280_IRON
 
 config NRF_IRONSIDE_CPUCONF_SERVICE
 	bool "IRONside CPUCONF service"
-	depends on SOC_NRF54H20_CPUAPP
+	depends on SOC_NRF54H20_CPUAPP || SOC_NRF9280_CPUAPP
 	select NRF_IRONSIDE_CALL
 	help
 	  Service used to boot local domain cores.
