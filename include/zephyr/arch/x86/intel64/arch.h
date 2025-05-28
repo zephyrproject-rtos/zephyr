@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Intel-64 specific kernel interface header
+ *
+ * This header contains the Intel-64 portion of the X86 specific kernel
+ * interface (see include/zephyr/arch/x86/cpu.h).
+ */
+
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 

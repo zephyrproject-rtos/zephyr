@@ -10,7 +10,7 @@
  *
  * This header contains the ARM AArch32 specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * (include/arm/cpu.h)
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
