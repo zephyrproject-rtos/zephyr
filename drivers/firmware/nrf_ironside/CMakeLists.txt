@@ -4,5 +4,3 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_NRF_IRONSIDE_CALL call.c)
-
-zephyr_library_sources_ifdef(CONFIG_NRF_IRONSIDE_CPUCONF_SERVICE cpuconf.c)
