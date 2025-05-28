@@ -48,6 +48,25 @@ config SHELL_STACK_SIZE
 
 endif # SHELL
 
+if MBEDTLS_PSA_CRYPTO_C
+
+config MCUX_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+	default y
+
+config MBEDTLS_USER_CONFIG_ENABLE
+	default y
+
+config MBEDTLS_USER_CONFIG_FILE
+	default "ble_els_pkc_mbedtls_psa_config.h"
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 endif # BT
 
 config NXP_MONOLITHIC_WIFI
