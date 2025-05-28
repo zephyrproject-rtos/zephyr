@@ -289,7 +289,7 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 							      buffer2_rx, BUF2_SIZE);
 	uint32_t freq = spec->config.frequency;
 	uint32_t start_time, end_time, cycles_spent;
-	uint64_t time_spent_us, expected_transfer_time_us;
+	uint64_t time_spent_us, expected_transfer_time_us, latency_measurement;
 
 	/* since this is a test program, there shouldn't be much to interfere with measurement */
 	start_time = k_cycle_get_32();
@@ -329,7 +329,12 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 	zassert_true(time_spent_us >= minimum_transfer_time_us,
 			"Transfer faster than theoretically possible");
 
-	TC_PRINT("Latency measurement: %llu us\n", time_spent_us - expected_transfer_time_us);
+	/* handle overflow for print statement */
+	latency_measurement = time_spent_us - expected_transfer_time_us;
+	if (latency_measurement > time_spent_us) {
+		latency_measurement = 0;
+	}
+	TC_PRINT("Latency measurement: %llu us\n", latency_measurement);
 
 	/* Allow some overhead, but not too much */
 	zassert_true(time_spent_us <= expected_transfer_time_us * 8, "Very high latency");
