@@ -8,7 +8,8 @@ from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 import itertools
 from pathlib import Path
-import pykwalify.core
+import jsonschema
+import json
 import sys
 from typing import List, Union
 import yaml
@@ -20,9 +21,11 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
+BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.json')
 with open(BOARD_SCHEMA_PATH, 'r') as f:
-    board_schema = yaml.load(f.read(), Loader=SafeLoader)
+    board_schema = json.load(f)
+
+board_validator = jsonschema.Draft202012Validator(board_schema)
 
 BOARD_YML = 'board.yml'
 
@@ -230,10 +233,10 @@ def load_v2_boards(board_name, board_yml, systems):
             b = yaml.load(f.read(), Loader=SafeLoader)
 
         try:
-            pykwalify.core.Core(source_data=b, schema_data=board_schema).validate()
-        except pykwalify.errors.SchemaError as e:
+            board_validator.validate(b)
+        except jsonschema.exceptions.ValidationError as e:
             sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                     .format(board_yml.as_posix(), e))
+                     .format(board_yml.as_posix(), e.message))
 
         mutual_exclusive = {'board', 'boards'}
         if len(mutual_exclusive - b.keys()) < 1:
