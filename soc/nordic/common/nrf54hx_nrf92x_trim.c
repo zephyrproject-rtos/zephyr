@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <hal/nrf_hsfll.h>
 #include <hal/nrf_auxpll.h>
+#include <hal/nrf_memconf.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -22,10 +23,16 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define FICR_EXISTS(node_id, name) \
 	DT_PROP_HAS_NAME(node_id, nordic_ficrs, name)
 
+#define FICR_ADDR_GET_BY_IDX(node_id, idx)							\
+	DT_REG_ADDR(DT_PHANDLE_BY_IDX(node_id, nordic_ficrs, idx)) +				\
+	DT_PHA_BY_IDX(node_id, nordic_ficrs, idx, offset)
+
 #if defined(CONFIG_SOC_NRF54H20_CPUAPP) || defined(CONFIG_SOC_NRF9280_CPUAPP)
 #define LOCAL_HSFLL_NODE DT_NODELABEL(cpuapp_hsfll)
+#define MEMCONF_NODE DT_NODELABEL(cpuapp_memconf)
 #elif defined(CONFIG_SOC_NRF54H20_CPURAD) || defined(CONFIG_SOC_NRF9280_CPURAD)
 #define LOCAL_HSFLL_NODE DT_NODELABEL(cpurad_hsfll)
+#define MEMCONF_NODE DT_NODELABEL(cpurad_memconf)
 #else
 #error "unsupported"
 #endif
@@ -69,6 +76,22 @@ static void trim_local_hsfll(void)
 	)
 }
 
+static void trim_memconf(void)
+{
+	NRF_MEMCONF_Type *memconf = (NRF_MEMCONF_Type *)DT_REG_ADDR(MEMCONF_NODE);
+
+	const uint16_t trims[4] = {
+		sys_read32(FICR_ADDR_GET_BY_IDX(MEMCONF_NODE, 0)),
+		sys_read32(FICR_ADDR_GET_BY_IDX(MEMCONF_NODE, 1)),
+		sys_read32(FICR_ADDR_GET_BY_IDX(MEMCONF_NODE, 2)),
+		sys_read32(FICR_ADDR_GET_BY_IDX(MEMCONF_NODE, 3)),
+	};
+
+	ARRAY_FOR_EACH(trims, i) {
+		nrf_memconf_memtrim_set(memconf, i, trims[i]);
+	}
+}
+
 #define TRIM_NRF_AUXPLL_DEFINE(node_id)								\
 	{											\
 		NRF_AUXPLL_Type *auxpll = (NRF_AUXPLL_Type *)DT_REG_ADDR(node_id);		\
@@ -80,9 +103,11 @@ static void trim_local_hsfll(void)
 		LOG_DBG("AUXPLL->AUXPL.CTUNE = %d", auxpll->TRIM.CTUNE);			\
 	}
 
+
 void nrf54hx_nrf92x_trim(void)
 {
 	trim_local_hsfll();
+	trim_memconf();
 
 	DT_FOREACH_STATUS_OKAY(nordic_nrf_auxpll, TRIM_NRF_AUXPLL_DEFINE)
 }
