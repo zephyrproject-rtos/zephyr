@@ -5,10 +5,19 @@
  */
 
 #include "nrf54h20dk_nrf54h20_cpuapp.dts"
-#include "nrf54h20dk_nrf54h20-ipc_conf_iron.dtsi"
-#include "nrf54h20dk_nrf54h20-memory_map_iron.dtsi"
 
-/delete-node/ &cpusec_cpurad_ipc;
+/delete-node/&cpurad_rx_partitions;
+/delete-node/&cpuapp_rx_partitions;
+
+/* Update the location of cpusys IPC shared memory */
+/delete-node/&cpuapp_cpusys_ipc_shm;
+/delete-node/&cpusys_cpuapp_ipc_shm;
+/delete-node/&cpurad_cpusys_ipc_shm;
+/delete-node/&cpusys_cpurad_ipc_shm;
+
+/* This is not yet an exhaustive memory map, and contain only a minimum required to boot
+ * the application core.
+ */
 
 / {
 	chosen {
@@ -17,19 +26,62 @@
 	};
 };
 
-&cpusec_cpuapp_ipc {
-	mbox-names = "tx", "rx";
-	status = "okay";
+&mram1x {
+	cpuapp_rx_partitions: cpuapp-rx-partitions {
+		compatible = "nordic,owned-partitions", "fixed-partitions";
+		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RXS>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@2c000 {
+			label = "mcuboot";
+			reg = <0x2c000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@3c000 {
+			label = "image-0";
+			reg = <0x3c000 DT_SIZE_K(336)>;
+		};
+
+		slot1_partition: partition@90000 {
+			label = "image-1";
+			reg = <0x90000 DT_SIZE_K(336)>;
+		};
+
+		cpuppr_code_partition: partition@e4000 {
+			reg = <0xe4000 DT_SIZE_K(64)>;
+		};
+
+		cpuflpr_code_partition: partition@f4000 {
+			reg = <0xf4000 DT_SIZE_K(48)>;
+		};
+	};
 };
 
-boot_partition: &cpuapp_boot_partition {
-	label = "mcuboot";
-};
+/ {
+	reserved-memory {
+		sysctrl_rom_report: memory@2f88ff00 {
+			reg = <0x2f88ff00 0x100>;
+		};
 
-slot0_partition: &cpuapp_slot0_partition {
-	label = "image-0";
-};
+		cpuapp_ironside_se_boot_report: memory@2f88fd00 {
+			reg = <0x2f88fd00 0x200>;
+		};
 
-slot1_partition: &cpuapp_slot1_partition {
-	label = "image-1";
+		cpusys_cpurad_ipc_shm: memory@2f88f780 {
+			reg = <0x2f88f780 0x80>;
+		};
+
+		cpurad_cpusys_ipc_shm: memory@2f88f700 {
+			reg = <0x2f88f700 0x80>;
+		};
+
+		cpusys_cpuapp_ipc_shm: memory@2f88f680 {
+			reg = <0x2f88f680 0x80>;
+		};
+
+		cpuapp_cpusys_ipc_shm: memory@2f88f600 {
+			reg = <0x2f88f600 0x80>;
+		};
+	};
 };
