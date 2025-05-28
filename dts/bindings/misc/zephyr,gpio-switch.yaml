@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic GPIO controlled switch
+
+compatible: "zephyr,gpio-switch"
+
+child-binding:
+  description: GPIO switch child node
+  properties:
+    gpios:
+      type: phandle-array
+      required: true
+
+    label:
+      type: string
+      description: Descriptive name of the switch
