@@ -37,7 +37,10 @@ static uint32_t sTxPeriod = 1;
 static int32_t sTxCount;
 static int32_t sTxRequestedCount = 1;
 
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
 static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[]);
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
+
 static otError processTransmit(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[]);
 
 static otError parse_long(char *aArgs, long *aValue)
@@ -72,11 +75,11 @@ void otPlatDiagSetOutputCallback(otInstance *aInstance,
 
 otError otPlatDiagProcess(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[])
 {
-#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
 	if (strcmp(aArgs[0], "modcarrier") == 0) {
 		return startModCarrier(aInstance, aArgsLength - 1, aArgs + 1);
 	}
-#endif
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
 
 	if (strcmp(aArgs[0], "transmit") == 0) {
 		return processTransmit(aInstance, aArgsLength - 1, aArgs + 1);
@@ -128,7 +131,7 @@ void otPlatDiagRadioReceived(otInstance *aInstance,
 	ARG_UNUSED(aError);
 }
 
-#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
 otError otPlatDiagRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 {
 	if (sTransmitMode != DIAG_TRANSMIT_MODE_IDLE &&
@@ -144,7 +147,7 @@ otError otPlatDiagRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 
 	return platformRadioTransmitCarrier(aInstance, aEnable);
 }
-#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
 
 /*
  * To enable gpio diag commands, in Devicetree create `openthread` node in `/options/` path
@@ -317,7 +320,7 @@ otError otPlatDiagGpioGetMode(uint32_t aGpio, otGpioMode *aMode)
 	* DT_NODE_HAS_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(openthread_config), diag_gpios)
 	*/
 
-#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS)
 
 static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[])
 {
@@ -346,7 +349,7 @@ static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char 
 	return platformRadioTransmitModulatedCarrier(aInstance, enable, data);
 }
 
-#endif
+#endif /* CONFIG_OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS */
 
 void otPlatDiagAlarmCallback(otInstance *aInstance)
 {
