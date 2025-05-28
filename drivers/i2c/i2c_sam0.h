@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2025 GP Orcullo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* GCLK registers */
+
+#ifndef ZEPHYR_DRIVERS_I2C_I2C_SAM0_H_
+#define ZEPHYR_DRIVERS_I2C_I2C_SAM0_H_
+
+#define CLKCTRL_OFFSET 0x02
+#define PCHCTRL_OFFSET 0x80
+
+#define CLKCTRL_ID(n)  FIELD_PREP(GENMASK(5, 0), n)
+#define CLKCTRL_GEN(n) FIELD_PREP(GENMASK(11, 8), n)
+#define CLKCTRL_CLKEN  BIT(14)
+
+#define PCHCTRL_GEN(n) FIELD_PREP(GENMASK(3, 0), n)
+#define PCHCTRL_CHEN   BIT(6)
+
+/* SERCOM I2C Master registers */
+
+#define CTRLA_OFFSET 0x00
+#define CTRLB_OFFSET 0x04
+
+#if defined(CONFIG_SOC_SERIES_SAMD20)
+
+#define BAUD_OFFSET     0x0A
+#define INTENCLR_OFFSET 0x0C
+#define INTENSET_OFFSET 0x0D
+#define INTFLAG_OFFSET  0x0E
+#define STATUS_OFFSET   0x10
+#define ADDR_OFFSET     0x14
+#define DATA_OFFSET     0x18
+
+#define CTRLA_LOWTOUTEN  0
+#define CTRLA_SPEED_MASK 0
+
+#define INTENCLR_MASK 0x03
+#define INTFLAG_MASK  0x03
+
+#define STATUS_LENERR   0
+#define STATUS_MEXTTOUT 0
+#define STATUS_SEXTTOUT 0
+
+#else
+
+#define BAUD_OFFSET     0x0C
+#define INTENCLR_OFFSET 0x14
+#define INTENSET_OFFSET 0x16
+#define INTFLAG_OFFSET  0x18
+#define STATUS_OFFSET   0x1A
+#define SYNCBUSY_OFFSET 0x1C
+#define ADDR_OFFSET     0x24
+#define DATA_OFFSET     0x28
+
+#define CTRLA_SPEED_MASK GENMASK(25, 24)
+#define CTRLA_LOWTOUTEN  BIT(30)
+
+#define BAUD_HSBAUD(n)    FIELD_PREP(GENMASK(23, 16), n)
+#define BAUD_HSBAUDLOW(n) FIELD_PREP(GENMASK(31, 24), n)
+
+#define INTENCLR_MASK 0x83
+
+#define INTENSET_ERROR BIT(7)
+
+#define INTFLAG_MASK 0x83
+
+#define STATUS_MEXTTOUT BIT(8)
+#define STATUS_SEXTTOUT BIT(9)
+#define STATUS_LENERR   BIT(10)
+
+#define ADDR_TENBITEN BIT(15)
+
+#endif
+
+#define CTRLA_ENABLE_BIT   1
+#define CTRLA_MODE(n)      FIELD_PREP(GENMASK(4, 2), n)
+#define CTRLA_SDAHOLD_MASK GENMASK(21, 20)
+#define CTRLA_SDAHOLD(n)   FIELD_PREP(CTRLA_SDAHOLD_MASK, n)
+#define CTRLA_SPEED(n)     FIELD_PREP(CTRLA_SPEED_MASK, n)
+#define CTRLA_INACTOUT(n)  FIELD_PREP(GENMASK(29, 28), n)
+
+#define CTRLB_SMEN       BIT(8)
+#define CTRLB_CMD_MASK   GENMASK(17, 16)
+#define CTRLB_ACKACT_BIT 18
+
+#define BAUD_BAUD(n)    FIELD_PREP(GENMASK(7, 0), n)
+#define BAUD_BAUDLOW(n) FIELD_PREP(GENMASK(15, 8), n)
+
+#define INTENSET_MB BIT(0)
+#define INTENSET_SB BIT(1)
+
+#define INTFLAG_MB BIT(0)
+#define INTFLAG_SB BIT(1)
+
+#define STATUS_BUSERR       BIT(0)
+#define STATUS_ARBLOST      BIT(1)
+#define STATUS_RXNACK       BIT(2)
+#define STATUS_BUSSTATE     BIT(4)
+#define STATUS_LOWTOUT      BIT(6)
+#define STATUS_SYNCBUSY_BIT 15
+
+#if defined(CONFIG_SOC_SERIES_SAMD51) || defined(CONFIG_SOC_SERIES_SAME51) ||                      \
+	defined(CONFIG_SOC_SERIES_SAME53) || defined(CONFIG_SOC_SERIES_SAME54)
+
+#define SYNCBUSY_MASK GENMASK(4, 0)
+#else
+#define SYNCBUSY_MASK GENMASK(2, 0)
+#endif
+
+#endif /* ZEPHYR_DRIVERS_I2C_I2C_SAM0_H_ */
