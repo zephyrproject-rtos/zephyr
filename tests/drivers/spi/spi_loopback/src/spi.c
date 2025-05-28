@@ -700,16 +700,17 @@ static K_SEM_DEFINE(sync_sem, 0, 1);
 static uint8_t __aligned(32) tx_buffer[3][32];
 static uint8_t __aligned(32) rx_buffer[3][32];
 
+atomic_t thread_test_fails;
+
 static void spi_transfer_thread(void *p1, void *p2, void *p3)
 {
 	struct spi_dt_spec *spec = (struct spi_dt_spec *)p1;
 	uint8_t *tx_buf_ptr = (uint8_t *)p2;
 	uint8_t *rx_buf_ptr = (uint8_t *)p3;
+	int ret = 0;
 
 	/* Wait for all threads to be ready */
 	k_sem_give(&thread_sem);
-	k_sem_take(&sync_sem, K_FOREVER);
-
 	/* Perform SPI transfer */
 	const struct spi_buf_set tx_bufs = {
 		.buffers = &(struct spi_buf) {
@@ -726,11 +727,19 @@ static void spi_transfer_thread(void *p1, void *p2, void *p3)
 		.count = 1,
 	};
 
-	zassert_equal(spi_transceive_dt(spec, &tx_bufs, &rx_bufs), 0,
-		      "SPI concurrent transfer failed");
+	k_sem_take(&sync_sem, K_FOREVER);
 
-	zassert_mem_equal(tx_buf_ptr, rx_buf_ptr, 32,
-			 "SPI concurrent transfer data mismatch");
+	ret = spi_transceive_dt(spec, &tx_bufs, &rx_bufs);
+	if (ret) {
+		TC_PRINT("SPI concurrent transfer failed, spec %p\n", spec);
+		atomic_inc(&thread_test_fails);
+	}
+
+	ret = memcmp(tx_buf_ptr, rx_buf_ptr, 32);
+	if (ret) {
+		TC_PRINT("SPI concurrent transfer data mismatch, spec %p\n", spec);
+		atomic_inc(&thread_test_fails);
+	}
 }
 
 /* Test case for concurrent SPI transfers */
@@ -752,6 +761,8 @@ static void test_spi_concurrent_transfer_helper(struct spi_dt_spec **specs)
 		k_sem_take(&thread_sem, K_FOREVER);
 	}
 
+	atomic_set(&thread_test_fails, 0);
+
 	/* Start all threads simultaneously */
 	for (int i = 0; i < 3; i++) {
 		k_sem_give(&sync_sem);
@@ -761,6 +772,8 @@ static void test_spi_concurrent_transfer_helper(struct spi_dt_spec **specs)
 	for (int i = 0; i < 3; i++) {
 		k_thread_join(&thread[i], K_FOREVER);
 	}
+
+	zassert_equal(atomic_get(&thread_test_fails), 0);
 }
 
 /* test for multiple threads accessing the driver / bus with the same spi_config */
