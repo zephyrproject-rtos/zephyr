@@ -325,6 +325,10 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
+	if (len == 0) {
+		return 0;
+	}
+
 	if (!buffer) {
 		return -EINVAL;
 	}
