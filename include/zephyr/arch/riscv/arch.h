@@ -8,8 +8,10 @@
 /**
  * @file
  * @brief RISCV specific kernel interface header
+ *
  * This header contains the RISCV specific kernel interface.  It is
- * included by the generic kernel interface header (arch/cpu.h)
+ * included by the kernel interface architecture-abstraction header
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
