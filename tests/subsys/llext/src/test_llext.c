@@ -658,4 +658,29 @@ ZTEST(llext, test_ext_syscall_fail)
 	zassert_is_null(esf_fn, "est_fn should be NULL");
 }
 
-ZTEST_SUITE(llext, NULL, NULL, NULL, NULL, NULL);
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+#define TEST_LLEXT_HEAP_DYNAMIC_SIZE KB(64)
+static uint8_t llext_heap_data[TEST_LLEXT_HEAP_DYNAMIC_SIZE];
+#endif
+
+static void *ztest_suite_setup(void)
+{
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+	/* Test runtime allocation of the LLEXT loader heap */
+	zassert_ok(llext_heap_init(llext_heap_data, sizeof(llext_heap_data)));
+	LOG_INF("Allocated LLEXT dynamic heap of size %uKB\n",
+			(unsigned int)(sizeof(llext_heap_data)/KB(1)));
+#endif
+	return NULL;
+}
+
+static void ztest_suite_teardown(void *data)
+{
+	ARG_UNUSED(data);
+
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+	zassert_ok(llext_heap_uninit());
+#endif
+}
+
+ZTEST_SUITE(llext, NULL, ztest_suite_setup, NULL, NULL, ztest_suite_teardown);
