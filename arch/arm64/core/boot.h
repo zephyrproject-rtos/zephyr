@@ -22,6 +22,7 @@ extern void __start(void);
 /* Offsets into the boot_params structure */
 #define BOOT_PARAM_MPID_OFFSET		0
 #define BOOT_PARAM_SP_OFFSET		8
-#define BOOT_PARAM_VOTING_OFFSET	16
+#define BOOT_PARAM_CPU_NUM_OFFSET	16
+#define BOOT_PARAM_VOTING_OFFSET	20
 
 #endif /* _BOOT_H_ */
