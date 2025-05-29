@@ -152,7 +152,9 @@ static int clock_mspm0_init(const struct device *dev)
 	DL_SYSCTL_setSYSOSCFreq(DL_SYSCTL_SYSOSC_FREQ_BASE);
 
 	DL_SYSCTL_setMCLKDivider(mspm0_mclk_cfg.clk_div);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div)
 	DL_SYSCTL_setULPCLKDivider(mspm0_ulpclk_cfg.clk_div);
+#endif
 
 #if MSPM0_PLL_ENABLED
 #if DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(syspll0))
