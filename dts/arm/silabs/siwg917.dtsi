@@ -72,14 +72,19 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
-	bt_hci0: bt_hci {
-		compatible = "silabs,siwx91x-bt-hci";
-		status = "disabled";
-	};
+	nwp: nwp {
+		compatible = "silabs,siwx91x-nwp";
+		power-profile = "high-performance";
 
-	wifi0: wifi {
-		compatible = "silabs,siwx91x-wifi";
-		status = "disabled";
+		bt_hci0: bt_hci {
+			compatible = "silabs,siwx91x-bt-hci";
+			status = "disabled";
+		};
+
+		wifi0: wifi {
+			compatible = "silabs,siwx91x-wifi";
+			status = "disabled";
+		};
 	};
 
 	soc {
