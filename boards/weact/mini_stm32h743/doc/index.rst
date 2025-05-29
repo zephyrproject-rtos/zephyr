@@ -104,7 +104,8 @@ by the PLL clock at 240MHz. PLL clock is fed by a 25MHz high speed external cloc
 STM32H743VIT6 can support 480 MHz operation. To enable 480 MHz change the dts file 
 by commenting out 240 MHz &rcc node and subsequently uncommenting 480 MHz &rcc node.
 
-.. code-block::
+.. zephyr:dts-instruction::
+
    :/* Comment out 240 MHz
    :&rcc {
    :	clocks = <&pll>;
