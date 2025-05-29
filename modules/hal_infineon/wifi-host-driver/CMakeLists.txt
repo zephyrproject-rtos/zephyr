@@ -25,6 +25,10 @@ if(CONFIG_AIROC_WLAN_MFG_FIRMWARE)
   zephyr_compile_definitions(WLAN_MFG_FIRMWARE)
 endif()
 
+if (CONFIG_AIROC_WIFI_BUS_SPI)
+  zephyr_compile_definitions(BLHS_SUPPORT)
+endif()
+
 zephyr_compile_definitions(CY_WIFI_COUNTRY=$<UPPER_CASE:${CONFIG_WHD_WIFI_COUNTRY}>)
 
 # Add WHD includes
@@ -59,7 +63,11 @@ zephyr_library_sources(${hal_wifi_dir}/WHD/${whd_wifi_ver}/src/whd_wifi_p2p.c)
 # src/bus_protocols
 zephyr_library_sources(${hal_wifi_dir}/WHD/${whd_wifi_ver}/src/bus_protocols/whd_bus.c)
 zephyr_library_sources(${hal_wifi_dir}/WHD/${whd_wifi_ver}/src/bus_protocols/whd_bus_common.c)
-zephyr_library_sources(${hal_wifi_dir}/WHD/${whd_wifi_ver}/src/bus_protocols/whd_bus_sdio_protocol.c)
+# zephyr_library_sources(${hal_wifi_dir}/WHD/${whd_wifi_ver}/src/bus_protocols/whd_bus_sdio_protocol.c)
+zephyr_library_sources_ifdef(CONFIG_AIROC_WIFI_BUS_SDIO
+  ${hal_wifi_dir}/WHD/${whd_wifi_ver}/src/bus_protocols/whd_bus_sdio_protocol.c)
+zephyr_library_sources_ifdef(CONFIG_AIROC_WIFI_BUS_SPI
+  ${hal_wifi_dir}/WHD/${whd_wifi_ver}/src/bus_protocols/whd_bus_spi_protocol.c)
 
 # resources/resource_imp
 zephyr_library_sources(${hal_wifi_dir}/WHD/${whd_wifi_ver}/resources/resource_imp/whd_resources.c)
