@@ -131,6 +131,8 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a76"
 #elif defined(CONFIG_CPU_CORTEX_A76)
 #define PROCESSOR_NAME "cortex-a76"
+#elif defined(CONFIG_CPU_CORTEX_A78)
+#define PROCESSOR_NAME "cortex-a78"
 #elif defined(CONFIG_CPU_CORTEX_R82)
 #define PROCESSOR_NAME "armv8.4-a+nolse"
 #endif
