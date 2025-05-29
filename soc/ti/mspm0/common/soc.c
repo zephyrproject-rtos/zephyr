@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2025 Texas Instruments
- * Copyright (c) 2025 Linumiz
+ * Copyright (c) 2025 Linumiz GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
