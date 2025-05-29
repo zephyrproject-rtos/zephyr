@@ -4326,7 +4326,7 @@ TI SimpleLink Platforms:
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
-    - dts/arm/ti/
+    - dts/arm/ti/cc*
     - dts/bindings/*/ti,*
     - soc/ti/simplelink/
     - dts/bindings/*/ti,*
@@ -4347,6 +4347,8 @@ TI K3 Platforms:
     - drivers/*/*davinci*
     - drivers/*/*omap*
     - drivers/*/*ti_k3*
+    - dts/arm/ti/am6*
+    - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
     - soc/ti/k3/
   labels:
