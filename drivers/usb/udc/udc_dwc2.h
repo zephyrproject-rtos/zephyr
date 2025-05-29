@@ -46,7 +46,7 @@ struct udc_dwc2_config {
 	/* Pointer to pin control configuration or NULL */
 	struct pinctrl_dev_config *const pcfg;
 	/* Pointer to vendor quirks or NULL */
-	struct dwc2_vendor_quirks *const quirks;
+	const struct dwc2_vendor_quirks *const quirks;
 	void (*make_thread)(const struct device *dev);
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
@@ -54,29 +54,5 @@ struct udc_dwc2_config {
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg4;
 };
-
-#define DWC2_QUIRK_FUNC_DEFINE(fname)						\
-static inline int dwc2_quirk_##fname(const struct device *dev)			\
-{										\
-	const struct udc_dwc2_config *const config = dev->config;		\
-	struct dwc2_vendor_quirks *quirks = config->quirks;			\
-										\
-	if (quirks != NULL && config->quirks->fname != NULL) {			\
-		return quirks->fname(dev);					\
-	}									\
-										\
-	return 0;								\
-}
-
-DWC2_QUIRK_FUNC_DEFINE(init)
-DWC2_QUIRK_FUNC_DEFINE(pre_enable)
-DWC2_QUIRK_FUNC_DEFINE(post_enable)
-DWC2_QUIRK_FUNC_DEFINE(disable)
-DWC2_QUIRK_FUNC_DEFINE(shutdown)
-DWC2_QUIRK_FUNC_DEFINE(irq_clear)
-DWC2_QUIRK_FUNC_DEFINE(caps)
-DWC2_QUIRK_FUNC_DEFINE(is_phy_clk_off)
-DWC2_QUIRK_FUNC_DEFINE(post_hibernation_entry)
-DWC2_QUIRK_FUNC_DEFINE(pre_hibernation_exit)
 
 #endif /* ZEPHYR_DRIVERS_USB_UDC_DWC2_H */
