@@ -78,7 +78,7 @@
 		#phy-cells = <0>;
 	};
 
-	dmci_camera_connector: connector_dcmi_camera {
+	dcmi_camera_connector: connector_dcmi_camera {
 		compatible = "st,stm32-dcmi-camera-fpu-330zh";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
