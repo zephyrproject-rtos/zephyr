@@ -1329,12 +1329,12 @@ static int ov5640_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+	if (cfg->reset_gpio.port != NULL && !gpio_is_ready_dt(&cfg->reset_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
 
-	if (!gpio_is_ready_dt(&cfg->powerdown_gpio)) {
+	if (cfg->powerdown_gpio.port != NULL && !gpio_is_ready_dt(&cfg->powerdown_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->powerdown_gpio.port->name);
 		return -ENODEV;
 	}
