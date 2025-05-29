@@ -101,6 +101,35 @@ The STM32H743VI System Clock can be driven by an internal or external oscillator
 as well as by the main PLL clock. By default, the System clock is driven
 by the PLL clock at 240MHz. PLL clock is fed by a 25MHz high speed external clock.
 
+STM32H743VIT6 can support 480 MHz operation. To enable 480 MHz change the dts file 
+by commenting out 240 MHz &rcc node and subsequently uncommenting 480 MHz &rcc node.
+
+.. code-block:: console
+   /* Comment out 240 MHz
+   &rcc {
+   	clocks = <&pll>;
+   	clock-frequency = <DT_FREQ_M(240)>;
+   	d1cpre = <1>;
+   	hpre = <2>;
+   	d1ppre = <1>;
+   	d2ppre1 = <1>;
+   	d2ppre2 = <1>;
+   	d3ppre = <1>;
+   };
+   */
+   /* Uncomment for 480 MHZ ONLY. Comment &rcc node above (240 MHz) before uncommenting 480 MHz below */
+   
+   &rcc {
+   	clocks = <&pll>;
+   	clock-frequency = <DT_FREQ_M(480)>;
+   	d1cpre = <1>;
+   	hpre = <2>;
+   	d1ppre = <2>;
+   	d2ppre1 = <2>;
+   	d2ppre2 = <2>;
+   	d3ppre = <2>;
+   };
+
 Serial Port (USB CDC ACM)
 =========================
 
