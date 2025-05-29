@@ -5,3 +5,15 @@
 description: Silabs SiWx91x SoC WiFi
 
 compatible: "silabs,siwx91x-wifi"
+
+properties:
+  power-profile:
+    type: int
+    default: 0
+    description: |
+      Power/performance profile for the device.
+      0: HIGH_PERFORMANCE
+      1: ASSOCIATED_POWER_SAVE
+      2: ASSOCIATED_POWER_SAVE_LOW_LATENCY
+      3: DEEP_SLEEP_WITHOUT_RAM_RETENTION
+      4: DEEP_SLEEP_WITH_RAM_RETENTION
