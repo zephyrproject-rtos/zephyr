@@ -3524,6 +3524,21 @@ Broadcom Platforms:
     - soc/brcm/
     - boards/brcm/
 
+ENE Platforms:
+  status: maintained
+  maintainers:
+    - ene-steven
+  files:
+    - boards/ene/
+    - drivers/*/*kb1200*
+    - drivers/*/*kb106x*
+    - dts/bindings/*/*kb1200*
+    - dts/bindings/*/*kb106x*
+    - dts/arm/ene/
+    - soc/ene/
+  labels:
+    - "platform: ENE SoCs"
+
 GD32 Platforms:
   status: maintained
   maintainers:
