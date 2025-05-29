@@ -327,7 +327,7 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 
 	/* Fail if transfer is faster than theoretically possible */
 	zassert_true(time_spent_us >= minimum_transfer_time_us,
-			"Transfer faster than theoretically possible");
+		     "Transfer faster than theoretically possible");
 
 	/* handle overflow for print statement */
 	latency_measurement = time_spent_us - expected_transfer_time_us;
@@ -337,7 +337,9 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 	TC_PRINT("Latency measurement: %llu us\n", latency_measurement);
 
 	/* Allow some overhead, but not too much */
-	zassert_true(time_spent_us <= expected_transfer_time_us * 8, "Very high latency");
+	zassert_true(time_spent_us <=
+			     expected_transfer_time_us * CONFIG_SPI_IDEAL_TRANSFER_DURATION_SCALING,
+		     "Very high latency");
 
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
 				  buffer_print_tx, buffer_print_rx);

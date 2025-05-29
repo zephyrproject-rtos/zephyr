@@ -11,6 +11,10 @@ config SPI_LARGE_BUFFER_SIZE
 	int "Large buffer size"
 	default 8192
 
+config SPI_IDEAL_TRANSFER_DURATION_SCALING
+	int "Scaling factor to compare ideal and measured SPI transfer duration"
+	default 8
+
 if SOC_SERIES_STM32H7X
 
 config SPI_LOOPBACK_16BITS_FRAMES
