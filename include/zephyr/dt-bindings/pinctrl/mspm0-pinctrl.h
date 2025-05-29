@@ -20,6 +20,7 @@
 #define MSPM0_PIN_FUNCTION_8      (0x00000008)
 #define MSPM0_PIN_FUNCTION_9      (0x00000009)
 #define MSPM0_PIN_FUNCTION_10     (0x0000000A)
+#define MSPM0_PIN_FUNCTION_11     (0x0000000B)
 
 /* Creates a concatenation of the correct pin function based on the pin control
  * management register offset and the function suffix.
