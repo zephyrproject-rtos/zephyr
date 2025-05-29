@@ -74,7 +74,7 @@ class TestInstance:
 
         if testsuite.detailed_test_id:
             self.build_dir = os.path.join(
-                outdir, platform.normalized_name, self.toolchain, testsuite.name
+                outdir, platform.normalized_name, self.toolchain.replace('/', '_'), testsuite.name
             )
         else:
             # if suite is not in zephyr,
