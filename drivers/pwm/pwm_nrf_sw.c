@@ -206,6 +206,9 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 			nrf_rtc_task_trigger(rtc, NRF_RTC_TASK_STOP);
 		} else {
 			nrf_timer_task_trigger(timer, NRF_TIMER_TASK_STOP);
+#if NRF_TIMER_HAS_SHUTDOWN
+			nrf_timer_task_trigger(timer, NRF_TIMER_TASK_SHUTDOWN);
+#endif
 		}
 
 		return 0;
