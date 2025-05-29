@@ -301,7 +301,6 @@ struct tcp { /* TCP connection */
 	int64_t last_nd_hint_time;
 #endif
 	size_t send_data_total;
-	size_t send_retries;
 	int unacked_len;
 	atomic_t ref_count;
 	enum tcp_state state;
@@ -330,7 +329,6 @@ struct tcp { /* TCP connection */
 	uint8_t dup_ack_cnt;
 #endif
 	uint8_t zwp_retries;
-	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
