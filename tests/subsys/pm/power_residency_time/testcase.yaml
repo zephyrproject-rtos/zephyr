@@ -15,6 +15,10 @@ common:
       num_of_transitions: 6
       expected_rms_values: [56.0, 4.0, 4.0, 1.2, 1.2, 0.26, 91]
       tolerance_percentage: 20
+    record:
+      regex:
+        - "RECORD:(?P<metrics>.*)"
+      as_json: ['metrics']
 
 tests:
   pm.power_residency_time:

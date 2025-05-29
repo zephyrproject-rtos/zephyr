@@ -77,6 +77,18 @@ def is_within_tolerance(measured_rms_value, expected_rms_value, tolerance_percen
     logger.debug(f"Expected RMS: {expected_rms_value:.2f} mA")
     logger.debug(f"Tolerance: {tolerance:.2f} mA")
     logger.debug(f"Measured  RMS: {measured_rms_value:.2f} mA")
-
+    logger.info(
+        'RECORD: ['
+        '{'
+        f'"expected_rms_ua": {expected_rms_value:.2f}'
+        '}'
+        ',{'
+        f'"tolerance_ua": {tolerance:.2f}'
+        '}'
+        ',{'
+        f'"measured_rms_ua": {measured_rms_value:.2f}'
+        '}'
+        ']'
+    )
     # Check if the measured value is within the range of expected ± tolerance
     return (expected_rms_value - tolerance) < measured_rms_value < (expected_rms_value + tolerance)
