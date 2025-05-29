@@ -31,6 +31,12 @@ config NXP_WIFI_CUSTOM
 	help
 	  Customize NXP Wi-Fi chip support.
 
+config NXP_WIFI_AUTO_INIT
+	bool "Auto initialize NXP Wi-Fi"
+	default y
+	help
+	  Automatically initialize NXP Wi-Fi driver and FW.
+
 choice NXP_WIFI_PART
 	prompt "Select NXP Wi-Fi part"
 	depends on !NXP_WIFI_CUSTOM
