@@ -1,0 +1,29 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+labels: ["Feature Request"]
+type: Feature
+assignees: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem? Please describe.
+      description: A clear and concise description of what the problem is.
+      placeholder: e.g., I'm frustrated when I need to do X manually because Y is missing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+      placeholder: e.g., It would be great if the system could automatically handle X by doing Y.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: Include any alternative solutions or features
