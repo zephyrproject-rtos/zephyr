@@ -464,7 +464,7 @@ static int imx335_init(const struct device *dev)
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
 	}
 
-	k_sleep(K_USEC(20)); /* T4 */
+	k_sleep(K_USEC(600)); /* T4 */
 
 	/* Initialize register values */
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
