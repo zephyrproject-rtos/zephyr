@@ -1,0 +1,48 @@
+description: |
+  Generic Software Mailbox Controller
+
+  examples:
+    / {
+      soc {
+        /* mailbox controller in shared memory */
+        sw_mbox: mailbox@fe000000 {
+          compatible = "nxp,generic-software-mbox";
+          reg = <0xfe000000 0x1000>;
+          #mbox-cells = <1>;
+          /* 151 (183 - 32) */
+          interrupts = <GIC_SPI 151 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+          remote-interrupt = <182>;
+          status = "okay";
+        };
+      };
+
+      /* device node using generic software mailbox */
+      some_device {
+        /* sw_mbox: select chan 0 */
+        mboxes = <&sw_mbox 0>;
+      };
+    };
+
+compatible: "nxp,generic-software-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address of the shared memory region used for mailbox communication.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt generated when a message is received.
+
+  remote-interrupt:
+    type: int
+    required: true
+    description: |
+      Interrupt number to be triggered on the remote core when sending a message.
+
+mbox-cells:
+  - channel
