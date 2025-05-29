@@ -34,4 +34,4 @@ jobs:
 
       - name: Run the check script
         run: |
-          ./scripts/ci/do_not_merge.py -p "${{ github.event.pull_request.number }}"
+          python -u scripts/ci/do_not_merge.py -p "${{ github.event.pull_request.number }}"
