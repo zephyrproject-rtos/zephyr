@@ -179,12 +179,13 @@ class Node:
 
     def _get_prop(self, name: str) -> 'Property':
         # Returns the property named 'name' on the node, creating it if it
-        # doesn't already exist
+        # doesn't already exist. Move the entry to the end of the props
+        # dictionary so the order is preserved in the output DTS file.
 
-        prop = self.props.get(name)
+        prop = self.props.pop(name, None)
         if not prop:
             prop = Property(self, name)
-            self.props[name] = prop
+        self.props[name] = prop
         return prop
 
     def _del(self) -> None:
