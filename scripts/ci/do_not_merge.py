@@ -42,7 +42,11 @@ def main(argv):
     repo = gh.get_repo("zephyrproject-rtos/zephyr")
     pr = repo.get_pull(args.pull_request)
 
+    print(f"pr: {pr.html_url}")
+
     for label in pr.get_labels():
+        print(f"label: {label.name}")
+
         if label.name in DNM_LABELS:
             print(f"Pull request is labeled as \"{label.name}\".")
             print("This workflow fails so that the pull request cannot be merged.")
