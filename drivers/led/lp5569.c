@@ -115,6 +115,8 @@ static int lp5569_enable(const struct device *dev)
 		return ret;
 	}
 
+	k_msleep(1);
+
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_MISC,
 				    LP5569_POWERSAVE_EN | LP5569_EN_AUTO_INCR |
 					    (config->cp_mode << LP5569_CP_MODE_SHIFT));
