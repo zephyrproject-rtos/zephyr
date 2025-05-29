@@ -1,0 +1,80 @@
+# Copyright 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Axis alignment specification for sensors
+    that require orientation.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/sensor_axis_align.h>
+
+    icm42688: icm42688@0 {
+      ...
+      axis-align-x = <SENSOR_AXIS_ALIGN_DT_X>
+    };
+
+include: base.yaml
+properties:
+  axis-align-x:
+    type: int
+    default: 0
+    description: |
+      Align sensor chanel x output with hardware orientation axis.
+      Defaults to x.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_X
+      - 1 # SENSOR_AXIS_ALIGN_DT_Y
+      - 2 # SENSOR_AXIS_ALIGN_DT_Z
+
+  axis-align-x-sign:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel x output with hardware orientation axis sign component.
+      Defaults to positive.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_NEG
+      - 2 # SENSOR_AXIS_ALIGN_DT_POS
+  
+  axis-align-y:
+    type: int
+    default: 1
+    description: |
+      Align sensor chanel y output with hardware orientation axis.
+      Defaults to y.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_X
+      - 1 # SENSOR_AXIS_ALIGN_DT_Y
+      - 2 # SENSOR_AXIS_ALIGN_DT_Z
+
+  axis-align-y-sign:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel y output with hardware orientation axis sign component.
+      Defaults to positive.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_NEG
+      - 2 # SENSOR_AXIS_ALIGN_DT_POS
+  
+  axis-align-z:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel z output with hardware orientation axis.
+      Defaults to z.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_X
+      - 1 # SENSOR_AXIS_ALIGN_DT_Y
+      - 2 # SENSOR_AXIS_ALIGN_DT_Z
+
+  axis-align-z-sign:
+    type: int
+    default: 2
+    description: |
+      Align sensor chanel z output with hardware orientation axis sign component.
+      Defaults to positive.
+    enum:
+      - 0 # SENSOR_AXIS_ALIGN_DT_NEG
+      - 2 # SENSOR_AXIS_ALIGN_DT_POS
+
