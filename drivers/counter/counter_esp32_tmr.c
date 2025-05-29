@@ -165,11 +165,7 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	if (absolute == 0) {
 		ticks += now;
-		if (ticks > data->top_data.ticks) {
-			ticks -= (data->top_data.ticks + 1);
-		}
-		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
-					 (now + alarm_cfg->ticks));
+		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, ticks);
 	} else {
 		irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 		max_rel_val = top - data->top_data.guard_period;
@@ -334,17 +330,19 @@ static void counter_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct counter_esp32_data *data = dev->data;
+	counter_alarm_callback_t cb = data->alarm_cfg.callback;
+	void *cb_data = data->alarm_cfg.user_data;
 	uint32_t now;
 
 	counter_esp32_get_value(dev, &now);
 
-	if (data->alarm_cfg.callback) {
-		data->alarm_cfg.callback(dev, 0, now, data->alarm_cfg.user_data);
+	if (cb) {
 		timer_ll_enable_intr(data->hal_ctx.dev,
 				     TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), false);
 		timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_ALARM_DIS);
 		data->alarm_cfg.callback = NULL;
 		data->alarm_cfg.user_data = NULL;
+		cb(dev, 0, now, cb_data);
 	}
 
 	if (data->top_data.callback) {
