@@ -48,7 +48,7 @@ static uint8_t gpioa_pincm_lut[NUM_GPIOA_PIN] = {
 	IOMUX_PINCM5,  IOMUX_PINCM6,
 };
 #elif CONFIG_SOC_SERIES_MSPM0L /* if CONFIG_SOC_SERIES_MSPM0L */
-#define GPIOA_NODE DT_NODELABEL(gpioa)
+#define GPIOA_NODE    DT_NODELABEL(gpioa)
 #define NUM_GPIOA_PIN 31
 #define gpioa_pins    NUM_GPIOA_PIN
 static uint8_t gpioa_pincm_lut[NUM_GPIOA_PIN] = {
@@ -57,8 +57,7 @@ static uint8_t gpioa_pincm_lut[NUM_GPIOA_PIN] = {
 	IOMUX_PINCM38, IOMUX_PINCM39, IOMUX_PINCM40, IOMUX_PINCM41, IOMUX_PINCM42, IOMUX_PINCM49,
 	IOMUX_PINCM50, IOMUX_PINCM51, IOMUX_PINCM52, IOMUX_PINCM56, IOMUX_PINCM57, IOMUX_PINCM67,
 	IOMUX_PINCM68, IOMUX_PINCM69, IOMUX_PINCM73, IOMUX_PINCM74, IOMUX_PINCM3,  IOMUX_PINCM4,
-	IOMUX_PINCM5
-};
+	IOMUX_PINCM5};
 #else
 #error "Series lookup table not supported"
 #endif /* if CONFIG_SOC_SERIES_MSPM0G */
@@ -77,7 +76,7 @@ static uint8_t gpiob_pincm_lut[NUM_GPIOB_PIN] = {
 	IOMUX_PINCM52, IOMUX_PINCM56, IOMUX_PINCM57, IOMUX_PINCM58,
 };
 #elif CONFIG_SOC_SERIES_MSPM0L /* if CONFIG_SOC_SERIES_MSPM0L */
-#define GPIOB_NODE DT_NODELABEL(gpiob)
+#define GPIOB_NODE    DT_NODELABEL(gpiob)
 #define NUM_GPIOB_PIN 32
 #define gpiob_pins    NUM_GPIOB_PIN
 static uint8_t gpiob_pincm_lut[NUM_GPIOB_PIN] = {
@@ -86,8 +85,7 @@ static uint8_t gpiob_pincm_lut[NUM_GPIOB_PIN] = {
 	IOMUX_PINCM33, IOMUX_PINCM34, IOMUX_PINCM35, IOMUX_PINCM36, IOMUX_PINCM37, IOMUX_PINCM53,
 	IOMUX_PINCM54, IOMUX_PINCM55, IOMUX_PINCM62, IOMUX_PINCM63, IOMUX_PINCM64, IOMUX_PINCM65,
 	IOMUX_PINCM66, IOMUX_PINCM70, IOMUX_PINCM71, IOMUX_PINCM72, IOMUX_PINCM21, IOMUX_PINCM22,
-	IOMUX_PINCM23, IOMUX_PINCM24
-};
+	IOMUX_PINCM23, IOMUX_PINCM24};
 #endif /* CONFIG_SOC_SERIES_MSPM0G */
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiob), okay) */
 
@@ -113,8 +111,7 @@ static int gpio_mspm0_port_get_raw(const struct device *port, uint32_t *value)
 	return 0;
 }
 
-static int gpio_mspm0_port_set_masked_raw(const struct device *port,
-					  uint32_t mask, uint32_t value)
+static int gpio_mspm0_port_set_masked_raw(const struct device *port, uint32_t mask, uint32_t value)
 {
 	const struct gpio_mspm0_config *config = port->config;
 
@@ -123,8 +120,7 @@ static int gpio_mspm0_port_set_masked_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_mspm0_port_set_bits_raw(const struct device *port,
-					uint32_t mask)
+static int gpio_mspm0_port_set_bits_raw(const struct device *port, uint32_t mask)
 {
 	const struct gpio_mspm0_config *config = port->config;
 
@@ -133,8 +129,7 @@ static int gpio_mspm0_port_set_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_mspm0_port_clear_bits_raw(const struct device *port,
-					  uint32_t mask)
+static int gpio_mspm0_port_clear_bits_raw(const struct device *port, uint32_t mask)
 {
 	const struct gpio_mspm0_config *config = port->config;
 
@@ -143,8 +138,7 @@ static int gpio_mspm0_port_clear_bits_raw(const struct device *port,
 	return 0;
 }
 
-static int gpio_mspm0_port_toggle_bits(const struct device *port,
-				       uint32_t mask)
+static int gpio_mspm0_port_toggle_bits(const struct device *port, uint32_t mask)
 {
 	const struct gpio_mspm0_config *config = port->config;
 
@@ -153,9 +147,7 @@ static int gpio_mspm0_port_toggle_bits(const struct device *port,
 	return 0;
 }
 
-static int gpio_mspm0_pin_configure(const struct device *port,
-				    gpio_pin_t pin,
-				    gpio_flags_t flags)
+static int gpio_mspm0_pin_configure(const struct device *port, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_mspm0_config *config = port->config;
 	/* determine pull up resistor value based on flags */
@@ -172,17 +164,13 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 	/* Config pin based on flags */
 	switch (flags & (GPIO_INPUT | GPIO_OUTPUT)) {
 	case GPIO_INPUT:
-		DL_GPIO_initDigitalInputFeatures(config->pincm_lut[pin],
-						 DL_GPIO_INVERSION_DISABLE,
-						 pull_res,
-						 DL_GPIO_HYSTERESIS_DISABLE,
+		DL_GPIO_initDigitalInputFeatures(config->pincm_lut[pin], DL_GPIO_INVERSION_DISABLE,
+						 pull_res, DL_GPIO_HYSTERESIS_DISABLE,
 						 DL_GPIO_WAKEUP_DISABLE);
 		break;
 	case GPIO_OUTPUT:
-		DL_GPIO_initDigitalOutputFeatures(config->pincm_lut[pin],
-						  DL_GPIO_INVERSION_DISABLE,
-						  pull_res,
-						  DL_GPIO_DRIVE_STRENGTH_LOW,
+		DL_GPIO_initDigitalOutputFeatures(config->pincm_lut[pin], DL_GPIO_INVERSION_DISABLE,
+						  pull_res, DL_GPIO_DRIVE_STRENGTH_LOW,
 						  DL_GPIO_HIZ_DISABLE);
 
 		/* Set initial state */
@@ -204,10 +192,8 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 	return 0;
 }
 
-static int gpio_mspm0_pin_interrupt_configure(const struct device *port,
-					      gpio_pin_t pin,
-					      enum gpio_int_mode mode,
-					      enum gpio_int_trig trig)
+static int gpio_mspm0_pin_interrupt_configure(const struct device *port, gpio_pin_t pin,
+					      enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_mspm0_config *config = port->config;
 
@@ -229,11 +215,10 @@ static int gpio_mspm0_pin_interrupt_configure(const struct device *port,
 		}
 
 		if (pin < MSPM0_PINS_LOW_GROUP) {
-			DL_GPIO_setLowerPinsPolarity(config->base,
-					     polarity << (2 * pin));
+			DL_GPIO_setLowerPinsPolarity(config->base, polarity << (2 * pin));
 		} else {
-			DL_GPIO_setUpperPinsPolarity(config->base,
-				polarity << (2 * (pin - MSPM0_PINS_LOW_GROUP)));
+			DL_GPIO_setUpperPinsPolarity(
+				config->base, polarity << (2 * (pin - MSPM0_PINS_LOW_GROUP)));
 		}
 
 		DL_GPIO_clearInterruptStatus(config->base, BIT(pin));
@@ -246,8 +231,7 @@ static int gpio_mspm0_pin_interrupt_configure(const struct device *port,
 	return 0;
 }
 
-static int gpio_mspm0_manage_callback(const struct device *port,
-				      struct gpio_callback *callback,
+static int gpio_mspm0_manage_callback(const struct device *port, struct gpio_callback *callback,
 				      bool set)
 {
 	struct gpio_mspm0_data *data = port->data;
@@ -267,9 +251,9 @@ static void gpio_mspm0_isr(const struct device *port)
 	struct gpio_mspm0_data *data;
 	const struct gpio_mspm0_config *config;
 	const struct device *dev_list[] = {
-			DEVICE_DT_GET_OR_NULL(GPIOA_NODE),
-			DEVICE_DT_GET_OR_NULL(GPIOB_NODE),
-			DEVICE_DT_GET_OR_NULL(GPIOC_NODE),
+		DEVICE_DT_GET_OR_NULL(GPIOA_NODE),
+		DEVICE_DT_GET_OR_NULL(GPIOB_NODE),
+		DEVICE_DT_GET_OR_NULL(GPIOC_NODE),
 	};
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(dev_list); i++) {
@@ -282,13 +266,11 @@ static void gpio_mspm0_isr(const struct device *port)
 		data = dev_list[i]->data;
 		config = dev_list[i]->config;
 
-		status = DL_GPIO_getRawInterruptStatus(config->base,
-						       0xFFFFFFFF);
+		status = DL_GPIO_getRawInterruptStatus(config->base, 0xFFFFFFFF);
 
 		DL_GPIO_clearInterruptStatus(config->base, status);
 		if (status != 0) {
-			gpio_fire_callbacks(&data->callbacks,
-					    dev_list[i], status);
+			gpio_fire_callbacks(&data->callbacks, dev_list[i], status);
 		}
 	}
 }
@@ -306,8 +288,8 @@ static int gpio_mspm0_init(const struct device *dev)
 	if (init_irq) {
 		init_irq = false;
 
-		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-			    gpio_mspm0_isr, DEVICE_DT_INST_GET(0), 0);
+		IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), gpio_mspm0_isr,
+			    DEVICE_DT_INST_GET(0), 0);
 		irq_enable(DT_INST_IRQN(0));
 	}
 
@@ -326,21 +308,23 @@ static DEVICE_API(gpio, gpio_mspm0_driver_api) = {
 	.get_pending_int = gpio_mspm0_get_pending_int,
 };
 
-#define GPIO_DEVICE_INIT(n, __suffix, __base_addr)						\
-	static const struct gpio_mspm0_config gpio_mspm0_cfg_##__suffix = {			\
-		.common = { .port_pin_mask =							\
-					GPIO_PORT_PIN_MASK_FROM_NGPIOS(gpio##__suffix##_pins),	\
-			  },									\
-		.base = (GPIO_Regs *)__base_addr,						\
-		.pincm_lut = gpio##__suffix##_pincm_lut,					\
-	};											\
-	static struct gpio_mspm0_data gpio_mspm0_data_##__suffix;				\
-	DEVICE_DT_DEFINE(n, gpio_mspm0_init, NULL, &gpio_mspm0_data_##__suffix,			\
-			 &gpio_mspm0_cfg_##__suffix, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,	\
+#define GPIO_DEVICE_INIT(n, __suffix, __base_addr)                                                 \
+	static const struct gpio_mspm0_config gpio_mspm0_cfg_##__suffix = {                        \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask =                                                   \
+					GPIO_PORT_PIN_MASK_FROM_NGPIOS(gpio##__suffix##_pins),     \
+			},                                                                         \
+		.base = (GPIO_Regs *)__base_addr,                                                  \
+		.pincm_lut = gpio##__suffix##_pincm_lut,                                           \
+	};                                                                                         \
+	static struct gpio_mspm0_data gpio_mspm0_data_##__suffix;                                  \
+	DEVICE_DT_DEFINE(n, gpio_mspm0_init, NULL, &gpio_mspm0_data_##__suffix,                    \
+			 &gpio_mspm0_cfg_##__suffix, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
 			 &gpio_mspm0_driver_api)
 
-#define GPIO_DEVICE_INIT_MSPM0(__suffix)							\
-	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix), __suffix,				\
+#define GPIO_DEVICE_INIT_MSPM0(__suffix)                                                           \
+	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix), __suffix,                                   \
 			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)))
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
