@@ -163,12 +163,12 @@ config NRF_802154_CCA_MODE_CARRIER_OR_ED
 
 endchoice
 
-config NRF_802154_CCA_ED_THRESHOLD
-	int "nRF IEEE 802.15.4 CCA Energy Detection threshold"
-	default 45
+config NRF_802154_CCA_ED_THRESHOLD_DBM
+	int "nRF IEEE 802.15.4 CCA Energy Detection threshold in dBm"
+	default -75
 	help
 	  If energy detected in a given channel is above the value then the
-	  channel is deemed busy. The unit is defined as per 802.15.4-2006 spec.
+	  channel is deemed busy. The unit is dBm.
 
 config NRF_802154_CCA_CORR_THRESHOLD
 	int "nRF IEEE 802.15.4 CCA Correlator threshold"
