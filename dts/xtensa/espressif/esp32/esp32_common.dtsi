@@ -452,11 +452,6 @@
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-
-			counter {
-				compatible = "espressif,esp32-counter";
-				status = "disabled";
-			};
 		};
 
 		timer1: counter@3ff5f024 {
@@ -468,11 +463,6 @@
 			interrupts = <TG0_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-
-			counter {
-				compatible = "espressif,esp32-counter";
-				status = "disabled";
-			};
 		};
 
 		timer2: counter@3ff60000 {
@@ -484,11 +474,6 @@
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-
-			counter {
-				compatible = "espressif,esp32-counter";
-				status = "disabled";
-			};
 		};
 
 		timer3: counter@3ff60024 {
@@ -500,11 +485,6 @@
 			interrupts = <TG1_T1_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
-
-			counter {
-				compatible = "espressif,esp32-counter";
-				status = "disabled";
-			};
 		};
 
 		dac: dac@3ff48800 {
