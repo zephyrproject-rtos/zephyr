@@ -347,6 +347,8 @@ Misc
 * All memc_flexram_* namespaced things including kconfigs and C API
   have been changed to just flexram_*.
 
+* Select ``CONFIG_ETHOS_U`` instead ``CONFIG_ARM_ETHOS_U`` to enable Ethos-U NPU driver.
+
 Bluetooth
 *********
 
