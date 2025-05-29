@@ -1196,5 +1196,7 @@ class TwisterEnv:
         if result['returncode'] != 0:
             print(f"E: {result['returnmsg']}")
             sys.exit(2)
-        self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
-        logger.info(f"Using '{self.toolchain}' toolchain.")
+        _variant = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
+        self.compiler = json.loads(result['stdout'])['TOOLCHAIN_VARIANT_COMPILER']
+        self.toolchain = f"{_variant}/{self.compiler}"
+        logger.info(f"Using '{self.toolchain}' toolchain variant.")
