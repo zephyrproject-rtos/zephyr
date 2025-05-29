@@ -44,13 +44,22 @@ def main(argv):
 
     print(f"pr: {pr.html_url}")
 
+    fail = False
+
     for label in pr.get_labels():
         print(f"label: {label.name}")
 
         if label.name in DNM_LABELS:
             print(f"Pull request is labeled as \"{label.name}\".")
-            print("This workflow fails so that the pull request cannot be merged.")
-            sys.exit(1)
+            fail = True
+
+    if not pr.body:
+        print("Pull request is description is empty.")
+        fail = True
+
+    if fail:
+        print("This workflow fails so that the pull request cannot be merged.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
