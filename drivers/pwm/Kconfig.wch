@@ -4,7 +4,7 @@
 config PWM_WCH_GPTM
 	bool "WCH General-purpose Timer (GPTM) for PWM"
 	default y
-	depends on DT_HAS_WCH_GPTM_PWM_ENABLED
+	depends on DT_HAS_WCH_GPTM_PWM_ENABLED || DT_HAS_WCH_ADTM_PWM_ENABLED
 	select PINCTRL
 	help
 	  PWM driver for the WCH GPTM, such as TIM2 on the CH32V003.
