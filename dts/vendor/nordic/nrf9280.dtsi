@@ -478,6 +478,7 @@
 				status = "disabled";
 				interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			spi120: spi@8e6000 {
@@ -766,6 +767,7 @@
 				status = "disabled";
 				interrupts = <420 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c130: i2c@9a5000 {
@@ -880,6 +882,7 @@
 				status = "disabled";
 				interrupts = <436 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c132: i2c@9b5000 {
@@ -994,6 +997,7 @@
 				status = "disabled";
 				interrupts = <452 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c134: i2c@9c5000 {
@@ -1108,6 +1112,7 @@
 				status = "disabled";
 				interrupts = <468 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c136: i2c@9d5000 {
