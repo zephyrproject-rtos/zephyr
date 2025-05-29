@@ -1,0 +1,23 @@
+sample:
+  description: Enables the M7_0 and M7_1 cores
+  name: XMC7200 M0+ Start
+
+common:
+  platform_allow:
+    - kit_xmc72_evk/xmc7200d_e272k8384/m0p
+  tags: introduction
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "CM0 - kit_xmc72_evk/xmc7200d_e272k8384/m0p"
+
+tests:
+  sample.boards.m0plus_start:
+    extra_args: EXTRA_CFLAGS=-DENABLE_CM7_0=1
+
+  sample.boards.m7_0_start:
+    extra_args: EXTRA_CFLAGS=-DENABLE_CM7_1=0
+
+  sample.boards.m7_1_start:
+    extra_args: EXTRA_CFLAGS=-DENABLE_CM7_0=0
