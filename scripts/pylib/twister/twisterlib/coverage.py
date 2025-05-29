@@ -563,7 +563,7 @@ def choose_gcov_tool(options, is_system_gcov):
         zephyr_sdk_gcov_tool = os.path.join(
             os.environ.get("ZEPHYR_SDK_INSTALL_DIR", default=""),
             "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
-        if os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT") == "llvm":
+        if os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT").endswith("/llvm"):
             llvm_path = os.environ.get("LLVM_TOOLCHAIN_PATH")
             if llvm_path is not None:
                 llvm_path = os.path.join(llvm_path, "bin")
