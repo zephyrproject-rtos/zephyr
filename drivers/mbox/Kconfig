@@ -15,6 +15,7 @@ if MBOX
 # zephyr-keep-sorted-start
 source "drivers/mbox/Kconfig.andes"
 source "drivers/mbox/Kconfig.esp32"
+source "drivers/mbox/Kconfig.gen_sw_mbox"
 source "drivers/mbox/Kconfig.ivshmem"
 source "drivers/mbox/Kconfig.mhuv3"
 source "drivers/mbox/Kconfig.nrf_bellboard"
