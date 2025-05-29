@@ -1,0 +1,98 @@
+# TI CC23x0 entropy driver configuration
+
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_CC23X0_RNG
+	bool "TI SimpleLink CC23x0 Random Number Generator (RNG)"
+	default y
+	depends on DT_HAS_TI_CC23X0_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the driver for the Random Number Generator (RNG)
+	  for TI SimpleLink CC23x0 SoCs. This uses noise from Radio during startup
+	  to generate entropy. Subsequent calls to this API will fail and it
+	  returns with an error code.
+
+if ENTROPY_CC23X0_RNG
+
+config HEAP_MEM_POOL_ADD_SIZE_ENTROPY
+	int
+	default 3072
+	help
+	  Add heap memory if entropy driver is enabled.
+	  Entropy driver depends on large amount of radio noise for
+	  generating entropy, which is dynamically allocated and freed
+	  during entropy driver initialization.
+
+config ENTROPY_CC23X0_NOISE_INPUT_WORD_LENGTH
+	int "Number of words from the Radio noise to use to generate 32-byte entropy"
+	default 512
+	range 256 1024
+	help
+	  The size in words of the buffer used to get the noise from Radio.
+	  This is the amount of noise that will be used to generate 32 bytes of entropy.
+	  The default value is 512 words, which is the minimum required to generate
+	  32 bytes of entropy. Increasing this value will increase the time it takes
+	  to generate the entropy, but may improve the quality of the entropy.
+	  The maximum value is 1024 words. The value must be a multiple of 32.
+	  Increasing this value will also increase heap usage, and the config value
+	  HEAP_MEM_POOL_ADD_SIZE_ENTROPY must be increased accordingly.
+
+config ENTROPY_CC23X0_ENTROPY_BYTE_LENGTH
+	int "Number of bytes of entropy to generate"
+	default 256
+	help
+	  The size in bytes of the entropy to generate. The minimum value is 64 bytes.
+	  But, it is recommended to use 128 bytes to provide entropy for other generators
+	  in the system. The value must be a multiple of 32. Increasing this value will
+	  increase the time it takes to generate the entropy. Increasing this value will
+	  also increase the data segment usage in the system. While the device is running,
+	  entropy cannot be generated again since Radio noise is only available during
+	  startup.
+
+config ENTROPY_CC23X0_RCT_ENABLED
+	bool "RCT (Repetitive Count Test) for the noise buffer from Radio"
+	default y
+	help
+	  This option enables the Repetitive Count Test (RCT) on the noise data from
+	  the Radio. RCT is a feature that checks the quality of the noise generated
+	  by the Radio. It is recommended to enable this feature to ensure the quality of
+	  the entropy generated. Disabling this feature can improve start up time.
+
+config ENTROPY_CC23X0_RCT_THRESHOLD
+	int "Threshold for RCT (Repetitive Count Test) on the noise buffer from Radio"
+	default 24
+	help
+	  This option sets the threshold for the Repetitive Count Test (RCT) on the noise
+	  data from the Radio. The RCT checks the number of repeated values in the noise
+	  data. If the number of repeated values exceeds this threshold, the RCT fails.
+	  The default value is 24 and it must be a multiple of 3.
+
+config ENTROPY_CC23X0_APT_ENABLED
+	bool "APT (Adaptive Proportion Test) for the noise buffer from Radio"
+	default y
+	help
+	  This option enables the Adaptive Proportion Test (APT) on the noise data from
+	  the Radio. APT is a feature that checks the quality of the noise generated
+	  by the Radio. It is recommended to enable this feature to ensure the quality of
+	  the entropy generated. Disabling this feature can improve start up time.
+
+config ENTROPY_CC23X0_APT_THRESHOLD
+	int "Threshold for APT (Adaptive Proportion Test) on the noise buffer from Radio"
+	default 461
+	help
+	  This option sets the threshold for the Adaptive Proportion Test (APT) on the noise
+	  data from the Radio. See NIST SP 800-90B section 4.4.2 for information about
+	  adjusting this value. This option is only effective if APT is enabled.
+
+config ENTROPY_CC23X0_APT_BIMODAL_THRESHOLD
+	int "Threshold for expected entropy between two code values"
+	default 369
+	help
+	  This option enables the bimodal test for the Adaptive Proportion Test (APT) on
+	  the noise data from the Radio. This is an additional test which is not specified
+	  by NSIT SP 800-90B. TI recommends setting this value to 80% of the Adaptive
+	  Proportion Test Threshold above.
+
+endif # ENTROPY_CC23X0_RNG

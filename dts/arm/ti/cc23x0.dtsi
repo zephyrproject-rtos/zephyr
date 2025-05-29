@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2025 Texas Instruments Incorporated
  * Copyright (c) 2024 BayLibre, SAS
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -11,6 +11,8 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash_controller;
+		zephyr,bt-hci = &ti_bt_hci;
+		zephyr,entropy = &rng;
 	};
 
 	cpus {
@@ -256,6 +258,11 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		rng: entropy {
+			compatible = "ti,cc23x0-rng", "simple-bus";
+			status = "okay";
 		};
 
 		adc0: adc@40050000 {
