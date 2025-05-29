@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2025 Texas Instruments
- * Copyright (c) 2025 Linumiz
+ * Copyright (c) 2025 Linumiz GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ZEPHYR_SOC_ARM_TI_MSPM0_M0G_PINCTRL_SOC_H__
-#define __ZEPHYR_SOC_ARM_TI_MSPM0_M0G_PINCTRL_SOC_H__
+#ifndef __ZEPHYR_SOC_ARM_TI_MSPM0_PINCTRL_SOC_H__
+#define __ZEPHYR_SOC_ARM_TI_MSPM0_PINCTRL_SOC_H__
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
@@ -47,4 +47,4 @@ typedef struct pinctrl_soc_pin {
 		DT_FOREACH_PROP_ELEM(node_id, prop, Z_PINCTRL_STATE_PIN_INIT)		\
 	}
 
-#endif /* __ZEPHYR_SOC_ARM_TI_MSPM0_M0G_PINCTRL_SOC_H__ */
+#endif /* __ZEPHYR_SOC_ARM_TI_MSPM0_PINCTRL_SOC_H__ */
