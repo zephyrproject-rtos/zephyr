@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/devicetree.h>
 
 #include "nwp.h"
 #include "sl_wifi_callback_framework.h"
@@ -21,6 +22,8 @@
 #endif
 #include "sl_si91x_power_manager.h"
 
+#define NWP_NODE            DT_NODELABEL(nwp)
+#define SI91X_POWER_PROFILE DT_ENUM_IDX(NWP_NODE, power_profile)
 #define AP_MAX_NUM_STA 4
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
@@ -245,7 +248,7 @@ static int siwg917_nwp_init(void)
 	sl_wifi_device_configuration_t network_config;
 	sl_status_t status;
 	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
-		.profile = DEEP_SLEEP_WITH_RAM_RETENTION};
+		.profile = SI91X_POWER_PROFILE};
 
 	siwx91x_get_nwp_config(&network_config, WIFI_STA_MODE, false, 0);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call

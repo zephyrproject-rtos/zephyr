@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs SiWx91x NWP (Network Wireless Processor)
+
+description: |
+  The Network Wireless Processor (NWP) manages Wi-Fi and Bluetooth connectivity on SiWx91x devices,
+  offloading wireless networking tasks from the main processor and
+  supporting configurable power and performance modes.
+
+compatible: "silabs,siwx91x-nwp"
+
+properties:
+  power-profile:
+    type: string
+    description: Power/performance profile
+    enum:
+      - high-performance
+      - associated-power-save
+      - associated-power-save-low-latency
+      - deep-sleep-without-ram-retention
+      - deep-sleep-with-ram-retention
+    required: true
