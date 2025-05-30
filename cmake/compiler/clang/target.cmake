@@ -29,13 +29,6 @@ if(NOT "${ARCH}" STREQUAL "posix")
   include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
 
   if("${ARCH}" STREQUAL "arm")
-    list(APPEND TOOLCHAIN_C_FLAGS
-      -fshort-enums
-      )
-    list(APPEND TOOLCHAIN_LD_FLAGS
-      -fshort-enums
-      )
-
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm.cmake)
   elseif("${ARCH}" STREQUAL "arm64")
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm64.cmake)
