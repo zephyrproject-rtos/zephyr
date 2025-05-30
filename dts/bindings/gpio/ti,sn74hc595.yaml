@@ -1,7 +1,17 @@
 # Copyright (c) 2022, Matthias Freese
 # SPDX-License-Identifier: Apache-2.0
 
-description: SN74HC595 SPI based GPIO expander
+description: |
+  SN74HC595 SPI based GPIO expander.
+  The SNx4HC595 is an 8-bit shift register.
+  Note: There are two clock inputs, one for shifting (SRCLK) and one for storing
+  (RCLK). On a rising edge, the shift clock puts a bit into the shift register,
+  but does not make it appear on the output. On a rising edge of the store clock,
+  all shifted in bits appear on the outputs of the shift register. One can use
+  `cs-gpios` property of the shift register's parent SPI controller to work the
+  load clock. If one assigns a GPIO in the GPIO_ACTIVE_LOW configuration, then as
+  the CS pin goes high at the end of the SPI transaction, the shift register will
+  load in all shifted bits.
 
 compatible: "ti,sn74hc595"
 
@@ -10,14 +20,38 @@ include: [gpio-controller.yaml, spi-device.yaml]
 properties:
   reset-gpios:
     type: phandle-array
-    required: true
-    description: Reset pin
+    description: |
+      An optional GPIO connected to the reset input of the shift register(s).
+      It will be set to a logical 1 and then held at a logical 0 on init.
+
+  enable-gpios:
+    type: phandle-array
+    description: |
+      An optional GPIO connected to the enable input of the shift register(s).
+      It will be set to a logical 1 on init.
+
+  reset-value:
+    type: int
+    default: 0x0
+    description: |
+      The value to be shifted into the register (or registers) and loaded on
+      init. This is useful when you want to start with the register(s) in a
+      specific state and or you don't have control over the hard reset input of
+      the register(s).
 
   ngpios:
     type: int
     required: true
-    const: 8
-    description: Number of supported gpios
+    enum:
+      - 8
+      - 16
+      - 24
+      - 32
+    description: |
+      The number of supported gpios. Although each shift register has only eight
+      outputs, they can be chained together. Due to Zephyr's idea of a GPIO port
+      only controlling up to 32 pins, the maximum number you can indicate here
+      is 32, equating to four chained shift registers.
 
   "#gpio-cells":
     const: 2
