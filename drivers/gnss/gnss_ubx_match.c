@@ -29,19 +29,22 @@ void gnss_ubx_match_pvt_callback(struct modem_ubx *ubx, const struct ubx_frame *
 			if (nav_pvt->flags.gnss_fix_ok &&
 			    !nav_pvt->nav.flags3.invalid_lon_height_hmsl) {
 
-				switch (nav_pvt->fix_type) {
-				case UBX_NAV_FIX_TYPE_DR:
-				case UBX_NAV_FIX_TYPE_GNSS_DR_COMBINED:
+				if (nav_pvt->flags.carr_soln == 1) {
+					fix_quality = GNSS_FIX_QUALITY_FLOAT_RTK;
+					fix_status = GNSS_FIX_STATUS_DGNSS_FIX;
+				} else if (nav_pvt->flags.carr_soln == 2) {
+					fix_quality = GNSS_FIX_QUALITY_RTK;
+					fix_status = GNSS_FIX_STATUS_DGNSS_FIX;
+				} else if (
+					(nav_pvt->fix_type == UBX_NAV_FIX_TYPE_GNSS_DR_COMBINED) ||
+					(nav_pvt->fix_type == UBX_NAV_FIX_TYPE_DR)) {
+
 					fix_quality = GNSS_FIX_QUALITY_ESTIMATED;
 					fix_status = GNSS_FIX_STATUS_ESTIMATED_FIX;
-					break;
-				case UBX_NAV_FIX_TYPE_2D:
-				case UBX_NAV_FIX_TYPE_3D:
+				} else if ((nav_pvt->fix_type == UBX_NAV_FIX_TYPE_2D) ||
+					   (nav_pvt->fix_type == UBX_NAV_FIX_TYPE_3D)) {
 					fix_quality = GNSS_FIX_QUALITY_GNSS_SPS;
 					fix_status = GNSS_FIX_STATUS_GNSS_FIX;
-					break;
-				default:
-					break;
 				}
 			}
 
@@ -129,6 +132,7 @@ void gnss_ubx_match_satellite_callback(struct modem_ubx *ubx, const struct ubx_f
 				.azimuth = ubx_sat->sat[i].azimuth,
 				.system = gnss_system,
 				.is_tracked = ubx_sat->sat[i].flags.sv_used,
+				.is_corrected = ubx_sat->sat[i].flags.rtcm_corr_used,
 			};
 
 			data->satellites.data[i] = sat;

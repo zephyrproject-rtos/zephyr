@@ -74,6 +74,11 @@ enum ubx_nav_fix_type {
 	UBX_NAV_FIX_TYPE_TIME_ONLY = 5,
 };
 
+enum ubx_nav_hp_dgnss_mode {
+	UBX_NAV_HP_DGNSS_MODE_RTK_FLOAT = 2,
+	UBX_NAV_HP_DGNSS_MODE_RTK_FIXED = 3,
+};
+
 struct ubx_nav_pvt {
 	struct {
 		uint32_t itow;
