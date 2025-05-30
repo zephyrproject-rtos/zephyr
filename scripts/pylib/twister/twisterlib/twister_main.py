@@ -114,7 +114,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
             if i.status == TwisterStatus.FILTER:
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
-                logger.debug(
+                logger.info(
                     f"{i.platform.name:<25} {i.testsuite.name:<50}"
                     f" {Fore.YELLOW}FILTERED{Fore.RESET}: {i.reason}"
                 )
