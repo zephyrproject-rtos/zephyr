@@ -10,7 +10,6 @@
 #include <stdlib.h>
 
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/netinet/in.h>
 #include <zephyr/posix/net/if.h>
@@ -215,11 +214,6 @@ int getaddrinfo(const char *host, const char *service, const struct zsock_addrin
 struct hostent *gethostent(void)
 {
 	return NULL;
-}
-
-int gethostname(char *buf, size_t len)
-{
-	return zsock_gethostname(buf, len);
 }
 
 int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
