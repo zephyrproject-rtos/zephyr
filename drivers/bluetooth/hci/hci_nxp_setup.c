@@ -17,6 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -1046,6 +1047,58 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 	return -EINVAL;
 }
 
+#ifdef CONFIG_BT_NXP_CTRL_BSP_TRIGGER
+static int fw_upload_wake_bt_from_bootsleep(void)
+{
+	int err;
+	int64_t end;
+	char c = 0xFF;
+	uint16_t wait_time = CONFIG_BT_NXP_CTRL_HDR_SIG_INTERVAL;
+
+	end = k_uptime_get() + CONFIG_BT_NXP_CTRL_HDR_SIG_INTERVAL * 10;
+
+	while (k_uptime_get() < end) {
+		wait_time = CONFIG_BT_NXP_CTRL_HDR_SIG_INTERVAL + (sys_rand8_get() % 5 + 5);
+		err = k_sem_take(&fw_upload.rx.sem, K_MSEC(wait_time));
+		if (err < 0) {
+			/* BT CPU has been put in sleep by WIFI CPU in coex (WIFI+BT) Scenario.
+			 * Next, sends boot-sleep-patch trigger to BT CPU to wake up
+			 */
+			goto send_bsp_trigger;
+		}
+
+		c = fw_upload.rx.buffer[fw_upload.rx.tail];
+		fw_upload.rx.tail++;
+		fw_upload.rx.tail = fw_upload.rx.tail % sizeof(fw_upload.rx.buffer);
+
+		if ((c == V1_HEADER_DATA_REQ) || (c == V1_START_INDICATION) ||
+			(c == V3_START_INDICATION) || (c == V3_HEADER_DATA_REQ)) {
+			LOG_DBG("HDR SIG found 0x%02X", c);
+		}
+	}
+
+	LOG_DBG("Please check if boot-sleep-patch is enabled!");
+
+send_bsp_trigger:
+	/* this feature sends boot-sleep-patch trigger to BT CPU to wake up
+	 * if BT CPU is put in sleep by WIFI CPU in coex (WIFI+BT) Scenario
+	 */
+	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 0);
+	if (err) {
+		LOG_ERR("fail to set rts low, err %d", err);
+		return err;
+	}
+	k_sleep(K_MSEC(5));
+	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 1);
+	if (err) {
+		LOG_ERR("fail to set rts high, err %d", err);
+		return err;
+	}
+
+	return 0;
+}
+#endif
+
 static void bt_nxp_ctlr_uart_isr(const struct device *unused, void *user_data)
 {
 	int err = 0;
@@ -1152,23 +1205,6 @@ static int bt_nxp_ctlr_init(void)
 #endif /* DT_NODE_HAS_PROP(DT_DRV_INST(0), w_disable_gpios) */
 #endif
 
-#ifdef CONFIG_BT_NXP_CTRL_BSP_TRIGGER
-	/* this feature sends boot-sleep-patch trigger to BT CPU to wake up
-	 * if BT CPU is put in sleep by WIFI CPU in coex (WIFI+BT) Scenario
-	 */
-	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 0);
-	if (err) {
-		LOG_ERR("fail to set rts low, err %d", err);
-		return err;
-	}
-	k_sleep(K_MSEC(5));
-	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 1);
-	if (err) {
-		LOG_ERR("fail to set rts high, err %d", err);
-		return err;
-	}
-	k_sleep(K_MSEC(5));
-#endif /*CONFIG_BT_NXP_CTRL_BSP_TRIGGER*/
 	uart_irq_rx_disable(uart_dev);
 	uart_irq_tx_disable(uart_dev);
 
@@ -1189,6 +1225,17 @@ static int bt_nxp_ctlr_init(void)
 	}
 
 	uart_irq_rx_enable(uart_dev);
+
+#ifdef CONFIG_BT_NXP_CTRL_BSP_TRIGGER
+	/* this feature sends boot-sleep-patch trigger to BT CPU to wake up
+	 * if BT CPU is put in sleep by WIFI CPU in coex (WIFI+BT) Scenario
+	 */
+	err = fw_upload_wake_bt_from_bootsleep();
+	if (err) {
+		LOG_ERR("Fail to wake BT CPU from boot sleep");
+		return err;
+	}
+#endif /*CONFIG_BT_NXP_CTRL_BSP_TRIGGER*/
 
 	err = fw_uploading(bt_fw_bin, bt_fw_bin_len);
 
