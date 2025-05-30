@@ -1336,6 +1336,8 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 	size_t pkt_len = net_pkt_get_len(pkt);
 	struct net_buf *buf = NULL;
 	int ret;
+	sl_wifi_operation_mode_t opermode;
+	sl_wifi_interface_t interface = SL_WIFI_CLIENT_INTERFACE;
 
 	if (net_pkt_get_len(pkt) > _NET_ETH_MAX_FRAME_SIZE) {
 		LOG_ERR("unexpected buffer size");
@@ -1350,8 +1352,13 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENOBUFS;
 	}
 	net_buf_add(buf, pkt_len);
-
-	ret = sl_wifi_send_raw_data_frame(SL_WIFI_CLIENT_INTERFACE, buf->data, pkt_len);
+	opermode = sli_get_opermode();
+	if (opermode == SL_SI91X_CLIENT_MODE) {
+		interface = SL_WIFI_CLIENT_INTERFACE;
+	} else if (opermode == SL_SI91X_ACCESS_POINT_MODE) {
+		interface = SL_WIFI_AP_INTERFACE;
+	}
+	ret = sl_wifi_send_raw_data_frame(interface, buf->data, pkt_len);
 	if (ret) {
 		net_buf_unref(buf);
 		return -EIO;
