@@ -1,23 +1,52 @@
 # Copyright (c) 2022, Matthias Freese
 # SPDX-License-Identifier: Apache-2.0
 
-description: SN74HC595 SPI based GPIO expander
+description: |
+  SN74HC595 SPI based GPIO expander
+  The SNx4HC595 is an 8-bit shift register.
 
 compatible: "ti,sn74hc595"
 
 include: [gpio-controller.yaml, spi-device.yaml]
 
 properties:
-  reset-gpios:
+  reset-value:
+    type: int
+    default: 0x0
+    description: |
+      The value to be shifted into the register (or registers) and loaded on init.
+      This is useful when you want to start with the register(s) in a specific state
+      and or you don't have control over the hard reset input of the register(s).
+
+  enable-gpios:
     type: phandle-array
-    required: true
-    description: Reset pin
+    description: |
+      An optional GPIO connected to the enable input of the shift register(s).
+      It will be set to a logical 1 on init.
+
+
+  rclk-gpios:
+    type: phandle-array
+    description: |
+      The GPIO connected to the RCLK input of the shift register.
+      A rising edge on this input makes the values of the shift registers
+      appear on the output.
+      A common configuration of the shift register is to link the RCLK
+      and the SRCLK inputs (the shifting clock which is driven by the SPI peripheral).
+      In this case of SRCLK and RCLK being tied together, don't specify this GPIO.
+      When this parameter is set, it will be toggled after all bits are toggled into
+      the shift register(s).
 
   ngpios:
     type: int
     required: true
-    const: 8
-    description: Number of supported gpios
+    description: |
+      The number of supported gpios.
+      Although each shift register has only eight outputs,
+      they can be chained together.
+      Do to Zephyr's idea of a GPIO port only controlling up to 32 pins,
+      the maximum number you can indicate here is 32, equating to
+      four chained shift registers.
 
   "#gpio-cells":
     const: 2
