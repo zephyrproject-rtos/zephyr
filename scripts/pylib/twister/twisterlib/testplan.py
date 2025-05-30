@@ -605,10 +605,12 @@ class TestPlan:
                 sim_name
             )
             if matched_quarantine and not self.options.quarantine_verify:
-                instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
+                instance.status = TwisterStatus.SKIP
+                instance.reason = "Quarantine: " + matched_quarantine
                 return
             if not matched_quarantine and self.options.quarantine_verify:
-                instance.add_filter("Not under quarantine", Filters.QUARANTINE)
+                instance.status = TwisterStatus.SKIP
+                instance.reason = "Not under quarantine"
 
     def load_from_file(self, file, filter_platform=None):
         if filter_platform is None:
