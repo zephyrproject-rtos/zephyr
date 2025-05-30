@@ -326,9 +326,8 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 		goto free_ack;
 	}
 
-	/* Use some fake values for LQI and RSSI. */
-	net_pkt_set_ieee802154_lqi(pkt, 80);
-	net_pkt_set_ieee802154_rssi_dbm(pkt, -40);
+	net_pkt_set_ieee802154_lqi(pkt, mcxw_radio->rx_ack_frame.lqi);
+	net_pkt_set_ieee802154_rssi_dbm(pkt, mcxw_radio->rx_ack_frame.rssi);
 
 	net_pkt_set_timestamp_ns(pkt, mcxw_radio->rx_ack_frame.timestamp);
 
@@ -377,7 +376,6 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	rf_set_channel(mcxw_radio->channel);
 
 	msg->msgType = gPdDataReq_c;
-	msg->msgData.dataReq.slottedTx = gPhyUnslottedMode_c;
 	msg->msgData.dataReq.psduLength = mcxw_radio->tx_frame.length;
 	msg->msgData.dataReq.CCABeforeTx = gPhyNoCCABeforeTx_c;
 	msg->msgData.dataReq.startTime = gPhySeqStartAsap_c;
@@ -988,6 +986,8 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 
 		mcxw_ctx.rx_ack_frame.channel = mcxw_ctx.channel;
 		mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
+		mcxw_ctx.rx_ack_frame.lqi = data_msg->msgData.dataCnf.ppduLinkQuality;
+		mcxw_ctx.rx_ack_frame.rssi = data_msg->msgData.dataCnf.ppduRssi;
 		mcxw_ctx.rx_ack_frame.timestamp = data_msg->msgData.dataCnf.timeStamp;
 		memcpy(mcxw_ctx.rx_ack_frame.psdu, data_msg->msgData.dataCnf.ackData,
 		       mcxw_ctx.rx_ack_frame.length);
