@@ -1885,7 +1885,7 @@ class TwisterRunner:
                     self.results.done -= self.results.error
                     self.results.error = 0
             else:
-                self.results.done = self.results.filtered_static
+                self.results.done = self.results.filtered_static + self.results.skipped
 
             self.execute(pipeline, done_queue)
 
@@ -1922,6 +1922,10 @@ class TwisterRunner:
                 self.results.filtered_static_increment()
                 self.results.filtered_configs_increment()
                 self.results.filtered_cases_increment(len(instance.testsuite.testcases))
+                self.results.cases_increment(len(instance.testsuite.testcases))
+            elif instance.status == TwisterStatus.SKIP and "overflow" not in instance.reason:
+                self.results.skipped_increment()
+                self.results.skipped_cases_increment(len(instance.testsuite.testcases))
                 self.results.cases_increment(len(instance.testsuite.testcases))
             elif instance.status == TwisterStatus.ERROR:
                 self.results.error_increment()
