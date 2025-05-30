@@ -191,8 +191,8 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define _MK_IRQ_ELEMENT_NAME(func, id) __MK_ISR_ELEMENT_NAME(func, id)
 #define __MK_IRQ_ELEMENT_NAME(func, id) __irq_table_entry_ ## func ## _irq_ ## id
 
-#define _MK_ISR_SECTION_NAME(prefix, file, counter) \
-	"." Z_STRINGIFY(prefix)"."file"." Z_STRINGIFY(counter)
+#define _MK_ISR_SECTION_NAME(prefix, file, counter)                                                \
+	"." Z_STRINGIFY(prefix) "." file "." Z_STRINGIFY(counter)
 
 #define _MK_ISR_ELEMENT_SECTION(counter) _MK_ISR_SECTION_NAME(irq, __FILE__, counter)
 #define _MK_IRQ_ELEMENT_SECTION(counter) _MK_ISR_SECTION_NAME(isr, __FILE__, counter)
