@@ -22,12 +22,11 @@ properties:
   primary-address:
     type: int
     required: false
-  
+
   secondary-address:
     type: int
     required: false
-  
+
   secondary-mask:
     type: int
     required: false
-    

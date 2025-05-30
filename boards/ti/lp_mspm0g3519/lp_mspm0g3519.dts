@@ -104,7 +104,7 @@
 
 &uart0 {
 	status = "okay";
-	
+
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
@@ -116,4 +116,3 @@
 	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pa16>;
 	pinctrl-names = "default";
 };
-

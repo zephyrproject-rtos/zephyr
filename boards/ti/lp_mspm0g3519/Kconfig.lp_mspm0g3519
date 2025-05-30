@@ -3,4 +3,3 @@
 
 config BOARD_LP_MSPM0G3519
 	select SOC_MSPM0G3519
-	

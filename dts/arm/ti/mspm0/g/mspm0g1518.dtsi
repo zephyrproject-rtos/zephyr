@@ -6,11 +6,11 @@
 / {
 	soc {
 		/*
-		* SRAM Bank 0 has optional ECC or Parity checking 
+		* SRAM Bank 0 has optional ECC or Parity checking
 		* SRAM0 ECC Corrected: 0x2000.0000
 		* SRAM0 Parity Checked: 0x2010.0000
 		* SRAM0 Unchecked: 0x2020.0000
-		* Sram Bank 1 (sram1) is only available as unchecked 
+		* Sram Bank 1 (sram1) is only available as unchecked
 		*/
 		sram0_unchecked: memory@20200000 {
 			reg = <0x20200000 DT_SIZE_K(64)>;

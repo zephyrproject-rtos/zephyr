@@ -4,4 +4,3 @@ board:
   vendor: ti
   socs:
     - name: mspm0g3519
-    
