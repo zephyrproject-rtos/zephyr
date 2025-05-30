@@ -9,7 +9,12 @@ Main rules
 
 The coding guideline rules are based on MISRA-C 2012 and are a **subset** of MISRA-C.
 The subset is listed in the table below with a summary of the rules, its
-severity and the equivalent rules from other standards for reference.
+MISRA-C severity and the equivalent rules from other standards for reference.
+
+The severity and other references in the table below are for informational
+purposes only. The listed rules are all required for Zephyr and all new code
+should comply with the rules listed below.
+
 
 .. note::
 
