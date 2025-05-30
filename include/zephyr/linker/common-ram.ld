@@ -41,11 +41,13 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 
         SECTION_DATA_PROLOGUE(device_states,,)
         {
+		. = ALIGN(CONFIG_ARCH_DEVICE_STATE_ALIGN);
 		/* Device states used by the device objects. */
                 PLACE_SYMBOL_HERE(__device_states_start);
 		KEEP(*(".z_devstate"));
 		KEEP(*(".z_devstate.*"));
                 PLACE_SYMBOL_HERE(__device_states_end);
+		. = ALIGN(CONFIG_ARCH_DEVICE_STATE_ALIGN);
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #ifdef CONFIG_PM_DEVICE

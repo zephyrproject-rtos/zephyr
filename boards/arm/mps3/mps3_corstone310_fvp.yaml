@@ -17,6 +17,7 @@ supported:
   - gpio
 testing:
   default: true
+  timeout_multiplier: 4
   ignore_tags:
     - drivers
     - bluetooth

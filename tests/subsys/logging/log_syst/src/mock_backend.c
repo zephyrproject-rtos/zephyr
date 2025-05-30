@@ -63,7 +63,8 @@ void validate_msg(const char *type, const char *optional_flags,
 	const char *raw_data_str = "SYS-T RAW DATA: ";
 	const char *output_str = test_output_buf;
 	const char *syst_format_headers[4] = {type, optional_flags, module_id, sub_type};
-	const char *syst_headers_name[4] = {"type", "optional_flags", "module_id", "sub_type"};
+	const char *syst_headers_name[4] __maybe_unused = {"type", "optional_flags", "module_id",
+							   "sub_type"};
 
 	/* Validate "SYS-T RAW DATA: " prefix in the output_str */
 	zassert_mem_equal(raw_data_str, output_str, strlen(raw_data_str),

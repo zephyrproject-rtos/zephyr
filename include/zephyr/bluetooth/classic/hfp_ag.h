@@ -77,6 +77,37 @@ enum hfp_ag_hf_indicators {
 	HFP_AG_BATTERY_LEVEL_IND = 2,   /* Remaining level of Battery */
 };
 
+/* The status of the call */
+enum __packed bt_hfp_ag_call_status {
+	BT_HFP_AG_CALL_STATUS_ACTIVE = 0,       /* Call is active */
+	BT_HFP_AG_CALL_STATUS_HELD = 1,         /* Call is on hold */
+	BT_HFP_AG_CALL_STATUS_DIALING = 2,      /* Outgoing call is being dialed */
+	BT_HFP_AG_CALL_STATUS_ALERTING = 3,     /* Outgoing call is being alerted */
+	BT_HFP_AG_CALL_STATUS_INCOMING = 4,     /* Incoming call is came */
+	BT_HFP_AG_CALL_STATUS_WAITING = 5,      /* Incoming call is waiting */
+	BT_HFP_AG_CALL_STATUS_INCOMING_HELD = 6 /* Call held by Response and Hold */
+};
+
+/* The direction of the call */
+enum __packed bt_hfp_ag_call_dir {
+	BT_HFP_AG_CALL_DIR_OUTGOING = 0, /* It is a outgoing call */
+	BT_HFP_AG_CALL_DIR_INCOMING = 1, /* It is a incoming call */
+};
+
+/** @brief The ongoing call
+ *
+ *  @param number Phone number terminated with '\0' of the call.
+ *  @param type Specify the format of the phone number.
+ *  @param dir Call direction.
+ *  @param status The status of the call.
+ */
+struct bt_hfp_ag_ongoing_call {
+	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+	uint8_t type;
+	enum bt_hfp_ag_call_dir dir;
+	enum bt_hfp_ag_call_status status;
+};
+
 /** @brief HFP profile AG application callback */
 struct bt_hfp_ag_cb {
 	/** HF AG connected callback to application
@@ -115,6 +146,26 @@ struct bt_hfp_ag_cb {
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*sco_disconnected)(struct bt_conn *sco_conn, uint8_t reason);
+
+	/** Get ongoing call information Callback
+	 *
+	 *  If this callback is provided it will be called whenever the AT command `AT+CIND?` is
+	 *  received from HF has been sent.
+	 *  After the callback notified, the ongoing calls should be set via function
+	 *  `bt_hfp_ag_ongoing_calls()` within the timeout
+	 *  @kconfig{CONFIG_BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT}.
+	 *
+	 *  @param ag HFP AG object.
+	 *
+	 *  @note The AG is in SLC establishment phase. The AG callback `connected()` is not
+	 *        notified at this time.
+	 *
+	 *  @return 0 in case of success. The response `+CIND` will be sent after the function
+	 *          `bt_hfp_ag_ongoing_calls()` called or after the time exceeds
+	 *          @kconfig{CONFIG_BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT}. Or negative value in case
+	 *          of error. The response `+CIND` will be replied immediately.
+	 */
+	int (*get_ongoing_call)(struct bt_hfp_ag *ag);
 
 	/** HF memory dialing request Callback
 	 *
@@ -790,6 +841,19 @@ int bt_hfp_ag_service_availability(struct bt_hfp_ag *ag, bool available);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_hf_indicator(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indicator, bool enable);
+
+/** @brief Set the ongoing calls
+ *
+ *  It is used to set the ongoing calls when AT command `AT+CIND?` is received.
+ *
+ *  @param ag HFP AG object.
+ *  @param calls Ongoing calls.
+ *  @param count Ongoing call count.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_ongoing_calls(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *calls,
+			    size_t count);
 
 #ifdef __cplusplus
 }

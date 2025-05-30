@@ -185,6 +185,10 @@
 	pinctrl-names = "default";
 };
 
+zephyr_udc0: &usb {
+	status = "okay";
+};
+
 &wwdt0 {
 	status = "okay";
 };

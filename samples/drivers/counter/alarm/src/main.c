@@ -50,6 +50,9 @@ struct counter_alarm_cfg alarm_cfg;
 #elif defined(CONFIG_COUNTER_INFINEON_CAT1)
 #define TIMER DT_NODELABEL(counter0_0)
 #elif defined(CONFIG_COUNTER_AMBIQ)
+#ifdef TIMER
+#undef TIMER
+#endif
 #define TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_SNPS_DW)
 #define TIMER DT_NODELABEL(timer0)

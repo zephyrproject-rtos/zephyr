@@ -7,7 +7,7 @@ description: Infineon counters
 
 compatible: "infineon,cat1-counter"
 
-include: base.yaml
+include: [base.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
   resolution:
@@ -25,3 +25,9 @@ properties:
     type: phandle-array
     description: |
       External trigger that runs counter
+
+  interrupts:
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices

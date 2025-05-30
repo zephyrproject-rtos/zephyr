@@ -189,6 +189,11 @@ void board_early_init_hook(void)
 	RESET_ReleasePeripheralReset(kPORT3_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb))
+	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
+	CLOCK_EnableUsbfsClock();
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
 #endif
