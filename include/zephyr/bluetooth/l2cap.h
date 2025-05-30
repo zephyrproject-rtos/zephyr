@@ -238,6 +238,9 @@ struct bt_l2cap_le_chan {
 	/** Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
 	uint16_t			_sdu_len;
+
+	/** @internal Holds the length of the current SDU being sent from tx_queue */
+	size_t				_sdu_remaining;
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 	uint16_t			_sdu_len_done;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
@@ -585,9 +588,9 @@ struct bt_l2cap_chan_ops {
 
 	/** @brief Channel sent callback
 	 *
-	 *  This callback will be called once the controller marks the SDU
+	 *  This callback will be called once the controller marks the buffer
 	 *  as completed. When the controller does so is implementation
-	 *  dependent. It could be after the SDU is enqueued for transmission,
+	 *  dependent. It could be after the buffer is enqueued for transmission,
 	 *  or after it is sent on air.
 	 *
 	 *  @param chan The channel which has sent data.
@@ -902,6 +905,8 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  When sending L2CAP data over an LE connection the application is sending
  *  L2CAP SDUs. The application shall reserve
  *  @ref BT_L2CAP_SDU_CHAN_SEND_RESERVE bytes in the buffer before sending.
+ *  If the buffer length is larger then the TX MTU, then the buffer
+ *  will be sent using multiple SDUs.
  *
  *  The application can use the BT_L2CAP_SDU_BUF_SIZE() helper to correctly size
  *  the buffer to account for the reserved headroom.
