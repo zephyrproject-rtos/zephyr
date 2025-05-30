@@ -25,6 +25,21 @@ Currently, two types of Wi-Fi drivers are supported:
 * Networking or socket offloaded drivers
 * Native L2 Ethernet drivers
 
+Compiled Features
+*****************
+
+To support applications that only require a certain subset of Wi-Fi features, :kconfig:option:`CONFIG_WIFI_USAGE_MODE` can be used
+as a hint for drivers to limit the functionality that needs to be compiled in. The following usage hints are available:
+
+ * :kconfig:option:`CONFIG_WIFI_USAGE_MODE_STA` (Connecting to an access point)
+ * :kconfig:option:`CONFIG_WIFI_USAGE_MODE_AP` (Being an access point)
+ * :kconfig:option:`CONFIG_WIFI_USAGE_MODE_STA_AP` (Both being and connecting to an access point)
+ * :kconfig:option:`CONFIG_WIFI_USAGE_MODE_SCAN_ONLY` (Access point SSID scanning only)
+
+.. note::
+
+    Support for a requested usage mode is hardware dependent.
+
 Wi-Fi PSA crypto supported build
 ********************************
 
