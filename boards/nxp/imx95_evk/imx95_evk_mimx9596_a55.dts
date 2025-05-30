@@ -43,7 +43,7 @@
 	};
 
 	dram: memory@d0000000 {
-		reg = <0xd0000000 DT_SIZE_M(1)>;
+		reg = <0xd0000000 DT_SIZE_M(10)>;
 	};
 };
 
