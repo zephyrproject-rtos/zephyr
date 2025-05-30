@@ -12,11 +12,16 @@
 extern char _rom_attr[];
 #endif
 
+#define REGION_PERIPHERAL_BASE_ADDRESS 0x40000000
+#define REGION_PERIPHERAL_SIZE         REGION_512M
+#define REGION_PPB_BASE_ADDRESS        0xE0000000
+#define REGION_PPB_SIZE                REGION_1M
+
 static struct arm_mpu_region mpu_regions[] = {
 
 	/* ERR011573: use first region to prevent speculative access in entire memory space */
 	{
-		.name = "BACKGROUND",
+		.name = "UNMAPPED",
 		.base = 0,
 		.attr = {REGION_4G | MPU_RASR_XN_Msk | P_NA_U_NA_Msk},
 	},
@@ -42,6 +47,18 @@ static struct arm_mpu_region mpu_regions[] = {
 		.attr = {(uint32_t)_rom_attr},
 	},
 #endif
+
+	{
+		.name = "PERIPHERALS",
+		.base = REGION_PERIPHERAL_BASE_ADDRESS,
+		.attr = REGION_IO_ATTR(REGION_PERIPHERAL_SIZE),
+	},
+
+	{
+		.name = "PPB",
+		.base = REGION_PPB_BASE_ADDRESS,
+		.attr = REGION_PPB_ATTR(REGION_PPB_SIZE),
+	},
 };
 
 const struct arm_mpu_config mpu_config = {
