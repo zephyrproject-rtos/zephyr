@@ -20,6 +20,10 @@ extern "C" {
 
 /* Note: None of these functions are public interfaces. But internal to the native ptty driver */
 
+/* IMPL-2: Symlink path validation and error reporting functions */
+int validate_ptty_symlink_path(const char *path);
+void report_ptty_symlink_error(const char *path, int error);
+
 int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char);
 int np_uart_slave_connected(int fd);
 int np_uart_open_ptty(const char *ptty_symlink_path, const char *uart_name, const char *auto_attach_cmd,

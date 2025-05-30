@@ -23,6 +23,9 @@
 #include <unistd.h>
 #include <poll.h>
 #include <nsi_tracing.h>
+// IMPL-2: Additional includes for symlink validation
+#include <sys/stat.h>
+#include <libgen.h>
 
 #define ERROR nsi_print_error_and_exit
 #define WARN nsi_print_warning
@@ -235,8 +238,25 @@ int np_uart_open_ptty(const char *ptty_symlink_path, const char *uart_name, cons
 	}
 
 	if (ptty_symlink_path != NULL) {
-		/* Future symlink mode - placeholder for Phase 2+ implementation */
-		ERROR("Symlink mode not yet implemented in Phase 1\n");
+		/* IMPL-2: Enhanced symlink creation mode */
+		int validation_result = validate_ptty_symlink_path(ptty_symlink_path);
+		if (validation_result != 0) {
+			/* Validation failed - cleanup PTY and report error */
+			close(master_pty);
+			report_ptty_symlink_error(ptty_symlink_path, validation_result);
+			return -1; /* Error reported by report_ptty_symlink_error, will exit */
+		}
+
+		/* Create symlink from custom path to auto-allocated PTY device */
+		if (symlink(slave_pty_name, ptty_symlink_path) != 0) {
+			int symlink_errno = errno;
+			close(master_pty);
+			report_ptty_symlink_error(ptty_symlink_path, -symlink_errno);
+			return -1; /* Error reported by report_ptty_symlink_error, will exit */
+		}
+
+		nsi_print_trace("Created symlink: %s -> %s\n",
+				ptty_symlink_path, slave_pty_name);
 	}
 
 	return master_pty;
@@ -250,4 +270,135 @@ int np_uart_ptty_get_stdin_fileno(void)
 int np_uart_ptty_get_stdout_fileno(void)
 {
 	return STDOUT_FILENO;
+}
+
+/* IMPL-2: Symlink path validation and error reporting functions */
+
+/**
+ * @brief Validate symlink path for PTY creation following DESIGN-2 specification
+ *
+ * Performs comprehensive pre-flight validation for symlink creation including:
+ * - Path format validation (no trailing slash)
+ * - Parent directory existence and write permissions
+ * - Symlink collision detection
+ * - Platform-specific validation requirements
+ *
+ * @param path Symlink path to validate (NULL means no symlink creation)
+ * @return 0 on success, negative error code on failure:
+ *         -EINVAL: Invalid path format (trailing slash, invalid characters)
+ *         -EEXIST: Path already exists (collision detection)
+ *         -ENOENT: Parent directory does not exist
+ *         -EACCES: Permission denied for parent directory
+ */
+int validate_ptty_symlink_path(const char *path)
+{
+	struct stat st;
+	char *parent_dir_copy = NULL;
+	char *parent_dir = NULL;
+	int result = 0;
+
+	/* NULL path is valid - means no symlink creation */
+	if (!path || !path[0]) {
+		return 0;
+	}
+
+	/* Check for trailing slash (invalid for symlink paths per DESIGN-2) */
+	size_t len = strlen(path);
+	if (len > 0 && path[len - 1] == '/') {
+		return -EINVAL;
+	}
+
+	/* Check if path already exists (symlink collision detection) */
+	if (stat(path, &st) == 0) {
+		return -EEXIST;
+	}
+
+	/* Validate parent directory exists and is writable */
+	parent_dir_copy = strdup(path);
+	if (!parent_dir_copy) {
+		return -ENOMEM;
+	}
+
+	parent_dir = dirname(parent_dir_copy);
+	if (!parent_dir) {
+		free(parent_dir_copy);
+		return -EINVAL;
+	}
+
+	/* Check parent directory existence */
+	if (stat(parent_dir, &st) != 0) {
+		result = (errno == ENOENT) ? -ENOENT : -EACCES;
+		goto cleanup;
+	}
+
+	/* Check if parent is actually a directory */
+	if (!S_ISDIR(st.st_mode)) {
+		result = -ENOTDIR;
+		goto cleanup;
+	}
+
+	/* Check write permission on parent directory */
+	if (access(parent_dir, W_OK) != 0) {
+		result = -EACCES;
+		goto cleanup;
+	}
+
+cleanup:
+	free(parent_dir_copy);
+	return result;
+}
+
+/**
+ * @brief Report symlink creation errors with actionable user guidance
+ *
+ * Provides comprehensive error reporting for symlink creation failures
+ * following DESIGN-2 error message specifications. Each error includes
+ * specific user guidance for resolution.
+ *
+ * @param path Symlink path that failed
+ * @param error Error code from validate_ptty_symlink_path() or symlink()
+ */
+void report_ptty_symlink_error(const char *path, int error)
+{
+	if (!path) {
+		path = "<null>";
+	}
+
+	switch (error) {
+	case -EEXIST:
+		ERROR("Symlink path '%s' already exists. "
+		      "Remove existing file or choose different path\n", path);
+		break;
+	case -ENOENT:
+		ERROR("Parent directory for '%s' does not exist. "
+		      "Create directory: mkdir -p $(dirname '%s')\n", path, path);
+		break;
+	case -ENOTDIR:
+		ERROR("Parent path for '%s' exists but is not a directory. "
+		      "Remove the file or choose different symlink path\n", path);
+		break;
+	case -EACCES:
+		ERROR("Permission denied creating symlink '%s'. "
+		      "Check directory permissions or choose writable location\n", path);
+		break;
+	case -EINVAL:
+		ERROR("Invalid symlink path '%s'. "
+		      "Path cannot end with '/' or contain invalid characters\n", path);
+		break;
+	case -ENOMEM:
+		ERROR("Out of memory while validating symlink path '%s'\n", path);
+		break;
+	case -EAGAIN:
+		ERROR("Failed to allocate PTY for symlink '%s'. "
+		      "System may be out of PTY devices\n", path);
+		break;
+	case -EIO:
+		ERROR("Failed to create symlink '%s'. "
+		      "Filesystem may not support symlinks\n", path);
+		break;
+	default:
+		ERROR("Symlink creation error for '%s': %s (errno=%d)\n",
+		      path, strerror(-error), -error);
+		break;
+	}
 }

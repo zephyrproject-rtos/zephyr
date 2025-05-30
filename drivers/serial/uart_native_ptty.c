@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT zephyr_native_posix_uart
 
 #include <stdbool.h>
+#include <string.h>
+#include <errno.h>
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
@@ -32,6 +34,13 @@
  *
  * When connected to its own pseudo terminal, it may also auto attach a terminal
  * emulator to it, if set so from command line.
+ *
+ * The following command line options are available:
+ * - uart0_symlink=PATH: Create a symlink at PATH pointing to UART0's PTY device
+ * - uart1_symlink=PATH: Create a symlink at PATH pointing to UART1's PTY device
+ * - attach_uart: Automatically attach to the UART terminal
+ * - attach_uart_cmd="COMMAND": Command used to automatically attach to the terminal
+ * - wait_uart: Hold writes to the uart/pts until a client is connected/ready
  */
 
 static int np_uart_stdin_poll_in(const struct device *dev,
@@ -44,10 +53,18 @@ static void np_uart_poll_out(const struct device *dev,
 static bool auto_attach;
 static bool wait_pts;
 static char *auto_attach_cmd = CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD;
+/* IMPL-2: Variables to store symlink paths from command line options */
+static char *uart0_symlink_path;
+#if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
+static char *uart1_symlink_path;
+#endif
 
 struct native_uart_status {
 	int out_fd; /* File descriptor used for output */
 	int in_fd; /* File descriptor used for input */
+	/* IMPL-2: Symlink tracking fields for command line option support */
+	char *ptty_symlink_path; /* Custom symlink path (NULL = no symlink) */
+	bool has_ptty_symlink; /* Flag indicating if symlink was created for cleanup */
 };
 
 static struct native_uart_status native_uart_status_0;
@@ -85,11 +102,17 @@ static int np_uart_0_init(const struct device *dev)
 	d = (struct native_uart_status *)dev->data;
 
 	if (IS_ENABLED(CONFIG_NATIVE_UART_0_ON_OWN_PTY)) {
-		int tty_fn = np_uart_open_ptty(NULL, dev->name, auto_attach_cmd, auto_attach, wait_pts);
+		int tty_fn = np_uart_open_ptty(uart0_symlink_path, dev->name, auto_attach_cmd, auto_attach, wait_pts);
 
 		d->in_fd = tty_fn;
 		d->out_fd = tty_fn;
 		np_uart_driver_api_0.poll_in = np_uart_tty_poll_in;
+
+		/* IMPL-2: Track symlink if created */
+		if (uart0_symlink_path != NULL && tty_fn >= 0) {
+			d->ptty_symlink_path = uart0_symlink_path;
+			d->has_ptty_symlink = true;
+		}
 	} else { /* NATIVE_UART_0_ON_STDINOUT */
 		d->in_fd  = np_uart_ptty_get_stdin_fileno();
 		d->out_fd = np_uart_ptty_get_stdout_fileno();
@@ -111,10 +134,16 @@ static int np_uart_1_init(const struct device *dev)
 
 	d = (struct native_uart_status *)dev->data;
 
-	tty_fn = np_uart_open_ptty(NULL, dev->name, NULL, false, wait_pts);
+	tty_fn = np_uart_open_ptty(uart1_symlink_path, dev->name, NULL, false, wait_pts);
 
 	d->in_fd = tty_fn;
 	d->out_fd = tty_fn;
+
+	/* IMPL-2: Track symlink if created */
+	if (uart1_symlink_path != NULL && tty_fn >= 0) {
+		d->ptty_symlink_path = uart1_symlink_path;
+		d->has_ptty_symlink = true;
+	}
 
 	return 0;
 }
@@ -245,6 +274,24 @@ static void np_add_uart_options(void)
 			    "auto_attach), by default: "
 			    "'" CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD "'"
 	},
+	/* IMPL-2: Command line option for UART0 symlink path */
+	{
+		.option = "uart0_symlink",
+		.name = "\"path\"",
+		.type = 's',
+		.dest = (void *)&uart0_symlink_path,
+		.descript = "Create a symlink at the specified path pointing to UART0's PTY device"
+	},
+#if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
+	/* IMPL-2: Command line option for UART1 symlink path if UART1 is enabled */
+	{
+		.option = "uart1_symlink",
+		.name = "\"path\"",
+		.type = 's',
+		.dest = (void *)&uart1_symlink_path,
+		.descript = "Create a symlink at the specified path pointing to UART1's PTY device"
+	},
+#endif
 	IF_ENABLED(CONFIG_UART_NATIVE_WAIT_PTS_READY_ENABLE, (
 		{
 		.is_switch = true,
@@ -266,11 +313,25 @@ static void np_cleanup_uart(void)
 		if (native_uart_status_0.in_fd != 0) {
 			nsi_host_close(native_uart_status_0.in_fd);
 		}
+		/* IMPL-2: Cleanup symlink if created */
+		if (native_uart_status_0.has_ptty_symlink && native_uart_status_0.ptty_symlink_path) {
+			if (unlink(native_uart_status_0.ptty_symlink_path) != 0) {
+				WARN("Failed to remove symlink '%s': %s\n",
+				     native_uart_status_0.ptty_symlink_path, strerror(errno));
+			}
+		}
 	}
 
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
 	if (native_uart_status_1.in_fd != 0) {
 		nsi_host_close(native_uart_status_1.in_fd);
+	}
+	/* IMPL-2: Cleanup symlink if created */
+	if (native_uart_status_1.has_ptty_symlink && native_uart_status_1.ptty_symlink_path) {
+		if (unlink(native_uart_status_1.ptty_symlink_path) != 0) {
+			WARN("Failed to remove symlink '%s': %s\n",
+			     native_uart_status_1.ptty_symlink_path, strerror(errno));
+		}
 	}
 #endif
 }
