@@ -1,0 +1,11 @@
+sample:
+  name: siwx91x sample app
+  description: Demonstrates ICMP functionality
+tests:
+  sample.boards.siwx91x.siwx91x_sample_app:
+    harness: Wi-Fi
+    platform_allow:
+      - siwx917_rb4338a
+    tags: Wi-Fi
+    integration_platforms:
+      - siwx917_rb4338a
