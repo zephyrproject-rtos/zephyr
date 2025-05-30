@@ -619,7 +619,11 @@ static void spi_loopback_test_word_size(struct spi_dt_spec *spec,
 	struct spi_config config_copy = spec->config;
 
 	config_copy.operation &= ~SPI_WORD_SIZE_MASK;
-	config_copy.operation |= SPI_WORD_SET(word_size);
+	if (word_size == 16) {
+		config_copy.operation |= SPI_WORD_SET(word_size - 1);
+	} else {
+		config_copy.operation |= SPI_WORD_SET(word_size);
+	}
 	spec_copy->config = config_copy;
 	spec_copy->bus = spec->bus;
 
