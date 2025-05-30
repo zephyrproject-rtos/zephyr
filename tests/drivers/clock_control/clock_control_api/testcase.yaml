@@ -38,4 +38,4 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
-    extra_args: CONF_FILE="nrf_lfclk_rc.conf"
+    extra_args: EXTRA_CONF_FILE="nrf_lfclk_rc.conf"
