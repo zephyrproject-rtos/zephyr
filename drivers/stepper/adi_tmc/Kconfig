@@ -19,6 +19,7 @@ config STEPPER_ADI_TMC_SPI
 
 comment "Trinamic Stepper Drivers"
 
+rsource "Kconfig.tmc2130_spi_step_dir"
 rsource "Kconfig.tmc22xx"
 rsource "Kconfig.tmc50xx"
 rsource "Kconfig.tmc51xx"

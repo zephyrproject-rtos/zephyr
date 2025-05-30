@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices TMC2130 stepper motor driver.
+  Implements only the Step Dir Interface with SPI driver configuration. The Standalone and
+  (pure) Spi Driver Interfaces are not supported.
+
+  Example:
+  stepper_motor: tmc2130@0 {
+    compatible = "adi,tmc2130-spi-step-dir";
+    reg = <0>;
+    spi-max-frequency = <DT_FREQ_M(1)>; /* Maximum SPI bus frequency */
+
+    dir-gpios = <&arduino_header 14 0>;
+    step-gpios = <&arduino_header 15 0>;
+    en-gpios  = <&mikroe_stepper_gpios 0 GPIO_ACTIVE_LOW>;
+    counter = <&counter2>;
+    irun = <20>;
+    ihold = <20>;
+    stealth-chop-enabled;
+  };
+
+compatible: "adi,tmc2130-spi-step-dir"
+
+include:
+  - name: stepper-controller.yaml
+  - name: spi-device.yaml
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - i-scale-analog
+  - name: adi,trinamic-common.yaml
+    property-allowlist:
+      - ihold
+      - irun
+      - iholddelay
+      - tpwmthrs
+      - tpowerdown
+
+
+properties:
+  dual-edge-step:
+    type: boolean
+    description: |
+      If present, the stepper motor controller supports dual edge step signals.
+      This means that the step signal can be toggled on both the rising and falling edge.
+
+  stealth-chop-enabled:
+    type: boolean
+    description: |
+      Enables stealth-chop for lower motor noise and vibrations at lower speeds. Note that some
+      motors have issues with a combination of stealth-chop and high current, forcing a reduction
+      of irun
