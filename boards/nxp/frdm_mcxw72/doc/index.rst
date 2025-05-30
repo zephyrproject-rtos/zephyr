@@ -29,6 +29,16 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Fetch Binary Blobs
+******************
+
+To support Bluetooth, frdm_mcxw72 requires fetching binary blobs, which can be
+achieved by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
 Programming and Debugging
 *************************
 
@@ -80,8 +90,24 @@ Connect a USB cable from your PC to J14, and use the serial terminal of your cho
 - Parity: None
 - Stop bits: 1
 
-Flashing
-========
+Application Building
+====================
+
+Openthread applications
+-----------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_server
+   :board: frdm_mcxw72/mcxw727c/cpu0
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_client
+   :board: frdm_mcxw72/mcxw727c/cpu0
+   :goals: build
+
+Application Flashing
+====================
 
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
@@ -115,6 +141,50 @@ should see the following message in the terminal:
 
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
    Hello World! frdm_mcxw72/mcxw727c/cpu0
+
+NBU Flashing
+============
+
+BLE functionality requires to fetch binary blobs, so make sure to follow
+the ``Fetch Binary Blobs`` section first.
+
+Two images must be written to the board: one for the host (CM33) and one for the NBU (CM3).
+
+- To flash the application (CM33) refer to the ``Application Flashing`` section above.
+
+- To flash the ``NBU Flashing``, follow the instructions below:
+
+   * Install ``blhost`` from NXP's website. This is the tool that will allow you to flash the NBU.
+   * Enter ISP mode. To boot the MCU in ISP mode, follow these steps:
+      - Disconnect the ``FRDM-MCXW72`` board from all power sources.
+      - Keep the ``SW4`` and ``SW1`` buttons on the board pressed, while connecting the board to the host computer USB port.
+      - Release the ``SW4`` and ``SW1`` buttons. The MCXW72 MCU boots in ISP mode.
+      - Reconnect any external power supply, if needed.
+   * Use the following command to flash NBU file:
+
+.. tabs::
+
+   .. group-tab:: DYN NBU - Windows
+
+      .. code-block:: console
+         :caption: Flash Dynamic NBU (BLE + 15.4) on Windows
+
+         blhost.exe -p COMxx flash-erase-all 0
+         blhost.exe -p COMxx flash-erase-all 2
+         blhost.exe -p COMxx write-memory 0x48800000 <nbu-firmware.bin>
+
+   .. group-tab:: DYN NBU - Linux
+
+      .. code-block:: console
+         :caption: Flash Dynamic NBU (BLE + 15.4) on Linux
+
+         ./blhost -p /dev/ttyxx flash-erase-all 0
+         /blhost -p /dev/ttyxx flash-erase-all 2
+         /blhost -p /dev/ttyxx write-memory 0x48800000 <nbu-firmware.bin>
+
+Please consider changing ``COMxx`` on Windows or ``ttyxx`` on Linux to the serial port used by your board.
+
+The NBU files can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw72/`` folder.
 
 Troubleshooting
 ===============
