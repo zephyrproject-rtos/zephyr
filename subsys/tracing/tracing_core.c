@@ -21,20 +21,6 @@
 #define TRACING_CMD_ENABLE  "enable"
 #define TRACING_CMD_DISABLE "disable"
 
-#ifdef CONFIG_TRACING_BACKEND_UART
-#define TRACING_BACKEND_NAME "tracing_backend_uart"
-#elif defined CONFIG_TRACING_BACKEND_USB
-#define TRACING_BACKEND_NAME "tracing_backend_usb"
-#elif defined CONFIG_TRACING_BACKEND_POSIX
-#define TRACING_BACKEND_NAME "tracing_backend_posix"
-#elif defined CONFIG_TRACING_BACKEND_RAM
-#define TRACING_BACKEND_NAME "tracing_backend_ram"
-#elif defined CONFIG_TRACING_BACKEND_ADSP_MEMORY_WINDOW
-#define TRACING_BACKEND_NAME "tracing_backend_adsp_memory_window"
-#else
-#define TRACING_BACKEND_NAME ""
-#endif
-
 enum tracing_state {
 	TRACING_DISABLE = 0,
 	TRACING_ENABLE
@@ -94,7 +80,7 @@ static int tracing_init(void)
 
 	tracing_buffer_init();
 
-	working_backend = tracing_backend_get(TRACING_BACKEND_NAME);
+	working_backend = tracing_backend_get(CONFIG_TRACING_BACKEND_NAME);
 	tracing_backend_init(working_backend);
 
 	atomic_set(&tracing_packet_drop_num, 0);
