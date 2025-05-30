@@ -91,7 +91,7 @@ static void *test_setup(void)
 static inline void restore_ubx_script(void)
 {
 	static const struct ubx_frame frame_restored = UBX_FRAME_ACK_INITIALIZER(0x01, 0x02);
-	static const struct script_runner script_runner_restored = {
+	const struct script_runner script_runner_restored = {
 		.script = {
 			.request = {
 				.buf = &test_req,
