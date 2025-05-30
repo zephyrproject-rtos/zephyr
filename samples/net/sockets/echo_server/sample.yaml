@@ -95,6 +95,7 @@ tests:
     platform_allow:
       - frdm_kw41z
       - frdm_mcxw71
+      - frdm_mcxw72/mcxw727c/cpu0
       - nrf52840dk/nrf52840
       - tlsr9518adk80d
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
