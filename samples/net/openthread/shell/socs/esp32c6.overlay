@@ -1,0 +1,5 @@
+
+
+&ieee802154 {
+	status = "okay";
+};
