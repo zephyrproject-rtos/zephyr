@@ -32,7 +32,7 @@
 &pwm9 {
 	pinctrl-0 = <&pwm9_default>;
 	pinctrl-names = "default";
-	interrupts = <50 1>, <51 1>;
-	interrupt-names = "gtioca", "overflow";
+	interrupts = <50 1>, <51 1>, <52 1>;
+	interrupt-names = "gtioca", "gtiocb", "overflow";
 	status = "okay";
 };

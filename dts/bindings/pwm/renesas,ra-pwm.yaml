@@ -24,6 +24,19 @@ properties:
 
   interrupt-names:
     required: true
+    enum:
+      - "gtioca"
+      - "gtiocb"
+      - "overflow"
+    description: |
+      A list of interrupt identifiers that correspond to the interrupt lines
+      provided in the `interrupts` property. The names must be listed in the
+      same order as their matching entries in `interrupts`.
+      Common configurations based on the operating mode:
+      - Input capture mode:"gtioca", "gtiocb", "overflow"
+          "gtioca": Input capture A
+          "gtiocb": Input capture B
+          "overflow" : Overflow interrupt
 
   renesas-elcs:
     type: phandle-array

@@ -9,6 +9,7 @@
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/pwm/renesas_ra_pwm.h>
 #include "r_gpt.h"
 #include "r_gpt_cfg.h"
 #include <zephyr/logging/log.h>
@@ -22,21 +23,25 @@ LOG_MODULE_REGISTER(pwm_renesas_ra, CONFIG_PWM_LOG_LEVEL);
 
 #define DT_DRV_COMPAT renesas_ra_pwm
 
-#define MAX_PIN                                       2U
-#define GPT_PRV_GTIO_HIGH_COMPARE_MATCH_LOW_CYCLE_END 0x6U
-#define GPT_PRV_GTIO_LOW_COMPARE_MATCH_HIGH_CYCLE_END 0x9U
-#define GPT_PRV_GTIOR_INITIAL_LEVEL_BIT               4
-#define GPT_PRV_GTIO_TOGGLE_COMPARE_MATCH             0x3U
+#define MAX_PIN                                          2U
+#define GPT_PRV_GTIO_HIGH_COMPARE_MATCH_LOW_CYCLE_END    0x6U
+#define GPT_PRV_GTIO_LOW_COMPARE_MATCH_HIGH_CYCLE_END    0x9U
+#define GPT_PRV_GTIOR_INITIAL_LEVEL_BIT                  4
+#define GPT_PRV_GTIO_TOGGLE_COMPARE_MATCH                0x3U
+#define CAPTURE_BOTH_MODE_FIRST_EVENT_IS_CAPTURE_PULSE   1
+#define CAPTURE_BOTH_MODE_SECOND_EVENT_IS_CAPTURE_PERIOD 2
 
 struct pwm_renesas_ra_capture_data {
 	pwm_capture_callback_handler_t callback;
 	void *user_data;
 	uint64_t period;
 	uint64_t pulse;
-	bool is_pulse_capture;
+	uint16_t capture_type_flag;
+	uint32_t capture_both_event_count;
 	bool is_busy;
 	uint32_t overflows;
 	bool continuous;
+	uint32_t capture_channel;
 };
 
 struct pwm_renesas_ra_data {
@@ -50,6 +55,7 @@ struct pwm_renesas_ra_data {
 #endif /* CONFIG_RENESAS_RA_ELC */
 
 	uint16_t capture_a_event;
+	uint16_t capture_b_event;
 	uint16_t overflow_event;
 
 #ifdef CONFIG_PWM_CAPTURE
@@ -156,7 +162,7 @@ static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uin
 	}
 
 	/* gtioca and gtiocb setting */
-	if (pin == GPT_IO_PIN_GTIOCA) {
+	if (pin == RA_PWM_GPT_IO_A) {
 		data->extend_cfg.gtioca.output_enabled = true;
 	} else {
 		data->extend_cfg.gtiocb.output_enabled = true;
@@ -231,6 +237,7 @@ static int pwm_renesas_ra_get_cycles_per_sec(const struct device *dev, uint32_t 
 
 #ifdef CONFIG_PWM_CAPTURE
 extern void gpt_capture_compare_a_isr(void);
+extern void gpt_capture_compare_b_isr(void);
 extern void gpt_counter_overflow_isr(void);
 
 static void enable_irq(IRQn_Type const irq, uint32_t priority, void *p_context)
@@ -254,63 +261,129 @@ static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t p
 {
 	struct pwm_renesas_ra_data *data = dev->data;
 
-	if (pin != GPT_IO_PIN_GTIOCA) {
-		LOG_ERR("Feature only support for gtioca");
-		return -EINVAL;
-	}
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
 		LOG_ERR("No PWWM capture type specified");
 		return -EINVAL;
 	}
-	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
-		return -ENOTSUP;
-	}
+
 	if (data->capture.is_busy) {
 		LOG_ERR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
-	if (flags & PWM_CAPTURE_TYPE_PERIOD) {
-		data->capture.is_pulse_capture = false;
+	data->capture.capture_type_flag = flags & PWM_CAPTURE_TYPE_MASK;
+	data->capture.capture_channel = pin;
 
-		if (flags & PWM_POLARITY_INVERTED) {
-			data->extend_cfg.start_source =
-				(gpt_source_t)(GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
-					       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
-					       GPT_SOURCE_NONE);
-			data->extend_cfg.capture_a_source = data->extend_cfg.start_source;
-
-		} else {
-			data->extend_cfg.start_source =
+	if (pin == RA_PWM_GPT_IO_A) {
+		if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_BOTH) {
+			data->capture.capture_both_event_count = 0;
+			if (flags & PWM_POLARITY_INVERTED) {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+			} else {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+			}
+			data->extend_cfg.capture_a_source =
 				(gpt_source_t)(GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_LOW |
 					       GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_HIGH |
+					       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
+					       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
 					       GPT_SOURCE_NONE);
-			data->extend_cfg.capture_a_source = data->extend_cfg.start_source;
+
+		} else if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_PERIOD) {
+			if (flags & PWM_POLARITY_INVERTED) {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_a_source = data->extend_cfg.start_source;
+			} else {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_a_source = data->extend_cfg.start_source;
+			}
+		} else {
+			if (flags & PWM_POLARITY_INVERTED) {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_a_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+			} else {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_a_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
+						       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
+						       GPT_SOURCE_NONE);
+			}
 		}
-	} else {
-		data->capture.is_pulse_capture = true;
-
-		if (flags & PWM_POLARITY_INVERTED) {
-			data->extend_cfg.start_source =
-				(gpt_source_t)(GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
-					       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
+	} else if (pin == RA_PWM_GPT_IO_B) {
+		if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_BOTH) {
+			data->capture.capture_both_event_count = 0;
+			if (flags & PWM_POLARITY_INVERTED) {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+			} else {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+			}
+			data->extend_cfg.capture_b_source =
+				(gpt_source_t)(GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_LOW |
+					       GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_HIGH |
+					       GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_LOW |
+					       GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_HIGH |
 					       GPT_SOURCE_NONE);
-
-			data->extend_cfg.capture_a_source =
-				(gpt_source_t)(GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_LOW |
-					       GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_HIGH |
-					       GPT_SOURCE_NONE);
+		} else if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_PERIOD) {
+			if (flags & PWM_POLARITY_INVERTED) {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_b_source = data->extend_cfg.start_source;
+			} else {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_b_source = data->extend_cfg.start_source;
+			}
 		} else {
-			data->extend_cfg.start_source =
-				(gpt_source_t)(GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_LOW |
-					       GPT_SOURCE_GTIOCA_RISING_WHILE_GTIOCB_HIGH |
-					       GPT_SOURCE_NONE);
-
-			data->extend_cfg.capture_a_source =
-				(gpt_source_t)(GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_LOW |
-					       GPT_SOURCE_GTIOCA_FALLING_WHILE_GTIOCB_HIGH |
-					       GPT_SOURCE_NONE);
+			if (flags & PWM_POLARITY_INVERTED) {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_b_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+			} else {
+				data->extend_cfg.start_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_RISING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+				data->extend_cfg.capture_b_source =
+					(gpt_source_t)(GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_LOW |
+						       GPT_SOURCE_GTIOCB_FALLING_WHILE_GTIOCA_HIGH |
+						       GPT_SOURCE_NONE);
+			}
 		}
 	}
 
@@ -319,7 +392,11 @@ static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t p
 	data->capture.continuous = flags & PWM_CAPTURE_MODE_CONTINUOUS;
 
 	if (data->capture.continuous) {
-		data->extend_cfg.stop_source = data->extend_cfg.capture_a_source;
+		if (pin == RA_PWM_GPT_IO_A) {
+			data->extend_cfg.stop_source = data->extend_cfg.capture_a_source;
+		} else if (pin == RA_PWM_GPT_IO_B) {
+			data->extend_cfg.stop_source = data->extend_cfg.capture_b_source;
+		}
 		data->extend_cfg.clear_source = data->extend_cfg.start_source;
 	} else {
 		data->extend_cfg.stop_source = (gpt_source_t)(GPT_SOURCE_NONE);
@@ -333,12 +410,6 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 {
 	struct pwm_renesas_ra_data *data = dev->data;
 	fsp_err_t err;
-
-	if (pin != GPT_IO_PIN_GTIOCA) {
-		LOG_ERR("Feature only support for gtioca");
-		return -EINVAL;
-	}
-
 	if (data->capture.is_busy) {
 		LOG_ERR("Capture already active on this pin");
 		return -EBUSY;
@@ -349,6 +420,7 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 		return -EINVAL;
 	}
 
+	data->capture.capture_channel = pin;
 	data->capture.is_busy = true;
 
 	/* Enable capture source */
@@ -359,10 +431,15 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 
 	/* Enable interruption */
 	enable_irq(data->fsp_cfg.cycle_end_irq, data->fsp_cfg.cycle_end_ipl, &data->fsp_ctrl);
-	enable_irq(data->extend_cfg.capture_a_irq, data->extend_cfg.capture_a_ipl, &data->fsp_ctrl);
-
 	R_ICU->IELSR[data->fsp_cfg.cycle_end_irq] = (elc_event_t)data->overflow_event;
-	R_ICU->IELSR[data->extend_cfg.capture_a_irq] = (elc_event_t)data->capture_a_event;
+
+	if (pin == RA_PWM_GPT_IO_A) {
+		enable_irq(data->extend_cfg.capture_a_irq, data->extend_cfg.capture_a_ipl, &data->fsp_ctrl);
+		R_ICU->IELSR[data->extend_cfg.capture_a_irq] = (elc_event_t)data->capture_a_event;
+	} else if (pin == RA_PWM_GPT_IO_B) {
+		enable_irq(data->extend_cfg.capture_b_irq, data->extend_cfg.capture_b_ipl, &data->fsp_ctrl);
+		R_ICU->IELSR[data->extend_cfg.capture_b_irq] = (elc_event_t)data->capture_b_event;
+	}
 
 	return 0;
 }
@@ -371,19 +448,20 @@ static int pwm_renesas_ra_disable_capture(const struct device *dev, uint32_t pin
 {
 	struct pwm_renesas_ra_data *data = dev->data;
 	fsp_err_t err;
-
-	if (pin != GPT_IO_PIN_GTIOCA) {
-		LOG_ERR("Feature only support for gtioca");
-		return -EINVAL;
-	}
+	data->capture.capture_channel = pin;
 	data->capture.is_busy = false;
 
 	/* Disable interruption */
 	disable_irq(data->fsp_cfg.cycle_end_irq);
-	disable_irq(data->extend_cfg.capture_a_irq);
-
 	R_ICU->IELSR[data->fsp_cfg.cycle_end_irq] = (elc_event_t)ELC_EVENT_NONE;
-	R_ICU->IELSR[data->extend_cfg.capture_a_irq] = (elc_event_t)ELC_EVENT_NONE;
+
+	if (pin == RA_PWM_GPT_IO_A) {
+		disable_irq(data->extend_cfg.capture_a_irq);
+		R_ICU->IELSR[data->extend_cfg.capture_a_irq] = (elc_event_t)ELC_EVENT_NONE;
+	} else if (pin == RA_PWM_GPT_IO_B) {
+		disable_irq(data->extend_cfg.capture_b_irq);
+		R_ICU->IELSR[data->extend_cfg.capture_b_irq] = (elc_event_t)ELC_EVENT_NONE;
+	}
 
 	/* Disable capture source */
 	err = R_GPT_Disable(&data->fsp_ctrl);
@@ -430,29 +508,110 @@ static void fsp_callback(timer_callback_args_t *p_args)
 	/* Capture event */
 	if (p_args->event == TIMER_EVENT_CAPTURE_A) {
 		if (p_args->capture != 0U) {
-			if (data->capture.is_pulse_capture == true) {
+			bool check_disable_capture = false;
+
+			if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_BOTH) {
+				data->capture.capture_both_event_count++;
+				if (data->capture.capture_both_event_count ==
+				    CAPTURE_BOTH_MODE_FIRST_EVENT_IS_CAPTURE_PULSE) {
+					data->capture.pulse = (data->capture.overflows * period) +
+							      p_args->capture;
+				}
+
+				if (data->capture.capture_both_event_count ==
+				    CAPTURE_BOTH_MODE_SECOND_EVENT_IS_CAPTURE_PERIOD) {
+					data->capture.capture_both_event_count = 0;
+					data->capture.period = (data->capture.overflows * period) +
+							       p_args->capture;
+					data->capture.callback(
+						dev, GPT_IO_PIN_GTIOCA, data->capture.period,
+						data->capture.pulse, 0, data->capture.user_data);
+
+					check_disable_capture = true;
+				}
+			} else if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_PULSE) {
 				data->capture.pulse =
 					(data->capture.overflows * period) + p_args->capture;
 				data->capture.callback(dev, GPT_IO_PIN_GTIOCA, 0,
 						       data->capture.pulse, 0,
 						       data->capture.user_data);
+
+				check_disable_capture = true;
 			} else {
 				data->capture.period =
 					(data->capture.overflows * period) + p_args->capture;
 				data->capture.callback(dev, GPT_IO_PIN_GTIOCA, data->capture.period,
 						       0, 0, data->capture.user_data);
+
+				check_disable_capture = true;
 			}
-			data->capture.overflows = 0U;
-			/* Disable capture in single mode */
-			if (data->capture.continuous == false) {
-				pwm_renesas_ra_disable_capture(dev, GPT_IO_PIN_GTIOCA);
+
+			if (check_disable_capture) {
+				data->capture.overflows = 0U;
+				/* Disable capture in single mode */
+				if (data->capture.continuous == false) {
+					pwm_renesas_ra_disable_capture(dev, GPT_IO_PIN_GTIOCA);
+				}
+			}
+		}
+	} else if (p_args->event == TIMER_EVENT_CAPTURE_B) {
+		if (p_args->capture != 0U) {
+			bool check_disable_capture = false;
+
+			if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_BOTH) {
+				data->capture.capture_both_event_count++;
+				if (data->capture.capture_both_event_count ==
+				    CAPTURE_BOTH_MODE_FIRST_EVENT_IS_CAPTURE_PULSE) {
+					data->capture.pulse = (data->capture.overflows * period) +
+							      p_args->capture;
+				}
+
+				if (data->capture.capture_both_event_count ==
+				    CAPTURE_BOTH_MODE_SECOND_EVENT_IS_CAPTURE_PERIOD) {
+					data->capture.capture_both_event_count = 0;
+					data->capture.period = (data->capture.overflows * period) +
+							       p_args->capture;
+					data->capture.callback(
+						dev, GPT_IO_PIN_GTIOCB, data->capture.period,
+						data->capture.pulse, 0, data->capture.user_data);
+
+					check_disable_capture = true;
+				}
+			} else if (data->capture.capture_type_flag == PWM_CAPTURE_TYPE_PULSE) {
+				data->capture.pulse =
+					(data->capture.overflows * period) + p_args->capture;
+				data->capture.callback(dev, GPT_IO_PIN_GTIOCB, 0,
+						       data->capture.pulse, 0,
+						       data->capture.user_data);
+
+				check_disable_capture = true;
+			} else {
+				data->capture.period =
+					(data->capture.overflows * period) + p_args->capture;
+				data->capture.callback(dev, GPT_IO_PIN_GTIOCB, data->capture.period,
+						       0, 0, data->capture.user_data);
+
+				check_disable_capture = true;
+			}
+
+			if (check_disable_capture) {
+				data->capture.overflows = 0U;
+				/* Disable capture in single mode */
+				if (data->capture.continuous == false) {
+					pwm_renesas_ra_disable_capture(dev, GPT_IO_PIN_GTIOCB);
+				}
 			}
 		}
 	} else if (p_args->event == TIMER_EVENT_CYCLE_END) {
 		data->capture.overflows++;
 	} else {
-		data->capture.callback(dev, GPT_IO_PIN_GTIOCA, 0, 0, -ECANCELED,
-				       data->capture.user_data);
+		if (data->capture.capture_channel == RA_PWM_GPT_IO_A) {
+			data->capture.callback(dev, GPT_IO_PIN_GTIOCA, 0, 0, -ECANCELED,
+					       data->capture.user_data);
+		} else if (data->capture.capture_channel == RA_PWM_GPT_IO_B) {
+			data->capture.callback(dev, GPT_IO_PIN_GTIOCB, 0, 0, -ECANCELED,
+					       data->capture.user_data);
+		}
 	}
 }
 
@@ -530,6 +689,8 @@ static int pwm_renesas_ra_init(const struct device *dev)
 
 #define EVENT_GPT_CAPTURE_COMPARE_A(channel)                                                       \
 	BSP_PRV_IELS_ENUM(CONCAT(EVENT_GPT, channel, _CAPTURE_COMPARE_A))
+#define EVENT_GPT_CAPTURE_COMPARE_B(channel)                                                       \
+	BSP_PRV_IELS_ENUM(CONCAT(EVENT_GPT, channel, _CAPTURE_COMPARE_B))
 #define EVENT_GPT_COUNTER_OVERFLOW(channel)                                                        \
 	BSP_PRV_IELS_ENUM(CONCAT(EVENT_GPT, channel, _COUNTER_OVERFLOW))
 
@@ -562,6 +723,9 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, gtioca, irq),                               \
 			    DT_INST_IRQ_BY_NAME(index, gtioca, priority),                          \
 			    gpt_capture_compare_a_isr, NULL, 0);                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, gtiocb, irq),                               \
+			    DT_INST_IRQ_BY_NAME(index, gtiocb, priority),                          \
+			    gpt_capture_compare_b_isr, NULL, 0);                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, overflow, irq),                             \
 			    DT_INST_IRQ_BY_NAME(index, overflow, priority),                        \
 			    gpt_counter_overflow_isr, NULL, 0);                                    \
@@ -597,9 +761,9 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		.capture_a_source = (gpt_source_t)(GPT_SOURCE_NONE),                               \
 		.capture_b_source = (gpt_source_t)(GPT_SOURCE_NONE),                               \
 		.capture_a_ipl = DT_INST_IRQ_BY_NAME(index, gtioca, priority),                     \
-		.capture_b_ipl = BSP_IRQ_DISABLED,                                                 \
+		.capture_b_ipl = DT_INST_IRQ_BY_NAME(index, gtiocb, priority),                     \
 		.capture_a_irq = DT_INST_IRQ_BY_NAME(index, gtioca, irq),                          \
-		.capture_b_irq = FSP_INVALID_VECTOR,                                               \
+		.capture_b_irq = DT_INST_IRQ_BY_NAME(index, gtiocb, irq),                          \
 		.capture_filter_gtioca = GPT_CAPTURE_FILTER_NONE,                                  \
 		.capture_filter_gtiocb = GPT_CAPTURE_FILTER_NONE,                                  \
 		.p_pwm_cfg = NULL,                                                                 \
@@ -619,6 +783,7 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		.extend_cfg = g_timer1_extend_##index,                                             \
 		PWM_RENESAS_ELC_DATA(index).capture_a_event =                                      \
 			EVENT_GPT_CAPTURE_COMPARE_A(DT_INST_PROP(index, channel)),                 \
+		.capture_b_event = EVENT_GPT_CAPTURE_COMPARE_B(DT_INST_PROP(index, channel)),      \
 		.overflow_event = EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)),        \
 	};                                                                                         \
 	static const struct pwm_renesas_ra_config pwm_renesas_ra_config_##index = {                \
