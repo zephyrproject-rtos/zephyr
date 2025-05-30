@@ -16,10 +16,6 @@ include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
 # 'cortex-m33+nodsp' we need that to be 'cortex-m33' for CMAKE_SYSTEM_PROCESSOR
 string(REGEX REPLACE "\\+.*" "" CMAKE_SYSTEM_PROCESSOR ${GCC_M_CPU})
 
-list(APPEND TOOLCHAIN_C_FLAGS
-  -fshort-enums
-  )
-
 if(CONFIG_ARM64)
   list(APPEND TOOLCHAIN_C_FLAGS   -mcpu=${GCC_M_CPU})
 
