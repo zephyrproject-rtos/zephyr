@@ -15,6 +15,7 @@ import sys
 import json
 
 # pylint: disable=duplicate-code
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -49,10 +50,15 @@ class TestQuarantine:
 
         with open(os.path.join(out_path, 'testplan.json')) as f:
             j = json.load(f)
+
+        # Quarantine-verify "swaps" statuses. The ones that are in quarantine list
+        # should no longer be quarantined, and the ones that are not in the list
+        # should be quarantined. Remove "quarantined" tests from "verify" testplan
+        # to count what should be verified.
         filtered_j = [
-           (ts['platform'], ts['name'], tc['identifier']) \
+           (ts['platform'], ts['name']) \
                for ts in j['testsuites'] \
-               for tc in ts['testcases'] if 'reason' not in tc
+               if ts['status'] != "skipped"
         ]
 
         assert str(sys_exit.value) == '0'
@@ -89,26 +95,26 @@ class TestQuarantine:
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 FILTERED: Quarantine: test '
+        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
                                'intel_adl_crb', err)
         board1_match2 = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 FILTERED: Quarantine: test '
+            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
             'intel_adl_crb',
             err)
         qemu_64_match = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 FILTERED: Quarantine: test '
+            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
             'qemu_x86_64',
             err)
         all_platforms_match = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
             'all platforms',
             err)
         all_platforms_match2 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
             'all platforms',
             err)
         all_platforms_match3 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
             'all platforms',
             err)
 

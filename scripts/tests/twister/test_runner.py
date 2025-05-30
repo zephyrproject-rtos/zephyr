@@ -2545,6 +2545,8 @@ def test_twisterrunner_run(
     results_mock().iteration = 0
     results_mock().failed = 2
     results_mock().total = 9
+    results_mock().filtered_static = 0
+    results_mock().skipped = 0
 
     def iteration_increment(value=1, decrement=False):
         results_mock().iteration += value * (-1 if decrement else 1)
@@ -2608,7 +2610,7 @@ def test_twisterrunner_update_counting_before_pipeline():
         ),
         'dummy5': mock.Mock(
             status=TwisterStatus.SKIP,
-            reason=None,
+            reason="Quarantine",
             testsuite=mock.Mock(
                 testcases=[mock.Mock()]
             )
@@ -2629,6 +2631,7 @@ def test_twisterrunner_update_counting_before_pipeline():
         error = 0,
         cases = 0,
         filtered_cases = 0,
+        skipped = 0,
         skipped_cases = 0,
         failed_cases = 0,
         error_cases = 0,
@@ -2652,14 +2655,22 @@ def test_twisterrunner_update_counting_before_pipeline():
     def filtered_cases_increment(value=1, decrement=False):
         tr.results.filtered_cases += value * (-1 if decrement else 1)
     tr.results.filtered_cases_increment = filtered_cases_increment
+    def skipped_increment(value=1, decrement=False):
+        tr.results.skipped += value * (-1 if decrement else 1)
+    tr.results.skipped_increment = skipped_increment
+    def skipped_cases_increment(value=1, decrement=False):
+        tr.results.skipped_cases += value * (-1 if decrement else 1)
+    tr.results.skipped_cases_increment = skipped_cases_increment
 
     tr.update_counting_before_pipeline()
 
     assert tr.results.filtered_static == 1
     assert tr.results.filtered_configs == 1
     assert tr.results.filtered_cases == 4
-    assert tr.results.cases == 4
+    assert tr.results.cases == 5
     assert tr.results.error == 1
+    assert tr.results.skipped == 1
+    assert tr.results.skipped_cases == 1
 
 
 def test_twisterrunner_show_brief(caplog):
