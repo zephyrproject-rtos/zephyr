@@ -78,6 +78,7 @@
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
 		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
 
