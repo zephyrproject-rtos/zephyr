@@ -67,18 +67,11 @@ static uint8_t dmic_mcux_hw_chan(struct mcux_dmic_drv_data *drv_data,
 	enum pdm_lr lr;
 	uint8_t hw_chan;
 
-	/* This function assigns hardware channel "n" to the left channel,
-	 * and hardware channel "n+1" to the right channel. This choice is
-	 * arbitrary, but must be followed throughout the driver.
-	 */
 	dmic_parse_channel_map(drv_data->chan_map_lo,
 			       drv_data->chan_map_hi,
 			       log_chan, &hw_chan, &lr);
-	if (lr == PDM_CHAN_LEFT) {
-		return hw_chan * 2;
-	} else {
-		return (hw_chan * 2) + 1;
-	}
+
+	return hw_chan;
 }
 
 static void dmic_mcux_activate_channels(struct mcux_dmic_drv_data *drv_data,
@@ -501,9 +494,9 @@ static int dmic_mcux_configure(const struct device *dev,
 			dmic_parse_channel_map(channel->req_chan_map_lo,
 					       channel->req_chan_map_hi,
 					       chan + 1, &hw_chan_1, &lr_1);
-			/* Verify that paired channels use same hardware index */
+			/* Verify that paired channels use consecutive hardware index */
 			if ((lr_0 == lr_1) ||
-			    (hw_chan_0 != hw_chan_1)) {
+			    (hw_chan_1 != (hw_chan_0 + 1))) {
 				return -EINVAL;
 			}
 		}
