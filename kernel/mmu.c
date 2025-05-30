@@ -955,7 +955,7 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 		 "wraparound for virtual address %p (size %zu)",
 		 dest_addr, size);
 
-	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", dest_addr,
+	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", (void *)dest_addr,
 		aligned_phys, aligned_size, flags, addr_offset);
 
 	arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
