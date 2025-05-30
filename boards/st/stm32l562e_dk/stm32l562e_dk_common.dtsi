@@ -14,10 +14,12 @@
 / {
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_9: led_9 {
 			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 			label = "User LD9";
 		};
+
 		green_led_10: led_10 {
 			gpios = <&gpiog 12 GPIO_ACTIVE_LOW>;
 			label = "User LD10";
@@ -26,6 +28,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -90,6 +93,7 @@
 				register-select-pin = <0>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+
 				st7789v: lcd-panel@0 {
 					compatible = "sitronix,st7789v";
 					reg = <0>;
@@ -314,7 +318,7 @@ zephyr_udc0: &usb {
 
 &sdmmc1 {
 	status = "okay";
-
+	disk-name = "SD";
 	pinctrl-0 = <&sdmmc1_d0_pc8
 		     &sdmmc1_d1_pc9
 		     &sdmmc1_d2_pc10

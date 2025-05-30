@@ -428,8 +428,7 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define PDU_ADV_SIZE  MAX(PDU_AC_LL_SIZE_MAX, \
 			  (PDU_AC_LL_HEADER_SIZE + LL_EXT_OCTETS_RX_MAX))
 
-#define PDU_DATA_SIZE MAX((PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX), \
-			  (PDU_BIS_LL_HEADER_SIZE + LL_BIS_OCTETS_RX_MAX))
+#define PDU_DATA_SIZE (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define PDU_CTRL_SIZE (PDU_DC_LL_HEADER_SIZE + PDU_DC_CTRL_RX_SIZE_MAX)
 
@@ -1687,6 +1686,7 @@ void ll_rx_mem_release(void **node_rx)
 				memq_link_t *link;
 
 				conn = ll_conn_get(rx_free->hdr.handle);
+				LL_ASSERT(conn != NULL);
 
 				LL_ASSERT(!conn->lll.link_tx_free);
 				link = memq_deinit(&conn->lll.memq_tx.head,
@@ -2869,6 +2869,8 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		conn = ll_conn_get(rx->handle);
+		LL_ASSERT(conn != NULL);
+
 		if (ull_cp_cc_awaiting_established(conn)) {
 			ull_cp_cc_established(conn, BT_HCI_ERR_SUCCESS);
 		}

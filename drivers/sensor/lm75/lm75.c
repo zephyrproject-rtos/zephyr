@@ -270,14 +270,7 @@ static inline int lm75_fetch_temp(const struct device *dev)
 
 static int lm75_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	enum pm_device_state pm_state;
 	int ret;
-
-	(void)pm_device_state_get(dev, &pm_state);
-	if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-		ret = -EIO;
-		return ret;
-	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ALL:

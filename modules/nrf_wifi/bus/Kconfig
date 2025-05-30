@@ -10,6 +10,7 @@ DT_COMPAT_NORDIC_NRF7001_QSPI := nordic,nrf7001-qspi
 DT_COMPAT_NORDIC_NRF7001_SPI := nordic,nrf7001-spi
 DT_COMPAT_NORDIC_NRF7000_QSPI := nordic,nrf7000-qspi
 DT_COMPAT_NORDIC_NRF7000_SPI := nordic,nrf7000-spi
+DT_COMPAT_NORDIC_WIFI71 := nordic,wifi71
 
 menuconfig NRF70_BUSLIB
 	bool "NRF70 Bus Library"
@@ -29,6 +30,15 @@ config NRF70_ON_SPI
 			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_SPI)) ||\
 			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_SPI))
 	select SPI
+
+config NRF71_ON_IPC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_WIFI71))
+	select MBOX
+	select IPC_SERVICE
+	select SPSC_PBUF
+	help
+	  nRF71 is a Wi-Fi and BLE combo SoC and uses IPC as a communication
+	  between APP and Wi-Fi cores.
 
 module = WIFI_NRF70_BUSLIB
 module-dep = LOG

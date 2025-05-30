@@ -1536,6 +1536,10 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 
 		break;
 	case 8:
+		if (sizeof(lladdr->addr) < 8) {
+			return false;
+		}
+
 		if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1],
 			    lladdr->len - 1) &&
 		    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {

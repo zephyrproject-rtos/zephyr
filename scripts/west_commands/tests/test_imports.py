@@ -17,6 +17,7 @@ def test_runner_imports():
     expected = set((
         # zephyr-keep-sorted-start
         'arc-nsim',
+        'bflb_mcu_tool',
         'blackmagicprobe',
         'bossac',
         'canopen',
@@ -36,7 +37,6 @@ def test_runner_imports():
         'minichlink',
         'misc-flasher',
         'native',
-        'nios2',
         'nrfjprog',
         'nrfutil',
         'nxp_s32dbg',

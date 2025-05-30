@@ -15,6 +15,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device_runtime.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -272,6 +273,45 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 	}
 
 	return 0;
+}
+
+/* Helper function to power manage the GPIO CS pins, not meant to be used directly by drivers */
+static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
+{
+	const struct gpio_dt_spec *cs_gpio;
+	int ret;
+
+	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
+		if (get) {
+			ret = pm_device_runtime_get(cs_gpio->port);
+		} else {
+			ret = pm_device_runtime_put(cs_gpio->port);
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+/* This function should be called by drivers to pm get all the chip select lines in
+ * master mode in the case of any CS being a GPIO. This should be called from the
+ * drivers pm action hook on pm resume.
+ */
+static inline int spi_context_cs_get_all(struct spi_context *ctx)
+{
+	return _spi_context_cs_pm_all(ctx, true);
+}
+
+/* This function should be called by drivers to pm put all the chip select lines in
+ * master mode in the case of any CS being a GPIO. This should be called from the
+ * drivers pm action hook on pm suspend.
+ */
+static inline int spi_context_cs_put_all(struct spi_context *ctx)
+{
+	return _spi_context_cs_pm_all(ctx, false);
 }
 
 /* Helper function to control the GPIO CS, not meant to be used directly by drivers */

@@ -883,7 +883,7 @@ static struct bdma_stm32_data bdma_stm32_data_##index = {		\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(index,							\
-		    &bdma_stm32_init,						\
+		    bdma_stm32_init,						\
 		    NULL,							\
 		    &bdma_stm32_data_##index, &bdma_stm32_config_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\

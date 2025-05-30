@@ -12,7 +12,10 @@ architecture, utilizing P-cores for performance and E-Cores for efficiency.
 Raptor Lake S and Raptor Lake P processor lines are supported.
 
 The S-Processor line is a 2-Chip Platform that includes the Processor Die and
-Platform Controller Hub (PCH-S) Die in the Package.
+Platform Controller Hub (PCH-S) Die in the Package. There are 2 PCH-s versions
+supported for S-Processor line 600 series (ADL) and 700 series (RPL). Default
+600 series revision is selected, to select 700 series revision the board name
+during build should be ``intel_rpl_s_crb@700``.
 
 The P-Processor line is a 2-Die Multi Chip Package (MCP) that includes the
 Processor Die and Platform Controller Hub (PCH-P) Die on the same package as

@@ -464,7 +464,6 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 	.enable_ucast_hash		= DT_INST_PROP(port, unicast_hash),\
 	.enable_mcast_hash		= DT_INST_PROP(port, multicast_hash),\
 	.disable_bcast			= DT_INST_PROP(port, reject_broadcast),\
-	.copy_all_frames		= DT_INST_PROP(port, promiscuous_mode),\
 	.discard_non_vlan		= DT_INST_PROP(port, discard_non_vlan),\
 	.enable_fdx			= DT_INST_PROP(port, full_duplex),\
 	.disc_rx_ahb_unavail		= DT_INST_PROP(port, discard_rx_frame_ahb_unavail),\
@@ -722,7 +721,6 @@ struct eth_xlnx_gem_dev_cfg {
 	bool				enable_ucast_hash : 1;
 	bool				enable_mcast_hash : 1;
 	bool				disable_bcast : 1;
-	bool				copy_all_frames : 1;
 	bool				discard_non_vlan : 1;
 	bool				enable_fdx : 1;
 	bool				disc_rx_ahb_unavail : 1;

@@ -1,0 +1,204 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * common device tree elements of all (currently supported) RX MCUs
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/rx_clock.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx.h>
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "renesas,rx";
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+		};
+	}; /* cpus */
+
+	icu: interrupt-controller@87000 {
+		#interrupt-cells = <2>;
+		compatible = "renesas,rx-icu";
+		interrupt-controller;
+		reg = <0x0087000 0xff>,
+		      <0x0087200 0x1f>,
+		      <0x0087300 0xff>,
+		      <0x00872f0 0x02>;
+		reg-names = "IR", "IER", "IPR", "FIR";
+	};
+
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-main-osc {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			mosel = <0>;
+			stabilization-time = <4>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		loco: clock-loco {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency =  <DT_FREQ_M(4)>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		subclk: clock-subclk {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <32768>;
+			drive-capacity = <0>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		iwdtlsclk: clock-iwdt-low-speed {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <15000>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			compatible = "renesas,rx-cgc-pll";
+			#clock-cells = <0>;
+			div = <2>;
+			clocks = <&xtal>;
+			mul = <RX_PLL_MUL_8>;
+			status = "disabled";
+		};
+
+		pclkblock: pclkblock@80010 {
+			compatible = "renesas,rx-cgc-pclk-block";
+			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
+					<0x0008001C 4>;
+			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
+			#clock-cells = <0>;
+			clocks = <&pll>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&icu>;
+
+		sram0: memory@0 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x0 DT_SIZE_K(48)>;
+		};
+
+		flash-controller@7e0000 {
+			reg = <0x007e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			code_flash: flash@fff80000 {
+				compatible = "soc-nv-flash";
+				reg = <0xfff80000 DT_SIZE_K(512)>;
+			};
+		};
+
+		sci0: sci0@88240 {
+			compatible = "renesas,rx-sci";
+			interrupts = <215 1>, <216 1>, <217 1>, <214 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x88240 0x08>;
+			status = "disabled";
+			channel = <0>;
+
+			uart {
+				compatible = "renesas,rx-uart-sci-qemu";
+				status = "disabled";
+			};
+		};
+
+		cmt: timer@88000 {
+			compatible = "renesas,rx-timer-cmt-start-control";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x00088000 0x02>;
+			clocks = <&pclkb MSTPA 15>;
+			reg-names = "CMSTR0";
+			status = "okay";
+
+			cmt0: timer@88002 {
+				compatible = "renesas,rx-timer-cmt";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				reg = <0x00088002 0x02>,
+				      <0x00088004 0x02>,
+				      <0x00088006 0x02>;
+				reg-names = "CMCR", "CMCNT", "CMCOR";
+				interrupts = <28 1>;
+				interrupt-names = "cmi";
+				status = "okay";
+			};
+
+			cmt1: timer@88008 {
+				compatible = "renesas,rx-timer-cmt";
+				reg = <0x00088008 0x02>,
+				      <0x0008800A 0x02>,
+				      <0x0008800C 0x02>;
+				reg-names = "CMCR", "CMCNT", "CMCOR";
+				interrupts = <29 1>;
+				interrupt-names = "cmi";
+				status = "okay";
+			};
+		};
+	};
+};

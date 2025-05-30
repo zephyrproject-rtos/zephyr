@@ -140,8 +140,8 @@ config BT_RFCOMM_L2CAP_MTU
 
 config BT_RFCOMM_TX_MAX
 	int "Maximum number of pending TX buffers for RFCOMM"
-	default BT_CONN_TX_MAX
-	range BT_CONN_TX_MAX $(UINT8_MAX)
+	default BT_BUF_ACL_TX_COUNT
+	range BT_BUF_ACL_TX_COUNT $(UINT8_MAX)
 	help
 	  Maximum number of pending TX buffers that have an associated
 	  sending buf. Normally this can be left to the default value, which
@@ -418,6 +418,13 @@ config BT_HFP_AG_REJECT_CALL
 	default y
 	help
 	  This option enables ability to reject a call for HFP AG
+
+config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
+	int "Timeout after the get ongoing calls callback notified (milliseconds) [EXPERIMENTAL]"
+	default 10000
+	range 1000 10000
+	help
+	  This option sets the timeout after the get ongoing calls callback notified
 
 endif # BT_HFP_AG
 

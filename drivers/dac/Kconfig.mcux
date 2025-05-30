@@ -11,6 +11,13 @@ config DAC_MCUX_DAC
 	help
 	  Enable the driver for the NXP Kinetis MCUX DAC.
 
+config DAC_MCUX_DAC12
+	bool "NXP MCUX DAC12 driver"
+	default y
+	depends on DT_HAS_NXP_DAC12_ENABLED
+	help
+	  Enable the driver for the NXP MCUX DAC12.
+
 config DAC_MCUX_DAC32
 	bool "NXP Kinetis MCUX DAC32 driver"
 	default y

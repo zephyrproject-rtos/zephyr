@@ -819,6 +819,9 @@ static void dma_callback(const struct device *dev, void *user_data,
 			LL_ADC_REG_StopConversion(adc);
 #endif
 			dma_stop(data->dma.dma_dev, data->dma.channel);
+			if (data->ctx.options.interval_us != 0U) {
+				adc_context_disable_timer(&data->ctx);
+			}
 			adc_context_complete(&data->ctx, status);
 		}
 	}

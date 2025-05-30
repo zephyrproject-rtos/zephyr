@@ -12,6 +12,7 @@ from pathlib import Path
 
 import list_boards
 import list_hardware
+import list_shields
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
@@ -185,23 +186,29 @@ def gather_board_build_info(twister_out_dir):
     return board_devicetrees, board_runners
 
 
-def run_twister_cmake_only(outdir):
+def run_twister_cmake_only(outdir, vendor_filter):
     """Run twister in cmake-only mode to generate build info files.
 
     Args:
         outdir: Directory where twister should output its files
+        vendor_filter: Limit build info to boards from listed vendors
     """
     twister_cmd = [
         sys.executable,
         f"{ZEPHYR_BASE}/scripts/twister",
         "-T", "samples/hello_world/",
-        "--all",
         "-M",
         *[arg for path in EDT_PICKLE_PATHS for arg in ('--keep-artifacts', path)],
         *[arg for path in RUNNERS_YAML_PATHS for arg in ('--keep-artifacts', path)],
         "--cmake-only",
         "--outdir", str(outdir),
     ]
+
+    if vendor_filter:
+        for vendor in vendor_filter:
+            twister_cmd += ["--vendor", vendor]
+    else:
+        twister_cmd += ["--all"]
 
     minimal_env = {
         'PATH': os.environ.get('PATH', ''),
@@ -216,11 +223,13 @@ def run_twister_cmake_only(outdir):
         logger.warning(f"Failed to run Twister, list of hw features might be incomplete.\n{e}")
 
 
-def get_catalog(generate_hw_features=False):
+def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
     """Get the board catalog.
 
     Args:
         generate_hw_features: If True, run twister to generate hardware features information.
+        hw_features_vendor_filter: If generate_hw_features is True, limit hardware feature
+                                   information generation to boards from this list of vendors.
     """
     import tempfile
 
@@ -248,15 +257,17 @@ def get_catalog(generate_hw_features=False):
     )
 
     boards = list_boards.find_v2_boards(args_find_boards)
+    shields = list_shields.find_shields(args_find_boards)
     systems = list_hardware.find_v2_systems(args_find_boards)
     board_catalog = {}
+    shield_catalog = {}
     board_devicetrees = {}
     board_runners = {}
 
     if generate_hw_features:
         logger.info("Running twister in cmake-only mode to get Devicetree files for all boards")
         with tempfile.TemporaryDirectory() as tmp_dir:
-            run_twister_cmake_only(tmp_dir)
+            run_twister_cmake_only(tmp_dir, hw_features_vendor_filter)
             board_devicetrees, board_runners = gather_board_build_info(Path(tmp_dir))
     else:
         logger.info("Skipping generation of supported hardware features.")
@@ -294,6 +305,7 @@ def get_catalog(generate_hw_features=False):
                         continue
 
                     description = DeviceTreeUtils.get_cached_description(node)
+                    title = node.title
                     filename = node.filename
                     lineno = node.lineno
                     locations = set()
@@ -308,7 +320,12 @@ def get_catalog(generate_hw_features=False):
                         node.matching_compat
                     )
 
-                    node_info = {"filename": str(filename), "lineno": lineno}
+                    node_info = {
+                        "filename": str(filename),
+                        "lineno": lineno,
+                        "dts_path": Path(node.filename),
+                        "binding_path": Path(node.binding_path),
+                    }
                     node_list_key = "okay_nodes" if node.status == "okay" else "disabled_nodes"
 
                     if existing_feature:
@@ -318,6 +335,7 @@ def get_catalog(generate_hw_features=False):
 
                     feature_data = {
                         "description": description,
+                        "title": title,
                         "custom_binding": is_custom_binding,
                         "locations": locations,
                         "okay_nodes": [],
@@ -385,8 +403,25 @@ def get_catalog(generate_hw_features=False):
             "commands": runner.capabilities().commands,
         }
 
+    for shield in shields:
+        doc_page = guess_doc_page(shield)
+        if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
+            doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()
+        else:
+            doc_page_path = None
+
+        shield_catalog[shield.name] = {
+            "name": shield.name,
+            "full_name": shield.full_name or shield.name,
+            "vendor": shield.vendor or "others",
+            "doc_page": doc_page_path,
+            "image": guess_image(shield),
+            "supported_features": shield.supported_features or [],
+        }
+
     return {
         "boards": board_catalog,
+        "shields": shield_catalog,
         "vendors": {**vnd_lookup.vnd2vendor, "others": "Other/Unknown"},
         "socs": socs_hierarchy,
         "runners": available_runners,

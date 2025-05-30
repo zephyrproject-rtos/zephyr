@@ -292,7 +292,7 @@ ZTEST(c_lib_dynamic_memalloc, test_reallocarray)
 
 	cptr =  reallocarray(ptr, TOO_BIG, sizeof(int));
 	zassert_is_null((ptr), "reallocarray failed, errno: %d", errno);
-	zassert_is_null((cptr), "reallocarray failed, errno: %d");
+	zassert_is_null((cptr), "reallocarray failed, errno: %d", errno);
 	free(cptr);
 
 	ptr = malloc(orig_size);

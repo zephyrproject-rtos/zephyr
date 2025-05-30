@@ -152,6 +152,30 @@ static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs,
 	return (requested_bis_syncs & aggregated_bis_syncs) != 0U;
 }
 
+static bool valid_bis_sync_request(uint32_t requested_bis_syncs, uint32_t aggregated_bis_syncs)
+{
+	/* Verify that the request BIS sync indexes are unique or no preference */
+	if (!bis_syncs_unique_or_no_pref(requested_bis_syncs, aggregated_bis_syncs)) {
+		LOG_DBG("Duplicate BIS index 0x%08x (aggregated %x)", requested_bis_syncs,
+			aggregated_bis_syncs);
+		return false;
+	}
+
+	if (requested_bis_syncs != BT_BAP_BIS_SYNC_NO_PREF &&
+	    aggregated_bis_syncs == BT_BAP_BIS_SYNC_NO_PREF) {
+		LOG_DBG("Invalid BIS index 0x%08X mixing BT_BAP_BIS_SYNC_NO_PREF and specific BIS",
+			requested_bis_syncs);
+		return false;
+	}
+
+	if (!valid_bis_syncs(requested_bis_syncs)) {
+		LOG_DBG("Invalid BIS sync: 0x%08X", requested_bis_syncs);
+		return false;
+	}
+
+	return true;
+}
+
 static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv_state)
 {
 	if (recv_state->active) {
@@ -710,19 +734,9 @@ static int scan_delegator_add_src(struct bt_conn *conn,
 			bis_sync_requested = true;
 		}
 
-		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (!bis_syncs_unique_or_no_pref(internal_state->requested_bis_sync[i],
-						 aggregated_bis_syncs)) {
-			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
-				i, internal_state->requested_bis_sync[i],
-				aggregated_bis_syncs);
-			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-			goto unlock_return;
-		}
-
-		if (!valid_bis_syncs(internal_state->requested_bis_sync[i])) {
-			LOG_DBG("Invalid BIS sync[%d]: 0x%08X", i,
-				internal_state->requested_bis_sync[i]);
+		if (!valid_bis_sync_request(internal_state->requested_bis_sync[i],
+					    aggregated_bis_syncs)) {
+			LOG_DBG("Invalid BIS Sync request[%d]", i);
 			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 			goto unlock_return;
 		}
@@ -741,6 +755,15 @@ static int scan_delegator_add_src(struct bt_conn *conn,
 		metadata = net_buf_simple_pull_mem(buf, subgroup->metadata_len);
 		(void)memcpy(subgroup->metadata, metadata,
 			     subgroup->metadata_len);
+	}
+
+	if (scan_delegator_cbs != NULL && scan_delegator_cbs->add_source != NULL) {
+		err = scan_delegator_cbs->add_source(conn, state);
+		if (err != 0) {
+			LOG_DBG("add_source callback rejected: 0x%02x", err);
+			ret = BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+			goto unlock_return;
+		}
 	}
 
 	/* The active flag shall be set before any application callbacks, so that any calls for the
@@ -905,15 +928,9 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			bis_sync_change_requested = true;
 		}
 
-		/* Verify that the request BIS sync indexes are unique or no preference */
-		if (!bis_syncs_unique_or_no_pref(requested_bis_sync[i], aggregated_bis_syncs)) {
-			LOG_DBG("Duplicate BIS index [%d]%x (aggregated %x)", i,
-				requested_bis_sync[i], aggregated_bis_syncs);
-			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-			goto unlock_return;
-		}
-
-		if (!valid_bis_syncs(requested_bis_sync[i])) {
+		if (!valid_bis_sync_request(internal_state->requested_bis_sync[i],
+					    aggregated_bis_syncs)) {
+			LOG_DBG("Invalid BIS Sync request[%d]", i);
 			ret = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 			goto unlock_return;
 		}
@@ -970,6 +987,19 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		}
 	}
 
+	if (scan_delegator_cbs != NULL && scan_delegator_cbs->modify_source != NULL) {
+		err = scan_delegator_cbs->modify_source(conn, state);
+		if (err != 0) {
+			LOG_DBG("Modify Source rejected with reason 0x%02x", err);
+			(void)memcpy(state, &backup_state, sizeof(backup_state));
+
+			err = k_mutex_unlock(&internal_state->mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+		}
+	}
+
 	/* Only send the sync request to upper layers if it is requested, and
 	 * we are not already synced to the device
 	 */
@@ -1006,22 +1036,17 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	} else if (pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC &&
 		   (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
 		    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED)) {
-		/* Unlock mutex to avoid potential deadlock on app callback */
-		err = k_mutex_unlock(&internal_state->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
-
 		/* Terminate PA sync */
 		err = pa_sync_term_request(conn, &internal_state->state);
 
 		if (err != 0) {
 			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
 				err);
-
+			err = k_mutex_unlock(&internal_state->mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
-
 		state_changed = true;
-		k_mutex_lock(&internal_state->mutex, K_FOREVER);
 	}
 
 	/* Store requested_bis_sync after everything has been validated */
@@ -1122,22 +1147,30 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 	state = &internal_state->state;
 
 	/* If conn == NULL then it's a local operation and we do not need to ask the application */
-	if (conn != NULL && (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
-			     state->pa_sync_state == BT_BAP_PA_STATE_SYNCED)) {
-		/* Unlock mutex to avoid potential deadlock on app callback */
-		err = k_mutex_unlock(&internal_state->mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	if (conn != NULL) {
 
-		/* Terminate PA sync */
-		err = pa_sync_term_request(conn, &internal_state->state);
-		if (err != 0) {
-			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
-				err);
-
-			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+		if (scan_delegator_cbs != NULL && scan_delegator_cbs->remove_source != NULL) {
+			err = scan_delegator_cbs->remove_source(conn, src_id);
+			if (err != 0) {
+				LOG_DBG("Remove Source rejected with reason 0x%02x", err);
+				err = k_mutex_unlock(&internal_state->mutex);
+				__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+				return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+			}
 		}
 
-		k_mutex_lock(&internal_state->mutex, K_FOREVER);
+		if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
+		    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
+			/* Terminate PA sync */
+			err = pa_sync_term_request(conn, &internal_state->state);
+			if (err != 0) {
+				LOG_DBG("PA sync term from %p was rejected with reason %d",
+					(void *)conn, err);
+				err = k_mutex_unlock(&internal_state->mutex);
+				__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+				return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+			}
+		}
 	}
 
 	for (uint8_t i = 0U; i < state->num_subgroups; i++) {

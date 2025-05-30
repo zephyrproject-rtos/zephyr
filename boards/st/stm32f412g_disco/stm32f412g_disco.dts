@@ -23,18 +23,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		orange_led_2: led_2 {
 			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led_3: led_3 {
 			gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		blue_led_4: led_4 {
 			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -43,26 +47,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		joy_sel: joystick_selection {
 			label = "joystick selection";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiog 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpiog 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
+
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiof 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
+
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiof 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;

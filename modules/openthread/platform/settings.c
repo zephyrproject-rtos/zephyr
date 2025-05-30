@@ -11,7 +11,7 @@
 
 #include <openthread/platform/settings.h>
 
-LOG_MODULE_REGISTER(net_otPlat_settings, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_otPlat_settings, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL);
 
 #define OT_SETTINGS_ROOT_KEY "ot"
 #define OT_SETTINGS_MAX_PATH_LEN 32

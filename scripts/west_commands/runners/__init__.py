@@ -26,6 +26,7 @@ def _import_runner_module(runner_name):
 
 _names = [
     # zephyr-keep-sorted-start
+    'bflb_mcu_tool',
     'blackmagicprobe',
     'bossac',
     'canopen_program',
@@ -44,7 +45,6 @@ _names = [
     'minichlink',
     'misc',
     'native',
-    'nios2',
     'nrfjprog',
     'nrfutil',
     'nsim',

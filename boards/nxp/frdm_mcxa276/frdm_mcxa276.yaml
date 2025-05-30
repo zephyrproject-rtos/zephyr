@@ -17,6 +17,9 @@ supported:
   - gpio
   - uart
   - flash
+  - adc
+  - i2c
+  - spi
   - watchdog
   - counter
   - dma

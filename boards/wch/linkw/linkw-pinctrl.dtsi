@@ -13,6 +13,7 @@
 			drive-push-pull;
 			slew-rate = "max-speed-10mhz";
 		};
+
 		group2 {
 			pinmux = <USART2_RX_PA3_0>;
 			bias-pull-up;

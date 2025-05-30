@@ -203,3 +203,40 @@
 	phys = <&can_phy0>;
 	status = "okay";
 };
+
+&usdhc1 {
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc1_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+	sdmmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "disabled";
+	};
+};
+
+&usdhc2 {
+	pinctrl-0 = <&pinmux_usdhc2>;
+	pinctrl-1 = <&pinmux_usdhc2_100mhz>;
+	pinctrl-2 = <&pinmux_usdhc2_200mhz>;
+	pinctrl-names = "default", "med", "fast";
+	pwr-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+	power-delay-ms = <20>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	read-watermark = <0x10>;
+	write-watermark = <0x80>;
+	status = "disabled";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "disabled";
+	};
+};

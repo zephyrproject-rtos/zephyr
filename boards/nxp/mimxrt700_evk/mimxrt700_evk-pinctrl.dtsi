@@ -84,4 +84,21 @@
 			input-enable;
 		};
 	};
+
+	pinmux_i3c3: pinmux_i3c3 {
+		group0 {
+			pinmux = <I3C3_SDA_PIO8_21>,
+				<I3C3_SCL_PIO8_22>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+			bias-pull-up;
+		};
+		group1 {
+			pinmux = <I3C3_PUR_PIO8_20>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };

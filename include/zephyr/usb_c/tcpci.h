@@ -41,38 +41,38 @@
 /** Mask for major part of USB PD revision supported */
 #define TCPC_REG_PD_REV_REV_MAJOR_MASK GENMASK(15, 12)
 /** Macro to extract the major part of USB PD revision supported */
-#define TCPC_REG_PD_REV_REV_MAJOR(reg) (((reg) & TCPC_REG_PD_REV_VER_REV_MAJOR_MASK) >> 12)
+#define TCPC_REG_PD_REV_REV_MAJOR(reg) (((reg) & TCPC_REG_PD_REV_REV_MAJOR_MASK) >> 12)
 /** Mask for minor part of USB PD revision supported */
 #define TCPC_REG_PD_REV_REV_MINOR_MASK GENMASK(11, 8)
 /** Macro to extract the minor part of USB PD revision supported */
-#define TCPC_REG_PD_REV_REV_MINOR(reg) (((reg) & TCPC_REG_PD_REV_VER_REV_MINOR_MASK) >> 8)
+#define TCPC_REG_PD_REV_REV_MINOR(reg) (((reg) & TCPC_REG_PD_REV_REV_MINOR_MASK) >> 8)
 /** Mask for major part of USB PD version supported */
 #define TCPC_REG_PD_REV_VER_MAJOR_MASK GENMASK(7, 4)
 /** Macro to extract the major part of USB PD version supported */
-#define TCPC_REG_PD_REV_VER_MAJOR(reg) (((reg) & TCPC_REG_PD_REV_VER_VER_MAJOR_MASK) >> 4)
+#define TCPC_REG_PD_REV_VER_MAJOR(reg) (((reg) & TCPC_REG_PD_REV_VER_MAJOR_MASK) >> 4)
 /** Mask for minor part of USB PD version supported */
 #define TCPC_REG_PD_REV_VER_MINOR_MASK GENMASK(3, 0)
 /** Macro to extract the minor part of USB PD version supported */
-#define TCPC_REG_PD_REV_VER_MINOR(reg) ((reg) & TCPC_REG_PD_REV_VER_VER_MINOR_MASK)
+#define TCPC_REG_PD_REV_VER_MINOR(reg) ((reg) & TCPC_REG_PD_REV_VER_MINOR_MASK)
 
 /** Register address - interface revision and version */
 #define TCPC_REG_PD_INT_REV                0xa
 /** Mask for major part of USB Port Controller Interface revision supported */
 #define TCPC_REG_PD_INT_REV_REV_MAJOR_MASK GENMASK(15, 12)
 /** Macro to extract the major part of USB Port Controller Interface revision supported */
-#define TCPC_REG_PD_INT_REV_REV_MAJOR(reg) (((reg) & TCPC_REG_PD_REV_VER_REV_MAJOR_MASK) >> 12)
+#define TCPC_REG_PD_INT_REV_REV_MAJOR(reg) (((reg) & TCPC_REG_PD_INT_REV_REV_MAJOR_MASK) >> 12)
 /** Mask for minor part of USB Port Controller Interface revision supported */
 #define TCPC_REG_PD_INT_REV_REV_MINOR_MASK GENMASK(11, 8)
 /** Macro to extract the minor part of USB Port Controller Interface revision supported */
-#define TCPC_REG_PD_INT_REV_REV_MINOR(reg) (((reg) & TCPC_REG_PD_REV_VER_REV_MINOR_MASK) >> 8)
+#define TCPC_REG_PD_INT_REV_REV_MINOR(reg) (((reg) & TCPC_REG_PD_INT_REV_REV_MINOR_MASK) >> 8)
 /** Mask for major part of USB Port Controller Interface version supported */
 #define TCPC_REG_PD_INT_REV_VER_MAJOR_MASK GENMASK(7, 4)
 /** Macro to extract the major part of USB Port Controller Interface version supported */
-#define TCPC_REG_PD_INT_REV_VER_MAJOR(reg) (((reg) & TCPC_REG_PD_REV_VER_VER_MAJOR_MASK) >> 4)
+#define TCPC_REG_PD_INT_REV_VER_MAJOR(reg) (((reg) & TCPC_REG_PD_INT_REV_VER_MAJOR_MASK) >> 4)
 /** Mask for minor part of USB Port Controller Interface version supported */
 #define TCPC_REG_PD_INT_REV_VER_MINOR_MASK GENMASK(3, 0)
 /** Macro to extract the minor part of USB Port Controller Interface version supported */
-#define TCPC_REG_PD_INT_REV_VER_MINOR(reg) ((reg) & TCPC_REG_PD_REV_VER_VER_MINOR_MASK)
+#define TCPC_REG_PD_INT_REV_VER_MINOR(reg) ((reg) & TCPC_REG_PD_INT_REV_VER_MINOR_MASK)
 
 /** Register address - alert */
 #define TCPC_REG_ALERT              0x10

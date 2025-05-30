@@ -3,13 +3,33 @@
   SPDX-License-Identifier: Apache-2.0
 #}
 
-<form class="filter-form" aria-label="Filter boards by name, architecture, and vendor">
+<form class="filter-form" aria-label="Filter boards & shields by name, architecture, and vendor">
 
-  <div class="form-group" style="flex-basis: 100%">
+  <div class="form-group" style="flex-basis: 60%">
     <label for="name">Name</label>
     <input type="text" id="name"
-      placeholder='Name (or partial name) of the board, e.g. "reel board", "nucleo", &hellip;'
+      placeholder='Name (or partial name) of the board/shield, e.g. "reel board", "nucleo", &hellip;'
       oninput="filterBoards()" />
+  </div>
+
+  <div class="form-group">
+    <label>Showing</label>
+    <div class="visibility-toggles">
+      <div class="toggle-group">
+        <input type="checkbox" id="show-boards" checked>
+        <label for="show-boards" class="toggle-label">
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Boards</span>
+        </label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="show-shields" checked>
+        <label for="show-shields" class="toggle-label">
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Shields</span>
+        </label>
+      </div>
+    </div>
   </div>
 
   <div class="form-group">
@@ -17,7 +37,6 @@
     <div class="select-container">
       <select id="arch">
         <option value="" disabled selected>Select an architecture</option>
-        <option value="nios2">Altera Nios II</option>
         <option value="arm">ARM</option>
         <option value="arm64">ARM 64</option>
         <option value="mips">MIPS</option>
@@ -36,9 +55,11 @@
     <div class="select-container">
       <select id="vendor">
         <option value="" disabled selected>Select a vendor</option>
-        {# Only show those vendors that have actual boards in the catalog.
+        {# Only show those vendors that have actual boards or shields in the catalog.
            Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the JavaScript code later #}
-        {% for vendor in (boards | items | map(attribute='1.vendor') | unique ) -%}
+        {% set board_vendors = boards | items | map(attribute='1.vendor') | unique | list %}
+        {% set shield_vendors = shields | items | map(attribute='1.vendor') | unique | list %}
+        {% for vendor in (board_vendors + shield_vendors) | unique -%}
         <option value="{{ vendor }}">{{ vendors[vendor] }}</option>
         {% endfor %}
       </select>
@@ -61,7 +82,7 @@
   </div>
 
   <div class="form-group" style="flex-basis: 100%">
-    <label for="hw-capabilities">Supported Hardware Capabilities</label>
+    <label for="tag-input">Supported Hardware Capabilities</label>
     <div class="tag-container" id="tag-container">
       <input list="tag-list" class="tag-input" id="tag-input"
              placeholder="{% if hw_features_present -%}
@@ -98,6 +119,10 @@
 <div id="catalog">
   {% for board_name, board in boards | items | sort(attribute='1.full_name') -%}
   {% include "board-card.html" %}
+  {% endfor %}
+
+  {% for shield_name, shield in shields | items | sort(attribute='1.full_name') -%}
+  {% include "shield-card.html" %}
   {% endfor %}
 </div>
 

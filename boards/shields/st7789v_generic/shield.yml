@@ -1,0 +1,12 @@
+shields:
+  - name: st7789v_tl019fqv01
+    full_name: ST7789V TL019FQV01
+    vendor: others
+    supported_features:
+      - display
+
+  - name: st7789v_waveshare_240x240
+    full_name: Waveshare 240x240 1.3inch IPS LCD
+    vendor: waveshare
+    supported_features:
+      - display

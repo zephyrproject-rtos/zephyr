@@ -335,7 +335,7 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 		int64_t conn_offset_us = (int64_t)conn_evt_offset * conn_interval_us;
 
 		if ((int64_t)sync_offset_us + conn_offset_us < 0) {
-			uint32_t total_offset_us = abs((int64_t)sync_offset_us + conn_offset_us);
+			uint32_t total_offset_us = llabs((int64_t)sync_offset_us + conn_offset_us);
 			uint32_t sync_intervals = DIV_ROUND_UP(total_offset_us, interval_us);
 
 			lll->event_counter += sync_intervals;

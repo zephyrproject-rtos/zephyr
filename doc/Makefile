@@ -9,6 +9,7 @@ SPHINXOPTS_EXTRA ?=
 LATEXMKOPTS ?= -halt-on-error -no-shell-escape
 DT_TURBO_MODE ?= 0
 HW_FEATURES_TURBO_MODE ?= 0
+HW_FEATURES_VENDOR_FILTER ?=
 
 # ------------------------------------------------------------------------------
 # Documentation targets
@@ -34,7 +35,8 @@ configure:
 		-DSPHINXOPTS_EXTRA="${SPHINXOPTS_EXTRA}" \
 		-DLATEXMKOPTS="${LATEXMKOPTS}" \
 		-DDT_TURBO_MODE=${DT_TURBO_MODE} \
-		-DHW_FEATURES_TURBO_MODE=${HW_FEATURES_TURBO_MODE}
+		-DHW_FEATURES_TURBO_MODE=${HW_FEATURES_TURBO_MODE} \
+		-DHW_FEATURES_VENDOR_FILTER=${HW_FEATURES_VENDOR_FILTER}
 
 clean:
 	cmake --build ${BUILDDIR} --target clean

@@ -426,6 +426,11 @@ static int cmd_udp_download_stop(const struct shell *sh, size_t argc,
 {
 	int ret;
 
+	if (!IS_ENABLED(CONFIG_NET_UDP)) {
+		shell_warn(sh, "UDP not supported");
+		return -ENOEXEC;
+	}
+
 	ret = zperf_udp_download_stop();
 	if (ret < 0) {
 		shell_fprintf(sh, SHELL_WARNING, "UDP server not running!\n");
@@ -957,6 +962,7 @@ static int shell_cmd_upload(const struct shell *sh, size_t argc,
 	int ret;
 	int seconds;
 
+	param.unix_offset_us = k_uptime_get() * USEC_PER_MSEC;
 	param.options.priority = -1;
 	is_udp = proto == IPPROTO_UDP;
 
@@ -1210,6 +1216,7 @@ static int shell_cmd_upload2(const struct shell *sh, size_t argc,
 	size_t opt_cnt = 0;
 	int seconds;
 
+	param.unix_offset_us = k_uptime_get() * USEC_PER_MSEC;
 	is_udp = proto == IPPROTO_UDP;
 
 	/* Parse options */
@@ -1491,6 +1498,11 @@ static int cmd_tcp_download_stop(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
 	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_TCP)) {
+		shell_warn(sh, "TCP not supported");
+		return -ENOEXEC;
+	}
 
 	ret = zperf_tcp_download_stop();
 	if (ret < 0) {

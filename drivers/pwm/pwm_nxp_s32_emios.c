@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
  * the HAL over configuration tool due to limitation of the integration
  */
 #if EMIOS_PWM_IP_USED
+
+#if defined(CONFIG_SOC_SERIES_S32ZE)
+#define eMios_Icu_Ip_IndexInChState eMios_Icu_Ip_u8IndexInChState
+#endif
+
 extern uint8 eMios_Pwm_Ip_IndexInChState[EMIOS_PWM_IP_INSTANCE_COUNT][EMIOS_PWM_IP_CHANNEL_COUNT];
 #define EMIOS_PWM_MASTER_CHANNEL(channel, bus)					\
 	((bus == EMIOS_PWM_IP_BUS_A) ? 23 :					\
@@ -44,7 +49,7 @@ extern uint8 eMios_Icu_Ip_IndexInChState[EMIOS_ICU_IP_INSTANCE_COUNT][EMIOS_ICU_
 
 #define EMIOS_ICU_MASTER_CHANNEL(channel, bus)					\
 	((bus == EMIOS_ICU_BUS_A) ? 23 :					\
-	((bus == EMIOS_ICU_BUS_F) ? 22 :					\
+	(IF_DISABLED(CONFIG_SOC_SERIES_S32ZE, (bus == EMIOS_ICU_BUS_F) ? 22 :)	\
 	((bus == EMIOS_ICU_BUS_DIVERSE) ? ((channel >> 3) * 8) : channel)))
 
 /* We need maximum three edges for measure both period and cycle */
@@ -882,7 +887,9 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
 #define EMIOS_ICU_BUS_C				EMIOS_ICU_BUS_DIVERSE
 #define EMIOS_ICU_BUS_D				EMIOS_ICU_BUS_DIVERSE
 #define EMIOS_ICU_BUS_E				EMIOS_ICU_BUS_DIVERSE
+#if !defined(CONFIG_SOC_SERIES_S32ZE)
 #define EMIOS_ICU_BUS_F				EMIOS_ICU_BUS_F
+#endif
 
 #define DIGITAL_FILTER_0			EMIOS_DIGITAL_FILTER_BYPASSED
 #define DIGITAL_FILTER_2			EMIOS_DIGITAL_FILTER_02

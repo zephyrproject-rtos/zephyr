@@ -1,0 +1,6 @@
+shield:
+  name: sparkfun_sara_r4
+  full_name: Sparkfun Sara R4
+  vendor: sparkfun
+  supported_features:
+    - modem

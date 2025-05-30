@@ -18,15 +18,19 @@
 #if defined(CONFIG_SOC_SERIES_STM32MP13X)
 
 /* No ll_utils for the stm32mp13x series, instead use the HAL functions */
+/* zephyr-keep-sorted-start */
 #define STM32_UID_WORD_0 HAL_GetUIDw2()
 #define STM32_UID_WORD_1 HAL_GetUIDw1()
 #define STM32_UID_WORD_2 HAL_GetUIDw0()
+/* zephyr-keep-sorted-stop */
 
 #else
 
+/* zephyr-keep-sorted-start */
 #define STM32_UID_WORD_0 LL_GetUID_Word2()
 #define STM32_UID_WORD_1 LL_GetUID_Word1()
 #define STM32_UID_WORD_2 LL_GetUID_Word0()
+/* zephyr-keep-sorted-stop */
 
 #endif /* CONFIG_SOC_SERIES_STM32MP13X */
 
@@ -42,9 +46,11 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	sys_cache_instr_disable();
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	dev_id.id[0] = sys_cpu_to_be32(STM32_UID_WORD_2);
+	/* zephyr-keep-sorted-start */
+	dev_id.id[0] = sys_cpu_to_be32(STM32_UID_WORD_0);
 	dev_id.id[1] = sys_cpu_to_be32(STM32_UID_WORD_1);
-	dev_id.id[2] = sys_cpu_to_be32(STM32_UID_WORD_0);
+	dev_id.id[2] = sys_cpu_to_be32(STM32_UID_WORD_2);
+	/* zephyr-keep-sorted-stop */
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	sys_cache_instr_enable();

@@ -35,6 +35,7 @@ zephyr_include_directories(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/CMSIS/Driver/Include
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade
 )
 
 zephyr_library_sources(
@@ -48,7 +49,10 @@ zephyr_library_sources(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ulpss_clk.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_wwdt.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_rtc.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_calendar.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_driver_gpio.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_pwm.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/src/sl_si91x_peripheral_gpio.c
@@ -68,16 +72,24 @@ zephyr_library_sources_ifdef(CONFIG_DMA_SILABS_SIWX91X
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/rom_driver/src/rsi_rom_table_si91x.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_qspi.c
+)
+
 if(CONFIG_WIFI_SILABS_SIWX91X)
   zephyr_library_sources(
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_credentials.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_internal_stack.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_integration_handler.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_rsi_utility.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/src/sli_net_si91x_utility.c
     ${WISECONNECT_DIR}/components/protocol/wifi/src/sl_wifi_basic_credentials.c
-    ${WISECONNECT_DIR}/components/service/network_manager/si91x/sl_net_si91x.c
     ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net_basic_profiles.c
     ${WISECONNECT_DIR}/components/service/network_manager/src/sl_net_credentials.c
+  )
+  zephyr_compile_definitions(
+    SLI_SI91X_CONFIG_WIFI6_PARAMS
+    SLI_SI91X_ENABLE_TWT_FEATURE
   )
   zephyr_compile_definitions_ifdef(CONFIG_NET_IPV6
     SLI_SI91X_ENABLE_IPV6
@@ -132,6 +144,7 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/config
     ${WISECONNECT_DIR}/components/protocol/wifi/inc
     ${WISECONNECT_DIR}/components/service/network_manager/inc
+    ${WISECONNECT_DIR}/components/sli_wifi_command_engine/inc
   )
   zephyr_library_sources(
     ${WISECONNECT_DIR}/components/common/src/sl_utility.c
@@ -145,9 +158,11 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/memory/malloc_buffers.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/threading/sli_si91x_multithreaded.c
     ${WISECONNECT_DIR}/components/protocol/wifi/si91x/sl_wifi.c
     ${WISECONNECT_DIR}/components/protocol/wifi/src/sl_wifi_callback_framework.c
+    ${WISECONNECT_DIR}/components/service/network_manager/src/sli_net_common_utility.c
+    ${WISECONNECT_DIR}/components/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
+    ${WISECONNECT_DIR}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
   )
 endif() # CONFIG_WISECONNECT_NETWORK_STACK
 

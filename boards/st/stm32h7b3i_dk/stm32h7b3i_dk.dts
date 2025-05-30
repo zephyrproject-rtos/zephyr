@@ -27,10 +27,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpiog 11 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		blue_led: led_1 {
 			gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -39,6 +41,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User PB";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -210,6 +213,7 @@
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
 		refresh-rate = <0x603>;
+
 		bank@1 {
 			reg = <1>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_9
@@ -231,6 +235,7 @@
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	disk-name = "SD";
 	status = "okay";
 };
 
@@ -251,6 +256,7 @@
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -264,6 +270,7 @@
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;
@@ -289,14 +296,14 @@
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       label = "nor";
-			       reg = <0x00000000 DT_SIZE_M(4)>;
-			   };
+			partition@0 {
+				label = "nor";
+				reg = <0x00000000 DT_SIZE_M(4)>;
+			};
 		};
 	};
 };

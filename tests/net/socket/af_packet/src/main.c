@@ -72,12 +72,16 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
  *   * (AF_PACKET, SOCK_RAW, htons(ETH_P_ALL)) - The packet is received for all protocols.
  *     The L2 header is not removed from the data:
  *     - test_raw_sock_recv_proto_wildcard
+ *     - test_raw_sock_recv_proto_wildcard_bound_other_iface
  *     - test_raw_sock_recvfrom_proto_wildcard
+ *     - test_raw_sock_recvfrom_proto_wildcard_unbound
  *
  *   * (AF_PACKET, SOCK_DGRAM, htons(ETH_P_ALL)) - The packet is received for all protocols.
  *     The L2 header is removed from the data:
  *     - test_dgram_sock_recv_proto_wildcard
+ *     - test_dgram_sock_recv_proto_wildcard_bound_other_iface
  *     - test_dgram_sock_recvfrom_proto_wildcard
+ *     - test_dgram_sock_recvfrom_proto_wildcard_unbound
  */
 
 #if defined(CONFIG_NET_SOCKETS_LOG_LEVEL_DBG)
@@ -128,13 +132,15 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 	DBG("Sending data (%d bytes) to iface %d\n",
 	    net_pkt_get_len(pkt), net_if_get_by_iface(net_pkt_iface(pkt)));
 
-	recv_pkt = net_pkt_rx_clone(pkt, K_NO_WAIT);
-
 	if (memcmp(pkt->frags->data, lladdr1, sizeof(lladdr1)) == 0) {
 		target_iface = eth_fake_data1.iface;
-	} else {
+	} else if (memcmp(pkt->frags->data, lladdr2, sizeof(lladdr2)) == 0) {
 		target_iface = eth_fake_data2.iface;
+	} else {
+		return 0;
 	}
+
+	recv_pkt = net_pkt_rx_clone(pkt, K_NO_WAIT);
 
 	net_pkt_set_iface(recv_pkt, target_iface);
 
@@ -179,8 +185,7 @@ ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", NULL, NULL, &eth_fake_data2, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
 		    NET_ETH_MTU);
 
-static void setup_packet_socket(int *sock, struct net_if *iface, int type,
-				int proto)
+static void setup_packet_socket(int *sock, int type, int proto)
 {
 	struct timeval optval = {
 		.tv_usec = 100000,
@@ -202,7 +207,7 @@ static void bind_packet_socket(int sock, struct net_if *iface)
 
 	memset(&addr, 0, sizeof(addr));
 
-	addr.sll_ifindex = net_if_get_by_iface(iface);
+	addr.sll_ifindex = (iface == NULL) ? 0 : net_if_get_by_iface(iface);
 	addr.sll_family = AF_PACKET;
 
 	ret = zsock_bind(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -212,7 +217,7 @@ static void bind_packet_socket(int sock, struct net_if *iface)
 static void prepare_packet_socket(int *sock, struct net_if *iface, int type,
 				  int proto)
 {
-	setup_packet_socket(sock, iface, type, proto);
+	setup_packet_socket(sock, type, proto);
 	bind_packet_socket(*sock, iface);
 }
 
@@ -254,7 +259,7 @@ static void prepare_udp_socket(int *sock, struct sockaddr_in *sockaddr, uint16_t
 	int ret;
 
 	*sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	zassert_true(*sock >= 0, "Cannot create DGRAM (UDP) socket (%d)", sock);
+	zassert_true(*sock >= 0, "Cannot create DGRAM (UDP) socket (%d)", *sock);
 
 	sockaddr->sin_family = AF_INET;
 	sockaddr->sin_port = htons(local_port);
@@ -608,8 +613,7 @@ static void prepare_test_packet(int sock_type, uint16_t proto,
 
 		offset += NET_IPV4UDPH_LEN;
 		zassert_true(offset <= sizeof(tx_buf), "Packet too long");
-		zassert_ok(net_addr_pton(AF_INET, IPV4_ADDR, &addr),
-			   "Addres parse failed");
+		zassert_ok(net_addr_pton(AF_INET, IPV4_ADDR, &addr), "Address parse failed");
 
 		/* Prepare IPv4 header */
 		ipv4->vhl = 0x45;
@@ -657,7 +661,7 @@ static void test_sendto_common(int sock_type, int proto, bool do_bind,
 	uint16_t pkt_len;
 	int ret;
 
-	setup_packet_socket(&packet_sock_1, ud.second, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_1, sock_type, htons(proto));
 	if (do_bind) {
 		bind_packet_socket(packet_sock_1, ud.second);
 	}
@@ -717,7 +721,7 @@ static void test_sendmsg_common(int sock_type, int proto)
 	uint16_t pkt_len;
 	int ret;
 
-	setup_packet_socket(&packet_sock_1, ud.second, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_1, sock_type, htons(proto));
 	prepare_udp_socket(&udp_sock_1, &ip_src, DST_PORT);
 	prepare_test_packet(sock_type, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
@@ -810,11 +814,11 @@ static void test_recv_common(int sock_type, int proto, bool success)
 	int ret;
 
 	/* Transmitting sock */
-	setup_packet_socket(&packet_sock_1, ud.second, SOCK_RAW, 0);
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
 	prepare_test_packet(SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
 	/* Receiving sock */
-	setup_packet_socket(&packet_sock_2, ud.first, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_2, sock_type, htons(proto));
 	bind_packet_socket(packet_sock_2, ud.first);
 
 	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
@@ -867,6 +871,20 @@ ZTEST(socket_packet, test_raw_sock_recv_proto_wildcard)
 	test_recv_common(SOCK_RAW, ETH_P_ALL, true);
 }
 
+static void validate_recvfrom_addr(struct sockaddr_ll *ll_rx, socklen_t addrlen,
+				   int iface, uint8_t *lladdr)
+{
+	zassert_equal(addrlen, sizeof(struct sockaddr_ll),
+		      "Invalid address length (%u)", addrlen);
+	zassert_equal(ll_rx->sll_family, AF_PACKET, "Invalid family");
+	zassert_equal(ll_rx->sll_protocol, htons(ETH_P_IP), "Invalid protocol");
+	zassert_equal(ll_rx->sll_ifindex, iface, "Invalid interface");
+	zassert_equal(ll_rx->sll_hatype, ARPHRD_ETHER, "Invalid hardware type");
+	zassert_equal(ll_rx->sll_pkttype, PACKET_OTHERHOST, "Invalid packet type");
+	zassert_equal(ll_rx->sll_halen, NET_ETH_ADDR_LEN, "Invalid address length");
+	zassert_mem_equal(ll_rx->sll_addr, lladdr, NET_ETH_ADDR_LEN, "Invalid address");
+}
+
 static void test_recvfrom_common(int sock_type, int proto)
 {
 	struct sockaddr_ll ll_dst;
@@ -877,11 +895,11 @@ static void test_recvfrom_common(int sock_type, int proto)
 	int ret;
 
 	/* Transmitting sock */
-	setup_packet_socket(&packet_sock_1, ud.second, SOCK_RAW, 0);
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
 	prepare_test_packet(SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
 	/* Receiving sock */
-	setup_packet_socket(&packet_sock_2, ud.first, sock_type, htons(proto));
+	setup_packet_socket(&packet_sock_2, sock_type, htons(proto));
 	bind_packet_socket(packet_sock_2, ud.first);
 
 	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
@@ -894,6 +912,8 @@ static void test_recvfrom_common(int sock_type, int proto)
 		offset = sizeof(struct net_eth_hdr);
 	}
 
+	pkt_len -= offset;
+
 	ret = zsock_recvfrom(packet_sock_2, rx_buf, sizeof(rx_buf), 0,
 			     (struct sockaddr *)&ll_rx, &addrlen);
 	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
@@ -904,15 +924,8 @@ static void test_recvfrom_common(int sock_type, int proto)
 			  "Invalid payload received");
 	zassert_equal(addrlen, sizeof(struct sockaddr_ll),
 		      "Invalid address length (%u)", addrlen);
-	zassert_equal(ll_rx.sll_family, AF_PACKET, "Invalid family");
-	zassert_equal(ll_rx.sll_protocol, htons(ETH_P_IP), "Invalid protocol");
-	zassert_equal(ll_rx.sll_ifindex, net_if_get_by_iface(ud.first),
-		      "Invalid interface");
-	zassert_equal(ll_rx.sll_hatype, ARPHRD_ETHER, "Invalid hardware type");
-	zassert_equal(ll_rx.sll_pkttype, PACKET_OTHERHOST, "Invalid packet type");
-	zassert_equal(ll_rx.sll_halen, NET_ETH_ADDR_LEN, "Invalid address length");
-	zassert_mem_equal(ll_rx.sll_addr, &lladdr2, NET_ETH_ADDR_LEN,
-			  "Invalid address");
+	validate_recvfrom_addr(&ll_rx, addrlen, net_if_get_by_iface(ud.first),
+			       lladdr2);
 }
 
 ZTEST(socket_packet, test_raw_sock_recvfrom_proto_wildcard)
@@ -927,7 +940,148 @@ ZTEST(socket_packet, test_dgram_sock_recv_proto_wildcard)
 
 ZTEST(socket_packet, test_dgram_sock_recvfrom_proto_wildcard)
 {
-	test_recvfrom_common(SOCK_RAW, ETH_P_ALL);
+	test_recvfrom_common(SOCK_DGRAM, ETH_P_ALL);
+}
+
+static void test_recvfrom_unbound_round(int tx_sock, int rx_sock, int sock_type,
+					uint8_t *src_addr, struct net_if *src_iface,
+					uint8_t *dst_addr, struct net_if *dst_iface)
+{
+	uint16_t offset = (sock_type == SOCK_DGRAM) ? sizeof(struct net_eth_hdr) : 0;
+	struct sockaddr_ll ll_dst;
+	struct sockaddr_ll ll_rx = { 0 };
+	socklen_t addrlen = sizeof(ll_rx);
+	uint16_t pkt_len;
+	int ret;
+
+	prepare_test_packet(SOCK_RAW, ETH_P_IP, src_addr, dst_addr, &pkt_len);
+	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, dst_addr, src_iface);
+
+	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
+			   (struct sockaddr *)&ll_dst,
+			   sizeof(struct sockaddr_ll));
+	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
+	zassert_equal(ret, pkt_len, "Invalid data length sent (%d/%d)", ret, pkt_len);
+
+	pkt_len -= offset;
+
+	ret = zsock_recvfrom(packet_sock_2, rx_buf, sizeof(rx_buf), 0,
+			     (struct sockaddr *)&ll_rx, &addrlen);
+	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
+	zassert_equal(ret, pkt_len,
+		      "Invalid data size received (%d, expected %d)",
+		      ret, pkt_len);
+	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len,
+			  "Invalid payload received");
+	validate_recvfrom_addr(&ll_rx, addrlen, net_if_get_by_iface(dst_iface),
+			       src_addr);
+}
+
+static void test_recvfrom_common_unbound(int sock_type, bool bind_iface_0)
+{
+	struct sockaddr_ll ll_dst;
+	static uint8_t dummy_lladdr[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+	uint16_t pkt_len;
+	int ret;
+
+	/* Transmitting sock */
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
+	/* Receiving sock */
+	setup_packet_socket(&packet_sock_2, sock_type, htons(ETH_P_ALL));
+
+	if (bind_iface_0) {
+		bind_packet_socket(packet_sock_2, NULL);
+	}
+
+	/* Verify we get packet from iface 1 */
+	test_recvfrom_unbound_round(packet_sock_1, packet_sock_2, sock_type,
+				    lladdr2, ud.second, lladdr1, ud.first);
+
+	/* Verify we get packet from iface 2 */
+	test_recvfrom_unbound_round(packet_sock_1, packet_sock_2, sock_type,
+				    lladdr1, ud.first, lladdr2, ud.second);
+
+	/* Send some dummy data into the void on the "receiving" socket and make
+	 * sure it doesn't get automatically "bound" to the target iface.
+	 */
+	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, dummy_lladdr, ud.second);
+	prepare_test_packet(sock_type, ETH_P_IP, lladdr2, dummy_lladdr, &pkt_len);
+	ret = zsock_sendto(packet_sock_2, tx_buf, pkt_len, 0,
+			   (struct sockaddr *)&ll_dst,
+			   sizeof(struct sockaddr_ll));
+	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
+	zassert_equal(ret, pkt_len, "Invalid data length sent (%d/%d)", ret, pkt_len);
+
+	/* And try to receive again. */
+	/* Verify we get packet from iface 1 */
+	test_recvfrom_unbound_round(packet_sock_1, packet_sock_2, sock_type,
+				    lladdr2, ud.second, lladdr1, ud.first);
+
+	/* Verify we get packet from iface 2 */
+	test_recvfrom_unbound_round(packet_sock_1, packet_sock_2, sock_type,
+				    lladdr1, ud.first, lladdr2, ud.second);
+}
+
+ZTEST(socket_packet, test_raw_sock_recvfrom_proto_wildcard_unbound)
+{
+	test_recvfrom_common_unbound(SOCK_RAW, false);
+}
+
+ZTEST(socket_packet, test_dgram_sock_recvfrom_proto_wildcard_unbound)
+{
+	test_recvfrom_common_unbound(SOCK_DGRAM, false);
+}
+
+ZTEST(socket_packet, test_raw_sock_recvfrom_proto_wildcard_bound_iface_0)
+{
+	test_recvfrom_common_unbound(SOCK_RAW, true);
+}
+
+ZTEST(socket_packet, test_dgram_sock_recvfrom_proto_wildcard_bound_iface_0)
+{
+	test_recvfrom_common_unbound(SOCK_DGRAM, true);
+}
+
+static void test_recv_common_bound_other_iface(int sock_type)
+{
+	struct sockaddr_ll ll_dst;
+	struct sockaddr_in ip_src;
+	uint16_t pkt_len;
+	int ret;
+
+	/* Transmitting sock */
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
+	prepare_test_packet(SOCK_RAW, ETH_P_IP, lladdr1, lladdr2, &pkt_len);
+	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr2, ud.first);
+	/* Receiving sock */
+	setup_packet_socket(&packet_sock_2, sock_type, htons(ETH_P_ALL));
+	bind_packet_socket(packet_sock_2, ud.first);
+	prepare_udp_socket(&udp_sock_1, &ip_src, DST_PORT);
+
+	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
+			   (struct sockaddr *)&ll_dst,
+			   sizeof(struct sockaddr_ll));
+	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
+	zassert_equal(ret, pkt_len, "Invalid data length sent (%d/%d)", ret, pkt_len);
+
+	/* Packet socket should not get the packet due to different binding */
+	ret = zsock_recv(packet_sock_2, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "Recv should fail");
+	zassert_equal(errno, EAGAIN, "Wrong errno");
+
+	/* But UDP socket should get the packet just fine. */
+	ret = zsock_recv(udp_sock_1, rx_buf, sizeof(rx_buf), 0);
+	zassert_not_equal(ret, -1, "Failed to receive UDP packet (%d)", errno);
+}
+
+ZTEST(socket_packet, test_raw_sock_recv_proto_wildcard_bound_other_iface)
+{
+	test_recv_common_bound_other_iface(SOCK_RAW);
+}
+
+ZTEST(socket_packet, test_dgram_sock_recv_proto_wildcard_bound_other_iface)
+{
+	test_recv_common_bound_other_iface(SOCK_DGRAM);
 }
 
 ZTEST(socket_packet, test_raw_dgram_udp_socks_recv)
@@ -939,13 +1093,13 @@ ZTEST(socket_packet, test_raw_dgram_udp_socks_recv)
 	int ret;
 
 	/* Transmitting sock */
-	setup_packet_socket(&packet_sock_1, ud.second, SOCK_RAW, 0);
+	setup_packet_socket(&packet_sock_1, SOCK_RAW, 0);
 	prepare_test_packet(SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
 	/* Receiving sockets */
-	setup_packet_socket(&packet_sock_2, ud.first, SOCK_RAW, htons(ETH_P_ALL));
+	setup_packet_socket(&packet_sock_2, SOCK_RAW, htons(ETH_P_ALL));
 	bind_packet_socket(packet_sock_2, ud.first);
-	setup_packet_socket(&packet_sock_3, ud.first, SOCK_DGRAM, htons(ETH_P_ALL));
+	setup_packet_socket(&packet_sock_3, SOCK_DGRAM, htons(ETH_P_ALL));
 	bind_packet_socket(packet_sock_3, ud.first);
 	prepare_udp_socket(&udp_sock_1, &ip_src, DST_PORT);
 

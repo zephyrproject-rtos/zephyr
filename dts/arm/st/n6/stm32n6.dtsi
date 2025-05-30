@@ -687,27 +687,27 @@
 
 		xspi1: xspi@58025000 {
 			compatible = "st,stm32-xspi";
-			reg = <0x58025000 0x1000>;
+			reg = <0x58025000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <170 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
 				 <&rcc STM32_SRC_HCLK5 XSPI1_SEL(0)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		xspi2: spi@5802a000 {
 			compatible = "st,stm32-xspi";
-			reg = <0x5802A000 0x1000>;
+			reg = <0x5802A000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <171 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
 				 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 

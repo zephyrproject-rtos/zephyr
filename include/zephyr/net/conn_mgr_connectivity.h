@@ -26,7 +26,7 @@ extern "C" {
  * @brief Connection Manager Connectivity API
  * @defgroup conn_mgr_connectivity Connection Manager Connectivity API
  * @since 3.4
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -90,6 +90,12 @@ enum conn_mgr_if_flag {
 	CONN_MGR_IF_NO_AUTO_DOWN,
 
 /** @cond INTERNAL_HIDDEN */
+	/**
+	 * Internal flag indicating that the interface is in active (application initiated)
+	 * disconnect.
+	 */
+	CONN_MGR_IF_DISCONNECTING,
+
 	/* Total number of flags - must be at the end of the enum */
 	CONN_MGR_NUM_IF_FLAGS,
 /** @endcond */

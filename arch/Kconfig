@@ -33,6 +33,7 @@ config ARM
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
 	select ARCH_SUPPORTS_COREDUMP_THREADS if CPU_CORTEX_M
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if CPU_CORTEX_M
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
@@ -103,15 +104,6 @@ config X86
 	help
 	  x86 architecture
 
-config NIOS2
-	bool
-	select ARCH_IS_SET
-	select ATOMIC_OPERATIONS_C
-	imply XIP
-	select ARCH_HAS_TIMING_FUNCTIONS
-	help
-	  Nios II Gen 2 architecture
-
 config RISCV
 	bool
 	select ARCH_IS_SET
@@ -165,6 +157,15 @@ config ARCH_POSIX
 	select REQUIRES_STD_C11
 	help
 	  POSIX (native) architecture
+
+config RX
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  Renesas RX architecture
 
 config ARCH_IS_SET
 	bool
@@ -227,7 +228,7 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || ARM64 || NIOS2 || X86 || RISCV
+if ARC || ARM || ARM64 || X86 || RISCV || RX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -250,7 +251,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || NIOS2 || X86 || RISCV
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -327,6 +328,7 @@ config PRIVILEGED_STACK_SIZE
 
 config KOBJECT_TEXT_AREA
 	int "Size of kobject text area"
+	default 1024 if UBSAN
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
 	default 512 if STACK_CANARIES && RISCV
@@ -513,6 +515,12 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	  to be aligned to architecture specific size.  The default
 	  size is 0 for no alignment.
 
+config ARCH_DEVICE_STATE_ALIGN
+	int "Alignment size of device state"
+	default 4
+	help
+	  This option controls alignment size of device state.
+
 choice IRQ_VECTOR_TABLE_TYPE
 	prompt "IRQ vector table type"
 	depends on GEN_IRQ_VECTOR_TABLE
@@ -693,6 +701,9 @@ config ARCH_SUPPORTS_COREDUMP_THREADS
 	bool
 
 config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	bool
+
+config ARCH_SUPPORTS_COREDUMP_STACK_PTR
 	bool
 
 config ARCH_SUPPORTS_ARCH_HW_INIT

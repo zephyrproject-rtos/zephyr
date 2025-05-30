@@ -19,7 +19,7 @@ struct sensor_shell_processing_context {
 
 extern struct rtio sensor_read_rtio;
 
-int cmd_sensor_stream(const struct shell *shell_ptr, size_t argc, char *argv[]);
+int cmd_sensor_stream(const struct shell *sh, size_t argc, char *argv[]);
 
 void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len, void *userdata);
 

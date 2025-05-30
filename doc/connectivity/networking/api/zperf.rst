@@ -13,7 +13,7 @@ Overview
 zperf is a shell utility which allows to generate network traffic in Zephyr. The
 tool may be used to evaluate network bandwidth.
 
-zperf is compatible with iPerf 2.0.10 and newer. For compatability with older versions,
+zperf is compatible with iPerf 2.0.10 and newer. For compatibility with older versions,
 enable :kconfig:option:`CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT`.
 
 zperf can be enabled in any application, a dedicated sample is also present
@@ -236,3 +236,13 @@ The ``-w`` option can be used like this to delay the startup of the jobs.
    Protocol:               TCP
    Session id:             0
    Total 2 sessions done
+
+Custom Data Upload
+******************
+
+zperf supports more advanced data upload profiling by setting a custom data
+source through :c:member:`zperf_upload_params.data_loader`. This enables the
+generation of custom packet contents instead of sending a constant packet
+consisting solely of the ``z`` character. An example use case would be
+determining the maximum throughput of uploading data from an external flash
+memory chip.

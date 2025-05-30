@@ -488,6 +488,19 @@ NXP S32 Debug Probe is designed to work in conjunction with NXP S32 Design Studi
 host tools as in indicated in :ref:`nxp-s32-debug-host-tools` before you program
 the firmware.
 
+.. _black-magic-probe:
+
+Black Magic Probe
+*****************
+
+The Black Magic Probe is an open-source hardware for debugging that is designed
+to be used with `Black Magic Debug`_ firmware.
+The firmware incorporates GDB Server so that you can connect directly from ``gdb``
+to the target device.
+
+Some of the STM32F103-based boards can run the `Black Magic Debug`_ firmware.
+See `Black Magic Debug supported hardware`_.
+
 .. _LPCScrypt:
    https://www.nxp.com/lpcscrypt
 
@@ -526,3 +539,9 @@ the firmware.
 
 .. _DAPLink Bootloader Update:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
+
+.. _Black Magic Debug:
+   https://black-magic.org/index.html
+
+.. _Black Magic Debug supported hardware:
+   https://black-magic.org/hardware.html

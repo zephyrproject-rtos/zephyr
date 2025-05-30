@@ -5,15 +5,15 @@
  */
 
 /** @file
- * @brief OpenThread L2 stack public header
+ * @brief OpenThread stack public header
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_OPENTHREAD_H_
 #define ZEPHYR_INCLUDE_NET_OPENTHREAD_H_
 
 /**
- * @brief OpenThread Layer 2 abstraction layer
- * @defgroup openthread OpenThread L2 abstraction layer
+ * @brief OpenThread stack public header
+ * @defgroup openthread OpenThread stack
  * @since 1.11
  * @version 0.8.0
  * @ingroup ieee802154
@@ -21,10 +21,10 @@
  */
 
 #include <zephyr/kernel.h>
-
 #include <zephyr/net/net_if.h>
+#include <zephyr/kernel/thread.h>
 
-#include <openthread/instance.h>
+#include <openthread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,8 +44,10 @@ struct pkt_list_elem {
  * @brief OpenThread l2 private data.
  */
 struct openthread_context {
-	/** Pointer to OpenThread stack instance */
-	otInstance *instance;
+	/** @deprecated Pointer to OpenThread stack instance. This is deprecated and will be removed
+	 * in a future release. This field must not be used anymore.
+	 */
+	__deprecated otInstance *instance;
 
 	/** Pointer to OpenThread network interface */
 	struct net_if *iface;
@@ -62,16 +64,24 @@ struct openthread_context {
 	/** Array for storing net_pkt for OpenThread internal usage */
 	struct pkt_list_elem pkt_list[CONFIG_OPENTHREAD_PKT_LIST_SIZE];
 
-	/** A mutex to protect API calls from being preempted. */
-	struct k_mutex api_lock;
+	/** @deprecated A mutex to protect API calls from being preempted. This is deprecated and
+	 * will be removed in a future release. This field must not be used anymore.
+	 */
+	__deprecated struct k_mutex api_lock;
 
-	/** A work queue for all OpenThread activity */
-	struct k_work_q work_q;
+	/** @deprecated A work queue for all OpenThread activity. This is deprecated and will be
+	 * removed in a future release. This field must not be used anymore.
+	 */
+	__deprecated struct k_work_q work_q;
 
-	/** Work object for OpenThread internal usage */
-	struct k_work api_work;
+	/** @deprecated Work object for OpenThread internal usage. This is deprecated and will be
+	 * removed in a future release. This field must not be used anymore.
+	 */
+	__deprecated struct k_work api_work;
 
-	/** A list for state change callbacks */
+	/** @deprecated A list for state change callbacks. This is deprecated and will be removed in
+	 * a future release.
+	 */
 	sys_slist_t state_change_cbs;
 };
 /**
@@ -81,6 +91,8 @@ struct openthread_context {
 /** OpenThread state change callback  */
 
 /**
+ * @deprecated use @ref openthread_state_changed_callback instead.
+ *
  * @brief OpenThread state change callback structure
  *
  * Used to register a callback in the callback list. As many
@@ -111,28 +123,27 @@ struct openthread_state_changed_cb {
 };
 
 /**
+ * @deprecated use @ref openthread_state_changed_callback_register instead.
+ *
  * @brief Registers callbacks which will be called when certain configuration
  * or state changes occur within OpenThread.
  *
  * @param ot_context the OpenThread context to register the callback with.
  * @param cb callback struct to register.
  */
-int openthread_state_changed_cb_register(struct openthread_context *ot_context,
-					 struct openthread_state_changed_cb *cb);
+__deprecated int openthread_state_changed_cb_register(struct openthread_context *ot_context,
+						      struct openthread_state_changed_cb *cb);
 
 /**
+ * @deprecated use @ref openthread_state_changed_callback_unregister instead.
+ *
  * @brief Unregisters OpenThread configuration or state changed callbacks.
  *
  * @param ot_context the OpenThread context to unregister the callback from.
  * @param cb callback struct to unregister.
  */
-int openthread_state_changed_cb_unregister(struct openthread_context *ot_context,
-					   struct openthread_state_changed_cb *cb);
-
-/**
- * @brief Get OpenThread thread identification.
- */
-k_tid_t openthread_thread_id_get(void);
+__deprecated int openthread_state_changed_cb_unregister(struct openthread_context *ot_context,
+							struct openthread_state_changed_cb *cb);
 
 /**
  * @brief Get pointer to default OpenThread context.
@@ -143,14 +154,8 @@ k_tid_t openthread_thread_id_get(void);
 struct openthread_context *openthread_get_default_context(void);
 
 /**
- * @brief Get pointer to default OpenThread instance.
+ * @deprecated use @ref openthread_run instead.
  *
- * @retval !NULL On success.
- * @retval NULL  On failure.
- */
-struct otInstance *openthread_get_default_instance(void);
-
-/**
  * @brief Starts the OpenThread network.
  *
  * @details Depends on active settings: it uses stored network configuration,
@@ -159,9 +164,11 @@ struct otInstance *openthread_get_default_instance(void);
  *
  * @param ot_context
  */
-int openthread_start(struct openthread_context *ot_context);
+__deprecated int openthread_start(struct openthread_context *ot_context);
 
 /**
+ * @deprecated use @ref openthread_mutex_lock.
+ *
  * @brief Lock internal mutex before accessing OT API.
  *
  * @details OpenThread API is not thread-safe, therefore before accessing any
@@ -170,9 +177,11 @@ int openthread_start(struct openthread_context *ot_context);
  *
  * @param ot_context Context to lock.
  */
-void openthread_api_mutex_lock(struct openthread_context *ot_context);
+__deprecated void openthread_api_mutex_lock(struct openthread_context *ot_context);
 
 /**
+ * @deprecated use @ref openthread_mutex_try_lock instead.
+ *
  * @brief Try to lock internal mutex before accessing OT API.
  *
  * @details This function behaves like openthread_api_mutex_lock() provided that
@@ -183,14 +192,16 @@ void openthread_api_mutex_lock(struct openthread_context *ot_context);
  * @retval 0  On success.
  * @retval <0 On failure.
  */
-int openthread_api_mutex_try_lock(struct openthread_context *ot_context);
+__deprecated int openthread_api_mutex_try_lock(struct openthread_context *ot_context);
 
 /**
+ * @deprecated use @ref openthread_mutex_unlock instead.
+ *
  * @brief Unlock internal mutex after accessing OT API.
  *
  * @param ot_context Context to unlock.
  */
-void openthread_api_mutex_unlock(struct openthread_context *ot_context);
+__deprecated void openthread_api_mutex_unlock(struct openthread_context *ot_context);
 
 /** @cond INTERNAL_HIDDEN */
 

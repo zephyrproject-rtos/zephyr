@@ -6,6 +6,7 @@
 /dts-v1/;
 #include <st/wl/stm32wle5Xc.dtsi>
 #include <st/wl/stm32wle5ccux-pinctrl.dtsi>
+#include <arm/rakwireless/rak3172.dtsi>
 
 / {
 	model = "RAKWireless RAK3172 WisDuo LPWAN Module with a STM32WLE5CC SoC";
@@ -42,20 +43,16 @@
 
 &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
-		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
-	status = "okay";
-};
-
-&clk_lsi {
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
 
 &pll {
 	div-m = <1>;
-	mul-n = <6>;
+	mul-n = <3>;
 	div-r = <2>;
 	div-q = <2>;
-	clocks = <&clk_hsi>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
@@ -98,7 +95,7 @@
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
-		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
@@ -112,26 +109,6 @@
 
 &rng {
 	status = "okay";
-};
-
-&clk_lse {
-	clock-frequency = <32768>;
-};
-
-&clk_hsi {
-	status = "okay";
-};
-
-&subghzspi {
-	status = "okay";
-
-	lora: radio@0 {
-		status = "okay";
-		tx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>; /* FE_CTRL1 */
-		rx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;  /* FE_CTRL2 */
-		power-amplifier-output = "rfo-lp";
-		rfo-lp-max-power = <14>;
-	};
 };
 
 &flash0 {

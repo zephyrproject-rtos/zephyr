@@ -21,6 +21,7 @@
 	};
 
 	chosen {
+		zephyr,canbus = &twai0;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
@@ -117,6 +118,11 @@
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
+
+			counter {
+				compatible = "espressif,esp32-counter";
+				status = "disabled";
+			};
 		};
 
 		timer1: counter@60009000 {
@@ -128,6 +134,11 @@
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
+
+			counter {
+				compatible = "espressif,esp32-counter";
+				status = "disabled";
+			};
 		};
 
 		rtc: rtc@600b0000 {
@@ -152,6 +163,24 @@
 			compatible = "espressif,esp32-trng";
 			reg = <0x600B2808 0x4>;
 			clocks = <&rtc ESP32_RNG_MODULE>;
+			status = "disabled";
+		};
+
+		twai0: can@6000b000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x6000B000 DT_SIZE_K(4)>;
+			interrupts = <TWAI0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI0_MODULE>;
+			status = "disabled";
+		};
+
+		twai1: can@6000d000 {
+			compatible = "espressif,esp32-twai";
+			reg = <0x6000D000 DT_SIZE_K(4)>;
+			interrupts = <TWAI1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_TWAI1_MODULE>;
 			status = "disabled";
 		};
 
@@ -255,6 +284,18 @@
 			status = "disabled";
 		};
 
+		i2s: i2s@6000c000 {
+			compatible = "espressif,esp32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x6000c000 0x1000>;
+			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2S1_MODULE>;
+			unit = <0>;
+			status = "disabled";
+		};
+
 		uart0: uart@60000000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x60000000 DT_SIZE_K(4)>;
@@ -306,6 +347,15 @@
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_MCPWM0_MODULE>;
 			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pcnt: pcnt@60012000 {
+			compatible = "espressif,esp32-pcnt";
+			reg = <0x60012000 DT_SIZE_K(4)>;
+			interrupts = <PCNT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_PCNT_MODULE>;
 			status = "disabled";
 		};
 	};

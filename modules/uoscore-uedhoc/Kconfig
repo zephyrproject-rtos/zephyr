@@ -6,6 +6,8 @@ menuconfig UOSCORE
 	depends on ZCBOR
 	depends on ZCBOR_CANONICAL
 	depends on MBEDTLS
+	select UOSCORE_UEDHOC_CRYPTO_COMMON
+
 	help
 	  This option enables the UOSCORE library.
 
@@ -21,6 +23,7 @@ menuconfig UEDHOC
 	depends on ZCBOR
 	depends on ZCBOR_CANONICAL
 	depends on MBEDTLS
+	select UOSCORE_UEDHOC_CRYPTO_COMMON
 	help
 	  This option enables the UEDHOC library.
 
@@ -30,3 +33,23 @@ config UEDHOC_DEBUG
 	bool "Debug logs in the uedhoc library"
 
 endif # UEDHOC
+
+if UOSCORE || UEDHOC
+
+config UOSCORE_UEDHOC_CRYPTO_COMMON
+	bool
+	imply MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CCM
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
+
+endif # UOSCORE || UEDHOC

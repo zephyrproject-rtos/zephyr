@@ -1,0 +1,14 @@
+shields:
+  - name: nxp_m2_1xk_wifi_bt
+    full_name: NXP M2 WiFi/BT Shield (Murata 1XK)
+    vendor: nxp
+    supported_features:
+      - bluetooth
+      - wifi
+
+  - name: nxp_m2_2el_wifi_bt
+    full_name: NXP M2 WiFi/BT Shield (Murata 2EL)
+    vendor: nxp
+    supported_features:
+      - bluetooth
+      - wifi

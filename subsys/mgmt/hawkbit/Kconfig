@@ -11,7 +11,6 @@ menuconfig HAWKBIT
 	depends on IMG_MANAGER
 	depends on NETWORKING
 	depends on HTTP_CLIENT
-	depends on DNS_RESOLVER
 	depends on JSON_LIBRARY
 	depends on BOOTLOADER_MCUBOOT
 	depends on SMF
@@ -57,7 +56,8 @@ config HAWKBIT_TENANT
 config HAWKBIT_SERVER
 	string "User address for the hawkbit server"
 	help
-	  Configure the hawkbit server address.
+	  Configure the hawkbit server address. If the address is not an IP address,
+	  CONFIG_DNS_RESOLVER must be enabled to resolve the hostname.
 
 config HAWKBIT_PORT
 	int "Port number for the hawkbit server"
@@ -69,6 +69,22 @@ config HAWKBIT_SET_SETTINGS_RUNTIME
 	bool "Set hawkbit settings at runtime"
 	help
 	  Enable to set hawkbit settings at runtime.
+
+config HAWKBIT_USE_DOMAIN_NAME
+	bool "Use server_domain for domain name instead of server_addr"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Enable to use the server_domain field for TLS and HTTP. If enabled,
+	  server_addr can accept an already resolved IP address, and the domain name
+	  can be provided via server_domain.
+
+config HAWKBIT_DOMAIN_NAME_MAX_LEN
+	int "The buffer size for storing the domain name string"
+	default DNS_RESOLVER_MAX_QUERY_LEN if DNS_RESOLVER
+	default 255
+	depends on HAWKBIT_USE_DOMAIN_NAME
+	help
+	  The size for the internal buffer used to hold the domain name string.
 
 choice HAWKBIT_DDI_SECURITY
 	prompt "hawkBit DDI API authentication modes"

@@ -22,10 +22,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		orange_led: led_1 {
 			gpios = <&mfx 0 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpioh 4 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
@@ -34,26 +36,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		joy_sel: joystick_selection {
 			label = "joystick selection";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&mfx 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
+
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&mfx 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&mfx 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
+
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&mfx 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
@@ -220,6 +227,7 @@
 		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
+	disk-name = "SD";
 };
 
 &adc1 {

@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v0/ch32v006.dtsi>

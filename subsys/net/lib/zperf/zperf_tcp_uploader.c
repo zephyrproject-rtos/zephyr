@@ -41,24 +41,26 @@ static ssize_t sendall(int sock, const void *buf, size_t len)
 
 static int tcp_upload(int sock,
 		      unsigned int duration_in_ms,
-		      unsigned int packet_size,
-		      struct zperf_results *results)
+		      const struct zperf_upload_params *param,
+		      struct zperf_results *results,
+		      uint64_t *data_offset)
 {
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(duration_in_ms));
 	int64_t start_time, end_time;
 	uint32_t nb_packets = 0U, nb_errors = 0U;
+	uint32_t packet_size = param->packet_size;
 	uint32_t alloc_errors = 0U;
 	int ret = 0;
 
 	if (packet_size > PACKET_SIZE_MAX) {
-		NET_WARN("Packet size too large! max size: %u\n",
-			PACKET_SIZE_MAX);
+		NET_WARN("Packet size too large! max size: %u\n", PACKET_SIZE_MAX);
 		packet_size = PACKET_SIZE_MAX;
 	}
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
 
+	/* Default data payload */
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	/* Set the "flags" field in start of the packet to be 0.
@@ -68,6 +70,17 @@ static int tcp_upload(int sock,
 	(void)memset(sample_packet, 0, sizeof(uint32_t));
 
 	do {
+		/* Load custom data payload if requested */
+		if (param->data_loader != NULL) {
+			ret = param->data_loader(param->data_loader_ctx, *data_offset,
+				sample_packet, packet_size);
+			if (ret < 0) {
+				NET_ERR("Failed to load data for offset %llu", *data_offset);
+				return ret;
+			}
+		}
+		*data_offset += packet_size;
+
 		/* Send the packet */
 		ret = sendall(sock, sample_packet, packet_size);
 		if (ret < 0) {
@@ -129,6 +142,7 @@ static int tcp_upload(int sock,
 int zperf_tcp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result)
 {
+	uint64_t data_offset = 0;
 	int sock;
 	int ret;
 
@@ -143,7 +157,7 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 		return sock;
 	}
 
-	ret = tcp_upload(sock, param->duration_ms, param->packet_size, result);
+	ret = tcp_upload(sock, param->duration_ms, param, result, &data_offset);
 
 	zsock_close(sock);
 
@@ -184,6 +198,7 @@ static void tcp_upload_async_work(struct k_work *work)
 
 	int ret;
 	struct zperf_upload_params param = upload_ctx->param;
+	uint64_t data_offset = 0;
 	int sock;
 
 	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
@@ -219,7 +234,8 @@ static void tcp_upload_async_work(struct k_work *work)
 			} else {
 				round_duration = report_interval;
 			}
-			ret = tcp_upload(sock, round_duration, param.packet_size, &periodic_result);
+			ret = tcp_upload(sock, round_duration, &param, &periodic_result,
+				&data_offset);
 			if (ret < 0) {
 				upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 						     upload_ctx->user_data);
@@ -236,7 +252,7 @@ static void tcp_upload_async_work(struct k_work *work)
 		result->packet_size = periodic_result.packet_size;
 
 	} else {
-		ret = tcp_upload(sock, param.duration_ms, param.packet_size, result);
+		ret = tcp_upload(sock, param.duration_ms, &param, result, &data_offset);
 		if (ret < 0) {
 			upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,
 					     upload_ctx->user_data);

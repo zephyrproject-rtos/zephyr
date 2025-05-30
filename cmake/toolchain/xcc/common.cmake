@@ -23,6 +23,7 @@ zephyr_get(XTENSA_CORE_${NORMALIZED_BOARD_TARGET})
 if(DEFINED XTENSA_CORE_${NORMALIZED_BOARD_TARGET})
   set(XTENSA_CORE_LOCAL_C_FLAG "--xtensa-core=${XTENSA_CORE_${NORMALIZED_BOARD_TARGET}}")
   list(APPEND TOOLCHAIN_C_FLAGS "--xtensa-core=${XTENSA_CORE_${NORMALIZED_BOARD_TARGET}}")
+  list(APPEND TOOLCHAIN_LD_FLAGS "--xtensa-core=${XTENSA_CORE_${NORMALIZED_BOARD_TARGET}}")
 else()
   # Not having XTENSA_CORE is not necessarily fatal as
   # the toolchain can have a default core configuration to use.

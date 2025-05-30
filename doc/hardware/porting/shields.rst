@@ -8,6 +8,8 @@ to extend its features and services for easier and modularized prototyping.
 In Zephyr, the shield feature provides Zephyr-formatted shield
 descriptions for easier compatibility with applications.
 
+.. _shield_porting_guide:
+
 Shield porting and configuration
 ********************************
 
@@ -17,11 +19,36 @@ under :zephyr_file:`boards/shields`:
 .. code-block:: none
 
    boards/shields/<shield>
+   ├── shield.yml
    ├── <shield>.overlay
    ├── Kconfig.shield
-   └── Kconfig.defconfig
+   ├── Kconfig.defconfig
+   └── pre_dt_shield.cmake
 
 These files provides shield configuration as follows:
+
+* **shield.yml**: This file provides metadata about the shield in YAML format.
+  It must contain the following fields:
+
+  * ``name``: Name of the shield used in Kconfig and build system (required)
+  * ``full_name``: Full commercial name of the shield (required)
+  * ``vendor``: Manufacturer/vendor of the shield (required)
+  * ``supported_features``: List of hardware features the shield supports (optional). In order to
+    help users identify the features a shield supports without having to dig into its overlay file,
+    the ``supported_features`` field can be used to list the types of features the shield supports.
+    The values should be the same as the ones defined in the
+    :zephyr_file:`dts/bindings/binding-types.txt` file.
+
+  Example:
+
+  .. code-block:: yaml
+
+     name: foo_shield
+     full_name: Foo Shield for Arduino
+     vendor: acme
+     supported_features:
+       - display
+       - input
 
 * **<shield>.overlay**: This file provides a shield description in devicetree
   format that is merged with the board's :ref:`devicetree <dt-guide>`
@@ -36,6 +63,9 @@ These files provides shield configuration as follows:
   is made to be consistent with the :ref:`default_board_configuration`. Hence,
   shield configuration should be done by keeping in mind that features
   activation is application responsibility.
+
+* **pre_dt_shield.cmake**: This optional file can be used to pass additional
+  arguments to the devicetree compiler ``dtc``.
 
 Besides, in order to avoid name conflicts with devices that may be defined at
 board level, it is advised, specifically for shields devicetree descriptions,

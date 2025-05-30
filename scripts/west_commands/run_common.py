@@ -1,5 +1,6 @@
 # Copyright (c) 2018 Open Source Foundries Limited.
 # Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 Aerlync Labs Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -181,6 +182,34 @@ def add_parser_common(command, parser_adder=None, parser=None):
 
     return parser
 
+def is_sysbuild(build_dir):
+    # Check if the build directory is part of a sysbuild (multi-image build).
+    domains_yaml_path = path.join(build_dir, "domains.yaml")
+    return path.exists(domains_yaml_path)
+
+def get_domains_to_process(build_dir, args, domain_file, get_all_domain=False):
+    try:
+        domains = load_domains(build_dir)
+    except Exception as e:
+        log.die(f"Failed to load domains: {e}")
+
+    if domain_file is None:
+        if getattr(args, "domain", None) is None and get_all_domain:
+            # This option for getting all available domains in the case of --context
+            # So default domain will be used.
+            return domains.get_domains()
+        if getattr(args, "domain", None) is None:
+            # No domains are passed down and no domains specified by the user.
+            # So default domain will be used.
+            return [domains.get_default_domain()]
+        else:
+            # No domains are passed down, but user has specified domains to use.
+            # Get the user specified domains.
+            return domains.get_domains(args.domain)
+    else:
+        # Use domains from domain file with flash order
+        return domains.get_domains(args.domain, default_flash_order=True)
+
 def do_run_common(command, user_args, user_runner_args, domain_file=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
@@ -218,18 +247,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
     if not user_args.skip_rebuild:
         rebuild(command, build_dir, user_args)
 
-    if domain_file is None:
-        if user_args.domain is None:
-            # No domains are passed down and no domains specified by the user.
-            # So default domain will be used.
-            domains = [load_domains(build_dir).get_default_domain()]
-        else:
-            # No domains are passed down, but user has specified domains to use.
-            # Get the user specified domains.
-            domains = load_domains(build_dir).get_domains(user_args.domain)
-    else:
-        domains = load_domains(build_dir).get_domains(user_args.domain,
-                                                      default_flash_order=True)
+    domains = get_domains_to_process(build_dir, user_args, domain_file)
 
     if len(domains) > 1:
         if len(user_runner_args) > 0:
@@ -672,6 +690,7 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         output_file('hex'),
                         output_file('bin'),
                         output_file('uf2'),
+                        output_file('mot'),
                         config('file'),
                         filetype('file_type'),
                         config('gdb'),
@@ -693,40 +712,71 @@ def dump_traceback():
 
 def dump_context(command, args, unknown_args):
     build_dir = get_build_dir(args, die_if_none=False)
+    get_all_domain = False
+
     if build_dir is None:
         log.wrn('no --build-dir given or found; output will be limited')
-        runners_yaml = None
-    else:
-        build_conf = BuildConfiguration(build_dir)
-        board = build_conf.get('CONFIG_BOARD_TARGET')
-        yaml_path = runners_yaml_path(build_dir, board)
-        runners_yaml = load_runners_yaml(yaml_path)
+        dump_context_no_config(command, None)
+        return
+
+    if is_sysbuild(build_dir):
+        get_all_domain = True
 
     # Re-build unless asked not to, to make sure the output is up to date.
     if build_dir and not args.skip_rebuild:
         rebuild(command, build_dir, args)
 
+    domains = get_domains_to_process(build_dir, args, None, get_all_domain)
+
+    if len(domains) > 1 and not getattr(args, "domain", None):
+        log.inf("Multiple domains available:")
+        for i, domain in enumerate(domains, 1):
+            log.inf(f"{INDENT}{i}. {domain.name} (build_dir: {domain.build_dir})")
+
+        while True:
+            try:
+                choice = input(f"Select domain (1-{len(domains)}): ")
+                choice = int(choice)
+                if 1 <= choice <= len(domains):
+                    domains = [domains[choice-1]]
+                    break
+                log.wrn(f"Please enter a number between 1 and {len(domains)}")
+            except ValueError:
+                log.wrn("Please enter a valid number")
+            except EOFError:
+                log.die("Input cancelled, exiting")
+
+    selected_build_dir = domains[0].build_dir
+
+    if not path.exists(selected_build_dir):
+        log.die(f"Build directory does not exist: {selected_build_dir}")
+
+    build_conf = BuildConfiguration(selected_build_dir)
+
+    board = build_conf.get('CONFIG_BOARD_TARGET')
+    if not board:
+        log.die("CONFIG_BOARD_TARGET not found in build configuration.")
+
+    yaml_path = runners_yaml_path(selected_build_dir, board)
+    if not path.exists(yaml_path):
+        log.die(f"runners.yaml not found in: {yaml_path}")
+
+    runners_yaml = load_runners_yaml(yaml_path)
+
+    # Dump runner info
+    log.inf(f'build configuration:', colorize=True)
+    log.inf(f'{INDENT}build directory: {build_dir}')
+    log.inf(f'{INDENT}board: {board}')
+    log.inf(f'{INDENT}runners.yaml: {yaml_path}')
     if args.runner:
         try:
             cls = get_runner_cls(args.runner)
-        except ValueError:
-            log.die(f'invalid runner name {args.runner}; choices: ' +
-                    ', '.join(cls.name() for cls in
-                              ZephyrBinaryRunner.get_runners()))
-    else:
-        cls = None
-
-    if runners_yaml is None:
-        dump_context_no_config(command, cls)
-    else:
-        log.inf(f'build configuration:', colorize=True)
-        log.inf(f'{INDENT}build directory: {build_dir}')
-        log.inf(f'{INDENT}board: {board}')
-        log.inf(f'{INDENT}runners.yaml: {yaml_path}')
-        if cls:
             dump_runner_context(command, cls, runners_yaml)
-        else:
-            dump_all_runner_context(command, runners_yaml, board, build_dir)
+        except ValueError:
+            available_runners = ", ".join(cls.name() for cls in ZephyrBinaryRunner.get_runners())
+            log.die(f"Invalid runner name {args.runner}; choices: {available_runners}")
+    else:
+        dump_all_runner_context(command, runners_yaml, board, selected_build_dir)
 
 def dump_context_no_config(command, cls):
     if not cls:

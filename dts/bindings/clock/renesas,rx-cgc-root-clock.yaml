@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX Root Clock Generation Circuit
+
+compatible: "renesas,rx-cgc-root-clock"
+
+include: [fixed-clock.yaml, base.yaml]
+
+properties:
+  mosel:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Choose the way for external Clock Oscillator supply
+      0: Resonator
+      1: External clock input
+
+  stabilization-time:
+    type: int
+    enum:
+      - 0 # Wait time = 2 cycles (0.5 μs)
+      - 1 # Wait time = 1024 cycles (256 μs)
+      - 2 # Wait time = 2048 cycles (512 μs)
+      - 3 # Wait time = 4096 cycles (1.024 ms)
+      - 4 # Wait time = 8192 cycles (2.048 ms)
+      - 5 # Wait time = 16384 cycles (4.096 ms)
+      - 6 # Wait time = 32768 cycles (8.192 ms)
+      - 7 # Wait time = 65536 cycles (16.384 ms)
+    description: |
+      Setting for main clock oscillator wait time
+
+  sub-clk-osc:
+    type: int
+    default: 500
+    description: |
+      Sub-Clock stabilization time in milliseconds
+
+  drive-capacity:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Drive Capacity Control (for Sub-Clock Oscillator only)
+      0: Drive capacity for standard CL.
+      1: Drive capacity for low CL.

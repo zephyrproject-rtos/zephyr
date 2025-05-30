@@ -9,6 +9,7 @@
 #include <zephyr/drivers/comparator/nrf_lpcomp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
+#include "comparator_nrf_common.h"
 
 #include <string.h>
 
@@ -18,7 +19,7 @@
 	_CONCAT(COMP_NRF_LPCOMP_REFSEL_, DT_INST_STRING_TOKEN(inst, refsel))
 
 #define SHIM_NRF_LPCOMP_DT_INST_REFSEL_IS_AREF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, refsel, AREF)
+	DT_INST_ENUM_HAS_VALUE(inst, refsel, aref)
 
 #define SHIM_NRF_LPCOMP_DT_INST_EXTREFSEL(inst) \
 	_CONCAT(COMP_NRF_LPCOMP_EXTREFSEL_, DT_INST_STRING_TOKEN(inst, extrefsel))
@@ -37,30 +38,6 @@ struct shim_nrf_lpcomp_data {
 	comparator_callback_t callback;
 	void *user_data;
 };
-
-#if (NRF_LPCOMP_HAS_AIN_AS_PIN)
-static const uint32_t shim_nrf_lpcomp_ain_map[] = {
-#if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
-	NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-#elif defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) ||  defined(CONFIG_SOC_NRF54L15)
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
-#endif
-};
-#endif
 
 #if (NRF_LPCOMP_HAS_AIN_AS_PIN)
 BUILD_ASSERT(COMP_NRF_LPCOMP_PSEL_AIN0 == 0);
@@ -152,11 +129,11 @@ static int shim_nrf_lpcomp_pm_callback(const struct device *dev, enum pm_device_
 static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim,
 				       nrf_lpcomp_input_t *nrf)
 {
-	if (shim >= ARRAY_SIZE(shim_nrf_lpcomp_ain_map)) {
+	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
 		return -EINVAL;
 	}
 
-	*nrf = shim_nrf_lpcomp_ain_map[(uint32_t)shim];
+	*nrf = shim_nrf_comp_ain_map[(uint32_t)shim];
 	return 0;
 }
 #else
@@ -208,11 +185,11 @@ static int shim_nrf_lpcomp_psel_to_nrf(enum comp_nrf_lpcomp_psel shim,
 static int shim_nrf_lpcomp_extrefsel_to_nrf(enum comp_nrf_lpcomp_extrefsel shim,
 					    nrf_lpcomp_ext_ref_t *nrf)
 {
-	if (shim >= ARRAY_SIZE(shim_nrf_lpcomp_ain_map)) {
+	if (shim >= ARRAY_SIZE(shim_nrf_comp_ain_map)) {
 		return -EINVAL;
 	}
 
-	*nrf = shim_nrf_lpcomp_ain_map[shim];
+	*nrf = shim_nrf_comp_ain_map[shim];
 	return 0;
 }
 #else

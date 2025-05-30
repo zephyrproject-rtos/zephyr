@@ -862,7 +862,7 @@ static int mcxw_cca(const struct device *dev)
 
 	k_sem_take(&mcxw_radio->cca_wait, K_FOREVER);
 
-	return (mcxw_radio->tx_status == OT_ERROR_CHANNEL_ACCESS_FAILURE) ? -EBUSY : 0;
+	return (mcxw_radio->tx_status > 0) ? -EBUSY : 0;
 }
 
 static int mcxw_set_channel(const struct device *dev, uint16_t channel)
@@ -1195,9 +1195,6 @@ static int mcxw_configure(const struct device *dev, enum ieee802154_config_type 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		break;
 
-	case IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS:
-		break;
-
 	default:
 		return -EINVAL;
 	}
@@ -1229,8 +1226,7 @@ static enum ieee802154_hw_caps mcxw_get_capabilities(const struct device *dev)
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_ENERGY_SCAN |
 	       IEEE802154_HW_TXTIME | IEEE802154_HW_RXTIME | IEEE802154_HW_SLEEP_TO_TX |
 	       IEEE802154_RX_ON_WHEN_IDLE | IEEE802154_HW_TX_SEC |
-	       IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA | IEEE802154_HW_SELECTIVE_TXCHANNEL |
-	       IEEE802154_OPENTHREAD_HW_CST;
+	       IEEE802154_HW_SELECTIVE_TXCHANNEL;
 	return caps;
 }
 
@@ -1356,5 +1352,11 @@ static const struct ieee802154_radio_api mcxw71_radio_api = {
 #define MTU         CONFIG_NET_L2_CUSTOM_IEEE802154_MTU
 #endif
 
+#if defined(CONFIG_NET_L2_PHY_IEEE802154)
 NET_DEVICE_DT_INST_DEFINE(0, mcxw_init, NULL, &mcxw_ctx, NULL, CONFIG_IEEE802154_MCXW_INIT_PRIO,
-			  &mcxw71_radio_api, L2, L2_CTX_TYPE, MTU);
+	&mcxw71_radio_api, L2, L2_CTX_TYPE, MTU);
+#else
+DEVICE_DT_INST_DEFINE(0, mcxw_init, NULL, &mcxw_ctx, NULL,
+			POST_KERNEL, CONFIG_IEEE802154_MCXW_INIT_PRIO,
+			&mcxw71_radio_api);
+#endif

@@ -24,6 +24,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
@@ -32,6 +33,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -120,7 +122,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -140,6 +141,7 @@
 			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(32)>;
 		};
+
 		/*
 		 * The flash sectors 4 at 0x00010000 and ending at
 		 * 0x001ffff
@@ -148,6 +150,7 @@
 			label = "image-1";
 			reg = <0x00010000 DT_SIZE_K(32)>;
 		};
+
 		scratch_partition: partition@18000 {
 			label = "image-scratch";
 			reg = <0x00018000 DT_SIZE_K(32)>;

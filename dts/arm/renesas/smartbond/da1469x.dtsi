@@ -30,6 +30,14 @@
 			reg = <0>;
 			clock-frequency = <32000000>;
 			cpu-power-states = <&standby>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
 		};
 
 		power-states {
