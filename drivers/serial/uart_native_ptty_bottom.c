@@ -132,7 +132,7 @@ static void attach_to_tty(const char *slave_tty, const char *auto_attach_cmd)
  * If auto_attach was set, it will also attempt to connect a new terminal
  * emulator to its slave side.
  */
-int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
+int np_uart_open_ptty(const char *ptty_symlink_path, const char *uart_name, const char *auto_attach_cmd,
 		      bool do_auto_attach, bool wait_pts)
 {
 	int master_pty;
@@ -232,6 +232,11 @@ int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
 	}
 	if (do_auto_attach) {
 		attach_to_tty(slave_pty_name, auto_attach_cmd);
+	}
+
+	if (ptty_symlink_path != NULL) {
+		/* Future symlink mode - placeholder for Phase 2+ implementation */
+		ERROR("Symlink mode not yet implemented in Phase 1\n");
 	}
 
 	return master_pty;

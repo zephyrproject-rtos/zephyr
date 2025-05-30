@@ -22,7 +22,7 @@ extern "C" {
 
 int np_uart_stdin_poll_in_bottom(int in_f, unsigned char *p_char);
 int np_uart_slave_connected(int fd);
-int np_uart_open_ptty(const char *uart_name, const char *auto_attach_cmd,
+int np_uart_open_ptty(const char *ptty_symlink_path, const char *uart_name, const char *auto_attach_cmd,
 		      bool do_auto_attach, bool wait_pts);
 int np_uart_ptty_get_stdin_fileno(void);
 int np_uart_ptty_get_stdout_fileno(void);

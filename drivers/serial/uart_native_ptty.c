@@ -85,7 +85,7 @@ static int np_uart_0_init(const struct device *dev)
 	d = (struct native_uart_status *)dev->data;
 
 	if (IS_ENABLED(CONFIG_NATIVE_UART_0_ON_OWN_PTY)) {
-		int tty_fn = np_uart_open_ptty(dev->name, auto_attach_cmd, auto_attach, wait_pts);
+		int tty_fn = np_uart_open_ptty(NULL, dev->name, auto_attach_cmd, auto_attach, wait_pts);
 
 		d->in_fd = tty_fn;
 		d->out_fd = tty_fn;
@@ -111,7 +111,7 @@ static int np_uart_1_init(const struct device *dev)
 
 	d = (struct native_uart_status *)dev->data;
 
-	tty_fn = np_uart_open_ptty(dev->name, NULL, false, wait_pts);
+	tty_fn = np_uart_open_ptty(NULL, dev->name, NULL, false, wait_pts);
 
 	d->in_fd = tty_fn;
 	d->out_fd = tty_fn;
