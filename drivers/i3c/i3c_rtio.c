@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/toolchain.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/drivers/i3c/rtio.h>
 #include <zephyr/rtio/rtio.h>
@@ -182,7 +183,11 @@ int i3c_rtio_configure(struct i3c_rtio *ctx, enum i3c_config_type type, void *co
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
-	res = cqe->result;
+	if (unlikely(cqe != NULL)) {
+		res = cqe->result;
+	} else {
+		res = -EIO;
+	}
 	rtio_cqe_release(r, cqe);
 
 out:
@@ -214,7 +219,11 @@ int i3c_rtio_ccc(struct i3c_rtio *ctx, struct i3c_ccc_payload *payload)
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
-	res = cqe->result;
+	if (unlikely(cqe != NULL)) {
+		res = cqe->result;
+	} else {
+		res = -EIO;
+	}
 	rtio_cqe_release(r, cqe);
 
 out:
@@ -245,7 +254,11 @@ int i3c_rtio_recover(struct i3c_rtio *ctx)
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
-	res = cqe->result;
+	if (unlikely(cqe != NULL)) {
+		res = cqe->result;
+	} else {
+		res = -EIO;
+	}
 	rtio_cqe_release(r, cqe);
 
 out:

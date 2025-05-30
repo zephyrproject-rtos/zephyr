@@ -821,8 +821,8 @@ ZTEST(test_utils_fn, test_addr_parse)
 			zassert_true(
 				net_ipv4_addr_cmp(
 				      &net_sin(&addr)->sin_addr,
-				      &parse_ipv4_entries[i].result.sin_addr),
-				parse_ipv4_entries[i].address);
+				      &parse_ipv4_entries[i].result.sin_addr) ==
+				parse_ipv4_entries[i].verdict);
 			zassert_true(net_sin(&addr)->sin_port ==
 				     parse_ipv4_entries[i].result.sin_port,
 				     "IPv4 port");
@@ -850,8 +850,8 @@ ZTEST(test_utils_fn, test_addr_parse)
 			zassert_true(
 				net_ipv6_addr_cmp(
 				      &net_sin6(&addr)->sin6_addr,
-				      &parse_ipv6_entries[i].result.sin6_addr),
-				parse_ipv6_entries[i].address);
+				      &parse_ipv6_entries[i].result.sin6_addr) ==
+				parse_ipv6_entries[i].verdict);
 			zassert_true(net_sin6(&addr)->sin6_port ==
 				     parse_ipv6_entries[i].result.sin6_port,
 				     "IPv6 port");
@@ -1233,8 +1233,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			zassert_true(
 				net_ipv4_addr_cmp(
 				      &net_sin(&addr)->sin_addr,
-				      &parse_ipv4_entries[i].result.sin_addr),
-				parse_ipv4_entries[i].address);
+				      &parse_ipv4_entries[i].result.sin_addr));
 			zassert_true(net_sin(&addr)->sin_port == 0,
 				     "IPv4 port");
 			zassert_true(net_sin(&addr)->sin_family ==
@@ -1262,8 +1261,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			zassert_true(
 				net_ipv6_addr_cmp(
 				      &net_sin6(&addr)->sin6_addr,
-				      &parse_ipv6_entries[i].result.sin6_addr),
-				parse_ipv6_entries[i].address);
+				      &parse_ipv6_entries[i].result.sin6_addr));
 			zassert_true(net_sin6(&addr)->sin6_port == 0,
 				     "IPv6 port");
 			zassert_true(net_sin6(&addr)->sin6_family ==

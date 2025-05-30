@@ -62,11 +62,11 @@ ZTEST(stm32u5_devices_clocks, test_spi_clk_config)
 
 		if (pclken[1].bus == STM32_SRC_HSI16) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI1CLKSOURCE_HSI,
-					"Expected SPI src: HSI (0x%x). Actual: 0x%x",
+					"Expected SPI src: HSI (0x%lx). Actual: 0x%x",
 					RCC_SPI1CLKSOURCE_HSI, spi1_actual_domain_clk);
 		} else if (pclken[1].bus == STM32_SRC_SYSCLK) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI1CLKSOURCE_SYSCLK,
-					"Expected SPI src: SYSCLK (0x%x). Actual: 0x%x",
+					"Expected SPI src: SYSCLK (0x%lx). Actual: 0x%x",
 					RCC_SPI1CLKSOURCE_SYSCLK, spi1_actual_domain_clk);
 		} else {
 			zassert_true(1, "Unexpected clk src (0x%x)", spi1_actual_domain_clk);

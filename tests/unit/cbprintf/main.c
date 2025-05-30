@@ -358,9 +358,7 @@ static inline bool prf_check(const char *expected,
 	return true;
 }
 
-#define PRF_CHECK(expected, rv)	\
-	zassert_true(prf_check(expected, rv, __FILE__, __LINE__), \
-		     NULL)
+#define PRF_CHECK(expected, rv)	zassert_true(prf_check(expected, rv, __FILE__, __LINE__))
 
 ZTEST(prf, test_pct)
 {
@@ -574,8 +572,7 @@ ZTEST(prf, test_d_flags)
 	reset_out();
 	rc = rawprf("/%#d/% +d/%-04d/%06.4d/", sv, sv, sv, sv);
 	zassert_equal(rc, 22, "rc %d", rc);
-	zassert_equal(strncmp("/123/+123/123 /  0123/",
-			      buf, rc), 0, NULL);
+	zassert_equal(strncmp("/123/+123/123 /  0123/", buf, rc), 0);
 }
 
 ZTEST(prf, test_x_length)

@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif ESP-Hosted WiFi
+
+compatible: "espressif,esp-hosted"
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+
+  dataready-gpios:
+    type: phandle-array
+    required: true
+
+  handshake-gpios:
+    type: phandle-array
+    required: true

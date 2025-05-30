@@ -1032,7 +1032,6 @@ static int ov2640_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = SVGA_HSIZE;
 	fmt.height = SVGA_VSIZE;
-	fmt.pitch = SVGA_HSIZE * 2;
 	ret = ov2640_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");

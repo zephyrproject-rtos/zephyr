@@ -158,7 +158,6 @@ ZTEST(video_common, test_video_vbuf)
 	fmt.pixelformat = caps.format_caps[0].pixelformat;
 	fmt.width = caps.format_caps[0].width_max;
 	fmt.height = caps.format_caps[0].height_max;
-	fmt.pitch = fmt.width * 2;
 	fmt.type = type;
 	zexpect_ok(video_set_format(rx_dev, &fmt));
 

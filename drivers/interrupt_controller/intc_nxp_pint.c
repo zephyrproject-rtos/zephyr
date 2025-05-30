@@ -10,6 +10,7 @@
 #include <zephyr/irq.h>
 #include <errno.h>
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
+#include <zephyr/pm/device.h>
 
 #include <fsl_inputmux.h>
 
@@ -180,6 +181,24 @@ static void nxp_pint_isr(uint8_t *slot)
 	}
 }
 
+static int intc_nxp_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		PINT_Init(pint_base);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
 
 /* Defines PINT IRQ handler for a given irq index */
 #define NXP_PINT_IRQ(idx, node_id)						\
@@ -200,10 +219,12 @@ static int intc_nxp_pint_init(const struct device *dev)
 	 * parameter.
 	 */
 	LISTIFY(8, NXP_PINT_IRQ, (;), DT_INST(0, DT_DRV_COMPAT));
-	PINT_Init(pint_base);
 	memset(pin_pint_id, NO_PINT_ID, ARRAY_SIZE(pin_pint_id));
-	return 0;
+
+	return pm_device_driver_init(dev, intc_nxp_pm_action);
 }
 
-DEVICE_DT_INST_DEFINE(0, intc_nxp_pint_init, NULL, NULL, NULL,
+PM_DEVICE_DT_INST_DEFINE(0, intc_nxp_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, intc_nxp_pint_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);

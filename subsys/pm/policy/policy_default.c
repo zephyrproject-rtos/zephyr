@@ -11,7 +11,6 @@
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 {
-	int64_t cyc = -1;
 	uint8_t num_cpu_states;
 	const struct pm_state_info *cpu_states;
 	const struct pm_state_info *out_state = NULL;
@@ -21,10 +20,6 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 		return NULL;
 	}
 #endif
-
-	if (ticks != K_TICKS_FOREVER) {
-		cyc = k_ticks_to_cyc_ceil32(ticks);
-	}
 
 	num_cpu_states = pm_state_cpu_get_all(cpu, &cpu_states);
 

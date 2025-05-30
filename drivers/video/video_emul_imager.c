@@ -368,7 +368,6 @@ int emul_imager_init(const struct device *dev)
 	fmt.pixelformat = fmts[0].pixelformat;
 	fmt.width = fmts[0].width_min;
 	fmt.height = fmts[0].height_min;
-	fmt.pitch = fmt.width * 2;
 
 	ret = emul_imager_set_fmt(dev, &fmt);
 	if (ret < 0) {

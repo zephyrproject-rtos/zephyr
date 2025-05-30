@@ -12,6 +12,19 @@ hardware supports them and your Zephyr board directory's :file:`board.cmake`
 file declares that support properly. See :ref:`west-build-flash-debug` for
 more information on these commands.
 
+.. _runner_blackmagicprobe:
+
+Black Magic Probe
+*****************
+
+Black Magic Probe (BMP) is an open-source debugging hardware incorporating GDB debug
+server functionality into the firmware.
+There is no need for a GDB server program, so there is no program equivalent
+to host-tool.
+
+For more details, including usage instructions and supported targets,
+see :ref:`black-magic-probe`.
+
 .. _atmel_sam_ba_bootloader:
 .. _runner_bossac:
 
@@ -561,6 +574,28 @@ It can be used through the ``west flash`` command to flash Zephyr applications.
 
 For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User Manual`_.
 
+.. _runner_uf2:
+
+UF2 Uploader
+************
+
+The uf2 runner supports flashing some boards using the UF2 (USB Flashing Format).
+UF2 is a user-friendly file format designed for drag-and-drop programming via a USB mass storage device.
+
+It relies on the target device entering a special bootloader mode where it appears to the host
+as a USB mass storage device.
+Once in this mode, the application image can be uploaded by copying a ``.uf2`` file to the
+mounted volume.
+
+.. code-block:: console
+
+   west flash --runner uf2
+
+If the UF2 volume is not automatically detected, you may need to manually specify the mount point
+using the ``--device`` option:
+
+For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
+
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 
@@ -632,3 +667,6 @@ For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User M
 
 .. _STLINK-V3PWR:
    https://www.st.com/en/development-tools/stlink-v3pwr.html
+
+.. _USB Flashing Format (UF2):
+   https://github.com/microsoft/uf2

@@ -45,7 +45,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		zassert_equal(PM_STATE_STANDBY, state);
 		break;
 	default:
-		zassert_unreachable(NULL);
+		zassert_unreachable();
 		break;
 	}
 }

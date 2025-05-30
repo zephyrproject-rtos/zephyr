@@ -53,7 +53,7 @@ void eventfd_poll_unset_common(int fd)
 
 	ret = eventfd_read(fd, &val);
 	zassert_equal(ret, 0, "read ret %d", ret);
-	zassert_equal(val, 2*TESTVAL, "val == %d, expected %d", val, TESTVAL);
+	zassert_equal(val, 2*TESTVAL, "val == %d, expected %d", (int)val, TESTVAL);
 
 	/* eventfd shall block on subsequent reads */
 
@@ -74,7 +74,7 @@ void eventfd_poll_set_common(int fd)
 
 	ret = eventfd_read(fd, &val);
 	zassert_equal(ret, 0, "read ret %d", ret);
-	zassert_equal(val, TESTVAL, "val == %d", val);
+	zassert_equal(val, TESTVAL, "val == %d", (int)val);
 
 	event = POLLIN;
 	ret = is_blocked(fd, &event);

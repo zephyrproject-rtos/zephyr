@@ -592,7 +592,6 @@ static int ov7725_init(const struct device *dev)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	fmt.width = 640;
 	fmt.height = 480;
-	fmt.pitch = 640 * 2;
 	ret = ov7725_set_fmt(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");

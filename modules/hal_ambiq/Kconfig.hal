@@ -51,6 +51,11 @@ config AMBIQ_HAL_USE_WDT
 	help
 	  Use the WDT driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_UART
+	bool
+	help
+	  Use the UART driver from Ambiq HAL
+
 config AMBIQ_HAL_USE_I2C
 	bool
 	help

@@ -23,10 +23,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_3: led_3 {
 			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		blue_led_4: led_4 {
 			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -35,6 +37,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "Key";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
@@ -48,6 +51,14 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc_in0_pa0 &adc_in1_pa1>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
 };
 
 &clk_lsi {
@@ -105,17 +116,19 @@
 
 		/*
 		 * The flash starting at offset 0x2000 and ending at
-		 * offset 0x3999 is reserved for use by the application.
+		 * offset 0x3fff is reserved for use by the application.
 		 */
 
 		slot0_partition: partition@4000 {
 			label = "image-0";
 			reg = <0x00004000 DT_SIZE_K(16)>;
 		};
+
 		slot1_partition: partition@8000 {
 			label = "image-1";
 			reg = <0x00008000 DT_SIZE_K(16)>;
 		};
+
 		scratch_partition: partition@c000 {
 			label = "image-scratch";
 			reg = <0x0000C000 DT_SIZE_K(16)>;

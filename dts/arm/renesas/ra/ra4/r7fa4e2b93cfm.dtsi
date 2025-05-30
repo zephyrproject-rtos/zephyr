@@ -97,6 +97,36 @@
 			compatible = "renesas,ra-trng";
 			status = "disabled";
 		};
+
+		agt0: agtw@400e8000 {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x400e8000 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agtw@400e8100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x400e8100 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
 	};
 
 	clocks: clocks {

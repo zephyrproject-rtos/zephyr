@@ -193,6 +193,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 			      NULL, threadfunc, prio, 0, K_NO_WAIT);
 
 	const char *name = (attr->name == NULL) ? init_thread_attrs.name : attr->name;
+
 	k_thread_name_set(&tid->z_thread, name);
 
 	return (osThreadId_t)tid;

@@ -5,4 +5,5 @@
 source "drivers/sensor/rohm/bd8lb600fs/Kconfig"
 source "drivers/sensor/rohm/bh1730/Kconfig"
 source "drivers/sensor/rohm/bh1750/Kconfig"
+source "drivers/sensor/rohm/bh1790/Kconfig"
 # zephyr-keep-sorted-stop

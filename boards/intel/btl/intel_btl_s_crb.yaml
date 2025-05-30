@@ -8,6 +8,16 @@ ram: 2048
 supported:
   - acpi
   - smp
+  - spi
+  - nvme
+  - gpio
+  - uart
+  - tgpio
+  - pwm
+  - smbus
+  - rtc
+  - watchdog
+  - i2c
 testing:
   ignore_tags:
     - net

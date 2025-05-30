@@ -1,0 +1,8 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD1327 128x128 dot-matrix display controller on I2C bus
+
+include: ["solomon,ssd1327fb-common.yaml", "i2c-device.yaml"]
+
+compatible: "solomon,ssd1327fb"

@@ -276,6 +276,9 @@
 #define BIT_INT_TDEASSERT_DISABLE BIT(5)
 #define BIT_INT_ASYNC_RESET	  BIT(4)
 
+/* Bank1 REG_INTF_CONFIG5 */
+#define MASK_PIN9_FUNCTION GENMASK(2, 1)
+
 /* misc. defines */
 #define WHO_AM_I_ICM42688     0x47
 #define MIN_ACCEL_SENS_SHIFT  11

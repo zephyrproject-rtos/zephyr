@@ -3,7 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_ARM_ETHOS_U AND CONFIG_MULTITHREADING)
-    set(ETHOSU_TARGET_NPU_CONFIG ${CONFIG_ARM_ETHOS_U_NPU_NAME})
+    # Due to CMP0126 not being NEW, ETHOSU_TARGET_NPU_CONFIG originally
+    # as directory variable will fail to override that in ethos-u-core-driver
+    # as cache variable. Fix by passing as cache variable. See:
+    # https://cmake.org/cmake/help/latest/policy/CMP0126.html#policy:CMP0126
+    set(ETHOSU_TARGET_NPU_CONFIG ${CONFIG_ARM_ETHOS_U_NPU_NAME} CACHE STRING "NPU configuration")
 
     # Mapping log level from Zephyr (none=0, err=1, wrn=2, inf=3, dbg=4) to
     # Ethos-U driver (err=0, warn=1, info=2, debug=3)

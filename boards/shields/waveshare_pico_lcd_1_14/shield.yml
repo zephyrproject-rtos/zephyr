@@ -1,0 +1,7 @@
+shield:
+  name: waveshare_pico_lcd_1_14
+  full_name: Waveshare Pico LCD 1.14"
+  vendor: waveshare
+  supported_features:
+    - display
+    - input

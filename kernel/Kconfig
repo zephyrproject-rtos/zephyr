@@ -653,7 +653,7 @@ config TIMESLICING
 
 config TIMESLICE_SIZE
 	int "Time slice size (in ms)"
-	default 0
+	default 20
 	range 0 $(INT32_MAX)
 	depends on TIMESLICING
 	help

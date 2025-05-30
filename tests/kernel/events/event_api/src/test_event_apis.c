@@ -47,9 +47,9 @@ static void entry_extra2(void *p1, void *p2, void *p3)
 	k_event_post(&test_event, events);
 }
 /**
-* @ingroup kernel_event_tests
-* @{
-*/
+ * @ingroup kernel_event_tests
+ * @{
+ */
 
 /**
  * Test the k_event_init() API.

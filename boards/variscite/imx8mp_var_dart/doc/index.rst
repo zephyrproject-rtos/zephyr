@@ -12,7 +12,7 @@ and graphics accelerators.
 Zephyr OS is ported to run on either the Cortex®-A53 or the Cortex®-M7.
 
 Specs Summary
-***************
+*************
 
   - CPU
 
@@ -68,7 +68,7 @@ More information about the SoM can be found at the
 `Variscite website`_.
 
 Supported Features
-==================
+******************
 
 .. zephyr:board-supported-hw::
 
@@ -260,7 +260,7 @@ should see the following message in the terminal:
    Hello World! imx8mp_var_dart/mimx8ml8/m7
 
 References
-==========
+**********
 
 - `Variscite Wiki`_
 - `Variscite website`_

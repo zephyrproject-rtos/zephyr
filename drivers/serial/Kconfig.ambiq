@@ -1,0 +1,27 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_AMBIQ
+	bool "AMBIQ UART driver"
+	default y
+	depends on DT_HAS_AMBIQ_UART_ENABLED
+	depends on SOC_SERIES_APOLLO5X
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
+	select PINCTRL
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_UART
+	help
+	  Enable the AMBIQ UART driver.
+
+if UART_AMBIQ
+
+config UART_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in uart driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Disable this if cache has been handled in upper layers.
+
+endif # UART_AMBIQ

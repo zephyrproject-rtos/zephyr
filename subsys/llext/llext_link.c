@@ -389,7 +389,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_load_param *ldr_parm)
 {
 	uintptr_t sect_base = 0;
-	elf_rela_t rel;
+	elf_rela_t rel = {0};
 	elf_word rel_cnt = 0;
 	const char *name;
 	int i, ret;

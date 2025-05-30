@@ -1,0 +1,44 @@
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Timer/PWM Module (TPM) Quadrature Decoder Mode driver.
+  This driver uses tpm_chn0 (phase A) and tpm_chn1 (phase B) input signals to control the
+  TPM counter increment and decrement. The Zephyr Sensor API exposes the rotational position as
+  SENSOR_CHAN_ROTATION by dividing the counter by counts-per revolution definition.
+
+  To use the NXP TPM module you've to override the compatible string to use the QDEC mode driver
+  with 'nxp,tpm-qdec'
+
+  &tpm4 {
+        compatible = "nxp,tpm-qdec";
+        status = "okay";
+        pinctrl-0 = <&tpm4_pwm2_pwm3>;
+        pinctrl-names = "default";
+        micro-ticks-per-rev = <685440000>;
+   };
+
+  When inherting from an existing TPM instance you might want to remove the prescaler property
+  Since the QDEC mode doesn't use the prescaler, you do this using:
+  /delete-property/ prescaler;
+
+compatible: "nxp,tpm-qdec"
+
+include: [pinctrl-device.yaml, sensor-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  micro-ticks-per-rev:
+    type: int
+    required: true
+    description: |
+      This is a number that is used to determine how many revolutions * 1000000
+      were done based on the current counter's value.
+
+  pinctrl-0:
+    required: true

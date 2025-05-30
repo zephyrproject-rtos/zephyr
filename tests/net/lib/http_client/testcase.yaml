@@ -1,0 +1,9 @@
+common:
+  tags:
+    - http
+    - net
+  depends_on: netif
+tests:
+  net.http_client:
+    min_ram: 64
+    min_flash: 192

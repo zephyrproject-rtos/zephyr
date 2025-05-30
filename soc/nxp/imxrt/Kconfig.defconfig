@@ -58,9 +58,6 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 
 endif # ETH_NXP_ENET
 
-config MEMC
-	default y if !SOC_SERIES_IMXRT118X # RT118X lacks FLEXRAM
-
 DT_CHOSEN_Z_DTCM := zephyr,dtcm
 
 choice SEGGER_RTT_SECTION

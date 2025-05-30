@@ -1,0 +1,6 @@
+shield:
+  name: link_board_eth
+  full_name: link board ETH
+  vendor: phytec
+  supported_features:
+    - ethernet

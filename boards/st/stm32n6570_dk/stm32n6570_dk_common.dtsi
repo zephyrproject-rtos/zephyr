@@ -19,11 +19,19 @@
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
 		zephyr,display = &ltdc;
+		zephyr,touch = &gt911;
 		spi-flash0 = &mx66uw1g45g;
 	};
 
 	aliases {
 		led0 = &green_led_1;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911>;
+		display = <&ltdc>;
+		invert-y;
 	};
 
 	psram: memory@90000000 {
@@ -45,6 +53,21 @@
 			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+	};
+};
+
+&i2c2 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB1, 22)>,
+		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
+	pinctrl-0 = <&i2c2_scl_pd14 &i2c2_sda_pd4>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -351,6 +374,7 @@ zephyr_udc0: &usbotg_hs1 {
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		de-active = <0>;
@@ -364,6 +388,7 @@ zephyr_udc0: &usbotg_hs1 {
 		hfront-porch = <8>;
 		vfront-porch = <8>;
 	};
+
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;

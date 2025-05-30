@@ -75,7 +75,7 @@ static void test_check_pattern32(off_t start, uint32_t (*pattern_gen)(void),
 		zassert_equal(val32, r_val32,
 			     "flash word at offset 0x%x has value 0x%08x, " \
 			     "expected 0x%08x",
-			     start + off, r_val32, val32);
+			     (uint32_t)(start + off), r_val32, val32);
 	}
 }
 
@@ -142,7 +142,7 @@ ZTEST(flash_sim_api, test_read)
 		zassert_equal(FLASH_SIMULATOR_ERASE_VALUE,
 			     test_read_buf[i],
 			     "sim flash byte at offset 0x%x has value 0x%08x",
-			     i, test_read_buf[i]);
+			     (int)i, test_read_buf[i]);
 	}
 }
 
@@ -163,7 +163,7 @@ static void test_write_read(void)
 				 &val32, sizeof(val32));
 		zassert_equal(0, rc,
 			      "flash_write (%d) should succeed at off 0x%x", rc,
-			       FLASH_SIMULATOR_BASE_OFFSET + off);
+			       FLASH_SIMULATOR_BASE_OFFSET + (int)off);
 		val32++;
 	}
 
@@ -177,7 +177,7 @@ static void test_write_read(void)
 		zassert_equal(val32, r_val32,
 			"flash byte at offset 0x%x has value 0x%08x, expected" \
 			" 0x%08x",
-			off, r_val32, val32);
+			(int)off, r_val32, val32);
 		val32++;
 	}
 }
@@ -487,10 +487,10 @@ ZTEST(flash_sim_api, test_flash_fill)
 		memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
 		rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + i,
 				buf, chunk);
-		zassert_equal(0, rc, "flash_read should succeed at offset %d", i);
+		zassert_equal(0, rc, "flash_read should succeed at offset %d", (int)i);
 		do {
 			zassert_equal((uint8_t)buf[i & (sizeof(buf) - 1)], 0x55,
-				      "Unexpected value at offset %d\n", i);
+				      "Unexpected value at offset %d\n", (int)i);
 			++i;
 			--size;
 			--chunk;

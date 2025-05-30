@@ -37,10 +37,10 @@ static inline int display_setup(const struct device *const display_dev, const ui
 
 	LOG_INF("- Capabilities:");
 	LOG_INF("  x_resolution = %u, y_resolution = %u, supported_pixel_formats = %u"
-	       "  current_pixel_format = %u, current_orientation = %u",
-	       capabilities.x_resolution, capabilities.y_resolution,
-	       capabilities.supported_pixel_formats, capabilities.current_pixel_format,
-	       capabilities.current_orientation);
+		"  current_pixel_format = %u, current_orientation = %u",
+		capabilities.x_resolution, capabilities.y_resolution,
+		capabilities.supported_pixel_formats, capabilities.current_pixel_format,
+		capabilities.current_orientation);
 
 	/* Set display pixel format to match the one in use by the camera */
 	switch (pixfmt) {
@@ -90,7 +90,8 @@ static inline void video_display_frame(const struct device *const display_dev,
 
 int main(void)
 {
-	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX], *vbuf;
+	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	struct video_format fmt;
 	struct video_caps caps;
 	struct video_frmival frmival;
@@ -100,6 +101,12 @@ int main(void)
 	size_t bsize;
 	int i = 0;
 	int err;
+
+	/* When the video shell is enabled, do not run the capture loop */
+	if (IS_ENABLED(CONFIG_VIDEO_SHELL)) {
+		LOG_INF("Letting the user control the device with the video shell");
+		return 0;
+	}
 
 #if DT_HAS_CHOSEN(zephyr_camera)
 	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
@@ -131,9 +138,9 @@ int main(void)
 		const struct video_format_cap *fcap = &caps.format_caps[i];
 		/* fourcc to string */
 		LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
-		       VIDEO_FOURCC_TO_STR(fcap->pixelformat),
-		       fcap->width_min, fcap->width_max, fcap->width_step,
-		       fcap->height_min, fcap->height_max, fcap->height_step);
+			VIDEO_FOURCC_TO_STR(fcap->pixelformat),
+			fcap->width_min, fcap->width_max, fcap->width_step,
+			fcap->height_min, fcap->height_max, fcap->height_step);
 		i++;
 	}
 
@@ -150,7 +157,6 @@ int main(void)
 
 #if CONFIG_VIDEO_FRAME_WIDTH
 	fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
-	fmt.pitch = fmt.width * 2;
 #endif
 
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
@@ -167,7 +173,7 @@ int main(void)
 
 	if (!video_get_frmival(video_dev, &frmival)) {
 		LOG_INF("- Default frame rate : %f fps",
-		       1.0 * frmival.denominator / frmival.numerator);
+			1.0 * frmival.denominator / frmival.numerator);
 	}
 
 	LOG_INF("- Supported frame intervals for the default format:");
@@ -175,12 +181,12 @@ int main(void)
 	fie.format = &fmt;
 	while (video_enum_frmival(video_dev, &fie) == 0) {
 		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-			LOG_INF("   %u/%u ", fie.discrete.numerator, fie.discrete.denominator);
+			LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
 		} else {
 			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
-			       fie.stepwise.min.numerator, fie.stepwise.min.denominator,
-			       fie.stepwise.max.numerator, fie.stepwise.max.denominator,
-			       fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+				fie.stepwise.min.numerator, fie.stepwise.min.denominator,
+				fie.stepwise.max.numerator, fie.stepwise.max.denominator,
+				fie.stepwise.step.numerator, fie.stepwise.step.denominator);
 		}
 		fie.index++;
 	}
@@ -202,10 +208,10 @@ int main(void)
 		video_set_ctrl(video_dev, &ctrl);
 	}
 
-#ifdef CONFIG_TEST
-	ctrl.id = VIDEO_CID_TEST_PATTERN;
-	video_set_ctrl(video_dev, &ctrl);
-#endif
+	if (IS_ENABLED(CONFIG_TEST)) {
+		ctrl.id = VIDEO_CID_TEST_PATTERN;
+		video_set_ctrl(video_dev, &ctrl);
+	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -262,8 +268,8 @@ int main(void)
 			return 0;
 		}
 
-		LOG_DBG("Got frame %u! size: %u; timestamp %u ms", frame++, vbuf->bytesused,
-		       vbuf->timestamp);
+		LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
+			frame++, vbuf->bytesused, vbuf->timestamp);
 
 #ifdef CONFIG_TEST
 		if (is_colorbar_ok(vbuf->buffer, fmt)) {

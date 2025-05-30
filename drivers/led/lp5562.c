@@ -41,8 +41,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp5562);
 
-#include "led_context.h"
-
 /* Registers */
 #define LP5562_ENABLE             0x00
 #define LP5562_OP_MODE            0x01
@@ -170,10 +168,6 @@ struct lp5562_config {
 	struct gpio_dt_spec enable_gpio;
 };
 
-struct lp5562_data {
-	struct led_data dev_data;
-};
-
 /*
  * @brief Get the register for the given LED channel used to directly write a
  *	brightness value instead of using the execution engines.
@@ -280,8 +274,8 @@ static int lp5562_get_engine_reg_shift(enum lp5562_led_sources engine,
  * @param prescale  Pointer to the prescale value.
  * @param step_time Pointer to the step_time value.
  */
-static void lp5562_ms_to_prescale_and_step(struct led_data *data, uint32_t ms,
-					   uint8_t *prescale, uint8_t *step_time)
+static void lp5562_ms_to_prescale_and_step(uint32_t ms, uint8_t *prescale,
+					   uint8_t *step_time)
 {
 	/*
 	 * One step with the prescaler set to 0 takes 0.49ms. The max value for
@@ -637,17 +631,14 @@ static int lp5562_program_ramp(const struct device *dev,
 			       uint8_t step_count,
 			       enum lp5562_engine_fade_dirs fade_dir)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t prescale, step_time;
 
-	if ((time_per_step < dev_data->min_period) ||
-			(time_per_step > dev_data->max_period)) {
+	if (time_per_step < LP5562_MIN_BLINK_PERIOD ||
+	    time_per_step > LP5562_MAX_BLINK_PERIOD) {
 		return -EINVAL;
 	}
 
-	lp5562_ms_to_prescale_and_step(dev_data, time_per_step,
-			&prescale, &step_time);
+	lp5562_ms_to_prescale_and_step(time_per_step, &prescale, &step_time);
 
 	return lp5562_program_command(dev, engine, command_index,
 			LP5562_PROG_COMMAND_RAMP_TIME(prescale, step_time),
@@ -984,8 +975,6 @@ static int lp5562_disable(const struct device *dev)
 static int lp5562_led_init(const struct device *dev)
 {
 	const struct lp5562_config *config = dev->config;
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
 	int ret;
 
@@ -1009,10 +998,6 @@ static int lp5562_led_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
-
-	/* Hardware specific limits */
-	dev_data->min_period = LP5562_MIN_BLINK_PERIOD;
-	dev_data->max_period = LP5562_MAX_BLINK_PERIOD;
 
 	ret = lp5562_led_update_current(dev);
 	if (ret) {
@@ -1081,9 +1066,8 @@ static int lp5562_pm_action(const struct device *dev, enum pm_device_action acti
 									\
 	PM_DEVICE_DT_INST_DEFINE(id, lp5562_pm_action);			\
 									\
-	struct lp5562_data lp5562_data_##id;				\
 	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id),	\
-			&lp5562_data_##id,				\
+			NULL,						\
 			&lp5562_config_##id, POST_KERNEL,		\
 			CONFIG_LED_INIT_PRIORITY,			\
 			&lp5562_led_api);				\

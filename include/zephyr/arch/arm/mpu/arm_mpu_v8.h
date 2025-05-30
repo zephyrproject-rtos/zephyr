@@ -419,9 +419,20 @@ typedef struct {
 
 #endif /* _ASMLANGUAGE */
 
+
+/* Some compilers do not handle casts on pointers in constant expressions */
+#if defined(__IAR_SYSTEMS_ICC__)
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
+	BUILD_ASSERT(                                                                              \
+		(size > 0) &&                                                                      \
+			((size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0),                  \
+		"The start and size of the partition must align with the minimum MPU "             \
+		"region size.")
+#else
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
 	BUILD_ASSERT((size > 0) &&                                                                 \
 			     ((uint32_t)start % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0U) && \
 			     ((size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0),             \
 		     "The start and size of the partition must align with the minimum MPU "        \
 		     "region size.")
+#endif /* defined(__IAR_SYSTEMS_ICC__) */

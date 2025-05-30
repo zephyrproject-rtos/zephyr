@@ -17,4 +17,5 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+ram: 3000
 vendor: qemu

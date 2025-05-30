@@ -467,7 +467,7 @@ static int stm32_ltdc_init(const struct device *dev)
 	/* Configure RIF for LTDC layer 1 */
 	rimc.MasterCID = RIF_CID_1;
 	rimc.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_LTDC1 , &rimc);
+	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_LTDC1, &rimc);
 	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_LTDCL1,
 					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
 #endif
@@ -560,7 +560,8 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 #elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(psram))
 #define FRAME_BUFFER_SECTION __stm32_psram_section
 #else
-#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node or PSRAM node"
+#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node or PSRAM "\
+	"node"
 #define FRAME_BUFFER_SECTION
 #endif /* DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram1)) */
 

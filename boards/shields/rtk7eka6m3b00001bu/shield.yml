@@ -1,0 +1,7 @@
+shield:
+  name: rtk7eka6m3b00001bu
+  full_name: RTK7EKA6M3B00001BU Display
+  vendor: renesas
+  supported_features:
+    - input
+    - display

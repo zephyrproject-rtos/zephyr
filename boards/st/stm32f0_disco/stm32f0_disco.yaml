@@ -8,4 +8,5 @@ toolchain:
 ram: 8
 supported:
   - watchdog
+  - adc
 vendor: st

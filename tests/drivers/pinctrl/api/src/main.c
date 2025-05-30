@@ -98,7 +98,7 @@ ZTEST(pinctrl_api, test_lookup_state)
 
 	ret = pinctrl_lookup_state(pcfg0, PINCTRL_STATE_DEFAULT, &scfg);
 	zassert_equal(ret, 0);
-	zassert_equal_ptr(scfg, &pcfg0->states[0], NULL);
+	zassert_equal_ptr(scfg, &pcfg0->states[0]);
 
 	ret = pinctrl_lookup_state(pcfg0, PINCTRL_STATE_SLEEP, &scfg);
 	zassert_equal(ret, -ENOENT);

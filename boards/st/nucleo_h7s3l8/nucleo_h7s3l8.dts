@@ -24,14 +24,17 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led: led_1 {
 			gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
+
 		yellow_led: led_2 {
 			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+
 		red_led: led_3 {
 			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -40,6 +43,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -74,6 +78,19 @@
 };
 
 &pll {
+	div-m = <12>;
+	mul-n = <200>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+/* PLL2 for clocking the xspi peripheral */
+&pll2 {
 	div-m = <12>;
 	mul-n = <200>;
 	div-p = <2>;
@@ -138,4 +155,66 @@
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set the partitions with first MB to make use of the whole Bank1 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&xspi2 {
+	pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
+		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
+		     &xspim_p2_io2_pn4 &xspim_p2_io3_pn5
+		     &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
+		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11
+		     &xspim_p2_dqs0_pn0>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25uw25645: xspi-nor-flash@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256Mbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_K(512)>;
+			};
+
+			slot1_partition: partition@80000 {
+				label = "image-1";
+				reg = <0x0080000 DT_SIZE_K(512)>;
+			};
+
+			scratch_partition: partition@100000 {
+				label = "image-scratch";
+				reg = <0x00100000 DT_SIZE_K(64)>;
+			};
+
+			storage_partition: partition@110000 {
+				label = "storage";
+				reg = <0x00110000 DT_SIZE_K(64)>;
+			};
+		};
+	};
 };

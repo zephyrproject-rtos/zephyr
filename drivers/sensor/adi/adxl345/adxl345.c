@@ -325,28 +325,16 @@ static int adxl345_sample_fetch(const struct device *dev,
 {
 	struct adxl345_dev_data *data = dev->data;
 	struct adxl345_sample sample;
-	uint8_t samples_count;
 	int rc;
 
-	data->sample_number = 0;
-	rc = adxl345_reg_read_byte(dev, ADXL345_FIFO_STATUS_REG, &samples_count);
+	rc = adxl345_read_sample(dev, &sample);
 	if (rc < 0) {
-		LOG_ERR("Failed to read FIFO status rc = %d\n", rc);
+		LOG_ERR("Failed to fetch sample rc=%d\n", rc);
 		return rc;
 	}
-
-	__ASSERT_NO_MSG(samples_count <= ARRAY_SIZE(data->bufx));
-
-	for (uint8_t s = 0; s < samples_count; s++) {
-		rc = adxl345_read_sample(dev, &sample);
-		if (rc < 0) {
-			LOG_ERR("Failed to fetch sample rc=%d\n", rc);
-			return rc;
-		}
-		data->bufx[s] = sample.x;
-		data->bufy[s] = sample.y;
-		data->bufz[s] = sample.z;
-	}
+	data->samples.x = sample.x;
+	data->samples.y = sample.y;
+	data->samples.z = sample.z;
 
 	return 0;
 }
@@ -357,28 +345,20 @@ static int adxl345_channel_get(const struct device *dev,
 {
 	struct adxl345_dev_data *data = dev->data;
 
-	if (data->sample_number >= ARRAY_SIZE(data->bufx)) {
-		data->sample_number = 0;
-	}
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl345_accel_convert(val, data->bufx[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val, data->samples.x);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl345_accel_convert(val, data->bufy[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val, data->samples.y);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl345_accel_convert(val, data->bufz[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val, data->samples.z);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl345_accel_convert(val++, data->bufx[data->sample_number]);
-		adxl345_accel_convert(val++, data->bufy[data->sample_number]);
-		adxl345_accel_convert(val,   data->bufz[data->sample_number]);
-		data->sample_number++;
+		adxl345_accel_convert(val++, data->samples.x);
+		adxl345_accel_convert(val++, data->samples.y);
+		adxl345_accel_convert(val,   data->samples.z);
 		break;
 	default:
 		return -ENOTSUP;
@@ -439,12 +419,8 @@ static int adxl345_init(const struct device *dev)
 {
 	int rc;
 	struct adxl345_dev_data *data = dev->data;
-#ifdef CONFIG_ADXL345_TRIGGER
 	const struct adxl345_dev_config *cfg = dev->config;
-#endif
 	uint8_t dev_id, full_res;
-
-	data->sample_number = 0;
 
 	if (!adxl345_bus_is_ready(dev)) {
 		LOG_ERR("bus not ready");
@@ -479,14 +455,14 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
-#ifdef CONFIG_ADXL345_TRIGGER
-	rc = adxl345_configure_fifo(dev, ADXL345_FIFO_STREAMED,
-				     ADXL345_INT2,
-				     cfg->fifo_config.fifo_samples);
+	rc = adxl345_configure_fifo(dev,
+				    IS_ENABLED(CONFIG_ADXL345_STREAM) ? ADXL345_FIFO_STREAMED :
+									ADXL345_FIFO_BYPASSED,
+				    ADXL345_INT2,
+				    cfg->fifo_config.fifo_samples);
 	if (rc) {
 		return rc;
 	}
-#endif
 
 	rc = adxl345_reg_write_byte(dev, ADXL345_POWER_CTL_REG, ADXL345_ENABLE_MEASURE_BIT);
 	if (rc < 0) {

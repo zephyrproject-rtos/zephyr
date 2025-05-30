@@ -57,6 +57,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_RCAR		i2c_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RA_IIC	i2c_renesas_ra_iic.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RA_SCI_B	i2c_renesas_ra_sci_b.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RZ_RIIC i2c_renesas_rz_riic.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_RTS5912		i2c_realtek_rts5912.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RV32M1_LPI2C	i2c_rv32m1_lpi2c.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM0		i2c_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWI		i2c_sam_twi.c)
@@ -66,14 +67,6 @@ zephyr_library_sources_ifdef(CONFIG_I2C_SC18IM704	i2c_sc18im704.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SEDI		i2c_sedi.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SIFIVE		i2c_sifive.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SMARTBOND	i2c_smartbond.c)
-zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
-	i2c_ll_stm32_v1.c
-	i2c_ll_stm32.c
- )
-zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
-	i2c_ll_stm32_v2.c
-	i2c_ll_stm32.c
- )
 zephyr_library_sources_ifdef(CONFIG_I2C_SY1XX		i2c_sy1xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TCA954X		i2c_tca954x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TELINK_B91	i2c_b91.c)
@@ -92,6 +85,12 @@ if(CONFIG_I2C_RTIO)
 	zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM	i2c_nrfx_twim_common.c)
 	zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM	i2c_nrfx_twim_rtio.c)
 	zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWIHS	i2c_sam_twihs_rtio.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32_common.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32_rtio.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32_v1_rtio.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32_common.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32_rtio.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32_v2_rtio.c)
 	# zephyr-keep-sorted-stop
 else()
 	# zephyr-keep-sorted-start
@@ -102,5 +101,11 @@ else()
 	zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM	i2c_nrfx_twim.c)
 	zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM	i2c_nrfx_twim_common.c)
 	zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWIHS	i2c_sam_twihs.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32_common.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32_v1.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32_common.c)
+	zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32_v2.c)
 	# zephyr-keep-sorted-stop
 endif()

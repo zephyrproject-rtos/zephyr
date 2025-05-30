@@ -54,7 +54,8 @@ static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	SET_FLAG(ccc_cfg_changed_flag);
 }
 
-static ssize_t ccc_cfg_write_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value)
+static ssize_t ccc_cfg_write_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				uint16_t value)
 {
 	if (notif_write_allowed) {
 		LOG_INF("CCC Write Request accepted.");

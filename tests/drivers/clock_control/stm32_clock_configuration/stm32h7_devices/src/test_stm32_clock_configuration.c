@@ -65,19 +65,19 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 		if (pclken[1].bus == STM32_SRC_PLL1_Q) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL,
 					"Expected SPI src: PLL1 Q (0x%x). Actual: 0x%x",
-					RCC_SPI123CLKSOURCE_PLL, spi1_actual_domain_clk);
+					(uint32_t)RCC_SPI123CLKSOURCE_PLL, spi1_actual_domain_clk);
 		} else if (pclken[1].bus == STM32_SRC_PLL2_P) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL2,
 					"Expected SPI src: PLL2 P (0x%x). Actual: 0x%x",
-					RCC_SPI123CLKSOURCE_PLL2, spi1_actual_domain_clk);
+					(uint32_t)RCC_SPI123CLKSOURCE_PLL2, spi1_actual_domain_clk);
 		} else if (pclken[1].bus == STM32_SRC_PLL3_P) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_PLL3,
 					"Expected SPI src: PLL3 P (0x%x). Actual: 0x%x",
-					RCC_SPI123CLKSOURCE_PLL3, spi1_actual_domain_clk);
+					(uint32_t)RCC_SPI123CLKSOURCE_PLL3, spi1_actual_domain_clk);
 		} else if (pclken[1].bus == STM32_SRC_CKPER) {
 			zassert_equal(spi1_actual_domain_clk, RCC_SPI123CLKSOURCE_CLKP,
 					"Expected SPI src: PERCLK (0x%x). Actual: 0x%x",
-					RCC_SPI123CLKSOURCE_CLKP, spi1_actual_domain_clk);
+					(uint32_t)RCC_SPI123CLKSOURCE_CLKP, spi1_actual_domain_clk);
 
 			/* Check perclk configuration */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(perck))
@@ -90,15 +90,18 @@ ZTEST(stm32h7_devices_clocks, test_spi_clk_config)
 			if (perclk_dt_domain_clk == STM32_SRC_HSI_KER) {
 				zassert_equal(perclk_actual_domain_clk, RCC_CLKPSOURCE_HSI,
 						"Expected PERCK src: HSI_KER (0x%x). Actual: 0x%x",
-						RCC_CLKPSOURCE_HSI, perclk_actual_domain_clk);
+						(uint32_t)RCC_CLKPSOURCE_HSI,
+						perclk_actual_domain_clk);
 			} else if (perclk_dt_domain_clk == STM32_SRC_CSI_KER) {
 				zassert_equal(perclk_actual_domain_clk, RCC_CLKPSOURCE_CSI,
 						"Expected PERCK src: CSI_KER (0x%x). Actual: 0x%x",
-						RCC_CLKPSOURCE_CSI, perclk_actual_domain_clk);
+						(uint32_t)RCC_CLKPSOURCE_CSI,
+						perclk_actual_domain_clk);
 			} else if (perclk_dt_domain_clk == STM32_SRC_HSE) {
 				zassert_equal(perclk_actual_domain_clk, RCC_CLKPSOURCE_HSE,
 						"Expected PERCK src: HSE (0x%x). Actual: 0x%x",
-						RCC_CLKPSOURCE_HSE, perclk_actual_domain_clk);
+						(uint32_t)RCC_CLKPSOURCE_HSE,
+						perclk_actual_domain_clk);
 			} else {
 				zassert_true(0, "Unexpected PERCK domain_clk src (0x%x)",
 									perclk_dt_domain_clk);

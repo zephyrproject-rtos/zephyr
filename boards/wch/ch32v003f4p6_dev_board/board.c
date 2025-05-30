@@ -7,7 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #define AFIO_SWCFG_MASK    0x07000000
 #define AFIO_SWCFG_SWD_OFF 0x04000000

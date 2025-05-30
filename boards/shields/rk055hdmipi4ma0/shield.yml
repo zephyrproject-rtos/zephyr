@@ -1,0 +1,7 @@
+shield:
+  name: rk055hdmipi4ma0
+  full_name: RK055HDMIPI4MA0 5.5" LCD Panel
+  vendor: nxp
+  supported_features:
+    - display
+    - input

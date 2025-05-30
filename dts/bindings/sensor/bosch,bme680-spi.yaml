@@ -1,6 +1,8 @@
 # Copyright (c) 2022, Leonard Pollak
 # SPDX-License-Identifier: Apache-2.0
 
+title: Bosch BME680 Environmental Sensor (SPI)
+
 description: |
     The BME680 is an integrated environmental sensor that measures
     temperature, pressure, humidity and air quality

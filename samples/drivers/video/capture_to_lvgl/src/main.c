@@ -19,7 +19,8 @@ LOG_MODULE_REGISTER(main);
 
 int main(void)
 {
-	struct video_buffer *buffers[2], *vbuf;
+	struct video_buffer *buffers[2];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	const struct device *display_dev;
 	struct video_format fmt;
 	struct video_caps caps;
@@ -79,7 +80,6 @@ int main(void)
 	/* Set format */
 	fmt.width = CONFIG_VIDEO_WIDTH;
 	fmt.height = CONFIG_VIDEO_HEIGHT;
-	fmt.pitch = fmt.width * 2;
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 
 	if (video_set_format(video_dev, &fmt)) {

@@ -27,7 +27,7 @@
 
 #if (defined(CONFIG_ARM_MPU) && !defined(CONFIG_CPU_HAS_NXP_SYSMPU))
 #include <cmsis_core.h>
-void disable_mpu_rasr_xn(void)
+static void disable_mpu_rasr_xn(void)
 {
 	uint32_t index;
 	/* Kept the max index as 8(irrespective of soc) because the sram

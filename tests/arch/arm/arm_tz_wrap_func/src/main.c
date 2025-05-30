@@ -80,7 +80,7 @@ ZTEST(tz_wrap_func, test_tz_wrap_func)
 	msp1 = __get_MSP();
 	psp1 = __get_PSP();
 
-	zassert_equal(foo1_retval, wrap_foo1(foo1_arg1, foo1_arg2, foo1_arg3, foo1_arg4), NULL);
+	zassert_equal(foo1_retval, wrap_foo1(foo1_arg1, foo1_arg2, foo1_arg3, foo1_arg4));
 
 	zassert_equal(msp1, __get_MSP());
 	zassert_equal(psp1, __get_PSP());

@@ -1,10 +1,11 @@
 # Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
+title: Arm MPS3 Pin Controller
+
 description: |
-    The Arm Mps3 pin controller is a node responsible for controlling
-    pin function selection and pin properties, such as routing a UART3 TX
-    to pin 1.
+    Node responsible for controlling pin function selection and pin properties,
+    such as routing a UART3 TX to pin 1.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:

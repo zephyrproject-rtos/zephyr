@@ -23,6 +23,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_ifx_cat1, CONFIG_UART_LOG_LEVEL);
 
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+extern void cyhal_uart_irq_handler(cyhal_uart_t *cyhal_uart_irq_obj);
+#endif
+
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #include <cyhal_dma.h>
@@ -84,6 +88,9 @@ struct ifx_cat1_uart_config {
 	const struct pinctrl_dev_config *pcfg;
 	CySCB_Type *reg_addr;
 	struct uart_config dt_cfg;
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+	uint16_t irq_num;
+#endif
 	uint8_t irq_priority;
 };
 
@@ -355,7 +362,7 @@ static void ifx_cat1_uart_irq_tx_enable(const struct device *dev)
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
 	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_TX_EMPTY,
-				config->irq_priority, 1);
+				config->irq_priority, true);
 }
 
 /* Disable TX interrupt */
@@ -365,7 +372,7 @@ static void ifx_cat1_uart_irq_tx_disable(const struct device *dev)
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
 	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_TX_EMPTY,
-				config->irq_priority, 0);
+				config->irq_priority, false);
 }
 
 /* Check if UART TX buffer can accept a new char */
@@ -392,7 +399,7 @@ static void ifx_cat1_uart_irq_rx_enable(const struct device *dev)
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
 	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_RX_NOT_EMPTY,
-				config->irq_priority, 1);
+				config->irq_priority, true);
 }
 
 /* Disable TX interrupt */
@@ -402,7 +409,7 @@ static void ifx_cat1_uart_irq_rx_disable(const struct device *dev)
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
 	cyhal_uart_enable_event(&data->obj, (cyhal_uart_event_t)CYHAL_UART_IRQ_RX_NOT_EMPTY,
-				config->irq_priority, 0);
+				config->irq_priority, false);
 }
 
 /* Check if UART RX buffer has a received char */
@@ -421,7 +428,7 @@ static void ifx_cat1_uart_irq_err_enable(const struct device *dev)
 
 	cyhal_uart_enable_event(
 		&data->obj, (cyhal_uart_event_t)(CYHAL_UART_IRQ_TX_ERROR | CYHAL_UART_IRQ_RX_ERROR),
-		config->irq_priority, 1);
+		config->irq_priority, true);
 }
 
 /* Disable Error interrupts */
@@ -432,7 +439,7 @@ static void ifx_cat1_uart_irq_err_disable(const struct device *dev)
 
 	cyhal_uart_enable_event(
 		&data->obj, (cyhal_uart_event_t)(CYHAL_UART_IRQ_TX_ERROR | CYHAL_UART_IRQ_RX_ERROR),
-		config->irq_priority, 0);
+		config->irq_priority, false);
 }
 
 /* Check if any IRQs is pending */
@@ -968,6 +975,12 @@ static int ifx_cat1_uart_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_UART_INTERRUPT_DRIVEN)
+	/* Enable the UART interrupt */
+	enable_sys_int(config->irq_num, config->irq_priority,
+		       (void (*)(const void *))(void *)cyhal_uart_irq_handler, &data->obj);
+#endif
+
 	/* Perform initial Uart configuration */
 	data->obj.is_clock_owned = true;
 	ret = ifx_cat1_uart_configure(dev, &config->dt_cfg);
@@ -1102,6 +1115,14 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #define UART_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)
 #endif /* CONFIG_UART_ASYNC_API */
 
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+#define IRQ_INFO(n)                                                                                \
+	.irq_num = DT_INST_PROP_BY_IDX(n, system_interrupts, SYS_INT_NUM),                         \
+	.irq_priority = DT_INST_PROP_BY_IDX(n, system_interrupts, SYS_INT_PRI)};
+#else
+#define IRQ_INFO(n) .irq_priority = DT_INST_IRQ(n, priority)};
+#endif
+
 #define INFINEON_CAT1_UART_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct ifx_cat1_uart_data ifx_cat1_uart##n##_data = {                               \
@@ -1110,13 +1131,13 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
                                                                                                    \
 	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                              \
 		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),                                 \
-		.dt_cfg.parity = DT_INST_ENUM_IDX(n, parity),             \
-		.dt_cfg.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),       \
-		.dt_cfg.data_bits = DT_INST_ENUM_IDX(n, data_bits),       \
+		.dt_cfg.parity = DT_INST_ENUM_IDX(n, parity),                                      \
+		.dt_cfg.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),                                \
+		.dt_cfg.data_bits = DT_INST_ENUM_IDX(n, data_bits),                                \
 		.dt_cfg.flow_ctrl = DT_INST_PROP(n, hw_flow_control),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
-		.irq_priority = DT_INST_IRQ(n, priority)};                                         \
+		IRQ_INFO(n)                                                                        \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,              \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \

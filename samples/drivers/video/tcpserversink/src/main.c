@@ -38,7 +38,8 @@ int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
-	struct video_buffer *buffers[2], *vbuf;
+	struct video_buffer *buffers[2];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	int i, ret, sock, client;
 	struct video_format fmt;
 	struct video_caps caps;

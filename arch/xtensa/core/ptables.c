@@ -1122,4 +1122,20 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	return mem_buffer_validate(addr, size, write, XTENSA_MMU_USER_RING);
 }
 
+#ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
+/* This is only used when swapping page tables and auto-refill DTLBs
+ * needing to be invalidated. Otherwise, SWAP_PAGE_TABLE assembly
+ * is used to avoid a function call.
+ */
+void xtensa_swap_update_page_tables(struct k_thread *incoming)
+{
+	struct arch_mem_domain *domain =
+		&(incoming->mem_domain_info.mem_domain->arch);
+
+	xtensa_mmu_set_paging(domain);
+
+	xtensa_dtlb_autorefill_invalidate();
+}
+#endif
+
 #endif /* CONFIG_USERSPACE */

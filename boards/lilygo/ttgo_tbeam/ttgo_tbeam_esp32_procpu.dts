@@ -125,6 +125,10 @@
 			constant-charge-current-max-microamp = <1000000>;
 			constant-charge-voltage-max-microvolt = <4200000>;
 		};
+
+		fuel_gauge: fuel_gauge {
+			compatible = "x-powers,axp2101-fuel-gauge";
+		};
 	};
 };
 

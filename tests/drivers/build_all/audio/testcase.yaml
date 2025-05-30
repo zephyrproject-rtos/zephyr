@@ -19,3 +19,11 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+
+  drivers.audio.build.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

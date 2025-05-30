@@ -11,4 +11,7 @@ rsource "Kconfig.defconfig.nrf91*"
 config NRF_RTC_TIMER
 	default y if SYS_CLOCK_EXISTS
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,rtc1,clock-frequency)
+
 endif # SOC_SERIES_NRF91X

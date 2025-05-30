@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/cat1c/mpns/xmc7200_e272k8384.dtsi>
+#include <arm/infineon/cat1c/xmc7200/system_clocks.dtsi>
+#include <arm/infineon/cat1c/xmc7200/xmc7200_m0p.dtsi>
+#include <arm/infineon/cat1c/xmc7200/memory_partition.dtsi>
+#include "kit_xmc72_evk_xmc7200d_e272k8384_m0p-pinctrl.dtsi"
+#include "kit_xmc72_evk_common.dtsi"
+
+/ {
+	model = "Infineon Evaluation board for XMC7200D-E272K8384 M0";
+	compatible = "infineon,kit_xmc72_evk", "infineon,XMC7200";
+
+	chosen {
+		zephyr,sram = &m0p_code;
+		zephyr,flash = &m0p_data;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+	};
+};

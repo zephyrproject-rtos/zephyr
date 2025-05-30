@@ -5,8 +5,8 @@
  */
 
 /*
- * Simple test to show support for secp256r1 curve with either MbedTLS and
- * TinyCrypt. Operations are pretty simple:
+ * Simple test to show support for secp256r1 curve with MbedTLS Operations
+ * are pretty simple:
  * - generate 2 keys
  * - perform key agreement.
  * The idea is to provide a way to compare memory footprint for the very
@@ -15,20 +15,12 @@
 
 #include <zephyr/ztest.h>
 
-#if defined(CONFIG_MBEDTLS)
 #if defined(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
 #include "p256-m.h"
 #else /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
 #include "psa/crypto.h"
 #endif /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
-#else /* CONFIG_MBEDTLS */
-#include "zephyr/random/random.h"
-#include "tinycrypt/constants.h"
-#include "tinycrypt/ecc.h"
-#include "tinycrypt/ecc_dh.h"
-#endif /* CONFIG_MBEDTLS */
 
-#if defined(CONFIG_MBEDTLS)
 #if defined(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
 ZTEST_USER(test_fn, test_mbedtls)
 {
@@ -78,31 +70,5 @@ ZTEST_USER(test_fn, test_mbedtls)
 	zassert_equal(status, PSA_SUCCESS, "Unable to compute shared secret (%d)", status);
 }
 #endif /* CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW */
-#else /* CONFIG_MBEDTLS */
-ZTEST_USER(test_fn, test_tinycrypt)
-{
-	uint8_t public_key_1[64], public_key_2[64];
-	uint8_t private_key_1[32], private_key_2[32];
-	uint8_t secret[32];
-	int ret;
-
-	ret = uECC_make_key(public_key_1, private_key_1, &curve_secp256r1);
-	zassert_equal(ret, TC_CRYPTO_SUCCESS, "Unable to generate 1st EC key (%d)", ret);
-
-	ret = uECC_make_key(public_key_2, private_key_2, &curve_secp256r1);
-	zassert_equal(ret, TC_CRYPTO_SUCCESS, "Unable to generate 2nd EC key (%d)", ret);
-
-	ret = uECC_valid_public_key(public_key_2, &curve_secp256r1);
-	zassert_equal(ret, 0, "Invalid public key (%d)", ret);
-
-	ret = uECC_shared_secret(public_key_2, private_key_1, secret, &curve_secp256r1);
-	zassert_equal(ret, TC_CRYPTO_SUCCESS, "Unable to compute the shared secret (%d)", ret);
-}
-
-int default_CSPRNG(uint8_t *dst, unsigned int len)
-{
-	return (sys_csrand_get(dst, len) == 0);
-}
-#endif /* CONFIG_MBEDTLS */
 
 ZTEST_SUITE(test_fn, NULL, NULL, NULL, NULL, NULL);

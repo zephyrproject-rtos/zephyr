@@ -74,8 +74,8 @@ static int afio_init(void)
 #ifdef AFIO_CPSCTL
 	if (DT_PROP(AFIO_NODE, enable_cps)) {
 		gpio_compensation_config(GPIO_COMPENSATION_ENABLE);
-		while (gpio_compensation_flag_get() == RESET)
-			;
+		while (gpio_compensation_flag_get() == RESET) {
+		}
 	}
 #endif /* AFIO_CPSCTL */
 

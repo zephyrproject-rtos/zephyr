@@ -71,17 +71,17 @@ ZTEST(stm32_tsc, test_2_cr_reg)
 	/* check charge transfer pulse high value (bits 31:28) */
 	zassert_equal((*tsc_cr & TSC_CR_CTPL_Msk) >> TSC_CR_CTPL_Pos, ctph - 1,
 		      "CTPH value is not correct, expected %d, got %d", ctph - 1,
-		      (*tsc_cr & TSC_CR_CTPL_Msk) >> TSC_CR_CTPL_Pos);
+		      (uint32_t)(*tsc_cr & TSC_CR_CTPL_Msk) >> TSC_CR_CTPL_Pos);
 
 	/* check charge transfer pulse low value (bits 27:24) */
 	zassert_equal((*tsc_cr & TSC_CR_CTPL_Msk) >> TSC_CR_CTPL_Pos, ctpl - 1,
 		      "CTPL value is not correct, expected %d, got %d", ctpl - 1,
-		      (*tsc_cr & TSC_CR_CTPL_Msk) >> TSC_CR_CTPL_Pos);
+		      (uint32_t)(*tsc_cr & TSC_CR_CTPL_Msk) >> TSC_CR_CTPL_Pos);
 
 	/* check spread spectrum deviation value (bits 23:17) */
 	zassert_equal((*tsc_cr & TSC_CR_SSD_Msk) >> TSC_CR_SSD_Pos, ssd,
 		      "SSD value is not correct, expected %d, got %d", ssd,
-		      (*tsc_cr & TSC_CR_SSD_Msk) >> TSC_CR_SSD_Pos);
+		      (uint32_t)(*tsc_cr & TSC_CR_SSD_Msk) >> TSC_CR_SSD_Pos);
 
 	/* check spread spectrum enable bit (bit 16) */
 	if (spread_spectrum) {
@@ -100,12 +100,12 @@ ZTEST(stm32_tsc, test_2_cr_reg)
 	/* check pulse generator prescaler value (bits 14:12) */
 	zassert_equal((*tsc_cr & TSC_CR_PGPSC_Msk), pgpsc << TSC_CR_PGPSC_Pos,
 		      "PGPSC value is not correct, expected %d, got %d", pgpsc,
-		      (*tsc_cr & TSC_CR_PGPSC_Msk));
+		      (uint32_t)(*tsc_cr & TSC_CR_PGPSC_Msk));
 
 	/* check max count value (bits 7:5) */
 	zassert_equal((*tsc_cr & TSC_CR_MCV_Msk), max_count << TSC_CR_MCV_Pos,
 		      "MCV value is not correct, expected %d, got %d", max_count,
-		      (*tsc_cr & TSC_CR_MCV_Msk));
+		      (uint32_t)(*tsc_cr & TSC_CR_MCV_Msk));
 
 	/* check I/O default mode bit (bit 4) */
 	if (iodef) {

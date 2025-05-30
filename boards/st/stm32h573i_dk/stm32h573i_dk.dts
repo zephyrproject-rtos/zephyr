@@ -29,18 +29,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_0: led_1 {
 			gpios = <&gpioi 9 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
+
 		orange_led_0: led_2 {
 			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
+
 		red_led_0: led_3 {
 			gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
 		};
+
 		blue_led_0: led_4 {
 			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
 			label = "User LD4";
@@ -49,6 +53,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -79,6 +84,13 @@
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
 		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft3267>;
+		display = <&st7789v>;
+		invert-y;
 	};
 };
 
@@ -200,6 +212,20 @@
 	status = "okay";
 };
 
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pb8 &i2c4_sda_pb9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	ft3267: ft3267@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpiog 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpiog 3 GPIO_ACTIVE_LOW>;
+	};
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
@@ -273,18 +299,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(416)>;
 		};
+
 		slot1_partition: partition@78000 {
 			label = "image-1";
 			reg = <0x00078000 DT_SIZE_K(416)>;
 		};
+
 		scratch_partition: partition@e0000 {
 			label = "image-scratch";
 			reg = <0x000e0000 DT_SIZE_K(64)>;
 		};
+
 		/* Set 64KB of storage at the end of Bank1 */
 		storage_partition: partition@f0000 {
 			label = "storage";
@@ -365,14 +395,14 @@
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       label = "nor";
-			       reg = <0x00000000 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				label = "nor";
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
 		};
 	};
 };

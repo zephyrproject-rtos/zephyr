@@ -85,7 +85,8 @@ struct modem_backend_uart {
 
 struct modem_backend_uart_config {
 	const struct device *uart;
-	uint8_t *receive_buf __aligned(sizeof(uint32_t));
+	/* Address must be word-aligned when CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC is enabled. */
+	uint8_t *receive_buf;
 	uint32_t receive_buf_size;
 	uint8_t *transmit_buf;
 	uint32_t transmit_buf_size;

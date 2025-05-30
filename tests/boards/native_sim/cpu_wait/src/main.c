@@ -29,8 +29,7 @@ ZTEST(native_cpu_hold, test_cpu_hold_basic)
 		k_busy_wait(wait_times[i]);
 		time2 = posix_get_hw_cycle();
 		zassert_true(time2 - time1 == wait_times[i],
-				"k_busy_wait failed "
-				PRIu64"-"PRIu64"!="PRIu32"\n",
+				"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
 				time2, time1, wait_times[i]);
 		time1 = time2;
 	}
@@ -39,8 +38,7 @@ ZTEST(native_cpu_hold, test_cpu_hold_basic)
 		posix_cpu_hold(wait_times[i]);
 		time2 = posix_get_hw_cycle();
 		zassert_true(time2 - time1 == wait_times[i],
-				"posix_cpu_hold failed "
-				PRIu64"-"PRIu64"!="PRIu32"\n",
+				"posix_cpu_hold failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
 				time2, time1, wait_times[i]);
 		time1 = time2;
 	}
@@ -125,9 +123,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_another_thread)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == TWO_TICKS_TIME + WASTED_TIME,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, TWO_TICKS_TIME + WASTED_TIME);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
+			time2, time1, (uint32_t)(TWO_TICKS_TIME + WASTED_TIME));
 
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -143,9 +140,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_another_thread)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == TWO_AND_HALF_TICKS,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, TWO_AND_HALF_TICKS);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32"\n",
+			time2, time1, (uint32_t)TWO_AND_HALF_TICKS);
 
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -163,9 +159,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_another_thread)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == TWO_TICKS_TIME + WASTED_TIME + 1,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, TWO_TICKS_TIME + WASTED_TIME + 1);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
+			time2, time1, (uint32_t)(TWO_TICKS_TIME + WASTED_TIME + 1));
 
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -183,9 +178,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_another_thread)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == TWO_AND_HALF_TICKS + WASTED_TIME,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, TWO_AND_HALF_TICKS + WASTED_TIME);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
+			time2, time1, (uint32_t)(TWO_AND_HALF_TICKS + WASTED_TIME));
 
 	k_sem_take(&end_sema, K_FOREVER);
 }
@@ -234,9 +228,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == ONE_TICK_TIME + WASTED_TIME,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, ONE_TICK_TIME);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
+			time2, time1, (uint32_t)ONE_TICK_TIME);
 
 
 	k_sleep(Z_TIMEOUT_TICKS(1)); /* Wait until tick boundary */
@@ -250,9 +243,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == ONE_AND_HALF_TICKS,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, ONE_TICK_TIME);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
+			time2, time1, (uint32_t)ONE_TICK_TIME);
 
 
 
@@ -267,9 +259,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == ONE_TICK_TIME + 1 + WASTED_TIME,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, ONE_TICK_TIME);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
+			time2, time1, (uint32_t)ONE_TICK_TIME);
 
 
 	k_sleep(Z_TIMEOUT_TICKS(1)); /* Wait until tick boundary */
@@ -283,9 +274,8 @@ ZTEST(native_cpu_hold, test_cpu_hold_with_interrupts)
 	time2 = posix_get_hw_cycle();
 
 	zassert_true(time2 - time1 == ONE_AND_HALF_TICKS + WASTED_TIME,
-			"k_busy_wait failed "
-			PRIu64"-"PRIu64"!="PRIu32"\n",
-			time2, time1, ONE_TICK_TIME);
+			"k_busy_wait failed %" PRIu64 "-%" PRIu64 "!=%" PRIu32 "\n",
+			time2, time1, (uint32_t)ONE_TICK_TIME);
 
 #endif /* defined(CONFIG_BOARD_NATIVE_SIM) */
 }

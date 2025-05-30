@@ -12,12 +12,6 @@
 
 / {
 	clocks {
-		uartclk: apb-pclk {
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(24)>;
-			#clock-cells = <0>;
-		};
-
 		xo32m_xtal: xo32m_xtal {
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(32)>;
@@ -470,39 +464,35 @@
 		};
 
 		uart0: uart@UART0_BASE_NAME {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <UART0_REG_BASE UART0_REG_SIZE>;
 			interrupts = <15 0>;
-			interrupt-names = "UART0";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart1: uart@UART1_BASE_NAME {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <UART1_REG_BASE UART1_REG_SIZE>;
 			interrupts = <16 0>;
-			interrupt-names = "UART1";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart2: uart@UART2_BASE_NAME {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <UART2_REG_BASE UART2_REG_SIZE>;
 			interrupts = <17 0>;
-			interrupt-names = "UART2";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart3: uart@UART3_BASE_NAME {
-			compatible = "ambiq,uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <UART3_REG_BASE UART3_REG_SIZE>;
 			interrupts = <18 0>;
-			interrupt-names = "UART3";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		mspi0: mspi@MSPI0_BASE_NAME {

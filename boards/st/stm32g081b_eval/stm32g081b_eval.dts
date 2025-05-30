@@ -22,18 +22,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_1: led1 {
 			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led_2: led2 {
 			gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led_3: led3 {
 			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
 		};
+
 		led_4: led4 {
 			gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
 			label = "LED4";
@@ -42,26 +46,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		joy_sel: button0 {
 			label = "JOY_SEL";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
+
 		joy_left: button1 {
 			label = "JOY_LEFT";
 			gpios = <&gpioc 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
+
 		joy_down: button2 {
 			label = "JOY_DOWN";
 			gpios = <&gpioc 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joy_right: button3 {
 			label = "JOY_RIGHT";
 			gpios = <&gpioc 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
+
 		joy_up: button4 {
 			label = "JOY_UP";
 			gpios = <&gpioc 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -121,6 +130,7 @@
 
 &timers15 {
 	status = "okay";
+
 	pwm15: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim15_ch1_pc1>;

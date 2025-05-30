@@ -22,7 +22,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 overlay=overlay_pst_conf
 RunTest mesh_lcd_test_comp130_data_split \
 	lcd_srv_comp_data_status_respond lcd_cli_split_comp_data_request -- -argstest page=130
-
-overlay="overlay_pst_conf_overlay_ss_conf_overlay_psa_conf"
-RunTest mesh_lcd_test_comp130_data_split \
-	lcd_srv_comp_data_status_respond lcd_cli_split_comp_data_request -- -argstest page=130

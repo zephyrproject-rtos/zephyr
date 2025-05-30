@@ -15,6 +15,7 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/sem.h>
+#include <zephyr/sys/timeutil.h>
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
@@ -82,11 +83,9 @@ int z_clock_gettime(clockid_t clock_id, struct timespec *ts)
 	/* For ns 32 bit conversion can be used since its smaller than 1sec. */
 	ts->tv_nsec = (int32_t)k_ticks_to_ns_floor32(nremainder);
 
-	ts->tv_sec += base.tv_sec;
-	ts->tv_nsec += base.tv_nsec;
-	if (ts->tv_nsec >= NSEC_PER_SEC) {
-		ts->tv_sec++;
-		ts->tv_nsec -= NSEC_PER_SEC;
+	if (unlikely(!timespec_normalize(ts)) || unlikely(!timespec_add(ts, &base))) {
+		errno = EOVERFLOW;
+		return -1;
 	}
 
 	return 0;
@@ -101,7 +100,7 @@ int z_clock_settime(clockid_t clock_id, const struct timespec *tp)
 		return -1;
 	}
 
-	if (tp->tv_nsec < 0 || tp->tv_nsec >= NSEC_PER_SEC) {
+	if (!timespec_is_valid(tp)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -111,6 +110,11 @@ int z_clock_settime(clockid_t clock_id, const struct timespec *tp)
 
 	base.tv_sec = delta / NSEC_PER_SEC;
 	base.tv_nsec = delta % NSEC_PER_SEC;
+
+	if (unlikely(!timespec_normalize(&base))) {
+		errno = EOVERFLOW;
+		return -1;
+	}
 
 	SYS_SEM_LOCK(&rt_clock_base_lock) {
 		rt_clock_base = base;
@@ -137,7 +141,7 @@ int z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp
 		return -1;
 	}
 
-	if ((rqtp->tv_sec < 0) || (rqtp->tv_nsec < 0) || (rqtp->tv_nsec >= NSEC_PER_SEC)) {
+	if ((rqtp->tv_sec < 0) || !timespec_is_valid(rqtp)) {
 		errno = EINVAL;
 		return -1;
 	}

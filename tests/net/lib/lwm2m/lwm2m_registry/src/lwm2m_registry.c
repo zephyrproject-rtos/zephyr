@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-
+#include <zephyr/sys/util.h>
 #include "lwm2m_engine.h"
 #include "lwm2m_util.h"
 
@@ -133,72 +133,111 @@ ZTEST(lwm2m_registry, test_get_res_inst)
 	zassert_not_null(lwm2m_engine_get_res_inst(&LWM2M_OBJ(3, 0, 11, 0)));
 }
 
+#define GET_SET_UNINIT_PATTERN 0xA5
+#define GET_SET_INT(c_type, name, init)                                                            \
+	struct {                                                                                   \
+		IDENTITY c_type out;                                                               \
+		IDENTITY c_type in;                                                                \
+	} name = {.out = init};                                                                    \
+	memset(&name.in, GET_SET_UNINIT_PATTERN, sizeof(name.in));                                 \
+	zassert_not_ok(memcmp(&name.out, &name.in, sizeof(name.out)), "init value must be "        \
+								      "non-zero")
+
+#define GET_SET_ARRAY(c_type, name, init)                                                          \
+	struct {                                                                                   \
+		IDENTITY c_type out[sizeof((IDENTITY c_type[])__DEBRACKET init)];                  \
+		IDENTITY c_type in[sizeof((IDENTITY c_type[])__DEBRACKET init)];                   \
+	} name = {.out = __DEBRACKET init};                                                        \
+	memset(&name.in, GET_SET_UNINIT_PATTERN, sizeof(name.in));                                 \
+	zassert_not_ok(memcmp(&name.out, &name.in, sizeof(name.out)), "init value must be "        \
+								      "non-zero")
+
+#define GET_SET_STRING(c_type, name, init)                                                         \
+	struct {                                                                                   \
+		IDENTITY c_type out[sizeof(init)];                                                 \
+		IDENTITY c_type in[sizeof(init)];                                                  \
+	} name = {.out = init};                                                                    \
+	memset(&name.in, GET_SET_UNINIT_PATTERN, sizeof(name.in));                                 \
+	zassert_not_ok(memcmp(&name.out, &name.in, sizeof(name.out)), "init value must be "        \
+								      "non-zero")
+
+#define GET_SET_STRUCT(c_type, name, init)                                                         \
+	struct {                                                                                   \
+		IDENTITY c_type out;                                                               \
+		IDENTITY c_type in;                                                                \
+	} name = {.out = __DEBRACKET init};                                                        \
+	memset(&name.in, GET_SET_UNINIT_PATTERN, sizeof(name.in));                                 \
+	zassert_not_ok(memcmp(&name.out, &name.in, sizeof(name.out)), "init value must be "        \
+								      "non-zero")
+
 ZTEST(lwm2m_registry, test_get_set)
 {
-	bool b = true;
-	uint8_t opaque[] = {0xde, 0xad, 0xbe, 0xff, 0, 0};
-	char string[] = "Hello";
-	uint8_t u8 = 8;
-	int8_t s8 = -8;
-	uint16_t u16 = 16;
-	int16_t s16 = -16;
-	uint32_t u32 = 32;
-	int32_t s32 = -32;
-	int64_t s64 = -64;
-	time_t t = 1687949519;
-	double d = 3.1415;
-	double d2;
-	struct lwm2m_objlnk objl = {.obj_id = 1, .obj_inst = 2};
-	uint16_t l = sizeof(opaque);
+	GET_SET_INT((bool), b, true);
+	GET_SET_ARRAY((uint8_t), opaque, ({0xde, 0xad, 0xbe, 0xff, 0, 0}));
+	GET_SET_STRING((char), string, "Hello");
+	GET_SET_INT((uint8_t), u8, 8);
+	GET_SET_INT((int8_t), s8, -8);
+	GET_SET_INT((uint16_t), u16, 16);
+	GET_SET_INT((int16_t), s16, -16);
+	GET_SET_INT((uint32_t), u32, 32);
+	GET_SET_INT((int32_t), s32, -32);
+	GET_SET_INT((int64_t), s64, -64);
+	GET_SET_INT((time_t), t, 1687949519);
+	GET_SET_INT((double), d, 3.1415);
+	GET_SET_STRUCT((struct lwm2m_objlnk), objl, ({.obj_id = 1, .obj_inst = 2}));
 
-	zassert_equal(lwm2m_set_bool(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL), b), 0);
-	zassert_equal(lwm2m_set_opaque(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OPAQUE), opaque, l), 0);
-	zassert_equal(lwm2m_set_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), string), 0);
-	zassert_equal(lwm2m_set_u8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U8), u8), 0);
-	zassert_equal(lwm2m_set_s8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S8), s8), 0);
-	zassert_equal(lwm2m_set_u16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U16), u16), 0);
-	zassert_equal(lwm2m_set_s16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S16), s16), 0);
-	zassert_equal(lwm2m_set_u32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U32), u32), 0);
-	zassert_equal(lwm2m_set_s32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S32), s32), 0);
-	zassert_equal(lwm2m_set_s64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S64), s64), 0);
-	zassert_equal(lwm2m_set_time(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_TIME), t), 0);
-	zassert_equal(lwm2m_set_f64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_FLOAT), d), 0);
-	zassert_equal(lwm2m_set_objlnk(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OBJLNK), &objl), 0);
+	/* set all resources */
+	zassert_ok(lwm2m_set_bool(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL), b.out));
+	zassert_ok(lwm2m_set_opaque(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OPAQUE), opaque.out,
+				    sizeof(opaque.out)));
+	zassert_ok(lwm2m_set_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), string.out));
+	zassert_ok(lwm2m_set_u8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U8), u8.out));
+	zassert_ok(lwm2m_set_s8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S8), s8.out));
+	zassert_ok(lwm2m_set_u16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U16), u16.out));
+	zassert_ok(lwm2m_set_s16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S16), s16.out));
+	zassert_ok(lwm2m_set_u32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U32), u32.out));
+	zassert_ok(lwm2m_set_s32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S32), s32.out));
+	zassert_ok(lwm2m_set_s64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S64), s64.out));
+	zassert_ok(lwm2m_set_time(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_TIME), t.out));
+	zassert_ok(lwm2m_set_f64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_FLOAT), d.out));
+	zassert_ok(lwm2m_set_objlnk(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OBJLNK), &objl.out));
 
-	zassert_equal(lwm2m_get_bool(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL), &b), 0);
-	zassert_equal(lwm2m_get_opaque(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OPAQUE), &opaque, l), 0);
-	zassert_equal(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), &string, l), 0);
-	zassert_equal(lwm2m_get_u8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U8), &u8), 0);
-	zassert_equal(lwm2m_get_s8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S8), &s8), 0);
-	zassert_equal(lwm2m_get_u16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U16), &u16), 0);
-	zassert_equal(lwm2m_get_s16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S16), &s16), 0);
-	zassert_equal(lwm2m_get_u32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U32), &u32), 0);
-	zassert_equal(lwm2m_get_s32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S32), &s32), 0);
-	zassert_equal(lwm2m_get_s64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S64), &s64), 0);
-	zassert_equal(lwm2m_get_time(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_TIME), &t), 0);
-	zassert_equal(lwm2m_get_f64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_FLOAT), &d2), 0);
-	zassert_equal(lwm2m_get_objlnk(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OBJLNK), &objl), 0);
+	/* get all resources */
+	zassert_ok(lwm2m_get_bool(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL), &b.in));
+	zassert_ok(lwm2m_get_opaque(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OPAQUE), opaque.in,
+				    sizeof(opaque.in)));
+	zassert_ok(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), string.in,
+				    sizeof(string.in)));
+	zassert_ok(lwm2m_get_u8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U8), &u8.in));
+	zassert_ok(lwm2m_get_s8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S8), &s8.in));
+	zassert_ok(lwm2m_get_u16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U16), &u16.in));
+	zassert_ok(lwm2m_get_s16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S16), &s16.in));
+	zassert_ok(lwm2m_get_u32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U32), &u32.in));
+	zassert_ok(lwm2m_get_s32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S32), &s32.in));
+	zassert_ok(lwm2m_get_s64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S64), &s64.in));
+	zassert_ok(lwm2m_get_time(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_TIME), &t.in));
+	zassert_ok(lwm2m_get_f64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_FLOAT), &d.in));
+	zassert_ok(lwm2m_get_objlnk(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OBJLNK), &objl.in));
 
-	zassert_equal(b, true);
-	zassert_equal(memcmp(opaque, &(uint8_t[6]) {0xde, 0xad, 0xbe, 0xff, 0, 0}, l), 0);
-	zassert_str_equal(string, "Hello");
-	zassert_equal(u8, 8);
-	zassert_equal(s8, -8);
-	zassert_equal(u16, 16);
-	zassert_equal(s16, -16);
-	zassert_equal(u32, 32);
-	zassert_equal(s32, -32);
-	zassert_equal(s64, -64);
-	zassert_equal(t, 1687949519);
-	zassert_equal(d, d2);
-	zassert_equal(
-		memcmp(&objl, &(struct lwm2m_objlnk){.obj_id = 1, .obj_inst = 2}, sizeof(objl)), 0);
+	/* check read value */
+	zassert_equal(b.in, b.out);
+	zassert_mem_equal(opaque.in, opaque.out, sizeof(opaque.out));
+	zassert_str_equal(string.in, string.out);
+	zassert_equal(u8.in, u8.out);
+	zassert_equal(s8.in, s8.out);
+	zassert_equal(u16.in, u16.out);
+	zassert_equal(s16.in, s16.out);
+	zassert_equal(u32.in, u32.out);
+	zassert_equal(s32.in, s32.out);
+	zassert_equal(s64.in, s64.out);
+	zassert_equal(t.in, t.out);
+	zassert_equal(d.in, d.out);
+	zassert_mem_equal(&objl.in, &objl.out, sizeof(objl.out));
 
-	zassert_equal(lwm2m_set_res_data_len(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), 0), 0);
+	/* set string resource to zero length */
+	zassert_ok(lwm2m_set_res_data_len(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), 0));
 	char buf[10];
-
-	zassert_equal(
-		lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), buf, sizeof(buf)), 0);
+	zassert_ok(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), buf, sizeof(buf)));
 	zassert_equal(strlen(buf), 0);
 }
 
@@ -522,69 +561,66 @@ ZTEST(lwm2m_registry, test_resource_cache)
 
 ZTEST(lwm2m_registry, test_set_bulk)
 {
-	bool b = true;
-	uint8_t opaque[] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-	char string[] = "Hello world";
-	uint8_t u8 = 80;
-	int8_t s8 = -80;
-	uint16_t u16 = 160;
-	int16_t s16 = -160;
-	uint32_t u32 = 320;
-	int32_t s32 = -320;
-	int64_t s64 = -640;
-	time_t t = 1687949518;
-	double d = 3.14151;
-	double d2;
-	struct lwm2m_objlnk objl = {.obj_id = 10, .obj_inst = 20};
+	GET_SET_INT((bool), b, true);
+	GET_SET_ARRAY((uint8_t), opaque, ({0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}));
+	GET_SET_STRING((char), string, "Hello world");
+	GET_SET_INT((uint8_t), u8, 80);
+	GET_SET_INT((int8_t), s8, -80);
+	GET_SET_INT((uint16_t), u16, 160);
+	GET_SET_INT((int16_t), s16, -160);
+	GET_SET_INT((uint32_t), u32, 320);
+	GET_SET_INT((int32_t), s32, -320);
+	GET_SET_INT((int64_t), s64, -640);
+	GET_SET_INT((time_t), t, 1687949518);
+	GET_SET_INT((double), d, 3.14151);
+	GET_SET_STRUCT((struct lwm2m_objlnk), objl, ({.obj_id = 10, .obj_inst = 20}));
 
 	struct lwm2m_res_item res_items[] = {
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_BOOL), &b, sizeof(b)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OPAQUE), &opaque, sizeof(opaque)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_STRING), &string, sizeof(string)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U8), &u8, sizeof(u8)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S8), &s8, sizeof(s8)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U16), &u16, sizeof(u16)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S16), &s16, sizeof(s16)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U32), &u32, sizeof(u32)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S32), &s32, sizeof(s32)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S64), &s64, sizeof(s64)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_TIME), &t, sizeof(t)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_FLOAT), &d, sizeof(d)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OBJLNK), &objl, sizeof(objl)}
-	};
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_BOOL), &b.out, sizeof(b.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OPAQUE), opaque.out, sizeof(opaque.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_STRING), string.out, sizeof(string.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U8), &u8.out, sizeof(u8.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S8), &s8.out, sizeof(s8.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U16), &u16.out, sizeof(u16.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S16), &s16.out, sizeof(s16.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U32), &u32.out, sizeof(u32.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S32), &s32.out, sizeof(s32.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S64), &s64.out, sizeof(s64.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_TIME), &t.out, sizeof(t.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_FLOAT), &d.out, sizeof(d.out)},
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OBJLNK), &objl.out, sizeof(objl.out)}};
 
 	zassert_equal(lwm2m_set_bulk(res_items, ARRAY_SIZE(res_items)), 0);
 
-	zassert_equal(lwm2m_get_bool(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_BOOL), &b), 0);
-	zassert_equal(lwm2m_get_opaque(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OPAQUE), &opaque,
-		sizeof(opaque)), 0);
-	zassert_equal(lwm2m_get_string(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_STRING), &string,
-		sizeof(string)), 0);
-	zassert_equal(lwm2m_get_u8(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U8), &u8), 0);
-	zassert_equal(lwm2m_get_s8(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S8), &s8), 0);
-	zassert_equal(lwm2m_get_u16(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U16), &u16), 0);
-	zassert_equal(lwm2m_get_s16(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S16), &s16), 0);
-	zassert_equal(lwm2m_get_u32(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U32), &u32), 0);
-	zassert_equal(lwm2m_get_s32(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S32), &s32), 0);
-	zassert_equal(lwm2m_get_s64(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S64), &s64), 0);
-	zassert_equal(lwm2m_get_time(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_TIME), &t), 0);
-	zassert_equal(lwm2m_get_f64(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_FLOAT), &d2), 0);
-	zassert_equal(lwm2m_get_objlnk(&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OBJLNK),
-		&objl), 0);
+	/* get all resources */
+	zassert_ok(lwm2m_get_bool(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL), &b.in));
+	zassert_ok(lwm2m_get_opaque(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OPAQUE), opaque.in,
+				    sizeof(opaque.in)));
+	zassert_ok(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), string.in,
+				    sizeof(string.in)));
+	zassert_ok(lwm2m_get_u8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U8), &u8.in));
+	zassert_ok(lwm2m_get_s8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S8), &s8.in));
+	zassert_ok(lwm2m_get_u16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U16), &u16.in));
+	zassert_ok(lwm2m_get_s16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S16), &s16.in));
+	zassert_ok(lwm2m_get_u32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U32), &u32.in));
+	zassert_ok(lwm2m_get_s32(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S32), &s32.in));
+	zassert_ok(lwm2m_get_s64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S64), &s64.in));
+	zassert_ok(lwm2m_get_time(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_TIME), &t.in));
+	zassert_ok(lwm2m_get_f64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_FLOAT), &d.in));
+	zassert_ok(lwm2m_get_objlnk(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OBJLNK), &objl.in));
 
-	zassert_equal(b, true);
-	zassert_equal(memcmp(opaque, &(uint8_t[6]) {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
-		sizeof(opaque)), 0);
-	zassert_str_equal(string, "Hello world");
-	zassert_equal(u8, 80);
-	zassert_equal(s8, -80);
-	zassert_equal(u16, 160);
-	zassert_equal(s16, -160);
-	zassert_equal(u32, 320);
-	zassert_equal(s32, -320);
-	zassert_equal(s64, -640);
-	zassert_equal(t, 1687949518);
-	zassert_equal(d, d2);
-	zassert_equal(memcmp(&objl, &(struct lwm2m_objlnk){.obj_id = 10, .obj_inst = 20},
-		sizeof(objl)), 0);
+	/* check for equality */
+	zassert_equal(b.in, b.out);
+	zassert_mem_equal(opaque.in, opaque.out, sizeof(opaque.out));
+	zassert_str_equal(string.in, string.out);
+	zassert_equal(u8.in, u8.out);
+	zassert_equal(s8.in, s8.out);
+	zassert_equal(u16.in, u16.out);
+	zassert_equal(s16.in, s16.out);
+	zassert_equal(u32.in, u32.out);
+	zassert_equal(s32.in, s32.out);
+	zassert_equal(s64.in, s64.out);
+	zassert_equal(t.in, t.out);
+	zassert_equal(d.in, d.out);
+	zassert_mem_equal(&objl.in, &objl.out, sizeof(objl.out));
 }

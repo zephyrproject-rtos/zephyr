@@ -997,11 +997,12 @@ static int espi_npcx_send_oob(const struct device *dev,
 
 	/* Write GET_OOB data into 32-bits tx buffer in little endian */
 	for (idx_tx_buf = 0; idx_tx_buf < sz_oob_tx/4; idx_tx_buf++,
-								oob_buf += 4)
+								oob_buf += 4) {
 		inst->OOBTXBUF[idx_tx_buf + 1] = oob_buf[0]
 					  | (oob_buf[1] << 8)
 					  | (oob_buf[2] << 16)
 					  | (oob_buf[3] << 24);
+	}
 
 	/* Write remaining bytes of package */
 	if (sz_oob_tx % 4) {

@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_mcp2518fd_click
+  full_name: MikroElektronika MCP2518FD Click shield
+  vendor: mikroe
+  supported_features:
+    - can

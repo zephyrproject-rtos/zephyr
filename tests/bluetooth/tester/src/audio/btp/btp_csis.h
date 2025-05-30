@@ -5,6 +5,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/csip.h>
 
 /* CSIS commands */

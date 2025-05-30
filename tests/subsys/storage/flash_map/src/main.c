@@ -25,6 +25,14 @@ struct flash_sector fs_sectors[2048];
 
 ZTEST(flash_map, test_flash_area_disabled_device)
 {
+	/* The test checks if Flash Map will report partition
+	 * non-existend if it is disabled, but it also assumes that
+	 * disabled parition will have an ID generated.
+	 * Custom partition maps may not be generating entries for
+	 * disabled partitions nor identifiers, which makes the
+	 * test fail with custom partition manager, for no real reason.
+	 */
+#if defined(CONFIG_TEST_FLASH_MAP_DISABLED_PARTITIONS)
 	const struct flash_area *fa;
 	int rc;
 
@@ -38,6 +46,9 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 	 * because this macro will fail, at compile time, if node does not
 	 * exist or is disabled.
 	 */
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(flash_map, test_flash_area_device_is_ready)
@@ -144,6 +155,11 @@ ZTEST(flash_map, test_flash_area_erased_val)
 
 ZTEST(flash_map, test_fixed_partition_node_macros)
 {
+	/* DTS node macros, for accessing fixed partitions, are only available
+	 * for DTS based partitions; custom flash map may define partition outside
+	 * of DTS definition, making the NODE macros fail to evaluate.
+	 */
+#if defined(CONFIG_TEST_FLASH_MAP_NODE_MACROS)
 	/* Test against changes in API */
 	zassert_equal(FIXED_PARTITION_NODE_OFFSET(SLOT1_PARTITION_NODE),
 		DT_REG_ADDR(SLOT1_PARTITION_NODE));
@@ -155,6 +171,9 @@ ZTEST(flash_map, test_fixed_partition_node_macros)
 	/* Taking by node and taking by label should give same device */
 	zassert_equal(FIXED_PARTITION_BY_NODE(DT_NODELABEL(SLOT1_PARTITION)),
 		      FIXED_PARTITION(SLOT1_PARTITION));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(flash_map, test_flash_area_erase_and_flatten)
@@ -200,7 +219,7 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 		}
 	}
 	zassert_true(erased, "Erase failed at dev abosolute offset index %d",
-		     i + fa->fa_off);
+		     (int)(i + fa->fa_off));
 
 	rc = flash_fill(flash_dev, 0xaa, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash device fill fail");
@@ -223,7 +242,7 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 		}
 	}
 	zassert_true(erased, "Flatten/Erase failed at dev absolute offset %d",
-		     i + fa->fa_off);
+		     (int)(i + fa->fa_off));
 }
 
 ZTEST(flash_map, test_flash_area_copy)

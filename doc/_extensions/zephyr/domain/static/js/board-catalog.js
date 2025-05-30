@@ -29,6 +29,13 @@ function populateFormFromURL() {
     }
   });
 
+  // Restore visibility toggles from URL
+  ["show-boards", "show-shields"].forEach(toggle => {
+    if (hashParams.has(toggle)) {
+      document.getElementById(toggle).checked = hashParams.get(toggle) === "true";
+    }
+  });
+
   // Restore supported features from URL
   if (hashParams.has("features")) {
     const features = hashParams.get("features").split(",");
@@ -68,6 +75,11 @@ function updateURL() {
     else {
       element.value ? hashParams.set(param, element.value) : hashParams.delete(param);
     }
+  });
+
+  ["show-boards", "show-shields"].forEach(toggle => {
+    const isChecked = document.getElementById(toggle).checked;
+    isChecked ? hashParams.delete(toggle) : hashParams.set(toggle, "false");
   });
 
   // Add supported features to URL
@@ -119,7 +131,7 @@ function setupHWCapabilitiesField() {
   const datalist = document.getElementById('tag-list');
 
   const tagCounts = Array.from(document.querySelectorAll('.board-card')).reduce((acc, board) => {
-    board.getAttribute('data-supported-features').split(' ').forEach(tag => {
+    (board.getAttribute('data-supported-features') || '').split(' ').forEach(tag => {
       acc[tag] = (acc[tag] || 0) + 1;
     });
     return acc;
@@ -228,6 +240,16 @@ document.addEventListener("DOMContentLoaded", function () {
     filterBoards();
   });
 
+  boardsToggle = document.getElementById("show-boards");
+  boardsToggle.addEventListener("change", () => {
+    filterBoards();
+  });
+
+  shieldsToggle = document.getElementById("show-shields");
+  shieldsToggle.addEventListener("change", () => {
+    filterBoards();
+  });
+
   form.addEventListener("input", function () {
     filterBoards();
   });
@@ -246,6 +268,9 @@ function resetForm() {
   fillSocSeriesSelect();
   fillSocSocSelect();
 
+  document.getElementById("show-boards").checked = true;
+  document.getElementById("show-shields").checked = true;
+
   // Clear supported features
   document.querySelectorAll('.tag').forEach(tag => tag.remove());
   document.getElementById('tag-input').value = '';
@@ -254,12 +279,14 @@ function resetForm() {
 }
 
 function updateBoardCount() {
-  const boards = document.getElementsByClassName("board-card");
-  const visibleBoards = Array.from(boards).filter(
-    (board) => !board.classList.contains("hidden")
-  ).length;
-  const totalBoards = boards.length;
-  document.getElementById("nb-matches").textContent = `Showing ${visibleBoards} of ${totalBoards}`;
+  const boards = Array.from(document.getElementsByClassName("board-card"));
+  const visible = boards.filter(board => !board.classList.contains("hidden"));
+  const shields = boards.filter(board => board.classList.contains("shield"));
+  const visibleShields = visible.filter(board => board.classList.contains("shield"));
+
+  document.getElementById("nb-matches").textContent =
+    `Showing ${visible.length - visibleShields.length} of ${boards.length - shields.length} boards,`
+    + ` ${visibleShields.length} of ${shields.length} shields`;
 }
 
 function filterBoards() {
@@ -267,11 +294,13 @@ function filterBoards() {
   const archSelect = document.getElementById("arch").value;
   const vendorSelect = document.getElementById("vendor").value;
   const socSocSelect = document.getElementById("soc");
+  const showBoards = document.getElementById("show-boards").checked;
+  const showShields = document.getElementById("show-shields").checked;
 
   const selectedTags = [...document.querySelectorAll('.tag')].map(tag => tag.textContent);
 
   const resetFiltersBtn = document.getElementById("reset-filters");
-  if (nameInput || archSelect || vendorSelect || socSocSelect.selectedOptions.length || selectedTags.length) {
+  if (nameInput || archSelect || vendorSelect || socSocSelect.selectedOptions.length || selectedTags.length || !showBoards || !showShields) {
     resetFiltersBtn.classList.remove("btn-disabled");
   } else {
     resetFiltersBtn.classList.add("btn-disabled");
@@ -281,21 +310,26 @@ function filterBoards() {
 
   Array.from(boards).forEach(function (board) {
     const boardName = board.getAttribute("data-name").toLowerCase();
-    const boardArchs = board.getAttribute("data-arch").split(" ");
-    const boardVendor = board.getAttribute("data-vendor");
-    const boardSocs = board.getAttribute("data-socs").split(" ");
-    const boardSupportedFeatures = board.getAttribute("data-supported-features").split(" ");
+    const boardArchs = (board.getAttribute("data-arch") || "").split(" ").filter(Boolean);
+    const boardVendor = board.getAttribute("data-vendor") || "";
+    const boardSocs = (board.getAttribute("data-socs") || "").split(" ").filter(Boolean);
+    const boardSupportedFeatures = (board.getAttribute("data-supported-features") || "").split(" ").filter(Boolean);
+    const isShield = board.classList.contains("shield");
 
     let matches = true;
 
     const selectedSocs = [...socSocSelect.selectedOptions].map(({ value }) => value);
 
-    matches =
-      !(nameInput && !boardName.includes(nameInput)) &&
-      !(archSelect && !boardArchs.includes(archSelect)) &&
-      !(vendorSelect && boardVendor !== vendorSelect) &&
-      (selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc))) &&
-      (selectedTags.length === 0 || selectedTags.every((tag) => boardSupportedFeatures.includes(tag)));
+    if ((isShield && !showShields) || (!isShield && !showBoards)) {
+      matches = false;
+    } else {
+      matches =
+        !(nameInput && !boardName.includes(nameInput)) &&
+        !(archSelect && !boardArchs.includes(archSelect)) &&
+        !(vendorSelect && boardVendor !== vendorSelect) &&
+        (selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc))) &&
+        (selectedTags.length === 0 || selectedTags.every((tag) => boardSupportedFeatures.includes(tag)));
+    }
 
     board.classList.toggle("hidden", !matches);
   });

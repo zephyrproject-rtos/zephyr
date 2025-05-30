@@ -70,22 +70,22 @@ child-binding:
       description: |
         Retention mode voltage in microvolts.
 
-    enable-gpios:
-      type: phandle-array
+    enable-gpio-config:
+      type: array
       description: |
-        Regulator enable controlled by specified regulator GPIO pin.
+        Regulator enable controlled by specified GPIO pin <idx flags>.
         When set regulator must be enabled/disabled using set_dvs_mode.
 
-    pwm-gpios:
-      type: phandle-array
+    pwm-gpio-config:
+      type: array
       description: |
-        Regulator enable controlled by specified regulator GPIO pin.
+        Regulator enable controlled by specified GPIO pin <idx flags>.
         When set regulator must be enabled/disabled using set_dvs_mode.
 
-    retention-gpios:
-      type: phandle-array
+    retention-gpio-config:
+      type: array
       description: |
-        Retention mode controlled by specified regulator GPIO pin.
+        Retention mode controlled by specified GPIO pin <idx flags>.
 
     soft-start-microamp:
       type: int

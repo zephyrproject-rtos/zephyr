@@ -38,7 +38,7 @@ class Harness:
     FAULT = "ZEPHYR FATAL ERROR"
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
-    run_id_pattern = r"RunID: (?P<run_id>.*)"
+    run_id_pattern = r"RunID: (?P<run_id>[0-9A-Fa-f]+)"
 
     def __init__(self):
         self._status = TwisterStatus.NONE
@@ -789,7 +789,7 @@ class Test(Harness):
     # Ztest log patterns don't require to match the line start exactly: there are platforms
     # where there is some logging prefix at each console line whereas on other platforms
     # without prefixes the leading space is stripped.
-    test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\S*)")
+    test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\w*)")
     test_suite_end_pattern = re.compile(
         r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)"
     )

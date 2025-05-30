@@ -81,7 +81,7 @@ static void mbox_data_tests_before(void *f)
 	}
 
 	ret_val = mbox_register_callback_dt(rx_channel, callback, NULL);
-	zassert_false(ret_val != 0, "mbox failed to register callback. ret_val", ret_val);
+	zassert_false(ret_val != 0, "mbox failed to register callback. ret_val: %d", ret_val);
 
 	ret_val = mbox_set_enabled_dt(rx_channel, 1);
 	zassert_false(ret_val != 0, "mbox failed to enable mbox. ret_val: %d", ret_val);

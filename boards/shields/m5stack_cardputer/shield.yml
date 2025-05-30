@@ -1,0 +1,7 @@
+shield:
+  name: m5stack_cardputer
+  full_name: M5Stack Cardputer
+  vendor: m5stack
+  supported_features:
+    - display
+    - sdhc

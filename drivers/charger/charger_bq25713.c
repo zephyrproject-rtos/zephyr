@@ -165,8 +165,7 @@ static int bq25713_set_minimum_system_voltage(const struct device *dev, uint32_t
 
 static int bq25713_set_constant_charge_current(const struct device *dev, uint32_t current_ua)
 {
-	if (!IN_RANGE(current_ua, BQ25713_REG_CC_CHARGE_CURRENT_MIN_UA,
-		      BQ25713_REG_CC_CHARGE_CURRENT_MAX_UA)) {
+	if (current_ua > BQ25713_REG_CC_CHARGE_CURRENT_MAX_UA) {
 		LOG_WRN("charging current out of range: %umA, "
 			"clamping to the nearest limit",
 			current_ua / BQ25713_FACTOR_U_TO_M);

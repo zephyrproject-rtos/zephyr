@@ -41,4 +41,41 @@
 		pinmux = <11 DIO11_SPI0_CSN>;
 		bias-disable;
 	};
+
+	/* ADC0 */
+	adc0_ch0: adc0_ch0 {
+		pinmux = <7 DIO7_ADC0_AREFM>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch2: adc0_ch2 {
+		pinmux = <5 DIO5_ADC2>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch3: adc0_ch3 {
+		pinmux = <2 DIO2_ADC3>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch4: adc0_ch4 {
+		pinmux = <1 DIO1_ADC4>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch6: adc0_ch6 {
+		pinmux = <25 DIO25_ADC6>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch8: adc0_ch8 {
+		pinmux = <23 DIO23_ADC8_LPCP_LPCM>;
+		bias-disable;
+		input-enable;
+	};
 };

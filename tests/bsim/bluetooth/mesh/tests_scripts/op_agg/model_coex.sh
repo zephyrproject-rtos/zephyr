@@ -23,7 +23,3 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    related to its own aggregated sequence from the cli device.
 RunTest mesh_op_agg_model_coex \
 	op_agg_tester_model_coex op_agg_dut_model_coex
-
-overlay=overlay_psa_conf
-RunTest mesh_op_agg_model_coex \
-	op_agg_tester_model_coex op_agg_dut_model_coex

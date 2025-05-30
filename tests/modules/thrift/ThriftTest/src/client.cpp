@@ -99,7 +99,7 @@ ZTEST(thrift, test_struct)
 	Xtruct response_struct;
 	context.client->testStruct(response_struct, request_struct);
 
-	zassert_equal(response_struct, request_struct, NULL);
+	zassert_equal(response_struct, request_struct);
 }
 
 ZTEST(thrift, test_nested_struct)
@@ -111,7 +111,7 @@ ZTEST(thrift, test_nested_struct)
 	Xtruct2 response_struct;
 	context.client->testNest(response_struct, request_struct);
 
-	zassert_equal(response_struct, request_struct, NULL);
+	zassert_equal(response_struct, request_struct);
 }
 
 ZTEST(thrift, test_map)
@@ -150,7 +150,8 @@ ZTEST(thrift, test_list)
 {
 	vector<int32_t> response_list;
 	context.client->testList(response_list, vector<int32_t>());
-	zassert_true(response_list.empty(), "Unexpected list size: %llu", response_list.size());
+	zassert_true(response_list.empty(), "Unexpected list size: %u",
+			(uint32_t)response_list.size());
 
 	static const vector<int32_t> request_list = {-2, -1, 0, 1, 2};
 
@@ -162,13 +163,13 @@ ZTEST(thrift, test_list)
 ZTEST(thrift, test_enum)
 {
 	Numberz::type response = context.client->testEnum(Numberz::ONE);
-	zassert_equal(response, Numberz::ONE, NULL);
+	zassert_equal(response, Numberz::ONE);
 
 	response = context.client->testEnum(Numberz::TWO);
-	zassert_equal(response, Numberz::TWO, NULL);
+	zassert_equal(response, Numberz::TWO);
 
 	response = context.client->testEnum(Numberz::EIGHT);
-	zassert_equal(response, Numberz::EIGHT, NULL);
+	zassert_equal(response, Numberz::EIGHT);
 }
 
 ZTEST(thrift, test_typedef)
@@ -182,15 +183,15 @@ ZTEST(thrift, test_nested_map)
 	map<int32_t, map<int32_t, int32_t>> mm;
 	context.client->testMapMap(mm, 1);
 
-	zassert_equal(mm.size(), 2, NULL);
-	zassert_equal(mm[-4][-4], -4, NULL);
-	zassert_equal(mm[-4][-3], -3, NULL);
-	zassert_equal(mm[-4][-2], -2, NULL);
-	zassert_equal(mm[-4][-1], -1, NULL);
-	zassert_equal(mm[4][4], 4, NULL);
-	zassert_equal(mm[4][3], 3, NULL);
-	zassert_equal(mm[4][2], 2, NULL);
-	zassert_equal(mm[4][1], 1, NULL);
+	zassert_equal(mm.size(), 2);
+	zassert_equal(mm[-4][-4], -4);
+	zassert_equal(mm[-4][-3], -3);
+	zassert_equal(mm[-4][-2], -2);
+	zassert_equal(mm[-4][-1], -1);
+	zassert_equal(mm[4][4], 4);
+	zassert_equal(mm[4][3], 3);
+	zassert_equal(mm[4][2], 2);
+	zassert_equal(mm[4][1], 1);
 }
 
 ZTEST(thrift, test_exception)

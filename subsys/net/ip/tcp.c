@@ -1514,6 +1514,10 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 	} else {
 		uint32_t ack = ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
 
+		if (th_flags(th_pkt) & SYN) {
+			ack++;
+		}
+
 		UNALIGNED_PUT(RST | ACK, &th_rst->th_flags);
 		UNALIGNED_PUT(htonl(ack), &th_rst->th_ack);
 	}
@@ -1614,7 +1618,7 @@ out:
 
 static void tcp_out(struct tcp *conn, uint8_t flags)
 {
-	(void)tcp_out_ext(conn, flags, NULL /* no data */, conn->seq);
+	(void)tcp_out_ext(conn, flags, NULL /* no data */, conn->seq + conn->unacked_len);
 }
 
 static int tcp_pkt_pull(struct net_pkt *pkt, size_t len)
@@ -2035,8 +2039,7 @@ static void tcp_send_keepalive_probe(struct k_work *work)
 	k_work_reschedule_for_queue(&tcp_work_q, &conn->keepalive_timer,
 				    K_SECONDS(conn->keep_intvl));
 
-
-	(void)tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+	(void)tcp_out_ext(conn, ACK, NULL, conn->seq + conn->unacked_len - 1);
 }
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
 
@@ -2047,7 +2050,7 @@ static void tcp_send_zwp(struct k_work *work)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	(void)tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+	(void)tcp_out_ext(conn, ACK, NULL, conn->seq + conn->unacked_len - 1);
 
 	tcp_derive_rto(conn);
 
@@ -2846,7 +2849,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	NET_DBG("%s", tcp_conn_state(conn, pkt));
 
 	if (th_off(th) < 5) {
-		tcp_out(conn, RST);
+		net_tcp_reply_rst(pkt);
 		do_close = true;
 		close_status = -ECONNRESET;
 		goto out;
@@ -2874,6 +2877,13 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		if (conn->in_connect) {
 			fl = th_flags(th);
 			if (FL(&fl, ==, RST | ACK)) {
+				if (th_ack(th) != conn->seq) {
+					/* Invalid ACKnum - drop it */
+					net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
+					k_mutex_unlock(&conn->lock);
+					return NET_DROP;
+				}
+
 				close_status = -ECONNREFUSED;
 			}
 		}
@@ -2884,7 +2894,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	if (tcp_options_len && !tcp_options_check(&conn->recv_options, pkt,
 						  tcp_options_len)) {
 		NET_DBG("DROP: Invalid TCP option list");
-		tcp_out(conn, RST);
+		net_tcp_reply_rst(pkt);
 		do_close = true;
 		close_status = -ECONNRESET;
 		goto out;
@@ -2899,7 +2909,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		NET_DBG("conn: %p, SYN received in %s state, dropping connection",
 			conn, tcp_state_to_str(conn->state, false));
 		net_stats_update_tcp_seg_drop(conn->iface);
-		tcp_out(conn, RST);
+		net_tcp_reply_rst(pkt);
 		do_close = true;
 		close_status = -ECONNRESET;
 		goto out;
@@ -3016,7 +3026,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			accept_cb(conn->context, &conn->context->remote,
 				  net_context_get_family(context) == AF_INET6 ?
 				  sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in),
-				  0, context);
+				  0, context->user_data);
 
 			next = TCP_ESTABLISHED;
 
@@ -3173,7 +3183,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 					"(total=%zu)", conn, len_acked,
 					conn->send_data_total);
 				net_stats_update_tcp_seg_drop(conn->iface);
-				tcp_out(conn, RST);
+				net_tcp_reply_rst(pkt);
 				do_close = true;
 				close_status = -ECONNRESET;
 				break;
@@ -3236,7 +3246,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 			ret = tcp_send_queued_data(conn);
 			if (ret < 0 && ret != -ENOBUFS) {
-				tcp_out(conn, RST);
+				net_tcp_reply_rst(pkt);
 				do_close = true;
 				close_status = ret;
 				verdict = NET_OK;
@@ -3334,7 +3344,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 			next = tcp_enter_time_wait(conn);
 
-			tcp_out(conn, RST);
+			net_tcp_reply_rst(pkt);
 			break;
 		}
 		if (FL(&fl, &, ACK, th_ack(th) == conn->seq)) {
@@ -3414,7 +3424,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 			next = tcp_enter_time_wait(conn);
 
-			tcp_out(conn, RST);
+			net_tcp_reply_rst(pkt);
 			break;
 		}
 		/*
@@ -3459,7 +3469,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 			next = tcp_enter_time_wait(conn);
 
-			tcp_out(conn, RST);
+			net_tcp_reply_rst(pkt);
 			break;
 		}
 
@@ -3513,7 +3523,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 				conn, new_len);
 			net_stats_update_tcp_seg_drop(conn->iface);
 
-			tcp_out(conn, RST);
+			net_tcp_reply_rst(pkt);
 		} else {
 			/* Acknowledge any FIN attempts, in case retransmission took
 			 * place.
@@ -4289,8 +4299,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 				conn = (void *)sys_slist_peek_head(&tcp_conns);
 				context = conn->context;
-				while (tcp_conn_close(conn, 0))
-					;
+				while (tcp_conn_close(conn, 0)) {
+				}
 				tcp_free(context);
 			}
 			tp_mem_stat();

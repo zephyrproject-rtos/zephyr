@@ -4,7 +4,7 @@
 description: |
   ADXL362 3-axis SPI accelerometer
   When setting the accelerometer DTS properties and want to use
-  streaming funcionality, make sure to include adxl362.h and
+  streaming functionality, make sure to include adxl362.h and
   use the macros defined there for fifo-mode and fifo-watermark properties.
 
   Example:

@@ -249,7 +249,7 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the source device */
-	return video_get_caps(config->source_dev, ep, caps);
+	return video_get_caps(config->source_dev, caps);
 }
 
 static int video_esp32_get_fmt(const struct device *dev, struct video_format *fmt)
@@ -259,15 +259,13 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 
 	LOG_DBG("Get format");
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
-
 	ret = video_get_format(cfg->source_dev, fmt);
 	if (ret) {
 		LOG_ERR("Failed to get format from source");
 		return ret;
 	}
+
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
 	return 0;
 }
@@ -276,14 +274,18 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 {
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
+	int ret;
 
-	if (fmt == NULL) {
-		return -EINVAL;
+	ret = video_set_format(cfg->source_dev, fmt);
+	if (ret < 0) {
+		return ret;
 	}
+
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
 	data->video_format = *fmt;
 
-	return video_set_format(cfg->source_dev, fmt);
+	return 0;
 }
 
 static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vbuf)

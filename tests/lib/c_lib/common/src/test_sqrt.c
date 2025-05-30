@@ -9,7 +9,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-
 #define local_abs(x) (((x) < 0) ? -(x) : (x))
 
 #ifndef NAN
@@ -29,12 +28,12 @@ static float test_floats[] = {
 	};
 #define	NUM_TEST_FLOATS	(sizeof(test_floats)/sizeof(float))
 
-	static double test_doubles[] = {
-		1.0, 2.0, 3.0, 4.0,
-		5.0, 6.0, 7.0, 8.0, 9.0,	/* numbers across the decade */
-		3.14159265359, 2.718281828,	/* irrational numbers pi and e */
-		123.4,	0.025,	0.10,	1.875	/* numbers with infinite */
-						/* repeating binary representationa */
+static double test_doubles[] = {
+	1.0, 2.0, 3.0, 4.0,
+	5.0, 6.0, 7.0, 8.0, 9.0,	/* numbers across the decade */
+	3.14159265359, 2.718281828,	/* irrational numbers pi and e */
+	123.4,	0.025,	0.10,	1.875	/* numbers with infinite */
+					/* repeating binary representationa */
 };
 #define	NUM_TEST_DOUBLES	(sizeof(test_floats)/sizeof(float))
 
@@ -88,13 +87,12 @@ static int isnanf(float x)
 
 ZTEST(libc_common, test_sqrtf)
 {
-int i;
-float	exponent, resf, square, root_squared, error;
-uint32_t max_error;
-int32_t ierror;
-int32_t *p_square = (int32_t *)&square;
-int32_t *p_root_squared = (int32_t *)&root_squared;
-
+	int i;
+	float exponent, resf, square, root_squared, error;
+	uint32_t max_error;
+	int32_t ierror;
+	int32_t *p_square = (int32_t *)&square;
+	int32_t *p_root_squared = (int32_t *)&root_squared;
 
 	max_error = 0;
 
@@ -147,13 +145,16 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 
 ZTEST(libc_common, test_sqrt)
 {
-int i;
-double	resd, error, square, root_squared, exponent;
-uint64_t max_error;
-int64_t ierror;
-int64_t *p_square = (int64_t *)&square;
-int64_t *p_root_squared = (int64_t *)&root_squared;
+	if (sizeof(double) != 8) {
+		ztest_test_skip();
+	}
 
+	int i;
+	double resd, error, square, root_squared, exponent;
+	uint64_t max_error;
+	int64_t ierror;
+	int64_t *p_square = (int64_t *)&square;
+	int64_t *p_root_squared = (int64_t *)&root_squared;
 
 	max_error = 0;
 

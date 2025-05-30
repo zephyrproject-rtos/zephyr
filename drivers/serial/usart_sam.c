@@ -105,12 +105,26 @@ static int usart_sam_baudrate_set(const struct device *dev, uint32_t baudrate)
 
 	uint32_t divisor;
 
+#ifdef SOC_ATMEL_SAM_MCK_FREQ_HZ
+	uint32_t rate = SOC_ATMEL_SAM_MCK_FREQ_HZ;
+#else
+	uint32_t rate;
+	int ret;
+
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
+				     (clock_control_subsys_t)&config->clock_cfg,
+				     &rate);
+	if (ret) {
+		return ret;
+	}
+#endif
+
 	__ASSERT(baudrate,
 		 "baud rate has to be bigger than 0");
-	__ASSERT(SOC_ATMEL_SAM_MCK_FREQ_HZ/16U >= baudrate,
+	__ASSERT(rate/16U >= baudrate,
 		 "MCK frequency is too small to set required baud rate");
 
-	divisor = SOC_ATMEL_SAM_MCK_FREQ_HZ / 16U / baudrate;
+	divisor = rate / 16U / baudrate;
 
 	if (divisor > 0xFFFF) {
 		return -EINVAL;

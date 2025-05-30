@@ -351,6 +351,33 @@
 			clocks = <&clock0 SIWX91X_CLK_GSPI>;
 			status = "disabled";
 		};
+
+		i2s0: i2s@47050000 {
+			compatible = "silabs,siwx91x-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x47050000 0x200>;
+			interrupts = <64 0>;
+			interrupt-names = "i2s0";
+			silabs,channel-group = <0>;
+			silabs,max-channel-count = <2>;
+			clocks = <&clock0 SIWX91X_CLK_I2S0>, <&clock0 SIWX91X_CLK_STATIC_I2S0>;
+			status = "disabled";
+		};
+
+		ulpi2s: i2s@24040400 {
+			compatible = "silabs,siwx91x-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24040400 0x200>;
+			interrupts = <14 0>;
+			interrupt-names = "ulpi2s";
+			silabs,channel-group = <0>;
+			silabs,max-channel-count = <1>;
+			clocks = <&clock0 SIWX91X_CLK_ULP_I2S>,
+				 <&clock0 SIWX91X_CLK_STATIC_ULP_I2S>;
+			status = "disabled";
+		};
 	};
 };
 

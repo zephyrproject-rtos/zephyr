@@ -5,29 +5,31 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <stddef.h>
-#include <errno.h>
-#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/types.h>
-#include <zephyr/kernel.h>
-
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <../../subsys/bluetooth/audio/mpl_internal.h>
-#include <../../subsys/bluetooth/audio/mcc_internal.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "bap_endpoint.h"
 #include "btp/btp.h"
-#include "../../../../include/zephyr/bluetooth/audio/media_proxy.h"
+#include "../../subsys/bluetooth/audio/mpl_internal.h"
+#include "../../subsys/bluetooth/audio/mcc_internal.h"
 
 #define LOG_MODULE_NAME bttester_mcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

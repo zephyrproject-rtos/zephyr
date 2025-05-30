@@ -171,7 +171,7 @@ static void timestamp_callback(struct net_pkt *pkt)
 		 */
 		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
-			     pkt->timestamp.nanosecond, pkt->timestamp.second);
+			     (int)pkt->timestamp.nanosecond, (int)pkt->timestamp.second);
 	}
 
 	/* The pkt was ref'ed in send_some_data()() */
@@ -201,7 +201,7 @@ void test_timestamp_setup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 }
 
 static void timestamp_callback_2(struct net_pkt *pkt)
@@ -214,7 +214,7 @@ static void timestamp_callback_2(struct net_pkt *pkt)
 		 */
 		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
-			     pkt->timestamp.nanosecond, pkt->timestamp.second);
+			     (int)pkt->timestamp.nanosecond, (int)pkt->timestamp.second);
 	}
 
 	zassert_equal(eth_interfaces[1], net_pkt_iface(pkt),
@@ -247,7 +247,7 @@ void test_timestamp_setup_2nd_iface(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 }
 
 void test_timestamp_setup_all(void)
@@ -272,7 +272,7 @@ void test_timestamp_setup_all(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n", pkt);
 
 	net_if_unregister_timestamp_cb(&timestamp_cb_3);
 }
@@ -296,7 +296,7 @@ void test_timestamp_cleanup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_false(timestamp_cb_called, "Timestamp callback called\n");
-	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n");
+	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n", pkt);
 
 	net_pkt_unref(pkt);
 }

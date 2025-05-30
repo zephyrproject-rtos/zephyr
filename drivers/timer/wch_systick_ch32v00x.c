@@ -12,7 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #define STK_SWIE  BIT(31)
 #define STK_STRE  BIT(3)
