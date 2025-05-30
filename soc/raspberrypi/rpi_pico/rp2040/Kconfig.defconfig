@@ -11,4 +11,9 @@ rsource "Kconfig.defconfig.rp2*"
 config NUM_IRQS
 	default 26
 
+DT_CLK_SYS_PATH := $(dt_nodelabel_path,clk_sys)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_CLK_SYS_PATH),clock-frequency)
+
 endif # SOC_SERIES_RP2040
