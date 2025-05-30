@@ -108,7 +108,7 @@ static int sd_common_init(struct sd_card *card)
 		LOG_INF("Card does not support CMD8, assuming legacy card");
 		return sd_idle(card);
 	} else if (ret) {
-		LOG_ERR("Card error on CMD 8");
+		LOG_ERR("Card error on CMD8");
 		return ret;
 	}
 	if (card->host_props.is_spi &&
@@ -135,13 +135,13 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->timing = SDHC_TIMING_LEGACY;
 
 	if (host_props->host_caps.vol_330_support) {
-		LOG_DBG("Host controller support 3.3V max");
+		LOG_DBG("Host controller support %sV max", "3.3");
 		voltage = SD_VOL_3_3_V;
 	} else if (host_props->host_caps.vol_300_support) {
-		LOG_DBG("Host controller support 3.0V max");
+		LOG_DBG("Host controller support %sV max", "3.0");
 		voltage = SD_VOL_3_0_V;
 	} else {
-		LOG_DBG("Host controller support 1.8V max");
+		LOG_DBG("Host controller support %sV max", "1.8");
 		voltage = SD_VOL_1_8_V;
 	}
 
@@ -153,14 +153,14 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->power_mode = SDHC_POWER_OFF;
 	ret = sdhc_set_io(card->sdhc, bus_io);
 	if (ret) {
-		LOG_ERR("Could not disable card power via SDHC");
+		LOG_ERR("Could not %s card power via SDHC", "disable");
 		return ret;
 	}
 	sd_delay(card->host_props.power_delay);
 	bus_io->power_mode = SDHC_POWER_ON;
 	ret = sdhc_set_io(card->sdhc, bus_io);
 	if (ret) {
-		LOG_ERR("Could not disable card power via SDHC");
+		LOG_ERR("Could not %s card power via SDHC", "enable");
 		return ret;
 	}
 	/* After reset or init, card voltage should be max HC support */
