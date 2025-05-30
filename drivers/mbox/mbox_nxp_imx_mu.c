@@ -61,7 +61,12 @@ static int nxp_imx_mu_send(const struct device *dev, uint32_t channel, const str
 
 	/* Signalling mode. */
 	if (msg == NULL) {
-		return MU_TriggerInterrupts(cfg->base, g_gen_int_trig_mask[channel]);
+		if (MU_TriggerInterrupts(cfg->base, g_gen_int_trig_mask[channel]) !=
+		    kStatus_Success) {
+			/* interrupt already pending, cannot trigger again */
+			return -EAGAIN;
+		}
+		return 0;
 	}
 
 	/* Data transfer mode. */
