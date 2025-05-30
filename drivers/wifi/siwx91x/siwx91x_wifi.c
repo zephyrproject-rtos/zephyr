@@ -1331,6 +1331,7 @@ static int siwx91x_ap_config_params(const struct device *dev, struct wifi_ap_con
 static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 {
 	size_t pkt_len = net_pkt_get_len(pkt);
+	sl_wifi_interface_t interface;
 	struct net_buf *buf = NULL;
 	int ret;
 
@@ -1347,8 +1348,9 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENOBUFS;
 	}
 	net_buf_add(buf, pkt_len);
-
-	ret = sl_wifi_send_raw_data_frame(SL_WIFI_CLIENT_INTERFACE, buf->data, pkt_len);
+	interface = sl_wifi_get_default_interface();
+	ret = sl_wifi_send_raw_data_frame(FIELD_GET(SIWX91X_INTERFACE_MASK, interface),
+					  buf->data, pkt_len);
 	if (ret) {
 		net_buf_unref(buf);
 		return -EIO;
