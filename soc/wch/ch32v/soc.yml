@@ -20,3 +20,4 @@ family:
   - name: qingke-v4f
     socs:
     - name: ch32v303
+    - name: ch32v307

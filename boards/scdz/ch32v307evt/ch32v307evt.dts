@@ -66,11 +66,11 @@
 };
 
 
-&gpioc {
+&gpioa {
 	status = "okay";
 };
 
-&gpiod {
+&gpioc {
 	status = "okay";
 };
 
