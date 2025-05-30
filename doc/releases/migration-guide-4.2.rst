@@ -482,6 +482,21 @@ Networking
   need to update their response callback implementations. To retain current
   behavior, simply return 0 from the callback.
 
+* The API signature of ``net_mgmt`` event handler :c:type:`net_mgmt_event_handler_t` and
+  request handler :c:type:`net_mgmt_request_handler_t` has changed. The management event
+  type is changed from ``uint32_t`` to ``uint64_t``. The change allows event number values
+  to be bit masks instead of enum values. The layer code still stays as a enum value.
+  The :c:macro:`NET_MGMT_LAYER_CODE` and :c:macro:`NET_MGMT_GET_COMMAND` can be used to get
+  the layer code and management event command from the actual event value in the request or
+  event handlers if needed.
+
+* The socket options for ``net_mgmt`` type sockets cannot directly be network management
+  event types as those are now ``uint64_t`` and the socket option expects a normal 32 bit
+  integer value. Because of this, a new ``SO_NET_MGMT_ETHERNET_SET_QAV_PARAM``
+  and ``SO_NET_MGMT_ETHERNET_GET_QAV_PARAM`` socket options are created that will replace
+  the previously used ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` and
+  ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` options.
+
 OpenThread
 ==========
 
