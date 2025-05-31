@@ -649,3 +649,6 @@ Architectures
   :kconfig:option:`CONFIG_ARCH_HAS_VECTOR_TABLE_RELOCATION` and
   :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM` to support relocation
   of vector table in RAM.
+
+* The :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` option has a new dependency with
+  :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE`.
