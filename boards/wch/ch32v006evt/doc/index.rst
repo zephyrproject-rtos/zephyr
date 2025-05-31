@@ -63,7 +63,10 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 Debugging
 =========
 
-This board can be debugged via OpenOCD or ``minichlink``.
+This board can be debugged via OpenOCD or ``minichlink``. Console messages are
+written to the UART by default, but can also be sent via the debug module
+and read by a SDI compatible debugger such as ``minichlink``. See
+:kconfig:option:`CONFIG_QINGKE_DEBUG_CONSOLE` for more.
 
 Testing the LED on the WCH CH32V006EVT
 **************************************
