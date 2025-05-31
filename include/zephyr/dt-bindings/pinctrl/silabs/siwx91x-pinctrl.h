@@ -22,6 +22,13 @@
 #define AGPIO_ULP10          SIWX91X_GPIO(0xFF, 7, 0xFF, 4, 0, 10)
 #define AGPIO_ULP11          SIWX91X_GPIO(0xFF, 7, 0xFF, 4, 0, 11)
 
+#define ADC_TOPGPIO_HP25     SIWX91X_GPIO(14, 0xFF, 0, 1, 9, 0)
+#define ADC_TOPGPIO_HP26     SIWX91X_GPIO(14, 0xFF, 0, 1, 10, 0)
+#define ADC_TOPGPIO_HP27     SIWX91X_GPIO(14, 0xFF, 0, 1, 11, 0)
+#define ADC_TOPGPIO_HP28     SIWX91X_GPIO(14, 0xFF, 0, 1, 12, 0)
+#define ADC_TOPGPIO_HP29     SIWX91X_GPIO(14, 0xFF, 0, 1, 13, 0)
+#define ADC_TOPGPIO_HP30     SIWX91X_GPIO(14, 0xFF, 0, 1, 14, 0)
+
 #define AUXULP_TRIG0_HP11    SIWX91X_GPIO(9,     5,    6, 0, 11,  5)
 #define AUXULP_TRIG0_HP30    SIWX91X_GPIO(11,    5,    0, 1, 14, 11)
 #define AUXULP_TRIG0_HP49    SIWX91X_GPIO(9,     5,   13, 3,  1, 11)
