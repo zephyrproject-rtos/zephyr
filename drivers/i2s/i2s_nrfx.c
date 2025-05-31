@@ -10,6 +10,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 #include <nrfx_i2s.h>
+#include <hal/nrf_clock.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -971,7 +972,8 @@ static DEVICE_API(i2s, i2s_nrf_drv_api) = {
 		init_clock_manager(dev);				     \
 		return 0;						     \
 	}								     \
-	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK || NRF_I2S_HAS_CLKCONFIG,	     \
+	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK ||			     \
+		     (NRF_I2S_HAS_CLKCONFIG && NRF_CLOCK_HAS_HFCLKAUDIO),    \
 		"Clock source ACLK is not available.");			     \
 	BUILD_ASSERT(I2S_CLK_SRC(idx) != ACLK ||			     \
 		     DT_NODE_HAS_PROP(DT_NODELABEL(clock),		     \
