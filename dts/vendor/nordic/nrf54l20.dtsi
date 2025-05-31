@@ -54,6 +54,12 @@
 			clock-frequency = <DT_FREQ_M(16)>;
 		};
 
+		pclk32m: pclk32m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
 		lfxo: lfxo {
 			compatible = "nordic,nrf54l-lfxo";
 			#clock-cells = <0>;
@@ -562,6 +568,17 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+			};
+
+			tdm: tdm@e8000 {
+				compatible = "nordic,nrf-tdm";
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0xe8000 0x1000>;
+				interrupts = <232 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				clocks = <&pclk32m>;
 			};
 
 			i2c23: i2c@ed000 {
