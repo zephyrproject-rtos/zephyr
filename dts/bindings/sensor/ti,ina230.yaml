@@ -31,7 +31,7 @@ properties:
       - "Shunt Voltage single shot"
       - "Bus Voltage single shot"
       - "Bus and Shunt Voltage single shot"
-      - "Shutdown continuous"
+      - "invalid"
       - "Shunt voltage continuous"
       - "Bus voltage continuous"
       - "Bus and shunt voltage continuous"
