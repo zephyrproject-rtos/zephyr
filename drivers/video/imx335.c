@@ -28,7 +28,9 @@ LOG_MODULE_REGISTER(video_imx335, CONFIG_VIDEO_LOG_LEVEL);
 
 struct imx335_config {
 	struct i2c_dt_spec i2c;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	struct gpio_dt_spec reset_gpio;
+#endif
 	uint32_t input_clk;
 };
 
@@ -445,26 +447,27 @@ static int imx335_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
-		return -ENODEV;
-	}
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+			LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->reset_gpio.port->name);
+			return -ENODEV;
+		}
 
-	/* Power up sequence */
-	if (cfg->reset_gpio.port) {
+		/* Power up sequence */
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
 			return ret;
 		}
-	}
 
-	k_sleep(K_NSEC(500)); /* Tlow */
+		k_sleep(K_NSEC(500)); /* Tlow */
 
-	if (cfg->reset_gpio.port) {
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
-	}
 
-	k_sleep(K_USEC(20)); /* T4 */
+		k_sleep(K_USEC(600)); /* T4 */
+	}
+#endif
 
 	/* Initialize register values */
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
@@ -499,6 +502,12 @@ static int imx335_init(const struct device *dev)
 	return imx335_init_controls(dev);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define IMX335_GET_RESET_GPIO(n)	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define IMX335_GET_RESET_GPIO(n)
+#endif
+
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
 		.fmt = {									\
@@ -509,7 +518,7 @@ static int imx335_init(const struct device *dev)
 	};											\
 	static const struct imx335_config imx335_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
+		IMX335_GET_RESET_GPIO(n)							\
 		.input_clk = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),		\
 	};											\
 												\
