@@ -51,19 +51,7 @@ static void test_main(void)
 		return;
 	}
 
-	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(adv);
-	if (err) {
-		FAIL("Failed to enable periodic advertising (err %d)\n", err);
-		return;
-	}
-
-	/* Start extended advertising */
-	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
-		FAIL("Failed to start extended advertising (err %d)\n", err);
-		return;
-	}
+	start_broadcast_adv(adv);
 
 	printk("Advertising successfully started\n");
 
