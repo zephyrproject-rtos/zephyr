@@ -154,7 +154,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	switch (clock_name) {
 
 #if defined(CONFIG_I2C_MCUX_FLEXCOMM) || defined(CONFIG_SPI_MCUX_FLEXCOMM) ||                      \
-	defined(CONFIG_UART_MCUX_FLEXCOMM)
+	defined(CONFIG_UART_MCUX_FLEXCOMM) || defined(CONFIG_I2S_MCUX_FLEXCOMM)
 	case MCUX_FLEXCOMM0_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(0);
 		break;
