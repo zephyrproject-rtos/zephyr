@@ -196,6 +196,13 @@ config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
 	  Path to BT firmware HCD file for custom or vendor CYW43xx modules.
 	  It can be absolute path, or relative from project folder.
 
+config AIROC_DOWNLOAD_MODE
+	bool "Firmware Download mode"
+	help
+	  Enable the AIROC Firmware Download mode
+
+	  Required by newer AIROC Controllers such as CYW555xx
+
 # Change size of command lengths. It for vendor commands related to
 # firmware downloading.
 config BT_BUF_CMD_TX_SIZE
