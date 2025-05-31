@@ -291,6 +291,34 @@
 	};
 
 	//
+	// GPIO controllers
+	//
+
+	gpio-1 {
+		compatible = "gpio-controller";
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio-2 {
+		compatible = "gpio-controller";
+		gpio-controller;
+		/*
+		 * #gpio-cells values other than 2 are strongly discouraged,
+		 * but not forbidden, so include coverage for them.
+		 */
+		#gpio-cells = <3>;
+		gpio-reserved-ranges = <3 1>;
+	};
+
+	gpio-3 {
+		compatible = "gpio-controller";
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-reserved-ranges = <3 1>, <10 2>;
+	};
+
+	//
 	// 'pinctrl-<index>'
 	//
 

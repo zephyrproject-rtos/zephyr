@@ -1298,22 +1298,18 @@ class Node:
     @property
     def gpio_hogs(self) -> list[ControllerAndData]:
         "See the class docstring"
+        if not self.parent or not isinstance(self.parent, GpioController):
+            _err(f"GPIO hog {self!r} lacks parent GPIO controller node")
 
         if "gpio-hog" not in self.props:
             return []
 
-        if not self.parent or "gpio-controller" not in self.parent.props:
-            _err(f"GPIO hog {self!r} lacks parent GPIO controller node")
-
-        if "#gpio-cells" not in self.parent._node.props:
-            _err(f"GPIO hog {self!r} parent node lacks #gpio-cells")
-
-        n_cells = self.parent._node.props["#gpio-cells"].to_num()
+        controller = self.parent
+        n_cells = controller.n_cells
         res = []
 
         for item in _slice(self._node, "gpios", 4*n_cells,
                            f"4*(<#gpio-cells> (= {n_cells})"):
-            controller = self.parent
             res.append(ControllerAndData(
                 node=self, controller=controller,
                 data=self._named_cells(controller, item, "gpio"),
@@ -1924,6 +1920,108 @@ class Node:
         return dict(zip(cell_names, data_list, strict=False))
 
 
+@dataclass
+class GpioReservedRange:
+    """
+    Represents an individual element in a GpioController node's
+    gpio-reserved-ranges property.
+
+    These attributes are available on GpioReservedRange objects:
+
+    node:
+      The GpioController instance this range is from
+
+    start:
+      Index of the first GPIO that is reserved in the range
+
+    size:
+      Total number of reserved GPIOs in the range.
+    """
+
+    node: 'GpioController'
+    start: int
+    size: int
+
+
+class GpioController(Node):
+    """Marker class that represents that this node is a GPIO controller,
+    i.e., it has a boolean "gpio-controller" property set and follows
+    other standard binding requirements for GPIO controllers defined in
+    dt-schema.
+
+    These attributes are available on GpioController objects, in addition
+    to those available on Node objects:
+
+    n_cells:
+      Number of cells in a GPIO specifier using this GPIO controller.
+      This should almost always be "2", following the expected and common
+      case that the GPIO controller has "pin" and "flags" cells.
+
+    reserved_ranges:
+      A list of GpioReservedRange objects representing the indexes of the
+      unusable GPIOs in the GPIO controller, as specified in the node's
+      gpio-reserved-ranges property.
+
+    reserved_gpios:
+      A list of the actual unusable GPIO numbers implied by the value of
+      the gpio-reserved-ranges property.
+    """
+
+    def __init__(self, *args, **kwargs):
+        '''
+        For internal use only; not meant to be used outside edtlib itself.
+        '''
+        super().__init__(*args, **kwargs)
+        self._check()
+
+    @property
+    def n_cells(self) -> int:
+        "See the class docstring"
+        return self._node.props["#gpio-cells"].to_num()
+
+    @property
+    def reserved_ranges(self) -> list[GpioReservedRange]:
+        "See the class docstring"
+        res: list[GpioReservedRange] = []
+
+        if "gpio-reserved-ranges" not in self._node.props:
+            return res
+
+        for item in _slice(self._node, "gpio-reserved-ranges", 8, "2 u32 cells per range"):
+            start = to_num(item[:4])
+            size = to_num(item[4:])
+            res.append(GpioReservedRange(node=self, start=start, size=size))
+
+        return res
+
+    @property
+    def reserved_gpios(self) -> list[int]:
+        "See the class docstring"
+        return list(self._reserved_gpios)
+
+    @property
+    def _reserved_gpios(self) -> Iterable[int]:
+        # Helper for reserved_gpios property.
+
+        for reserved_range in self.reserved_ranges:
+            yield from range(reserved_range.start, reserved_range.start + reserved_range.size)
+
+    def _check(self) -> None:
+        # Check various requirements for GPIO controller nodes.
+        # dt-schema is the de-facto standard imposing these requirements.
+
+        dt_node = self._node
+
+        if "gpio-controller" not in dt_node.props:
+            _err(f"GPIO controller {self!r} lacks gpio-controller property")
+
+        if dt_node.props["gpio-controller"].type is not Type.EMPTY:
+            _err(f"GPIO controller {self!r} has nonempty gpio-controller property")
+
+        if "#gpio-cells" not in dt_node.props:
+            _err(f"GPIO controller {self!r} lacks #gpio-cells property")
+
+
 class EDT:
     """
     Represents a devicetree augmented with information from bindings.
@@ -2349,7 +2447,13 @@ class EDT:
         for dt_node in self._dt.node_iter():
             # Warning: We depend on parent Nodes being created before their
             # children. This is guaranteed by node_iter().
-            node = Node(dt_node, self, self._fixed_partitions_no_bus)
+
+            if "gpio-controller" in dt_node.props:
+                cls: type[Node] = GpioController
+            else:
+                cls = Node
+
+            node = cls(dt_node, self, self._fixed_partitions_no_bus)
 
             if node.hash in hash2node:
                 _err(f"hash collision between '{node.path}' and "
