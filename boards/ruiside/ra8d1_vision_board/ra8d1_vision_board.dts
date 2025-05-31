@@ -1,0 +1,219 @@
+/*
+ * Copyright (c) 2025 Shan Pen <bricle031@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
+#include "ra8d1_vision_board-pinctrl.dtsi"
+
+/ {
+	model = "Ruiside Electronic RA8D1-VISION-BOARD";
+	compatible = "ruiside,ra8d1-vision-board";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led0 {
+			gpios = <&ioport1 2 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		led1: led1 {
+			gpios = <&ioport1 6 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioporta 7 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			gpios = <&ioport9 7 GPIO_ACTIVE_LOW>;
+			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	sdram1: sdram@68000000 {
+		    compatible = "zephyr,memory-region", "mmio-sram";
+		    reg = <0x68000000 DT_SIZE_M(32)>;
+		    zephyr,memory-region = "SDRAM";
+		    status = "okay";
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &user_button;
+		watchdog0 = &wdt;
+		sdhc0 = &sdhc1;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(20)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+
+	pllp {
+		status = "okay";
+	};
+
+	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
+		status = "okay";
+	};
+
+	pllr {
+		status = "okay";
+	};
+};
+
+&sciclk {
+	clocks = <&pllp>;
+	div = <4>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
+	div = <5>;
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&ioport8 {
+	status = "okay";
+};
+
+&ioport9 {
+	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(12)>;
+		};
+	};
+};
+
+&port_irq10 {
+	interrupts = <86 12>;
+	status = "okay";
+};
+
+&sdram {
+	    pinctrl-0 = <&sdram_default>;
+	    pinctrl-names = "default";
+	    status = "okay";
+	    auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
+	    auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
+	    precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
+	    multiplex-addr-shift = "9-bit";
+	    edian-mode = "little-endian";
+	    continuous-access;
+	    bus-width = "16-bit";
+
+	    bank@0 {
+			reg = <0>;
+			renesas,ra-sdram-timing = <SDRAM_TRAS_4CYCLES
+			SDRAM_TRCD_2CYCLES
+			SDRAM_TRP_2CYCLES
+			SDRAM_TWR_2CYCLES
+			SDRAM_TCL_3CYCLES
+			937
+			SDRAM_TREFW_8CYCLES>;
+	    };
+};
+
+&sdhc1 {
+	pinctrl-names = "default";
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <60 12>, <61 12>, <62 12>;
+	pinctrl-0 = <&sdhc1_default>;
+	status = "okay";
+	/delete-property/ card-detect;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&wdt {
+	status = "okay";
+};
