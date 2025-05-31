@@ -27,6 +27,7 @@ LOG_MODULE_DECLARE(net_shell);
 #endif
 
 #include "net_shell_private.h"
+#include <stdlib.h>
 
 #define UNICAST_MASK GENMASK(7, 1)
 #define LOCAL_BIT BIT(1)
@@ -817,6 +818,60 @@ static int cmd_net_default_iface(const struct shell *sh, size_t argc, char *argv
 	return 0;
 }
 
+static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
+{
+#if !defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	PR_WARNING("Unsupported command, please enable CONFIG_NET_L2_ETHERNET_MGMT\n");
+	return -ENOEXEC;
+#else
+	int idx = get_iface_idx(sh, argv[1]);
+	uint16_t speed = atoi(argv[2]);
+	const struct device *phy_dev;
+	struct net_if *iface;
+
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		PR_WARNING("Interface %idx is not Ethernet type\n", idx);
+		return -EINVAL;
+	}
+
+	phy_dev = net_eth_get_phy(iface);
+	if (!phy_dev) {
+		PR_WARNING("No PHY device found for interface %d\n", idx);
+		return -ENODEV;
+	}
+
+	switch (speed) {
+	case 10:
+		speed = LINK_FULL_10BASE;
+		break;
+	case 100:
+		speed = LINK_FULL_100BASE;
+		break;
+	case 1000:
+		speed = LINK_FULL_1000BASE;
+		break;
+	case 2500:
+		speed = LINK_FULL_2500BASE;
+		break;
+	case 5000:
+		speed = LINK_FULL_5000BASE;
+		break;
+	default:
+		PR_WARNING("Unsupported speed %d\n", speed);
+		return -ENOTSUP;
+	}
+
+	phy_configure_link(phy_dev, speed);
+
+	return 0;
+#endif /* CONFIG_NET_L2_ETHERNET_MGMT */
+}
+
 #if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 
 #include "iface_dynamic.h"
@@ -841,6 +896,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(default, IFACE_DYN_CMD,
 		  "'net iface default [<index>]' displays or sets the default network interface.",
 		  cmd_net_default_iface),
+	SHELL_CMD(set_link, IFACE_DYN_CMD,
+		  "'net iface set_link <index> <Speed 10/100/1000/2500/5000>' sets link speed for the network interface.",
+		  cmd_net_link_speed),
 	SHELL_SUBCMD_SET_END
 );
 
