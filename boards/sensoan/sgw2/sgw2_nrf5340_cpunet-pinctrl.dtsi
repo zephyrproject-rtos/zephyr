@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor
+ * Copyright (c) 2024 Sensoan Oy
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			psels = <SGW_PSEL(UART_TX, EDGE_CONN, 26)>,
+				<SGW_PSEL(UART_RX, EDGE_CONN, 29)>;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			psels = <SGW_PSEL(UART_TX, EDGE_CONN, 26)>,
+				<SGW_PSEL(UART_RX, EDGE_CONN, 29)>;
+			low-power-enable;
+		};
+	};
+};

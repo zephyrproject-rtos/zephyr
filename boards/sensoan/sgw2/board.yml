@@ -1,0 +1,11 @@
+board:
+  name: sgw2
+  vendor: sensoan
+  socs:
+  - name: nrf9160
+    variants:
+    - name: 'ns'
+  - name: nrf5340
+    variants:
+    - name: 'ns'
+      cpucluster: 'cpuapp'
