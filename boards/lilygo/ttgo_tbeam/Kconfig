@@ -8,3 +8,9 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 
 config GNSS_INIT_PRIORITY
 	default 87
+
+config MFD
+	default y if !MCUBOOT
+
+config REGULATOR
+	default y if !MCUBOOT
