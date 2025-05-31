@@ -111,7 +111,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
         # command line
 
         for i in tplan.instances.values():
-            if i.status == TwisterStatus.FILTER:
+            if i.status in [TwisterStatus.FILTER, TwisterStatus.QUARANTINE]:
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
                 logger.debug(

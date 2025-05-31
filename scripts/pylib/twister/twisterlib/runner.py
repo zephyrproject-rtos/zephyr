@@ -1578,7 +1578,7 @@ class ProjectBuilder(FilterBuilder):
                 self.log_info_file(self.options.inline_logs)
         elif instance.status == TwisterStatus.SKIP:
             results.skipped_increment()
-        elif instance.status == TwisterStatus.FILTER:
+        elif instance.status in [TwisterStatus.FILTER, TwisterStatus.QUARANTINE]:
             results.filtered_configs_increment()
         elif instance.status == TwisterStatus.PASS:
             results.passed_increment()
@@ -1591,7 +1591,11 @@ class ProjectBuilder(FilterBuilder):
         if self.options.verbose:
             if self.options.cmake_only:
                 more_info = "cmake"
-            elif instance.status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
+            elif instance.status in [
+                TwisterStatus.SKIP,
+                TwisterStatus.FILTER,
+                TwisterStatus.QUARANTINE
+            ]:
                 more_info = instance.reason
             else:
                 if instance.handler.ready and instance.run:
@@ -1918,7 +1922,8 @@ class TwisterRunner:
         the static filter stats. So need to prepare them before pipline starts.
         '''
         for instance in self.instances.values():
-            if instance.status == TwisterStatus.FILTER and instance.reason != 'runtime filter':
+            if instance.status in [TwisterStatus.FILTER, TwisterStatus.QUARANTINE] and \
+               instance.reason != 'runtime filter':
                 self.results.filtered_static_increment()
                 self.results.filtered_configs_increment()
                 self.results.filtered_cases_increment(len(instance.testsuite.testcases))
@@ -1949,6 +1954,7 @@ class TwisterRunner:
                 TwisterStatus.PASS,
                 TwisterStatus.SKIP,
                 TwisterStatus.FILTER,
+                TwisterStatus.QUARANTINE,
                 TwisterStatus.NOTRUN
             ]
             if not retry_build_errors:

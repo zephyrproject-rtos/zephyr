@@ -32,7 +32,7 @@ class Artifacts:
         ) as json_test_plan:
             jtp = json.load(json_test_plan)
             for t in jtp['testsuites']:
-                if t['status'] != TwisterStatus.FILTER:
+                if t['status'] not in [TwisterStatus.FILTER, TwisterStatus.QUARANTINE]:
                     p = t['platform']
                     normalized  = p.replace("/", "_")
                     dirs.append(

@@ -15,6 +15,7 @@ import sys
 import json
 
 # pylint: disable=duplicate-code
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -49,10 +50,15 @@ class TestQuarantine:
 
         with open(os.path.join(out_path, 'testplan.json')) as f:
             j = json.load(f)
+
+        # Quarantine-verify "swaps" statuses. The ones that are in quarantine list
+        # should no longer be quarantined, and the ones that are not in the list
+        # should be quarantined. Remove "quarantined" tests from "verify" testplan
+        # to count what should be verified.
         filtered_j = [
-           (ts['platform'], ts['name'], tc['identifier']) \
+           (ts['platform'], ts['name']) \
                for ts in j['testsuites'] \
-               for tc in ts['testcases'] if 'reason' not in tc
+               if ts['status'] != "quarantined"
         ]
 
         assert str(sys_exit.value) == '0'
