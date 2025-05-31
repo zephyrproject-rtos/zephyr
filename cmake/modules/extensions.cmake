@@ -5960,6 +5960,7 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${slid_inject_cmd}
     DEPENDS ${llext_proc_target} ${llext_pkg_input}
+    COMMAND_EXPAND_LISTS
   )
 
   # Add user-visible target and dependency, and fill in properties
