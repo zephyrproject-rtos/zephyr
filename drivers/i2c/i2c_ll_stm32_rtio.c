@@ -239,7 +239,8 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {					\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),						\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),					\
 		(.timings = (const struct i2c_config_timing *) i2c_timings_##index,		\
-		 .n_timings = ARRAY_SIZE(i2c_timings_##index),))				\
+		.n_timings =									\
+			sizeof(i2c_timings_##index) / (sizeof(struct i2c_config_timing)),))	\
 };												\
 												\
 I2C_RTIO_DEFINE(CONCAT(_i2c, index, _stm32_rtio),						\
