@@ -51,3 +51,4 @@ set(CROSS_COMPILE ${TOOLCHAIN_HOME}/arc/bin/)
 set(SYSROOT_DIR ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
 
 set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
+set(TOOLCHAIN_HAS_PICOLIBC ON CACHE BOOL "True if toolchain supports picolibc")
