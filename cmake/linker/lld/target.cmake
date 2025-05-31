@@ -4,6 +4,10 @@ set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 find_package(LlvmLld 14.0.0 REQUIRED)
 set(CMAKE_LINKER ${LLVMLLD_LINKER})
 
+compiler_rt_library(library_dir library_name "")
+set_linker_property(PROPERTY rt_library "-l${library_name}")
+set_linker_property(PROPERTY lib_include_dir "-L${library_dir}")
+
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
 list(APPEND TOOLCHAIN_LD_FLAGS -fuse-ld=lld)

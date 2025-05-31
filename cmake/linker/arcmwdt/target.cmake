@@ -3,9 +3,6 @@ set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 
 find_program(CMAKE_LINKER ${CROSS_COMPILE}lldac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
-# the prefix to transfer linker options from compiler
-set_ifndef(LINKERFLAGPREFIX -Wl)
-
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)

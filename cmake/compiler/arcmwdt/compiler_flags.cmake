@@ -11,11 +11,18 @@ list(APPEND CXX_EXCLUDED_OPTIONS
 #####################################################
 # This section covers flags related to optimization #
 #####################################################
-set_compiler_property(PROPERTY no_optimization -O0)
-set_compiler_property(PROPERTY optimization_debug -O0)
-set_compiler_property(PROPERTY optimization_speed -O2)
-set_compiler_property(PROPERTY optimization_size -Os)
-set_compiler_property(PROPERTY optimization_fast -O3)
+set_compiler_property(PROPERTY no_optimizations    -O0)
+set_compiler_property(PROPERTY debug_optimizations -O0)
+set_compiler_property(PROPERTY speed_optimizations -O2)
+set_compiler_property(PROPERTY size_optimizations  -Os)
+set_compiler_property(PROPERTY optimization_fast   -O3)
+
+set_compiler_property(PROPERTY optimization
+                      CHOICE no_optimizations
+		             debug_optimizations
+			     speed_optimizations
+			     size_optimizations
+)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -118,7 +125,6 @@ set_compiler_property(PROPERTY cstd -std=)
 
 if (NOT CONFIG_ARCMWDT_LIBC)
   set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib -U__STDC_LIB_EXT1__)
-  set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
 # C++ std options
