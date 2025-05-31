@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from subprocess import run, PIPE
+from subprocess import run
 
 from west import log
 
@@ -30,7 +30,7 @@ def getCIncludes(compilerPath, srcFile, tcg):
     # prepare command invocation
     cmd = [compilerPath, "-E", "-H"] + fragments + includes + defines + [srcFile]
 
-    cp = run(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+    cp = run(cmd, capture_output=True, text=True)
     if cp.returncode != 0:
         log.dbg(f"    - calling {compilerPath} failed with error code {cp.returncode}")
         return []
