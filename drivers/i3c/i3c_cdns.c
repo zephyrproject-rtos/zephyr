@@ -576,6 +576,11 @@ struct cdns_i3c_data {
 	struct k_mutex bus_lock;
 #ifdef CONFIG_I3C_CONTROLLER
 	struct cdns_i3c_i2c_dev_data cdns_i3c_i2c_priv_data[I3C_MAX_DEVS];
+#ifdef CONFIG_I3C_CALLBACK
+	i3c_callback_t cb;
+	void *userdata;
+	struct k_sem async_sem;
+#endif
 #endif /* CONFIG_I3C_CONTROLLER */
 	struct cdns_i3c_xfer xfer;
 #ifdef CONFIG_I3C_TARGET
@@ -1421,17 +1426,8 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IER);
 }
 
-/**
- * @brief Send Common Command Code (CCC).
- *
- * @see i3c_do_ccc
- *
- * @param dev Pointer to controller device driver instance.
- * @param payload Pointer to CCC payload.
- *
- * @return @see i3c_do_ccc
- */
-static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *payload)
+static int cdns_i3c_do_ccc_do(const struct device *dev, struct i3c_ccc_payload *payload, bool async,
+			      i3c_callback_t cb, void *userdata)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
@@ -1483,7 +1479,16 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	LOG_DBG("%s: CCC[0x%02x]", dev->name, payload->ccc.id);
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
-
+#ifdef CONFIG_I3C_CALLBACK
+	k_sem_take(&data->async_sem, K_FOREVER);
+	if (async) {
+		data->cb = cb;
+		data->userdata = userdata;
+	} else {
+		data->cb = NULL;
+		data->userdata = NULL;
+	}
+#endif
 	/* wait for idle */
 	ret = cdns_i3c_wait_for_idle(dev);
 	if (ret != 0) {
@@ -1572,7 +1577,8 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	data->xfer.num_cmds = num_cmds;
 
 	cdns_i3c_start_transfer(dev);
-	if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
+	if (!async && k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
+		LOG_ERR("%s: transfer timed out", dev->name);
 		cdns_i3c_cancel_transfer(dev);
 	}
 
@@ -1589,10 +1595,50 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	}
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 error:
+#ifdef CONFIG_I3C_CALLBACK
+	if (!async || ret != 0) {
+		k_sem_give(&data->async_sem);
+	}
+#endif
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
 }
+
+/**
+ * @brief Send Common Command Code (CCC).
+ *
+ * @see i3c_do_ccc
+ *
+ * @param dev Pointer to controller device driver instance.
+ * @param payload Pointer to CCC payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *payload)
+{
+	return cdns_i3c_do_ccc_do(dev, payload, false, NULL, NULL);
+}
+
+#ifdef CONFIG_I3C_CALLBACK
+/**
+ * @brief Send Common Command Code (CCC).
+ *
+ * @see i3c_do_ccc_cb
+ *
+ * @param dev Pointer to controller device driver instance.
+ * @param payload Pointer to CCC payload.
+ * @param cb Callback function
+ * @param userdata User data for callback function
+ *
+ * @return @see i3c_do_ccc_cb
+ */
+static int cdns_i3c_do_ccc_cb(const struct device *dev, struct i3c_ccc_payload *payload,
+			      i3c_callback_t cb, void *userdata)
+{
+	return cdns_i3c_do_ccc_do(dev, payload, true, cb, userdata);
+}
+#endif
 
 /**
  * @brief Perform Dynamic Address Assignment.
@@ -1997,8 +2043,16 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 
 	/* Indicate no transfer is pending */
 	data->xfer.num_cmds = 0;
-
+#ifdef CONFIG_I3C_CALLBACK
+	if (data->cb) {
+		data->cb(dev, ret, data->userdata);
+		k_sem_give(&data->async_sem);
+	} else {
+		k_sem_give(&data->xfer.complete);
+	}
+#else
 	k_sem_give(&data->xfer.complete);
+#endif
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 #if CONFIG_I3C_CONTROLLER
@@ -2297,20 +2351,9 @@ static int cdns_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_d
 	return 0;
 }
 
-/**
- * @brief Transfer messages in I3C mode.
- *
- * @see i3c_transfer
- *
- * @param dev Pointer to device driver instance.
- * @param target Pointer to target device descriptor.
- * @param msgs Pointer to I3C messages.
- * @param num_msgs Number of messages to transfers.
- *
- * @return @see i3c_transfer
- */
-static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *target,
-			     struct i3c_msg *msgs, uint8_t num_msgs)
+static int cdns_i3c_transfer_do(const struct device *dev, struct i3c_device_desc *target,
+				struct i3c_msg *msgs, uint8_t num_msgs, bool async,
+				i3c_callback_t cb, void *userdata)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
@@ -2352,7 +2395,16 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
-
+#ifdef CONFIG_I3C_CALLBACK
+	k_sem_take(&data->async_sem, K_FOREVER);
+	if (async) {
+		data->cb = cb;
+		data->userdata = userdata;
+	} else {
+		data->cb = NULL;
+		data->userdata = NULL;
+	}
+#endif
 	/* wait for idle */
 	ret = cdns_i3c_wait_for_idle(dev);
 	if (ret != 0) {
@@ -2477,17 +2529,63 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	data->xfer.num_cmds = num_msgs;
 
 	cdns_i3c_start_transfer(dev);
-	if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
+	if (!async && k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
 		LOG_ERR("%s: transfer timed out", dev->name);
 		cdns_i3c_cancel_transfer(dev);
 	}
 
 	ret = data->xfer.ret;
 error:
+#ifdef CONFIG_I3C_CALLBACK
+	if (!async || ret != 0) {
+		k_sem_give(&data->async_sem);
+	}
+#endif
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
 }
+
+/**
+ * @brief Transfer messages in I3C mode.
+ *
+ * @see i3c_transfer
+ *
+ * @param dev Pointer to device driver instance.
+ * @param target Pointer to target device descriptor.
+ * @param msgs Pointer to I3C messages.
+ * @param num_msgs Number of messages to transfers.
+ *
+ * @return @see i3c_transfer
+ */
+static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *target,
+			     struct i3c_msg *msgs, uint8_t num_msgs)
+{
+	return cdns_i3c_transfer_do(dev, target, msgs, num_msgs, false, NULL, NULL);
+}
+
+#ifdef CONFIG_I3C_CALLBACK
+/**
+ * @brief Transfer messages in I3C mode.
+ *
+ * @see i3c_transfer
+ *
+ * @param dev Pointer to device driver instance.
+ * @param target Pointer to target device descriptor.
+ * @param msgs Pointer to I3C messages.
+ * @param num_msgs Number of messages to transfers.
+ * @param cb Callback function
+ * @param userdata User data for callback function
+ *
+ * @return @see i3c_transfer
+ */
+static int cdns_i3c_transfer_cb(const struct device *dev, struct i3c_device_desc *target,
+				struct i3c_msg *msgs, uint8_t num_msgs, i3c_callback_t cb,
+				void *userdata)
+{
+	return cdns_i3c_transfer_do(dev, target, msgs, num_msgs, true, cb, userdata);
+}
+#endif
 #endif /* CONFIG_I3C_CONTROLLER */
 
 #ifdef CONFIG_I3C_USE_IBI
@@ -3572,7 +3670,10 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	k_sem_init(&data->ibi_cr_complete, 0, 1);
 #endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_CONTROLLER */
-#endif
+#endif /* CONFIG_I3C_USE_IBI */
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_CALLBACK)
+	k_sem_init(&data->async_sem, 1, 1);
+#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_CALLBACK */
 
 	cdns_i3c_interrupts_disable(config);
 	cdns_i3c_interrupts_clear(config);
@@ -3714,10 +3815,16 @@ static DEVICE_API(i3c, api) = {
 
 	.do_daa = cdns_i3c_do_daa,
 	.do_ccc = cdns_i3c_do_ccc,
+#ifdef CONFIG_I3C_CALLBACK
+	.do_ccc_cb = cdns_i3c_do_ccc_cb,
+#endif
 
 	.i3c_device_find = cdns_i3c_device_find,
 
 	.i3c_xfers = cdns_i3c_transfer,
+#ifdef CONFIG_I3C_CALLBACK
+	.i3c_xfers_cb = cdns_i3c_transfer_cb,
+#endif
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
 	.target_tx_write = cdns_i3c_target_tx_write,
