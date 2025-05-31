@@ -64,28 +64,37 @@ struct spi_dt_spec spec_copies[5];
  ********************
  */
 
-#if CONFIG_NOCACHE_MEMORY
+#ifdef CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
 #elif defined(CONFIG_DT_DEFINED_NOCACHE)
 #define __NOCACHE	__attribute__((__section__(CONFIG_DT_DEFINED_NOCACHE_NAME)))
 #else /* CONFIG_NOCACHE_MEMORY */
 #define __NOCACHE
+#if CONFIG_DCACHE_LINE_SIZE != 0
+#define __BUF_ALIGN	__aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define __BUF_ALIGN	__aligned(DT_PROP_OR(DT_PATH(cpus, cpu_0), d_cache_line_size, 32))
+#endif
 #endif /* CONFIG_NOCACHE_MEMORY */
+
+#ifndef __BUF_ALIGN
+#define __BUF_ALIGN	__aligned(sizeof(void *))
+#endif
 
 #define BUF_SIZE 18
 static const char tx_data[BUF_SIZE] = "0123456789abcdef-\0";
-static __aligned(32) char buffer_tx[BUF_SIZE] __NOCACHE;
-static __aligned(32) char buffer_rx[BUF_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer_tx[BUF_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer_rx[BUF_SIZE] __NOCACHE;
 
 #define BUF2_SIZE 36
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char buffer2_tx[BUF2_SIZE] __NOCACHE;
-static __aligned(32) char buffer2_rx[BUF2_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer2_tx[BUF2_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer2_rx[BUF2_SIZE] __NOCACHE;
 
 #define BUF3_SIZE CONFIG_SPI_LARGE_BUFFER_SIZE
 static const char large_tx_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char large_buffer_tx[BUF3_SIZE] __NOCACHE;
-static __aligned(32) char large_buffer_rx[BUF3_SIZE] __NOCACHE;
+static __BUF_ALIGN char large_buffer_tx[BUF3_SIZE] __NOCACHE;
+static __BUF_ALIGN char large_buffer_rx[BUF3_SIZE] __NOCACHE;
 
 #define BUFWIDE_SIZE 12
 static const uint16_t tx_data_16[] = {0x1234, 0x5678, 0x9ABC, 0xDEF0,
