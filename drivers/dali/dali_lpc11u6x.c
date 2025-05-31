@@ -11,7 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dali_low_level, CONFIG_DALI_LOW_LEVEL_LOG_LEVEL);
@@ -42,7 +42,9 @@ LOG_MODULE_REGISTER(dali_low_level, CONFIG_DALI_LOW_LEVEL_LOG_LEVEL);
 static struct k_work_q dali_work_queue;
 static K_KERNEL_STACK_DEFINE(dali_work_queue_stack, CONFIG_DALI_LPC11U6X_STACK_SIZE);
 
-/* states for rx state machine */
+/**
+ * @brief States for receive state machine.
+ */
 enum rx_state {
 	IDLE,
 	START_BIT_START,
@@ -62,27 +64,37 @@ enum rx_state {
 enum rx_counter_event {
 	CAPTURE,
 	STOPBIT,
-	PRIORITY,
-	QUERY,
 };
 
-/* see IEC 62386-101:2022 Table 22 - Multi-master transmitter settling time values */
-static const uint32_t settling_time_us[DALI_PRIORITY_5 + 1] = {
-	(DALI_TX_BACKWARD_INTERFRAME_MIN_US + (GREY_AREA_INTERFRAME_US / 2)),
-	(DALI_TX_PRIO_1_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
-	(DALI_TX_PRIO_2_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
-	(DALI_TX_PRIO_3_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
-	(DALI_TX_PRIO_4_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
-	(DALI_TX_PRIO_5_INTERFRAME_MIN_US + GREY_AREA_INTERFRAME_US),
+struct dali_lpc11u6x_tx_callback {
+	dali_tx_callback_t function;
+	void *user_data;
 };
 
-struct dali_tx_slot {
+struct dali_lpc11u6x_rx_callback {
+	dali_rx_callback_t function;
+	void *user_data;
+};
+
+struct dali_lpc11u6x_callbacks {
+	struct dali_lpc11u6x_tx_callback tx;
+	struct dali_lpc11u6x_rx_callback rx;
+};
+
+struct dali_lpc11u6x_tx_data {
 	uint32_t count[COUNT_ARRAY_SIZE];
 	uint_fast8_t index_next;
 	uint_fast8_t index_max;
 	bool state_now;
-	bool is_query;
+	bool collision_detection;
 	uint32_t inter_frame_idle;
+};
+
+struct dali_lpc11u6x_rx_data {
+	enum rx_state status;
+	uint32_t data;
+	uint32_t timestamp;
+	uint8_t frame_length;
 };
 
 struct dali_lpc11u6x_config {
@@ -94,25 +106,18 @@ struct dali_lpc11u6x_config {
 };
 
 struct dali_lpc11u6x_data {
-	const struct dali_lpc11u6x_config *config;
-	struct dali_tx_slot forward;
-	struct dali_tx_slot backward;
-	struct dali_tx_slot *active;
-	enum rx_state rx_status;
+	const struct device *dev;
+	struct dali_lpc11u6x_callbacks cb;
+	struct dali_lpc11u6x_tx_data tx;
+	struct dali_lpc11u6x_rx_data rx;
+	struct k_work rx_work;
+	struct k_mutex tx_mutex;
+
 	uint32_t last_edge_count;
 	uint32_t last_full_frame_count;
 	uint32_t edge_count;
 	bool last_data_bit;
-	struct k_work rx_work;
 	enum rx_counter_event rx_event;
-	struct k_msgq rx_queue;
-	char rx_buffer[CONFIG_DALI_MAX_FRAMES_IN_QUEUE * sizeof(struct dali_frame)];
-	uint32_t rx_data;
-	uint32_t rx_timestamp;
-	uint8_t rx_frame_length;
-	uint32_t rx_last_timestamp;
-	uint32_t rx_last_payload;
-	uint32_t rx_last_frame_length;
 	uint32_t tx_count_on_capture;
 };
 
@@ -223,49 +228,17 @@ static uint32_t dali_lpc11u6x_get_rx_capture(void)
 	return LPC_CT32B1->cr0;
 }
 
-static void dali_lpc11u6x_set_rx_counter(enum rx_counter_event event, uint32_t match_count)
+static void dali_lpc11u6x_set_rx_counter(uint32_t match_count)
 {
-	switch (event) {
-	case STOPBIT:
-		LPC_CT32B1->mr0 = match_count;
-		break;
-	case PRIORITY:
-		LPC_CT32B1->mr1 = match_count;
-		break;
-	case QUERY:
-		LPC_CT32B1->mr2 = match_count;
-		break;
-	default:
-		__ASSERT(false, "unexpected event code");
-	}
+	LPC_CT32B1->mr0 = match_count;
 }
 
-static void dali_lpc11u6x_enable_rx_counter(enum rx_counter_event event, bool enable)
+static void dali_lpc11u6x_enable_rx_counter(bool enable)
 {
-	switch (event) {
-	case STOPBIT:
-		if (enable) {
-			LPC_CT32B1->mcr |= (CT32_MCR_MR0I);
-		} else {
-			LPC_CT32B1->mcr &= ~(CT32_MCR_MR0I);
-		}
-		break;
-	case PRIORITY:
-		if (enable) {
-			LPC_CT32B1->mcr |= (CT32_MCR_MR1I);
-		} else {
-			LPC_CT32B1->mcr &= ~(CT32_MCR_MR1I);
-		}
-		break;
-	case QUERY:
-		if (enable) {
-			LPC_CT32B1->mcr |= (CT32_MCR_MR2I);
-		} else {
-			LPC_CT32B1->mcr &= ~(CT32_MCR_MR2I);
-		}
-		break;
-	default:
-		__ASSERT(false, "unexpected");
+	if (enable) {
+		LPC_CT32B1->mcr |= (CT32_MCR_MR0I);
+	} else {
+		LPC_CT32B1->mcr &= ~(CT32_MCR_MR0I);
 	}
 }
 
@@ -279,9 +252,7 @@ void dali_lpc11u6x_init_rx_counter(void)
 	/* capture both edges, trigger IRQ */
 	LPC_CT32B1->ccr = (CT32_CCR_CAP0FE | CT32_CCR_CAP0RE | CT32_CCR_CAP0I);
 	/* disable event matches */
-	dali_lpc11u6x_enable_rx_counter(STOPBIT, false);
-	dali_lpc11u6x_enable_rx_counter(PRIORITY, false);
-	dali_lpc11u6x_enable_rx_counter(QUERY, false);
+	dali_lpc11u6x_enable_rx_counter(false);
 	/* pin function: CT32B1_CAP0 */
 	/* function mode: enable pull up resistor */
 	/* hysteresis disabled */
@@ -294,53 +265,38 @@ void dali_lpc11u6x_init_rx_counter(void)
 	LPC_CT32B1->tcr = CT32_TCR_CEN;
 }
 
-static void dali_lpc11u6x_reset_tx_slot(struct dali_tx_slot *slot)
+static inline void dali_lpc11u68_reset_tx(struct dali_lpc11u6x_tx_data *tx)
 {
-	__ASSERT(slot, "invalid tx slot");
-
-	*slot = (struct dali_tx_slot){
-		.state_now = true,
-	};
+	*tx = (struct dali_lpc11u6x_tx_data){.state_now = true};
 }
 
-static void dali_lpc11u6x_reset_tx_all_slots(struct dali_lpc11u6x_data *data)
-{
-	dali_lpc11u6x_reset_tx_slot(&data->forward);
-	dali_lpc11u6x_reset_tx_slot(&data->backward);
-	data->active = 0;
-}
-
-static bool dali_lpc11u6x_is_tx_slot_empty(const struct dali_tx_slot *slot)
-{
-	return slot->index_max == 0;
-}
-
-static void dali_lpc11u6x_add_signal_phase(struct dali_tx_slot *slot, uint32_t duration_us,
+static void dali_lpc11u6x_add_signal_phase(struct dali_lpc11u6x_tx_data *tx, uint32_t duration_us,
 					   bool change_last_phase)
 {
-	if (slot->index_max >= COUNT_ARRAY_SIZE || (change_last_phase && slot->index_max == 0)) {
+	if (tx->index_max >= COUNT_ARRAY_SIZE || (change_last_phase && tx->index_max == 0)) {
 		__ASSERT(true, "Access beyond array bounds");
 		return;
 	}
 
 	if (change_last_phase) {
-		slot->index_max--;
+		tx->index_max--;
 	}
 	uint32_t count_now =
-		(slot->index_max) ? (slot->count[slot->index_max - 1] + duration_us) : duration_us;
-	slot->count[slot->index_max++] = count_now;
+		(tx->index_max) ? (tx->count[tx->index_max - 1] + duration_us) : duration_us;
+	tx->count[tx->index_max++] = count_now;
 }
 
-static void dali_lpc11u6x_add_bit(const struct device *dev, struct dali_tx_slot *slot, bool value)
+static void dali_lpc11u6x_add_bit(const struct device *dev, bool value)
 {
 	const struct dali_lpc11u6x_config *config = dev->config;
+	struct dali_lpc11u6x_data *data = dev->data;
 
 	uint32_t phase_one;
 	uint32_t phase_two;
 	bool change_previous = false;
 
-	if (slot->state_now == value) {
-		if (slot->state_now) {
+	if (data->tx.state_now == value) {
+		if (data->tx.state_now) {
 			phase_one = DALI_TX_HALF_BIT_US + config->tx_rise_fall_delta_us;
 			phase_two = DALI_TX_HALF_BIT_US - config->tx_rise_fall_delta_us;
 		} else {
@@ -349,7 +305,7 @@ static void dali_lpc11u6x_add_bit(const struct device *dev, struct dali_tx_slot 
 		}
 	} else {
 		change_previous = true;
-		if (slot->state_now) {
+		if (data->tx.state_now) {
 			phase_one = DALI_TX_FULL_BIT_US - config->tx_rise_fall_delta_us;
 			phase_two = DALI_TX_HALF_BIT_US + config->tx_rise_fall_delta_us;
 		} else {
@@ -357,133 +313,129 @@ static void dali_lpc11u6x_add_bit(const struct device *dev, struct dali_tx_slot 
 			phase_two = DALI_TX_HALF_BIT_US - config->tx_rise_fall_delta_us;
 		}
 	}
-	dali_lpc11u6x_add_signal_phase(slot, phase_one, change_previous);
-	dali_lpc11u6x_add_signal_phase(slot, phase_two, false);
-	slot->state_now = value;
+	dali_lpc11u6x_add_signal_phase(&data->tx, phase_one, change_previous);
+	dali_lpc11u6x_add_signal_phase(&data->tx, phase_two, false);
+	data->tx.state_now = value;
 }
 
-static void dali_lpc11u6x_add_stop_condition(struct dali_tx_slot *slot)
+static void dali_lpc11u6x_add_stop_condition(struct dali_lpc11u6x_tx_data *tx)
 {
-	if (slot->state_now) {
-		dali_lpc11u6x_add_signal_phase(slot, DALI_TX_STOP_BIT_US, true);
-		slot->index_max--;
+	if (tx->state_now) {
+		dali_lpc11u6x_add_signal_phase(tx, DALI_TX_STOP_BIT_US, true);
+		tx->index_max--;
 	} else {
-		dali_lpc11u6x_add_signal_phase(slot, DALI_TX_STOP_BIT_US, false);
-		slot->index_max--;
+		dali_lpc11u6x_add_signal_phase(tx, DALI_TX_STOP_BIT_US, false);
+		tx->index_max--;
 	}
 }
 
-static void dali_lpc11u6x_calculate_counts(const struct device *dev, struct dali_tx_slot *slot,
-					   const struct dali_frame frame)
+static int dali_lpc11u6x_calculate_counts(const struct device *dev, const struct dali_frame *frame)
 {
 	uint_fast8_t length = 0;
+	struct dali_lpc11u6x_data *data = dev->data;
 
-	switch (frame.event_type) {
+	switch (frame->event_type) {
 	case DALI_FRAME_CORRUPT:
 		for (int_fast8_t i = 0; i < (2 * DALI_FRAME_BACKWARD_LENGTH); i++) {
 			if (i == EXTEND_CORRUPT_PHASE) {
-				dali_lpc11u6x_add_signal_phase(slot, TX_CORRUPT_BIT_US, false);
+				dali_lpc11u6x_add_signal_phase(&data->tx, TX_CORRUPT_BIT_US, false);
 			} else {
-				dali_lpc11u6x_add_signal_phase(slot, DALI_TX_HALF_BIT_US, false);
+				dali_lpc11u6x_add_signal_phase(&data->tx, DALI_TX_HALF_BIT_US,
+							       false);
 			}
 		}
-		return;
+		data->tx.collision_detection = false;
+		return 0;
 	case DALI_FRAME_BACKWARD:
 		length = DALI_FRAME_BACKWARD_LENGTH;
+		data->tx.collision_detection = false;
 		break;
 	case DALI_FRAME_GEAR:
 		length = DALI_FRAME_GEAR_LENGTH;
+		data->tx.collision_detection = false;
 		break;
 	case DALI_FRAME_DEVICE:
 		length = DALI_FRAME_DEVICE_LENGTH;
+		data->tx.collision_detection = false;
 		break;
 	default:
-		__ASSERT(false, "illegal event type");
+		return -EINVAL;
 	}
 
-	if (length) {
-		/* add start bit */
-		dali_lpc11u6x_add_bit(dev, slot, true);
-		/* add data bits */
-		for (int_fast8_t i = (length - 1); i >= 0; i--) {
-			dali_lpc11u6x_add_bit(dev, slot, frame.data & (1 << i));
-		}
-		dali_lpc11u6x_add_stop_condition(slot);
+	/* add start bit */
+	dali_lpc11u6x_add_bit(dev, true);
+	/* add data bits */
+	for (int_fast8_t i = (length - 1); i >= 0; i--) {
+		dali_lpc11u6x_add_bit(dev, frame->data & (1 << i));
 	}
-}
 
-static void dali_lpc11u6x_schedule_query(void)
-{
-	const uint32_t query_count = dali_lpc116x_get_rx_counter() + DALI_RX_FORWARD_BACK_MAX_US +
-				     GREY_AREA_INTERFRAME_US;
-	dali_lpc11u6x_set_rx_counter(QUERY, query_count);
-	dali_lpc11u6x_enable_rx_counter(QUERY, true);
-}
+	dali_lpc11u6x_add_stop_condition(&data->tx);
 
-static bool dali_lpc116x_is_forward_active(struct dali_lpc11u6x_data *data)
-{
-	return (data->active == &data->forward && data->active->index_next);
+	return 0;
 }
 
 static void dali_lpc11u6x_stop_tx(struct dali_lpc11u6x_data *data)
 {
-	if (dali_lpc116x_is_forward_active(data)) {
-		data->rx_status = STOP_TRANSMISSION;
+	if (data->tx.index_next) {
+		data->rx.status = STOP_TRANSMISSION;
 		dali_lpc11u6x_stop_tx_counter();
 		dali_lpc11u6x_set_tx_counter(DALI_TX_IDLE);
+		if (data->cb.tx.function) {
+			data->cb.tx.function(data->dev, 0, data->cb.tx.user_data);
+		}
 	}
 }
 
 static void dali_lpc11u6x_destroy_frame(struct dali_lpc11u6x_data *data)
 {
-	if (dali_lpc116x_is_forward_active(data)) {
-		if (data->rx_status == DESTROY_FRAME) {
+	if (data->tx.collision_detection) {
+		if (data->rx.status == DESTROY_FRAME) {
 			return;
 		}
-		if (data->rx_status != STOP_TRANSMISSION) {
+		if (data->rx.status != STOP_TRANSMISSION) {
 			dali_lpc11u6x_stop_tx_counter();
 			dali_lpc11u6x_set_tx_counter(DALI_TX_ACTIVE);
 		}
-		data->rx_status = DESTROY_FRAME;
+		data->rx.status = DESTROY_FRAME;
 
 		/* use stopbit counter to time break condition */
 		const uint32_t break_count = data->edge_count + TX_BREAK_US;
 
-		dali_lpc11u6x_set_rx_counter(STOPBIT, break_count);
-		dali_lpc11u6x_enable_rx_counter(STOPBIT, true);
+		dali_lpc11u6x_set_rx_counter(break_count);
+		dali_lpc11u6x_enable_rx_counter(true);
 	}
 }
 
-void dali_lpc11u6x_handle_tx_callback(const struct device *dev)
+void dali_lpc11u6x_handle_tx_callback_irq(const struct device *dev)
 {
 	struct dali_lpc11u6x_data *data = dev->data;
-	const struct dali_lpc11u6x_config *config = data->config;
-	struct dali_tx_slot *active = data->active;
+	const struct dali_lpc11u6x_config *config = data->dev->config;
+	struct dali_lpc11u6x_tx_data *tx = &data->tx;
 
 	/* schedule collision check for current transition */
-	if (dali_lpc116x_is_forward_active(data)) {
-		const uint32_t last_transition = active->count[active->index_next - 1];
+	if (tx->collision_detection) {
+		const uint32_t last_transition = tx->count[tx->index_next - 1];
 
 		dali_lpc11u6x_set_collision_counter(last_transition +
 						    config->tx_rx_propagation_min_us);
-		active->state_now = !active->state_now;
+		tx->state_now = !tx->state_now;
 	}
 
 	/* schedule next level transition */
-	if (active->index_next < active->index_max) {
-		const uint32_t next_transition = active->count[active->index_next++];
+	if (tx->index_next < tx->index_max) {
+		const uint32_t next_transition = tx->count[tx->index_next++];
 
 		dali_lpc11u6x_set_next_match_tx_counter(next_transition, NOTHING);
 		return;
 	}
 
 	/* schedule the last transition */
-	if (active->index_next == active->index_max) {
-		const uint32_t next_transition = active->count[active->index_next++];
+	if (tx->index_next == tx->index_max) {
+		const uint32_t next_transition = tx->count[tx->index_next++];
 
 		dali_lpc11u6x_set_next_match_tx_counter(next_transition, DISABLE_TOGGLE);
-		if (data->rx_status == TRANSMIT_BACKFRAME) {
-			data->rx_status = STOPBIT_BACKFRAME;
+		if (data->rx.status == TRANSMIT_BACKFRAME) {
+			data->rx.status = STOPBIT_BACKFRAME;
 		}
 		return;
 	}
@@ -491,22 +443,17 @@ void dali_lpc11u6x_handle_tx_callback(const struct device *dev)
 	/* activities at end of frame */
 	dali_lpc11u6x_set_tx_counter(DALI_TX_IDLE);
 	dali_lpc11u6x_stop_tx_counter();
-	if (active->is_query) {
-		dali_lpc11u6x_schedule_query();
-	}
-	dali_lpc11u6x_reset_tx_slot(active);
-	data->active = 0;
+	dali_lpc11u68_reset_tx(tx);
 }
 
-void dali_lpc11u6x_handle_collision_callback(const struct device *dev)
+void dali_lpc11u6x_handle_collision_callback_irq(const struct device *dev)
 {
 	struct dali_lpc11u6x_data *data = dev->data;
-	struct dali_tx_slot *active = data->active;
 
-	if (active && dali_lpc11u6x_get_rx_pin() == active->state_now) {
+	if (data->tx.index_next && dali_lpc11u6x_get_rx_pin() == data->tx.state_now) {
 		dali_lpc11u6x_stop_tx(data);
 		LOG_ERR("unexpected bus state while sending period %d -- stop transmission",
-			active->index_next);
+			data->tx.index_next);
 	}
 }
 
@@ -514,152 +461,87 @@ static void dali_lpc11u6x_handle_tx_irq(const struct device *dev)
 {
 	if (LPC_CT32B0->ir & CT32_IR_MR3INT) {
 		LPC_CT32B0->ir = CT32_IR_MR3INT;
-		dali_lpc11u6x_handle_tx_callback(dev);
+		dali_lpc11u6x_handle_tx_callback_irq(dev);
 	}
 	if (LPC_CT32B0->ir & CT32_IR_MR0INT) {
 		LPC_CT32B0->ir = CT32_IR_MR0INT;
-		dali_lpc11u6x_handle_collision_callback(dev);
+		dali_lpc11u6x_handle_collision_callback_irq(dev);
 	}
 }
 
-static void dali_lpc11u6x_start_tx(struct dali_lpc11u6x_data *data)
+static void dali_lpc11u6x_start_tx(struct dali_lpc11u6x_tx_data *tx)
 {
-	if (data->active) {
-		data->active->index_next = 1;
-		data->active->state_now = true;
-		dali_lpc11u6x_init_tx_counter(data->active->count[0],
-					      dali_lpc116x_is_forward_active(data));
-	}
-}
-
-static void dali_lpc11u6x_schedule_tx(struct dali_lpc11u6x_data *data)
-{
-	if (!data->active) {
-		/* no active frame, select one to send - backward frame is dominant */
-		if (!dali_lpc11u6x_is_tx_slot_empty(&data->forward)) {
-			data->active = &data->forward;
-		}
-		if (!dali_lpc11u6x_is_tx_slot_empty(&data->backward)) {
-			data->active = &data->backward;
-		}
-	}
-
-	if (!data->active) {
-		/* nothing to do */
-		return;
-	}
-
-	uint32_t start_send_rx_count = data->active->inter_frame_idle;
-
-	if (data->rx_status == TRANSMIT_BACKFRAME) {
-		start_send_rx_count += data->last_full_frame_count;
-	} else {
-		start_send_rx_count += data->last_edge_count;
-	}
-	if (dali_lpc116x_get_rx_counter() > start_send_rx_count) {
-		dali_lpc11u6x_enable_rx_counter(PRIORITY, false);
-		dali_lpc11u6x_start_tx(data);
-	} else {
-		dali_lpc11u6x_set_rx_counter(PRIORITY, start_send_rx_count);
-		dali_lpc11u6x_enable_rx_counter(PRIORITY, true);
-	}
-}
-
-static bool dali_lpc11u6x_is_rx_twice(struct dali_lpc11u6x_data *data)
-{
-	const uint32_t frame_duration_us = (data->rx_frame_length + 1) * DALI_TX_FULL_BIT_US;
-	const uint32_t time_difference_us =
-		data->rx_timestamp - data->rx_last_timestamp - frame_duration_us;
-	const bool is_data_identical = (data->rx_data == data->rx_last_payload &&
-					data->rx_frame_length == data->rx_last_frame_length);
-
-	data->rx_last_timestamp = data->rx_timestamp;
-	data->rx_last_payload = data->rx_data;
-	data->rx_last_frame_length = data->rx_frame_length;
-
-	if (time_difference_us > DALI_RX_TWICE_MAX_US + GREY_AREA_INTERFRAME_US) {
-		return false;
-	}
-	return is_data_identical;
-}
-
-static void dali_lpc11u6x_reset_rx_twice(struct dali_lpc11u6x_data *data)
-{
-	data->rx_last_payload = 0;
-	data->rx_last_frame_length = 0;
+	tx->index_next = 1;
+	tx->state_now = true;
+	dali_lpc11u6x_init_tx_counter(tx->count[0], tx->collision_detection);
 }
 
 static void dali_lpc11u6x_finish_rx_frame(struct dali_lpc11u6x_data *data)
 {
 	struct dali_frame frame = {
-		.data = data->rx_data,
+		.data = data->rx.data,
 		.event_type = DALI_EVENT_NONE,
 	};
-	switch (data->rx_status) {
+
+	switch (data->rx.status) {
 	case START_BIT_START:
 	case START_BIT_INSIDE:
 	case DATA_BIT_START:
 	case DATA_BIT_INSIDE:
-		LOG_INF("{%08x:%02x %08x}", data->rx_timestamp, data->rx_frame_length,
-			data->rx_data);
-		switch (data->rx_frame_length) {
+		LOG_INF("{%08x:%02x %08x}", data->rx.timestamp, data->rx.frame_length,
+			data->rx.data);
+		switch (data->rx.frame_length) {
 		case DALI_FRAME_BACKWARD_LENGTH:
 			frame.event_type = DALI_FRAME_BACKWARD;
 			break;
 		case DALI_FRAME_GEAR_LENGTH:
 			data->last_full_frame_count = data->last_edge_count;
-			frame.event_type = dali_lpc11u6x_is_rx_twice(data) ? DALI_FRAME_GEAR_TWICE
-									   : DALI_FRAME_GEAR;
+			frame.event_type = DALI_FRAME_GEAR;
 			break;
 		case DALI_FRAME_DEVICE_LENGTH:
 			data->last_full_frame_count = data->last_edge_count;
-			frame.event_type = dali_lpc11u6x_is_rx_twice(data) ? DALI_FRAME_DEVICE_TWICE
-									   : DALI_FRAME_DEVICE;
+			frame.event_type = DALI_FRAME_DEVICE;
 			break;
 		case DALI_FRAME_UPDATE_LENGTH:
-			dali_lpc11u6x_is_rx_twice(data);
 			data->last_full_frame_count = data->last_edge_count;
 			frame.event_type = DALI_FRAME_FIRMWARE;
 			break;
 		default:
-			LOG_INF("invalid frame length %d bits", data->rx_frame_length);
-			dali_lpc11u6x_reset_rx_twice(data);
+			LOG_INF("invalid frame length %d bits", data->rx.frame_length);
 			frame.data = 0, frame.event_type = DALI_FRAME_CORRUPT;
 		}
-		data->rx_status = IDLE;
+		data->rx.status = IDLE;
 		break;
 	case STOP_TRANSMISSION:
 		frame.data = 0;
 		frame.event_type = DALI_FRAME_CORRUPT;
-		dali_lpc11u6x_reset_rx_twice(data);
-		data->rx_status = IDLE;
+		data->rx.status = IDLE;
 		/* re-schedule the current frame data */
-		data->active->index_next = 0;
-		data->active->state_now = true;
-		data->active->inter_frame_idle = DALI_TX_RECOVER_MIN_US;
-		dali_lpc11u6x_schedule_tx(data);
+		data->tx.index_next = 0;
+		data->tx.state_now = true;
+		data->tx.inter_frame_idle = DALI_TX_RECOVER_MIN_US;
+		dali_lpc11u6x_start_tx(&data->tx);
 		break;
 	case BUS_FAILURE_DETECT:
 		LOG_INF("bus failure");
 		frame.data = 0;
 		frame.event_type = DALI_EVENT_BUS_FAILURE;
-		dali_lpc11u6x_reset_rx_twice(data);
 		break;
 	case IDLE:
 		LOG_INF("bus idle");
 		frame.data = 0;
 		frame.event_type = DALI_EVENT_BUS_IDLE;
-		dali_lpc11u6x_reset_rx_twice(data);
 		break;
 	case ERROR_IN_FRAME:
 	default:
 		LOG_INF("corrupt frame");
 		frame.data = 0;
 		frame.event_type = DALI_FRAME_CORRUPT;
-		dali_lpc11u6x_reset_rx_twice(data);
-		data->rx_status = IDLE;
+		data->rx.status = IDLE;
 	}
-	k_msgq_put(&data->rx_queue, &frame, K_NO_WAIT);
+	if (data->cb.rx.function) {
+		(data->cb.rx.function)(data->dev, frame, data->cb.rx.user_data);
+	}
 }
 
 static bool dali_lpc11u6x_is_valid_halfbit_timing(const uint32_t time_difference_us)
@@ -711,7 +593,7 @@ static bool dali_lpc11u6x_is_destroy_inside(const uint32_t time_difference_us)
 static uint32_t dali_lpc11u6x_get_time_difference_us(const struct dali_lpc11u6x_data *data,
 						     bool invert)
 {
-	const struct dali_lpc11u6x_config *config = data->config;
+	const struct dali_lpc11u6x_config *config = data->dev->config;
 	const uint32_t time_difference_us = data->edge_count - data->last_edge_count;
 
 	if (data->last_data_bit != invert) {
@@ -722,21 +604,21 @@ static uint32_t dali_lpc11u6x_get_time_difference_us(const struct dali_lpc11u6x_
 
 static void dali_lpc11u6x_set_status(struct dali_lpc11u6x_data *data, enum rx_state new_status)
 {
-	switch (data->rx_status) {
+	switch (data->rx.status) {
 	case ERROR_IN_FRAME:
 	case STOP_TRANSMISSION:
 	case DESTROY_FRAME:
 		return;
 	default:
-		data->rx_status = new_status;
+		data->rx.status = new_status;
 	}
 }
 
 static void dali_lpc11u6x_add_bit_to_rx_data(struct dali_lpc11u6x_data *data)
 {
-	data->rx_data = (data->rx_data << 1U) | (data->last_data_bit ? (1U) : (0U));
-	data->rx_frame_length++;
-	if (data->rx_frame_length > DALI_MAX_BIT_PER_FRAME) {
+	data->rx.data = (data->rx.data << 1U) | (data->last_data_bit ? (1U) : (0U));
+	data->rx.frame_length++;
+	if (data->rx.frame_length > DALI_MAX_BIT_PER_FRAME) {
 		dali_lpc11u6x_set_status(data, ERROR_IN_FRAME);
 	}
 }
@@ -746,29 +628,27 @@ static void dali_lpc11u6x_check_start_timing(struct dali_lpc11u6x_data *data)
 	const uint32_t time_difference_us = dali_lpc11u6x_get_time_difference_us(data, false);
 
 	LOG_DBG("start timing: %d us", time_difference_us);
-	if (dali_lpc116x_is_forward_active(data) &&
-	    dali_lpc11u6x_is_destroy_start(time_difference_us)) {
-		dali_lpc11u6x_destroy_frame(data);
-		if (data->rx_status == START_BIT_START) {
-			LOG_ERR("start bit collision, timing %d us, destroy frame",
-				time_difference_us);
-		} else {
-			LOG_ERR("data bit %d collision, timing %d us, destroy frame",
-				data->rx_frame_length, time_difference_us);
+	/*	if (data->tx.collision_detection &&
+	   dali_lpc11u6x_is_destroy_start(time_difference_us)) { dali_lpc11u6x_destroy_frame(data);
+			if (data->rx.status == START_BIT_START) {
+				LOG_ERR("start bit collision, timing %d us, destroy frame",
+					time_difference_us);
+			} else {
+				LOG_ERR("data bit %d collision, timing %d us, destroy frame",
+					data->rx.frame_length, time_difference_us);
+			}
+			return;
 		}
-		return;
-	}
-	if (!dali_lpc11u6x_is_valid_halfbit_timing(time_difference_us)) {
-		dali_lpc11u6x_set_status(data, ERROR_IN_FRAME);
-		if (data->rx_status == START_BIT_START) {
-			LOG_ERR("start bit timing %d us, corrupt frame", time_difference_us);
-		} else {
-			LOG_ERR("data bit %d timing %d us, corrupt frame", data->rx_frame_length,
-				time_difference_us);
-		}
-		return;
-	}
-	if (data->rx_status == DATA_BIT_START) {
+		if (!dali_lpc11u6x_is_valid_halfbit_timing(time_difference_us)) {
+			dali_lpc11u6x_set_status(data, ERROR_IN_FRAME);
+			if (data->rx.status == START_BIT_START) {
+				LOG_ERR("start bit timing %d us, corrupt frame",
+	   time_difference_us); } else { LOG_ERR("data bit %d timing %d us, corrupt frame",
+	   data->rx.frame_length, time_difference_us);
+			}
+			return;
+		} */
+	if (data->rx.status == DATA_BIT_START) {
 		dali_lpc11u6x_add_bit_to_rx_data(data);
 	}
 }
@@ -778,15 +658,14 @@ static enum rx_state dali_lpc11u6x_check_inside_timing(struct dali_lpc11u6x_data
 	uint32_t time_difference_us = dali_lpc11u6x_get_time_difference_us(data, true);
 
 	LOG_DBG("inside timing: %d us", time_difference_us);
-	if (dali_lpc116x_is_forward_active(data) &&
-	    dali_lpc11u6x_is_destroy_inside(time_difference_us)) {
+	if (data->tx.collision_detection && dali_lpc11u6x_is_destroy_inside(time_difference_us)) {
 		dali_lpc11u6x_destroy_frame(data);
-		if (data->rx_status == START_BIT_INSIDE) {
+		if (data->rx.status == START_BIT_INSIDE) {
 			LOG_ERR("inside start bit collision, timing %d us, destroy frame",
 				time_difference_us);
 		} else {
 			LOG_ERR("inside bit %d collision, timing %d us, destroy frame",
-				data->rx_frame_length, time_difference_us);
+				data->rx.frame_length, time_difference_us);
 		}
 		return DESTROY_FRAME;
 	}
@@ -798,10 +677,10 @@ static enum rx_state dali_lpc11u6x_check_inside_timing(struct dali_lpc11u6x_data
 		dali_lpc11u6x_add_bit_to_rx_data(data);
 		return DATA_BIT_INSIDE;
 	}
-	if (data->rx_status == START_BIT_INSIDE) {
+	if (data->rx.status == START_BIT_INSIDE) {
 		LOG_ERR("inside start bit timing error %d us", time_difference_us);
 	} else {
-		LOG_ERR("inside data bit %d timing error %d us", data->rx_frame_length,
+		LOG_ERR("inside data bit %d timing error %d us", data->rx.frame_length,
 			time_difference_us);
 	}
 	return ERROR_IN_FRAME;
@@ -809,69 +688,65 @@ static enum rx_state dali_lpc11u6x_check_inside_timing(struct dali_lpc11u6x_data
 
 static void dali_lpc11u6x_check_collision(struct dali_lpc11u6x_data *data)
 {
-	struct dali_tx_slot *active = data->active;
-
-	if (!dali_lpc116x_is_forward_active(data)) {
+	if (!data->tx.collision_detection) {
 		return;
 	}
 
-	const struct dali_lpc11u6x_config *config = data->config;
-	const uint32_t expected_count = active->count[active->index_next - 2];
+	const struct dali_lpc11u6x_config *config = data->dev->config;
+	const uint32_t expected_count = data->tx.count[data->tx.index_next - 2];
 	const int32_t delay = data->tx_count_on_capture - expected_count;
 
 	if (delay < 0 || delay > config->tx_rx_propagation_max_us) {
 		dali_lpc11u6x_stop_tx(data);
 		LOG_ERR("unexpected capture with delay of %d us while receiving bit %d, stop "
 			"transmission",
-			delay, data->rx_frame_length);
+			delay, data->rx.frame_length);
 	}
 }
 
 static void dali_lpc11u6x_process_capture_event(struct dali_lpc11u6x_data *data)
 {
-	if (data->rx_status == STOP_TRANSMISSION) {
+	if (data->rx.status == STOP_TRANSMISSION) {
 		data->last_edge_count = dali_lpc116x_get_rx_counter();
 		return;
 	}
 
-	if (data->rx_status == DESTROY_FRAME) {
+	if (data->rx.status == DESTROY_FRAME) {
 		data->last_edge_count = dali_lpc116x_get_rx_counter();
 		if (dali_lpc11u6x_get_rx_pin()) {
-			data->rx_status = IDLE;
+			data->rx.status = IDLE;
 
 			/* re-schedule the current frame data */
-			data->active->index_next = 0;
-			data->active->state_now = true;
-			data->active->inter_frame_idle = DALI_TX_RECOVER_MIN_US;
-			dali_lpc11u6x_schedule_tx(data);
+			data->tx.index_next = 0;
+			data->tx.state_now = true;
+			data->tx.inter_frame_idle = DALI_TX_RECOVER_MIN_US;
+			dali_lpc11u6x_start_tx(&data->tx);
 		}
 		return;
 	}
 
 	data->edge_count = dali_lpc11u6x_get_rx_capture();
 
-	const struct dali_lpc11u6x_config *config = data->config;
+	const struct dali_lpc11u6x_config *config = data->dev->config;
 	const uint32_t stop_timeout_count =
 		data->edge_count + DALI_RX_BIT_TIME_STOP_US + 2 * config->rx_rise_fall_delta_us;
 
-	dali_lpc11u6x_set_rx_counter(STOPBIT, stop_timeout_count);
-	dali_lpc11u6x_enable_rx_counter(STOPBIT, true);
+	dali_lpc11u6x_set_rx_counter(stop_timeout_count);
+	dali_lpc11u6x_enable_rx_counter(true);
 
-	if (data->rx_status == TRANSMIT_BACKFRAME || data->rx_status == STOPBIT_BACKFRAME) {
+	if (data->rx.status == TRANSMIT_BACKFRAME || data->rx.status == STOPBIT_BACKFRAME) {
 		data->last_edge_count = data->edge_count;
 		return;
 	}
 
-	switch (data->rx_status) {
+	switch (data->rx.status) {
 	case IDLE:
 		if (!dali_lpc11u6x_get_rx_pin()) {
 			dali_lpc11u6x_set_status(data, START_BIT_START);
 			data->last_data_bit = true;
-			data->rx_timestamp = dali_lpc116x_get_rx_counter();
-			data->rx_data = 0;
-			data->rx_frame_length = 0;
-			dali_lpc11u6x_enable_rx_counter(QUERY, false);
-			dali_lpc11u6x_enable_rx_counter(PRIORITY, false);
+			data->rx.timestamp = dali_lpc116x_get_rx_counter();
+			data->rx.data = 0;
+			data->rx.frame_length = 0;
 		}
 		break;
 	case START_BIT_START:
@@ -900,7 +775,7 @@ static void dali_lpc11u6x_process_capture_event(struct dali_lpc11u6x_data *data)
 		break;
 	case BUS_FAILURE_DETECT:
 		if (dali_lpc11u6x_get_rx_pin()) {
-			data->rx_status = IDLE;
+			data->rx.status = IDLE;
 			dali_lpc11u6x_finish_rx_frame(data);
 		}
 		break;
@@ -908,40 +783,24 @@ static void dali_lpc11u6x_process_capture_event(struct dali_lpc11u6x_data *data)
 		__ASSERT(false, "invalid state");
 	}
 	data->last_edge_count = data->edge_count;
-	/* if transmission pending: re-schedule the next transmission */
-	if (data->active && data->active->index_next == 0) {
-		dali_lpc11u6x_schedule_tx(data);
-	}
-}
-
-static void dali_lpc11u6x_restart_tx(struct dali_lpc11u6x_data *data)
-{
-	/* set the bus to idle */
-	dali_lpc11u6x_set_tx_counter(DALI_TX_IDLE);
-	dali_lpc11u6x_enable_rx_counter(STOPBIT, false);
-
-	/* push information into receive queue */
-	struct dali_frame frame = {
-		.event_type = DALI_FRAME_CORRUPT,
-	};
-	k_msgq_put(&data->rx_queue, &frame, K_NO_WAIT);
-	dali_lpc11u6x_reset_rx_twice(data);
 }
 
 static void dali_lpc11u6x_process_stopbit_event(struct dali_lpc11u6x_data *data)
 {
 	/* this can happen with extensive long bus active periods */
-	if (data->rx_status == TRANSMIT_BACKFRAME) {
+	if (data->rx.status == TRANSMIT_BACKFRAME) {
 		/* re-start counter */
+		const struct dali_lpc11u6x_config *config = data->dev->config;
 		const uint32_t stop_timeout_count = data->edge_count + DALI_RX_BIT_TIME_STOP_US +
-						    2 * data->config->rx_rise_fall_delta_us;
-		dali_lpc11u6x_set_rx_counter(STOPBIT, stop_timeout_count);
-		dali_lpc11u6x_enable_rx_counter(STOPBIT, true);
+						    2 * config->rx_rise_fall_delta_us;
+
+		dali_lpc11u6x_set_rx_counter(stop_timeout_count);
+		dali_lpc11u6x_enable_rx_counter(true);
 		return;
 	}
 
 	if (dali_lpc11u6x_get_rx_pin()) {
-		switch (data->rx_status) {
+		switch (data->rx.status) {
 		case IDLE:
 		case START_BIT_START:
 		case START_BIT_INSIDE:
@@ -954,42 +813,30 @@ static void dali_lpc11u6x_process_stopbit_event(struct dali_lpc11u6x_data *data)
 			dali_lpc11u6x_finish_rx_frame(data);
 			return;
 		case STOPBIT_BACKFRAME:
-			data->rx_status = IDLE;
+			data->rx.status = IDLE;
 			return;
 		default:
 			__ASSERT(false, "invalid state");
 			return;
 		}
 	}
-	switch (data->rx_status) {
+	switch (data->rx.status) {
 	case DESTROY_FRAME:
-		dali_lpc11u6x_restart_tx(data);
+		if (data->cb.tx.function) {
+			data->cb.tx.function(data->dev, -ECOMM, data->cb.tx.user_data);
+		};
 		return;
 	case BUS_LOW:
-		data->rx_status = BUS_FAILURE_DETECT;
+		data->rx.status = BUS_FAILURE_DETECT;
 		dali_lpc11u6x_finish_rx_frame(data);
 		return;
 	case BUS_FAILURE_DETECT:
 		return;
 	default:
-		dali_lpc11u6x_set_rx_counter(STOPBIT, data->edge_count + DALI_FAILURE_CONDITION_US);
-		dali_lpc11u6x_enable_rx_counter(STOPBIT, true);
-		data->rx_status = BUS_LOW;
+		dali_lpc11u6x_set_rx_counter(data->edge_count + DALI_FAILURE_CONDITION_US);
+		dali_lpc11u6x_enable_rx_counter(true);
+		data->rx.status = BUS_LOW;
 	}
-}
-
-static void dali_lpc11u6x_process_priority_event(struct dali_lpc11u6x_data *data)
-{
-	dali_lpc11u6x_start_tx(data);
-}
-
-static void dali_lpc11u6x_process_query_event(struct dali_lpc11u6x_data *data)
-{
-	struct dali_frame timeout_event = {
-		.data = 0,
-		.event_type = DALI_EVENT_NO_ANSWER,
-	};
-	k_msgq_put(&data->rx_queue, &timeout_event, K_NO_WAIT);
 }
 
 static void dali_lpc11u6x_handle_work_queue(struct k_work *item)
@@ -1003,12 +850,6 @@ static void dali_lpc11u6x_handle_work_queue(struct k_work *item)
 	case STOPBIT:
 		dali_lpc11u6x_process_stopbit_event(data);
 		break;
-	case PRIORITY:
-		dali_lpc11u6x_process_priority_event(data);
-		break;
-	case QUERY:
-		dali_lpc11u6x_process_query_event(data);
-		break;
 	default:
 		__ASSERT(false, "invalid event type");
 	}
@@ -1018,23 +859,9 @@ static void dali_lpc11u6x_handle_rx_irq(const struct device *dev)
 {
 	if (LPC_CT32B1->ir & CT32_IR_MR0INT) {
 		LPC_CT32B1->ir = CT32_IR_MR0INT;
-		dali_lpc11u6x_enable_rx_counter(STOPBIT, false);
+		dali_lpc11u6x_enable_rx_counter(false);
 		struct dali_lpc11u6x_data *data = dev->data;
 		data->rx_event = STOPBIT;
-		k_work_submit_to_queue(&dali_work_queue, &data->rx_work);
-	}
-	if (LPC_CT32B1->ir & CT32_IR_MR1INT) {
-		LPC_CT32B1->ir = CT32_IR_MR1INT;
-		dali_lpc11u6x_enable_rx_counter(PRIORITY, false);
-		struct dali_lpc11u6x_data *data = dev->data;
-		data->rx_event = PRIORITY;
-		k_work_submit_to_queue(&dali_work_queue, &data->rx_work);
-	}
-	if (LPC_CT32B1->ir & CT32_IR_MR2INT) {
-		LPC_CT32B1->ir = CT32_IR_MR2INT;
-		dali_lpc11u6x_enable_rx_counter(QUERY, false);
-		struct dali_lpc11u6x_data *data = dev->data;
-		data->rx_event = QUERY;
 		k_work_submit_to_queue(&dali_work_queue, &data->rx_work);
 	}
 	if (LPC_CT32B1->ir & CT32_IR_CR0INT) {
@@ -1046,66 +873,37 @@ static void dali_lpc11u6x_handle_rx_irq(const struct device *dev)
 	}
 }
 
-static int dali_lpc11u6x_receive(const struct device *dev, struct dali_frame *frame,
-				 k_timeout_t timeout)
+static int dali_lpc11u6x_receive(const struct device *dev, dali_rx_callback_t callback,
+				 void *user_data)
 {
 	struct dali_lpc11u6x_data *data = dev->data;
 
-	if (k_msgq_get(&data->rx_queue, frame, timeout) < 0) {
-		return -ENOMSG;
-	}
-	return 0;
-};
+	data->cb.rx.function = callback;
+	data->cb.rx.user_data = user_data;
 
-static int dali_lpc11u6x_send(const struct device *dev, const struct dali_tx_frame *tx_frame)
+	return 0;
+}
+
+static int dali_lpc11u6x_send(const struct device *dev, const struct dali_frame *frame,
+			      dali_tx_callback_t callback, void *user_data)
 {
-	const enum dali_event_type frame_type = tx_frame->frame.event_type;
-	if (frame_type == DALI_EVENT_NONE) {
+	struct dali_lpc11u6x_data *data = dev->data;
+
+	if (frame->event_type == DALI_EVENT_NONE) {
 		return 0;
 	}
 
-	struct dali_lpc11u6x_data *data = dev->data;
-	if (data->active && data->active->index_next) {
-		LOG_ERR("send is busy sending");
-		return -EBUSY;
-	}
+	k_mutex_lock(&data->tx_mutex, K_FOREVER);
 
-	switch (frame_type) {
-	case DALI_FRAME_BACKWARD:
-	case DALI_FRAME_CORRUPT:
-		if (tx_frame->is_query) {
-			return -EINVAL;
-		}
-		if (dali_lpc11u6x_is_tx_slot_empty(&data->backward)) {
-			data->rx_status = TRANSMIT_BACKFRAME;
-			dali_lpc11u6x_enable_rx_counter(STOPBIT, false);
-			dali_lpc11u6x_calculate_counts(dev, &data->backward, tx_frame->frame);
-			data->backward.inter_frame_idle = settling_time_us[0];
-		} else {
-			LOG_ERR("backward frame slot is busy");
-			return -EBUSY;
-		}
-		break;
-	case DALI_FRAME_DEVICE:
-	case DALI_FRAME_GEAR:
-	case DALI_FRAME_FIRMWARE:
-		if (dali_lpc11u6x_is_tx_slot_empty(&data->forward)) {
-			dali_lpc11u6x_calculate_counts(dev, &data->forward, tx_frame->frame);
-			if (tx_frame->priority < DALI_PRIORITY_1 ||
-			    tx_frame->priority > DALI_PRIORITY_5) {
-				return -EINVAL;
-			}
-			data->forward.inter_frame_idle = settling_time_us[tx_frame->priority];
-			data->forward.is_query = tx_frame->is_query;
-		} else {
-			LOG_ERR("forward frame slot is busy");
-			return -EBUSY;
-		}
-		break;
-	default:
-		return -EINVAL;
+	data->cb.tx.function = callback;
+	data->cb.tx.user_data = user_data;
+
+	int err = dali_lpc11u6x_calculate_counts(dev, frame);
+	if (err != 0) {
+		return err;
 	}
-	dali_lpc11u6x_schedule_tx(data);
+	dali_lpc11u6x_start_tx(&data->tx);
+	k_mutex_unlock(&data->tx_mutex);
 
 	return 0;
 }
@@ -1116,7 +914,7 @@ static void dali_lpc11u6x_abort(const struct device *dev)
 	dali_lpc11u6x_set_tx_counter(DALI_TX_ACTIVE);
 
 	struct dali_lpc11u6x_data *data = dev->data;
-	dali_lpc11u6x_reset_tx_all_slots(data);
+	dali_lpc11u68_reset_tx(&data->tx);
 }
 
 static int dali_lpc11u6x_init(const struct device *dev)
@@ -1124,16 +922,16 @@ static int dali_lpc11u6x_init(const struct device *dev)
 	struct dali_lpc11u6x_data *data = dev->data;
 	const struct dali_lpc11u6x_config *config = dev->config;
 
-	/* connect to config */
-	data->config = config;
+	/* connect to device */
+	data->dev = dev;
 
 	/* configure interrupts */
 	if (config->irq_config_function != NULL) {
 		config->irq_config_function();
 	}
 
-	/* initialize transmission slots */
-	dali_lpc11u6x_reset_tx_all_slots(data);
+	/* mutexes and semaphore */
+	k_mutex_init(&data->tx_mutex);
 
 	/* set up receive work queue */
 	const struct k_work_queue_config cfg = {
@@ -1146,23 +944,22 @@ static int dali_lpc11u6x_init(const struct device *dev)
 			   CONFIG_DALI_LPC11U6X_PRIORITY, &cfg);
 	k_work_init(&data->rx_work, dali_lpc11u6x_handle_work_queue);
 
-	/* initialize receive queue */
-	k_msgq_init(&data->rx_queue, data->rx_buffer, sizeof(struct dali_frame),
-		    CONFIG_DALI_MAX_FRAMES_IN_QUEUE);
-
 	/* initialize peripherals */
 	dali_lpc11u6x_init_peripheral_clock();
 	dali_lpc11u6x_init_io_pins();
 	dali_lpc11u6x_set_tx_counter(DALI_TX_IDLE);
 	dali_lpc11u6x_init_rx_counter();
 
+	/* reset transmission state */
+	dali_lpc11u68_reset_tx(&data->tx);
+
 	/* examine inital bus state */
 	if (dali_lpc11u6x_get_rx_pin()) {
-		data->rx_status = IDLE;
+		data->rx.status = IDLE;
 	} else {
-		data->rx_status = BUS_LOW;
-		dali_lpc11u6x_set_rx_counter(STOPBIT, DALI_FAILURE_CONDITION_US);
-		dali_lpc11u6x_enable_rx_counter(STOPBIT, true);
+		data->rx.status = BUS_LOW;
+		dali_lpc11u6x_set_rx_counter(DALI_FAILURE_CONDITION_US);
+		dali_lpc11u6x_enable_rx_counter(true);
 	}
 	return 0;
 }
