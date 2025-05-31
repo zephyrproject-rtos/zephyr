@@ -498,9 +498,14 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	ll_func_disable_int_errors(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+#ifdef CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI
+	/* Using this spi shield, Disable the EOT unconditionnaly */
+	LL_SPI_DisableIT_EOT(spi);
+#else
 	if (cfg->fifo_enabled) {
 		LL_SPI_DisableIT_EOT(spi);
 	}
+#endif /* CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI */
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
@@ -529,6 +534,11 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 
+#ifdef CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI
+	/* Using this spi shield, clear the EOT unconditionnaly */
+	LL_SPI_ClearFlag_EOT(spi);
+	/* This is not a problem to clear it again if cfg->fifo_enabled */
+#endif /* CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI */
 	if (cfg->fifo_enabled) {
 		LL_SPI_ClearFlag_TXTF(spi);
 		LL_SPI_ClearFlag_OVR(spi);
@@ -882,9 +892,14 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+#ifdef CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI
+		/* Using this spi shield, Enable the EOT unconditionnaly */
+		LL_SPI_EnableIT_EOT(spi);
+#else
 		if (cfg->fifo_enabled) {
 			LL_SPI_EnableIT_EOT(spi);
 		}
+#endif /* CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI */
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 		ll_func_enable_int_errors(spi);
@@ -990,9 +1005,15 @@ static int transceive(const struct device *dev,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (cfg->fifo_enabled) {
+#ifdef CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI
+		/* Using this spi shield, Enable the EOT unconditionnaly */
 		LL_SPI_EnableIT_EOT(spi);
-	}
+#else
+		if (cfg->fifo_enabled) {
+			LL_SPI_EnableIT_EOT(spi);
+		}
+#endif /* CONFIG_SHIELD_X_NUCLEO_WB05KN1_SPI */
+
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 	ll_func_enable_int_errors(spi);
