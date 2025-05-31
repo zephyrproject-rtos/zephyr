@@ -23,6 +23,9 @@ list(APPEND CMAKE_REQUIRED_FLAGS
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 set(NOSTDINC ${TOOLCHAIN_HOME}/arc/inc)
+if (NOT CONFIG_ARCMWDT_LIBC)
+  set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
+endif()
 
 # For CMake to be able to test if a compiler flag is supported by the toolchain
 # (check_c_compiler_flag function which we wrap with target_cc_option in extensions.cmake)

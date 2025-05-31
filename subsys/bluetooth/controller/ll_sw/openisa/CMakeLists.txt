@@ -53,6 +53,7 @@ zephyr_library_include_directories(
   ../../../controller/include
   )
 
+get_property(OPTIMIZE_FOR_SPEED_FLAG TARGET compiler PROPERTY speed_optimizations)
 zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED
   ${OPTIMIZE_FOR_SPEED_FLAG}
