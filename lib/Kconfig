@@ -1,4 +1,6 @@
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2025 Aerlync Labs Inc.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 source "lib/libc/Kconfig"
@@ -32,4 +34,6 @@ source "lib/runtime/Kconfig"
 source "lib/utils/Kconfig"
 
 source "lib/uuid/Kconfig"
+
+source "lib/min_heap/Kconfig"
 endmenu
