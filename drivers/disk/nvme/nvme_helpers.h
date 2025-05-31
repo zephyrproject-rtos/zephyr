@@ -3,8 +3,8 @@
  * Copyright (c) 2022 Intel Corp.
  */
 
-#ifndef ZEPHYR_DRIVERS_DISK_NVME_NHME_HELPERS_H_
-#define ZEPHYR_DRIVERS_DISK_NVME_NHME_HELPERS_H_
+#ifndef ZEPHYR_DRIVERS_DISK_NVME_NVME_HELPERS_H_
+#define ZEPHYR_DRIVERS_DISK_NVME_NVME_HELPERS_H_
 
 #define NVME_GONE		0xfffffffful
 
@@ -516,4 +516,4 @@ enum shst_value {
 
 #define NVME_IS_BUFFER_DWORD_ALIGNED(_buf_addr) (!((uintptr_t)_buf_addr & 0x3))
 
-#endif /* ZEPHYR_DRIVERS_DISK_NVME_NHME_HELPERS_H_ */
+#endif /* ZEPHYR_DRIVERS_DISK_NVME_NVME_HELPERS_H_ */
