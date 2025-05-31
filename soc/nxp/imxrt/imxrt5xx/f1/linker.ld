@@ -314,8 +314,10 @@ SECTIONS
     __text_region_start = ABSOLUTE(.);
     KEEP (*(.ResetVector.text))
     *(.ResetVector.literal)
-    *(.entry.text)
     *(.init.literal)
+    *(.entry.text)
+    /* to support backtrace */
+    KEEP (*(.iram1.literal .iram1))
     KEEP(*(.init))
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.fini.literal)
