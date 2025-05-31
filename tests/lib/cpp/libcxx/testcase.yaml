@@ -1,7 +1,3 @@
-common:
-  arch_exclude:
-    # see #89839
-    - rx
 tests:
   # GNU C++ Standard Library (libstdc++)
   cpp.libcxx.glibcxx.newlib:
