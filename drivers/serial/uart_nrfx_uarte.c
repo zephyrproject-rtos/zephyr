@@ -136,6 +136,20 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
  */
 #define UARTE_ANY_HIGH_SPEED (UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_HIGH_SPEED, (||), (0)))
 
+#define UARTE_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(prefix##idx)),	\
+		   (UARTE_HAS_PROP(idx, cross_domain_default_port)),	\
+		   (0))
+
+#if (UARTE_FOR_EACH_INSTANCE(UARTE_PINS_CROSS_DOMAIN, (||), (0))) && defined(CONFIG_NRF_SYS_EVENT)
+#include <hal/nrf_gpio.h>
+#include <nrf_sys_event.h>
+/* Macro determines if there is any UART instance that needs constant latency mode if using
+ * cross domain pins. To use constant latency, NRF_SYS_EVENT needs to be enabled.
+ */
+#define UARTE_ANY_PINS_CROSS_DOMAIN 1
+#endif
+
 #ifdef UARTE_ANY_CACHE
 /* uart120 instance does not retain BAUDRATE register when ENABLE=0. When this instance
  * is used then baudrate must be set after enabling the peripheral and not before.
@@ -357,6 +371,10 @@ struct uarte_nrfx_config {
 #endif
 	uint8_t *poll_out_byte;
 	uint8_t *poll_in_byte;
+#if UARTE_ANY_PINS_CROSS_DOMAIN
+	bool cross_domain;
+	uint8_t default_port;
+#endif
 };
 
 /* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
@@ -425,6 +443,31 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 #endif
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
+
+#if UARTE_ANY_PINS_CROSS_DOMAIN
+static bool uarte_has_cross_domain_connection(const struct uarte_nrfx_config *config)
+{
+	const struct pinctrl_dev_config *pcfg = config->pcfg;
+	const struct pinctrl_state *state;
+	int ret;
+
+	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
+	if (ret < 0) {
+		LOG_ERR("Unable to read pin state");
+		return false;
+	}
+
+	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
+		uint32_t pin = NRF_GET_PIN(state->pins[i]);
+
+		if (nrf_gpio_pin_port_number_extract(&pin) != config->default_port) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#endif
 
 #ifdef UARTE_ANY_NONE_ASYNC
 /**
@@ -708,6 +751,15 @@ static void uarte_periph_enable(const struct device *dev)
 	nrf_uarte_enable(uarte);
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(config->pcfg, false);
+#endif
+#if UARTE_ANY_PINS_CROSS_DOMAIN
+	if (config->cross_domain && uarte_has_cross_domain_connection(config)) {
+		int err;
+
+		err = nrf_sys_event_request_global_constlat();
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+	}
 #endif
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
 	nrf_uarte_baudrate_set(uarte,
@@ -2341,6 +2393,15 @@ static void uarte_pm_suspend(const struct device *dev)
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(cfg->pcfg, true);
 #endif
+#if UARTE_ANY_PINS_CROSS_DOMAIN
+	if (cfg->cross_domain && uarte_has_cross_domain_connection(cfg)) {
+		int err;
+
+		err = nrf_sys_event_release_global_constlat();
+		(void)err;
+		__ASSERT_NO_MSG(err >= 0);
+	}
+#endif
 
 	nrf_uarte_disable(uarte);
 
@@ -2620,6 +2681,12 @@ static int uarte_instance_init(const struct device *dev,
 				.accuracy = 0,				       \
 				.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,\
 				},))					       \
+		IF_ENABLED(UTIL_AND(					       \
+			UARTE_PINS_CROSS_DOMAIN(_, /*empty*/, idx, _),	       \
+			CONFIG_NRF_SYS_EVENT),				       \
+			(.cross_domain = true,				       \
+			 .default_port =				       \
+				UARTE_PROP(idx, cross_domain_default_port),))  \
 	};								       \
 	UARTE_DIRECT_ISR_DECLARE(idx)					       \
 	static int uarte_##idx##_init(const struct device *dev)		       \
