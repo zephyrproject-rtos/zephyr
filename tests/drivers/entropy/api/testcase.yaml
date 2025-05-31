@@ -24,3 +24,10 @@ tests:
       - driver
       - entropy
       - psa-crypto
+  drivers.entropy.stm32:
+    filter: CONFIG_SOC_FAMILY_STM32 and
+            (dt_compat_enabled("st,stm32-rng") or dt_compat_enabled("st,stm32-rng-noirq"))
+    extra_args: "DTC_OVERLAY_FILE=./stm32_rng.overlay"
+    tags:
+      - driver
+      - entropy
