@@ -51,6 +51,7 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 static int ina230_adc_run(const struct device *dev)
 {
 	const struct ina230_config *config = dev->config;
+	bool in_shutdown = config->adc_mode == 0;
 	uint16_t reg;
 	int ret;
 
@@ -59,8 +60,11 @@ static int ina230_adc_run(const struct device *dev)
 		return 0;
 	}
 
+	/* If idling in shutdown, update to single shot triggered */
+	reg = in_shutdown ? (config->config | 3) : config->config;
+
 	/* Write the configuration register to force a sample */
-	ret = ina23x_reg_write(&config->bus, INA230_REG_CONFIG, config->config);
+	ret = ina23x_reg_write(&config->bus, INA230_REG_CONFIG, reg);
 	if (ret < 0) {
 		LOG_ERR("Failed to trigger sample");
 		return ret;
@@ -77,6 +81,12 @@ static int ina230_adc_run(const struct device *dev)
 		}
 		k_sleep(K_MSEC(1));
 	}
+
+	if (in_shutdown) {
+		/* Return to shutdown mode */
+		(void)ina23x_reg_write(&config->bus, INA230_REG_CONFIG, config->config);
+	}
+
 	return ret;
 }
 
@@ -275,6 +285,7 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 	 DT_INST_PROP(inst, avg_count))
 
 #define INA230_DRIVER_INIT(inst, type)                                                             \
+	BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(inst, adc_mode, invalid) == false);                    \
 	static struct ina230_data drv_data_##type##inst;                                           \
 	static const struct ina230_config drv_config_##type##inst = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
