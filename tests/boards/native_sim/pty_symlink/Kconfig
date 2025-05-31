@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config PTY_INTERACTIVE_TEST
+	bool "Enable interactive PTY UART test"
+	default n
+	help
+	  Enable the test_uart_echo test which waits for UART input and responds.
+	  This test blocks execution waiting for user input, so it should only be
+	  enabled when specifically testing interactive UART communication.
+	  The test is designed to be used by test_e2e.sh for automated E2E testing.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,12 @@
+tests:
+  boards.native_sim.pty_symlink:
+    build_only: false
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - uart
+      - pty
+      - symlink

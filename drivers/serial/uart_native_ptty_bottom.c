@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "uart_native_ptty_bottom.h"
+
 #undef _XOPEN_SOURCE
 /* Note: This is used only for interaction with the host C library, and is therefore exempt of
  * coding guidelines rule A.4&5 which applies to the embedded code using embedded libraries

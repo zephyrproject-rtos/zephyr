@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h> /* For unlink() function */
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
