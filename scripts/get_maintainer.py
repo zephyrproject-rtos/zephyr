@@ -109,6 +109,16 @@ def _parse_args():
         nargs="?",
         help="List all areas maintained by maintainer.")
 
+    # New arguments for filtering
+    areas_parser.add_argument(
+        "--without-maintainers",
+        action="store_true",
+        help="Exclude areas that have maintainers")
+    areas_parser.add_argument(
+        "--without-collaborators",
+        action="store_true",
+        help="Exclude areas that have collaborators")
+
     areas_parser.set_defaults(cmd_fn=Maintainers._areas_cmd)
 
     orphaned_parser = subparsers.add_parser(
@@ -290,6 +300,13 @@ class Maintainers:
         for area in self.areas.values():
             maintainers = multiline(area.maintainers)
             collaborators = multiline(area.collaborators)
+
+            # Filter based on new arguments
+            if getattr(args, "without_maintainers", False) and area.maintainers:
+                continue
+            if getattr(args, "without_collaborators", False) and area.collaborators:
+                continue
+
             if args.maintainer:
                 if args.maintainer in area.maintainers:
                     table.append([
@@ -304,7 +321,6 @@ class Maintainers:
                     collaborators
                 ])
         if table:
-            # Use plain tablefmt for better multi-line cell support
             print(tabulate(
                 table,
                 headers=["Area", "Maintainers", "Collaborators"],
