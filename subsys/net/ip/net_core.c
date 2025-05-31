@@ -105,6 +105,51 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 			return ret;
 		}
 	}
+	
+	/* After receiving the packet from the current l2 interface, we do a look ahead
+	 * for other l2 protocols (like VLAN or MACsec).
+	 * If a next layer interface is found, the new interface is set and the packet
+	 * is processed again. (NET_CONTINUE)
+	 */
+
+	if (IS_ENABLED(CONFIG_NET_VLAN)) {
+		if (net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_VLAN) {
+			struct net_vlan_hdr hdr_vlan;
+
+			/* VLAN header points at the ethertype */
+			net_buf_push(pkt->frags, 2);
+			memcpy(&hdr_vlan, net_pkt_data(pkt), sizeof(struct net_vlan_hdr));
+			net_buf_pull(pkt->frags, sizeof(struct net_vlan_hdr));
+
+			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan.tci));
+			net_pkt_set_ll_proto_type(pkt, ntohs(hdr_vlan.type));
+		}
+		if (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC) {
+			/* Set the packet priority based on the vlan PCP */
+			net_pkt_set_priority(pkt, net_vlan2priority(net_pkt_vlan_priority(pkt)));
+
+			struct net_if *vlan_iface =
+			net_eth_get_vlan_iface(net_pkt_iface(pkt), net_pkt_vlan_tag(pkt));
+			
+			/* If we receive a packet with a VLAN tag, for that we don't
+			 * have a VLAN interface, drop the packet.
+			 */
+			if (vlan_iface == NULL) {
+				NET_DBG("Dropping frame, no VLAN interface for tag %d",
+					net_pkt_vlan_tag(pkt));
+				net_stats_update_processing_error(iface);
+				return NET_DROP;
+			} 
+			net_pkt_set_iface(pkt, vlan_iface);
+
+			/* If the new interface is different to the original one,
+			 * continue l2 parsing. Otherwise continue with the processing
+			 * as we have only a priority tagged packet. */
+			if (net_pkt_iface(pkt) != net_pkt_orig_iface(pkt)) {
+				return NET_CONTINUE;
+			}
+		}
+	}
 
 	net_pkt_set_l2_processed(pkt, true);
 
@@ -587,7 +632,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
 		net_pkt_set_orig_iface(pkt, iface);
 	}
-
+	
 	net_pkt_set_iface(pkt, iface);
 
 	if (!net_pkt_filter_recv_ok(pkt)) {
