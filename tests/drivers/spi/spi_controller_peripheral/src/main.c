@@ -155,6 +155,8 @@ static int check_buffers(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set,
 	static uint8_t rx_data[256];
 	int rx_len;
 	int tx_len;
+	int len;
+	int result;
 
 	if (!tx_set || !rx_set) {
 		return 0;
@@ -165,8 +167,17 @@ static int check_buffers(struct spi_buf_set *tx_set, struct spi_buf_set *rx_set,
 	if (same_size && (rx_len != tx_len)) {
 		return -1;
 	}
-
-	return memcmp(tx_data, rx_data, rx_len);
+	len = MIN(MIN(rx_len, tx_len), MIN(sizeof(rx_data), sizeof(tx_data)));
+	result = memcmp(tx_data, rx_data, len);
+	if (result != 0) {
+		for (size_t i = 0; i < len; i++) {
+			if (tx_data[i] != rx_data[i]) {
+				TC_PRINT("[%d] tx: 0x%02x, rx: 0x%02x\n", i, tx_data[i],
+					 rx_data[i]);
+			}
+		}
+	}
+	return result;
 }
 
 /** Calculate expected number of received bytes by the SPI peripheral.
