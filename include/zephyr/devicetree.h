@@ -436,6 +436,44 @@
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
 
 /**
+ * @brief Get a child node by index
+ *
+ * This macro retrieves a child node of a specified node by its
+ * index. The index corresponds to the order in which the child nodes
+ * are defined in the Devicetree source.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ * / {
+ *     parent_node {
+ *         first_child {
+ *             reg = <0>;
+ *         };
+ *         second_child {
+ *             reg = <1>;
+ *         };
+ *     };
+ * };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ * DT_CHILD_BY_IDX(DT_NODELABEL(parent_node), 0) // "first_child"
+ * DT_CHILD_BY_IDX(DT_NODELABEL(parent_node), 1) // "second_child"
+ * @endcode
+ *
+ * @param node_id The identifier of the parent node. This can be obtained
+ *                using macros like DT_NODELABEL(), DT_PATH(), or similar.
+ * @param idx     The index of the child node to retrieve. Must be within
+ *                the range of 0 to DT_CHILD_NUM(node_id) - 1.
+ *
+ * @return The identifier of the child node at the specified index.
+ */
+#define DT_CHILD_BY_IDX(node_id, idx) UTIL_CAT(UTIL_CAT(node_id, _CHILD_IDX_), idx)
+
+/**
  * @brief Get a node identifier for a status `okay` node with a compatible
  *
  * Use this if you want to get an arbitrary enabled node with a given

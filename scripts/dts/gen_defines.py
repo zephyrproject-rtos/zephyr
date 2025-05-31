@@ -478,9 +478,11 @@ def write_children(node: edtlib.Node) -> None:
     out_dt_define(f"{node.z_path_id}_CHILD_NUM", len(node.children))
 
     ok_nodes_num = 0
-    for child in node.children.values():
+    for i, child in enumerate(node.children.values()):
         if child.status == "okay":
             ok_nodes_num = ok_nodes_num + 1
+
+        out_dt_define(f"{node.z_path_id}_CHILD_IDX_{i}", f"DT_{child.z_path_id}")
 
     out_dt_define(f"{node.z_path_id}_CHILD_NUM_STATUS_OKAY", ok_nodes_num)
 
