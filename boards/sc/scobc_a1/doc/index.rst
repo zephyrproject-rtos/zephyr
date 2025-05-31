@@ -1,9 +1,9 @@
-.. zephyr:board:: scobc_module1
+.. zephyr:board:: scobc_a1
 
 Overview
 ********
 
-`Space Cubics`_ OBC module 1 is a single board computer for spacecraft,
+`Space Cubics`_ OBC Module A1 (SC-OBC Module A1) is a single board computer for spacecraft,
 especially for 3U CubeSats.  The board is based on Xilinx Artix-7 FPGA and
 implements ARM Cortex M3 as the main CPU.
 
@@ -21,7 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The Space Cubics OBC module 1 provides the following hardware features:
+The SC-OBC Module A1 provides the following hardware features:
 
 +-----------+------------+------------------------------------+
 | Interface | Controller | Driver/Component                   |
@@ -35,7 +35,7 @@ The Space Cubics OBC module 1 provides the following hardware features:
 +-----------+------------+------------------------------------+
 
 The default configuration for the board can be found in the defconfig file:
-:file:`boards/arm/scobc_module1/scobc_module1_defconfig`.
+:file:`boards/arm/scobc_a1/scobc_a1_defconfig`.
 
 Other hardware features are not currently supported by the port.
 
@@ -71,15 +71,15 @@ for the default design:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: scobc_module1
+   :board: scobc_a1
    :goals: flash
 
 After flashing, you should see message similar to the following in the terminal:
 
 .. code-block:: console
 
-   *** Booting Zephyr OS build zephyr-v2.7.99  ***
-   Hello World! scobc_module1
+   *** Booting Zephyr OS build v4.1.0-4619-gd571a59b0a43 ***
+   Hello World! scobc_a1/designstart_fpga_cortex_m3
 
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal RAM in the FPGA.
@@ -91,7 +91,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: scobc_module1
+   :board: scobc_a1
    :goals: debug
 
 Step through the application in your debugger, and you should see a message
@@ -99,8 +99,8 @@ similar to the following in the terminal:
 
 .. code-block:: console
 
-   *** Booting Zephyr OS build zephyr-v2.7.99  ***
-   Hello World! scobc_module1
+   *** Booting Zephyr OS build v4.1.0-4619-gd571a59b0a43 ***
+   Hello World! scobc_a1/designstart_fpga_cortex_m3
 
 References
 **********
