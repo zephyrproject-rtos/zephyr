@@ -17,6 +17,16 @@
 #include <zephyr/toolchain.h>
 
 #include <hal/nrf_auxpll.h>
+#include <zephyr/dt-bindings/clock/nrf-auxpll.h>
+
+/* Check dt-bindings match MDK frequency division definitions*/
+BUILD_ASSERT(                                                             \
+	NRF_AUXPLL_FREQ_DIV_MIN     	== NRF_AUXPLL_FREQUENCY_DIV_MIN   	&&    \
+	NRF_AUXPLL_FREQ_DIV_AUDIO_44K1  == NRF_AUXPLL_FREQUENCY_AUDIO_44K1 	&&    \
+	NRF_AUXPLL_FREQ_DIV_USB24M      == NRF_AUXPLL_FREQUENCY_USB_24M   	&&    \
+	NRF_AUXPLL_FREQ_DIV_AUDIO_48K   == NRF_AUXPLL_FREQUENCY_AUDIO_48K 	&&    \
+	NRF_AUXPLL_FREQ_DIV_MAX         == NRF_AUXPLL_FREQUENCY_DIV_MAX,          \
+	"Different AUXPLL frequency definitions in MDK and devicetree bindings");
 
 /* maximum lock time in ms, >10x time observed experimentally */
 #define AUXPLL_LOCK_TIME_MAX_MS  20
@@ -28,7 +38,7 @@ struct clock_control_nrf_auxpll_config {
 	uint32_t ref_clk_hz;
 	uint32_t ficr_ctune;
 	nrf_auxpll_config_t cfg;
-	uint16_t frequency;
+	nrf_auxpll_freq_div_ratio_t frequency;
 	nrf_auxpll_ctrl_outsel_t out_div;
 };
 
@@ -124,6 +134,13 @@ static int clock_control_nrf_auxpll_init(const struct device *dev)
 }
 
 #define CLOCK_CONTROL_NRF_AUXPLL_DEFINE(n)                                                         \
+	BUILD_ASSERT(                                                                            \
+		DT_INST_PROP(n, nordic_frequency) == NRF_AUXPLL_FREQUENCY_DIV_MIN   ||          \
+		DT_INST_PROP(n, nordic_frequency) == NRF_AUXPLL_FREQUENCY_AUDIO_44K1||          \
+		DT_INST_PROP(n, nordic_frequency) == NRF_AUXPLL_FREQUENCY_USB_24M   ||          \
+		DT_INST_PROP(n, nordic_frequency) == NRF_AUXPLL_FREQUENCY_AUDIO_48K ||          \
+		DT_INST_PROP(n, nordic_frequency) == NRF_AUXPLL_FREQUENCY_DIV_MAX,              \
+		"Invalid nordic,frequency value in DeviceTree for AUXPLL instance " #n);      \
 	static const struct clock_control_nrf_auxpll_config config##n = {                          \
 		.auxpll = (NRF_AUXPLL_Type *)DT_INST_REG_ADDR(n),                                  \
 		.ref_clk_hz = DT_PROP(DT_INST_CLOCKS_CTLR(n), clock_frequency),                    \
