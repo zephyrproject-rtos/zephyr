@@ -126,7 +126,7 @@ config BT_CTLR_RX_POLL
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Hidden
 	int
-	depends on !BT_HCI_RAW
+	depends on BT_DRV_RX_HIGH_PRIO_SUPPORT
 	default 448
 	help
 	  Controller's Co-Operative high priority Rx thread stack size.
