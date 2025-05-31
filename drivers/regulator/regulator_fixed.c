@@ -93,7 +93,7 @@ static int regulator_fixed_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		int ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT);
+		int ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
 
 		if (ret < 0) {
 			return ret;
