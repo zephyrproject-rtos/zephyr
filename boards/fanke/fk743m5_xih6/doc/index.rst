@@ -122,7 +122,7 @@ Then, press the RESET button, you should see the following message:
 Debugging
 =========
 
-This current Zephyr port does not support debugging.
+Use SWD with a J-Link or ST-Link.
 
 References
 **********
