@@ -90,19 +90,19 @@ static inline int _xtensa_handle_one_int1(unsigned int mask)
 	if (mask & 0x7f) {
 		if (mask & 0x7) {
 			if (mask & (1 << 0)) {
-				struct _isr_table_entry *e = &_sw_isr_table[0];
+				const struct _isr_table_entry *e = &_sw_isr_table[0];
 
 				e->isr(e->arg);
 				return 1 << 0;
 			}
 			if (mask & (1 << 1)) {
-				struct _isr_table_entry *e = &_sw_isr_table[1];
+				const struct _isr_table_entry *e = &_sw_isr_table[1];
 
 				e->isr(e->arg);
 				return 1 << 1;
 			}
 			if (mask & (1 << 2)) {
-				struct _isr_table_entry *e = &_sw_isr_table[2];
+				const struct _isr_table_entry *e = &_sw_isr_table[2];
 
 				e->isr(e->arg);
 				return 1 << 2;
@@ -110,26 +110,26 @@ static inline int _xtensa_handle_one_int1(unsigned int mask)
 		} else {
 			if (mask & 0x18) {
 				if (mask & (1 << 3)) {
-					struct _isr_table_entry *e = &_sw_isr_table[3];
+					const struct _isr_table_entry *e = &_sw_isr_table[3];
 
 					e->isr(e->arg);
 					return 1 << 3;
 				}
 				if (mask & (1 << 4)) {
-					struct _isr_table_entry *e = &_sw_isr_table[4];
+					const struct _isr_table_entry *e = &_sw_isr_table[4];
 
 					e->isr(e->arg);
 					return 1 << 4;
 				}
 			} else {
 				if (mask & (1 << 5)) {
-					struct _isr_table_entry *e = &_sw_isr_table[5];
+					const struct _isr_table_entry *e = &_sw_isr_table[5];
 
 					e->isr(e->arg);
 					return 1 << 5;
 				}
 				if (mask & (1 << 6)) {
-					struct _isr_table_entry *e = &_sw_isr_table[6];
+					const struct _isr_table_entry *e = &_sw_isr_table[6];
 
 					e->isr(e->arg);
 					return 1 << 6;
@@ -139,19 +139,19 @@ static inline int _xtensa_handle_one_int1(unsigned int mask)
 	} else {
 		if (mask & 0x18080) {
 			if (mask & (1 << 7)) {
-				struct _isr_table_entry *e = &_sw_isr_table[7];
+				const struct _isr_table_entry *e = &_sw_isr_table[7];
 
 				e->isr(e->arg);
 				return 1 << 7;
 			}
 			if (mask & (1 << 15)) {
-				struct _isr_table_entry *e = &_sw_isr_table[15];
+				const struct _isr_table_entry *e = &_sw_isr_table[15];
 
 				e->isr(e->arg);
 				return 1 << 15;
 			}
 			if (mask & (1 << 16)) {
-				struct _isr_table_entry *e = &_sw_isr_table[16];
+				const struct _isr_table_entry *e = &_sw_isr_table[16];
 
 				e->isr(e->arg);
 				return 1 << 16;
@@ -159,26 +159,26 @@ static inline int _xtensa_handle_one_int1(unsigned int mask)
 		} else {
 			if (mask & 0x60000) {
 				if (mask & (1 << 17)) {
-					struct _isr_table_entry *e = &_sw_isr_table[17];
+					const struct _isr_table_entry *e = &_sw_isr_table[17];
 
 					e->isr(e->arg);
 					return 1 << 17;
 				}
 				if (mask & (1 << 18)) {
-					struct _isr_table_entry *e = &_sw_isr_table[18];
+					const struct _isr_table_entry *e = &_sw_isr_table[18];
 
 					e->isr(e->arg);
 					return 1 << 18;
 				}
 			} else {
 				if (mask & (1 << 19)) {
-					struct _isr_table_entry *e = &_sw_isr_table[19];
+					const struct _isr_table_entry *e = &_sw_isr_table[19];
 
 					e->isr(e->arg);
 					return 1 << 19;
 				}
 				if (mask & (1 << 20)) {
-					struct _isr_table_entry *e = &_sw_isr_table[20];
+					const struct _isr_table_entry *e = &_sw_isr_table[20];
 
 					e->isr(e->arg);
 					return 1 << 20;
@@ -192,7 +192,7 @@ static inline int _xtensa_handle_one_int1(unsigned int mask)
 static inline int _xtensa_handle_one_int2(unsigned int mask)
 {
 	if (mask & (1 << 8)) {
-		struct _isr_table_entry *e = &_sw_isr_table[8];
+		const struct _isr_table_entry *e = &_sw_isr_table[8];
 
 		e->isr(e->arg);
 		return 1 << 8;
@@ -204,26 +204,26 @@ static inline int _xtensa_handle_one_int3(unsigned int mask)
 {
 	if (mask & 0x600) {
 		if (mask & (1 << 9)) {
-			struct _isr_table_entry *e = &_sw_isr_table[9];
+			const struct _isr_table_entry *e = &_sw_isr_table[9];
 
 			e->isr(e->arg);
 			return 1 << 9;
 		}
 		if (mask & (1 << 10)) {
-			struct _isr_table_entry *e = &_sw_isr_table[10];
+			const struct _isr_table_entry *e = &_sw_isr_table[10];
 
 			e->isr(e->arg);
 			return 1 << 10;
 		}
 	} else {
 		if (mask & (1 << 11)) {
-			struct _isr_table_entry *e = &_sw_isr_table[11];
+			const struct _isr_table_entry *e = &_sw_isr_table[11];
 
 			e->isr(e->arg);
 			return 1 << 11;
 		}
 		if (mask & (1 << 21)) {
-			struct _isr_table_entry *e = &_sw_isr_table[21];
+			const struct _isr_table_entry *e = &_sw_isr_table[21];
 
 			e->isr(e->arg);
 			return 1 << 21;
@@ -235,7 +235,7 @@ static inline int _xtensa_handle_one_int3(unsigned int mask)
 static inline int _xtensa_handle_one_int4(unsigned int mask)
 {
 	if (mask & (1 << 12)) {
-		struct _isr_table_entry *e = &_sw_isr_table[12];
+		const struct _isr_table_entry *e = &_sw_isr_table[12];
 
 		e->isr(e->arg);
 		return 1 << 12;
@@ -246,7 +246,7 @@ static inline int _xtensa_handle_one_int4(unsigned int mask)
 static inline int _xtensa_handle_one_int5(unsigned int mask)
 {
 	if (mask & (1 << 13)) {
-		struct _isr_table_entry *e = &_sw_isr_table[13];
+		const struct _isr_table_entry *e = &_sw_isr_table[13];
 
 		e->isr(e->arg);
 		return 1 << 13;
@@ -262,7 +262,7 @@ static inline int _xtensa_handle_one_int6(unsigned int mask)
 static inline int _xtensa_handle_one_int7(unsigned int mask)
 {
 	if (mask & (1 << 14)) {
-		struct _isr_table_entry *e = &_sw_isr_table[14];
+		const struct _isr_table_entry *e = &_sw_isr_table[14];
 
 		e->isr(e->arg);
 		return 1 << 14;
