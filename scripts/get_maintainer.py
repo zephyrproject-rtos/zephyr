@@ -30,6 +30,7 @@ import re
 import shlex
 import subprocess
 import sys
+from tabulate import tabulate
 
 from yaml import load, YAMLError
 try:
@@ -281,12 +282,36 @@ class Maintainers:
 
     def _areas_cmd(self, args):
         # 'areas' subcommand implementation
+        def multiline(items):
+            # Each item on its own line, empty string if none
+            return "\n".join(items) if items else ""
+
+        table = []
         for area in self.areas.values():
+            maintainers = multiline(area.maintainers)
+            collaborators = multiline(area.collaborators)
             if args.maintainer:
                 if args.maintainer in area.maintainers:
-                    print("{:25}\t{}".format(area.name, ",".join(area.maintainers)))
+                    table.append([
+                        area.name,
+                        maintainers,
+                        collaborators
+                    ])
             else:
-                print("{:25}\t{}".format(area.name, ",".join(area.maintainers)))
+                table.append([
+                    area.name,
+                    maintainers,
+                    collaborators
+                ])
+        if table:
+            # Use plain tablefmt for better multi-line cell support
+            print(tabulate(
+                table,
+                headers=["Area", "Maintainers", "Collaborators"],
+                tablefmt="grid",
+                stralign="left",
+                disable_numparse=True
+            ))
 
     def _count_cmd(self, args):
         # 'count' subcommand implementation
