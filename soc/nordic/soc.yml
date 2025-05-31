@@ -126,7 +126,9 @@ runners:
               - nrf54l20/cpuflpr
           - qualifiers:
               - nrf54h20/cpuapp
+              - nrf54h20/cpuapp/iron
               - nrf54h20/cpurad
+              - nrf54h20/cpurad/iron
               - nrf54h20/cpuppr
               - nrf54h20/cpuflpr
           - qualifiers:
@@ -192,7 +194,9 @@ runners:
               - nrf54l20/cpuflpr
           - qualifiers:
               - nrf54h20/cpuapp
+              - nrf54h20/cpuapp/iron
               - nrf54h20/cpurad
+              - nrf54h20/cpurad/iron
               - nrf54h20/cpuppr
               - nrf54h20/cpuflpr
           - qualifiers:
@@ -258,7 +262,9 @@ runners:
               - nrf54l20/cpuflpr
           - qualifiers:
               - nrf54h20/cpuapp
+              - nrf54h20/cpuapp/iron
               - nrf54h20/cpurad
+              - nrf54h20/cpurad/iron
               - nrf54h20/cpuppr
               - nrf54h20/cpuflpr
           - qualifiers:
