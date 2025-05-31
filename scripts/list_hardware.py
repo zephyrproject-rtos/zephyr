@@ -4,13 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePath
+
 import pykwalify.core
-import sys
-from typing import List
 import yaml
-import re
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -19,11 +19,11 @@ except ImportError:
 
 
 SOC_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'soc-schema.yml')
-with open(SOC_SCHEMA_PATH, 'r') as f:
+with open(SOC_SCHEMA_PATH) as f:
     soc_schema = yaml.load(f.read(), Loader=SafeLoader)
 
 ARCH_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'arch-schema.yml')
-with open(ARCH_SCHEMA_PATH, 'r') as f:
+with open(ARCH_SCHEMA_PATH) as f:
     arch_schema = yaml.load(f.read(), Loader=SafeLoader)
 
 SOC_YML = 'soc.yml'
@@ -116,7 +116,7 @@ class Systems:
         '''Load SoCs from a soc.yml file.
         '''
         try:
-            with open(socs_file, 'r') as f:
+            with open(socs_file) as f:
                 socs_yaml = f.read()
         except FileNotFoundError as e:
             sys.exit(f'ERROR: socs.yml file not found: {socs_file.as_posix()}', e)
@@ -172,8 +172,8 @@ class Systems:
 @dataclass
 class Soc:
     name: str
-    cpuclusters: List[str]
-    folder: List[str]
+    cpuclusters: list[str]
+    folder: list[str]
     series: str = ''
     family: str = ''
 
@@ -186,17 +186,17 @@ class Soc:
 @dataclass
 class Series:
     name: str
-    folder: List[str]
+    folder: list[str]
     family: str
-    socs: List[Soc]
+    socs: list[Soc]
 
 
 @dataclass
 class Family:
     name: str
-    folder: List[str]
-    series: List[Series]
-    socs: List[Soc]
+    folder: list[str]
+    series: list[Series]
+    socs: list[Soc]
 
 
 def unique_paths(paths):
@@ -216,8 +216,7 @@ def find_v2_archs(args):
             try:
                 pykwalify.core.Core(source_data=archs, schema_data=arch_schema).validate()
             except pykwalify.errors.SchemaError as e:
-                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
-                         .format(archs_yml.as_posix(), e))
+                sys.exit(f'ERROR: Malformed "build" section in file: {archs_yml.as_posix()}\n{e}')
 
             if args.arch is not None:
                 archs = {'archs': list(filter(
