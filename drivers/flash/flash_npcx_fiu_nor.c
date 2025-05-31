@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(flash_npcx_fiu_nor, CONFIG_FLASH_LOG_LEVEL);
 #define BLOCK_64K_SIZE KB(64)
 #define BLOCK_4K_SIZE  KB(4)
 
+#define POLLING_BUSY_SLEEP_TIME_US 100
+
 /* Device config */
 struct flash_npcx_nor_config {
 	/* QSPI bus device for mutex control and bus configuration */
@@ -153,6 +155,7 @@ static int flash_npcx_nor_wait_until_ready(const struct device *dev)
 			return 0;
 		}
 
+		k_usleep(POLLING_BUSY_SLEEP_TIME_US);
 	} while ((k_uptime_get() - st) < config->max_timeout);
 
 	return -EBUSY;
