@@ -1,0 +1,4 @@
+&flash0 {
+       write-block-size = <32>;
+};
+
