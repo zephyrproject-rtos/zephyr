@@ -74,10 +74,12 @@ config NET_ZPERF_MAX_SESSIONS
 config NET_ZPERF_UDP_REPORT_RETANSMISSION_COUNT
 	int "Maximum number of UDP upload report retransmissions"
 	depends on NET_UDP
-	range 1 16
+	range 0 16
 	default 4
 	help
 	  Maximum number of retries zperf will take to retrieve the UDP upload
-	  report from the server.
+	  report from the server. `0` means the report will not be requested
+	  at all, which is useful for testing purposes.
+
 
 endif
