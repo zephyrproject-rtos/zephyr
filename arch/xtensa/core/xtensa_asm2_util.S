@@ -335,6 +335,12 @@ noflush:
 	l32i a3, a2, ___xtensa_irq_bsa_t_a3_OFFSET
 	s32i a1, a3, 0
 
+#if defined(CONFIG_XTENSA_LIBC) && defined(CONFIG_MULTITHREADING)
+	rsr   a6, ZSR_CPU
+	l32i  a6, a6, ___cpu_t_current_OFFSET
+	call4 _xclib_update_reent_ptr
+#endif
+
 	/* Switch stack pointer and restore.  The jump to
 	 * _restore_context does not return as such, but we arrange
 	 * for the restored "next" address to be immediately after for
