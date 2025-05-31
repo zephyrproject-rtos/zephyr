@@ -68,6 +68,10 @@
 	clocks = <&pll>;
 };
 
+&exti {
+	status = "okay";
+};
+
 &gpioa {
 	status = "okay";
 };
