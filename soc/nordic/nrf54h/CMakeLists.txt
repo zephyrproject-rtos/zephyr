@@ -8,6 +8,7 @@ if(CONFIG_ARM)
   endif()
 endif()
 
+zephyr_library_sources(pinctrl.c)
 zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c)
 
 zephyr_include_directories(.)
