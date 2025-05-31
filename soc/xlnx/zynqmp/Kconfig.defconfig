@@ -12,7 +12,14 @@ config NUM_IRQS
 	default 220
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ttc0),clock-frequency) if XLNX_PSTTC_TIMER_INDEX = 0
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ttc1),clock-frequency) if XLNX_PSTTC_TIMER_INDEX = 1
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ttc2),clock-frequency) if XLNX_PSTTC_TIMER_INDEX = 2
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ttc3),clock-frequency) if XLNX_PSTTC_TIMER_INDEX = 3
 	default 5000000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
 
 endif # SOC_XILINX_ZYNQMP_RPU
 

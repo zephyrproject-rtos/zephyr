@@ -1,0 +1,6 @@
+board:
+  name: zub1cg_r5
+  full_name: ZUBoard 1CG Development Board RPU Cortex-R5
+  vendor: avnet
+  socs:
+  - name: zynqmp_rpu

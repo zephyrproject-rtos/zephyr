@@ -1,0 +1,141 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/xilinx/zynqmp_rpu.dtsi>
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	model = "ZUBoard 1CG Cortex-R5";
+	compatible = "xlnx,zynqmp-r5";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ocm = &ocm;
+	};
+
+	aliases {
+		led0 = &red_led_0;
+		sw0 = &mio_push_btn;
+		eeprom-0 = &eeprom0;
+	};
+
+	leds: leds{
+		compatible = "gpio-leds";
+
+		red_led_0: d6 {
+			gpios = <&psgpio_bank1 7 GPIO_ACTIVE_HIGH>;
+			label = "D6";
+		};
+
+		red_led_1: d7 {
+			gpios = <&psgpio_bank0 25 GPIO_ACTIVE_HIGH>;
+			label = "D7";
+		};
+
+		red_led_2: d8 {
+			gpios = <&psgpio_bank0 24 GPIO_ACTIVE_HIGH>;
+			label = "D8";
+		};
+
+		red_led_3: d9 {
+			gpios = <&psgpio_bank0 7 GPIO_ACTIVE_HIGH>;
+			label = "D9";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		mio_push_btn: mio_push_btn {
+			gpios = <&psgpio_bank1 6 GPIO_ACTIVE_LOW>;
+			label = "MIO Push Button";
+		};
+
+		user_switch_1: sw1 {
+			gpios = <&psgpio_bank1 18 GPIO_ACTIVE_HIGH>;
+			label = "User Switch 1";
+		};
+
+		user_switch_2: sw2 {
+			gpios = <&psgpio_bank1 14 GPIO_ACTIVE_HIGH>;
+			label = "User Switch 2";
+		};
+
+		user_switch_3: sw3 {
+			gpios = <&psgpio_bank1 13 GPIO_ACTIVE_HIGH>;
+			label = "User Switch 3";
+		};
+
+		user_switch_4: sw4 {
+			gpios = <&psgpio_bank1 5 GPIO_ACTIVE_HIGH>;
+			label = "User Switch 4";
+		};
+	};
+
+	i2c_ref_clk: i2c_ref_clk {
+		compatible = "fixed-clock";
+		clock-frequency = <100000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		/* rproc_0_reserved in Petalinux zynqmp_openamp.dtsi */
+		sram1: memory@3ed00000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ed00000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "SRAM1";
+			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		};
+	};
+};
+
+&ttc0 {
+	status = "okay";
+	clock-frequency = <100000000>;
+};
+
+&psgpio {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clocks = <&i2c_ref_clk>;
+	clock-frequency = <400000>;
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+
+	mac_eeprom: mac-eeprom@58 {
+		compatible = "atmel,at24mac402";
+		reg = <0x58>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac_address: mac-address@9a {
+			reg = <0x9a 0x06>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <DT_FREQ_M(100)>;
+};
