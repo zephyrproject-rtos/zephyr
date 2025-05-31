@@ -1,0 +1,20 @@
+# Copyright 2025 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config PTP_CLOCK_HA1588
+	bool "HA1588 PTP Clock driver"
+	default y
+	depends on DT_HAS_HA1588_RTC_1_0_ENABLED && NET_L2_PTP
+	help
+	  Enable ha1588 PTP clock support.
+
+if PTP_CLOCK_HA1588
+
+config PTP_CLOCK_HA1588_TSU
+	bool "HA1588 TSU support"
+	help
+	  Enable driver support for ha1588 Time-Stamp Unit.
+	  Used in hardware designs where Ethernet MAC lacks
+	  timestamping functionality.
+
+endif

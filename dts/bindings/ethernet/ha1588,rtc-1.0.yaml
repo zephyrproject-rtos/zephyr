@@ -1,0 +1,32 @@
+# Copyright 2025 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: ha1588 PTP (Precision Time Protocol) Clock and TSU
+
+compatible: "ha1588,rtc-1.0"
+
+include: ["base.yaml"]
+
+properties:
+  ha1588,period:
+    required: true
+    type: array
+    description: |
+      Nominal period of ha1588 RTC clock.
+      Provided as array of period in nanoseconds followed by fractional nanoseconds.
+      For example, set the property like this for a 125 MHz frequency / 8 ns clock:
+      ha1588,period = <0x8 0x0>;
+  ha1588,tsu:
+    required: true
+    type: boolean
+    description: |
+      Does the ha1588 instance have the time stamping unit enabled?
+      This is true for almost all ha1588 devices.
+  ha1588,ts-all-supported:
+    required: true
+    type: boolean
+    description: |
+      Does the ha1588 instance have a TSU that can timestamp all
+      incoming packets (including non-TSU packets)?
+      This is a non-standard option and only available in some
+      ha1588 devices.
