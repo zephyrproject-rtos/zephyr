@@ -9,7 +9,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#if defined(CONFIG_BOARD_NUCLEO_F091RC) || \
+#if defined(CONFIG_BOARD_SAME54_XPRO)
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
+
+#elif defined(CONFIG_BOARD_NUCLEO_F091RC) || \
 	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
 	defined(CONFIG_BOARD_STM32F3_DISCO) || \
 	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
