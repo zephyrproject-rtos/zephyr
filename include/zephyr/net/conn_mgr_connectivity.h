@@ -42,9 +42,14 @@ extern "C" {
 #define NET_MGMT_CONN_IF_EVENT			(NET_MGMT_IFACE_BIT | NET_MGMT_CONN_BASE)
 
 enum net_event_conn_cmd {
-	NET_EVENT_CONN_CMD_IF_TIMEOUT = 1,
+	NET_EVENT_CONN_CMD_IF_TIMEOUT,
 	NET_EVENT_CONN_CMD_IF_FATAL_ERROR,
+
+	NET_EVENT_CONN_CMD_MAX
 };
+
+BUILD_ASSERT(NET_EVENT_CONN_CMD_MAX <= NET_MGMT_MAX_COMMANDS,
+	     "Number of events in net_event_conn_cmd exceeds the limit");
 
 /** @endcond */
 
@@ -52,13 +57,13 @@ enum net_event_conn_cmd {
  * @brief net_mgmt event raised when a connection attempt times out
  */
 #define NET_EVENT_CONN_IF_TIMEOUT					\
-	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_TIMEOUT)
+	(NET_MGMT_CONN_IF_EVENT | BIT64(NET_EVENT_CONN_CMD_IF_TIMEOUT))
 
 /**
  * @brief net_mgmt event raised when a non-recoverable connectivity error occurs on an iface
  */
 #define NET_EVENT_CONN_IF_FATAL_ERROR					\
-	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_FATAL_ERROR)
+	(NET_MGMT_CONN_IF_EVENT | BIT64(NET_EVENT_CONN_CMD_IF_FATAL_ERROR))
 
 
 /**

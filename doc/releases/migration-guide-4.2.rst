@@ -465,6 +465,14 @@ Networking
   need to update their response callback implementations. To retain current
   behavior, simply return 0 from the callback.
 
+* The API signature of ``net_mgmt`` request handler :c:type:`net_mgmt_request_handler_t`
+  has changed. The management event value is changed from ``uint32_t`` to ``uint64_t``.
+  The change allows event number values to be bit masks instead of enum values.
+  The layer code still stays as a enum value so one cannot directly compare the event
+  numbers. The :c:macro:`NET_MGMT_LAYER_CODE` and :c:macro:`NET_MGMT_GET_COMMAND` should
+  be used to get the layer code and management event command from the actual event value
+  in the request event handler.
+
 OpenThread
 ==========
 
