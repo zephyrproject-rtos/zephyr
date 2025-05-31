@@ -235,7 +235,7 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 	static const struct ina230_config drv_config_##type##inst = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.config = (DT_INST_PROP_OR(inst, high_precision, 0) << 12) |                       \
-			  DT_INST_PROP(inst, config) | (DT_INST_ENUM_IDX(inst, avg_count) << 9) |  \
+			  (DT_INST_ENUM_IDX(inst, avg_count) << 9) |                               \
 			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                 \
 			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |               \
 			  DT_INST_ENUM_IDX(inst, adc_mode),                                        \
@@ -247,7 +247,7 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 				    DT_INST_PROP(inst, rshunt_micro_ohms))) >>                     \
 				  (DT_INST_PROP_OR(inst, high_precision, 0) << 1)),                \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
-			    ())};   \
+			    ())};                                                                  \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##type##inst,             \
 				     &drv_config_##type##inst, POST_KERNEL,                        \
 				     CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
