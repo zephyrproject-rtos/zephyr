@@ -26,3 +26,11 @@ macro reset
     sysbus LoadELF $elf
 """
 runMacro $reset
+
+# ZBus tests take up a lot of time to finish running; let's speed them up
+python
+"""
+cpu = self.Machine['sysbus.cpu']
+if self.Machine.SystemBus.TryGetAllSymbolAddresses("CONFIG_ZBUS", context=cpu)[0]:
+    Antmicro.Renode.Peripherals.Plugins.ZephyrMode.EnableZephyrMode(cpu)
+"""

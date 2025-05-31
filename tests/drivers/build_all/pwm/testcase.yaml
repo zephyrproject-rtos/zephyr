@@ -27,7 +27,7 @@ tests:
   drivers.pwm.rv32m1.tpm.build:
     platform_allow: rv32m1_vega/openisa_rv32m1/ri5cy
   drivers.pwm.sifive.build:
-    platform_allow: hifive1@B
+    platform_allow: hifive1_revb
   drivers.pwm.npcx.build:
     platform_allow: npcx7m6fb_evb
   drivers.pwm.nrf.sw.build:

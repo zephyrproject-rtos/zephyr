@@ -3,4 +3,4 @@ board:
   full_name: QEMU Emulation for RISCV32 XIP
   vendor: qemu
   socs:
-    - name: fe310
+    - name: fe310_g002
