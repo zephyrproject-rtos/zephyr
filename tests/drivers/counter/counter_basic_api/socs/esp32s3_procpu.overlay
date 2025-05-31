@@ -1,5 +1,8 @@
 &timer3 {
 	status = "okay";
+	counter {
+		status = "okay";
+	};
 };
 
 &rtc_timer {
