@@ -227,7 +227,7 @@
 			status = "okay";
 		};
 
-		test_i2c: i2c@11112222 {
+		test_i2c: test_i2c1: i2c@11112222 {
 			#address-cells = < 1 >;
 			#size-cells = < 0 >;
 			compatible = "vnd,i2c";
@@ -318,7 +318,7 @@
 			status = "okay";
 		};
 
-		test_spi: spi@33334444 {
+		test_spi: test_spi1: spi@33334444 {
 			#address-cells = < 1 >;
 			#size-cells = < 0 >;
 			compatible = "vnd,spi";
