@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2022 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: npck3m8k_evb
+name: Nuvoton NPCK3M8K DFT Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 192
+supported:
+  - adc
+  - i2c
