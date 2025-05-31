@@ -399,11 +399,7 @@ static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db,
 /* Some MCU's don't support 7B or 9B datawidth */
 #ifdef LL_USART_DATAWIDTH_7B
 	case UART_CFG_DATA_BITS_7:
-		if (p == UART_CFG_PARITY_NONE) {
-			return LL_USART_DATAWIDTH_7B;
-		} else {
-			return LL_USART_DATAWIDTH_8B;
-		}
+		return LL_USART_DATAWIDTH_7B;
 #endif	/* LL_USART_DATAWIDTH_7B */
 #ifdef LL_USART_DATAWIDTH_9B
 	case UART_CFG_DATA_BITS_9:
@@ -411,13 +407,6 @@ static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db,
 #endif	/* LL_USART_DATAWIDTH_9B */
 	case UART_CFG_DATA_BITS_8:
 	default:
-		if (p == UART_CFG_PARITY_NONE) {
-			return LL_USART_DATAWIDTH_8B;
-#ifdef LL_USART_DATAWIDTH_9B
-		} else {
-			return LL_USART_DATAWIDTH_9B;
-#endif
-		}
 		return LL_USART_DATAWIDTH_8B;
 	}
 }
@@ -429,27 +418,15 @@ static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(uint32_t db,
 /* Some MCU's don't support 7B or 9B datawidth */
 #ifdef LL_USART_DATAWIDTH_7B
 	case LL_USART_DATAWIDTH_7B:
-		if (p == LL_USART_PARITY_NONE) {
-			return UART_CFG_DATA_BITS_7;
-		} else {
-			return UART_CFG_DATA_BITS_6;
-		}
+		return UART_CFG_DATA_BITS_7;
 #endif	/* LL_USART_DATAWIDTH_7B */
 #ifdef LL_USART_DATAWIDTH_9B
 	case LL_USART_DATAWIDTH_9B:
-		if (p == LL_USART_PARITY_NONE) {
-			return UART_CFG_DATA_BITS_9;
-		} else {
-			return UART_CFG_DATA_BITS_8;
-		}
+		return UART_CFG_DATA_BITS_9;
 #endif	/* LL_USART_DATAWIDTH_9B */
 	case LL_USART_DATAWIDTH_8B:
 	default:
-		if (p == LL_USART_PARITY_NONE) {
-			return UART_CFG_DATA_BITS_8;
-		} else {
-			return UART_CFG_DATA_BITS_7;
-		}
+		return UART_CFG_DATA_BITS_8;
 	}
 }
 
