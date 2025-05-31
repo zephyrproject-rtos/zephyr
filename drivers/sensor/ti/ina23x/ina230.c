@@ -29,41 +29,23 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
-	uint32_t bus_uv, power_uw;
-	int32_t current_ua;
+	int32_t val_micro;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		bus_uv = data->bus_voltage * config->uv_lsb;
-
-		/* convert to fractional volts (units for voltage channel) */
-		val->val1 = bus_uv / 1000000U;
-		val->val2 = bus_uv % 1000000U;
+		val_micro = data->bus_voltage * config->uv_lsb;
 		break;
-
 	case SENSOR_CHAN_CURRENT:
-		/* see datasheet "Programming" section for reference */
-		current_ua = data->current * config->current_lsb;
-
-		/* convert to fractional amperes */
-		val->val1 = current_ua / 1000000L;
-		val->val2 = current_ua % 1000000L;
+		val_micro = data->current * config->current_lsb;
 		break;
-
 	case SENSOR_CHAN_POWER:
-		power_uw = data->power * config->power_scale * config->current_lsb;
-
-		/* convert to fractional watts */
-		val->val1 = (int32_t)(power_uw / 1000000U);
-		val->val2 = (int32_t)(power_uw % 1000000U);
-
+		val_micro = data->power * config->power_scale * config->current_lsb;
 		break;
-
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return sensor_value_from_micro(val, val_micro);
 }
 
 static int ina230_sample_fetch(const struct device *dev, enum sensor_channel chan)
