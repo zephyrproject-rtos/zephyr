@@ -4,14 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menu "POSIX Options"
-
-rsource "Kconfig.profile"
-
+# zephyr-keep-sorted-start
 rsource "Kconfig.aio"
 rsource "Kconfig.barrier"
-rsource "Kconfig.c_lang_r"
-rsource "Kconfig.c_lib_ext"
 rsource "Kconfig.device_io"
 rsource "Kconfig.fd_mgmt"
 rsource "Kconfig.file_system_r"
@@ -29,19 +24,16 @@ rsource "Kconfig.signal"
 rsource "Kconfig.spinlock"
 rsource "Kconfig.sync_io"
 rsource "Kconfig.timer"
+# zephyr-keep-sorted-stop
 
 menu "X/Open system interfaces"
 
+# zephyr-keep-sorted-start
 rsource "Kconfig.xsi_realtime"
 rsource "Kconfig.xsi_single_process"
 rsource "Kconfig.xsi_streams"
 rsource "Kconfig.xsi_system_logging"
 rsource "Kconfig.xsi_threads_ext"
+# zephyr-keep-sorted-stop
 
 endmenu # "X/Open system interfaces"
-
-rsource "Kconfig.compat"
-
-rsource "Kconfig.toolchain"
-
-endmenu # "POSIX Options"
