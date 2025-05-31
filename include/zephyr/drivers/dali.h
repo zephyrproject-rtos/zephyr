@@ -122,7 +122,7 @@ static inline int dali_receive(const struct device *dev, dali_rx_callback_t call
  * @retval -EINVAL  if invalid parametr was passed to function
  * @retval -ECOMM   if collision occured during transmission
  */
-static inline int dali_send(const struct device *dev, const struct dali_frame *frame,-
+static inline int dali_send(const struct device *dev, const struct dali_frame *frame,
 			    dali_tx_callback_t callback, void *user_data)
 {
 	const struct dali_driver_api *api = (const struct dali_driver_api *)dev->api;
