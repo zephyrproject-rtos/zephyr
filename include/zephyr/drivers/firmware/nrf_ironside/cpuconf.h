@@ -21,6 +21,8 @@
 #define IRONSIDE_CPUCONF_ERROR_WRONG_CPU         (1)
 /** The boot message is too large to fit in the buffer. */
 #define IRONSIDE_CPUCONF_ERROR_MESSAGE_TOO_LARGE (2)
+/** The vector table content is 0xFFFFFFFF */
+#define IRONSIDE_CPUCONF_ERROR_NO_FIRMWARE		 (3)
 
 /**
  * @}
