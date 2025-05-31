@@ -81,3 +81,9 @@
 		status = "okay";
 	};
 };
+
+&rspi0 {
+	pinctrl-0 = <&rspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
