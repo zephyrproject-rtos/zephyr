@@ -201,6 +201,14 @@ enum sensor_channel {
 	SENSOR_CHAN_GRAVITY_VECTOR,
 	/** Gyroscope bias (X/Y/Z components in radians/s) */
 	SENSOR_CHAN_GBIAS_XYZ,
+	/** Light flicker frequency in Hz. */
+	SENSOR_CHAN_FLICKER,
+	/** Photopic light intensity in lux. */
+	SENSOR_CHAN_PHOTOPIC,
+	/** Gain for sensitivity adjustment. */
+	SENSOR_CHAN_GAIN,
+	/** Ultraviolet A (UVA) radiation in μW/cm². */
+	SENSOR_CHAN_UVA,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
@@ -360,6 +368,15 @@ enum sensor_attribute {
 	 * Number of all common sensor attributes.
 	 */
 	SENSOR_ATTR_COMMON_COUNT,
+
+	/**
+	 * One-shot measurement for single readings.
+	 */
+	SENSOR_ATTR_ONE_SHOT,
+	/**
+	 * Auto-disable sensor after conditions are met.
+	 */
+	SENSOR_ATTR_AUTO_DISABLE,
 
 	/**
 	 * This and higher values are sensor specific.
