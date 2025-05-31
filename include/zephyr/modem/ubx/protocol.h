@@ -171,6 +171,8 @@ enum ubx_msg_id_cfg {
 	UBX_MSG_ID_CFG_RST = 0x04,
 	UBX_MSG_ID_CFG_RATE = 0x08,
 	UBX_MSG_ID_CFG_NAV5 = 0x24,
+	UBX_MSG_ID_CFG_VAL_SET = 0x8A,
+	UBX_MSG_ID_CFG_VAL_GET = 0x8B,
 };
 
 enum ubx_msg_id_mon {
@@ -332,6 +334,35 @@ struct ubx_cfg_rate {
 	uint16_t time_ref;
 };
 
+enum ubx_cfg_val_ver {
+	UBX_CFG_VAL_VER_SIMPLE = 0,
+	UBX_CFG_VAL_VER_TRANSACTION = 1,
+};
+
+struct ubx_cfg_val_hdr {
+	uint8_t ver; /* See ubx_cfg_val_ver */
+	uint8_t layer;
+	uint16_t position;
+} __packed;
+
+struct ubx_cfg_val_u8 {
+	struct ubx_cfg_val_hdr hdr;
+	uint32_t key;
+	uint8_t value;
+} __packed;
+
+struct ubx_cfg_val_u16 {
+	struct ubx_cfg_val_hdr hdr;
+	uint32_t key;
+	uint16_t value;
+} __packed;
+
+struct ubx_cfg_val_u32 {
+	struct ubx_cfg_val_hdr hdr;
+	uint32_t key;
+	uint32_t value;
+} __packed;
+
 enum ubx_msg_id_nmea_std {
 	UBX_MSG_ID_NMEA_STD_DTM = 0x0A,
 	UBX_MSG_ID_NMEA_STD_GBQ = 0x44,
@@ -443,6 +474,34 @@ static inline int ubx_frame_encode(uint8_t class, uint8_t id,
 #define UBX_FRAME_CFG_MSG_RATE_INITIALIZER(_class_id, _msg_id, _rate)				   \
 	UBX_FRAME_INITIALIZER_PAYLOAD(UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_MSG,			   \
 				      _class_id, _msg_id, _rate)
+
+#define UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(_key, _value)					   \
+	UBX_FRAME_INITIALIZER_PAYLOAD(UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,			   \
+				      0x00, 0x01, 0x00, 0x00,					   \
+				      ((_key) & 0xFF), (((_key) >> 8) & 0xFF),			   \
+				      (((_key) >> 16) & 0xFF), (((_key) >> 24) & 0xFF),		   \
+				      ((_value) & 0xFF))
+
+#define UBX_FRAME_CFG_VAL_SET_U16_INITIALIZER(_key, _value)					   \
+	UBX_FRAME_INITIALIZER_PAYLOAD(UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,			   \
+				      0x00, 0x01, 0x00, 0x00,					   \
+				      ((_key) & 0xFF), (((_key) >> 8) & 0xFF),			   \
+				      (((_key) >> 16) & 0xFF), (((_key) >> 24) & 0xFF),		   \
+				      ((_value) & 0xFF), (((_value) >> 8) & 0xFF))
+
+#define UBX_FRAME_CFG_VAL_SET_U32_INITIALIZER(_key, _value)					   \
+	UBX_FRAME_INITIALIZER_PAYLOAD(UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,			   \
+				      0x00, 0x01, 0x00, 0x00,					   \
+				      ((_key) & 0xFF), (((_key) >> 8) & 0xFF),			   \
+				      (((_key) >> 16) & 0xFF), (((_key) >> 24) & 0xFF),		   \
+				      ((_value) & 0xFF), (((_value) >> 8) & 0xFF),		   \
+				      (((_value) >> 16) & 0xFF), (((_value) >> 24) & 0xFF))
+
+#define UBX_FRAME_CFG_VAL_GET_INITIALIZER(_key)							   \
+	UBX_FRAME_INITIALIZER_PAYLOAD(UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_GET,			   \
+				      0x00, 0x00, 0x00, 0x00,					   \
+				      ((_key) & 0xFF), (((_key) >> 8) & 0xFF),			   \
+				      (((_key) >> 16) & 0xFF), (((_key) >> 24) & 0xFF))
 
 #define UBX_FRAME_INITIALIZER_PAYLOAD(_class_id, _msg_id, ...)					   \
 	_UBX_FRAME_INITIALIZER_PAYLOAD(_class_id, _msg_id, __VA_ARGS__)
