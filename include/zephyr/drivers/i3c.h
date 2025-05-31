@@ -2319,6 +2319,22 @@ static inline int i3c_device_info_get(struct i3c_device_desc *target)
  */
 bool i3c_bus_has_sec_controller(const struct device *dev);
 
+/** TODO: write doxygen headers */
+int i3c_bus_rstdaa_all(const struct device *dev);
+int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr);
+int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr);
+int i3c_bus_setaasa(const struct device *dev);
+int i3c_bus_getbcr(struct i3c_device_desc *desc);
+int i3c_bus_getdcr(struct i3c_device_desc *desc);
+int i3c_bus_getpid(struct i3c_device_desc *desc);
+int i3c_bus_getmrl(struct i3c_device_desc *desc);
+int i3c_bus_getmwl(struct i3c_device_desc *desc);
+int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len);
+int i3c_bus_setmwl(struct i3c_device_desc *desc, uint16_t mwl);
+int i3c_bus_setmrl_all(const struct device *dev, uint16_t mrl, uint8_t ibi_len);
+int i3c_bus_setmwl_all(const struct device *dev, uint16_t mwl);
+int i3c_bus_getacccr(struct i3c_device_desc *desc);
+
 /**
  * @brief Send the CCC DEFTGTS
  *
@@ -2357,7 +2373,7 @@ uint8_t i3c_odd_parity(uint8_t p);
  * @retval -EIO General Input/Output error.
  * @retval -EBUSY Target cannot accept Controller Handoff
  */
-int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested);
+int i3c_device_controller_handoff(struct i3c_device_desc *target, bool requested);
 #endif /* CONFIG_I3C_CONTROLLER */
 
 #if defined(CONFIG_I3C_USE_IBI) || defined(__DOXYGEN__)
