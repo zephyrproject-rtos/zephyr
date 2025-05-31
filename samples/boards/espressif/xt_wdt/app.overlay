@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&rtc {
+&clock {
 	slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_XTAL32K>;
 };
 
