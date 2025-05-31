@@ -44,11 +44,11 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_HW_RX_CHKSUM_OFFLOAD, "RX checksum offload"),
 	EC(ETHERNET_HW_VLAN,              "Virtual LAN"),
 	EC(ETHERNET_HW_VLAN_TAG_STRIP,    "VLAN Tag stripping"),
-	EC(ETHERNET_AUTO_NEGOTIATION_SET, "Auto negotiation"),
 	EC(ETHERNET_LINK_10BASE,          "10 Mbits"),
 	EC(ETHERNET_LINK_100BASE,         "100 Mbits"),
 	EC(ETHERNET_LINK_1000BASE,        "1 Gbits"),
-	EC(ETHERNET_DUPLEX_SET,           "Half/full duplex"),
+	EC(ETHERNET_LINK_2500BASE,        "2.5 Gbits"),
+	EC(ETHERNET_LINK_5000BASE,        "5 Gbits"),
 	EC(ETHERNET_PTP,                  "IEEE 802.1AS gPTP clock"),
 	EC(ETHERNET_QAV,                  "IEEE 802.1Qav (credit shaping)"),
 	EC(ETHERNET_QBV,                  "IEEE 802.1Qbv (scheduled traffic)"),
@@ -61,8 +61,6 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_DSA_CONDUIT_PORT,     "DSA conduit port"),
 	EC(ETHERNET_TXTIME,               "TXTIME supported"),
 	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
-	EC(ETHERNET_LINK_2500BASE,        "2.5 Gbits"),
-	EC(ETHERNET_LINK_5000BASE,        "5 Gbits"),
 };
 
 static void print_supported_ethernet_capabilities(
