@@ -1,0 +1,19 @@
+/*
+*       Here you need to define the INT1 pin as a button.
+*       Note: INT2 pin exists on the LSM6DS3TR-C BUT is not connected on
+*       the XIAO BLE Sense!!
+*/
+/ {
+    aliases {
+        accel0 = &lsm6ds3tr_c;
+        sw0 = &button0;
+    };
+
+    buttons {
+             compatible = "gpio-keys";
+             button0: button_0 {
+                     gpios = < &gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW) >;
+                     label = "INT1";
+             };
+        };
+};
