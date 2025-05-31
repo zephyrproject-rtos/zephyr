@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Beechwoods Software Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AIROC Wirless Controller
+  LED Port
+
+compatible: "infineon,airoc-leds"
+
+child-binding:
+  description: AIROC LED child node
+  properties:
+    gpios:
+      type: phandle-array
+      required: true
