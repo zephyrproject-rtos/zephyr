@@ -128,6 +128,11 @@ __subsystem struct led_driver_api {
 	led_api_write_channels write_channels;
 };
 
+#ifdef CONFIG_LED_BLINK_FALLBACK
+int led_blink_fallback(const struct device *dev, uint32_t led, uint32_t delay_on,
+		       uint32_t delay_off);
+#endif
+
 /**
  * @brief Blink an LED
  *
@@ -150,7 +155,11 @@ static inline int z_impl_led_blink(const struct device *dev, uint32_t led,
 		(const struct led_driver_api *)dev->api;
 
 	if (api->blink == NULL) {
+#ifdef CONFIG_LED_BLINK_FALLBACK
+		return led_blink_fallback(dev, led, delay_on, delay_off);
+#else
 		return -ENOSYS;
+#endif
 	}
 	return api->blink(dev, led, delay_on, delay_off);
 }
@@ -332,6 +341,13 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
 
+#ifdef CONFIG_LED_BLINK_FALLBACK
+	/* Stop blinking */
+	if (api->blink == NULL) {
+		led_blink_fallback(dev, led, 0, 0);
+	}
+#endif
+
 	if (api->set_brightness == NULL && api->on == NULL) {
 		return -ENOSYS;
 	}
@@ -361,6 +377,13 @@ static inline int z_impl_led_off(const struct device *dev, uint32_t led)
 {
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
+
+#ifdef CONFIG_LED_BLINK_FALLBACK
+	/* Stop blinking */
+	if (api->blink == NULL) {
+		led_blink_fallback(dev, led, 0, 0);
+	}
+#endif
 
 	if (api->set_brightness == NULL && api->off == NULL) {
 		return -ENOSYS;
