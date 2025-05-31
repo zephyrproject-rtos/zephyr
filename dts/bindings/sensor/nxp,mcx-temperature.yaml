@@ -1,0 +1,9 @@
+description: NXP MCX temperature sensor
+
+compatible: "nxp,mcx-temperature"
+
+include: sensor-device.yaml
+
+properties:
+  status:
+    required: true

@@ -1,0 +1,17 @@
+# NXP MCX temperature sensor configuration options
+
+# Copyright (c) 2025 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+# NXP MCX temperature sensor configuration options
+
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config TEMP_MCX
+	bool "NXP MCX Temperature Sensor"
+	default y
+	depends on DT_HAS_NXP_MCX_TEMPERATURE_ENABLED
+	select ADC
+	help
+	  Enable driver for NXP MCX temperature sensor.
