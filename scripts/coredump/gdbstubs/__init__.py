@@ -22,22 +22,22 @@ class TgtCode:
     ARM64 = 6
 
 
-def get_gdbstub(logfile, elffile):
+def get_gdbstub(logfile, elffiles):
     stub = None
 
     tgt_code = logfile.log_hdr['tgt_code']
 
     if tgt_code == TgtCode.X86:
-        stub = GdbStub_x86(logfile=logfile, elffile=elffile)
+        stub = GdbStub_x86(logfile=logfile, elffiles=elffiles)
     elif tgt_code == TgtCode.X86_64:
-        stub = GdbStub_x86_64(logfile=logfile, elffile=elffile)
+        stub = GdbStub_x86_64(logfile=logfile, elffiles=elffiles)
     elif tgt_code == TgtCode.ARM_CORTEX_M:
-        stub = GdbStub_ARM_CortexM(logfile=logfile, elffile=elffile)
+        stub = GdbStub_ARM_CortexM(logfile=logfile, elffiles=elffiles)
     elif tgt_code == TgtCode.RISC_V:
-        stub = GdbStub_RISC_V(logfile=logfile, elffile=elffile)
+        stub = GdbStub_RISC_V(logfile=logfile, elffiles=elffiles)
     elif tgt_code == TgtCode.XTENSA:
-        stub = GdbStub_Xtensa(logfile=logfile, elffile=elffile)
+        stub = GdbStub_Xtensa(logfile=logfile, elffiles=elffiles)
     elif tgt_code == TgtCode.ARM64:
-        stub = GdbStub_ARM64(logfile=logfile, elffile=elffile)
+        stub = GdbStub_ARM64(logfile=logfile, elffiles=elffiles)
 
     return stub
