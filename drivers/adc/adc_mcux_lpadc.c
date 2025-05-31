@@ -225,6 +225,16 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 		}
 	} else if (channel_cfg->reference == ADC_REF_EXTERNAL0) {
 		LOG_DBG("ref external0");
+# if defined(FSL_FEATURE_LPADC_HAS_INTERNAL_TEMP_SENSOR)
+	} else if (channel_cfg->reference == ADC_REF_INTERNAL) {
+		/*
+		 * We are assuming that if the reference has been set to
+		 * ADC_REF_INTERNAL that the channel is being used to sample the
+		 * internal temperature sensor.
+		 */
+		LOG_DBG("ref internal");
+		cmd->loopCount = FSL_FEATURE_LPADC_TEMP_SENS_BUFFER_SIZE - 1U;
+#endif
 	} else {
 		LOG_DBG("ref not support");
 		return -EINVAL;
@@ -477,8 +487,12 @@ static int mcux_lpadc_init(const struct device *dev)
 	lpadc_config_t adc_config;
 	int err;
 
+	/*
+	 * pinctrl_apply_state() returns -ENOENT if pinctrl is not provided. This is
+	 * expected if only using the internal channels.
+	 */
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
+	if (err && err != -ENOENT) {
 		return err;
 	}
 

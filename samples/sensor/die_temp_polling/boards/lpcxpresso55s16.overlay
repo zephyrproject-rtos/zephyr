@@ -1,0 +1,35 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Nova Dynamics LLC
+ */
+
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	aliases {
+		die-temp0 = &temp;
+	};
+
+	temp: temp {
+		status = "okay";
+		compatible = "nxp,lpc-temperature";
+		io-channels = <&adc0 0>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 131)>;
+		zephyr,vref-mv = <1000>;
+		zephyr,input-positive = <26>;
+		zephyr,input-negative = <26>;
+	};
+};

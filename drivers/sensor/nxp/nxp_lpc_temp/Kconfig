@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nova Dynamics LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config TEMP_LPC
+	bool "NXP LPC Temperature Sensor"
+	default y
+	depends on ADC_MCUX_LPADC && DT_HAS_NXP_LPC_TEMPERATURE_ENABLED
+	help
+	  Enable driver for NXP LPC internal temperature sensor.
