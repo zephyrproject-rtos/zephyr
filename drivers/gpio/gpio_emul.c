@@ -249,7 +249,7 @@ static void gpio_emul_gen_interrupt_bits(const struct device *port,
 		case GPIO_INT_DISABLE:
 			break;
 		default:
-			LOG_DBG("unhandled case %u",
+			LOG_DBG("unhandled case %lu",
 				drv_data->flags[i] & GPIO_EMUL_INT_BITMASK);
 			break;
 		}
