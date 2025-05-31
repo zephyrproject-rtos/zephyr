@@ -23,6 +23,8 @@
 #include "usb_phy.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 LOG_MODULE_REGISTER(udc_mcux, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 /*
@@ -33,6 +35,7 @@ LOG_MODULE_REGISTER(udc_mcux, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define USB_MCUX_EP0_SIZE	64
 
 #define PRV_DATA_HANDLE(_handle) CONTAINER_OF(_handle, struct udc_mcux_data, mcux_device)
+
 
 struct udc_mcux_config {
 	const usb_device_controller_interface_struct_t *mcux_if;
@@ -51,6 +54,8 @@ struct udc_mcux_data {
 	usb_device_struct_t mcux_device;
 	struct k_work work;
 	struct k_fifo fifo;
+	bool enabled;
+	bool vbus_present;
 	uint8_t controller_id; /* 0xFF is invalid value */
 };
 
@@ -90,6 +95,50 @@ static int udc_mcux_control(const struct device *dev, usb_device_control_type_t 
 	}
 
 	return 0;
+}
+
+/* Helper function to keep track of the activity state for the udc */
+static void udc_mcux_change_state(const struct device *dev, bool enabled, bool vbus_present)
+{
+	struct udc_mcux_data *data = udc_get_private(dev);
+
+	if (data->enabled == enabled && data->vbus_present == vbus_present) {
+		return;
+	}
+
+	if (vbus_present != data->vbus_present && enabled) {
+		udc_submit_event(data->dev,
+				 vbus_present ? UDC_EVT_VBUS_READY : UDC_EVT_VBUS_REMOVED, 0);
+	}
+	if (enabled && vbus_present) {
+		data->enabled = true;
+		data->vbus_present = true;
+
+		/*
+		 * Block PM when usb is active.
+		 */
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+		pm_policy_device_power_lock_get(dev);
+#endif
+	} else if (data->enabled && data->vbus_present) {
+		/*
+		 * USB was previously busy, but now has either lost
+		 * VBUS signal or application has disabled udc.
+		 */
+		data->enabled = enabled;
+		data->vbus_present = vbus_present;
+
+		/*
+		 * UDC will now unblock PM
+		 */
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+		pm_policy_device_power_lock_put(dev);
+#endif
+	} else {
+		/* USB still not activated, keep track of what's on and off */
+		data->enabled = enabled;
+		data->vbus_present = vbus_present;
+	}
 }
 
 /* If ep is busy, return busy. Otherwise feed the buf to controller */
@@ -525,10 +574,10 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 	case kUSB_DeviceNotifyLPMSleep:
 		break;
 	case kUSB_DeviceNotifyDetach:
-		udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
+		udc_mcux_change_state(dev, priv->enabled, 0);
 		break;
 	case kUSB_DeviceNotifyAttach:
-		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+		udc_mcux_change_state(dev, priv->enabled, 1);
 		break;
 	case kUSB_DeviceNotifySOF:
 		udc_submit_event(dev, UDC_EVT_SOF, 0);
@@ -676,11 +725,19 @@ static int udc_mcux_set_address(const struct device *dev, const uint8_t addr)
 
 static int udc_mcux_enable(const struct device *dev)
 {
+	struct udc_mcux_data *priv = udc_get_private(dev);
+
+	udc_mcux_change_state(dev, 1, priv->vbus_present);
+
 	return udc_mcux_control(dev, kUSB_DeviceControlRun, NULL);
 }
 
 static int udc_mcux_disable(const struct device *dev)
 {
+	struct udc_mcux_data *priv = udc_get_private(dev);
+
+	udc_mcux_change_state(dev, 0, priv->vbus_present);
+
 	return udc_mcux_control(dev, kUSB_DeviceControlStop, NULL);
 }
 
@@ -759,7 +816,9 @@ static inline void udc_mcux_get_hal_driver_id(struct udc_mcux_data *priv,
 	}
 }
 
-static int udc_mcux_driver_preinit(const struct device *dev)
+
+
+static int udc_mcux_init_common(const struct device *dev)
 {
 	const struct udc_mcux_config *config = dev->config;
 	struct udc_data *data = dev->data;
@@ -771,9 +830,6 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	k_mutex_init(&data->mutex);
-	k_fifo_init(&priv->fifo);
-	k_work_init(&priv->work, udc_mcux_work_handler);
 
 	for (int i = 0; i < config->num_of_eps; i++) {
 		config->ep_cfg_out[i].caps.out = 1;
@@ -823,10 +879,51 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	data->caps.hs = true;
 	priv->dev = dev;
 
+
 	pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 
 	return 0;
 }
+
+static int udc_mcux_driver_preinit(const struct device *dev)
+{
+	const struct udc_mcux_config *config = dev->config;
+	struct udc_data *data = dev->data;
+	struct udc_mcux_data *priv = data->priv;
+
+	udc_mcux_get_hal_driver_id(priv, config);
+	if (priv->controller_id == 0xFFu) {
+		return -ENOMEM;
+	}
+
+	k_mutex_init(&data->mutex);
+	k_fifo_init(&priv->fifo);
+	k_work_init(&priv->work, udc_mcux_work_handler);
+	return udc_mcux_init_common(dev);
+}
+
+#ifdef CONFIG_PM
+static int udc_mcux_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct udc_mcux_data *priv = udc_get_private(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		udc_mcux_init_common(dev);
+		if (priv->enabled) {
+			udc_mcux_control(dev, kUSB_DeviceControlRun, NULL);
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+#endif /* CONFIG_PM */
 
 static const struct udc_api udc_mcux_api = {
 	.device_speed = udc_mcux_device_speed,
@@ -917,7 +1014,8 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		.priv = &priv_data_##n,							\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(n, udc_mcux_driver_preinit, NULL,				\
+	PM_DEVICE_DT_INST_DEFINE(n, udc_mcux_pm_action);				\
+	DEVICE_DT_INST_DEFINE(n, udc_mcux_driver_preinit, PM_DEVICE_DT_INST_GET(n),	\
 			      &udc_data_##n, &priv_config_##n,				\
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			      &udc_mcux_api);
