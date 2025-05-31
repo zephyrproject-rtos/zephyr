@@ -91,8 +91,7 @@ static void stm32_dcmi_isr(const struct device *dev)
 	HAL_DCMI_IRQHandler(&data->hdcmi);
 }
 
-static void dmci_dma_callback(const struct device *dev, void *arg,
-			 uint32_t channel, int status)
+static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
 
@@ -454,7 +453,7 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 		.dest_burst_length = 1,         /* SINGLE transfer */			\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-		.dma_callback = dmci_dma_callback,					\
+		.dma_callback = dcmi_dma_callback,					\
 	},										\
 
 PINCTRL_DT_INST_DEFINE(0);
