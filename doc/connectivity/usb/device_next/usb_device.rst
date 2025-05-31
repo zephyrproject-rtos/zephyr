@@ -32,6 +32,8 @@ Samples
 
 * :zephyr:code-sample:`uac2-implicit-feedback`
 
+* :zephyr:code-sample:`uvc`
+
 Samples ported to new USB device support
 ----------------------------------------
 
@@ -222,6 +224,8 @@ instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`
 | USB Human Interface Devices (HID) | :ref:`usbd_hid_device`  | :samp:`hid_{n}`         |
 +-----------------------------------+-------------------------+-------------------------+
 | Bluetooth HCI USB transport layer | :ref:`bt_hci_raw`       | :samp:`bt_hci_{n}`      |
++-----------------------------------+-------------------------+-------------------------+
+| USB Video Class (UVC)             | Video device            | :samp:`uvc_{n}`         |
 +-----------------------------------+-------------------------+-------------------------+
 
 CDC ACM UART
