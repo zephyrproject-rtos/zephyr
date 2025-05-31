@@ -71,3 +71,7 @@ properties:
     default: 0
     # default alert limit is 0V
     description: Alert register, default matches the power-on reset value
+
+  direction-invert:
+    type: boolean
+    description: Invert the direction of reported current and power flow

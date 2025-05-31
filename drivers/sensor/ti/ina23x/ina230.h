@@ -52,7 +52,7 @@ struct ina230_data {
 
 struct ina230_config {
 	struct i2c_dt_spec bus;
-	uint32_t current_lsb;
+	int32_t current_lsb;
 	uint32_t uv_lsb;
 	uint32_t conv_duration_us;
 	uint16_t config;
