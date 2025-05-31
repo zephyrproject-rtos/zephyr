@@ -9,12 +9,17 @@
 static k_timeout_t stepper_movement_delay(const struct device *dev)
 {
 	const struct step_dir_stepper_common_data *data = dev->data;
+	const struct step_dir_stepper_common_config *config = dev->config;
 
 	if (data->microstep_interval_ns == 0) {
 		return K_FOREVER;
 	}
 
-	return K_NSEC(data->microstep_interval_ns);
+	if (config->dual_edge) {
+		return K_NSEC(data->microstep_interval_ns);
+	} else {
+		return K_NSEC(data->microstep_interval_ns / 2);
+	}
 }
 
 static void stepper_work_step_handler(struct k_work *work)
