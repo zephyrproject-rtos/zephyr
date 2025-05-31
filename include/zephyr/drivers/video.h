@@ -843,6 +843,23 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match);
 
 /**
+ * @brief Return the link-frequency advertised by a device
+ *
+ * Device exposing a CSI link should advertise at least one of the following two controls:
+ *   - @ref VIDEO_CID_LINK_FREQ
+ *   - @ref VIDEO_CID_PIXEL_RATE
+ *
+ * At first the helper will try read the @ref VIDEO_CID_LINK_FREQ and if not available will
+ * approximate the link-frequency from the @ref VIDEO_CID_PIXEL_RATE value, taking into
+ * consideration the bits per pixel of the format and the number of lanes.
+ *
+ * @param dev Video device to query.
+ * @param bpp Amount of bits per pixel of the pixel format produced by the device
+ * @param lane_nb Number of CSI-2 lanes used
+ */
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb);
+
+/**
  * @defgroup video_pixel_formats Video pixel formats
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.
@@ -1455,6 +1472,39 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 0;
 	}
 }
+
+/**
+ * @}
+ */
+
+/**
+ * @name MIPI CSI2 Data-types
+ *
+ * @{
+ */
+#define VIDEO_MIPI_CSI2_DT_NULL	0x10
+#define VIDEO_MIPI_CSI2_DT_BLANKING	0x11
+#define VIDEO_MIPI_CSI2_DT_EMBEDDED_8	0x12
+#define VIDEO_MIPI_CSI2_DT_YUV420_8	0x18
+#define VIDEO_MIPI_CSI2_DT_YUV420_10	0x19
+#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_8	0x1c
+#define VIDEO_MIPI_CSI2_DT_YUV420_CSPS_10	0x1d
+#define VIDEO_MIPI_CSI2_DT_YUV422_8	0x1e
+#define VIDEO_MIPI_CSI2_DT_YUV422_10	0x1f
+#define VIDEO_MIPI_CSI2_DT_RGB444	0x20
+#define VIDEO_MIPI_CSI2_DT_RGB555	0x21
+#define VIDEO_MIPI_CSI2_DT_RGB565	0x22
+#define VIDEO_MIPI_CSI2_DT_RGB666	0x23
+#define VIDEO_MIPI_CSI2_DT_RGB888	0x24
+#define VIDEO_MIPI_CSI2_DT_RAW6		0x28
+#define VIDEO_MIPI_CSI2_DT_RAW7		0x29
+#define VIDEO_MIPI_CSI2_DT_RAW8		0x2a
+#define VIDEO_MIPI_CSI2_DT_RAW10	0x2b
+#define VIDEO_MIPI_CSI2_DT_RAW12	0x2c
+#define VIDEO_MIPI_CSI2_DT_RAW14	0x2d
+
+/* User-defined Data-Type range from 0x30 to 0x37 */
+#define VIDEO_MIPI_CSI2_DT_USER(n)	(0x30 + (n))
 
 /**
  * @}
