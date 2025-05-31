@@ -28,7 +28,7 @@
  *   xreg1: logic id (0 ~ CONFIG_MP_MAX_NUM_CPUS - 1)
  * clobbers: xreg0, xreg1, xreg2, xreg3
  */
-.macro get_cpu_logic_id xreg0, xreg1, xreg2, xreg3
+.macro get_cpu_logic_id xreg0, xreg1, xreg2, xreg3, xreg4
 	get_cpu_id \xreg0
 	ldr	\xreg3, =cpu_node_list
 	mov	\xreg1, 0
@@ -36,7 +36,9 @@
 	cmp	\xreg2, \xreg0
 	beq	2f
 	add	\xreg1, \xreg1, 1
-	cmp	\xreg1, #CONFIG_MP_MAX_NUM_CPUS
+	ldr	\xreg2, =cpu_node_list_length
+	ldr	\xreg4, [\xreg2]
+	cmp	\xreg1, \xreg4
 	bne	1b
 	b	.
 2:

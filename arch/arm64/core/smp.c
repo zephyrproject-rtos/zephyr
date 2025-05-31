@@ -37,15 +37,16 @@
 struct boot_params {
 	uint64_t mpid;
 	char *sp;
+	int cpu_num;
 	uint8_t voting[CONFIG_MP_MAX_NUM_CPUS];
 	arch_cpustart_t fn;
 	void *arg;
-	int cpu_num;
 };
 
 /* Offsets used in reset.S */
 BUILD_ASSERT(offsetof(struct boot_params, mpid) == BOOT_PARAM_MPID_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, sp) == BOOT_PARAM_SP_OFFSET);
+BUILD_ASSERT(offsetof(struct boot_params, cpu_num) == BOOT_PARAM_CPU_NUM_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, voting) == BOOT_PARAM_VOTING_OFFSET);
 
 volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
@@ -55,6 +56,8 @@ volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
 const uint64_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
 };
+
+const uint64_t cpu_node_list_length = ARRAY_SIZE(cpu_node_list);
 
 /* cpu_map saves the maping of core id and mpid */
 static uint64_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
