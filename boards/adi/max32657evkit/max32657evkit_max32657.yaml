@@ -10,5 +10,6 @@ supported:
   - serial
   - gpio
   - trng
+  - dma
 ram: 256
 flash: 960
