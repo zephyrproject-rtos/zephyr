@@ -31,29 +31,14 @@ static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
 int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param)
 {
+	int err;
+
 	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return -EINVAL;
 	}
 
-	return bt_ascs_register(param->snk_cnt, param->src_cnt);
-}
-
-int bt_bap_unicast_server_unregister(void)
-{
-	if (unicast_server_cb != NULL) {
-		LOG_DBG("Callbacks are still registered");
-		return -EAGAIN;
-	}
-
-	return bt_ascs_unregister();
-}
-
-int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
-{
-	int err;
-
-	CHECKIF(cb == NULL) {
+	if (param->cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
@@ -63,37 +48,38 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 		return -EALREADY;
 	}
 
-	err = bt_ascs_init(cb);
+	err = bt_ascs_register(param->snk_cnt, param->src_cnt);
 	if (err != 0) {
 		return err;
 	}
 
-	unicast_server_cb = cb;
+	err = bt_ascs_init(param->cb);
+	if (err != 0) {
+		return err;
+	}
 
-	return 0;
+	unicast_server_cb = param->cb;
+
+	return err;
 }
 
-int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *cb)
+int bt_bap_unicast_server_unregister(void)
 {
+	int err = 0;
+
 	if (unicast_server_cb == NULL) {
 		LOG_DBG("no callback is registered");
 		return -EALREADY;
 	}
 
-	if (cb == NULL) {
-		LOG_DBG("cb is NULL");
-		return -EINVAL;
-	}
-
-	if (unicast_server_cb != cb) {
-		LOG_DBG("callback structure not registered");
-		return -EINVAL;
-	}
-
 	bt_ascs_cleanup();
-	unicast_server_cb = NULL;
 
-	return 0;
+	err = bt_ascs_unregister();
+	if (err == 0) {
+		unicast_server_cb = NULL;
+	}
+
+	return err;
 }
 
 int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
