@@ -176,6 +176,16 @@
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
+			cpuapp_memconf: memconf@12000 {
+				compatible = "nordic,nrf-memconf";
+				reg = <0x12000 0x1000>;
+				nordic,ficrs =
+					<&ficr NRF_FICR_TRIM_APPLICATION_MEMCONF_BLOCKTYPE_0_TRIM>,
+					<&ficr NRF_FICR_TRIM_APPLICATION_MEMCONF_BLOCKTYPE_1_TRIM>,
+					<&ficr NRF_FICR_TRIM_APPLICATION_MEMCONF_BLOCKTYPE_2_TRIM>,
+					<&ficr NRF_FICR_TRIM_APPLICATION_MEMCONF_BLOCKTYPE_3_TRIM>;
+			};
+
 			cpuapp_ipct: ipct@13000 {
 				compatible = "nordic,nrf-ipct-local";
 				reg = <0x13000 0x1000>;
@@ -226,6 +236,16 @@
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
 					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
+			};
+
+			cpurad_memconf: memconf@12000 {
+				compatible = "nordic,nrf-memconf";
+				reg = <0x12000 0x1000>;
+				nordic,ficrs =
+					<&ficr NRF_FICR_TRIM_RADIOCORE_MEMCONF_BLOCKTYPE_0_TRIM>,
+					<&ficr NRF_FICR_TRIM_RADIOCORE_MEMCONF_BLOCKTYPE_1_TRIM>,
+					<&ficr NRF_FICR_TRIM_RADIOCORE_MEMCONF_BLOCKTYPE_2_TRIM>,
+					<&ficr NRF_FICR_TRIM_RADIOCORE_MEMCONF_BLOCKTYPE_3_TRIM>;
 			};
 
 			cpurad_wdt010: watchdog@13000 {
