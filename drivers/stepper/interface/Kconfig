@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright (c) 2025 Andre Stefanov
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_INTERFACE_STEP_DIR
+	bool
+	help
+	  Enable library used for step/dir stepper drivers.
