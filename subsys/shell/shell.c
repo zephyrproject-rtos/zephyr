@@ -17,6 +17,10 @@
 #include "shell_vt100.h"
 #include "shell_wildcard.h"
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+#include <zephyr/internal/syscall_handler.h>
+#endif
+
 /* 2 == 1 char for cmd + 1 char for '\0' */
 #if (CONFIG_SHELL_CMD_BUFF_SIZE < 2)
 	#error too small CONFIG_SHELL_CMD_BUFF_SIZE
@@ -36,6 +40,16 @@
 #define SHELL_THREAD_PRIORITY \
 	COND_CODE_1(CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE, \
 			(CONFIG_SHELL_THREAD_PRIORITY), (K_LOWEST_APPLICATION_THREAD_PRIO))
+
+#if defined(CONFIG_SHELL_BYPASS_USER)
+	#define BYPASS_PIPE_EVENT_INDEX 0
+
+	/* Shift events by 1 to accommodate bypass pipe event. */
+	#define BYPASS_PIPE_EVENT_SHIFT 1
+#else
+	/* Do not shift events to accommodate bypass pipe event. */
+	#define BYPASS_PIPE_EVENT_SHIFT 0
+#endif
 
 BUILD_ASSERT(SHELL_THREAD_PRIORITY >=
 		  K_HIGHEST_APPLICATION_THREAD_PRIO
@@ -978,7 +992,7 @@ static void state_collect(const struct shell *sh)
 #if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
 			uint8_t buf[CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN];
 #else
-			uint8_t buf[16];
+			uint8_t buf[CONFIG_SHELL_BYPASS_RX_BUFF_SIZE];
 #endif
 
 			(void)sh->iface->api->read(sh->iface, buf,
@@ -1213,6 +1227,19 @@ static int instance_init(const struct shell *sh,
 	__ASSERT_NO_MSG((sh->shell_flag == SHELL_FLAG_CRLF_DEFAULT) ||
 			(sh->shell_flag == SHELL_FLAG_OLF_CRLF));
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+#if (CONFIG_SHELL_BYPASS_USER_RX_PIPE_SIZE > 0)
+	void *bypass_rx_pipe_buf = &sh->ctx->bypass_rx_pipe_buf;
+#else
+	void *bypass_rx_pipe_buf = NULL;
+#endif
+#if (CONFIG_SHELL_BYPASS_USER_TX_PIPE_SIZE > 0)
+	void *bypass_tx_pipe_buf = &sh->ctx->bypass_tx_pipe_buf;
+#else
+	void *bypass_tx_pipe_buf = NULL;
+#endif
+#endif
+
 	memset(sh->ctx, 0, sizeof(*sh->ctx));
 	if (CONFIG_SHELL_CMD_ROOT[0]) {
 		sh->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
@@ -1222,9 +1249,24 @@ static int instance_init(const struct shell *sh,
 
 	k_mutex_init(&sh->ctx->wr_mtx);
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+	sh->ctx->bypass_user_thread = NULL;
+	sh->ctx->bypass_rx_dropped = 0;
+	k_pipe_init(&sh->ctx->bypass_rx_pipe, bypass_rx_pipe_buf,
+		    CONFIG_SHELL_BYPASS_USER_RX_PIPE_SIZE);
+	k_pipe_init(&sh->ctx->bypass_tx_pipe, bypass_tx_pipe_buf,
+		    CONFIG_SHELL_BYPASS_USER_TX_PIPE_SIZE);
+	k_sem_init(&sh->ctx->bypass_exit_resp_sem, 0, 1);
+
+	/* Place bypass pipe poll event at array position 0. */
+	k_poll_event_init(&sh->ctx->events[BYPASS_PIPE_EVENT_INDEX],
+			  K_POLL_TYPE_PIPE_DATA_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &sh->ctx->bypass_tx_pipe);
+#endif
+
 	for (int i = 0; i < SHELL_SIGNALS; i++) {
 		k_poll_signal_init(&sh->ctx->signals[i]);
-		k_poll_event_init(&sh->ctx->events[i],
+		k_poll_event_init(&sh->ctx->events[i + BYPASS_PIPE_EVENT_SHIFT],
 				  K_POLL_TYPE_SIGNAL,
 				  K_POLL_MODE_NOTIFY_ONLY,
 				  &sh->ctx->signals[i]);
@@ -1327,6 +1369,33 @@ static void kill_handler(const struct shell *sh)
 	CODE_UNREACHABLE;
 }
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+static void bypass_exit_handler(const struct shell *sh)
+{
+	/* Drop all data in rx/tx pipes. */
+	k_pipe_reset(&sh->ctx->bypass_rx_pipe);
+	k_pipe_reset(&sh->ctx->bypass_tx_pipe);
+
+	/* Revoke user thread access to shell internals. */
+	k_object_access_revoke(&sh->ctx->bypass_rx_pipe,
+			       sh->ctx->bypass_user_thread);
+	k_object_access_revoke(&sh->ctx->bypass_tx_pipe,
+			       sh->ctx->bypass_user_thread);
+	k_object_access_revoke(&sh->ctx->signals[SHELL_SIGNAL_BYPASS_EXIT],
+			       sh->ctx->bypass_user_thread);
+	sh->ctx->bypass_user_thread = NULL;
+
+	/* Reset the shell to a normal running state. */
+	shell_set_bypass(sh, NULL);
+	shell_start(sh);
+	z_cursor_next_line_move(sh);
+	z_shell_print_prompt_and_cmd(sh);
+
+	/* Wake up the thread waiting for user bypass to exit. */
+	k_sem_give(&sh->ctx->bypass_exit_resp_sem);
+}
+#endif
+
 void shell_thread(void *shell_handle, void *arg_log_backend,
 		  void *arg_log_level)
 {
@@ -1350,8 +1419,9 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	}
 
 	while (true) {
-		/* waiting for all signals except SHELL_SIGNAL_TXDONE */
-		err = k_poll(sh->ctx->events, SHELL_SIGNAL_TXDONE,
+		/* Waiting for all events except SHELL_SIGNAL_TXDONE. */
+		err = k_poll(sh->ctx->events,
+			     SHELL_SIGNAL_TXDONE + BYPASS_PIPE_EVENT_SHIFT,
 			     K_FOREVER);
 
 		if (err != 0) {
@@ -1359,13 +1429,28 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 				return;
 			}
 			z_shell_fprintf(sh, SHELL_ERROR,
-					"Shell thread error: %d", err);
+					"Shell thread error: %d\n", err);
 			k_mutex_unlock(&sh->ctx->wr_mtx);
 			return;
 		}
 
 		k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+		/* Forward any incoming data on the tx pipe. */
+		uint8_t buf[16];
+		int len;
+		do {
+			len = k_pipe_read(&sh->ctx->bypass_tx_pipe, buf, 16,
+					  K_NO_WAIT);
+			if (len > 0) {
+				z_shell_write(sh, buf, len);
+			}
+		}
+		while (len == 16);
+
+		shell_signal_handle(sh, SHELL_SIGNAL_BYPASS_EXIT, bypass_exit_handler);
+#endif
 		shell_signal_handle(sh, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(sh, SHELL_SIGNAL_RXRDY, shell_process);
 		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
@@ -1835,6 +1920,126 @@ void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 	}
 }
 
+#if defined(CONFIG_SHELL_BYPASS_USER)
+static void shell_bypass_user_cb(const struct shell *sh, uint8_t *data,
+				 size_t len)
+{
+	int ret = k_pipe_write(&sh->ctx->bypass_rx_pipe, data, len, K_NO_WAIT);
+
+	/* Drop data on any pipe put error. */
+	if (ret) {
+		sh->ctx->bypass_rx_dropped += (len - ret);
+	}
+}
+
+int z_impl_shell_bypass_enter(const struct shell *sh, struct shell_bypass *shb)
+{
+	if (sh->ctx->bypass != NULL) {
+		return -EALREADY;
+	}
+
+	shb->thread = k_current_get();
+	shb->rx_pipe = &sh->ctx->bypass_rx_pipe;
+	shb->tx_pipe = &sh->ctx->bypass_tx_pipe;
+	shb->exit_signal = &sh->ctx->signals[SHELL_SIGNAL_BYPASS_EXIT];
+	shb->exit_resp_sem = &sh->ctx->bypass_exit_resp_sem;
+
+	k_thread_access_grant(shb->thread, shb->rx_pipe, shb->tx_pipe,
+			      shb->exit_signal, shb->exit_resp_sem);
+
+	shell_stop(sh);
+	sh->ctx->bypass_user_thread = shb->thread;
+	sh->ctx->bypass_rx_dropped = 0;
+	shell_set_bypass(sh, shell_bypass_user_cb);
+
+	return 0;
+}
+
+static int z_vrfy_shell_bypass_enter(const struct shell *sh,
+				     struct shell_bypass *shb)
+{
+	struct shell_bypass shb_copy;
+	int ret;
+
+	if ((sh == NULL) || (sh->ctx == NULL)) {
+		return -EINVAL;
+	}
+
+	if (k_usermode_from_copy(&shb_copy, shb, sizeof(*shb)) != 0) {
+		return -EINVAL;
+	}
+
+	ret = z_impl_shell_bypass_enter(sh, &shb_copy);
+
+	if (ret == 0 && k_usermode_to_copy(shb, &shb_copy, sizeof(*shb)) != 0) {
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
+size_t z_impl_shell_bypass_get_rx_dropped(const struct shell *sh)
+{
+	return sh->ctx->bypass_rx_dropped;
+}
+
+static size_t z_vrfy_shell_bypass_get_rx_dropped(const struct shell *sh)
+{
+	if ((sh == NULL) || (sh->ctx == NULL)) {
+		return 0;
+	}
+
+	return z_impl_shell_bypass_get_rx_dropped(sh);
+}
+
+int shell_bypass_send(struct shell_bypass *shb, const void *data, size_t len,
+		      k_timeout_t timeout)
+{
+	if ((shb == NULL) || (shb->tx_pipe == NULL)) {
+		return -EINVAL;
+	}
+
+	if (shb->thread != k_current_get()) {
+		return -EPERM;
+	}
+
+	return k_pipe_write(shb->tx_pipe, data, len, timeout);
+}
+
+int shell_bypass_receive(struct shell_bypass *shb, void *data, size_t len,
+			 k_timeout_t timeout)
+{
+	if ((shb == NULL) || (shb->rx_pipe == NULL)) {
+		return -EINVAL;
+	}
+
+	if (shb->thread != k_current_get()) {
+		return -EPERM;
+	}
+
+	return k_pipe_read(shb->rx_pipe, data, len, timeout);
+}
+
+int shell_bypass_exit(struct shell_bypass *shb)
+{
+	if ((shb == NULL) || (shb->exit_signal == NULL)) {
+		return -EINVAL;
+	}
+
+	if (shb->thread != k_current_get()) {
+		return -EPERM;
+	}
+
+	/* Wake up the shell thread to exit user bypass mode. */
+	int ret = k_poll_signal_raise(shb->exit_signal, 0);
+
+	/* Wait for the shell thread to finish the operation. */
+	ret |= k_sem_take(shb->exit_resp_sem, K_FOREVER);
+
+	return ret;
+}
+#endif
+
 bool shell_ready(const struct shell *sh)
 {
 	__ASSERT_NO_MSG(sh);
@@ -1890,3 +2095,8 @@ static int cmd_help(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_CMD_ARG_REGISTER(help, NULL, "Prints the help message.", cmd_help, 1, 0);
+
+#if defined(CONFIG_SHELL_BYPASS_USER)
+#include <syscalls/shell_bypass_enter_mrsh.c>
+#include <syscalls/shell_bypass_get_rx_dropped_mrsh.c>
+#endif
