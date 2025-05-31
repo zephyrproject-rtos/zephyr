@@ -12,6 +12,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
@@ -19,6 +20,7 @@
 #include <zephyr/sys/printk.h>
 
 #include "bap_common.h"
+#include "common.h"
 
 #define VS_CODEC_CID 0x05F1 /* Linux foundation*/
 #define VS_CODEC_VID 0x1234 /* any value*/
@@ -137,4 +139,40 @@ void copy_unicast_stream_preset(struct unicast_stream *stream,
 {
 	memcpy(&stream->qos, &named_preset->preset.qos, sizeof(stream->qos));
 	memcpy(&stream->codec_cfg, &named_preset->preset.codec_cfg, sizeof(stream->codec_cfg));
+}
+
+bool bap_stream_is_streaming(const struct bt_bap_stream *bap_stream)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	if (bap_stream == NULL) {
+		return false;
+	}
+
+	/* No-op if stream is not configured */
+	if (bap_stream->ep == NULL) {
+		return false;
+	}
+
+	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
+	if (err != 0) {
+		return false;
+	}
+
+	if (ep_info.iso_chan == NULL || ep_info.iso_chan->state != BT_ISO_STATE_CONNECTED) {
+		return false;
+	}
+
+	return ep_info.state == BT_BAP_EP_STATE_STREAMING;
+}
+
+bool cap_stream_is_streaming(const struct bt_cap_stream *cap_stream)
+{
+	return bap_stream_is_streaming(&cap_stream->bap_stream);
+}
+
+bool audio_test_stream_is_streaming(const struct audio_test_stream *test_stream)
+{
+	return cap_stream_is_streaming(&test_stream->stream);
 }
