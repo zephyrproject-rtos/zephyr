@@ -11,6 +11,13 @@
 
 #include "spi_context.h"
 
+/* PCIe config space registers */
+#define PCH_GSPI_STATUS_CMD             0x04
+#define PCH_GSPI_CTRL                   0x230
+
+/* DMA offset */
+#define PW_SPI_IDMA_OFFSET              0x800
+
 /* lpss penwell spi registers */
 #define PW_SPI_REG_CTRLR0               0x00
 #define PW_SPI_REG_CTRLR1               0x04
@@ -144,6 +151,21 @@
 /* nval mask [30:16] */
 #define PW_SPI_CLKS_NVAL_MASK           (BIT_MASK(15) << 16)
 
+/* Resets */
+#define PW_SPI_RESET_DMA_BIT            0x2
+
+/* DMA finish Disable */
+#define PW_SPI_DIS_DMA_FINISH_BIT       0x0
+
+/* DMA intr bits */
+#define PW_SPI_IDMA_RSRE_BIT            BIT(20)
+#define PW_SPI_IDMA_TSRE_BIT            BIT(21)
+#define PW_SPI_IDMA_TRAIL_BIT           BIT(22)
+
+#define PW_SPI_IDMA_INTR                (PW_SPI_IDMA_RSRE_BIT | \
+					 PW_SPI_IDMA_TSRE_BIT | \
+					 PW_SPI_IDMA_TRAIL_BIT)
+
 /* SPI chip select control */
 #define PW_SPI_CS_MODE_BIT              0
 #define PW_SPI_CS_STATE_BIT             1
@@ -208,6 +230,9 @@ struct spi_pw_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	struct pcie_dev *pcie;
 #endif
+#ifdef CONFIG_SPI_PW_LPSS_DMA
+	const struct device *dma_dev;
+#endif
 };
 
 struct spi_pw_data {
@@ -219,6 +244,13 @@ struct spi_pw_data {
 	uint8_t cs_output;
 	uint32_t id;
 	uint8_t fifo_depth;
+#ifdef CONFIG_SPI_PW_LPSS_DMA
+	uintptr_t phy_addr;
+	uintptr_t base_addr;
+	/* For dma transfer */
+	bool dma_tx_finished;
+	bool dma_rx_finished;
+#endif
 };
 
 #endif /* ZEPHYR_DRIVERS_SPI_SPI_PW_H_ */
