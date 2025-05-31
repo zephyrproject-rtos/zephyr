@@ -38,25 +38,6 @@ void soc_early_init_hook(void)
 
 	/* Internal timer15 for SPOT manager */
 	IRQ_CONNECT(82, 0, hal_internal_timer_isr, 0, 0);
-
-	/* Initialize for low power in the power control block */
-	am_hal_pwrctrl_low_power_init();
-
-	/* Enable SIMOBUCK for the apollo5 Family */
-	am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_SIMOBUCK_INIT, NULL);
-
-	/*
-	 * Set default temperature for spotmgr to room temperature
-	 */
-	am_hal_pwrctrl_temp_thresh_t dummy;
-
-	am_hal_pwrctrl_temp_update(25.0f, &dummy);
-
-	/* Enable Icache*/
-	sys_cache_instr_enable();
-
-	/* Enable Dcache */
-	sys_cache_data_enable();
 }
 
 #if CONFIG_CACHE_MANAGEMENT
@@ -84,3 +65,29 @@ bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	return buf_within_nocache;
 }
 #endif
+
+int apollo5x_init(void)
+{
+	/* Initialize for low power in the power control block */
+	am_hal_pwrctrl_low_power_init();
+
+	/* Enable SIMOBUCK for the apollo5 Family */
+	am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_SIMOBUCK_INIT, NULL);
+
+	/*
+	 * Set default temperature for spotmgr to room temperature
+	 */
+	am_hal_pwrctrl_temp_thresh_t dummy;
+
+	am_hal_pwrctrl_temp_update(25.0f, &dummy);
+
+	/* Enable Icache*/
+	sys_cache_instr_enable();
+
+	/* Enable Dcache */
+	sys_cache_data_enable();
+
+	return 0;
+}
+
+SYS_INIT(apollo5x_init, PRE_KERNEL_1, 0);
