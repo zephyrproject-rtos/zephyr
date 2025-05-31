@@ -903,7 +903,6 @@ static int uart_sam0_irq_update(const struct device *dev)
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
 
-#if defined(SERCOM_REV500)
 	/*
 	 * Cache the TXC flag, and use this cached value to clear the interrupt
 	 * if we do not used the cached value, there is a chance TXC will set
@@ -912,6 +911,9 @@ static int uart_sam0_irq_update(const struct device *dev)
 	struct uart_sam0_dev_data *const dev_data = dev->data;
 
 	dev_data->txc_cache = regs->INTFLAG.bit.TXC;
+	
+#if defined(SERCOM_REV500)
+
 	regs->INTFLAG.reg = SERCOM_USART_INTENCLR_ERROR
 			  | SERCOM_USART_INTENCLR_RXBRK
 			  | SERCOM_USART_INTENCLR_CTSIC
