@@ -116,6 +116,22 @@ __weak void clock_init(void)
 #endif
 }
 
+#if defined(CONFIG_WDOG_INIT)
+void z_arm_watchdog_init(void)
+{
+	/*
+	 * NOTE: DO NOT SINGLE STEP THROUGH THIS SECTION!!! Watchdog
+	 * reconfiguration must take place within 128 bus clocks from
+	 * unlocking. Single stepping through the code will cause the
+	 * watchdog to close the unlock window again.
+	 */
+
+	/* COP control registers are write-once, so they must be configured
+	 * only once, using the Watchdog driver API from the application.
+	 */
+}
+#endif /* CONFIG_WDOG_INIT */
+
 void soc_early_init_hook(void)
 {
 #ifdef CONFIG_TEMP_KINETIS
