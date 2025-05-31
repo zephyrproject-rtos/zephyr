@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Raytac Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuapp_qkaa.dtsi>
+#include "nrf5340_cpuapp_common.dtsi"
+#include "raytac_an7002q_db_nrf5340_cpuapp_pinctrl.dtsi"
+
+/ {
+	model = "Raytac AN7002-DB NRF5340 Application";
+	compatible = "raytac,raytac-an7002q-db-nrf5340-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_image;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
+		zephyr,wifi = &wlan0;
+	};
+};
+
+&qspi {
+	nrf70: nrf7002@1 {
+		compatible = "nordic,nrf7002-qspi";
+		status = "okay";
+		reg = <1>;
+		qspi-frequency = <24000000>;
+		qspi-quad-mode;
+
+		#include "nrf70_common.dtsi"
+		#include "nrf70_common_5g.dtsi"
+	};
+};
