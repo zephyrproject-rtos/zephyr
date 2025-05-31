@@ -8,8 +8,12 @@ config DMA_ESP32
 	help
 	  General Purpose DMA for ESP32 series.
 
+if DMA_ESP32
+
 config DMA_ESP32_MAX_DESCRIPTOR_NUM
 	int "Maximal number of available DMA descriptors"
 	default 16
 	help
 	  Reserves memory for a maximal number of descriptors
+
+endif # DMA_ESP32
