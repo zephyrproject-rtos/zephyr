@@ -868,22 +868,15 @@ Debug:
     - scripts/coredump/
     - samples/subsys/debug/
     - doc/services/debugging/
-  labels:
-    - "area: Debugging"
-  tests:
-    - debug
-
-"Debug: Profiling: Perf":
-  status: odd fixes
-  files:
     - doc/services/profiling/perf.rst
     - samples/subsys/profiling/perf/
     - scripts/profiling/stackcollapse.py
     - subsys/profiling/perf/
   labels:
-    - "area: Profiling / Perf"
+    - "area: Debugging"
   tests:
-    - debug.profiling.perf
+    - debug
+
 
 "Debug: Symtab":
   status: maintained
@@ -1778,6 +1771,10 @@ Release Notes:
 
 "Interrupt Handling":
   status: odd fixes
+  collaborators:
+    - ycsin
+    - dcpleung
+    - nashif
   files:
     - drivers/interrupt_controller/
     - dts/bindings/interrupt-controller/
