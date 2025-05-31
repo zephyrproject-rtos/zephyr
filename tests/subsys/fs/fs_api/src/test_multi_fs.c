@@ -10,18 +10,19 @@
 #define TEST_FS_NAND1 "/NAND:"
 #define TEST_FS_NAND2 "/MMCBLOCK:"
 
-static struct test_fs_data test_data;
+static struct test_fs_data test_data_fs1;
+static struct test_fs_data test_data_fs2;
 
 static struct fs_mount_t test_fs_mnt_1 = {
-		.type = TEST_FS_1,
-		.mnt_point = TEST_FS_NAND1,
-		.fs_data = &test_data,
+	.type = TEST_FS_1,
+	.mnt_point = TEST_FS_NAND1,
+	.fs_data = &test_data_fs1,
 };
 
 static struct fs_mount_t test_fs_mnt_2 = {
-		.type = TEST_FS_2,
-		.mnt_point = TEST_FS_NAND2,
-		.fs_data = &test_data,
+	.type = TEST_FS_2,
+	.mnt_point = TEST_FS_NAND2,
+	.fs_data = &test_data_fs2,
 };
 
 static int test_fs_init(void)
