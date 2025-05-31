@@ -296,8 +296,8 @@ mikrobus_serial: &uart3 {};
 
 &pwm7 {
 	pinctrl-0 = <&pwm7_default>;
-	interrupts = <40 1>, <41 1>;
-	interrupt-names = "gtioca", "overflow";
+	interrupts = <40 1>, <41 1>, <42 1>;
+	interrupt-names = "gtioca", "gtiocb", "overflow";
 	pinctrl-names = "default";
 	status = "okay";
 };
