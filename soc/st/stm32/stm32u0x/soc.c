@@ -37,7 +37,7 @@ void soc_early_init_hook(void)
 
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-#if CONFIG_PM
+#ifdef CONFIG_PM
 	stm32_power_init();
 #endif
 }

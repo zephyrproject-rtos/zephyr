@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 The Zephyr Project Contributors
+ * Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 void set_mode_stop(uint8_t substate_id)
 {
-	/* ensure the proper wake-up system clock */
+	/* ensure the proper wake-up system clock is selected */
 	LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
 
 	switch (substate_id) {
@@ -105,8 +105,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	/*
 	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
+	 * Reenable interrupts which were disabled when OS started idling code.
 	 */
 	irq_unlock(0);
 }
