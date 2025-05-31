@@ -46,6 +46,10 @@ config SOC_STM32U5A9XX
 	bool
 	select SOC_SERIES_STM32U5X
 
+config SOC_STM32U5F9XX
+	bool
+	select SOC_SERIES_STM32U5X
+
 config SOC_STM32U5G9XX
 	bool
 	select SOC_SERIES_STM32U5X
@@ -53,6 +57,7 @@ config SOC_STM32U5G9XX
 config SOC
 	default "stm32u5a5xx" if SOC_STM32U5A5XX
 	default "stm32u5a9xx" if SOC_STM32U5A9XX
+	default "stm32u5f9xx" if SOC_STM32U5F9XX
 	default "stm32u5g9xx" if SOC_STM32U5G9XX
 	default "stm32u535xx" if SOC_STM32U535XX
 	default "stm32u545xx" if SOC_STM32U545XX

@@ -1,10 +1,12 @@
 /*
  * Copyright (c) 2021 Linaro Limited
+ * Copyright (c) 2025 Harris Tomy
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <st/u5/stm32u575.dtsi>
+#include <st/u5/stm32u5_crypt.dtsi>
 
 / {
 	soc {
