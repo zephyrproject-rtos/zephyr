@@ -25,6 +25,19 @@
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 		};
+
+		power-states {
+			pstate_ps4_standby: ps4_standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+			pstate_ps4_sleep: ps4_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000>;
+				exit-latency-us = <3000>;
+			};
+		};
 	};
 
 	/* The first 1KB of SRAM is reserved for the NWP (Network Processor).
@@ -65,6 +78,16 @@
 
 	wifi0: wifi {
 		compatible = "silabs,siwx91x-wifi";
+		/*
+		 * Power/performance profile (see enum sl_si91x_performance_profile_t):
+		 *   0: HIGH_PERFORMANCE
+		 *   1: ASSOCIATED_POWER_SAVE
+		 *   2: ASSOCIATED_POWER_SAVE_LOW_LATENCY
+		 *   3: DEEP_SLEEP_WITHOUT_RAM_RETENTION
+		 *   4: DEEP_SLEEP_WITH_RAM_RETENTION
+		 * Default: 0 (HIGH_PERFORMANCE)
+		 */
+		power-profile = <0>;
 		status = "disabled";
 	};
 
