@@ -9,12 +9,12 @@ zephyr_library_include_directories(.)
 zephyr_library_sources(
   getaddrinfo.c
   sockets.c
+  sockets_misc.c
 )
 
 if(NOT CONFIG_NET_SOCKETS_OFFLOAD)
 zephyr_library_sources(
   getnameinfo.c
-  sockets_misc.c
   )
 endif()
 
