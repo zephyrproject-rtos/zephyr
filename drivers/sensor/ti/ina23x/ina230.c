@@ -223,9 +223,9 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 
 #ifdef CONFIG_INA230_TRIGGER
 #define INA230_CFG_IRQ(inst)                                                                       \
-	.trig_enabled = true, .mask = DT_INST_PROP(inst, mask),                                    \
-	.alert_limit = DT_INST_PROP(inst, alert_limit),                                            \
-	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios)
+	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),                                    \
+	.alert_limit = DT_INST_PROP(inst, alert_limit), .mask = DT_INST_PROP(inst, mask),          \
+	.trig_enabled = true,
 #else
 #define INA230_CFG_IRQ(inst)
 #endif /* CONFIG_INA230_TRIGGER */
@@ -234,18 +234,18 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 	static struct ina230_data drv_data_##type##inst;                                           \
 	static const struct ina230_config drv_config_##type##inst = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
+		.uv_lsb = type##_BUS_VOLTAGE_UV_LSB,                                               \
 		.config = (DT_INST_PROP_OR(inst, high_precision, 0) << 12) |                       \
 			  (DT_INST_ENUM_IDX(inst, avg_count) << 9) |                               \
 			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                 \
 			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |               \
 			  DT_INST_ENUM_IDX(inst, adc_mode),                                        \
-		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
-		.uv_lsb = type##_BUS_VOLTAGE_UV_LSB,                                               \
-		.power_scale = type##_POWER_SCALING,                                               \
 		.cal = (uint16_t)(((INA230_CAL_SCALING * 10000000ULL) /                            \
 				   ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *          \
 				    DT_INST_PROP(inst, rshunt_micro_ohms))) >>                     \
 				  (DT_INST_PROP_OR(inst, high_precision, 0) << 1)),                \
+		.power_scale = type##_POWER_SCALING,                                               \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
 			    ())};                                                                  \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##type##inst,             \
