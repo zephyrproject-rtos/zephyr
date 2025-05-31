@@ -295,7 +295,8 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 	static struct ina230_data drv_data_##type##inst;                                           \
 	static const struct ina230_config drv_config_##type##inst = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps) *                         \
+			       COND_CODE_1(DT_INST_PROP(inst, direction_invert), (-1), (1)),       \
 		.uv_lsb = type##_BUS_VOLTAGE_UV_LSB,                                               \
 		.conv_duration_us = CONV_DURATION_US(inst),                                        \
 		.config = (DT_INST_PROP_OR(inst, high_precision, 0) << 12) |                       \
