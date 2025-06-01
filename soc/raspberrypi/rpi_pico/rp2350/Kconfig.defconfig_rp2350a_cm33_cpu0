@@ -1,0 +1,20 @@
+# Raspberry Pi RP2350 MCU line
+# ARM Cortex M33, CPU0
+
+# Copyright (c) 2025 Dan Collins
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RP2350A_M33_CPU0
+
+# For CPU0, we need to use the base address of the flash rather than the
+# code address - because the image definition block needs to be at the
+# start of flash for the boot ROM to find it. If we don't have the image
+# definition block, then we should just use the offset.
+
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	default y if RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	default y if !RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
+
+endif # SOC_RP2350A_M33_CPU0
