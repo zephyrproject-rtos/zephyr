@@ -679,6 +679,10 @@ static int spi_sam0_init(const struct device *dev)
 			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
 #endif
 
+	/* Ensure all registers are at their default values */
+	regs->CTRLA.bit.SWRST = 1;
+	wait_synchronization(regs);
+
 	/* Disable all SPI interrupts */
 	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
 	wait_synchronization(regs);
