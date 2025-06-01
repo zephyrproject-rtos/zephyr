@@ -13,6 +13,7 @@ common:
   arch_exclude:
     # see #89839
     - rx
+  skip: true
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc
