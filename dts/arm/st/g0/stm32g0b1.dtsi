@@ -6,6 +6,7 @@
  */
 
 #include <st/g0/stm32g071.dtsi>
+#include <zephyr/dt-bindings/clock/stm32g0_b1x_c1x_clock.h>
 
 / {
 
