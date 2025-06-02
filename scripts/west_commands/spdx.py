@@ -49,14 +49,14 @@ class ZephyrSpdx(WestCommand):
         return parser
 
     def do_run(self, args, unknown_args):
-        self.dbg(f"running zephyr SPDX generator")
+        self.dbg("running zephyr SPDX generator")
 
-        self.dbg(f"  --init is", args.init)
-        self.dbg(f"  --build-dir is", args.build_dir)
-        self.dbg(f"  --namespace-prefix is", args.namespace_prefix)
-        self.dbg(f"  --spdx-dir is", args.spdx_dir)
-        self.dbg(f"  --analyze-includes is", args.analyze_includes)
-        self.dbg(f"  --include-sdk is", args.include_sdk)
+        self.dbg("  --init is", args.init)
+        self.dbg("  --build-dir is", args.build_dir)
+        self.dbg("  --namespace-prefix is", args.namespace_prefix)
+        self.dbg("  --spdx-dir is", args.spdx_dir)
+        self.dbg("  --analyze-includes is", args.analyze_includes)
+        self.dbg("  --include-sdk is", args.include_sdk)
 
         if args.init:
             self.do_run_init(args)
