@@ -220,7 +220,9 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		.resistor_p     = NRF_SAADC_RESISTOR_DISABLED,
 		.resistor_n     = NRF_SAADC_RESISTOR_DISABLED,
 #endif
+#if NRF_SAADC_HAS_CH_BURST
 		.burst          = NRF_SAADC_BURST_DISABLED,
+#endif
 	};
 	uint8_t channel_id = channel_cfg->channel_id;
 	uint32_t input_negative = channel_cfg->input_negative;
@@ -530,6 +532,7 @@ static int start_read(const struct device *dev,
 	uint8_t resolution = sequence->resolution;
 	uint8_t active_channels;
 	uint8_t channel_id;
+	nrf_saadc_burst_t burst;
 
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -581,10 +584,13 @@ static int start_read(const struct device *dev,
 			 * is not used (hence, the multiple channel sampling is
 			 * possible), the burst mode have to be deactivated.
 			 */
-			nrf_saadc_burst_set(NRF_SAADC, channel_id,
-				(sequence->oversampling != 0U ?
-					NRF_SAADC_BURST_ENABLED :
-					NRF_SAADC_BURST_DISABLED));
+			burst = (sequence->oversampling != 0U ?
+				 NRF_SAADC_BURST_ENABLED : NRF_SAADC_BURST_DISABLED);
+#if NRF_SAADC_HAS_CH_BURST
+			nrf_saadc_channel_burst_set(NRF_SAADC, channel_id, burst);
+#else
+			nrf_saadc_burst_set(NRF_SAADC, burst);
+#endif
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
@@ -596,10 +602,12 @@ static int start_read(const struct device *dev,
 				);
 			++active_channels;
 		} else {
-			nrf_saadc_burst_set(
-				NRF_SAADC,
-				channel_id,
-				NRF_SAADC_BURST_DISABLED);
+			burst = NRF_SAADC_BURST_DISABLED;
+#if NRF_SAADC_HAS_CH_BURST
+			nrf_saadc_channel_burst_set(NRF_SAADC, channel_id, burst);
+#else
+			nrf_saadc_burst_set(NRF_SAADC, burst);
+#endif
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
