@@ -172,10 +172,10 @@ struct scfg_reg {
 #define NPCM_DEV_CTL3_WP_INT_FL               0
 #define NPCM_DEV_CTL3_WP_GPIO55               1
 #define NPCM_DEV_CTL3_WP_GPIO76               2
-#define NPCM_DEV_CTL4_F_SPI_SLLK              2
-#define NPCM_DEV_CTL4_SPI_SP_SEL              4
-#define NPCM_DEV_CTL4_WP_IF                   5
-#define NPCM_DEV_CTL4_VCC1_RST_LK             6
+#define NPCM_DEV_CTL4_AMD_EN                  2
+#define NPCM_DEV_CTL4_PWROK_WD_EVENT          4
+#define NPCM_DEV_CTL4_ESPI_RSTO_EN            5
+#define NPCM_DEV_CTL4_USB_PWRDN               7
 #define NPCM_DEVPU0_I2C0_0_PUE                0
 #define NPCM_DEVPU0_I2C0_1_PUE                1
 #define NPCM_DEVPU0_I2C1_0_PUE                2
@@ -3849,5 +3849,190 @@ typedef enum {
 /*--------------------------*/
 #define RTC_YEARALARM_Pos                                  (0)
 #define RTC_YEARALARM_Msk                                  (0xFF << RTC_YEARALARM_Pos)
+
+
+/*---------------------- USB Host Controller -------------------------*/
+struct usbh_reg {
+    /* 0x00: OHCI Revision Register */
+    volatile uint32_t HcRevision;
+    /* 0x04: OHCI Control Register */
+    volatile uint32_t HcControl;
+    /* 0x08: OHCI Command Status Register */
+    volatile uint32_t HcCommandStatus;
+    /* 0x0C: OHCI Interrupt Status Register */
+    volatile uint32_t HcInterruptStatus;
+    /* 0x10: OHCI Interrupt Enable Register */
+    volatile uint32_t HcInterruptEnable;
+    /* 0x14: OHCI Interrupt Disable Register */
+    volatile uint32_t HcInterruptDisable;
+    /* 0x18: OHCI HCCA Base Address Register */
+    volatile uint32_t HcHCCA;
+    /* 0x1C: OHCI Period Current ED Register */
+    volatile uint32_t HcPeriodCurrentED;
+    /* 0x20: OHCI Control Head ED Register */
+    volatile uint32_t HcControlHeadED;
+    /* 0x24: OHCI Control Current ED Register */
+    volatile uint32_t HcControlCurrentED;
+    /* 0x28: OHCI Bulk Head ED Register */
+    volatile uint32_t HcBulkHeadED;
+    /* 0x2C: OHCI Bulk Current ED Register */
+    volatile uint32_t HcBulkCurrentED;
+    /* 0x30: OHCI Done Head Register */
+    volatile uint32_t HcDoneHead;
+    /* 0x34: OHCI FM Interval Register */
+    volatile uint32_t HcFmInterval;
+    /* 0x38: OHCI FM Remaining Register */
+    volatile uint32_t HcFmRemaining;
+    /* 0x3C: OHCI FM Number Register */
+    volatile uint32_t HcFmNumber;
+    /* 0x40: OHCI Periodic Start Register */
+    volatile uint32_t HcPeriodicStart;
+    /* 0x44: OHCI LSThreshold Register */
+    volatile uint32_t HcLSThreshold;
+    /* 0x48: OHCI Root Hub Descriptor A Register */
+    volatile uint32_t HcRhDescriptorA;
+    /* 0x4C: OHCI Root Hub Descriptor B Register */
+    volatile uint32_t HcRhDescriptorB;
+    /* 0x50: OHCI Root Hub Status Register */
+    volatile uint32_t HcRhStatus;
+    /* 0x54, 0x58: OHCI Root Hub Port Status [1/2] Register */
+    volatile uint32_t HcRhPortStatus[2];
+    volatile uint32_t RESERVE0[108];
+    /* 0x20C  USB Host Controller Config4 Register */
+    volatile uint32_t HcConfig4;
+};
+
+/* HcRevision fields */
+#define NPCM_HcRevision_REV                 FIELD(0, 8)
+
+/* HcControl field */
+#define NPCM_HcControl_CBSR_FIELD           FIELD(0, 1)
+#define NPCM_HcControl_PLE                  (2)
+#define NPCM_HcControl_IE                   (3)
+#define NPCM_HcControl_CLE                  (4)
+#define NPCM_HcControl_BLE                  (5)
+#define NPCM_HcControl_HCFS_FIELD           FIELD(6, 7)
+#define NPCM_HcControl_IR                   (8)
+#define NPCM_HcControl_RWC                  (9)
+#define NPCM_HcControl_RWCE                 (10)
+
+/* HcCommandStatus fields */
+#define NPCM_HcCommandStatus_HCR            (0)
+#define NPCM_HcCommandStatus_CLF            (1)
+#define NPCM_HcCommandStatus_BLF            (2)
+#define NPCM_HcCommandStatus_OCR            (3)
+#define NPCM_HcCommandStatus_SOC_FIELD      FIELD(16, 17)
+
+/* HcInterruptStatus fields */
+#define NPCM_HcInterruptStatus_SO           (0)
+#define NPCM_HcInterruptStatus_WDH          (1)
+#define NPCM_HcInterruptStatus_SF           (2)
+#define NPCM_HcInterruptStatus_RD           (3)
+#define NPCM_HcInterruptStatus_UE           (4)
+#define NPCM_HcInterruptStatus_FNO          (5)
+#define NPCM_HcInterruptStatus_RHSC         (6)
+#define NPCM_HcInterruptStatus_OC           (30)
+
+/* HcInterruptEnable fields */
+#define NPCM_HcInterruptEnable_SO           (0)
+#define NPCM_HcInterruptEnable_WDH          (1)
+#define NPCM_HcInterruptEnable_SF           (2)
+#define NPCM_HcInterruptEnable_RD           (3)
+#define NPCM_HcInterruptEnable_UE           (4)
+#define NPCM_HcInterruptEnable_FNO          (5)
+#define NPCM_HcInterruptEnable_RHSC         (6)
+#define NPCM_HcInterruptEnable_OC           (30)
+#define NPCM_HcInterruptEnable_MIE          (31)
+
+/* HcInterruptDisable fields */
+#define NPCM_HcInterruptDisable_SO          (0)
+#define NPCM_HcInterruptDisable_WDH         (1)
+#define NPCM_HcInterruptDisable_SF          (2)
+#define NPCM_HcInterruptDisable_RD          (3)
+#define NPCM_HcInterruptDisable_FNO         (5)
+#define NPCM_HcInterruptDisable_RHSC        (6)
+#define NPCM_HcInterruptDisable_MIE         (31)
+
+/* HcHCCA fields */
+#define NPCM_HcHCCA_HCCA_FIELD              FIELD(8, 31)
+
+/* HcPeriodCurrentED fields*/
+#define NPCM_HcPeriodCurrentED_PCED_FIELD   FIELD(4, 31)
+
+/* HcControlHeadED fields*/
+#define NPCM_HcControlHeadED_CHED_FIELD     FIELD(4, 31)
+
+/* HcControlCurrentED fields*/
+#define NPCM_HcControlCurrentED_CCED_FIELD  FIELD(4, 31)
+
+/* HcBulkHeadED fields*/
+#define NPCM_HcBulkHeadED_BHED_FIELD        FIELD(4, 31)
+
+/* HcBulkCurrentED fields*/
+#define NPCM_HcBulkCurrentED_BCED_FIELD     FIELD(4, 31)
+
+/* HcDoneHead fields*/
+#define NPCM_HcDoneHead_DH_FIELD            FIELD(4, 31)
+
+/* HcFmInterval fields*/
+#define NPCM_HcFmInterval_FI_FIELD          FIELD(0, 13)
+#define NPCM_HcFmInterval_FSMPS_FIELD       FIELD(16, 30)
+#define NPCM_HcFmInterval_FIT               (31)
+
+/* HcFmRemaining fields*/
+#define NPCM_HcFmRemaining_FR_FIELD         FIELD(0, 13)
+#define NPCM_HcFmRemaining_FRT              (31)
+
+/* HcFmNumber fields*/
+#define NPCM_HcFmNumber_FN_FIELD            FIELD(0, 15)
+
+/* HcPeriodicStart fields*/
+#define NPCM_HcPeriodicStart_PS_FIELD       FIELD(0, 13)
+
+/* HcLSThreshold fields*/
+#define NPCM_HcLSThreshold_LS_FIELDT        FIELD(0, 11)
+
+/* HcRhDescriptorA fields*/
+#define NPCM_HcRhDescriptorA_NDP_FIELD      FIELD(0, 7)
+
+/* HcRhDescriptorA fields*/
+#define NPCM_HcRhDescriptorA_PSM            (8)
+#define NPCM_HcRhDescriptorA_NPS            (9)
+#define NPCM_HcRhDescriptorA_DT             (10)
+#define NPCM_HcRhDescriptorA_OCPM           (11)
+#define NPCM_HcRhDescriptorA_NOCP           (12)
+#define NPCM_HcRhDescriptorA_POTPGT_FIELD   FIELD(24, 31)
+
+/* HcRhDescriptorB fields*/
+#define NPCM_HcRhDescriptorB_DR_FIELD       FIELD(0, 15)
+#define NPCM_HcRhDescriptorB_PPCM_FIELD     FIELD(16, 31)
+
+/* HcRhStatus fields*/
+#define NPCM_HcRhStatus_LPS                 (0)
+#define NPCM_HcRhStatus_OCI                 (1)
+#define NPCM_HcRhStatus_DRWE                (15)
+#define NPCM_HcRhStatus_LPSC                (16)
+#define NPCM_HcRhStatus_OCIC                (17)
+#define NPCM_HcRhStatus_CRWE                (31)
+
+/* HcRhPortStatus fields*/
+#define NPCM_HcRhPortStatus_CCS             (0)
+#define NPCM_HcRhPortStatus_PES             (1)
+#define NPCM_HcRhPortStatus_PSS             (2)
+#define NPCM_HcRhPortStatus_POCI            (3)
+#define NPCM_HcRhPortStatus_PRS             (4)
+#define NPCM_HcRhPortStatus_PPS             (8)
+#define NPCM_HcRhPortStatus_LSDA            (9)
+#define NPCM_HcRhPortStatus_CSC             (16)
+#define NPCM_HcRhPortStatus_PESC            (17)
+#define NPCM_HcRhPortStatus_PSSC            (18)
+#define NPCM_HcRhPortStatus_OCIC            (19)
+#define NPCM_HcRhPortStatus_PRSC            (20)
+
+/* HcConfig4 fields*/
+#define NPCM_HcConfig4_DMPULLDOWN           (3)
+#define NPCM_HcConfig4_DPPULLDOWN           (4)
+
+
 
 #endif /* _NUVOTON_NPCM_REG_DEF_H */

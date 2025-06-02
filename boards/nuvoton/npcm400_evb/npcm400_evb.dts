@@ -183,6 +183,10 @@
 	pinctrl-names = "default";
 };
 
+&usbh {
+    status = "okay";
+};
+
 &emac {
 	status = "okay";
 	pinctrl-0 = <&emac_rmii_en &emac_mdio_en &emac_phy>;

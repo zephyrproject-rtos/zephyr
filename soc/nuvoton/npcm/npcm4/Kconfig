@@ -11,3 +11,21 @@ config SOC_SERIES_NPCM4
 	select CPU_HAS_ARM_MPU
 	help
 	  Enable support for Nuvoton NPCM4 series
+
+config USBH_OHCI
+    bool "Enable Nuvoton NPCM USB OHCI Host Driver"
+    default y
+    help
+      Enable support for USB OHCI host controller.
+      
+config USBH_HID
+    bool "Enable USB Host HID"
+    default y
+    depends on USBH_OHCI
+    help
+      Enable support for HID on USBH.
+
+config USBH_INIT_PRIORITY
+    int "USBH initialization priority"
+    default 50
+
