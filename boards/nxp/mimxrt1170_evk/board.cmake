@@ -7,9 +7,6 @@
 if(CONFIG_SOC_MIMXRT1176_CM7 OR CONFIG_SECOND_CORE_MCUX)
  board_runner_args(pyocd "--target=mimxrt1170_cm7")
  board_runner_args(jlink "--device=MIMXRT1176xxxA_M7")
- # ITCM is not defined in RT1170's LinkServer device file
- board_runner_args(linkserver "--override=/device/memory/-=\{\"location\":\"0x00000000\",\
-                               \"size\":\"0x00040000\",\"type\":\"RAM\"\}")
 
  if(${BOARD_REVISION} STREQUAL "A")
   board_runner_args(linkserver  "--device=MIMXRT1176xxxxx:MIMXRT1170-EVK")
