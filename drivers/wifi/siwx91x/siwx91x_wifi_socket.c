@@ -88,25 +88,57 @@ void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
 		.type = SL_IPV6,
 	};
 	struct in6_addr addr6 = { };
-	int ret;
+	struct in6_addr ll_addr6 = { };
+	struct in6_addr gw_addr6 = { };
 
 	if (!IS_ENABLED(CONFIG_NET_IPV6)) {
 		return;
 	}
-	/* FIXME: support for static IP configuration */
-	ret = sl_si91x_configure_ip_address(&ip_config6, SL_SI91X_WIFI_CLIENT_VAP_ID);
-	if (!ret) {
-		ARRAY_FOR_EACH(addr6.s6_addr32, i) {
-			addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
-		}
-		/* SiWx91x already take care of DAD and sending ND is not
-		 * supported anyway.
-		 */
-		net_if_flag_set(sidev->iface, NET_IF_IPV6_NO_ND);
-		/* FIXME: also report gateway and link local address */
-		net_if_ipv6_addr_add(sidev->iface, &addr6, NET_ADDR_AUTOCONF, 0);
-	} else {
+	int ret = sl_si91x_configure_ip_address(&ip_config6, SL_SI91X_WIFI_CLIENT_VAP_ID);
+
+	if (ret) {
 		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		return;
+	}
+
+	/* Extract IPv6 gateway address */
+	ARRAY_FOR_EACH(gw_addr6.s6_addr32, i) {
+		gw_addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.gateway.value[i]);
+	}
+	if (!IN6_IS_ADDR_UNSPECIFIED(&gw_addr6)) {
+		struct net_if_router *ret_gw =
+			net_if_ipv6_router_add(sidev->iface, &gw_addr6, 1800);
+
+		if (!ret_gw) {
+			LOG_ERR("Failed to add IPv6 gateway");
+		}
+	}
+
+	/* Add link-local address if present */
+	ARRAY_FOR_EACH(ll_addr6.s6_addr32, i) {
+		ll_addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.link_local_address.value[i]);
+	}
+	if (!IN6_IS_ADDR_UNSPECIFIED(&ll_addr6)) {
+		struct net_if_addr *if_addr =
+			net_if_ipv6_addr_add(sidev->iface, &ll_addr6, NET_ADDR_AUTOCONF, 0);
+
+		if (!if_addr) {
+			LOG_ERR("Failed to add link-local IPv6 address");
+		}
+	}
+
+	/* Add global address if present */
+	ARRAY_FOR_EACH(addr6.s6_addr32, i) {
+		addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
+	}
+	if (!IN6_IS_ADDR_UNSPECIFIED(&addr6)) {
+		net_if_flag_set(sidev->iface, NET_IF_IPV6_NO_ND);
+		struct net_if_addr *if_addr =
+			net_if_ipv6_addr_add(sidev->iface, &addr6, NET_ADDR_AUTOCONF, 0);
+
+		if (!if_addr) {
+			LOG_ERR("Failed to add global IPv6 address");
+		}
 	}
 }
 
