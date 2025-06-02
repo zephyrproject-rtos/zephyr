@@ -114,7 +114,7 @@
 	};
 };
 
-&psramctrl0 {
+&memc {
 	clocks = <&clock0 SIWX91X_CLK_QSPI>;
 	pinctrl-0 = <&psram_default>;
 	pinctrl-names = "default";
