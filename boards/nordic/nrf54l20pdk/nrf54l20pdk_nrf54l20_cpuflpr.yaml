@@ -6,7 +6,7 @@ name: nRF54L20-PDK-nRF54L20-Fast-Lightweight-Peripheral-Processor
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 64
 flash: 64

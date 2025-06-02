@@ -3,7 +3,7 @@ name: Alder Lake CRB
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 2048
 supported:
   - acpi

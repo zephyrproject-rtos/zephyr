@@ -3,7 +3,7 @@ name: TTGO T8S3 APPCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

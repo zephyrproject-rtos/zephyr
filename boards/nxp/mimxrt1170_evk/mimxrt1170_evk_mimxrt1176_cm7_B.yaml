@@ -9,7 +9,7 @@ name: NXP MIMXRT1170-EVKB CM7
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 65536
 flash: 65536

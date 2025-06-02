@@ -3,7 +3,7 @@ name: NXP i.MX 8QM Audio DSP
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   only_tags:
     - kernel

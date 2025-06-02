@@ -9,7 +9,7 @@ name: Nuvoton NPCX4M8F EVB
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 114
 flash: 384

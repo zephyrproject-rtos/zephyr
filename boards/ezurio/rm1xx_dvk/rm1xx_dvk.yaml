@@ -3,7 +3,7 @@ name: RM1xx_DVK
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 32
 supported:

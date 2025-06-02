@@ -3,7 +3,7 @@ name: M5Stack STAMP-C3
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - i2c

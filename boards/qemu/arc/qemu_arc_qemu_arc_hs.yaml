@@ -5,7 +5,7 @@ simulation:
   - name: qemu
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - arcmwdt
 testing:

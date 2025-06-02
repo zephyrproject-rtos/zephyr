@@ -3,7 +3,7 @@ name: IAR STM32F429II ACA
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - iar
 ram: 192

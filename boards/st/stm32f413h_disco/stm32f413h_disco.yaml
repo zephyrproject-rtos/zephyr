@@ -3,7 +3,7 @@ name: ST STM32F413H Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - arduino_gpio

@@ -3,7 +3,7 @@ name: ST Nucleo U5A5ZJ Q
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - arduino_gpio

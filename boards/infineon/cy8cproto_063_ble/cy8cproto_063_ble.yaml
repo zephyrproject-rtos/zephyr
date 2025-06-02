@@ -10,7 +10,7 @@ arch: arm
 ram: 288
 flash: 1024
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - adc

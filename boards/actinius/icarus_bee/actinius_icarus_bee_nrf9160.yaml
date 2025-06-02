@@ -4,7 +4,7 @@ type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
 ram: 88
 flash: 256
 supported:

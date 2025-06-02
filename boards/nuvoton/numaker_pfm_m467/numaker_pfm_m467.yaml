@@ -6,7 +6,7 @@ name: NUVOTON NUMAKER-PFM-M467 Kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 512
 flash: 1024

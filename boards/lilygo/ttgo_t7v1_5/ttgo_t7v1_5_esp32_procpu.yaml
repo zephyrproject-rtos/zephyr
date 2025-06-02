@@ -3,7 +3,7 @@ name: TTGO T7 V1.5 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - i2c

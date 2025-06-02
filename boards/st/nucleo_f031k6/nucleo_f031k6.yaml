@@ -3,7 +3,7 @@ name: ST Nucleo F031K6
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 4
 flash: 32

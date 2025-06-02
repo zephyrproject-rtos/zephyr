@@ -3,7 +3,7 @@ name: Visionfive JH7110 (NON-SMP)
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 supported:
   - uart

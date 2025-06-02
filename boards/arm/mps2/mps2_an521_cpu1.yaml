@@ -9,7 +9,7 @@ simulation:
   - name: armfvp
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
 testing:
   default: true
   only_tags:

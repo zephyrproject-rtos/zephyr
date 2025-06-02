@@ -9,7 +9,7 @@ ram: 512
 flash: 512
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
 testing:

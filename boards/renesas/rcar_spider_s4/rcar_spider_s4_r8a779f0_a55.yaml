@@ -3,7 +3,7 @@ name: Cortex A55 for Renesas Spider
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 supported:
   - pinctrl

@@ -6,7 +6,7 @@ simulation:
     exec: nsimdrv
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - arcmwdt
 testing:

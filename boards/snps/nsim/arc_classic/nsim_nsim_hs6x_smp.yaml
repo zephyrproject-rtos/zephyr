@@ -7,7 +7,7 @@ simulation:
 arch: arc
 toolchain:
   - cross-compile
-  - zephyr
+  - zephyr-gnu
   - arcmwdt
 supported:
   - smp

@@ -3,7 +3,7 @@ name: ODROID-GO PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - i2c

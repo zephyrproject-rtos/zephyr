@@ -6,7 +6,7 @@ simulation:
 arch: riscv
 ram: 16
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   default: true
   only_tags:

@@ -7,7 +7,7 @@ name: Raytac-AN54L15Q-DB-nRF54L15-Fast-Lightweight-Peripheral-Processor (RRAM XI
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 68
 flash: 96

@@ -6,7 +6,7 @@ name: Ophelia4-EV-nRF54L15-Fast-Lightweight-Peripheral-Processor
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 96
 flash: 96

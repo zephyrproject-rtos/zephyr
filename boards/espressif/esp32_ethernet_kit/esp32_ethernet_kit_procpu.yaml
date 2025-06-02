@@ -3,7 +3,7 @@ name: ESP32 ETHERNET KIT PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - watchdog

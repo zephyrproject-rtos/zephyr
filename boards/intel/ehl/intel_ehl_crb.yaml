@@ -3,7 +3,7 @@ name: Elkhart Lake CRB
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - llvm
 ram: 2048
 supported:

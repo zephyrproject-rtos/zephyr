@@ -3,6 +3,6 @@ name: nRF51-VBLUno51
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 32

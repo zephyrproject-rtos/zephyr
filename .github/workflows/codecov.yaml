@@ -103,7 +103,7 @@ jobs:
         continue-on-error: true
         run: |
           export ZEPHYR_BASE=${PWD}
-          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr-gnu
           mkdir -p coverage/reports
           ./scripts/twister --save-tests ${{matrix.normalized}}-testplan.json
           ls -la

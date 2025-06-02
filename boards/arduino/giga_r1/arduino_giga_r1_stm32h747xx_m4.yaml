@@ -3,7 +3,7 @@ name: Arduino GIGA R1 WiFi (M4)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 288
 flash: 1024

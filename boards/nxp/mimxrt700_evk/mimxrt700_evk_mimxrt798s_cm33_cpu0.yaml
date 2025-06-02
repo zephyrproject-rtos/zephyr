@@ -11,7 +11,7 @@ arch: arm
 ram: 512
 flash: 65536
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - counter

@@ -3,7 +3,7 @@ name: OLIMEXINO-STM32
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 20
 supported:

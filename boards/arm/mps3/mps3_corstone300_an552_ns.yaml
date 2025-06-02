@@ -9,7 +9,7 @@ ram: 2048
 flash: 512
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
 testing:
   default: true
   only_tags:

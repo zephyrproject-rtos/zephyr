@@ -6,7 +6,7 @@ name: ESP32-C3-DevKit-RUST-1
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - adc
   - gpio

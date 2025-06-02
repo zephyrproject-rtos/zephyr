@@ -3,6 +3,6 @@ name: INTEL FPGA Nios V/g general purpose processor
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 256
 vendor: intel

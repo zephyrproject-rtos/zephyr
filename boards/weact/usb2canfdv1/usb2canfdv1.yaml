@@ -3,7 +3,7 @@ name: WeAct USB2CANFDV1
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 144
 flash: 128

@@ -6,7 +6,7 @@ name: ST Nucleo H533RE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 272
 flash: 512
 supported:

@@ -12,7 +12,7 @@ simulation:
   - name: qemu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - net

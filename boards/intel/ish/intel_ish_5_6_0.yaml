@@ -3,7 +3,7 @@ name: Intel ISH 5.6.0 SoC
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 640
 supported:
   - serial

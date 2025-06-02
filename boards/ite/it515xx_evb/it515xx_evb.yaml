@@ -3,7 +3,7 @@ name: ITE IT51XXX EVB
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 128
 supported:
   - flash

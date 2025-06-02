@@ -3,7 +3,7 @@ name: ST STM32MP135F-DK Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - gpio

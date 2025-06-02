@@ -7,7 +7,7 @@ simulation:
 env:
   - BSIM_OUT_PATH
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   ignore_tags:
     - modem

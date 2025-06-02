@@ -22,5 +22,5 @@ variants:
     twister: false
   nucleo_n657x0_q/stm32n657xx/sb:
     toolchain:
-      - zephyr
+      - zephyr-gnu
       - gnuarmemb

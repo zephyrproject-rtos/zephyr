@@ -57,11 +57,11 @@ Flash the ``zephyr.bin.normal.out`` using this command:
 
 .. code-block:: console
 
-   cargo run -- zephyr.bin.normal.out && minicom -D /dev/ttyUSB0
+   cargo run -- zephyr-gnu.bin.normal.out && minicom -D /dev/ttyUSB0
 
 .. code-block:: text
 
-   cargo run -- zephyr.bin.normal.out && minicom -D /dev/ttyUSB0
+   cargo run -- zephyr-gnu.bin.normal.out && minicom -D /dev/ttyUSB0
    Finished dev [unoptimized + debuginfo] target(s) in 0.03s
    Running `target/debug/vf2-loader zephyr.bin.normal.out`
    Welcome to minicom 2.7.1

@@ -6,7 +6,7 @@ name: STM32C0116 DK
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - counter

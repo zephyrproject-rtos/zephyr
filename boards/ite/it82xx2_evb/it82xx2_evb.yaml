@@ -3,7 +3,7 @@ name: ITE IT82XX2 EVB
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 256
 testing:
   ignore_tags:

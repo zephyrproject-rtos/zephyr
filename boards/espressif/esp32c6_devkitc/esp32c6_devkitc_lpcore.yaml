@@ -3,7 +3,7 @@ name: ESP32-C6-DevKitC LP Core
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - cpu
   - uart

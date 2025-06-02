@@ -6,7 +6,7 @@ name: NXP i.MX93 EVK M33 DDR
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 4096
 flash: 0

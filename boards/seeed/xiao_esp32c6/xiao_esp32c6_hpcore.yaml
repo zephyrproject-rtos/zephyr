@@ -3,7 +3,7 @@ name: XIAO ESP32C6 HP Core
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - watchdog

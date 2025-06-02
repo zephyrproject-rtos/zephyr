@@ -9,7 +9,7 @@ name: MEC1501 MODULAR ASSY 6885
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 32
 flash: 224

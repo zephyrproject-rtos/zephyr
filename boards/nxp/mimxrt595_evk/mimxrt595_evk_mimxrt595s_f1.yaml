@@ -3,7 +3,7 @@ name: i.MXRT595 Fusion F1 DSP
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   only_tags:
     - kernel

@@ -9,7 +9,7 @@ name: LiteX SoC with VexRiscV softcore CPU
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 262144
 supported:
   - gpio

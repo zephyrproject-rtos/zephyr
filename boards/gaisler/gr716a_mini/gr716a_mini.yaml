@@ -6,7 +6,7 @@ simulation:
     exec: tsim-leon3
 arch: sparc
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - netif
   - spi

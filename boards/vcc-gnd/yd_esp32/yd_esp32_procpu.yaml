@@ -3,7 +3,7 @@ name: YD-ESP32 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - adc
   - dac

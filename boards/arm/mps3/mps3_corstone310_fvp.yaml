@@ -12,7 +12,7 @@ simulation:
     exec: FVP_Corstone_SSE-310
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
 testing:

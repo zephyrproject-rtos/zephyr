@@ -6,7 +6,7 @@ name: Oceanus-I EV (rev 1.1)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 64
 flash: 256
 supported:

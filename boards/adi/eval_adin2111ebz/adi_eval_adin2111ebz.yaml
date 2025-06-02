@@ -3,7 +3,7 @@ name: ADI EVAL-ADIN2111EBZ evaulation board
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 640
 flash: 2048

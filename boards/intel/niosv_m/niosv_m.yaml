@@ -3,6 +3,6 @@ name: INTEL FPGA niosv_m
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 256
 vendor: intel

@@ -3,7 +3,7 @@ name: ESP32-S3-Touch-LCD-1.28 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - i2c

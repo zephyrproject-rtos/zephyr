@@ -6,7 +6,7 @@ simulation:
 arch: x86
 ram: 3000
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - llvm
 supported:
   - pci

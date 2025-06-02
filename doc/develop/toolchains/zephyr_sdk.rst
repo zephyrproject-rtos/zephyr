@@ -34,7 +34,7 @@ script. Additional OS-specific instructions are described in the sections below.
 
 If no toolchain is selected, the build system looks for Zephyr SDK and uses the toolchain
 from there. You can enforce this by setting the environment variable
-:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr``.
+:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr-gnu``.
 
 If you install the Zephyr SDK outside any of the default locations (listed in
 the operating system specific instructions below) and you want automatic discovery

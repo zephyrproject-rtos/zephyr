@@ -6,7 +6,7 @@ name: CANbardo
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 flash: 1024
 ram: 384

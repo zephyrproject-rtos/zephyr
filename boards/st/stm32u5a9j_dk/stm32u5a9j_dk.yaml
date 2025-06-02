@@ -3,7 +3,7 @@ name: ST STM32U5A9J-DK Discovery Kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - gpio

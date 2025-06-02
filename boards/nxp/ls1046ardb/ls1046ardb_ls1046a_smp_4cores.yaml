@@ -3,7 +3,7 @@ name: NXP LS1046ARDB SMP on four CPU Cores
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 1024
 vendor: nxp

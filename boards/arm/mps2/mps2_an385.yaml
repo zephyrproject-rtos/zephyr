@@ -7,7 +7,7 @@ simulation:
   - name: armfvp
     exec: FVP_MPS2_Cortex-M3
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - counter

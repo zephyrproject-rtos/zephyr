@@ -3,7 +3,7 @@ name: FANKE FK743M5-XIH6
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 1024
 flash: 2048
