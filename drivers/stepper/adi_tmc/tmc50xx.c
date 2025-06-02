@@ -105,6 +105,7 @@ static int tmc50xx_stepper_set_event_callback(const struct device *dev,
 
 static int read_vactual(const struct tmc50xx_stepper_config *config, int32_t *actual_velocity)
 {
+	__ASSERT(actual_velocity != NULL, "actual_velocity pointer must not be NULL");
 	int err;
 
 	err = tmc50xx_read(config->controller, TMC50XX_VACTUAL(config->index), actual_velocity);
