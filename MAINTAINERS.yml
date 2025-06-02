@@ -3945,6 +3945,10 @@ NXP Platforms (Xtensa):
   files:
     - soc/nxp/imx/*/adsp/
     - soc/nxp/imxrt/imxrt5xx/f1/
+    - soc/nxp/imxrt/imxrt7xx/hifi1/
+    - soc/nxp/imxrt/*/hifi4/
+    - soc/nxp/imxrt/imxrt(5|6|7)xx/CMakeLists.txt
+    - soc/nxp/imxrt/imxrt(5|6|7)xx/Kconfig*
   labels:
     - "platform: NXP Xtensa"
   description: NXP Xtensa platforms
