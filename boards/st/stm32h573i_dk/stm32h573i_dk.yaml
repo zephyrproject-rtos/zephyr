@@ -24,7 +24,6 @@ supported:
   - spi
   - octospi
   - can
-  - usb_device
   - i2c
   - rtc
   - usbd
