@@ -69,8 +69,10 @@ static int ntc_thermistor_channel_get(const struct device *dev, enum sensor_chan
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
+		k_mutex_lock(&data->mutex, K_FOREVER);
 		ohm = ntc_get_ohm_of_thermistor(&cfg->ntc_cfg, data->sample_val,
 						data->sample_val_max);
+		k_mutex_unlock(&data->mutex);
 		temp = ntc_get_temp_mc(&cfg->ntc_cfg.type, ohm);
 		val->val1 = temp / 1000;
 		val->val2 = (temp % 1000) * 1000;
