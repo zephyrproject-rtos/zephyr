@@ -866,8 +866,18 @@ void bt_conn_data_ready(struct bt_conn *conn)
 		 */
 		bt_conn_ref(conn);
 		k_sched_lock();
+#if defined(CONFIG_BT_CONN_PRIORITIZE_ISO_READY)
+		if (conn->type == BT_CONN_TYPE_ISO) {
+			sys_slist_append(&bt_dev.le.iso_conn_ready,
+					 &conn->_conn_ready);
+		} else {
+			sys_slist_append(&bt_dev.le.conn_ready,
+					 &conn->_conn_ready);
+		}
+#else
 		sys_slist_append(&bt_dev.le.conn_ready,
 				 &conn->_conn_ready);
+#endif
 		k_sched_unlock();
 		LOG_DBG("raised");
 	} else {
@@ -909,20 +919,12 @@ __maybe_unused static bool dont_have_methods(struct bt_conn *conn)
 		(conn->has_data == NULL);
 }
 
-struct bt_conn *get_conn_ready(void)
+static struct bt_conn *get_conn_ready_from_sys_slist(sys_slist_t *ready_list)
 {
 	struct bt_conn *conn, *tmp;
 	sys_snode_t *prev = NULL;
 
-	if (dont_have_viewbufs()) {
-		/* We will get scheduled again when the (view) buffers are freed. If you
-		 * hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
-		 */
-		LOG_DBG("no view bufs");
-		return NULL;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_dev.le.conn_ready, conn, tmp, _conn_ready) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(ready_list, conn, tmp, _conn_ready) {
 		__ASSERT_NO_MSG(tmp != conn);
 
 		/* Iterate over the list of connections that have data to send
@@ -970,6 +972,26 @@ struct bt_conn *get_conn_ready(void)
 
 	/* No connection has data to send */
 	return NULL;
+}
+
+struct bt_conn *get_conn_ready(void)
+{
+	if (dont_have_viewbufs()) {
+		/* We will get scheduled again when the (view) buffers are freed. If you
+		 * hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
+		 */
+		LOG_DBG("no view bufs");
+		return NULL;
+	}
+
+#if defined(CONFIG_BT_CONN_PRIORITIZE_ISO_READY)
+	struct bt_conn *conn = get_conn_ready_from_sys_slist(&bt_dev.le.iso_conn_ready);
+
+	if (conn) {
+		return conn;
+	}
+#endif
+	return get_conn_ready_from_sys_slist(&bt_dev.le.conn_ready);
 }
 
 /* Crazy that this file is compiled even if this is not true, but here we are. */
