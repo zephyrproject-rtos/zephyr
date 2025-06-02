@@ -307,21 +307,6 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(416)>;
-		};
-
-		slot1_partition: partition@78000 {
-			label = "image-1";
-			reg = <0x00078000 DT_SIZE_K(416)>;
-		};
-
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 DT_SIZE_K(64)>;
-		};
-
 		/* Set 64KB of storage at the end of Bank1 */
 		storage_partition: partition@f0000 {
 			label = "storage";
@@ -406,9 +391,19 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
-				label = "nor";
-				reg = <0x00000000 DT_SIZE_M(64)>;
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_M(16)>;
+			};
+
+			slot1_partition: partition@1000000 {
+				label = "image-1";
+				reg = <0x01000000 DT_SIZE_M(16)>;
+			};
+
+			scratch_partition: partition@2000000 {
+				label = "image-scratch";
+				reg = <0x02000000 DT_SIZE_M(24)>;
 			};
 		};
 	};
