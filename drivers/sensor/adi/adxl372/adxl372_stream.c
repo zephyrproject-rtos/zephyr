@@ -365,15 +365,7 @@ static void adxl372_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		return;
 	}
 
-	enum sensor_stream_data_opt data_opt;
-
-	if ((fifo_wmark_cfg != NULL) && (fifo_full_cfg == NULL)) {
-		data_opt = fifo_wmark_cfg->opt;
-	} else if ((fifo_wmark_cfg == NULL) && (fifo_full_cfg != NULL)) {
-		data_opt = fifo_full_cfg->opt;
-	} else {
-		data_opt = MIN(fifo_wmark_cfg->opt, fifo_full_cfg->opt);
-	}
+	enum sensor_stream_data_opt data_opt = MIN(fifo_wmark_cfg->opt, fifo_full_cfg->opt);
 
 	if (data_opt == SENSOR_STREAM_DATA_NOP || data_opt == SENSOR_STREAM_DATA_DROP) {
 		uint8_t *buf;
