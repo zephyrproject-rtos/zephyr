@@ -152,8 +152,11 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	 * result
 	 */
 	struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(r);
+	__ASSERT_NO_MSG(write_fifo_addr != NULL);
 	struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(r);
+	__ASSERT_NO_MSG(read_fifo_data != NULL);
 	struct rtio_sqe *complete_op = rtio_sqe_acquire(r);
+	__ASSERT_NO_MSG(complete_op != NULL);
 	const uint8_t reg_addr = REG_SPI_READ_BIT | FIELD_GET(REG_ADDRESS_MASK, REG_FIFO_DATA);
 
 	rtio_sqe_prep_tiny_write(write_fifo_addr, spi_iodev, RTIO_PRIO_NORM, &reg_addr, 1, NULL);
@@ -175,6 +178,7 @@ icm42688_get_read_config_trigger(const struct sensor_read_config *cfg,
 			return &cfg->triggers[i];
 		}
 	}
+	LOG_DBG("Unsupported trigger (%d)", trig);
 	return NULL;
 }
 
