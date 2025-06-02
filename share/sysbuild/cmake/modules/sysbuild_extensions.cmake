@@ -292,7 +292,7 @@ function(ExternalZephyrProject_Add)
         list(PREPEND sysbuild_image_dts_overlay_files ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${FILE_SUFFIX}.overlay)
       endif()
 
-      foreach(sysbuild_image_dts_overlay_files overlay_file)
+      foreach(overlay_file ${sysbuild_image_dts_overlay_files})
         if(EXISTS ${overlay_file})
           set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${overlay_file}
             CACHE INTERNAL "devicetree overlay file defined by main application"
