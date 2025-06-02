@@ -157,9 +157,7 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 
 	k_sem_take(&data->lock, K_FOREVER);
 
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	pm_policy_device_power_lock_get(dev);
-#endif
 
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
@@ -215,9 +213,7 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		msgs++;
 	}
 
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	pm_policy_device_power_lock_put(dev);
-#endif
 
 	k_sem_give(&data->lock);
 
