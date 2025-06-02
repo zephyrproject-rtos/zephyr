@@ -135,6 +135,12 @@ static int runtime_suspend(const struct device *dev, bool async,
 		}
 
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
+
+		/* Now put the domain */
+		if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+			(void)pm_device_runtime_put(PM_DOMAIN(dev->pm_base));
+			atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+		}
 	}
 
 unlock:
@@ -171,6 +177,7 @@ static void runtime_suspend_work(struct k_work *work)
 	if ((ret == 0) &&
 	    atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
 		(void)pm_device_runtime_put(PM_DOMAIN(&pm->base));
+		atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
 
 	__ASSERT(ret == 0, "Could not suspend device (%d)", ret);
@@ -256,7 +263,7 @@ int pm_device_runtime_get(const struct device *dev)
 	 */
 	const struct device *domain = PM_DOMAIN(&pm->base);
 
-	if (domain != NULL) {
+	if (domain != NULL && !atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
 		ret = pm_device_runtime_get(domain);
 		if (ret != 0) {
 			goto unlock;
@@ -382,14 +389,6 @@ int pm_device_runtime_put(const struct device *dev)
 		k_spin_unlock(&pm_sync->lock, k);
 	} else {
 		ret = runtime_suspend(dev, false, K_NO_WAIT);
-
-		/*
-		 * Now put the domain
-		 */
-		if ((ret == 0) &&
-		    atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
-			ret = pm_device_runtime_put(PM_DOMAIN(dev->pm_base));
-		}
 	}
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put, dev, ret);
 
