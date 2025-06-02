@@ -880,7 +880,10 @@ class TestPlan:
                 if itoolchain:
                     toolchain = itoolchain
                 elif plat.arch in ['posix', 'unit']:
-                        toolchain = 'host/gnu' if not self.env.toolchain else self.env.toolchain
+                    if self.env.toolchain in ['host/llvm']:
+                        toolchain = 'host/llvm'
+                    else:
+                        toolchain = 'host/gnu'
                 else:
                     toolchain = "zephyr" if not self.env.toolchain else self.env.toolchain
 
