@@ -64,6 +64,33 @@ static inline void DBG(char *msg, struct k_thread *t)
 
 #ifdef CONFIG_RISCV_ISA_EXT_V
 
+void z_riscv_vstate_csr_save(struct z_riscv_v_context *dest)
+{
+	__asm volatile(".option push\n\t"
+		       ".option arch, +v\n\t"
+		       "csrr	%0, vstart\n\t"
+		       "csrr	%1, vl\n\t"
+		       "csrr	%2, vtype\n\t"
+		       "csrr	%3, vcsr\n\t"
+		       ".option pop\n\t"
+		       : "=r"(dest->vstart), "=r"(dest->vl), "=r"(dest->vtype), "=r"(dest->vcsr)
+		       :
+		       :);
+}
+
+void z_riscv_vstate_csr_restore(struct z_riscv_v_context *src)
+{
+	__asm volatile(".option push\n\t"
+		       ".option arch, +v\n\t"
+			   "vsetvl	 x0, %1, %2\n\t"
+		       "csrw	vstart, %0\n\t"
+		       "csrw	vcsr, %3\n\t"
+		       ".option pop\n\t"
+		       :
+		       : "r"(src->vstart), "r"(src->vl), "r"(src->vtype), "r"(src->vcsr)
+		       :);
+}
+
 #ifndef CONFIG_RISCV_ISA_EXT_V_LAZY
 void z_riscv_vstate_save_thread(struct k_thread *thread)
 {
@@ -79,14 +106,7 @@ void z_riscv_vstate_save_thread(struct k_thread *thread)
 
 	unsigned long vl;
 
-	__asm volatile(
-		"csrr	%0, vstart\n\t"
-		"csrr	%1, vtype\n\t"
-		"csrr	%2, vl\n\t"
-		"csrr	%3, vcsr\n\t"
-		"csrr	%4, vlenb\n\t"
-		: "=r"(save_to->vstart), "=r"(save_to->vtype), "=r"(save_to->vl), "=r"(save_to->vcsr), "=r"(save_to->vlenb)
-		::);
+	z_riscv_vstate_csr_save(save_to);
 	__asm volatile(
 		".option push\n\t"
 		".option arch, +v\n\t"
@@ -136,15 +156,7 @@ void z_riscv_vstate_restore_thread(struct k_thread *thread){
 		: "=&r"(vl)
 		: "r"(restore_from->vreg)
 		: "memory");
-	__asm volatile(
-		".option push\n\t"
-		".option arch, +v\n\t"
-		"vsetvl	 x0, %2, %1\n\t"
-		".option pop\n\t"
-		"csrw	vstart, %0\n\t"
-		"csrw	vcsr, %3\n\t"
-		: : "r"(restore_from->vstart), "r"(restore_from->vtype), "r"(restore_from->vl), "r"(restore_from->vcsr)
-		:);
+	z_riscv_vstate_csr_restore(restore_from);
 	csr_clear(mstatus, MSTATUS_VS);
 	csr_set(mstatus, MSTATUS_VS_CLEAN);
 }
@@ -156,34 +168,6 @@ void z_riscv_vstate_restore()
 #endif /* CONFIG_RISCV_ISA_EXT_V_LAZY */
 
 #ifdef CONFIG_RISCV_ISA_EXT_V_LAZY
-
-void z_riscv_vstate_csr_save(struct z_riscv_v_context *dest)
-{
-	// printk("vcsr save\n");
-	__asm volatile("csrr	%0, vstart\n\t"
-		       "csrr	%1, vtype\n\t"
-		       "csrr	%2, vl\n\t"
-		       "csrr	%3, vcsr\n\t"
-		       "csrr	%4, vlenb\n\t"
-		       : "=r"(dest->vstart), "=r"(dest->vtype), "=r"(dest->vl), "=r"(dest->vcsr),
-			 "=r"(dest->vlenb)
-		       :
-		       :);
-}
-
-void z_riscv_vstate_csr_restore(struct z_riscv_v_context *src)
-{
-	// printk("vcsr restore\n");
-	__asm volatile(".option push\n\t"
-		       ".option arch, +v\n\t"
-		       "vsetvl	 x0, %2, %1\n\t"
-		       ".option pop\n\t"
-		       "csrw	vstart, %0\n\t"
-		       "csrw	vcsr, %3\n\t"
-		       :
-		       : "r"(src->vstart), "r"(src->vtype), "r"(src->vl), "r"(src->vcsr)
-		       :);
-}
 
 void z_riscv_vstate_save(struct z_riscv_v_context *save_to)
 {
@@ -213,7 +197,6 @@ void z_riscv_vstate_restore(struct z_riscv_v_context *restore_from)
 {
 	unsigned long vl;
 
-	// printk("vstate restore\n");
 	__asm volatile(".option push\n\t"
 		       ".option arch, +v\n\t"
 		       "vsetvli	%0, x0, e8, m8, ta, ma\n\t"

@@ -70,7 +70,6 @@ struct z_riscv_v_context {
 	unsigned long vl;
 	unsigned long vtype;
 	unsigned long vcsr;
-	unsigned long vlenb;
 	// #ifndef CONFIG_RISCV_ISA_EXT_V_LAZY
 	bool is_dirty;
 	// #endif
