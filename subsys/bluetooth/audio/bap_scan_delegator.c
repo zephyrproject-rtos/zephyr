@@ -679,6 +679,9 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
 				err);
 
+			atomic_clear_bit(internal_state->flags,
+					 BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND);
+
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 	}
@@ -875,6 +878,9 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
 				err);
 
+			atomic_clear_bit(internal_state->flags,
+					 BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND);
+
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 	} else if (pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC &&
@@ -885,6 +891,9 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 		if (err != 0) {
 			LOG_DBG("PA sync term from %p was rejected with reason %d", conn, err);
+
+			atomic_clear_bit(internal_state->flags,
+					 BASS_RECV_STATE_INTERNAL_FLAG_NOTIFY_PEND);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
