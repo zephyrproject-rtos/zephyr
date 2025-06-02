@@ -86,6 +86,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 {
 	struct ra_spi_data *data = dev->data;
 	fsp_err_t fsp_err;
+	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
 
 	if (spi_context_configured(&data->ctx, config)) {
 		/* Nothing to do */
@@ -97,6 +98,11 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
+		return -ENOTSUP;
+	}
+
+	if (word_size < 4 || word_size > 32) {
+		LOG_ERR("Unsupported SPI word size: %u", word_size);
 		return -ENOTSUP;
 	}
 
