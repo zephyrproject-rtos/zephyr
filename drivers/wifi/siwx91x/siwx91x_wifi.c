@@ -282,11 +282,13 @@ static int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 
 	interface = sl_wifi_get_default_interface();
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
-		return 0;
+		LOG_ERR("Wi-Fi not in station mode");
+		return -EINVAL;
 	}
 
 	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
-		return 0;
+		LOG_ERR("Command given in invalid state");
+		return -EINVAL;
 	}
 
 	sl_wifi_get_performance_profile(&sl_ps_profile);
