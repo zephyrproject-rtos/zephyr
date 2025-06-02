@@ -481,7 +481,7 @@ static unsigned int siwx91x_on_join(sl_wifi_event_t event,
 static int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
-	sl_si91x_rsp_wireless_info_t wlan_info = { };
+	sl_wifi_wireless_info_t wlan_info = { };
 	struct siwx91x_dev *sidev = dev->data;
 	uint8_t join_config;
 	int32_t rssi;
@@ -504,7 +504,6 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 
 	strncpy(status->ssid, wlan_info.ssid, WIFI_SSID_MAX_LEN);
 	status->ssid_len = strlen(status->ssid);
-	memcpy(status->bssid, wlan_info.bssid, WIFI_MAC_ADDR_LEN);
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
 	if (interface & SL_WIFI_2_4GHZ_INTERFACE) {
@@ -555,6 +554,7 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 
 		status->beacon_interval = sys_get_le16(operational_statistics.beacon_interval);
 		status->dtim_period = operational_statistics.dtim_period;
+		memcpy(status->bssid, wlan_info.bssid, WIFI_MAC_ADDR_LEN);
 	} else if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_AP_INTERFACE) {
 		sl_wifi_ap_configuration_t sl_ap_cfg = { };
 
@@ -571,6 +571,7 @@ static int siwx91x_status(const struct device *dev, struct wifi_iface_status *st
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
 		wlan_info.sec_type = (uint8_t)sl_ap_cfg.security;
+		memcpy(status->bssid, wlan_info.mac_address, WIFI_MAC_ADDR_LEN);
 	} else {
 		status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 		status->iface_mode = WIFI_MODE_UNKNOWN;
