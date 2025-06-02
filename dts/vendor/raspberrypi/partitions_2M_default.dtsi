@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <raspberrypi/partitions_2M_storage.dtsi>
+#include <raspberrypi/partitions_2M_sysbuild.dtsi>
