@@ -3,6 +3,8 @@
 
 config HAS_RPI_PICO
 	bool
+	# pico-sdk makes use of typeof - and for that we need GNU extensions!
+	select GNU_C_EXTENSIONS
 
 config PICOSDK_USE_UART
 	bool
