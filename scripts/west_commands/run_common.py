@@ -439,7 +439,7 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     # the board has enabled this functionality, check if the board should be
     # reset or not. If this is not specified in the board/soc file, leave it up to
     # the runner's default configuration to decide if a reset should occur.
-    if runner_cls.capabilities().reset and '--no-reset' not in final_argv:
+    if runner_cls.capabilities().reset and '--no-reset' not in final_argv and len(board_image_count):
         if board_image_count is not None:
             reset = True
 
