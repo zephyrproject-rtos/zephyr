@@ -33,7 +33,7 @@ static const struct bt_data ad[] = {
 static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
-
+#else
 static struct bt_le_adv_param adv_param = {
 	.id = BT_ID_DEFAULT,
 	.sid = 0U,
