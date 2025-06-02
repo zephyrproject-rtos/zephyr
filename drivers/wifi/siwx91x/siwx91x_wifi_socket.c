@@ -63,6 +63,7 @@ void siwx91x_on_join_ipv4(struct siwx91x_dev *sidev)
 		.type = SL_IPV4,
 	};
 	struct in_addr addr4 = { };
+	struct in_addr router = { };
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -71,8 +72,9 @@ void siwx91x_on_join_ipv4(struct siwx91x_dev *sidev)
 	/* FIXME: support for static IP configuration */
 	ret = sl_si91x_configure_ip_address(&ip_config4, SL_SI91X_WIFI_CLIENT_VAP_ID);
 	if (!ret) {
+		memcpy(router.s4_addr, ip_config4.ip.v4.gateway.bytes, sizeof(router.s4_addr));
 		memcpy(addr4.s4_addr, ip_config4.ip.v4.ip_address.bytes, sizeof(addr4.s4_addr));
-		/* FIXME: also report gateway (net_if_ipv4_router_add()) */
+		net_if_ipv4_set_gw(sidev->iface, &router);
 		net_if_ipv4_addr_add(sidev->iface, &addr4, NET_ADDR_DHCP, 0);
 	} else {
 		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
