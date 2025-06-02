@@ -102,7 +102,10 @@ static void siwx91x_configure_ap_mode(sl_si91x_boot_configuration_t *boot_config
 {
 	boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
 	boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
-	boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+	}
 
 	if (hidden_ssid) {
 		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_AP_IN_HIDDEN_MODE;
@@ -200,6 +203,11 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 	}
 
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		if (!IS_ENABLED(CONFIG_PM)) {
+			boot_config->custom_feature_bit_map |=
+				SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+		}
+
 		siwx91x_configure_network_stack(boot_config, wifi_oper_mode);
 	}
 
