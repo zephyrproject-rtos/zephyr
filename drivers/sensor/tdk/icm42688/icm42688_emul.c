@@ -48,13 +48,13 @@ static void icm42688_emul_handle_write(const struct emul *target, uint8_t regn, 
 
 	switch (regn) {
 	case REG_DEVICE_CONFIG:
-		if (FIELD_GET(BIT_SOFT_RESET, value) == 1) {
+		if (FIELD_GET(BIT_SOFT_RESET_CONFIG, value) == 1) {
 			/* Perform a soft reset */
 			memset(data->reg, 0, NUM_REGS);
 			/* Initialized the who-am-i register */
 			data->reg[REG_WHO_AM_I] = WHO_AM_I_ICM42688;
 			/* Set the bit for the reset being done */
-			data->reg[REG_INT_STATUS] |= BIT_INT_STATUS_RESET_DONE;
+			data->reg[REG_INT_STATUS] |= BIT_RESET_DONE_INT;
 		}
 		break;
 	}
@@ -397,7 +397,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, struct s
 	data->reg[reg_addr + 1] = reg_val & 0xFF;
 
 	/* Set data ready flag */
-	data->reg[REG_INT_STATUS] |= BIT_INT_STATUS_DATA_RDY;
+	data->reg[REG_INT_STATUS] |= BIT_DATA_RDY_INT;
 
 	return 0;
 }
