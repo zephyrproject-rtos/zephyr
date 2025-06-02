@@ -2562,7 +2562,48 @@ void radio_ccm_disable(void)
 #endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+struct aar_job_ptr {
+	void *ptr;
+	struct {
+		uint32_t length:24;
+		uint32_t attribute:8;
+	} __packed;
+} __packed;
+
+#define AAR_JOB_PTR_ATTRIBUTE_HASH  11U
+#define AAR_JOB_PTR_ATTRIBUTE_PRAND 12U
+#define AAR_JOB_PTR_ATTRIBUTE_IRK   13U
+#define AAR_JOB_PTR_ATTRIBUTE_INDEX 11U
+
+#define AAR_JOB_OUT_MAX_RESOLVED 1U
+
+#define AAR_IRK_SIZE 16U
+
+#define RADIO_PACKET_PTR_TO_PDU_OFFSET 3U
+
+#define BDADDR_HASH_OFFSET 0U
+#define BDADDR_HASH_SIZE   3U
+#define BDADDR_PRND_OFFSET 3U
+#define BDADDR_PRND_SIZE   3U
+
+/* AAR HAL global memory referenced by the h/w peripheral and its DMA */
+static struct {
+	/* Index of the IRK match in the AAR job list, on successful resolution */
+	uint32_t status;
+
+	/* Input AAR job list; list of Hash, Prand, IRKs and a terminating empty job entry */
+	struct aar_job_ptr in[CONFIG_BT_CTLR_RL_SIZE + 3];
+
+	/* Output AAR job list of one entry */
+	struct aar_job_ptr out[AAR_JOB_OUT_MAX_RESOLVED];
+
+	/* NOTE: Refer to the AAR section in the SoC product specification for details */
+} aar_job;
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 static uint8_t MALIGN(4) _aar_scratch[3];
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 {
@@ -2599,10 +2640,57 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
+
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Input, Resolvable Address Hash offset in the legacy or extended advertising PDU.
+	 * Radio packet pointer offset by 3 compared to legacy AAR in nRF51/52/53 SoCs that took
+	 * Radio packet pointer value.
+	 */
+	aar_job.in[0].ptr = (uint8_t *)addrptr + RADIO_PACKET_PTR_TO_PDU_OFFSET +
+			    BDADDR_HASH_OFFSET;
+	aar_job.in[0].length = BDADDR_HASH_SIZE;
+	aar_job.in[0].attribute = AAR_JOB_PTR_ATTRIBUTE_HASH;
+
+	/* Input, Resolvable Address Random offset in the legacy or extended advertising PDU.
+	 * Radio packet pointer offset by 3 compared to legacy AAR in nRF51/52/53 SoCs that took
+	 * Radio packet pointer, plus offset of the 24-bit random in the legacy or extended
+	 * advertising PDU after the 24-bit Hash in the Resolvable Address.
+	 */
+	aar_job.in[1].ptr = (uint8_t *)addrptr + RADIO_PACKET_PTR_TO_PDU_OFFSET +
+			    BDADDR_PRND_OFFSET;
+	aar_job.in[1].length = BDADDR_PRND_SIZE;
+	aar_job.in[1].attribute = AAR_JOB_PTR_ATTRIBUTE_PRAND;
+
+	/* Input, list of IRKs used for resolution */
+	for (uint32_t i = 0; i < nirk; i++) {
+		aar_job.in[2U + i].ptr = (void *)(((uint8_t *)irk) + (AAR_IRK_SIZE * i));
+		aar_job.in[2U + i].length = AAR_IRK_SIZE;
+		aar_job.in[2U + i].attribute = AAR_JOB_PTR_ATTRIBUTE_IRK;
+	}
+
+	/* A terminating empty job entry */
+	aar_job.in[2U + nirk].ptr = 0U;
+	aar_job.in[2U + nirk].length = 0U;
+	aar_job.in[2U + nirk].attribute = 0U;
+
+	/* Reset match index to invalid value ( >= CONFIG_BT_CTLR_RL_SIZE ) */
+	aar_job.status = UINT32_MAX;
+
+	/* Output, single job entry that populates the `status` value with match index */
+	aar_job.out[0].ptr = &aar_job.status;
+	aar_job.out[0].length = sizeof(aar_job.status);
+	aar_job.out[0].attribute = AAR_JOB_PTR_ATTRIBUTE_INDEX;
+
+	NRF_AAR->IN.PTR = (uint32_t)&aar_job.in[0];
+	NRF_AAR->OUT.PTR = (uint32_t)&aar_job.out[0];
+	NRF_AAR->MAXRESOLVED = AAR_JOB_OUT_MAX_RESOLVED;
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (uint32_t)irk;
 	NRF_AAR->ADDRPTR = addrptr;
 	NRF_AAR->SCRATCHPTR = (uint32_t)&_aar_scratch[0];
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
@@ -2617,7 +2705,11 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 
 uint32_t radio_ar_match_get(void)
 {
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	return aar_job.status;
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 	return NRF_AAR->STATUS;
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 }
 
 void radio_ar_status_reset(void)
@@ -2660,7 +2752,25 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Input, Resolvable Address Hash offset in the supplied address buffer */
+	aar_job.in[0].ptr = (void *)&addr[BDADDR_HASH_OFFSET];
+
+	/* Input, Resolvable Address Prand offset in the supplied address buffer */
+	aar_job.in[1].ptr = (void *)&addr[BDADDR_PRND_OFFSET];
+
+	/* Reset match index to invalid value ( >= CONFIG_BT_CTLR_RL_SIZE ) */
+	aar_job.status = UINT32_MAX;
+
+	/* NOTE: Other `aar_job` structure members are initialized in `radio_ar_configure()` */
+
+	NRF_AAR->IN.PTR = (uint32_t)&aar_job.in[0];
+	NRF_AAR->OUT.PTR = (uint32_t)&aar_job.out[0];
+	NRF_AAR->MAXRESOLVED = AAR_JOB_OUT_MAX_RESOLVED;
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 	NRF_AAR->ADDRPTR = (uint32_t)addr - 3;
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
