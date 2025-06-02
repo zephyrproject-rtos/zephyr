@@ -263,6 +263,7 @@
 		axis-align-x = <SENSOR_AXIS_ALIGN_DT_Y>;
 		axis-align-y = <SENSOR_AXIS_ALIGN_DT_X>;
 		axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>;
+		fifo-hires;
 	};
 };
 
@@ -284,6 +285,7 @@
 		axis-align-x = <SENSOR_AXIS_ALIGN_DT_Y>;
 		axis-align-y = <SENSOR_AXIS_ALIGN_DT_X>;
 		axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>;
+		fifo-hires;
 	};
 };
 

@@ -724,11 +724,11 @@ static bool icm24688_decoder_has_trigger(const uint8_t *buffer, enum sensor_trig
 
 	switch (trigger) {
 	case SENSOR_TRIG_DATA_READY:
-		return FIELD_GET(BIT_INT_STATUS_DATA_RDY, edata->int_status);
+		return FIELD_GET(BIT_DATA_RDY_INT, edata->int_status);
 	case SENSOR_TRIG_FIFO_WATERMARK:
-		return FIELD_GET(BIT_INT_STATUS_FIFO_THS, edata->int_status);
+		return FIELD_GET(BIT_FIFO_THS_INT, edata->int_status);
 	case SENSOR_TRIG_FIFO_FULL:
-		return FIELD_GET(BIT_INT_STATUS_FIFO_FULL, edata->int_status);
+		return FIELD_GET(BIT_FIFO_FULL_INT, edata->int_status);
 	default:
 		return false;
 	}
