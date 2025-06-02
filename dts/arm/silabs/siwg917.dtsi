@@ -97,7 +97,7 @@
 			};
 		};
 
-		psramctrl0: memory-controller@12040000 {
+		memc: memory-controller@12040000 {
 			compatible = "silabs,siwx91x-qspi-memory";
 			reg = <0x12040000 0x200>;
 			#address-cells = <1>;
