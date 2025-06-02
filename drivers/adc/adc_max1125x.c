@@ -403,9 +403,17 @@ static int max1125x_read_sample(const struct device *dev)
 	 * the available input range is limited to the minimum or maximum
 	 * data value.
 	 */
+
+	if (config->resolution > 24 || config->resolution < 1) {
+		LOG_ERR("Unsupported ADC resolution: %u", config->resolution);
+		return -EINVAL;
+	}
+
 	is_positive = buffer_rx[(config->resolution / 8)] >> 7;
+
 	if (is_positive) {
-		*data->buffer++ = sys_get_be24(buffer_rx) - (1 << (config->resolution - 1));
+		/* Ensure left shift is done using unsigned literal to avoid overflow. */
+		*data->buffer++ = sys_get_be24(buffer_rx) - (1U << (config->resolution - 1));
 	} else {
 		*data->buffer++ = sys_get_be24(buffer_rx + 1);
 	}
