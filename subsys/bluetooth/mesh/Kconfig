@@ -1085,10 +1085,15 @@ menu "Firmware Update model configuration"
 
 config BT_MESH_DFU_FWID_MAXLEN
 	int "DFU FWID max length"
-	default 16
+	default 106
 	range 0 106
 	help
-	  This value defines the maximum length of an image's firmware ID.
+	  This value defines the maximum length of the vendor-specific version information
+	  that the mesh stack can manage, describing the image. Please note that
+	  only 106 octets size allows the device to be compliant with
+	  the Bluetooth Mesh DFU specification. If smaller than 106 octets are set,
+	  then the device will fail with managing firmware images that have
+	  a longer vendor-specific version information.
 
 config BT_MESH_DFU_METADATA_MAXLEN
 	int "DFU metadata max length"
