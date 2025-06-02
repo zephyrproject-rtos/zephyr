@@ -698,6 +698,13 @@
 			usbd-ram-size = <4096>;
 			status = "disabled";
 		};
+		
+		usbh: usbh@40013000 {
+			compatible = "nuvoton,npcm-usbh";
+			reg = <0x40013000 0x210>;
+			interrupts = <79 3>;
+			status = "disabled";
+		};
 
 		emac: ethernet@40018000 {
 			compatible = "nuvoton,npcm-ethernet";
