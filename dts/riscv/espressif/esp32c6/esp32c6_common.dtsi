@@ -290,7 +290,7 @@
 			reg = <0x6000c000 0x1000>;
 			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_I2S1_MODULE>;
+			clocks = <&clock ESP32_I2S1_MODULE>;
 			unit = <0>;
 			status = "disabled";
 		};
@@ -354,7 +354,7 @@
 			reg = <0x60012000 DT_SIZE_K(4)>;
 			interrupts = <PCNT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_PCNT_MODULE>;
+			clocks = <&clock ESP32_PCNT_MODULE>;
 			status = "disabled";
 		};
 	};
