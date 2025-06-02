@@ -28,7 +28,7 @@ static int icm42688_rtio_sample_fetch(const struct device *dev, int16_t readings
 		return res;
 	}
 
-	if (!FIELD_GET(BIT_INT_STATUS_DATA_RDY, status)) {
+	if (!FIELD_GET(BIT_DATA_RDY_INT, status)) {
 		return -EBUSY;
 	}
 

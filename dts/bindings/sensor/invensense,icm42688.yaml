@@ -126,3 +126,8 @@ properties:
       - 5 # ICM42688_DT_GYRO_FS_62_5
       - 6 # ICM42688_DT_GYRO_FS_31_25
       - 7 # ICM42688_DT_GYRO_FS_15_625
+
+  fifo-hires:
+    type: boolean
+    description: |
+      Enables hires for fifo

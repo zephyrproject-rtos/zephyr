@@ -28,7 +28,7 @@ int icm42688_reset(const struct device *dev)
 	k_msleep(3);
 
 	/* perform a soft reset to ensure a clean slate, reset bit will auto-clear */
-	res = icm42688_spi_single_write(&dev_cfg->spi, REG_DEVICE_CONFIG, BIT_SOFT_RESET);
+	res = icm42688_spi_single_write(&dev_cfg->spi, REG_DEVICE_CONFIG, BIT_SOFT_RESET_CONFIG);
 
 	if (res) {
 		LOG_ERR("write REG_SIGNAL_PATH_RESET failed");
@@ -45,7 +45,7 @@ int icm42688_reset(const struct device *dev)
 		return res;
 	}
 
-	if (FIELD_GET(BIT_INT_STATUS_RESET_DONE, value) != 1) {
+	if (FIELD_GET(BIT_RESET_DONE_INT, value) != 1) {
 		LOG_ERR("unexpected RESET_DONE value, %i", value);
 		return -EINVAL;
 	}
@@ -295,7 +295,9 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg)
 			FIELD_PREP(BIT_FIFO_GYRO_EN, 1) |
 			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) |
 			FIELD_PREP(BIT_FIFO_TMST_FSYNC_EN, 1) |
-			FIELD_PREP(BIT_FIFO_HIRES_EN, 1);
+			FIELD_PREP(BIT_FIFO_HIRES_EN, cfg->fifo_hires);
+
+		LOG_DBG("HIRES MODE ENABLED?: %d", cfg->fifo_hires);
 
 		LOG_DBG("FIFO_CONFIG1 (0x%x) 0x%x", REG_FIFO_CONFIG1, fifo_cfg1);
 		res = icm42688_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG1, fifo_cfg1);
