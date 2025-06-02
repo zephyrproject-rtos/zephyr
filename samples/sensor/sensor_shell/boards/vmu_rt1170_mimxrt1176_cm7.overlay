@@ -22,5 +22,8 @@
 		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
 		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
 		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
+		axis-align-x = <SENSOR_AXIS_ALIGN_DT_Y>;
+		axis-align-y = <SENSOR_AXIS_ALIGN_DT_X>;
+		axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>;
 	};
 };

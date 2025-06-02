@@ -114,6 +114,9 @@ static void icm42688_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 			.gyro_fs = drv_data->cfg.gyro_fs,
 			.accel_fs = drv_data->cfg.accel_fs,
 			.timestamp = drv_data->timestamp,
+			.axis_align[0] = drv_data->cfg.axis_align[0],
+			.axis_align[1] = drv_data->cfg.axis_align[1],
+			.axis_align[2] = drv_data->cfg.axis_align[2]
 		},
 		.int_status = drv_data->int_status,
 		.gyro_odr = drv_data->cfg.gyro_odr,

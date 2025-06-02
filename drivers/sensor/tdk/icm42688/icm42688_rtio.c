@@ -112,4 +112,5 @@ void icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	rtio_work_req_submit(req, iodev_sqe, icm42688_submit_sync);
 }
 
-BUILD_ASSERT(sizeof(struct icm42688_decoder_header) == 9);
+BUILD_ASSERT(sizeof(struct icm42688_decoder_header) == 15,
+	"icm42688_decoder_header size is not equal to 15");
