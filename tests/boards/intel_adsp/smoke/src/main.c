@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include "tests.h"
 
-intel_adsp_ipc_handler_t ipm_handler;
-
 static bool clock_msg(const struct device *dev, void *arg,
 		      uint32_t data, uint32_t ext_data)
 {
@@ -66,15 +64,6 @@ ZTEST(intel_adsp, test_vecbase_lock)
 }
 #endif
 
-static void *intel_adsp_setup(void)
-{
-	struct intel_adsp_ipc_data *devdata = INTEL_ADSP_IPC_HOST_DEV->data;
-
-	ipm_handler = devdata->handle_message;
-
-	return NULL;
-}
-
 static void intel_adsp_teardown(void *data)
 {
 	/* Wait a bit so the python script on host is ready to receive
@@ -85,7 +74,6 @@ static void intel_adsp_teardown(void *data)
 	k_msleep(1000);
 }
 
-ZTEST_SUITE(intel_adsp, NULL, intel_adsp_setup, NULL, NULL,
-		intel_adsp_teardown);
+ZTEST_SUITE(intel_adsp, NULL, NULL, NULL, NULL, intel_adsp_teardown);
 
-ZTEST_SUITE(intel_adsp_boot, NULL, intel_adsp_setup, NULL, NULL, NULL);
+ZTEST_SUITE(intel_adsp_boot, NULL, NULL, NULL, NULL, NULL);
