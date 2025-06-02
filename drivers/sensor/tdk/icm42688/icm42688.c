@@ -114,7 +114,7 @@ static int icm42688_sample_fetch(const struct device *dev, enum sensor_channel c
 		return res;
 	}
 
-	if (!FIELD_GET(BIT_INT_STATUS_DATA_RDY, status)) {
+	if (!FIELD_GET(BIT_DATA_RDY_INT, status)) {
 		return -EBUSY;
 	}
 
@@ -350,7 +350,7 @@ void icm42688_unlock(const struct device *dev)
 		.temp_dis = false,						\
 		.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM),			\
 		.batch_ticks = 0,						\
-		.fifo_hires = false,			\
+		.fifo_hires = DT_INST_PROP(inst, fifo_hires),			\
 		.interrupt1_drdy = false,					\
 		.interrupt1_fifo_ths = false,					\
 		.interrupt1_fifo_full = false,					\
