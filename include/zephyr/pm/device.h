@@ -622,13 +622,22 @@ int pm_device_power_domain_remove(const struct device *dev,
 bool pm_device_is_powered(const struct device *dev);
 
 /**
- * @brief Setup a device driver into the lowest valid power mode
+ * @brief Move a device driver into its initial device power state.
  *
- * This helper function is intended to be called at the end of a driver
- * init function to automatically setup the device into the lowest power
- * mode. It assumes that the device has been configured as if it is in
- * @ref PM_DEVICE_STATE_OFF, or @ref PM_DEVICE_STATE_SUSPENDED if device can
- * never be powered off.
+ * @details This function uses the device driver's internal PM hook to
+ * move the device from the OFF state to the initial power state expected
+ * by the system.
+ *
+ * The initial power state expected by the system is:
+ *
+ * - ACTIVE if CONFIG_PM_DEVICE=n or (CONFIG_PM_DEVICE=y and
+ *   CONFIG_PM_DEVICE_RUNTIME=n) or (CONFIG_PM_DEVICE_RUNTIME=y and
+ *   !pm_device_runtime_is_enabled(dev)).
+ * - SUSPENDED if CONFIG_PM_DEVICE_RUNTIME=y and device's parent power domain is ACTIVE.
+ * - OFF if CONFIG_PM_DEVICE_RUNTIME=y and device's parent power domain is SUSPENDED.
+ *
+ * @note This function must be called at the end of a driver's init
+ * function.
  *
  * @param dev Device instance.
  * @param action_cb Device PM control callback function.
