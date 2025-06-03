@@ -2236,21 +2236,12 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 		left -= rem;
 		if (left) {
 			memmove(c_op->pos, c_op->pos+rem, left);
-		} else {
-			struct net_buf *buf = pkt->buffer;
-
-			if (buf) {
-				pkt->buffer = buf->frags;
-				buf->frags = NULL;
-				net_buf_unref(buf);
-			}
-
-			net_pkt_cursor_init(pkt);
 		}
 
 		length -= rem;
 	}
 
+	net_pkt_trim_buffer(pkt);
 	net_pkt_cursor_init(pkt);
 
 	if (length) {

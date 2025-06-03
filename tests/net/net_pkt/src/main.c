@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_test, CONFIG_NET_PKT_LOG_LEVEL);
+
 #include <zephyr/kernel.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/types.h>
@@ -759,6 +762,31 @@ ZTEST(net_pkt_test_suite, test_net_pkt_pull)
 					      AF_UNSPEC,
 					      0,
 					      K_NO_WAIT);
+	zassert_true(dummy_pkt != NULL, "Pkt not allocated");
+
+	zassert_true(net_pkt_write(dummy_pkt, pkt_data, PULL_TEST_PKT_DATA_SIZE) == 0,
+		     "Write packet failed");
+
+	net_pkt_cursor_init(dummy_pkt);
+	net_pkt_set_overwrite(dummy_pkt, true);
+	net_pkt_skip(dummy_pkt, PULL_AMOUNT);
+	net_pkt_pull(dummy_pkt, LARGE_PULL_AMOUNT);
+	zassert_equal(net_pkt_get_len(dummy_pkt), PULL_TEST_PKT_DATA_SIZE - LARGE_PULL_AMOUNT,
+		      "Wrong len after pull (%d) / (%d)",
+		      PULL_TEST_PKT_DATA_SIZE - LARGE_PULL_AMOUNT, net_pkt_get_len(dummy_pkt));
+	zassert_true(net_pkt_read(dummy_pkt, pkt_data_readback, PULL_AMOUNT) == 0,
+		     "Read packet failed");
+	zassert_mem_equal(pkt_data_readback, &pkt_data[0], PULL_AMOUNT, "Packet data changed");
+	zassert_true(net_pkt_read(dummy_pkt, pkt_data_readback,
+				  PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT - LARGE_PULL_AMOUNT) == 0,
+		     "Read packet failed");
+	zassert_mem_equal(pkt_data_readback, &pkt_data[PULL_AMOUNT + LARGE_PULL_AMOUNT],
+			  PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT - LARGE_PULL_AMOUNT,
+			  "Packet data changed");
+	net_pkt_unref(dummy_pkt);
+
+	dummy_pkt =
+		net_pkt_alloc_with_buffer(eth_if, PULL_TEST_PKT_DATA_SIZE, AF_UNSPEC, 0, K_NO_WAIT);
 	zassert_true(dummy_pkt != NULL, "Pkt not allocated");
 
 	zassert_true(net_pkt_write(dummy_pkt,
