@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Bootlin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v303/ch32v303.dtsi>
+
+&gpiod {
+	gpio-reserved-ranges = <3 13>;
+};
+
+&gpioe {
+	gpio-reserved-ranges = <0 16>;
+};
