@@ -68,6 +68,10 @@ function showProgress(message) {
  * @returns {string} - The generated GitHub URL.
  */
 function getGithubLink(path, line, mode = "blob", revision = "main") {
+    if (!zephyr_gh_base_url) {
+        return;
+    }
+
     let url = [
         zephyr_gh_base_url,
         mode,
@@ -307,14 +311,18 @@ function renderKconfigEntry(entry) {
     renderKconfigPropList(props, 'Choices', entry.choices, false);
 
     /* symbol location with permalink */
-    const locationPermalink = document.createElement('a');
-    locationPermalink.href = getGithubLink(entry.filename, entry.linenr, "blob", zephyr_version);
-
     const locationElement = document.createTextNode(`${entry.filename}:${entry.linenr}`);
     locationElement.class = "pre";
-    locationPermalink.appendChild(locationElement);
 
-    renderKconfigPropLiteralElement(props, 'Location', locationPermalink);
+    let locationPermalink = getGithubLink(entry.filename, entry.linenr, "blob", zephyr_version);
+    if (locationPermalink) {
+        const locationPermalink = document.createElement('a');
+        locationPermalink.href = locationPermalink;
+        locationPermalink.appendChild(locationElement);
+        renderKconfigPropLiteralElement(props, 'Location', locationPermalink);
+    } else {
+        renderKconfigPropLiteralElement(props, 'Location', locationElement);
+    }
 
     renderKconfigPropLiteral(props, 'Menu path', entry.menupath);
 
