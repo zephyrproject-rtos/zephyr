@@ -19,7 +19,13 @@ these buffers via a pty for debugging without the kernel driver.
 #include <zephyr/cache.h>
 
 #define RING_SIZE 512
+#if CONFIG_TIGERLAKE
 #define SOF_GDB_WINDOW_OFFSET 1024
+#elif CONFIG_METEORLAKE	// MTL has 2 usable slots in debug window, which is more than
+			// 1 slot on TGL, but still slot 0 is always used for logging,
+			// slot 1 is assigned to shell
+#define SOF_GDB_WINDOW_OFFSET 1024
+#endif
 
 struct gdb_sram_ring {
 	unsigned int head;
