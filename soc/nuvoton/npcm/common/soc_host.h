@@ -11,6 +11,15 @@
 extern "C" {
 #endif
 
+/** MSWC API **/
+void host_mswc_WriteReg(uint8_t index, uint8_t val);
+uint8_t host_mswc_ReadReg(uint8_t index);
+
+/** BBRAM API **/
+uint32_t host_bbram_GetBBramSpaceAdr(void);
+bool host_bbram_BKUPSTS_IsSet(uint8_t mask);
+void host_bbram_BKUPSTS_Clear(uint8_t mask);
+
 /** SHM API **/
 void host_shm_SetWinBaseAddr(uint8_t win, volatile uint8_t* addr);
 uint32_t host_shm_GetWrProtect(uint8_t win);
@@ -36,6 +45,11 @@ void host_shm_AddCBtoShmISR(void * CB);
 void host_shm_SetP80Ctrl(uint8_t val);
 bool host_shm_IsP80STS(uint8_t val);
 uint32_t host_shm_GetP80Buf(uint8_t Buf);
+
+
+/** C2H(SIB) API **/
+void host_c2h_write_reg(uint8_t c2h_device, uint8_t reg_index, uint8_t reg_data);
+uint8_t host_c2h_read_reg(uint8_t c2h_device, uint8_t reg_index);
 
 /**
  * @brief Initializes all host sub-modules in Core domain.

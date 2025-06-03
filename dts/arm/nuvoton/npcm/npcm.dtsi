@@ -734,9 +734,10 @@
 			       0x400c9000 0x2000
 			       0x400cb000 0x2000
 			       0x400cd000 0x2000
-			       0x400cf000 0x1000>;
+			       0x400cf000 0x1000
+			       0x400af000 0x200>;
 			reg-names = "mswc", "shm", "pm_acpi",
-				    "pm_hcmd", "pmch3", "pmch4";
+				    "pm_hcmd", "pmch3", "pmch4", "bbram";
 
 			/* host sub-module IRQ and priority */
 			interrupts = <4 3>, /* PMCH Input-Buf-Full (IBF) */

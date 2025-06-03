@@ -66,29 +66,29 @@
  * This driver introduces four host sub-modules. It includes:
  *
  * 1. KCS/Power Management (PM) channels.
- *   ��� KCS/PM channel registers
- *     �� Command/Status register
- *     �� Data register
+ *   嚙踝蕭嚙?KCS/PM channel registers
+ *     嚙踝蕭 Command/Status register
+ *     嚙踝蕭 Data register
  *       channel 1: legacy 62h, 66h; channel 2: legacy 68h, 6Ch
  *       (Zephyr setting: 200h, 204h);
  *       channel 3: legacy 6Ah, 6Eh; channel 4: legacy 6Bh, 6Fh;
- *   ��� KCS/PM interrupt using:
- *     �� Serial IRQ
- *     �� SMI
- *     �� EC_SCI
- *   ��� Configured by four logical devices: KCS/PM1/2/3/4 (LDN 0x11/0x12/0x17/0x1E)
+ *   嚙踝蕭嚙?KCS/PM interrupt using:
+ *     嚙踝蕭 Serial IRQ
+ *     嚙踝蕭 SMI
+ *     嚙踝蕭 EC_SCI
+ *   嚙踝蕭嚙?Configured by four logical devices: KCS/PM1/2/3/4 (LDN 0x11/0x12/0x17/0x1E)
  *
  * 2. Shared Memory mechanism (SHM).
  *   This module allows sharing of the on-chip RAM by both Core and the Host.
  *   It also supports the following features:
- *   ��� Four Core/Host communication windows for direct RAM access
- *   ��� Eight Protection regions for each access window
- *   ��� Host IRQ and SMI generation
- *   ��� Port 80 debug support
- *   ��� Configured by one logical device: SHM (LDN 0x0F)
+ *   嚙踝蕭嚙?Four Core/Host communication windows for direct RAM access
+ *   嚙踝蕭嚙?Eight Protection regions for each access window
+ *   嚙踝蕭嚙?Host IRQ and SMI generation
+ *   嚙踝蕭嚙?Port 80 debug support
+ *   嚙踝蕭嚙?Configured by one logical device: SHM (LDN 0x0F)
  *
  * 3. Core Access to Host Modules (C2H).
- *   ��� A interface to access module registers in host domain.
+ *   嚙踝蕭嚙?A interface to access module registers in host domain.
  *     It enables the Core to access the registers in host domain (i.e., Host
  *     Configuration, Serial Port, SHM, and MSWC), through HMIB.
  *
@@ -119,6 +119,7 @@ struct host_sub_npcm_config {
 	struct mswc_reg *const inst_mswc;
 	struct shm_reg *const inst_shm;
 	struct c2h_reg *const inst_c2h;
+	struct bbram_reg *const inst_bbram;
 	struct pmch_reg *const inst_pm_acpi;
 	struct pmch_reg *const inst_pmch4;
 	/* clock configuration */
@@ -142,6 +143,7 @@ struct host_sub_npcm_config host_sub_cfg = {
 	.inst_mswc = (struct mswc_reg *)DT_INST_REG_ADDR_BY_NAME(0, mswc),
 	.inst_shm = (struct shm_reg *)DT_INST_REG_ADDR_BY_NAME(0, shm),
 	.inst_c2h = (struct c2h_reg *)DT_REG_ADDR(DT_NODELABEL(c2h)),
+	.inst_bbram = (struct bbram_reg *)DT_INST_REG_ADDR_BY_NAME(0, bbram),
 	.inst_pm_acpi = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_acpi),
 	.inst_pmch4 = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pmch4),
 	.host_acc_wui = NPCM_DT_WUI_ITEM_BY_NAME(0, host_acc_wui),
@@ -183,6 +185,10 @@ struct host_sub_npcm_data host_sub_data;
 #define EC_CFG_IDX_SHM_WND2_ADDR_2 0xFA
 #define EC_CFG_IDX_SHM_WND2_ADDR_3 0xFB
 
+#define EC_C2H_DEV_CFG 0x01
+#define EC_C2H_OFFSET_INDEX 0x00
+#define EC_C2H_OFFSET_DATA  0x01
+
 typedef enum {
 	hs_SHM_WIN1 = 0,
 	hs_SHM_WIN2,
@@ -211,6 +217,83 @@ static inline uint8_t host_shd_mem_wnd_size_sl(uint32_t size)
 	 * power-of-two value, and return value corresponds to RWINx_SIZE field.
 	 */
 	return (32 - __builtin_clz(size - 1U)) & 0xff;
+}
+
+/* MSWC API */
+#define MSWC_REG_SMIP_LEN 1
+#define MSWC_REG_HOST_CTL 2
+#define MSWC_REG_CTL1     3
+#define MSWC_REG_LPC_STS  4
+
+void host_mswc_WriteReg(uint8_t index, uint8_t val)
+{
+	struct mswc_reg *const inst_mswc = host_sub_cfg.inst_mswc;
+
+	switch(index)
+	{
+	case MSWC_REG_SMIP_LEN:
+		inst_mswc->SMIP_LEN = val;
+		break;
+	case MSWC_REG_HOST_CTL:
+		inst_mswc->HOST_CTL = val;
+		break;
+	case MSWC_REG_CTL1:
+		inst_mswc->MSWCTL1 = val;
+		break;
+	case MSWC_REG_LPC_STS:
+		inst_mswc->LPC_STS = val;
+		break;
+	}
+}
+
+uint8_t host_mswc_ReadReg(uint8_t index)
+{
+	struct mswc_reg *const inst_mswc = host_sub_cfg.inst_mswc;
+	uint8_t ret;
+
+	switch(index)
+	{
+	case MSWC_REG_SMIP_LEN:
+		ret = inst_mswc->SMIP_LEN;
+		break;
+	case MSWC_REG_HOST_CTL:
+		ret = inst_mswc->HOST_CTL;
+		break;
+	case MSWC_REG_CTL1:
+		ret = inst_mswc->MSWCTL1;
+		break;
+	case MSWC_REG_LPC_STS:
+		ret = inst_mswc->LPC_STS;
+		break;
+	}
+
+	return ret;
+}
+
+/* BBRAM API */
+uint32_t host_bbram_GetBBramSpaceAdr(void)
+{
+	struct bbram_reg *const inst_bbram = host_sub_cfg.inst_bbram;
+
+	return (uint32_t)inst_bbram->BBRAM_SPACE;
+}
+
+bool host_bbram_BKUPSTS_IsSet(uint8_t mask)
+{
+	struct bbram_reg *const inst_bbram = host_sub_cfg.inst_bbram;
+	bool ret;
+
+	if(inst_bbram->BKUP_STS & mask) {ret = true;}
+	else {ret = false;}
+
+	return ret;
+}
+
+void host_bbram_BKUPSTS_Clear(uint8_t mask)
+{
+	struct bbram_reg *const inst_bbram = host_sub_cfg.inst_bbram;
+
+	inst_bbram->BKUP_STS = mask;
 }
 
 /* Host ACPI sub-device local functions */
@@ -963,7 +1046,7 @@ static void host_c2h_wait_read_done(void)
 	}
 }
 
-void host_c2h_write_io_cfg_reg(uint8_t reg_index, uint8_t reg_data)
+void host_c2h_write_reg(uint8_t c2h_device, uint8_t reg_index, uint8_t reg_data)
 {
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 
@@ -973,32 +1056,17 @@ void host_c2h_write_io_cfg_reg(uint8_t reg_index, uint8_t reg_data)
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCM_LKSIOHA_LKCFG);
 	/* Enable Core-to-Host access CFG module */
-	inst_c2h->CRSMAE |= BIT(NPCM_CRSMAE_CFGAE);
+	//inst_c2h->CRSMAE |= BIT(NPCM_CRSMAE_CFGAE);
+	inst_c2h->CRSMAE |= c2h_device;
 
 	/* Verify core-to-host modules is not in progress */
-	host_c2h_wait_read_done();
 	host_c2h_wait_write_done();
 
-	/*
-	 * Specifying the in-direct IO address which A0 = 0 indicates the index
-	 * register is accessed. Then write index address directly and it starts
-	 * a write transaction to host sub-module on LPC/eSPI bus.
-	 */
-	inst_c2h->IHIOA = 0;
-	inst_c2h->IHD = reg_index;
-	host_c2h_wait_write_done();
-
-	/*
-	 * Specifying the in-direct IO address which A0 = 1 indicates the data
-	 * register is accessed. Then write data directly and it starts a write
-	 * transaction to host sub-module on LPC/eSPI bus.
-	 */
-	inst_c2h->IHIOA = 1;
+	inst_c2h->IHIOA = reg_index;
 	inst_c2h->IHD = reg_data;
-	host_c2h_wait_write_done();
 
 	/* Disable Core-to-Host access CFG module */
-	inst_c2h->CRSMAE &= ~BIT(NPCM_CRSMAE_CFGAE);
+	inst_c2h->CRSMAE = 0;
 	/* Unlock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA &= ~BIT(NPCM_LKSIOHA_LKCFG);
 
@@ -1006,7 +1074,7 @@ void host_c2h_write_io_cfg_reg(uint8_t reg_index, uint8_t reg_data)
 	irq_unlock(key);
 }
 
-uint8_t host_c2h_read_io_cfg_reg(uint8_t reg_index)
+uint8_t host_c2h_read_reg(uint8_t c2h_device, uint8_t reg_index)
 {
 	struct c2h_reg *const inst_c2h = host_sub_cfg.inst_c2h;
 	uint8_t data_val;
@@ -1017,34 +1085,15 @@ uint8_t host_c2h_read_io_cfg_reg(uint8_t reg_index)
 	/* Lock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA |= BIT(NPCM_LKSIOHA_LKCFG);
 	/* Enable Core-to-Host access CFG module */
-	inst_c2h->CRSMAE |= BIT(NPCM_CRSMAE_CFGAE);
+	inst_c2h->CRSMAE = c2h_device;
 
-	/* Verify core-to-host modules is not in progress */
-	host_c2h_wait_read_done();
-	host_c2h_wait_write_done();
-
-	/*
-	 * Specifying the in-direct IO address which A0 = 0 indicates the index
-	 * register is accessed. Then write index address directly and it starts
-	 * a write transaction to host sub-module on LPC/eSPI bus.
-	 */
-	inst_c2h->IHIOA = 0;
-	inst_c2h->IHD = reg_index;
-	host_c2h_wait_write_done();
-
-	/*
-	 * Specifying the in-direct IO address which A0 = 1 indicates the data
-	 * register is accessed. Then write CSRD bit in SIBCTRL to issue a read
-	 * transaction to host sub-module on LPC/eSPI bus. Once it was done,
-	 * read data out from IHD.
-	 */
-	inst_c2h->IHIOA = 1;
+	inst_c2h->IHIOA = reg_index;
 	inst_c2h->SIBCTRL |= BIT(NPCM_SIBCTRL_CSRD);
 	host_c2h_wait_read_done();
 	data_val = inst_c2h->IHD;
 
 	/* Disable Core-to-Host access CFG module */
-	inst_c2h->CRSMAE &= ~BIT(NPCM_CRSMAE_CFGAE);
+	inst_c2h->CRSMAE = 0;
 	/* Unlock host access EC configuration registers (0x4E/0x4F) */
 	inst_c2h->LKSIOHA &= ~BIT(NPCM_LKSIOHA_LKCFG);
 
@@ -1179,37 +1228,51 @@ void npcm_host_init_subs_host_domain(void)
 		 * Select ACPI bank which LDN are 0x11 (PM Channel 1) and enable
 		 * module by setting bit 0 in its Control (index is 0x30) reg.
 		 */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_ACPI);
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+		//host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_ACPI);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_INDEX, EC_CFG_IDX_LDN);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_DATA, EC_CFG_LDN_ACPI);
+
+		//host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_INDEX, EC_CFG_IDX_CTRL);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_DATA, 0x01);
 
 	}
 
 	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) ||
 	    IS_ENABLED(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)) {
 		/* Select 'Host Command' bank which LDN are 0x12 (PM chan 2) */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_HCMD);
+		//host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_HCMD);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_INDEX, EC_CFG_IDX_LDN);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_DATA, EC_CFG_LDN_HCMD);
 
 		/* Enable 'Host Command' io port (PM Channel 2) */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+		//host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_INDEX, EC_CFG_IDX_CTRL);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_DATA, 0x01);
 
 		/* Select 'Shared Memory' bank which LDN are 0x0F */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_SHM);
+		//host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_SHM);
+
 		/* WIN 1 & 2 mapping to IO space */
-		host_c2h_write_io_cfg_reg(0xF1,
-				host_c2h_read_io_cfg_reg(0xF1) | 0x30);
+		//host_c2h_write_io_cfg_reg(0xF1,
+		//		host_c2h_read_io_cfg_reg(0xF1) | 0x30);
 		/* WIN1 as Host Command on the IO address (default: 0x0800) */
 
 		/* Set WIN2 as MEMMAP on the configured IO address */
 	/* Enable SHM direct memory access */
-	host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+	//host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
 
 	}
 
 	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_PMCH4)) {
 		/* Select 'Host Command' bank which LDN are 0x1E (KCS4/PM chan 4) */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_PMCH4);
+		//host_c2h_write_io_cfg_reg(EC_CFG_IDX_LDN, EC_CFG_LDN_PMCH4);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_INDEX, EC_CFG_IDX_LDN);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_DATA, EC_CFG_LDN_PMCH4);
 		/* Enable 'Host Command' io port (KCS4/PM Channel 4) */
-		host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+		//host_c2h_write_io_cfg_reg(EC_CFG_IDX_CTRL, 0x01);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_INDEX, EC_CFG_IDX_CTRL);
+		host_c2h_write_reg(EC_C2H_DEV_CFG, EC_C2H_OFFSET_DATA, 0x01);
 	}
 
 	LOG_DBG("Hos sub-modules configurations are done!");
