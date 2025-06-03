@@ -17,8 +17,8 @@ GTEXT(__reset)
 
 /* imports */
 GTEXT(z_prep_c)
-GTEXT(riscv_cpu_wake_flag)
-GTEXT(riscv_cpu_sp)
+GDATA(riscv_cpu_wake_flag)
+GDATA(riscv_cpu_sp)
 GTEXT(arch_secondary_cpu_init)
 
 #if CONFIG_INCLUDE_RESET_VECTOR
