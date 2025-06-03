@@ -33,12 +33,10 @@ config INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW
 endif # INTEL_ADSP_SIM
 
 DT_COMPAT_INTEL_ADSP_HOST_IPC := intel,adsp-host-ipc
-DT_COMPAT_INTEL_ADSP_IDC := intel,adsp-idc
 
 config INTEL_ADSP_IPC
 	bool "Driver for the host IPC interrupt delivery"
 	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_ADSP_HOST_IPC)) if !SOF
-	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_ADSP_IDC)) if !SOF
 	help
 	  Driver for the host IPC interrupt delivery mechanism.
 	  Currently SOF has its own driver for this hardware.
