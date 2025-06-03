@@ -66,30 +66,30 @@ static inline void dcache_is_enabled(void)
 {
 	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
 }
-static inline void dcache_invalidate(uint32_t addr, uint32_t size)
+static inline void dcache_invalidate(void *addr, uint32_t size)
 {
 	if (!dcache_enabled) {
 		return;
 	}
 
 	/* Make sure it is aligned to 32B */
-	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-	uint32_t size_full = size + addr - start_addr;
+	uint32_t start_addr = (uint32_t)addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+	uint32_t size_full = size + (uint32_t)addr - start_addr;
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
+	SCB_InvalidateDCache_by_Addr((void *)start_addr, size_full);
 }
 
-static inline void dcache_clean(uint32_t addr, uint32_t size)
+static inline void dcache_clean(void *addr, uint32_t size)
 {
 	if (!dcache_enabled) {
 		return;
 	}
 
 	/* Make sure it is aligned to 32B */
-	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
-	uint32_t size_full = size + addr - start_addr;
+	uint32_t start_addr = (uint32_t)addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+	uint32_t size_full = size + (uint32_t)addr - start_addr;
 
-	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
+	SCB_CleanDCache_by_Addr((void *)start_addr, size_full);
 }
 #else
 #define dcache_is_enabled()
@@ -1288,7 +1288,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		/* Link frame fragments only if RX net buffer is valid */
 		if (rx_frame != NULL) {
 			/* Assure cache coherency after DMA write operation */
-			dcache_invalidate((uint32_t)frag_data, frag->size);
+			dcache_invalidate((void *)frag_data, frag->size);
 
 			/* Get a new data net buffer from the buffer pool */
 			new_frag = net_pkt_get_frag(rx_frame, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
@@ -1454,7 +1454,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		frag_len = frag->len;
 
 		/* Assure cache coherency before DMA read operation */
-		dcache_clean((uint32_t)frag_data, frag->size);
+		dcache_clean((void *)frag_data, frag->size);
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 		k_sem_take(&queue->tx_desc_sem, K_FOREVER);
