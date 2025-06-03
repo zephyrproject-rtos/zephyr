@@ -14,4 +14,8 @@ rsource "*/Kconfig"
 config ARM_SECURE_FIRMWARE
 	default y
 
+config SILABS_DEVICE_IS_MODULE
+	bool
+	default n
+
 endif

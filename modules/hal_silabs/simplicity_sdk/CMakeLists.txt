@@ -23,8 +23,16 @@ set(BLOBS_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/simplicity_sdk)
 # respectively.
 string(TOUPPER ${CONFIG_SOC_SERIES} SILABS_DEVICE_FAMILY)
 
-# Get SoC series number, i.e. translate e.g. efr32bg22 -> 22
-string(SUBSTRING ${CONFIG_SOC_SERIES} 7 2 SILABS_DEVICE_FAMILY_NUMBER)
+# Get SoC series number, i.e. translate efr32bg22 -> 22, mgm240p -> 24, simg301 -> 301
+if(CONFIG_SOC_SERIES MATCHES "^ef[rm]32")
+  string(SUBSTRING ${CONFIG_SOC_SERIES} 7 2 SILABS_DEVICE_FAMILY_NUMBER)
+elseif(CONFIG_SOC_SERIES MATCHES "^si")
+  string(SUBSTRING ${CONFIG_SOC_SERIES} 4 3 SILABS_DEVICE_FAMILY_NUMBER)
+elseif(CONFIG_SOC_SERIES MATCHES "^.gm")
+  string(SUBSTRING ${CONFIG_SOC_SERIES} 3 2 SILABS_DEVICE_FAMILY_NUMBER)
+else()
+  message(FATAL_ERROR "unknown part")
+endif()
 
 set(SILABS_DEVICE_PART_NUMBER ${CONFIG_SOC_PART_NUMBER})
 
@@ -88,11 +96,20 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   if(CONFIG_SOC_GECKO_USE_RAIL)
     # rail
-    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
+    # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
+    if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
+      zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
+    endif()
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
 
-    # prebuilt libs
-    add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+    if(CONFIG_SILABS_DEVICE_IS_MODULE)
+      # RAIL lib and config for modules
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      add_prebuilt_library(librail_config platform/radio/rail_lib/autogen/librail_release/librail_config_${CONFIG_SOC}_gcc.a)
+    else()
+      # generic RAIL lib for SoCs
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+    endif()
 
     zephyr_include_directories_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
       ${RADIO_DIR}/rail_lib/protocol/ble
