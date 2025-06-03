@@ -12,7 +12,6 @@ LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_nxp_lpspi_priv.h"
 
 struct lpspi_driver_data {
-	size_t fill_len;
 	uint8_t word_size_bytes;
 };
 
@@ -126,7 +125,7 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev, const uint8_t *b
 		buf_remaining_bytes -= word_size;
 	}
 
-	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", lpspi_data->fill_len, offset);
+	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", fill_len, offset);
 }
 
 /* just fills TX fifo with the specified amount of NOPS */
@@ -187,32 +186,24 @@ static void lpspi_next_tx_fill(const struct device *dev)
 		actual_filled += next_buf_fill;
 	}
 
-	lpspi_data->fill_len = actual_filled;
+	spi_context_update_tx(ctx, lpspi_data->word_size_bytes, actual_filled);
 }
 
 static inline void lpspi_handle_tx_irq(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct lpspi_data *data = dev->data;
-	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 
 	base->SR = LPSPI_SR_TDF_MASK;
 
 	/* If we receive a TX interrupt but no more data is available,
-	 * we can be sure that all data has been written to the bus.
+	 * we can be sure that all data has been written to the fifo.
 	 * Disable the interrupt to signal that we are done.
 	 */
 	if (!spi_context_tx_on(ctx)) {
 		base->IER &= ~LPSPI_IER_TDIE_MASK;
 		return;
-	}
-
-	while (spi_context_tx_on(ctx) && lpspi_data->fill_len > 0) {
-		size_t this_buf_words_sent = MIN(lpspi_data->fill_len, ctx->tx_len);
-
-		spi_context_update_tx(ctx, lpspi_data->word_size_bytes, this_buf_words_sent);
-		lpspi_data->fill_len -= this_buf_words_sent;
 	}
 
 	lpspi_next_tx_fill(dev);
@@ -272,7 +263,6 @@ static void lpspi_isr(const struct device *dev)
 					max_fill - tx_current_fifo_len : 0;
 
 		lpspi_fill_tx_fifo_nop(dev, fill_len);
-		lpspi_data->fill_len = fill_len;
 	}
 
 	if ((DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1) &&
