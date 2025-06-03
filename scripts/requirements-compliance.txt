@@ -13,5 +13,6 @@ python-magic; sys_platform != "win32"
 ruff==0.11.11
 sphinx-lint
 unidiff
+vermin
 yamllint
 # zephyr-keep-sorted-stop
