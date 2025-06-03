@@ -357,6 +357,25 @@ struct btp_gap_big_create_sync_cmd {
 	uint8_t broadcast_code[0];
 } __packed;
 
+#define BTP_GAP_CREATE_BIG			0x2c
+struct btp_gap_create_big_cmd {
+	uint8_t id;
+	uint8_t num_bis;
+	uint32_t interval;
+	uint16_t latency;
+	uint8_t packing;
+	uint8_t framing;
+	uint8_t encryption;
+	uint8_t broadcast_code[0];
+} __packed;
+
+#define BTP_GAP_BIS_BROADCAST			0x2d
+struct btp_gap_bis_broadcast_cmd {
+	uint8_t bis_id;
+	uint8_t data_len;
+	uint8_t data[];
+} __packed;
+
 #define BTP_GAP_SET_RPA_TIMEOUT                 0x30
 struct btp_gap_set_rpa_timeout_cmd {
 	uint16_t rpa_timeout;
