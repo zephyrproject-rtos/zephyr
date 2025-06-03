@@ -13,6 +13,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <dmm.h>
 
 LOG_MODULE_REGISTER(adc_nrfx_saadc, CONFIG_ADC_LOG_LEVEL);
 
@@ -88,34 +89,24 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
 #endif
 
-#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
-#include <dmm.h>
-/* Haltium devices always use bounce buffers in RAM */
-static uint16_t adc_samples_buffer[SAADC_CH_NUM] DMM_MEMORY_SECTION(DT_NODELABEL(adc));
-
-#define ADC_BUFFER_IN_RAM
-
-#endif /* defined(CONFIG_NRF_PLATFORM_HALTIUM) */
-
 struct driver_data {
 	struct adc_context ctx;
 	uint8_t single_ended_channels;
 	nrf_saadc_value_t *p_buffer; /* Pointer to the buffer with converted samples. */
 	uint16_t size;               /* Number of samples in the buffer. */
 
-#if defined(ADC_BUFFER_IN_RAM)
-	void *samples_buffer;
+	void *mem_reg;
 	void *user_buffer;
+	void *samples_buffer;
 	uint8_t active_channels_cnt;
-#endif
 };
 
 static struct driver_data m_data = {
 	ADC_CONTEXT_INIT_TIMER(m_data, ctx),
 	ADC_CONTEXT_INIT_LOCK(m_data, ctx),
 	ADC_CONTEXT_INIT_SYNC(m_data, ctx),
-#if defined(ADC_BUFFER_IN_RAM)
-	.samples_buffer = adc_samples_buffer,
+#if defined(CONFIG_HAS_NORDIC_DMM)
+	.mem_reg = DMM_DEV_TO_REG(DT_NODELABEL(adc)),
 #endif
 };
 
@@ -423,6 +414,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 		if (ret != NRFX_SUCCESS) {
 			LOG_ERR("Cannot start sampling: %d", ret);
+			adc_context_complete(&m_data.ctx, -EIO);
 		}
 	}
 }
@@ -430,12 +422,20 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
 {
 	if (!repeat) {
-#if defined(ADC_BUFFER_IN_RAM)
 		m_data.user_buffer = (uint16_t *)m_data.user_buffer + m_data.size;
-#else
-		nrf_saadc_value_t *buffer = (uint16_t *)m_data.p_buffer + m_data.size;
 
-		nrfx_saadc_buffer_set(buffer, m_data.size);
+		int error = dmm_buffer_in_prepare(m_data.mem_reg, m_data.user_buffer,
+						  samples_to_bytes(m_data.active_channels_cnt),
+						  (void **)&m_data.samples_buffer);
+		if (error != 0) {
+			LOG_ERR("DMM buffer allocation failed err=%d", error);
+			dmm_buffer_in_release(m_data.mem_reg, m_data.user_buffer,
+					      samples_to_bytes(m_data.active_channels_cnt),
+					      m_data.user_buffer);
+			adc_context_complete(&m_data.ctx, -EIO);
+		}
+#if !defined(CONFIG_HAS_NORDIC_DMM)
+		nrfx_saadc_buffer_set(m_data.samples_buffer, m_data.size);
 #endif
 	}
 }
@@ -611,17 +611,26 @@ static int start_read(const struct device *dev,
 		return error;
 	}
 
-#if defined(ADC_BUFFER_IN_RAM)
 	m_data.user_buffer = sequence->buffer;
 	m_data.active_channels_cnt = active_channels_cnt;
 
-	nrfx_saadc_buffer_set(m_data.samples_buffer, active_channels_cnt);
-#else
+	error = dmm_buffer_in_prepare(m_data.mem_reg,
+				      m_data.user_buffer,
+				      samples_to_bytes(active_channels_cnt),
+				      (void **)&m_data.samples_buffer);
+	if (error != 0) {
+		LOG_ERR("DMM buffer allocation failed err=%d", error);
+		dmm_buffer_in_release(m_data.mem_reg,
+				      m_data.user_buffer,
+				      samples_to_bytes(active_channels_cnt),
+				      m_data.user_buffer);
+		return error;
+	}
+
 	/* Buffer is filled in chunks, each chunk composed of number of samples equal to number
 	 * of active channels. Buffer pointer is advanced and reloaded after each chunk.
 	 */
-	nrfx_saadc_buffer_set(sequence->buffer, active_channels_cnt);
-#endif
+	nrfx_saadc_buffer_set(m_data.samples_buffer, active_channels_cnt);
 
 	adc_context_start_read(&m_data.ctx, sequence);
 
@@ -669,10 +678,10 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 			correct_single_ended(&m_data.ctx.sequence);
 		}
 
-#if defined(ADC_BUFFER_IN_RAM)
-		memcpy(m_data.user_buffer, m_data.samples_buffer,
-		       samples_to_bytes(m_data.active_channels_cnt));
-#endif
+		dmm_buffer_in_release(m_data.mem_reg,
+				      m_data.user_buffer,
+				      samples_to_bytes(m_data.active_channels_cnt),
+				      m_data.samples_buffer);
 
 		adc_context_on_sampling_done(&m_data.ctx, DEVICE_DT_INST_GET(0));
 	} else if (event->type == NRFX_SAADC_EVT_CALIBRATEDONE) {
