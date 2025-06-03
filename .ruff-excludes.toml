@@ -1059,10 +1059,6 @@
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/west_commands/spdx.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/west_commands/tests/conftest.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
