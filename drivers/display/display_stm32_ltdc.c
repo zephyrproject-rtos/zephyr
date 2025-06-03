@@ -224,7 +224,12 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	data->pend_buf = pend_buf;
 
+	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
+
 	k_sem_take(&data->sem, K_FOREVER);
+
+	__HAL_LTDC_DISABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
@@ -478,9 +483,6 @@ static int stm32_ltdc_init(const struct device *dev)
 
 	/* Set the line interrupt position */
 	LTDC->LIPCR = 0U;
-
-	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
-	__HAL_LTDC_ENABLE_IT(&data->hltdc, LTDC_IT_LI);
 
 	return 0;
 }
