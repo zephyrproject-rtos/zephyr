@@ -25,6 +25,7 @@
 #include <stm32_ll_adc.h>
 #include <stm32_ll_system.h>
 #if defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <stm32_ll_pwr.h>
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
@@ -201,6 +202,7 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* H72x ADC3 and U5 ADC4 are different from the rest, but this call works also for them,
 	 * so no need to call their specific function
@@ -928,6 +930,7 @@ static int set_sequencer(const struct device *dev)
 		if (config->sequencer_type == FULLY_CONFIGURABLE) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 			/*
 			 * Each channel in the sequence must be previously enabled in PCSEL.
@@ -1532,7 +1535,7 @@ static void adc_stm32_enable_analog_supply(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32N6X)
 	LL_PWR_EnableVddADC();
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32U3X)
 	LL_PWR_EnableVDDA();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 }
@@ -1542,7 +1545,7 @@ static void adc_stm32_disable_analog_supply(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32N6X)
 	LL_PWR_DisableVddADC();
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32U3X)
 	LL_PWR_DisableVDDA();
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 }
@@ -1609,6 +1612,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be awaken from deep sleep
@@ -1639,6 +1643,7 @@ static int adc_stm32_init(const struct device *dev)
 		}
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
@@ -1691,6 +1696,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be put into
