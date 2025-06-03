@@ -17,31 +17,48 @@ tests:
     harness: bluetooth
     platform_allow:
       - nrf52_bsim
-      - nrf5340bsim/nrf5340/cpuapp
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
-      - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf52_bsim
-      - nrf5340bsim/nrf5340/cpuapp
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
-      - nrf5340dk/nrf5340/cpuapp
     extra_args: EXTRA_CONF_FILE=overlay-extended.conf
     tags: bluetooth
+  sample.bluetooth.central_hr.multicore.bt_ll_sw_split.extended:
+    harness: bluetooth
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      - CONFIG_BT_EXT_ADV=y
+    tags: bluetooth
+    sysbuild: true
   sample.bluetooth.central_hr.bt_ll_sw_split.phy_coded:
     harness: bluetooth
     platform_allow:
       - nrf52_bsim
-      - nrf5340bsim/nrf5340/cpuapp
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
-      - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf52_bsim
-      - nrf5340bsim/nrf5340/cpuapp
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
-      - nrf5340dk/nrf5340/cpuapp
     extra_args: EXTRA_CONF_FILE=overlay-phy_coded.conf
     tags: bluetooth
+  sample.bluetooth.central_hr.multicore.bt_ll_sw_split.phy_coded:
+    harness: bluetooth
+    platform_allow:
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      - CONFIG_BT_EXT_ADV=y
+      - CONFIG_BT_AUTO_PHY_UPDATE=n
+    tags: bluetooth
+    sysbuild: true
