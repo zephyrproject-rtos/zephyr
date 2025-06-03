@@ -144,13 +144,13 @@ static void lpspi_fill_tx_fifo_nop(const struct device *dev, size_t fill_len)
 static void lpspi_next_tx_fill(const struct device *dev)
 {
 	const struct lpspi_config *config = dev->config;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
-	size_t fill_len;
+	uint8_t left_in_fifo = tx_fifo_cur_len(base);
+	size_t fill_len = MIN(ctx->tx_len, config->tx_fifo_size - left_in_fifo);
 	size_t actual_filled = 0;
-
-	fill_len = MIN(ctx->tx_len, config->tx_fifo_size);
 
 	const struct spi_buf *current_buf = ctx->current_tx;
 	const uint8_t *cur_buf_pos = ctx->tx_buf;
@@ -254,15 +254,41 @@ static void lpspi_isr(const struct device *dev)
 	}
 
 	if (spi_context_rx_on(ctx)) {
+		/* capture these values because they could change during this code block */
 		size_t rx_fifo_len = rx_fifo_cur_len(base);
+		size_t tx_fifo_len = tx_fifo_cur_len(base);
+
+		/*
+		 * Goal here is to provide the number of TX NOPS to match the amount of RX
+		 * we have left to receive, so that we provide the correct number of
+		 * clocks to the bus, since the clocks only happen when TX data is being sent.
+		 *
+		 * The expected RX left is essentially what is left in the spi transfer
+		 * minus what we have just got in the fifo, but prevent underflow of this
+		 * subtraction since it is unsigned.
+		 */
 		size_t expected_rx_left = rx_fifo_len < ctx->rx_len ? ctx->rx_len - rx_fifo_len : 0;
-		size_t max_fill = MIN(expected_rx_left, config->rx_fifo_size);
-		size_t tx_current_fifo_len = tx_fifo_cur_len(base);
 
-		size_t fill_len = tx_current_fifo_len < ctx->rx_len ?
-					max_fill - tx_current_fifo_len : 0;
 
-		lpspi_fill_tx_fifo_nop(dev, fill_len);
+		/*
+		 * We know the expected amount of RX we have left but only fill up to the
+		 * max of the RX fifo size so that we don't have some overflow of the FIFO later.
+		 * Similarly, we shouldn't overfill the TX fifo with too many NOPs.
+		 */
+		size_t tx_fifo_space_left = config->tx_fifo_size - tx_fifo_len;
+		size_t rx_fifo_space_left = config->rx_fifo_size - rx_fifo_len;
+		size_t max_fifo_fill = MIN(tx_fifo_space_left, rx_fifo_space_left);
+		size_t max_fill = MIN(max_fifo_fill, expected_rx_left);
+
+		/* If we already have some words in the tx fifo, we should count those */
+		if (max_fill > tx_fifo_len) {
+			max_fill -= tx_fifo_len;
+		} else {
+			max_fill = 0;
+		}
+
+		/* So now we want to fill the fifo with the max amount of NOPs */
+		lpspi_fill_tx_fifo_nop(dev, max_fill);
 	}
 
 	if ((DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1) &&
