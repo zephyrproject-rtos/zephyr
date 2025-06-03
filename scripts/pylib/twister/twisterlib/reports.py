@@ -845,4 +845,9 @@ class Reporting:
                 return line[line.index('error: ') :].strip()
             elif ": in function " in line:
                 last_warning = line[line.index('in function') :].strip()
+            elif "CMake Error at" in line:
+                for next_line in lines[i + 1 :]:
+                    if next_line.strip():
+                        return line + ' ' + next_line
+                return line
         return None
