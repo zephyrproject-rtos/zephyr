@@ -18,6 +18,18 @@ config MCTP_HEAP_SIZE
 	  libmctp's allocation operations. This setting defines the size of
 	  the dedicated MCTP heap in bytes. Defaults to 1KB for small packets.
 
+config MCTP_SOCKETS
+	int "MCTP sockets"
+	default 8
+	help
+	  When using the zephyr socket-like API a maximum number of available sockets to open
+	  is decided with this option.
+
+config MCTP_ENDPOINT_ID
+	int "MCTP Endpoint ID"
+	help
+	  The endpoint ID this device will use for all socket-like activity.
+
 config MCTP_UART
 	bool "MCTP UART Binding"
 	depends on UART_ASYNC_API
