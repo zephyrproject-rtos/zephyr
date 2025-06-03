@@ -114,6 +114,7 @@ static enum test_case_no {
 	TEST_CLIENT_CLOSING_FAILURE_IPV6 = 16,
 	TEST_CLIENT_FIN_WAIT_2_IPV4_FAILURE = 17,
 	TEST_CLIENT_FIN_ACK_WITH_DATA = 18,
+	TEST_CLIENT_SEQ_VALIDATION = 19,
 } test_case_no;
 
 static enum test_state t_state;
@@ -138,6 +139,7 @@ static void handle_server_rst_on_closed_port(sa_family_t af, struct tcphdr *th);
 static void handle_server_rst_on_listening_port(sa_family_t af, struct tcphdr *th);
 static void handle_syn_invalid_ack(sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_ack_with_data_test(sa_family_t af, struct tcphdr *th);
+static void handle_client_seq_validation_test(sa_family_t af, struct tcphdr *th);
 
 static void verify_flags(struct tcphdr *th, uint8_t flags,
 			 const char *fun, int line)
@@ -484,7 +486,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	case TEST_CLIENT_FIN_ACK_WITH_DATA:
 		handle_client_fin_ack_with_data_test(net_pkt_family(pkt), &th);
 		break;
-
+	case TEST_CLIENT_SEQ_VALIDATION:
+		handle_client_seq_validation_test(net_pkt_family(pkt), &th);
+		break;
 	default:
 		zassert_true(false, "Undefined test case");
 	}
@@ -2084,6 +2088,8 @@ static struct out_of_order_check_struct out_of_order_check_list[] = {
 	{ 10,  9, 0, 0}, /* Section with a gap */
 	{ 0,  10, 10, 0},
 	{ 10, 10, 40, 0}, /* First sequence complete */
+	{ 32,  6, 40, 0}, /* Invalid seqnum (old) */
+	{ 30, 16, 40, 0}, /* Partial data valid (not supported yet) */
 	{ 50,  6, 40, 0},
 	{ 50,  3, 40, 0}, /* Discardable packet */
 	{ 55,  5, 40, 0},
@@ -2605,6 +2611,249 @@ ZTEST(net_tcp, test_client_fin_ack_with_data)
 		 */
 		k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 	}
+}
+
+static struct k_work_delayable test_seq_val_work;
+
+static void handle_client_seq_validation_test(sa_family_t af, struct tcphdr *th)
+{
+	static uint16_t peer_port;
+	struct net_pkt *reply = NULL;
+	static uint8_t round;
+	static uint16_t wnd;
+	static int rsterr;
+	const uint8_t *data = lorem_ipsum;
+	size_t len = 500;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		device_initial_seq = ntohl(th->th_seq);
+		seq = 0U;
+		ack = ntohl(th->th_seq) + 1U;
+		peer_port = th->th_sport;
+		reply = prepare_syn_ack_packet(af, htons(MY_PORT), peer_port);
+		seq++;
+		t_state = T_SYN_ACK;
+		break;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		t_state = T_DATA;
+		wnd = ntohs(th_win(th));
+		round = 0;
+
+		k_work_reschedule(&test_seq_val_work, K_MSEC(1));
+		return;
+	case T_DATA:
+		/* Test seqnum on case 'recv_win > 0'. Some scenarios
+		 * have been covered by out-of-order test. Here we only
+		 * cover the remaining ones.
+		 */
+
+		switch (round) {
+		case 0: {
+			uint32_t t_seq = seq;
+
+			/* len == 0, with seqnum bigger than the scope. */
+			seq = 66000;
+			reply = prepare_ack_packet(af, htons(MY_PORT), peer_port);
+			seq = t_seq;
+			round++;
+
+			/* The ACK with an invalid seqnum would be silently dropped */
+			k_work_reschedule(&test_seq_val_work, K_MSEC(1));
+		}
+		break;
+		case 1: {
+			uint32_t t_seq = seq;
+
+			/* len == 0, with seqnum bigger than the scope. */
+			seq = 66000;
+			reply = prepare_data_packet(af, htons(MY_PORT), peer_port, data, 10);
+			seq = t_seq;
+			round++;
+		}
+		break;
+		case 2: {
+			uint32_t t_seq = seq;
+
+			test_verify_flags(th, ACK);
+			zassert_equal(get_rel_seq(th), 1,
+				      "Unexpected SEQ number in T_DATA_ACK round %d, got %d",
+				      round, get_rel_seq(th));
+			zassert_equal(ntohl(th->th_ack), seq,
+				      "Unexpected ACK in T_DATA_ACK round %d, got %d",
+				      round, ntohl(th->th_ack));
+
+			seq = wnd + 10;
+			reply = prepare_data_packet(af, htons(MY_PORT), peer_port, data, 1);
+			seq = t_seq;
+			round++;
+		}
+		break;
+		case 3:
+			test_verify_flags(th, ACK);
+			zassert_equal(get_rel_seq(th), 1,
+				      "Unexpected SEQ number in T_DATA round %d, got %d",
+				      round, get_rel_seq(th));
+			zassert_equal(ntohl(th->th_ack), seq,
+				      "Unexpected ACK in T_DATA round %d, got %d",
+				      round, ntohl(th->th_ack));
+			zassert_equal(ntohs(th_win(th)), wnd,
+				      "Unexpected recv_win in T_DATA round %d, got %d",
+				      round, ntohs(th_win(th)));
+
+			len = len > wnd ? wnd : len;
+			reply = prepare_data_packet(af, htons(MY_PORT), peer_port, data, len);
+			seq += len;
+			wnd -= len;
+			if (wnd == 0) {
+				t_state = T_DATA_ACK;
+				round++;
+			}
+			break;
+		default:
+			zassert_true(false, "T_DATA, %d round should never happen", round);
+			break;
+		}
+		break;
+	case T_DATA_ACK:
+		if (th) {
+			test_verify_flags(th, ACK);
+			zassert_equal(get_rel_seq(th), 1,
+				      "Unexpected SEQ number in T_DATA_ACK round %d, got %d",
+				      round, get_rel_seq(th));
+			zassert_equal(ntohl(th->th_ack), seq,
+				      "Unexpected ACK in T_DATA_ACK round %d, got %d",
+				      round, ntohl(th->th_ack));
+			zassert_equal(ntohs(th_win(th)), wnd,
+				      "Unexpected recv_win in T_DATA_ACK round %d, got %d",
+				      round, ntohs(th_win(th)));
+		}
+
+		switch (round) {
+		case 4:
+			zassert_true(wnd == 0, "Peer's recv_win is not zero");
+			/* test data in 0 window, expect duplicate ACK */
+			reply = prepare_data_packet(af, htons(MY_PORT), peer_port, data, 1);
+			round++;
+			break;
+		case 5:
+			/* test RST with different seqnum, expect no reply */
+			seq--;
+			reply = prepare_rst_ack_packet(af, htons(MY_PORT), peer_port);
+			seq++;
+			round++;
+
+			rsterr = GET_STAT(net_iface, tcp.rsterr);
+
+			/* reschedule thread due to no reply */
+			k_work_reschedule(&test_seq_val_work, K_MSEC(1));
+			break;
+		case 6: {
+			int rsterr_after = GET_STAT(net_iface, tcp.rsterr);
+
+			zassert_equal(rsterr + 1, rsterr_after,
+				      "RST packet not skipped (before %d, after %d)",
+				      rsterr, rsterr_after);
+
+			/* test RST with correct seqnum, expect ERSET in recv_cb. */
+			reply = prepare_rst_ack_packet(af, htons(MY_PORT), peer_port);
+
+		}
+		break;
+		default:
+			zassert_true(false, "T_DATA_ACK, %d round should never happen", round);
+			break;
+		}
+		break;
+	default:
+		zassert_true(false, "%s unexpected state", __func__);
+		return;
+	}
+
+	zassert_ok(net_recv_data(net_iface, reply), "%s failed", __func__);
+}
+
+static void test_seq_val_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	handle_client_seq_validation_test(AF_INET, NULL);
+}
+
+static void test_seq_val_recv_cb(struct net_context *context,
+				 struct net_pkt *pkt,
+				 union net_ip_header *ip_hdr,
+				 union net_proto_header *proto_hdr,
+				 int status,
+				 void *user_data)
+{
+	if (status) {
+		zassert_equal(status, -ECONNRESET, "failed to recv data");
+		test_sem_give();
+	}
+
+	if (pkt) {
+		static int i;
+
+		net_pkt_unref(pkt);
+
+		if (i == 0) {
+			test_sem_give();
+		}
+		i++;
+	}
+}
+
+/* Test case scenario IPv4
+ *   expect SYN,
+ *   send SYN ACK,
+ *   expect ACK,
+ *   send Data with seq valid,
+ *   expect ACK,
+ *   send Data with seq invalid,
+ *   expect same ACK,
+ *   send Data to make server 0 recv_wnd,
+ *   expect ACK with 0 window,
+ *   send Data, valid RST,
+ *   expect duplicate ACK on Data, check RST stat
+ *   any failures cause test case to fail.
+ */
+ZTEST(net_tcp, test_client_seq_validation)
+{
+	struct net_context *ctx;
+
+	test_case_no = TEST_CLIENT_SEQ_VALIDATION;
+
+	k_work_init_delayable(&test_seq_val_work, test_seq_val_handler);
+
+	t_state = T_SYN;
+	seq = ack = 0;
+
+	zassert_ok(net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx),
+		   "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	zassert_ok(net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
+				       sizeof(struct sockaddr_in), NULL,
+				       K_MSEC(1000), NULL),
+		   "Failed to connect to peer");
+	zassert_ok(net_context_recv(ctx, test_seq_val_recv_cb,
+				    K_NO_WAIT, NULL),
+		   "Failed to recv data from peer");
+
+	/* Take sem twice, one for data packet, second for conn reset. */
+	test_sem_take(K_MSEC(300), __LINE__);
+	test_sem_take(K_MSEC(300), __LINE__);
+
+	net_context_put(ctx);
+
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
