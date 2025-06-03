@@ -13,12 +13,14 @@ config SOC_SERIES_MCXA
 config SOC_MCXA153
 	select CPU_CORTEX_M33
 	select HAS_MCUX_CACHE
+	select HAS_MCUX_MCX_CMC
 
 config SOC_MCXA156
 	select CPU_CORTEX_M33
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
+	select HAS_MCUX_MCX_CMC
 
 config SOC_MCXA166
 	select CPU_CORTEX_M33
