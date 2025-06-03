@@ -7,23 +7,265 @@ config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	default 25600 if ESP_BT_HEAP_SYSTEM
 	default 0
 	help
-	  Make sure there is a minimal heap available for BT driver.
+	  Additional heap size reserved for Bluetooth driver usage.
 
 choice ESP_BT_HEAP
-	prompt "Bluetooth adapter heap in use"
+	prompt "Bluetooth heap type"
 	default ESP_BT_HEAP_SYSTEM
 
-	config ESP_BT_HEAP_SYSTEM
-		bool "Bluetooth adapter use the kernel mempool heap (k_malloc)"
+config ESP_BT_HEAP_SYSTEM
+	bool "Kernel memory pool heap (k_malloc)"
 
 endchoice # ESP_BT_HEAP
+
+menu "ESP32 Bluetooth Controller Configuration"
 
 config ESP32_BT_CONTROLLER_STACK_SIZE
 	int "Bluetooth controller stack size"
 	default 4096
 
 config ESP32_BT_CONTROLLER_TASK_PRIO
-	int "Bluetooth controller task priority level"
+	int "Bluetooth controller task priority"
 	default 2
+
+if BT_CLASSIC
+
+config ESP32_BT_CTLR_BR_EDR_MAX_SYNC_CONN
+	int "BR/EDR synchronous connection limit (SCO/eSCO)"
+	default 0
+	range 0 3
+	help
+	  Maximum number of synchronous connections (SCO/eSCO).
+	  Each connection uses approximately 2 KB of DRAM.
+
+config ESP32_BT_CTLR_BR_EDR_MAX_ACL_CONN
+	int "BR/EDR ACL connection limit"
+	default 2
+	range 1 7
+	help
+	  Maximum number of BR/EDR ACL connections.
+	  Each connection uses about 1.2 KB of DRAM.
+
+config ESP32_BT_CTLR_BR_EDR_MIN_ENC_KEY_SZ_DFT
+	int "BR/EDR minimum encryption key size"
+	default 7
+	range 7 16
+	help
+	  Default minimum encryption key size when initiating BR/EDR encryption.
+
+endif # BT_CLASSIC
+
+config ESP32_BT_CTLR_LE_MAX_CONN
+	int "BLE connection limit"
+	default 3
+	range 1 9
+	help
+	  Maximum number of concurrent BLE connections.
+	  Each connection consumes about 1 KB of DRAM.
+
+config ESP32_BT_LE_SLEEP_CLOCK_ACCURACY_INDEX_EFF
+	int
+	default 1
+	help
+	  BLE sleep clock accuracy index (1 = 151–250 ppm).
+
+config ESP32_BT_CTLR_LE_MAX_ACT
+	int "BLE activity instance limit"
+	default 6
+	range 1 10
+	help
+	  Number of BLE activities (connections, scanning, advertising, synchronization).
+	  Each instance uses about 828 bytes of DRAM.
+
+config ESP32_BT_CTLR_LE_STATIC_ACL_TX_BUF_NB
+	int "BLE static ACL TX buffer numbers"
+	range 0 12
+	default 0
+	help
+	  BLE ACL buffer have two methods to be allocated. One is persistent allocating
+	  (allocate when controller initialise, never free until controller de-initialise)
+	  another is dynamically allocating (allocate before TX and free after TX).
+
+config ESP32_BT_CTLR_ADV_DUP_FILT_MAX
+	int "BLE duplicate filter entry limit"
+	range 1 500
+	default 30
+	help
+	  Maximum entries in the extended advertising duplicate scan filter.
+
+choice ESP32_BT_LE_CCA_MODE
+	prompt "BLE clear channel assessment mode"
+	default ESP32_BT_LE_CCA_MODE_NONE
+	help
+	  Select BLE CCA behavior. CCA delays packet transmission if the channel is busy,
+	  affecting scan and connection timing.
+
+config ESP32_BT_LE_CCA_MODE_NONE
+	bool "None"
+
+config ESP32_BT_LE_CCA_MODE_HW
+	bool "Hardware CCA"
+
+config ESP32_BT_LE_CCA_MODE_SW
+	bool "Software CCA (experimental)"
+
+endchoice
+
+config ESP32_BT_LE_CCA_MODE
+	int
+	default 0 if ESP32_BT_LE_CCA_MODE_NONE
+	default 1 if ESP32_BT_LE_CCA_MODE_HW
+	default 2 if ESP32_BT_LE_CCA_MODE_SW
+
+config ESP32_BT_CTLR_HW_CCA_VAL
+	int "Hardware CCA threshold (dBm)"
+	range 20 100
+	default 20
+	help
+	  RSSI threshold for hardware CCA. Value 30 corresponds to –30 dBm.
+
+config ESP32_BT_CTLR_HW_CCA
+	int
+	default 0
+	help
+	  Internal effective value for hardware CCA.
+
+choice ESP32_BT_CTLR_CE_LENGTH_TYPE
+	prompt "Connection event length type"
+	help
+	  Determine how connection event lengths are set by the controller.
+
+config ESP32_BT_CTLR_CE_LENGTH_TYPE_ORIG
+	bool "Original method"
+
+config ESP32_BT_CTLR_CE_LENGTH_TYPE_CE
+	bool "Use HCI CE parameter"
+
+config ESP32_BT_CTLR_CE_LENGTH_TYPE_SD
+	bool "Espressif custom method"
+
+endchoice
+
+config ESP32_BT_CTLR_CE_LENGTH_TYPE_EFF
+	int
+	default 0 if ESP32_BT_CTLR_CE_LENGTH_TYPE_ORIG
+	default 1 if ESP32_BT_CTLR_CE_LENGTH_TYPE_CE
+	default 2 if ESP32_BT_CTLR_CE_LENGTH_TYPE_SD
+
+choice ESP32_BT_CTLR_TX_ANTENNA_INDEX
+	prompt "Bluetooth default TX antenna"
+	help
+	  Select the antenna used for Bluetooth transmission.
+
+config ESP32_BT_CTLR_TX_ANTENNA_INDEX_0
+	bool "Antenna 0"
+
+config ESP32_BT_CTLR_TX_ANTENNA_INDEX_1
+	bool "Antenna 1"
+
+endchoice
+
+config ESP32_BT_CTLR_TX_ANTENNA_INDEX_EFF
+	int
+	default 0 if ESP32_BT_CTLR_TX_ANTENNA_INDEX_0
+	default 1 if ESP32_BT_CTLR_TX_ANTENNA_INDEX_1
+
+choice ESP32_BT_CTLR_RX_ANTENNA_INDEX
+	prompt "Bluetooth default RX antenna"
+	help
+	  Select the antenna used for Bluetooth reception.
+
+config ESP32_BT_CTLR_RX_ANTENNA_INDEX_0
+	bool "Antenna 0"
+
+config ESP32_BT_CTLR_RX_ANTENNA_INDEX_1
+	bool "Antenna 1"
+
+endchoice
+
+config ESP32_BT_CTLR_RX_ANTENNA_INDEX_EFF
+	int
+	default 0 if ESP32_BT_CTLR_RX_ANTENNA_INDEX_0
+	default 1 if ESP32_BT_CTLR_RX_ANTENNA_INDEX_1
+
+config ESP32_BT_LE_ADV_DATA_LENGTH_ZERO_AUX
+	bool "Include auxiliary packet for zero-length advertising"
+	help
+	  Include AUX PDUs for non-connectable, non-scannable advertising when payload is zero.
+
+config ESP32_BT_CTLR_CHAN_ASS_EN
+	bool "Channel assessment timer"
+	default y
+	help
+	  Evaluate channel quality periodically and update the channel map every 4 seconds.
+
+config ESP32_BT_CTLR_LE_PING_EN
+	bool "LE authenticated payload timeout"
+	default y
+	help
+	  Enable LE authenticated payload timeout (ping timer) for link security.
+
+menu "BLE link-layer control procedures"
+
+config ESP32_BT_CTLR_LE_LLCP_CONN_UPDATE
+	bool "Terminate on connection update timeout"
+
+config ESP32_BT_CTLR_LE_LLCP_CHAN_MAP_UPDATE
+	bool "Terminate on channel map update timeout"
+
+config ESP32_BT_CTLR_LE_LLCP_PHY_UPDATE
+	bool "Terminate on PHY update timeout"
+
+endmenu
+
+config ESP32_BT_CTLR_DTM_ENABLE
+	bool "Direct test mode support"
+	default y
+
+config ESP32_BT_CTLR_LE_MASTER
+	bool "BLE master role support"
+	default y
+	help
+	  When disabled, connectable advertising is not used.
+
+config ESP32_BT_CTLR_LE_SCAN
+	bool "BLE scanning support"
+	default y
+
+config ESP32_BT_CTLR_LE_SECURITY_ENABLE
+	bool "BLE security support"
+	default y
+
+config ESP32_BT_CTLR_LE_ADV
+	bool "BLE advertising support"
+	default y
+
+config ESP32_BT_CTLR_CHECK_CONNECT_IND_ACCESS_ADDRESS
+	bool "CONNECT_IND access address verification"
+	help
+	  Perform strict validation of Access Address in CONNECT_IND PDUs to improve security.
+
+choice ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM
+	prompt "Coexistence PHY coded TX/RX time limit"
+	depends on ESP32_SW_COEXIST_ENABLE
+	default ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_DIS
+	help
+	  Limit TX/RX time for coded PHY to reduce Wi-Fi interference.
+
+config ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EN
+	bool "Apply time limit"
+
+config ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_DIS
+	bool "No time limit"
+
+endchoice
+
+config ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EFF
+	int
+	default 0 if !ESP32_SW_COEXIST_ENABLE
+	default 1 if ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EN
+	default 0 if ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_DIS
+
+endmenu # ESP32 Bluetooth Controller Configuration
 
 endif # BT_ESP32
