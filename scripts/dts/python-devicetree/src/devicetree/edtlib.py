@@ -2904,8 +2904,14 @@ def _interrupt_parent(start_node: dtlib_Node) -> dtlib_Node:
 
     while node:
         if "interrupt-parent" in node.props:
-            return node.props["interrupt-parent"].to_node()
+            iparent = node.props["interrupt-parent"].to_node()
+            assert "interrupt-controller" in iparent.props or "interrupt-map" in iparent.props
+            return iparent
         node = node.parent
+        if node is None:
+            _err(f"{start_node!r} no interrupt parent found")
+        if ("interrupt-controller" in node.props) or ("interrupt-map" in node.props):
+            return node
 
     _err(f"{start_node!r} has an 'interrupts' property, but neither the node "
          f"nor any of its parents has an 'interrupt-parent' property")
