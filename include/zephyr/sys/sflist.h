@@ -392,8 +392,6 @@ Z_GENLIST_APPEND(sflist, sfnode)
  * the pointer to the next node as the first element of a node, to @a list.
  * This and other sys_sflist_*() functions are not thread safe.
  *
- * FIXME: Why are the element parameters void *?
- *
  * @param list A pointer on the list to affect
  * @param head A pointer to the first element of the list to append
  * @param tail A pointer to the last element of the list to append
