@@ -209,33 +209,33 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
-void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+void mtu_updated_cb(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	printk("Updated MTU: TX: %d RX: %d bytes\n", tx, rx);
 }
 
-static struct bt_gatt_cb gatt_callbacks = {.att_mtu_updated = mtu_updated};
+static struct bt_gatt_cb gatt_callbacks = {.att_mtu_updated = mtu_updated_cb, };
 
-static void connected(struct bt_conn *conn, uint8_t err)
+static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	if (err) {
+	if (0 != err) {
 		printk("Connection failed, err 0x%02x %s\n", err, bt_hci_err_to_str(err));
 	} else {
 		printk("Connected\n");
 	}
 }
 
-static void disconnected(struct bt_conn *conn, uint8_t reason)
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
 }
 
-static void recycled(void)
+static void recycled_cb(void)
 {
 	printk("connection recycled. Restart advertising a connection");
 	const int err =
 		bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
-	if (err) {
+	if (0 != err) {
 		printk("Advertising failed to start (err %d)\n", err);
 	}
 }
@@ -256,9 +256,9 @@ static void alert_high_start(void)
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected,
-	.disconnected = disconnected,
-	.recycled = recycled,
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+	.recycled = recycled_cb,
 };
 
 BT_IAS_CB_DEFINE(ias_callbacks) = {
@@ -278,7 +278,7 @@ static void bt_ready(void)
 	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
-	if (err) {
+	if (0 != err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
 	}
@@ -407,7 +407,7 @@ int main(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (0 != err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}
