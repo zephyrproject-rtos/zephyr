@@ -1,0 +1,20 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_S32K148_EVB
+
+if SERIAL
+
+config UART_CONSOLE
+	default y
+
+endif # SERIAL
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !MODEM
+
+endif # NETWORKING
+
+endif # BOARD_S32K148_EVB
