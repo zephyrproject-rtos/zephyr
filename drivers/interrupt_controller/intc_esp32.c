@@ -607,6 +607,7 @@ int esp_intr_alloc_intrstatus(int source,
 		/* Mark as unusable for other interrupt sources. This is ours now! */
 		vd->flags = VECDESC_FL_NONSHARED;
 		if (handler) {
+			irq_disable(intr);
 			irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)handler, arg, 0);
 		}
 		if (flags & ESP_INTR_FLAG_EDGE) {
