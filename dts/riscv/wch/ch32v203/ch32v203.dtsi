@@ -76,7 +76,7 @@
 				reg = <0x40010800 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				ngpios = <8>;
+				ngpios = <16>;
 				clocks = <&rcc CH32V20X_V30X_CLOCK_IOPA>;
 			};
 
@@ -85,7 +85,7 @@
 				reg = <0x40010C00 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				ngpios = <8>;
+				ngpios = <16>;
 				clocks = <&rcc CH32V20X_V30X_CLOCK_IOPB>;
 			};
 
@@ -94,7 +94,7 @@
 				reg = <0x40011000 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				ngpios = <8>;
+				ngpios = <16>;
 				clocks = <&rcc CH32V20X_V30X_CLOCK_IOPC>;
 			};
 
@@ -103,7 +103,7 @@
 				reg = <0x40011400 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				ngpios = <8>;
+				ngpios = <16>;
 				clocks = <&rcc CH32V20X_V30X_CLOCK_IOPD>;
 			};
 		};
