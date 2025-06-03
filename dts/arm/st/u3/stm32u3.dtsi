@@ -231,6 +231,14 @@
 			interrupts = <66 0>;
 			status = "disabled";
 		};
+
+		dac1: dac@42028400 {
+			compatible = "st,stm32-dac";
+			reg = <0x42028400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 11)>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
