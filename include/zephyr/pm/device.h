@@ -628,6 +628,9 @@ bool pm_device_is_powered(const struct device *dev);
  * @ref PM_DEVICE_STATE_OFF, or @ref PM_DEVICE_STATE_SUSPENDED if device can
  * never be powered off.
  *
+ * @note If CONFIG_PM_DEVICE=n, PM_DEVICE_ACTION_TURN_ON followed by
+ * PM_DEVICE_ACTION_RESUME will be invoked unconditionally.
+ *
  * @param dev Device instance.
  * @param action_cb Device PM control callback function.
  * @retval 0 On success.
