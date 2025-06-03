@@ -57,7 +57,7 @@ static int lsm6dso_enable_tilt_int(const struct device *dev, int enable)
 	int ret = 0;
 	lsm6dso_emb_sens_t sens;
 
-	sens.tilt = PROPERTY_ENABLE;
+	sens.tilt = enable;
 
 	ret += lsm6dso_embedded_sens_set(ctx, &sens);
 	if (ret < 0) {
@@ -115,13 +115,13 @@ static int lsm6dso_enable_tap(const struct device *dev, int enable)
 		LOG_WRN("Minimum recommended accelerometer ODR is 417Hz for tap mode");
 	}
 
-	LOG_INF("TAP: tap mode is %d", cfg->tap_mode);
+	LOG_DBG("TAP: tap mode is %d", cfg->tap_mode);
 	if (lsm6dso_tap_mode_set(ctx, cfg->tap_mode) < 0) {
 		LOG_ERR("Failed to select tap trigger mode");
 		return -EIO;
 	}
 
-	LOG_INF("TAP: ths_x is %02x", cfg->tap_threshold[0]);
+	LOG_DBG("TAP: ths_x is %02x", cfg->tap_threshold[0]);
 	if (lsm6dso_tap_threshold_x_set(ctx, cfg->tap_threshold[0]) < 0) {
 		LOG_ERR("Failed to set tap X axis threshold");
 		return -EIO;
@@ -207,7 +207,6 @@ static int lsm6dso_enable_single_tap_int(const struct device *dev, int enable)
 		return lsm6dso_pin_int2_route_set(ctx, NULL, route);
 	}
 
-	return 0;
 }
 
 static int lsm6dso_enable_double_tap_int(const struct device *dev, int enable)
@@ -374,7 +373,11 @@ int lsm6dso_trigger_set(const struct device *dev,
 #if defined(CONFIG_LSM6DSO_TAP)
 	else if (trig->type == SENSOR_TRIG_TAP || trig->type == SENSOR_TRIG_DOUBLE_TAP) {
 
-		lsm6dso_enable_tap(dev, handler ? LSM6DSO_EN_BIT : LSM6DSO_DIS_BIT);
+		int ret = lsm6dso_enable_tap(dev, handler ? LSM6DSO_EN_BIT : LSM6DSO_DIS_BIT);
+
+		if (ret < 0) {
+			return ret;
+		}
 
 		/* Set interrupt */
 		if (trig->type == SENSOR_TRIG_TAP) {
@@ -407,6 +410,8 @@ int lsm6dso_trigger_set(const struct device *dev,
  * lsm6dso_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
+#if defined(CONFIG_LSM6DSO_TILT) || defined(CONFIG_LSM6DSO_TAP)
+
 static void lsm6dso_handle_interrupt(const struct device *dev)
 {
 	struct lsm6dso_data *lsm6dso = dev->data;
@@ -425,7 +430,7 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 		if ((sources.drdy_xl && lsm6dso->handler_drdy_acc != NULL) ||
 		    (sources.drdy_g && lsm6dso->handler_drdy_gyr != NULL)
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-			|| (sources.drdy_temp && lsm6dso->handler_drdy_temp != NULL)
+		    || (sources.drdy_temp && lsm6dso->handler_drdy_temp != NULL)
 #endif
 		) {
 			pending_status = true;
@@ -472,6 +477,49 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					GPIO_INT_EDGE_TO_ACTIVE);
 }
+
+#else
+
+static void lsm6dso_handle_interrupt(const struct device *dev)
+{
+	struct lsm6dso_data *lsm6dso = dev->data;
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lsm6dso_status_reg_t status;
+
+	while (1) {
+		if (lsm6dso_status_reg_get(ctx, &status) < 0) {
+			LOG_DBG("failed reading status reg");
+			return;
+		}
+
+		if ((status.xlda == 0) && (status.gda == 0)
+#if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
+		    && (status.tda == 0)
+#endif
+		) {
+			break;
+		}
+
+		if ((status.xlda) && (lsm6dso->handler_drdy_acc != NULL)) {
+			lsm6dso->handler_drdy_acc(dev, lsm6dso->trig_drdy_acc);
+		}
+
+		if ((status.gda) && (lsm6dso->handler_drdy_gyr != NULL)) {
+			lsm6dso->handler_drdy_gyr(dev, lsm6dso->trig_drdy_gyr);
+		}
+
+#if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
+		if ((status.tda) && (lsm6dso->handler_drdy_temp != NULL)) {
+			lsm6dso->handler_drdy_temp(dev, lsm6dso->trig_drdy_temp);
+		}
+#endif
+	}
+
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
+}
+
+#endif
 
 static void lsm6dso_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, uint32_t pins)
