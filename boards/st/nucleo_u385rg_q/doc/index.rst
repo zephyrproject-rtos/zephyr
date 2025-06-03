@@ -171,8 +171,12 @@ More information about STM32U385RG can be found here:
 
 Supported Features
 ==================
-
-.. zephyr:board-supported-hw::
+The Zephyr _nucleo_u385rg_q_ board configuration supports the following hardware features:
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Connections and IOs
 ===================

@@ -96,3 +96,9 @@
 &clk_lsi {
 	status = "okay";
 };
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pc0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
