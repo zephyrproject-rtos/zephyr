@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rts5817_maa_evb
+name: RTS5817 Platform for fingerprint
+type: mcu
+arch: arm
+ram: 256
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+testing:
+  default: true
+vendor: realtek
