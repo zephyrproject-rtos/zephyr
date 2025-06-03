@@ -71,6 +71,28 @@
 			reg = <0x40100048 0x4>;
 			status = "disabled";
 		};
+
+		uart0: dwapb@40120000 {
+			compatible = "ns16550";
+			reg = <0x40120000 0x100>;
+			reg-shift = <2>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_UART0 0>;
+			clocks = <&clks RTS_FP_CLK_UART0>;
+			resets = <&reset SYS_FORCE_RST_UART0>;
+			status = "disabled";
+		};
+
+		uart1: dwapb@40128000 {
+			compatible = "ns16550";
+			reg = <0x40128000 0x100>;
+			reg-shift = <2>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_UART1 0>;
+			clocks = <&clks RTS_FP_CLK_UART1>;
+			resets = <&reset SYS_FORCE_RST_UART1>;
+			status = "disabled";
+		};
 	};
 };
 
