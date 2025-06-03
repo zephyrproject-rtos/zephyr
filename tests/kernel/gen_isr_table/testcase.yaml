@@ -60,6 +60,10 @@ tests:
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+  arch.interrupt.gen_isr_table_local.riscv:
+    arch_allow: riscv
+    extra_configs:
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
 
   arch.interrupt.gen_isr_table.arc:
     arch_allow: arc
