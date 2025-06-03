@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 TriaGnoSys GmbH
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
