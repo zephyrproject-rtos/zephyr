@@ -26,4 +26,5 @@ zephyr_library_sources_ifdef(CONFIG_MBOX_RENESAS_RZ_MHU mbox_renesas_rz_mhu.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_STM32_HSEM mbox_stm32_hsem.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_TI_OMAP_MAILBOX mbox_ti_omap.c)
 zephyr_library_sources_ifdef(CONFIG_MBOX_TI_SECURE_PROXY mbox_ti_secproxy.c)
+zephyr_library_sources_ifdef(CONFIG_MBOX_XLNX_IPI_MAILBOX mbox_xlnx_ipi_mailbox.c)
 # zephyr-keep-sorted-stop
