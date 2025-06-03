@@ -132,6 +132,11 @@
 				erase-block-size = <8192>;
 				write-block-size = <128>;
 			};
+
+			uuid: uuid@1100800 {
+				compatible = "nxp,lpc-uid";
+				reg = <0x1100800 0x10>;
+			};
 		};
 
 		gpio0: gpio@40102000 {
