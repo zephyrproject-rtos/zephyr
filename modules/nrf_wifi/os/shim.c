@@ -156,7 +156,11 @@ static unsigned int zep_shim_qspi_read_reg32(void *priv, unsigned long addr)
 
 	dev = qspi_priv->qspi_dev;
 
+#ifdef CONFIG_WIFI_NRF71
+	if (addr < 0x200000) {
+#else
 	if (addr < 0x0C0000) {
+#endif /* CONFIG_WIFI_NRF71 */
 		dev->hl_read(addr, &val, 4);
 	} else {
 		dev->read(addr, &val, 4);
@@ -182,8 +186,11 @@ static void zep_shim_qspi_cpy_from(void *priv, void *dest, unsigned long addr, s
 	size_t count_aligned = ROUND_UP(count, 4);
 
 	dev = qspi_priv->qspi_dev;
-
+#ifdef CONFIG_WIFI_NRF71
+	if (addr < 0x200000) {
+#else
 	if (addr < 0x0C0000) {
+#endif /* CONFIG_WIFI_NRF71 */
 		dev->hl_read(addr, dest, count_aligned);
 	} else {
 		dev->read(addr, dest, count_aligned);

@@ -397,12 +397,13 @@ void nrf_wifi_event_proc_get_power_save_info(void *vif_ctx,
 	vif_ctx_zep->ps_info->ps_params.timeout_ms = ps_info->ps_timeout;
 	vif_ctx_zep->ps_info->ps_params.listen_interval = ps_info->listen_interval;
 	vif_ctx_zep->ps_info->ps_params.wakeup_mode = ps_info->extended_ps;
+#ifndef CONFIG_WIFI_NRF71
 	if (ps_info->ps_exit_strategy == EVERY_TIM) {
 		vif_ctx_zep->ps_info->ps_params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
 	} else if (ps_info->ps_exit_strategy == INT_PS) {
 		vif_ctx_zep->ps_info->ps_params.exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
 	}
-
+#endif /* !CONFIG_WIFI_NRF71 */
 	for (int i = 0; i < ps_info->num_twt_flows; i++) {
 		struct twt_interval_float twt_interval_fp;
 		struct wifi_twt_flow_info *twt_zep = &vif_ctx_zep->ps_info->twt_flows[i];

@@ -69,7 +69,11 @@ BUILD_ASSERT(CONFIG_NRF70_MAX_TX_AGGREGATION <= 15,
 	"Max TX aggregation is 15");
 BUILD_ASSERT(CONFIG_NRF70_RX_NUM_BUFS >= 1,
 	"At least one RX buffer is required");
+#ifdef CONFIG_WIFI_NRF71
+BUILD_ASSERT(RPU_DATA_RAM_SIZE - TOTAL_RX_SIZE >= TOTAL_TX_SIZE,
+#else
 BUILD_ASSERT(RPU_PKTRAM_SIZE - TOTAL_RX_SIZE >= TOTAL_TX_SIZE,
+#endif  /* CONFGI_WIFI_NRF71 */
 	"Packet RAM overflow: not enough memory for TX");
 
 BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
@@ -615,13 +619,25 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 	}
 
 	rpu_ctx_zep->rpu_ctx = rpu_ctx;
-
+#ifdef CONFIG_WIFI_NRF71
+	/** Block the loading of firmware as
+	 * it has to be done from codescape for NRF71 case.
+	 */
+	/** Check if frimware loaded properly */
+	status = nrf_wifi_fmac_fw_boot(rpu_ctx);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fw_boot failed", __func__);
+		goto err;
+	} else {
+		printf("Boot check passed\n");
+	}
+#else
 	status = nrf_wifi_fw_load(rpu_ctx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fw_load failed", __func__);
 		goto err;
 	}
-
+#endif /* CONFIG_WIFI_NRF71 */
 	status = nrf_wifi_fmac_ver_get(rpu_ctx,
 				       &fw_ver);
 
@@ -629,7 +645,6 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 		LOG_ERR("%s: FW version read failed", __func__);
 		goto err;
 	}
-
 	LOG_DBG("Firmware (v%d.%d.%d.%d) booted successfully",
 		NRF_WIFI_UMAC_VER(fw_ver),
 		NRF_WIFI_UMAC_VER_MAJ(fw_ver),
@@ -817,7 +832,11 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 
 	sys_fpriv = wifi_fmac_priv(rpu_drv_priv_zep.fmac_priv);
 	sys_fpriv->max_ampdu_len_per_token =
+#ifdef CONFIG_WIFI_NRF71
+		(RPU_DATA_RAM_SIZE - (CONFIG_NRF70_RX_NUM_BUFS * CONFIG_NRF70_RX_MAX_DATA_SIZE)) /
+#else
 		(RPU_PKTRAM_SIZE - (CONFIG_NRF70_RX_NUM_BUFS * CONFIG_NRF70_RX_MAX_DATA_SIZE)) /
+#endif /* CONFIG_WIFI_NRF71 */
 		CONFIG_NRF70_MAX_TX_TOKENS;
 	/* Align to 4-byte */
 	sys_fpriv->max_ampdu_len_per_token &= ~0x3;

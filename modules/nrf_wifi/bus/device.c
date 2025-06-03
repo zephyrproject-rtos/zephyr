@@ -60,9 +60,10 @@ struct qspi_config *qspi_defconfig(void)
 	config.test_name = "QSPI TEST";
 	config.test_hlread = false;
 	config.test_iteration = 0;
-
 	config.qspi_slave_latency = 0;
-
+#ifdef CONFIG_WIFI_NRF71
+	config.qspi_slave_latency = 1;
+#endif /* CONFIG_WIFI_NRF71 */
 	config.encryption = config.CMD_CNONCE = false;
 
 #if defined(CONFIG_NRF70_ON_QSPI) && (NRF_QSPI_HAS_XIP_ENC || NRF_QSPI_HAS_DMA_ENC)

@@ -53,4 +53,9 @@ config NRF70_LOG_VERBOSE
 	bool "Maintains the verbosity of information in logs"
 	default y
 
+config WIFI_NRF71
+	bool "For nrf71 testing with fpga"
+	select EXPERIMENTAL
+	help
+	  Enable to do system testn with nrf71 and fpga
 endif # NRF70_BUSLIB

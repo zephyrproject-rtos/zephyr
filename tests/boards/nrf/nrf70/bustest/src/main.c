@@ -16,7 +16,11 @@
 
 LOG_MODULE_REGISTER(nrf70_bustest, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 
+#ifdef CONFIG_WIFI_NRF71
+#define DATARAM_ADDR 0x200000
+#else
 #define DATARAM_ADDR 0x0C0000
+#endif /* CONFIG_WIFI_NRF71 */
 static struct qspi_dev *dev;
 
 static int wifi_on(void *state)
@@ -182,6 +186,7 @@ static int test_peripbus(void)
 
 ZTEST_SUITE(bustest_suite, NULL, (void *)wifi_on, NULL, NULL, wifi_off);
 
+#ifndef CONFIG_WIFI_NRF71
 ZTEST(bustest_suite, test_sysbus)
 {
 	zassert_equal(0, test_sysbus(), "SYSBUS read validation failed!!!");
@@ -191,6 +196,7 @@ ZTEST(bustest_suite, test_peripbus)
 {
 	zassert_equal(0, test_peripbus(), "PERIP BUS read/write validation failed!!!");
 }
+#endif /* !CONFIG_WIFI_NRF71 */
 
 ZTEST(bustest_suite, test_dataram)
 {

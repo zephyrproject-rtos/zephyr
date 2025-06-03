@@ -35,6 +35,23 @@ GPIO_DT_SPEC_GET(NRF7002_NODE, iovdd_ctrl_gpios);
 static const struct gpio_dt_spec bucken_spec =
 GPIO_DT_SPEC_GET(NRF7002_NODE, bucken_gpios);
 
+#ifdef CONFIG_WIFI_NRF71
+char blk_name[][15] = { "WIFIMCU_REG", "RAM0", "RAM1", "DATARAM",
+			"CODERAM", "RAM2", "BELLBOARD", "GRTC", "WICR", "SECURERAM"};
+
+uint32_t rpu_7002_memmap[][3] = {
+	{ 0x000000, 0x0FFFFF, 1 },
+	{ 0x100000, 0x17FFFF, 1 }, /* RAM0 is LMAC Memory */
+	{ 0x180000, 0x1FFFFF, 1 }, /* RAM1 is UMAC Memory */
+	{ 0x200000, 0x2FFFFF, 0 }, /* PKTRAM is DATARAM */
+	{ 0x300000, 0x37FFFF, 1 }, /* CODERAM is ROM (LMAC & UMAC) */
+	{ 0x3C0000, 0x3DFFFF, 2 }, /* RAM2 is GRAM */
+	{ 0x380000, 0x38FFFF, 1 }, /* BELLBOARD */
+	{ 0x392000, 0x393FFF, 1 }, /* GRTC */
+	{ 0x3B0000, 0x3BFFFF, 1 }, /* WICR */
+	{ 0x3e0000, 0x3FFFFB, 1 }  /* Secure RAM */
+};
+#else
 char blk_name[][15] = { "SysBus",   "ExtSysBus",	   "PBus",	   "PKTRAM",
 			       "GRAM",	   "LMAC_ROM",	   "LMAC_RET_RAM", "LMAC_SRC_RAM",
 			       "UMAC_ROM", "UMAC_RET_RAM", "UMAC_SRC_RAM" };
@@ -52,6 +69,7 @@ uint32_t rpu_7002_memmap[][3] = {
 	{ 0x280000, 0x2A4000, 1 },
 	{ 0x300000, 0x338000, 1 }
 };
+#endif /* CONFIG_WIFI_NRF71 */
 
 static const struct qspi_dev *qdev;
 static struct qspi_config *cfg;
@@ -66,7 +84,11 @@ static int validate_addr_blk(uint32_t start_addr,
 
 	if (((start_addr >= block_map[0]) && (start_addr <= block_map[1])) &&
 	    ((end_addr >= block_map[0]) && (end_addr <= block_map[1]))) {
+#ifdef CONFIG_WIFI_NRF71
+		if (block_no == DATARAM) {
+#else
 		if (block_no == PKTRAM) {
+#endif /* CONFIG_WIFI_NRF71 */
 			*hl_flag = 0;
 		}
 		*selected_blk = block_no;
@@ -76,7 +98,11 @@ static int validate_addr_blk(uint32_t start_addr,
 	return -1;
 }
 
+#ifdef CONFIG_WIFI_NRF71
+int rpu_validate_addr(uint32_t start_addr, uint32_t len, bool *hl_flag)
+#else /* CONFIG_WIFI_NRF71 */
 static int rpu_validate_addr(uint32_t start_addr, uint32_t len, bool *hl_flag)
+#endif /* !CONFIG_WIFI_NRF71 */
 {
 	int ret = 0, i;
 	uint32_t end_addr;
@@ -97,8 +123,11 @@ static int rpu_validate_addr(uint32_t start_addr, uint32_t len, bool *hl_flag)
 		LOG_ERR("Address validation failed - pls check memmory map and re-try");
 		return -1;
 	}
-
+#ifdef CONFIG_WIFI_NRF71
+	if (selected_blk == CODERAM) {
+#else  /* CONFIG_WIFI_NRF71 */
 	if ((selected_blk == LMAC_ROM) || (selected_blk == UMAC_ROM)) {
+#endif /* !CONFIG_WIFI_NRF71 */
 		LOG_ERR("Error: Cannot write to ROM blocks");
 		return -1;
 	}
@@ -168,8 +197,11 @@ int rpu_irq_remove(struct gpio_callback *irq_callback_data)
 out:
 	return ret;
 }
-
+#ifdef CONFIG_WIFI_NRF71
+int rpu_gpio_config(void)
+#else /* CONFIG_WIFI_NRF71 */
 static int rpu_gpio_config(void)
+#endif /* !CONFIG_WIFI_NRF71 */
 {
 	int ret;
 
@@ -221,7 +253,11 @@ static int rpu_gpio_remove(void)
 	return ret;
 }
 
+#ifdef CONFIG_WIFI_NRF71
+int rpu_pwron(void)
+#else /* CONFIG_WIFI_NRF71 */
 static int rpu_pwron(void)
+#endif /* !CONFIG_WIFI_NRF71 */
 {
 	int ret;
 
@@ -487,12 +523,14 @@ int rpu_enable(void)
  * successfully before it can be called. So, disable this for
  * nrf70_buslib only usage.
  */
+#ifndef CONFIG_WIFI_NRF71
 #ifdef CONFIG_WIFI_NRF70
 	ret = rpu_validate_comms();
 	if (ret) {
 		goto rpu_pwroff;
 	}
 #endif
+#endif /* !CONFIG_WIFI_NRF71 */
 	return 0;
 rpu_pwroff:
 	rpu_pwroff();

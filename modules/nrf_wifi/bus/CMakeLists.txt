@@ -58,4 +58,7 @@ if (CONFIG_NRF70_BUSLIB)
     ipc_service.c
     spsc_qm.c
   )
+  zephyr_library_include_directories_ifdef(CONFIG_WIFI_NRF71
+    ${NRF_WIFI_DIR}/bus_if/bus/qspi/inc
+  )
 endif()
