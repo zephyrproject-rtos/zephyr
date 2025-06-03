@@ -51,5 +51,10 @@ config UOSCORE_UEDHOC_CRYPTO_COMMON
 	select PSA_WANT_KEY_TYPE_HMAC
 	select PSA_WANT_ALG_HMAC
 	select PSA_WANT_ALG_SHA_256
+	# On TF-M platforms the PSA_WANT_xxx above do not enable the legacy
+	# MBEDTLS_ECP_C build symbol which is required to enable the
+	# mbedtls_pk_ec() function used in uOSCORE/uEDHOC.
+	select MBEDTLS_ECP_C if BUILD_WITH_TFM
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED if BUILD_WITH_TFM
 
 endif # UOSCORE || UEDHOC
