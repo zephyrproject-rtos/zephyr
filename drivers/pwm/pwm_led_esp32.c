@@ -10,6 +10,8 @@
 #include <hal/ledc_hal.h>
 #include <hal/ledc_types.h>
 #include <esp_clk_tree.h>
+#include <soc/rtc.h>
+#include <clk_ctrl_os.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -150,10 +152,20 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 * Try each clock source available depending on the device and channel type.
 	 */
 	for (int i = 0; i < clock_src_num; i++) {
-		channel->clock_src = clock_src[i];
-		esp_clk_tree_src_get_freq_hz(channel->clock_src,
-					     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
-					     &channel->clock_src_hz);
+		if (clock_src[i] == LEDC_SLOW_CLK_RC_FAST) {
+			/* RC_FAST requires enabling and calibrating */
+			if (!rtc_dig_8m_enabled() && !periph_rtc_dig_clk8m_enable()) {
+				/* skip RC_FAST as clock source */
+				continue;
+			}
+			channel->clock_src = clock_src[i];
+			channel->clock_src_hz = periph_rtc_dig_clk8m_get_freq();
+		} else {
+			channel->clock_src = clock_src[i];
+			esp_clk_tree_src_get_freq_hz(channel->clock_src,
+							ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+							&channel->clock_src_hz);
+		}
 		if (!pwm_led_esp32_calculate_max_resolution(channel)) {
 			return 0;
 		}
