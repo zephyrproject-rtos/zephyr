@@ -97,3 +97,19 @@ e.g.:
 
     west build -b nrf5340dk/nrf5340/cpuapp --sysbuild \
         -- -DEXTRA_CONF_FILE=overlay-le-audio.conf;hci_ipc.conf
+
+Building with support for btsnoop and rtt logs
+**********************************************
+
+Add following options in desired configuration file:
+
+CONFIG_LOG=n
+CONFIG_LOG_BACKEND_RTT=y
+CONFIG_LOG_BACKEND_RTT_BUFFER=1
+CONFIG_LOG_BACKEND_RTT_MODE_DROP=n
+
+CONFIG_USE_SEGGER_RTT=y
+CONFIG_SEGGER_RTT_SECTION_CUSTOM=y
+
+CONFIG_BT_DEBUG_MONITOR_RTT=y
+CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER=2
