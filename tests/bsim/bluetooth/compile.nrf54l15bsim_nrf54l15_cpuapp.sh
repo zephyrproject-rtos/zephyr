@@ -13,6 +13,9 @@ export BOARD="${BOARD:-nrf54l15bsim/nrf54l15/cpuapp}"
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
+app=tests/bsim/bluetooth/ll/advx compile
+app=tests/bsim/bluetooth/ll/advx conf_overlay=overlay-ticker_expire_info.conf compile
+app=tests/bsim/bluetooth/ll/advx conf_overlay=overlay-scan_aux_use_chains.conf compile
 app=tests/bsim/bluetooth/ll/throughput compile
 app=tests/bsim/bluetooth/ll/multiple_id compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
