@@ -114,6 +114,7 @@ ZTEST(device_power_domain, test_device_power_domain)
 	/* Directly request the supported device multiple times */
 	pm_device_runtime_get(dev);
 	pm_device_runtime_get(dev);
+	pm_device_runtime_get(dev);
 	/* Directly release the supported device the first time, check all still powered */
 	pm_device_runtime_put(dev);
 	zassert_true(pm_device_is_powered(dev), "");
@@ -121,8 +122,11 @@ ZTEST(device_power_domain, test_device_power_domain)
 	zassert_equal(PM_DEVICE_STATE_ACTIVE, state, "");
 	pm_device_state_get(reg_1, &state);
 	zassert_equal(PM_DEVICE_STATE_ACTIVE, state, "");
-	/* Directly release the supported device the second time, check all off */
-	pm_device_runtime_put(dev);
+	/* Release the supported device the twice using async */
+	zassert_ok(pm_device_runtime_put_async(dev, K_SECONDS(1)));
+	zassert_ok(pm_device_runtime_put_async(dev, K_SECONDS(1)));
+	k_sleep(K_SECONDS(2));
+	/* Check all off */
 	zassert_false(pm_device_is_powered(dev), "");
 	pm_device_state_get(dev, &state);
 	zassert_equal(PM_DEVICE_STATE_OFF, state, "");
