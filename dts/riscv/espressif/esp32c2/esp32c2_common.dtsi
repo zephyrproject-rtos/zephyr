@@ -229,5 +229,17 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+
+		dma: dma@6003f000 {
+			compatible = "espressif,esp32-gdma";
+			reg = <0x6003f000 DT_SIZE_K(4)>;
+			#dma-cells = <1>;
+			interrupts = <DMA_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_GDMA_MODULE>;
+			dma-channels = <2>;
+			dma-buf-addr-alignment = <4>;
+			status = "disabled";
+		};
 	};
 };
