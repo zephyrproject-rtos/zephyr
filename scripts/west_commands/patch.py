@@ -530,7 +530,11 @@ class Patch(WestCommand):
     @staticmethod
     def get_file_sha256sum(filename: Path) -> str:
         with open(filename, "rb") as fp:
-            digest = hashlib.file_digest(fp, "sha256")
+            # NOTE: If python 3.11 is the minimum, the following can be replaced with:
+            # digest = hashlib.file_digest(fp, "sha256")
+            digest = hashlib.new("sha256")
+            while chunk := fp.read(2**10):
+                digest.update(chunk)
 
         return digest.hexdigest()
 
