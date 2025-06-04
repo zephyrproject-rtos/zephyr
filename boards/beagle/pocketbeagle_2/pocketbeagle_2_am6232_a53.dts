@@ -19,6 +19,10 @@
 		zephyr,sram = &ddr0;
 	};
 
+	aliases {
+		led0 = &led1;
+	};
+
 	cpus {
 		cpu@0 {
 			status = "okay";
@@ -32,6 +36,30 @@
 	ddr0: memory@80000000 {
 		reg = <0x80000000 DT_SIZE_M(512)>;
 	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&main_gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+
+		led2: led_2 {
+			gpios = <&main_gpio0 5 GPIO_ACTIVE_HIGH>;
+			label = "LED 2";
+		};
+
+		led3: led_3 {
+			gpios = <&main_gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "LED 3";
+		};
+
+		led4: led_4 {
+			gpios = <&main_gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "LED 4";
+		};
+	};
 };
 
 &uart6 {
@@ -42,6 +70,12 @@
 
 &main_i2c2 {
 	pinctrl-0 = <&main_i2c2_sda_default &main_i2c2_scl_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_gpio0 {
+	pinctrl-0 = <&led_pins_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
