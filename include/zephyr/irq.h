@@ -128,6 +128,10 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * Although this routine is invoked at run-time, all of its arguments must be
  * computable by the compiler at build time.
  *
+ * @note
+ * All IRQs configured with the IRQ_ZERO_LATENCY flag must be declared as
+ * direct.
+ *
  * @param irq_p IRQ line number.
  * @param priority_p Interrupt priority.
  * @param isr_p Address of interrupt service routine.
@@ -170,6 +174,10 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * and IRQ_DIRECT_FOOTER() invocations. It performs tasks necessary to
  * exit power management idle state. It takes no parameters and returns no
  * arguments. It may be omitted, but be careful!
+ *
+ * @warning
+ * This macro must not be used at all with IRQs configured with the
+ * IRQ_ZERO_LATENCY flag.
  */
 #define ISR_DIRECT_PM() ARCH_ISR_DIRECT_PM()
 
@@ -185,6 +193,10 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * these interrupt types require different assembly language handling of
  * registers by the ISR, this will always generate code for the 'fast'
  * interrupt type.
+ *
+ * @warning
+ * Any ISRs that serve IRQs configured with the IRQ_ZERO_LATENCY flag must
+ * always return 0 in this macro.
  *
  * Example usage:
  *
