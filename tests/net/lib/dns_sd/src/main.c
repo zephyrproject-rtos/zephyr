@@ -693,7 +693,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	zassert_equal(255, ttl, "TTL invalid (%d vs %d)", 255, ttl);
 	zassert_true(net_ipv4_addr_cmp(&addr_v4_expect,
 				       &net_sin(&dst)->sin_addr), "");
-	zassert_equal(8, dst_len, "");
+	zassert_equal(sizeof(struct sockaddr_in), dst_len, "");
 
 	(void)zsock_close(v4);
 
@@ -716,7 +716,7 @@ ZTEST(dns_sd, test_setup_dst_addr)
 	zassert_equal(255, ttl, "Hoplimit invalid (%d vs %d)", 255, ttl);
 	zassert_true(net_ipv6_addr_cmp(&addr_v6_expect,
 				       &net_sin6(&dst)->sin6_addr), "");
-	zassert_equal(24, dst_len, "");
+	zassert_equal(sizeof(struct sockaddr_in6), dst_len, "");
 
 	(void)zsock_close(v6);
 #endif
