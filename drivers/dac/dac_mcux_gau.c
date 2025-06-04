@@ -133,7 +133,6 @@ static int nxp_gau_dac_init_common(const struct device *dev)
 	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
  
 	POWER_PowerOnGau();
- 
 	return 0;
 };
  
