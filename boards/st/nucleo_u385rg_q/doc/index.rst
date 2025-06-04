@@ -186,6 +186,9 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - DAC1_OUT1 : PA4
+- I2C_1 SDA/SDL : PB6/PB7 (Arduino I2C)
+- I2C_2 SDA/SDL : PB13/PB14
+- I2C_3 SDA/SDL : PC0/PC1
 - LD1 : PA5
 - LPUART_1_TX : PA9
 - LPUART_1_RX : PA10
