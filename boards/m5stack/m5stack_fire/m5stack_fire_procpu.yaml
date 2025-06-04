@@ -14,5 +14,3 @@ supported:
   - nvs
   - pwm
 vendor: m5stack
-testing:
-  default: true
