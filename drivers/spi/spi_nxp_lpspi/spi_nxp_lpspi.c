@@ -241,6 +241,7 @@ static void lpspi_isr(const struct device *dev)
 	const struct lpspi_config *config = dev->config;
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
+	uint8_t word_size_bytes = lpspi_data->word_size_bytes;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t status_flags = base->SR;
 
@@ -252,7 +253,7 @@ static void lpspi_isr(const struct device *dev)
 		lpspi_handle_tx_irq(dev);
 	}
 
-	if (spi_context_rx_len_left(ctx) == 0) {
+	if (spi_context_rx_len_left(ctx, word_size_bytes) == 0) {
 		base->IER &= ~LPSPI_IER_RDIE_MASK;
 		base->CR |= LPSPI_CR_RRF_MASK; /* flush rx fifo */
 	}
@@ -274,7 +275,8 @@ static void lpspi_isr(const struct device *dev)
 		lpspi_data->fill_len = fill_len;
 	}
 
-	if (spi_context_rx_len_left(ctx) == 1 && (LPSPI_VERID_MAJOR(base->VERID) < 2)) {
+	if ((DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1) &&
+	    (LPSPI_VERID_MAJOR(base->VERID) < 2)) {
 		/* Due to stalling behavior on older LPSPI,
 		 * need to end xfer in order to get last bit clocked out on bus.
 		 */
