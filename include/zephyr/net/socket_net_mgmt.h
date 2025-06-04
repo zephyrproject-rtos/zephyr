@@ -43,6 +43,19 @@ extern "C" {
 /** @endcond */
 
 /**
+ * @name Socket options for NET_MGMT sockets
+ * @{
+ */
+
+/** Set Ethernet Qav parameters */
+#define SO_NET_MGMT_ETHERNET_SET_QAV_PARAM 1
+
+/** Get Ethernet Qav parameters */
+#define SO_NET_MGMT_ETHERNET_GET_QAV_PARAM 2
+
+/** @} */ /* for @name */
+
+/**
  * struct sockaddr_nm - The sockaddr structure for NET_MGMT sockets
  *
  * Similar concepts are used as in Linux AF_NETLINK. The NETLINK name is not
