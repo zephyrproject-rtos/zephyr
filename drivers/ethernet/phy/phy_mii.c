@@ -221,17 +221,17 @@ static int check_autonegotiation_completion(const struct device *dev)
 	uint16_t c1kt_reg = 0;
 	uint16_t s1kt_reg = 0;
 
-		/* On some PHY chips, the BMSR bits are latched, so the first read may
-		 * show incorrect status. A second read ensures correct values.
-		 */
-		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-			return -EIO;
-		}
+	/* On some PHY chips, the BMSR bits are latched, so the first read may
+	 * show incorrect status. A second read ensures correct values.
+	 */
+	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		return -EIO;
+	}
 
-		/* Second read, clears the latched bits and gives the correct status */
-		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
-			return -EIO;
-		}
+	/* Second read, clears the latched bits and gives the correct status */
+	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		return -EIO;
+	}
 
 	if (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE)) {
 		if (data->autoneg_timeout-- == 0U) {
