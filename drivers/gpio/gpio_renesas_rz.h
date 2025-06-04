@@ -12,7 +12,8 @@
 #define GPIO_RZ_INT_UNSUPPORTED 0xF
 
 #if defined(CONFIG_SOC_SERIES_RZG3S) || defined(CONFIG_SOC_SERIES_RZA3UL) ||                       \
-	defined(CONFIG_SOC_SERIES_RZV2L) || defined(CONFIG_SOC_SERIES_RZG2L)
+	defined(CONFIG_SOC_SERIES_RZV2L) || defined(CONFIG_SOC_SERIES_RZG2L) ||                    \
+	defined(CONFIG_SOC_SERIES_RZA3M)
 #include <zephyr/dt-bindings/gpio/renesas-rz-gpio.h>
 
 #if defined(CONFIG_SOC_SERIES_RZG3S)
@@ -46,6 +47,17 @@ static const uint8_t gpio_rz_int[GPIO_RZ_MAX_PORT_NUM] = {
 	0,  2,  4,  6,  8,  10, 13, 15, 18, 21, 24,  25,  27,  29,  32, 34, 36,
 	38, 41, 43, 45, 48, 50, 52, 54, 56, 58, 60,  62,  64,  66,  68, 70, 72,
 	74, 76, 78, 80, 83, 85, 88, 91, 93, 98, 102, 106, 110, 114, 118};
+
+#elif defined(CONFIG_SOC_SERIES_RZA3M)
+#define GPIO_RZ_P_REG_BASE_GET   (&R_GPIO->P01)
+#define GPIO_RZ_PM_REG_BASE_GET  (&R_GPIO->PM01)
+#define GPIO_RZ_PFC_REG_BASE_GET (&R_GPIO->PFC01)
+#define GPIO_RZ_MAX_PORT_NUM            24
+#define GPIO_RZ_TINT_IRQ_OFFSET         476
+#define R_INTC                          R_INTC_IA55
+static const uint8_t gpio_rz_int[GPIO_RZ_MAX_PORT_NUM] = {0,  4,  9,  13, 17, 23, 28, 33, 38, 42,
+							  47, 52, 56, 0,  0,  0,  0,  0,  0,  0,
+							  58, 64, 67, 72};
 #endif
 
 #define GPIO_RZ_P_REG_GET(port, pin)   (&GPIO_RZ_P_REG_BASE_GET[port])
