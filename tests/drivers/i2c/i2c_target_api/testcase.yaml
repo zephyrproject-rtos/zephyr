@@ -28,6 +28,7 @@ tests:
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_u083rc
+      - nucleo_u385rg_q
       - nucleo_wba55cg
       - nucleo_wb55rg
       - rpi_pico
