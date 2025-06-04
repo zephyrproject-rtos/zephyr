@@ -20,6 +20,12 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 
 #include "platform/platform-zephyr.h"
 
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+#include <openthread/border_router.h>
+#include <openthread/border_routing.h>
+#include <openthread/backbone_router_ftd.h>
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
+
 #include <openthread.h>
 
 #include <openthread/child_supervision.h>
@@ -30,6 +36,10 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #include <openthread/ncp.h>
 #include <openthread/message.h>
 #include <openthread/platform/diag.h>
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+#include <openthread/platform/infra_if.h>
+#include "mdns_socket.h"
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/dataset.h>
@@ -451,6 +461,31 @@ int openthread_stop(void)
 
 	return 0;
 }
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+int openthread_start_border_router_services(struct net_if *ot_iface, struct net_if *ail_iface)
+{
+	otError error = OT_ERROR_NONE;
+
+	net_if_flag_set(ot_iface, NET_IF_FORWARD_MULTICASTS);
+
+	openthread_mutex_lock();
+
+	otInstance *instance = openthread_get_default_instance();
+	// Initialize platform modules first
+	InfraIfInit(instance);
+	mdns_socket_plat_init(instance);
+
+	// Call OpenThread API
+	otPlatInfraIfStateChanged(instance, (uint32_t)net_if_get_by_iface(ail_iface), true);
+	otBorderRoutingInit(instance, net_if_get_by_iface(ail_iface), true);
+	otBorderRoutingSetEnabled(instance, true);
+	otBackboneRouterSetEnabled(instance, true);
+
+	openthread_mutex_unlock();
+
+	return error == OT_ERROR_NONE ? 0 : -EIO;
+}
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
 
 void openthread_set_receive_cb(openthread_receive_cb cb, void *context)
 {
@@ -468,6 +503,19 @@ void openthread_set_receive_cb(openthread_receive_cb cb, void *context)
 		openthread_mutex_unlock();
 	}
 }
+
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+void openthread_set_bbr_multicast_listener_cb(openthread_bbr_multicast_listener_cb cb,
+					      void *context)
+{
+	__ASSERT(cb != NULL, "Receive callback is not set");
+	__ASSERT(openthread_instance != NULL, "OpenThread instance is not initialized");
+
+	openthread_mutex_lock();
+	otBackboneRouterSetMulticastListenerCallback(openthread_instance, cb, context);
+	openthread_mutex_unlock();
+}
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
 
 void openthread_mutex_lock(void)
 {

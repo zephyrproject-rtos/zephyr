@@ -28,4 +28,8 @@ zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT messa
 zephyr_library_sources_ifdef(CONFIG_SETTINGS settings.c)
 zephyr_library_sources_ifndef(CONFIG_LOG_BACKEND_SPINEL logging.c)
 
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_BORDER_ROUTER trel.c)
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_BORDER_ROUTER udp.c)
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_BORDER_ROUTER mdns_socket.c)
+
 zephyr_include_directories(.)
