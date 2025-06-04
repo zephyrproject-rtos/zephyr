@@ -57,7 +57,7 @@ struct xtensa_register {
 	 * Offset of saved register in stack frame.
 	 * 0 if not saved in stack frame.
 	 */
-	int8_t		stack_offset;
+	int16_t		stack_offset;
 
 	/** Sequence number */
 	uint8_t		seqno;
