@@ -22,3 +22,10 @@ CONFIG_UART_CONSOLE=y
 
 # Use zephyr,code-partition as flash offset
 CONFIG_USE_DT_CODE_PARTITION=y
+
+# Set default values for Video
+CONFIG_VIDEO_BUFFER_POOL_NUM_MAX=2
+CONFIG_VIDEO_BUFFER_POOL_SZ_MAX=160000
+
+# Enable DMA
+CONFIG_DMA=y
