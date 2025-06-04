@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include "r_sci_rx130_private.h"
 #elif CONFIG_SOC_SERIES_RX261
 #include "r_sci_rx261_private.h"
+#elif CONFIG_SOC_SERIES_RX26T
+#include "r_sci_rx26t_private.h"
 #else
 #error Unknown SOC, not (yet) supported.
 #endif
@@ -442,7 +444,9 @@ static void uart_rx_sci_txi_isr(const struct device *dev)
 		data->user_cb(dev, data->user_cb_data);
 	}
 }
+#endif
 
+#ifndef CONFIG_SOC_SERIES_RX26T
 static void uart_rx_sci_tei_isr(const struct device *dev)
 {
 	struct uart_rx_sci_data *data = dev->data;
@@ -462,7 +466,16 @@ static void uart_rx_sci_eri_isr(const struct device *dev)
 }
 #endif
 
+#if defined(CONFIG_SOC_SERIES_RX26T)
+#define UART_RX_SCI_CONFIG_INIT(index)
+#else
+#define UART_RX_SCI_CONFIG_INIT(index)                                                             \
+	.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),                                \
+	.eri_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq),
+#endif
+
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+#ifndef CONFIG_SOC_SERIES_RX26T
 #define UART_RX_SCI_IRQ_INIT(index)                                                                \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                       \
@@ -483,7 +496,18 @@ static void uart_rx_sci_eri_isr(const struct device *dev)
 		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq));                       \
 	} while (0)
 #else
-#define UART_RX_SCI_IRQ_INIT(index)
+#define UART_RX_SCI_IRQ_INIT(index)                                                                \
+	do {                                                                                       \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                       \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),                  \
+			    uart_rx_sci_rxi_isr, DEVICE_DT_INST_GET(index), 0);                    \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),                       \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),                  \
+			    uart_rx_sci_txi_isr, DEVICE_DT_INST_GET(index), 0);                    \
+		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));                       \
+		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq));                       \
+	} while (0)
+#endif
 #endif
 
 #define UART_RX_INIT(index)                                                                        \
@@ -508,9 +532,7 @@ static void uart_rx_sci_eri_isr(const struct device *dev)
 			},                                                                         \
 		.rxi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                        \
 		.txi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),                        \
-		.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),                        \
-		.eri_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq),                        \
-	};                                                                                         \
+		UART_RX_SCI_CONFIG_INIT(index)};                                                   \
                                                                                                    \
 	static int uart_rx_init_##index(const struct device *dev)                                  \
 	{                                                                                          \
