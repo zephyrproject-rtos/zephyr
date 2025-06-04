@@ -1098,15 +1098,18 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_d
 	return 0;
 }
 
-static void link_configure(Gmac *gmac, bool full_duplex, bool speed_100M)
+static void link_configure(Gmac *gmac, enum phy_link_speed speed)
 {
 	uint32_t val;
 
 	val = gmac->GMAC_NCFGR;
 
 	val &= ~(GMAC_NCFGR_FD | GMAC_NCFGR_SPD);
-	val |= (full_duplex) ? GMAC_NCFGR_FD : 0;
-	val |= (speed_100M) ?  GMAC_NCFGR_SPD : 0;
+	val |= PHY_LINK_IS_FULL_DUPLEX(speed) ? GMAC_NCFGR_FD : 0;
+	val |= PHY_LINK_IS_SPEED_100M(speed) ? GMAC_NCFGR_SPD : 0;
+#if defined(GMAC_NCFGR_GBE)
+	val |= PHY_LINK_IS_SPEED_1000M(speed) ? GMAC_NCFGR_GBE : 0;
+#endif
 
 	gmac->GMAC_NCFGR = val;
 
@@ -1708,9 +1711,7 @@ static void phy_link_state_changed(const struct device *pdev,
 		net_eth_carrier_on(dev_data->iface);
 
 		/* Set up link */
-		link_configure(cfg->regs,
-			       PHY_LINK_IS_FULL_DUPLEX(state->speed),
-			       PHY_LINK_IS_SPEED_100M(state->speed));
+		link_configure(cfg->regs, state->speed);
 	} else if (!is_up && dev_data->link_up) {
 		LOG_INF("%s Link down", dev->name);
 
