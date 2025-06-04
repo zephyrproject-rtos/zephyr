@@ -9,6 +9,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <1>;
@@ -184,6 +185,26 @@
 		clock-frequency = <100000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_gpio0: gpio@600000 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00600000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		/* FIXME: Enable all 92 GPIOs */
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	main_gpio1: gpio@601000 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x00601000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		/* FIXME: Enable all 52 GPIOs */
+		ngpios = <32>;
 		status = "disabled";
 	};
 };
