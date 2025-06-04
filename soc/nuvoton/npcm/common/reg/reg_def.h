@@ -1406,9 +1406,15 @@ struct pmch_reg {
 /* PMCH register field */
 #define NPCM_HIPMIE_SCIE                 1
 #define NPCM_HIPMIE_SMIE                 2
+#define NPCM_HIPMIE_HIRQE                3
+#define NPCM_HIPMIE_HSCIE                4
+#define NPCM_HIPMIE_HSMIE                5
+#define NPCM_HIPMIE_HSTA                 6
 #define NPCM_HIPMCTL_IBFIE               0
 #define NPCM_HIPMCTL_OBEIE               1
+#define NPCM_HIPMCTL_PLMS                3
 #define NPCM_HIPMCTL_SCIPOL              6
+#define NPCM_HIPMCTL_EME                 7
 #define NPCM_HIPMST_OBF                  0
 #define NPCM_HIPMST_IBF                  1
 #define NPCM_HIPMST_F0                   2
@@ -1417,9 +1423,13 @@ struct pmch_reg {
 #define NPCM_HIPMST_ST1                  5
 #define NPCM_HIPMST_ST2                  6
 #define NPCM_HIPMST_ST3                  7
+#define NPCM_HIPMIC_IRQB                 0
 #define NPCM_HIPMIC_SMIB                 1
 #define NPCM_HIPMIC_SCIB                 2
 #define NPCM_HIPMIC_SMIPOL               6
+#define NPCM_HIPMIC_SCIIS                7
+
+#define NPCM_HIPMCTL_PLMS_MSK            (0x7 << NPCM_HIPMCTL_PLMS)
 
 /*
  * Core Access to Host (C2H) device registers

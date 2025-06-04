@@ -51,6 +51,27 @@ uint32_t host_shm_GetP80Buf(uint8_t Buf);
 void host_c2h_write_reg(uint8_t c2h_device, uint8_t reg_index, uint8_t reg_data);
 uint8_t host_c2h_read_reg(uint8_t c2h_device, uint8_t reg_index);
 
+//PMCH
+bool host_pmch_is_obf(uint8_t pmch);
+void host_pmch_ibf_int_enable(uint8_t pmch);
+bool host_pmch_is_ibf(uint8_t pmch);
+void host_pmch_write_data(uint8_t pmch, uint8_t data);
+void host_pmch_write_data_with_smi(uint8_t pmch, uint8_t data);
+uint8_t host_pmch_read_data(uint8_t pmch);
+uint8_t host_pmch_shadow_read_data(uint8_t pmch);
+bool host_pmch_is_rcv_cmd(uint8_t pmch);
+void host_pmch_manual_hw_sci_enable(uint8_t pmch);
+void host_pmch_auto_hw_sci_enable(uint8_t pmch);
+void host_pmch_set_sci_mode(uint8_t pmch, uint8_t type);
+void host_pmch_gen_sci_on_ibf_start(uint8_t pmch);
+void host_pmch_gen_sci_manually(uint8_t pmch);
+void host_pmch_write_data_with_sci(uint8_t pmch, uint8_t data);
+uint8_t host_pmch_read_data_with_sci(uint8_t pmch);
+uint8_t host_pmch_get_st(uint8_t pmch);
+void host_pmch_set_st(uint8_t pmch, uint8_t msk);
+void host_pmch_clr_st(uint8_t pmch, uint8_t msk);
+void host_pmch_set_enhance_mode(uint8_t pmch);
+
 /**
  * @brief Initializes all host sub-modules in Core domain.
  *

@@ -121,6 +121,8 @@ struct host_sub_npcm_config {
 	struct c2h_reg *const inst_c2h;
 	struct bbram_reg *const inst_bbram;
 	struct pmch_reg *const inst_pm_acpi;
+	struct pmch_reg *const inst_pm_hcmd;
+	struct pmch_reg *const inst_pmch3;
 	struct pmch_reg *const inst_pmch4;
 	/* clock configuration */
 	const uint8_t clks_size;
@@ -145,6 +147,8 @@ struct host_sub_npcm_config host_sub_cfg = {
 	.inst_c2h = (struct c2h_reg *)DT_REG_ADDR(DT_NODELABEL(c2h)),
 	.inst_bbram = (struct bbram_reg *)DT_INST_REG_ADDR_BY_NAME(0, bbram),
 	.inst_pm_acpi = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_acpi),
+	.inst_pm_hcmd = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pm_hcmd),
+	.inst_pmch3 = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pmch3),
 	.inst_pmch4 = (struct pmch_reg *)DT_INST_REG_ADDR_BY_NAME(0, pmch4),
 	.host_acc_wui = NPCM_DT_WUI_ITEM_BY_NAME(0, host_acc_wui),
 //	.clks_size = ARRAY_SIZE(host_dev_clk_cfg),
@@ -198,6 +202,13 @@ typedef enum {
 	hs_SHM_IMA_WIN1,
 	hs_SHM_IMA_WIN2,
 } HS_SHM_DEVICE_T;
+
+typedef enum {
+	hs_PMCH_ACPI = 0,
+	hs_PMCH_HCMD,
+	hs_PMCH3,
+	hs_PMCH4,
+} HS_PMCH_T;
 
 /* Host sub-device local inline functions */
 static inline uint8_t host_shd_mem_wnd_size_sl(uint32_t size)
@@ -297,55 +308,60 @@ void host_bbram_BKUPSTS_Clear(uint8_t mask)
 }
 
 /* Host ACPI sub-device local functions */
-#if defined(CONFIG_ESPI_PERIPHERAL_PMCH4)
+
+
+#if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO) || \
+				defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || \
+				defined(CONFIG_ESPI_PERIPHERAL_PMCH3) || \
+				defined(CONFIG_ESPI_PERIPHERAL_PMCH4)
 #if !defined(CONFIG_IPMI_KCS_NPCM)
-static void host_pmch4_process_input_data(uint8_t data)
+static void host_pmch_process_input_data(struct pmch_reg *pmch, uint8_t data)
 {
-	struct pmch_reg *const inst_pmch4 = host_sub_cfg.inst_pmch4;
+	struct pmch_reg *const inst_pmch = pmch;
 	struct espi_event evt = {
 		.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
 		.evt_details = ESPI_PERIPHERAL_HOST_IO,
 		.evt_data = ESPI_PERIPHERAL_NODATA
 	};
 
-	LOG_DBG("%s: pmch4 data 0x%02x", __func__, data);
+	LOG_DBG("%s: pmch data 0x%02x", __func__, data);
 
 	/*
 	 * The high byte contains information from the host, and the lower byte
 	 * indicates if the host sent a command or data. 1 = Command.
 	 */
 	evt.evt_data = (data << NPCM_ACPI_DATA_POS) |
-		       (IS_BIT_SET(inst_pmch4->HIPMST, NPCM_HIPMST_CMD) <<
+		       (IS_BIT_SET(inst_pmch->HIPMST, NPCM_HIPMST_CMD) <<
 				       NPCM_ACPI_TYPE_POS);
 	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
 							evt);
 }
 #endif
 
-static void host_pmch4_init(void)
+static void host_pmch_init(struct pmch_reg *pmch)
 {
-	struct pmch_reg *const inst_pmch4 = host_sub_cfg.inst_pmch4;
+	struct pmch_reg *const inst_pmch = pmch;
 
 	/* Use SMI/SCI postive polarity by default */
-	inst_pmch4->HIPMCTL &= ~BIT(NPCM_HIPMCTL_SCIPOL);
-	inst_pmch4->HIPMIC &= ~BIT(NPCM_HIPMIC_SMIPOL);
+	inst_pmch->HIPMCTL &= ~BIT(NPCM_HIPMCTL_SCIPOL);
+	inst_pmch->HIPMIC &= ~BIT(NPCM_HIPMIC_SMIPOL);
 
 	/* Set SMIB/SCIB bits to make sure SMI#/SCI# are driven to high */
-	inst_pmch4->HIPMIC |= BIT(NPCM_HIPMIC_SMIB) | BIT(NPCM_HIPMIC_SCIB);
+	inst_pmch->HIPMIC |= BIT(NPCM_HIPMIC_SMIB) | BIT(NPCM_HIPMIC_SCIB);
 
 	/*
 	 * Allow SMI#/SCI# generated from PM module.
 	 * On eSPI bus, we suggest set VW value of SCI#/SMI# directly.
 	 */
-	inst_pmch4->HIPMIE |= BIT(NPCM_HIPMIE_SCIE);
-	inst_pmch4->HIPMIE |= BIT(NPCM_HIPMIE_SMIE);
+	inst_pmch->HIPMIE |= BIT(NPCM_HIPMIE_SCIE);
+	inst_pmch->HIPMIE |= BIT(NPCM_HIPMIE_SMIE);
 
 	/*
-	 * Init KCS4 PM channel 4 (Host IO) with:
+	 * Init KCS PM channel (Host IO) with:
 	 * 1. Enable Input-Buffer Full (IBF) core interrupt.
 	 * 2. BIT 7 must be 1.
 	 */
-	inst_pmch4->HIPMCTL |= BIT(7) | BIT(NPCM_HIPMCTL_IBFIE);
+	inst_pmch->HIPMCTL |= BIT(7) | BIT(NPCM_HIPMCTL_IBFIE);
 }
 #endif
 
@@ -845,7 +861,7 @@ static void host_pmch_ibf_isr(void *arg)
 		/* Read out input data and clear IBF pending bit */
 		in_data = inst_acpi->HIPMDI;
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO)
-		host_acpi_process_input_data(in_data);
+		host_pmch_process_input_data(host_sub_cfg.inst_pm_acpi, in_data);
 	}
 
 	/* Host put data on input buffer of HOSTCMD channel */
@@ -855,7 +871,7 @@ static void host_pmch_ibf_isr(void *arg)
 		/* Read out input data and clear IBF pending bit */
 		in_data = inst_hcmd->HIPMDI;
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
-		host_hcmd_process_input_data(in_data);
+		host_pmch_process_input_data(host_sub_cfg.inst_pm_hcmd, in_data);
 #endif
 	}
 
@@ -866,7 +882,7 @@ static void host_pmch_ibf_isr(void *arg)
 		/* Read out input data and clear IBF pending bit */
 		in_data = inst_pmch3->HIPMDI;
 #if defined(CONFIG_ESPI_PERIPHERAL_PMCH3)
-		host_pmch3_process_input_data(in_data);
+		host_pmch_process_input_data(host_sub_cfg.inst_pmch3, in_data);
 #endif
 	}
 
@@ -877,7 +893,7 @@ static void host_pmch_ibf_isr(void *arg)
 		/* Read out input data and clear IBF pending bit */
 		in_data = inst_pmch4->HIPMDI;
 #if defined(CONFIG_ESPI_PERIPHERAL_PMCH4)
-		host_pmch4_process_input_data(in_data);
+		host_pmch_process_input_data(host_sub_cfg.inst_pmch4, in_data);
 #endif
 	}
 #endif
@@ -1323,16 +1339,16 @@ int npcm_host_init_subs_core_domain(const struct device *host_bus_dev,
 
 	/* host sub-module initialization in core domain */
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO)
-	host_acpi_init();
+	host_pmch_init(host_sub_cfg.inst_pm_acpi);
 #endif
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
-	host_hcmd_init();
+	host_pmch_init(host_sub_cfg.inst_pm_hcmd);
 #endif
 #if defined(CONFIG_ESPI_PERIPHERAL_PMCH3)
-	host_pmch3_init();
+	host_pmch_init(host_sub_cfg.inst_pmch3);
 #endif
 #if defined(CONFIG_ESPI_PERIPHERAL_PMCH4)
-	host_pmch4_init();
+	host_pmch_init(host_sub_cfg.inst_pmch4);
 #endif
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 	host_shared_mem_region_init();
@@ -1385,4 +1401,367 @@ int npcm_host_init_subs_core_domain(const struct device *host_bus_dev,
 	}
 
 	return 0;
+}
+
+
+/* Check power management channel is OBF */
+bool host_pmch_is_obf(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			return ( (host_sub_cfg.inst_pm_acpi->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+		case hs_PMCH_HCMD:
+			return ( (host_sub_cfg.inst_pm_hcmd->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+		case hs_PMCH3:
+			return ( (host_sub_cfg.inst_pmch3->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+		case hs_PMCH4:
+			return ( (host_sub_cfg.inst_pmch4->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+		default:
+			return 0;
+	}
+}
+
+void host_pmch_ibf_int_enable(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMCTL |= BIT(NPCM_HIPMCTL_IBFIE);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMCTL |= BIT(NPCM_HIPMCTL_IBFIE); 
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMCTL |= BIT(NPCM_HIPMCTL_IBFIE); 
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMCTL |= BIT(NPCM_HIPMCTL_IBFIE); 
+			break;
+	}
+}
+
+/* Check power management channel is IBF */
+bool host_pmch_is_ibf(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			return ( (host_sub_cfg.inst_pm_acpi->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+		case hs_PMCH_HCMD:
+			return ( (host_sub_cfg.inst_pm_hcmd->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+		case hs_PMCH3:
+			return ( (host_sub_cfg.inst_pmch3->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+		case hs_PMCH4:
+			return ( (host_sub_cfg.inst_pmch4->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+		default:
+			return 0;
+	}
+}
+
+void host_pmch_write_data(uint8_t pmch, uint8_t data)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMDO = data;
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMDO = data;
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMDO = data;
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMDO = data;
+			break;
+	}
+}
+
+void host_pmch_write_data_with_smi(uint8_t pmch, uint8_t data)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMDOM = data;
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMDOM = data;
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMDOM = data;
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMDOM = data;
+			break;
+	}
+}
+
+uint8_t host_pmch_read_data(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			return host_sub_cfg.inst_pm_acpi-> HIPMDI;
+		case hs_PMCH_HCMD:
+			return host_sub_cfg.inst_pm_hcmd-> HIPMDI;
+		case hs_PMCH3:
+			return host_sub_cfg.inst_pmch3-> HIPMDI;
+		case hs_PMCH4:
+			return host_sub_cfg.inst_pmch4-> HIPMDI;
+		default:
+			return 0;
+	}
+}
+
+uint8_t host_pmch_shadow_read_data(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			return host_sub_cfg.inst_pm_acpi-> SHIPMDI;
+		case hs_PMCH_HCMD:
+			return host_sub_cfg.inst_pm_hcmd-> SHIPMDI;
+		case hs_PMCH3:
+			return host_sub_cfg.inst_pmch3-> SHIPMDI;
+		case hs_PMCH4:
+			return host_sub_cfg.inst_pmch4-> SHIPMDI;
+		default:
+			return 0;
+	}
+}
+
+bool host_pmch_is_rcv_cmd(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			return ( (host_sub_cfg.inst_pm_acpi->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+		case hs_PMCH_HCMD:
+			return ( (host_sub_cfg.inst_pm_hcmd->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+		case hs_PMCH3:
+			return ( (host_sub_cfg.inst_pmch3->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+		case hs_PMCH4:
+			return ( (host_sub_cfg.inst_pmch4->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+		default:
+			return 0;
+	}
+}
+
+void host_pmch_manual_hw_sci_enable(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE); 
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE); 
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE); 
+			break;
+	}
+}
+
+void host_pmch_auto_hw_sci_enable(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE) | BIT(NPCM_HIPMIE_HSCIE);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE) | BIT(NPCM_HIPMIE_HSCIE);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE) | BIT(NPCM_HIPMIE_HSCIE);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMIE |= BIT(NPCM_HIPMIE_SCIE) | BIT(NPCM_HIPMIE_HSCIE);
+			break;
+	}
+}
+
+void host_pmch_set_sci_mode(uint8_t pmch, uint8_t type)
+{
+	if(type > 6) {return;}
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMCTL &= ~(NPCM_HIPMCTL_PLMS_MSK);
+			host_sub_cfg.inst_pm_acpi-> HIPMCTL |= (type << NPCM_HIPMCTL_PLMS);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMCTL &= ~(NPCM_HIPMCTL_PLMS_MSK);
+			host_sub_cfg.inst_pm_hcmd-> HIPMCTL |= (type << NPCM_HIPMCTL_PLMS);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMCTL &= ~(NPCM_HIPMCTL_PLMS_MSK);
+			host_sub_cfg.inst_pmch3-> HIPMCTL |= (type << NPCM_HIPMCTL_PLMS);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMCTL &= ~(NPCM_HIPMCTL_PLMS_MSK);
+			host_sub_cfg.inst_pmch4-> HIPMCTL |= (type << NPCM_HIPMCTL_PLMS);
+			break;
+	}
+}
+
+void host_pmch_gen_sci_on_ibf_start(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB)|BIT(NPCM_HIPMIC_SCIB));
+			host_sub_cfg.inst_pm_acpi-> HIPMIC |= BIT(NPCM_HIPMIC_SCIIS);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB)|BIT(NPCM_HIPMIC_SCIB));
+			host_sub_cfg.inst_pm_hcmd-> HIPMIC |= BIT(NPCM_HIPMIC_SCIIS);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB)|BIT(NPCM_HIPMIC_SCIB));
+			host_sub_cfg.inst_pmch3-> HIPMIC |= BIT(NPCM_HIPMIC_SCIIS);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB)|BIT(NPCM_HIPMIC_SCIB));
+			host_sub_cfg.inst_pmch4-> HIPMIC |= BIT(NPCM_HIPMIC_SCIIS);
+			break;
+	}
+}
+
+void host_pmch_gen_sci_manually(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB));
+			host_sub_cfg.inst_pm_acpi-> HIPMIC |= BIT(NPCM_HIPMIC_SCIB);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB));
+			host_sub_cfg.inst_pm_hcmd-> HIPMIC |= BIT(NPCM_HIPMIC_SCIB);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB));
+			host_sub_cfg.inst_pmch3-> HIPMIC |= BIT(NPCM_HIPMIC_SCIB);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMIC &= ~(BIT(NPCM_HIPMIC_IRQB)|BIT(NPCM_HIPMIC_SMIB));
+			host_sub_cfg.inst_pmch4-> HIPMIC |= BIT(NPCM_HIPMIC_SCIB);
+			break;
+	}
+}
+
+void host_pmch_write_data_with_sci(uint8_t pmch, uint8_t data)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMDOC = data;
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMDOC = data;
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMDOC = data;
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMDOC = data;
+			break;
+	}
+}
+
+uint8_t host_pmch_read_data_with_sci(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			return host_sub_cfg.inst_pm_acpi-> HIPMDIC;
+		case hs_PMCH_HCMD:
+			return host_sub_cfg.inst_pm_hcmd-> HIPMDIC;
+		case hs_PMCH3:
+			return host_sub_cfg.inst_pmch3-> HIPMDIC;
+		case hs_PMCH4:
+			return host_sub_cfg.inst_pmch4-> HIPMDIC;
+		default:
+			return 0;
+	}
+}
+
+uint8_t host_pmch_get_st(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			return host_sub_cfg.inst_pm_acpi-> HIPMST;
+		case hs_PMCH_HCMD:
+			return host_sub_cfg.inst_pm_hcmd-> HIPMST;
+		case hs_PMCH3:
+			return host_sub_cfg.inst_pmch3-> HIPMST;
+		case hs_PMCH4:
+			return host_sub_cfg.inst_pmch4-> HIPMST;
+		default:
+			return 0;
+	}
+}
+
+void host_pmch_set_st(uint8_t pmch, uint8_t msk)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST |= msk;
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST |= msk;
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST |= msk;
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST |= msk;
+			break;
+	}
+}
+
+void host_pmch_clr_st(uint8_t pmch, uint8_t msk)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMST &= ~(msk);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMST &= ~(msk);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMST &= ~(msk);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMST &= ~(msk);
+			break;
+	}
+}
+
+void host_pmch_set_enhance_mode(uint8_t pmch)
+{
+	switch(pmch) 
+	{
+		case hs_PMCH_ACPI:
+			host_sub_cfg.inst_pm_acpi-> HIPMCTL |= BIT(NPCM_HIPMCTL_EME);
+			break;
+		case hs_PMCH_HCMD:
+			host_sub_cfg.inst_pm_hcmd-> HIPMCTL |= BIT(NPCM_HIPMCTL_EME);
+			break;
+		case hs_PMCH3:
+			host_sub_cfg.inst_pmch3-> HIPMCTL |= BIT(NPCM_HIPMCTL_EME);
+			break;
+		case hs_PMCH4:
+			host_sub_cfg.inst_pmch4-> HIPMCTL |= BIT(NPCM_HIPMCTL_EME);
+			break;
+	}
 }
