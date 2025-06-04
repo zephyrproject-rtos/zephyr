@@ -38,21 +38,21 @@ void _isr_wrapper(void)
 
 #ifdef CONFIG_PM
 	/*
-	 * All interrupts are disabled when handling idle wakeup.  For tickless
-	 * idle, this ensures that the calculation and programming of the
-	 * device for the next timer deadline is not interrupted.  For
+	 * All non-ZLI interrupts are disabled when handling idle wakeup.  For
+	 * tickless idle, this ensures that the calculation and programming of
+	 * the device for the next timer deadline is not interrupted.  For
 	 * non-tickless idle, this ensures that the clearing of the kernel idle
-	 * state is not interrupted.  In each case, pm_system_resume
-	 * is called with interrupts disabled.
+	 * state is not interrupted.  In each case, pm_system_resume is called
+	 * with non-ZLI interrupts disabled.
 	 */
 
 	/*
-	 * Disable interrupts to prevent nesting while exiting idle state. This
-	 * is only necessary for the Cortex-M because it is the only ARM
-	 * architecture variant that automatically enables interrupts when
+	 * Disable non-ZLI interrupts to prevent nesting while exiting idle
+	 * state. This is only necessary for the Cortex-M because it is the only
+	 * ARM architecture variant that automatically enables interrupts when
 	 * entering an ISR.
 	 */
-	__disable_irq();
+	unsigned int key = arch_irq_lock();
 
 	/* is this a wakeup from idle ? */
 	/* requested idle duration, in ticks */
@@ -62,7 +62,7 @@ void _isr_wrapper(void)
 		pm_system_resume();
 	}
 	/* re-enable interrupts */
-	__enable_irq();
+	arch_irq_unlock(key);
 #endif /* CONFIG_PM */
 
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
