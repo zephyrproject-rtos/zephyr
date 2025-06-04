@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/stm32u3_clock.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32u3_reset.h>
 #include <freq.h>
 
@@ -273,6 +274,42 @@
 			reg = <0x42028400 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 11)>;
 			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40005400 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005400 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			interrupts = <55 0>, <56 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			interrupts = <57 0>, <58 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c3: i2c@40042800 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40042800 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB3, 7)>;
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "event", "error";
 			status = "disabled";
 		};
 
