@@ -33,7 +33,6 @@ struct gpio_keys_pin_data {
 	const struct device *dev;
 	struct gpio_keys_callback cb_data;
 	struct k_work_delayable work;
-	int8_t pin_state;
 };
 
 struct gpio_keys_config {
@@ -107,11 +106,12 @@ static __maybe_unused void gpio_keys_poll_pins(struct k_work *work)
 
 static __maybe_unused void gpio_keys_change_deferred(struct k_work *work)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(dwork, struct gpio_keys_pin_data, work);
+	const struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	const struct gpio_keys_pin_data *pin_data =
+		CONTAINER_OF(dwork, struct gpio_keys_pin_data, work);
 	const struct device *dev = pin_data->dev;
 	const struct gpio_keys_config *cfg = dev->config;
-	int key_index = pin_data - (struct gpio_keys_pin_data *)cfg->pin_data;
+	const int key_index = pin_data - (struct gpio_keys_pin_data *)cfg->pin_data;
 
 #ifdef CONFIG_PM_DEVICE
 	struct gpio_keys_data *data = dev->data;
@@ -267,6 +267,7 @@ static int gpio_keys_pm_action(const struct device *dev,
 				k_work_reschedule(&pin_data[0].work,
 						  K_MSEC(cfg->debounce_interval_ms));
 			} else {
+				pin_data[i].cb_data.pin_state = gpio_pin_get_dt(gpio);
 				ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_BOTH);
 				if (ret < 0) {
 					LOG_ERR("interrupt configuration failed: %d", ret);
