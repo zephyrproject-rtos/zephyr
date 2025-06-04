@@ -38,6 +38,9 @@ int bt_id_init(void);
 
 uint8_t bt_id_read_public_addr(bt_addr_le_t *addr);
 
+/** Generate IRK from Identity Root (IR) */
+int bt_id_irk_get(uint8_t *ir, uint8_t *irk);
+
 int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type);
 
 int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type);

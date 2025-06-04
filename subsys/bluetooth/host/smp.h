@@ -187,9 +187,6 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf);
  */
 int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
 
-/** Generate IRK from Identity Root (IR) */
-int bt_smp_irk_get(uint8_t *ir, uint8_t *irk);
-
 /** Converts a SMP error to string.
  *
  * The error codes are described in the Bluetooth Core specification,

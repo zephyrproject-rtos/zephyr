@@ -5203,36 +5203,6 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 }
 #endif /* CONFIG_BT_SIGNING */
 
-static int smp_d1(const uint8_t *key, uint16_t d, uint16_t r, uint8_t res[16])
-{
-	int err;
-
-	LOG_DBG("key %s d %u r %u", bt_hex(key, 16), d, r);
-
-	sys_put_le16(d, &res[0]);
-	sys_put_le16(r, &res[2]);
-	memset(&res[4], 0, 16 - 4);
-
-	err = bt_encrypt_le(key, res, res);
-	if (err) {
-		return err;
-	}
-
-	LOG_DBG("res %s", bt_hex(res, 16));
-	return 0;
-}
-
-int bt_smp_irk_get(uint8_t *ir, uint8_t *irk)
-{
-	uint8_t invalid_ir[16] = { 0 };
-
-	if (!memcmp(ir, invalid_ir, 16)) {
-		return -EINVAL;
-	}
-
-	return smp_d1(ir, 1, 0, irk);
-}
-
 #if defined(CONFIG_BT_SMP_SELFTEST)
 /* Test vectors are taken from RFC 4493
  * https://tools.ietf.org/html/rfc4493

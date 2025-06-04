@@ -104,6 +104,7 @@ static void adv_is_private_enabled(struct bt_le_ext_adv *adv, void *data)
 }
 
 #if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
 static void adv_is_limited_enabled(struct bt_le_ext_adv *adv, void *data)
 {
 	bool *adv_enabled = data;
@@ -128,6 +129,7 @@ static void adv_unpause_enabled(struct bt_le_ext_adv *adv, void *data)
 		bt_le_adv_set_enable(adv, true);
 	}
 }
+#endif /* defined(CONFIG_BT_PRIVACY) */
 #endif /* defined(CONFIG_BT_SMP) */
 
 static int set_random_address(const bt_addr_t *addr)
@@ -831,6 +833,7 @@ void bt_id_adv_limited_stopped(struct bt_le_ext_adv *adv)
 }
 
 #if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
 static int le_set_privacy_mode(const bt_addr_le_t *addr, uint8_t mode)
 {
 	struct bt_hci_cp_le_set_privacy_mode cp;
@@ -900,14 +903,11 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	bt_addr_le_copy(&cp->peer_id_addr, addr);
 	memcpy(cp->peer_irk, peer_irk, 16);
 
-#if defined(CONFIG_BT_PRIVACY)
 	(void)memcpy(cp->local_irk, &bt_dev.irk[id], 16);
-#else
-	(void)memset(cp->local_irk, 0, 16);
-#endif
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
 }
+#endif /* defined(CONFIG_BT_PRIVACY) */
 
 static void pending_id_update(struct bt_keys *keys, void *data)
 {
@@ -1003,6 +1003,7 @@ struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate)
 
 void bt_id_add(struct bt_keys *keys)
 {
+#if defined(CONFIG_BT_PRIVACY)
 	CHECKIF(keys == NULL) {
 		return;
 	}
@@ -1134,8 +1135,10 @@ done:
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
 	}
+#endif /* defined(CONFIG_BT_PRIVACY) */
 }
 
+#if defined(CONFIG_BT_PRIVACY)
 static void keys_add_id(struct bt_keys *keys, void *data)
 {
 	if (keys->state & BT_KEYS_ID_ADDED) {
@@ -1160,9 +1163,11 @@ static int hci_id_del(const bt_addr_le_t *addr)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
 }
+#endif /* defined(CONFIG_BT_PRIVACY) */
 
 void bt_id_del(struct bt_keys *keys)
 {
+#if defined(CONFIG_BT_PRIVACY)
 	struct bt_conn *conn;
 	int err;
 
@@ -1262,6 +1267,7 @@ done:
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
 	}
+#endif /* defined(CONFIG_BT_PRIVACY) */
 }
 #endif /* defined(CONFIG_BT_SMP) */
 
@@ -1542,6 +1548,36 @@ static void bt_read_identity_root(uint8_t *ir)
 	net_buf_unref(rsp);
 #endif /* defined(CONFIG_BT_HCI_VS) */
 }
+
+static int d1(const uint8_t *key, uint16_t d, uint16_t r, uint8_t res[16])
+{
+	int err;
+
+	LOG_DBG("key %s d %u r %u", bt_hex(key, 16), d, r);
+
+	sys_put_le16(d, &res[0]);
+	sys_put_le16(r, &res[2]);
+	memset(&res[4], 0, 16 - 4);
+
+	err = bt_encrypt_le(key, res, res);
+	if (err) {
+		return err;
+	}
+
+	LOG_DBG("res %s", bt_hex(res, 16));
+	return 0;
+}
+
+int bt_id_irk_get(uint8_t *ir, uint8_t *irk)
+{
+	uint8_t invalid_ir[16] = { 0 };
+
+	if (!memcmp(ir, invalid_ir, 16)) {
+		return -EINVAL;
+	}
+
+	return d1(ir, 1, 0, irk);
+}
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
 uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
@@ -1596,7 +1632,7 @@ int bt_setup_public_id_addr(void)
 	bt_read_identity_root(ir);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
-		if (!bt_smp_irk_get(ir, ir_irk)) {
+		if (!bt_id_irk_get(ir, ir_irk)) {
 			irk = ir_irk;
 		}
 	}
@@ -1686,7 +1722,7 @@ int bt_setup_random_id_addr(void)
 
 			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_PRIVACY_RANDOMIZE_IR)) {
-				if (!bt_smp_irk_get(addrs[i].ir, ir_irk)) {
+				if (!bt_id_irk_get(addrs[i].ir, ir_irk)) {
 					irk = ir_irk;
 				}
 			}
@@ -2031,6 +2067,22 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			err = bt_id_set_adv_private_addr(adv);
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 #endif /* defined(CONFIG_BT_OBSERVER) */
+
+#if defined(CONFIG_BT_PRIVACY)
+		} else if (BT_FEAT_LE_PRIVACY(bt_dev.le.features) && bt_dev.le.rl_entries &&
+			   bt_dev.le.rl_entries <= bt_dev.le.rl_size) {
+			if (id_addr->type == BT_ADDR_LE_RANDOM) {
+				err = bt_id_set_adv_random_addr(adv, &id_addr->a);
+				if (err) {
+					return err;
+				}
+
+				*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+			} else if (id_addr->type == BT_ADDR_LE_PUBLIC) {
+				*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_PUBLIC;
+			}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 		} else {
 			err = bt_id_set_adv_private_addr(adv);
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
