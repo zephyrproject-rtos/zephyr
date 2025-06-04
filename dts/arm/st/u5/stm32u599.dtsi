@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 PSICONTROL nv
+ * Copyright (c) 2025 Harris Tomy
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,5 +10,15 @@
 / {
 	soc {
 		compatible = "st,stm32u599", "st,stm32u5", "simple-bus";
+
+		ltdc: display-controller@40016800 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016800 0x400>;
+			interrupts = <135 0>, <136 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
+			resets = <&rctl STM32_RESET(APB2, 26)>;
+			status = "disabled";
+		};
 	};
 };

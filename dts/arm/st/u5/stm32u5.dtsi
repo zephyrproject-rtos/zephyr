@@ -3,6 +3,7 @@
  * Copyright (c) 2021 Linaro Limited
  * Copyright (c) 2023 PSICONTROL nv
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Harris Tomy
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +18,6 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/dt-bindings/reset/stm32u5_reset.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
-#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/adc/stm32u5_adc.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
@@ -253,14 +253,6 @@
 				clocks = <&rcc STM32_CLOCK(AHB2, 4U)>;
 			};
 
-			gpiof: gpio@42021400 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x42021400 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 5U)>;
-			};
-
 			gpiog: gpio@42021800 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
@@ -275,14 +267,6 @@
 				#gpio-cells = <2>;
 				reg = <0x42021c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 7U)>;
-			};
-
-			gpioi: gpio@42022000 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x42022000 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 8U)>;
 			};
 		};
 
@@ -315,15 +299,6 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 14U)>;
 			resets = <&rctl STM32_RESET(APB2, 14U)>;
 			interrupts = <61 0>;
-			status = "disabled";
-		};
-
-		usart2: serial@40004400 {
-			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x40004400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 17U)>;
-			resets = <&rctl STM32_RESET(APB1L, 17U)>;
-			interrupts = <62 0>;
 			status = "disabled";
 		};
 
@@ -731,28 +706,6 @@
 			status = "disabled";
 		};
 
-		octospi2: spi@420d2400 {
-			compatible = "st,stm32-ospi";
-			reg = <0x420d2400 0x400>;
-			interrupts = <120 0>;
-			clock-names = "ospix", "ospi-ker", "ospi-mgr";
-			clocks = <&rcc STM32_CLOCK(AHB2_2, 8U)>,
-				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 21U)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
-		};
-
-		aes: aes@420c0000 {
-			compatible = "st,stm32-aes";
-			reg = <0x420c0000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 16U)>;
-			resets = <&rctl STM32_RESET(AHB2L, 16U)>;
-			interrupts = <93 0>;
-			status = "disabled";
-		};
-
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
@@ -779,16 +732,6 @@
 				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2L, 27U)>;
 			interrupts = <78 0>;
-			status = "disabled";
-		};
-
-		sdmmc2: sdmmc@420c8c00 {
-			compatible = "st,stm32-sdmmc";
-			reg = <0x420c8c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 28U)>,
-				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
-			resets = <&rctl STM32_RESET(AHB2L, 28U)>;
-			interrupts = <79 0>;
 			status = "disabled";
 		};
 
@@ -848,14 +791,6 @@
 			status = "disabled";
 		};
 
-		ucpd1: ucpd@4000dc00 {
-			compatible = "st,stm32-ucpd";
-			reg = <0x4000dc00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
-			interrupts = <106 0>;
-			status = "disabled";
-		};
-
 		gpdma1: dma@40020000 {
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
@@ -867,20 +802,6 @@
 			dma-requests = <114>;
 			dma-offset = <0>;
 			status = "disabled";
-		};
-
-		fmc: memory-controller@420d0400 {
-			compatible = "st,stm32-fmc";
-			reg = <0x420d0400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2_2, 0U)>;
-			status = "disabled";
-
-			sram {
-				compatible = "st,stm32-fmc-nor-psram";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
 		};
 
 		pwr: power@46020800 {
