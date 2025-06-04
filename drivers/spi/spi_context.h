@@ -496,7 +496,7 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		return;
 	}
 
-	ctx->tx_len -= len * dfs;
+	ctx->tx_len -= len;
 	if (!ctx->tx_len) {
 		/* Current buffer is done. Get the next one to be processed. */
 		++ctx->current_tx;
@@ -555,7 +555,7 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		return;
 	}
 
-	ctx->rx_len -= len * dfs;
+	ctx->rx_len -= len;
 	if (!ctx->rx_len) {
 		/* Current buffer is done. Get the next one to be processed. */
 		++ctx->current_rx;
