@@ -137,7 +137,7 @@ Glossary of Terms
 
    private API
       Any private function, structure or macro defined anywhere in the zephyr source
-      tree. Private APIs are only intended for consumption inside the
+      tree which are only intended for consumption inside the
       :term:`software component` where they are defined.
 
    public API
