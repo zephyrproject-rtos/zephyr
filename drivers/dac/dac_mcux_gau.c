@@ -9,13 +9,13 @@
 #include <zephyr/drivers/dac.h>
 #include <fsl_dac.h>
 #include "fsl_clock.h"
-#define LOG_LEVEL CONFIG_DAC_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
-LOG_MODULE_REGISTER(nxp_gau_dac);
 
+LOG_MODULE_REGISTER(nxp_gau_dac);
+#define LOG_LEVEL CONFIG_DAC_LOG_LEVEL
 #define ZEPHYR_USER_NODE_RESTORE DT_PATH(zephyr_user)
 #if (DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac) && \
 DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac_channel_id) && \
@@ -101,6 +101,7 @@ static int nxp_gau_dac_init(const struct device *dev)
 {
 	const struct nxp_gau_dac_config *config = dev->config;
 	dac_config_t dac_cfg;
+
 	DAC_GetDefaultConfig(&dac_cfg);
 
 	dac_cfg.conversionRate = config->conversion_rate;
@@ -132,14 +133,18 @@ static int nxp_gau_dac_init_common(const struct device *dev)
 	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
 
 	POWER_PowerOnGau();
+
 	return 0;
 };
 
-int nxp_gau_deinit(const struct device *dev){
+int nxp_gau_deinit(const struct device *dev)
+{
 	const struct nxp_gau_dac_config *config = dev->config;
+
 	DAC_Deinit(config->base);
 
 	pm_policy_device_power_lock_put(dev); /*Free the PM states*/
+
 	return 0;
 }
 
@@ -160,7 +165,6 @@ static int dac_mcux_pm_action(const struct device *dev, enum pm_device_action ac
 }
 
 #define NXP_GAU_DAC_INIT(inst)							\
-										 \
 	const struct nxp_gau_dac_config nxp_gau_dac_##inst##_config = {		\
 		.base = (DAC_Type *) DT_INST_REG_ADDR(inst),			\
 		.voltage_ref = DT_INST_ENUM_IDX(inst, nxp_dac_reference),	\
@@ -169,9 +173,8 @@ static int dac_mcux_pm_action(const struct device *dev, enum pm_device_action ac
 						nxp_output_voltage_range),	\
 	};									\
 	PM_DEVICE_DT_INST_DEFINE(inst, dac_mcux_pm_action);									\
-										 \
 	DEVICE_DT_INST_DEFINE(inst, &nxp_gau_dac_init, PM_DEVICE_DT_INST_GET(inst),			\
-				NULL,						\
+				NULL,	\
 				&nxp_gau_dac_##inst##_config,			\
 				POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\
 				&nxp_gau_dac_driver_api);
