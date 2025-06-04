@@ -114,3 +114,10 @@ tests:
     platform_allow:
       - siwx917_rb4338a
     extra_args: "DTC_OVERLAY_FILE=boards/siwx917_rb4338a-uulp.overlay"
+  drivers.gpio.2pin.nrf54h20_cpurad_gpiote0:
+    harness_config:
+      fixture: i2s_loopback # Loopback includes the pin pair needed for that test
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpurad
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpurad_gpiote0.overlay"
