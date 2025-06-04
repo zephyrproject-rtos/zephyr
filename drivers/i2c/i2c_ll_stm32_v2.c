@@ -736,17 +736,26 @@ static inline int msg_done(const struct device *dev,
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
+	int64_t start_time = k_uptime_get();
 
 	/* Wait for transfer to complete */
 	while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_TCR(i2c)) {
 		if (check_errors(dev, __func__)) {
 			return -EIO;
 		}
+		if ((k_uptime_get() - start_time) >
+		    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+			return -ETIMEDOUT;
+		}
 	}
 	/* Issue stop condition if necessary */
 	if (current_msg_flags & I2C_MSG_STOP) {
 		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
+			if ((k_uptime_get() - start_time) >
+			    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+				return -ETIMEDOUT;
+			}
 		}
 
 		LL_I2C_ClearFlag_STOP(i2c);
@@ -763,6 +772,7 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
+	int64_t start_time = k_uptime_get();
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -775,6 +785,11 @@ static int stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
 
 			if (check_errors(dev, __func__)) {
 				return -EIO;
+			}
+
+			if ((k_uptime_get() - start_time) >
+			    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+				return -ETIMEDOUT;
 			}
 		}
 
@@ -793,6 +808,7 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = 0U;
 	uint8_t *buf = msg->buf;
+	int64_t start_time = k_uptime_get();
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
 
@@ -801,6 +817,10 @@ static int stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 		while (!LL_I2C_IsActiveFlag_RXNE(i2c)) {
 			if (check_errors(dev, __func__)) {
 				return -EIO;
+			}
+			if ((k_uptime_get() - start_time) >
+			    STM32_I2C_TRANSFER_TIMEOUT_MSEC) {
+				return -ETIMEDOUT;
 			}
 		}
 
@@ -1171,6 +1191,27 @@ int stm32_i2c_transaction(const struct device *dev,
 		msg.buf += msg.len;
 		msg.len = rest;
 	} while (rest > 0U);
+
+#ifndef CONFIG_I2C_STM32_INTERRUPT
+	struct i2c_stm32_data *data = dev->data;
+
+	if (ret == -ETIMEDOUT) {
+		if (LL_I2C_IsEnabledReloadMode(i2c)) {
+			LL_I2C_DisableReloadMode(i2c);
+		}
+#if defined(CONFIG_I2C_TARGET)
+		data->master_active = false;
+		if (!data->slave_attached && !data->smbalert_active) {
+			LL_I2C_Disable(i2c);
+		}
+#else
+		if (!data->smbalert_active) {
+			LL_I2C_Disable(i2c);
+		}
+#endif
+		return -EIO;
+	}
+#endif /* !CONFIG_I2C_STM32_INTERRUPT */
 
 	return ret;
 }
