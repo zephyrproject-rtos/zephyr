@@ -76,8 +76,6 @@ if (DEFINED CONFIG_SOC_RESET_HOOK)
   endif()
 endif()
 
-include_driver_ifdef(CONFIG_DMA_NXP_EDMA               edma_rev2       driver_edma_rev2)
-
 if(CONFIG_CPU_CORTEX_A)
   include_driver_ifdef(CONFIG_HAS_MCUX_CACHE		cache/armv8-a	driver_cache_armv8a)
 endif()
