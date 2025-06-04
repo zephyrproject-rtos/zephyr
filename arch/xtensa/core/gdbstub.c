@@ -466,11 +466,10 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 		if (reg->regno == SOC_GDB_REGNO_A1) {
 			/* A1 is calculated */
 			reg->val = POINTER_TO_UINT(((char *)bsa) + sizeof(_xtensa_irq_bsa_t));
-			reg->seqno = ctx->seqno;
 		} else {
 			reg->val = bsa[reg->stack_offset / 4];
-			reg->seqno = ctx->seqno;
 		}
+		reg->seqno = ctx->seqno;
 	}
 
 	/* For registers other than logical address registers */
