@@ -717,8 +717,11 @@ size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
 		reg = &ctx->regs[idx];
 
 		/*
-		 * GDB sends the G-packet index as register number
-		 * instead of the actual Xtensa register number.
+		 * Some GDB versions send the G-packet index as register number
+		 * instead of the actual Xtensa register number. After checking
+		 * 4 GDB versions one of them (Zephyr SDK for ESP32) sent the
+		 * index while the others (Zephyr SDK for TGL and Cadence
+		 * toolchain for TGL and MTL) sent register numbers.
 		 */
 		if (reg->idx == regno) {
 			if (reg->seqno != ctx->seqno) {
@@ -769,9 +772,8 @@ size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
 		reg = &ctx->regs[idx];
 
 		/*
-		 * Remember GDB sends index number instead of
-		 * actual register number (as defined in Xtensa
-		 * architecture).
+		 * Remember some GDB versions send index number instead of
+		 * actual register number (as defined in Xtensa architecture).
 		 */
 		if (reg->idx != regno) {
 			continue;
