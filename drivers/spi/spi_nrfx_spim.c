@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL)
 #define SPIM_REQUESTS_CLOCK(node) \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(DT_CLOCKS_CTLR(node)), nordic_nrf_hsfll_global)
+	DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(node), nordic_nrf_hsfll_global)
 #define SPIM_REQUESTS_CLOCK_OR(node) SPIM_REQUESTS_CLOCK(node) ||
 #if (DT_FOREACH_STATUS_OKAY(nordic_nrf_spim, SPIM_REQUESTS_CLOCK_OR) 0)
 #define USE_CLOCK_REQUESTS 1
@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #endif
 #else
-#define SPIM_REQUESTS_CLOCK(idx) 0
+#define SPIM_REQUESTS_CLOCK(node) 0
 #endif
 
 struct spi_nrfx_data {
@@ -799,7 +799,7 @@ static int spi_nrfx_init(const struct device *dev)
 #if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY) && \
 	CONFIG_SPI_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY
 #define SPIM_INIT_PRIORITY(idx) \
-	COND_CODE_1(SPIM_REQUESTS_CLOCK(idx), \
+	COND_CODE_1(SPIM_REQUESTS_CLOCK(SPIM(idx)), \
 		(UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)), \
 		(CONFIG_SPI_INIT_PRIORITY))
 #else
@@ -858,8 +858,8 @@ static int spi_nrfx_init(const struct device *dev)
 		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
 		IF_ENABLED(CONFIG_DCACHE,				       \
 			(.mem_attr = SPIM_GET_MEM_ATTR(idx),))		       \
-		IF_ENABLED(USE_CLOCK_REQUESTS,			       \
-			(.clk_dev = SPIM_REQUESTS_CLOCK(idx)		       \
+		IF_ENABLED(USE_CLOCK_REQUESTS,				       \
+			(.clk_dev = SPIM_REQUESTS_CLOCK(SPIM(idx))	       \
 				  ? DEVICE_DT_GET(DT_CLOCKS_CTLR(SPIM(idx)))   \
 				  : NULL,				       \
 			 .clk_spec = {					       \
