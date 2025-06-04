@@ -16,6 +16,8 @@ config GNSS_U_BLOX_M8
 	help
 	  Enable U-BLOX M8 GNSS modem driver.
 
+if GNSS_U_BLOX_M8
+
 config GNSS_U_BLOX_M8_SATELLITES_COUNT
 	int "Maximum satellite count"
 	depends on GNSS_SATELLITES
@@ -25,3 +27,5 @@ config GNSS_U_BLOX_M8_SATELLITES_COUNT
 	  the GNSS device. This does not affect the number of devices that the
 	  device is actually tracking, just how many of those can be reported
 	  in the satellites callback.
+
+endif
