@@ -14,7 +14,7 @@ tests:
     tags:
       - kernel
       - timer
-    filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+    filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER and not CONFIG_NRF_GRTC_TIMER
     arch_exclude: posix
     timeout: 140
     slow: true
@@ -22,5 +22,13 @@ tests:
     tags:
       - kernel
       - timer
-    filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+    filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER and not CONFIG_NRF_GRTC_TIMER
     arch_allow: posix
+  kernel.timer.cycle64.grtc:
+    tags:
+      - kernel
+      - timer
+    filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER and CONFIG_NRF_GRTC_TIMER
+    arch_exclude: posix
+    timeout: 8600
+    slow: true
