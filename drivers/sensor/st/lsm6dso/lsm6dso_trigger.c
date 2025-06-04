@@ -478,7 +478,7 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 					GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-#else
+#else /* defined(CONFIG_LSM6DSO_TILT) || defined(CONFIG_LSM6DSO_TAP) */
 
 static void lsm6dso_handle_interrupt(const struct device *dev)
 {
@@ -519,7 +519,7 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-#endif
+#endif /* defined(CONFIG_LSM6DSO_TILT) || defined(CONFIG_LSM6DSO_TAP) */
 
 static void lsm6dso_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, uint32_t pins)
