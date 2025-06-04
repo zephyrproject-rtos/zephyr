@@ -70,6 +70,7 @@ jobs:
           west init -l . || true
           west config --global update.narrow true
           west config manifest.group-filter -- +ci,+optional
+          west config manifest.project-filter -- -zephyr-lang-rust
           # In some cases modules are left in a state where they can't be
           # updated (i.e. when we cancel a job and the builder is killed),
           # So first retry to update, if that does not work, remove all modules
