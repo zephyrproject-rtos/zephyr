@@ -356,9 +356,10 @@ static void uart_rz_scif_tei_isr(const struct device *dev)
 	} else {
 		data->int_data.rxi_flag = false;
 		data->int_data.rx_fifo_busy = true;
-		if (data->callback) {
-			data->callback(dev, data->callback_data);
-		}
+	}
+
+	if (data->callback) {
+		data->callback(dev, data->callback_data);
 	}
 }
 
