@@ -1,0 +1,11 @@
+# STMicroelectronics STM32U5GFXX MCU
+
+# Copyright (c) 2025 Harris Tomy
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U5F9XX
+
+config NUM_IRQS
+	default 141
+
+endif # SOC_STM32U5F9XX

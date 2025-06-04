@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/u5/stm32u5g9Xj.dtsi>
 #include <st/u5/stm32u5g9zjtxq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
