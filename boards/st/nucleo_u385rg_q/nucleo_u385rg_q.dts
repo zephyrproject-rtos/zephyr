@@ -106,6 +106,24 @@
 	pinctrl-names = "default";
 };
 
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb13 &i2c2_sda_pb14>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa7 &i2c3_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };
