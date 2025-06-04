@@ -289,7 +289,7 @@ manifest:
       revision: b97860e78998551af99931ece149eeffc538bdb1
       path: modules/lib/libmctp
     - name: libmetal
-      revision: 14f519529a1e4a46aaea6826f5a41d99a3347276
+      revision: pull/30/head
       path: modules/hal/libmetal
       groups:
         - hal
@@ -331,7 +331,7 @@ manifest:
       revision: 0cd7f28d34a5279cd839940c199658a294165722
       path: modules/lib/nrf_wifi
     - name: open-amp
-      revision: f7f4d083c7909a39d86e217376c69b416ec4faf3
+      revision: pull/26/head
       path: modules/lib/open-amp
     - name: openthread
       revision: 3ae741f95e7dfb391dec35c48742862049eb62e8
