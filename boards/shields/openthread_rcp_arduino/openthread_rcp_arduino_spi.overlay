@@ -1,0 +1,29 @@
+/*
+ * Copyright 2025 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * Overlay to enable support for OpenThread's RCP over SPI communication
+ */
+
+/ {
+	chosen {
+		zephyr,hdlc-rcp-if = &hdlc_rcp_if;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	hdlc_rcp_if: hdlc_rcp_if@0 {
+		compatible = "spi,hdlc-rcp-if";
+		status = "okay";
+		reg = <0>;
+
+		spi-max-frequency = <1000000>; /* 1 MHz to support most devices */
+		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+	};
+};
