@@ -15,7 +15,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 LOG_MODULE_REGISTER(nxp_gau_dac);
- 
+
 #define ZEPHYR_USER_NODE_RESTORE DT_PATH(zephyr_user)
 #if (DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac) && \
 DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac_channel_id) && \
@@ -24,14 +24,14 @@ DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac_resolution))
 #define DAC_CHANNEL_ID_RESTORE DT_PROP(ZEPHYR_USER_NODE_RESTORE, dac_channel_id)
 #define DAC_RESOLUTION_RESTORE DT_PROP(ZEPHYR_USER_NODE_RESTORE, dac_resolution)
 #endif
- 
+
 struct nxp_gau_dac_config {
 	DAC_Type *base;
 	dac_conversion_rate_t conversion_rate : 2;
 	dac_reference_voltage_source_t voltage_ref : 1;
 	dac_output_voltage_range_t output_range : 2;
 };
- 
+
 static inline dac_channel_id_t convert_channel_id(uint8_t channel_id)
 {
 	switch (channel_id) {
@@ -42,7 +42,7 @@ static inline dac_channel_id_t convert_channel_id(uint8_t channel_id)
 		return -EINVAL;
 	};
 }
- 
+
 static int nxp_gau_dac_channel_setup(const struct device *dev,
 			const struct dac_channel_cfg *channel_cfg)
 {
@@ -50,13 +50,13 @@ static int nxp_gau_dac_channel_setup(const struct device *dev,
 	dac_channel_config_t dac_channel_config = {0};
 	bool use_internal = true;
 
-	pm_policy_device_power_lock_get(dev);/*Lock the PM states*/ 
+	pm_policy_device_power_lock_get(dev);/*Lock the PM states*/
 
 	if (channel_cfg->resolution != 10) {
 		LOG_ERR("DAC only support 10 bit resolution");
 		return -EINVAL;
 	}
- 
+
 	if (channel_cfg->internal && channel_cfg->buffered) {
 		LOG_ERR("DAC output can not be buffered and internal");
 		return -EINVAL;
@@ -65,7 +65,7 @@ static int nxp_gau_dac_channel_setup(const struct device *dev,
 		LOG_WRN("Note: buffering DAC output to pad disconnects internal output");
 		use_internal = false;
 	}
- 
+
 	dac_channel_config.waveType = kDAC_WaveNormal;
 	dac_channel_config.outMode =
 		use_internal ? kDAC_ChannelOutputInternal : kDAC_ChannelOutputPAD;
@@ -73,79 +73,78 @@ static int nxp_gau_dac_channel_setup(const struct device *dev,
 	dac_channel_config.enableTrigger = false;
 	dac_channel_config.enableDMA = false;
 	dac_channel_config.enableConversion = true;
- 
- 
+
 	DAC_SetChannelConfig(config->base,
 			(uint32_t)convert_channel_id(channel_cfg->channel_id),
 			&dac_channel_config);
- 
+
 	return 0;
 };
- 
+
 static int nxp_gau_dac_write_value(const struct device *dev,
 				uint8_t channel, uint32_t value)
 {
 	const struct nxp_gau_dac_config *config = dev->config;
- 
+
 	DAC_SetChannelData(config->base,
 			(uint32_t)convert_channel_id(channel),
 			(uint16_t)value);
 	return 0;
 };
- 
+
 static DEVICE_API(dac, nxp_gau_dac_driver_api) = {
 	.channel_setup = nxp_gau_dac_channel_setup,
 	.write_value = nxp_gau_dac_write_value,
 };
- 
+
 static int nxp_gau_dac_init(const struct device *dev)
 {
 	const struct nxp_gau_dac_config *config = dev->config;
 	dac_config_t dac_cfg;
 	DAC_GetDefaultConfig(&dac_cfg);
- 
+
 	dac_cfg.conversionRate = config->conversion_rate;
 	dac_cfg.refSource = config->voltage_ref;
 	dac_cfg.rangeSelect = config->output_range;
- 
+
 	DAC_Init(config->base, &dac_cfg);
- 
+
 	return 0;
 };
- 
+
 static int nxp_gau_dac_init_common(const struct device *dev)
 {
 	const struct nxp_gau_dac_config *config = dev->config;
 	dac_config_t dac_cfg;
 
 	DAC_GetDefaultConfig(&dac_cfg);
- 
+
 	dac_cfg.conversionRate = config->conversion_rate;
 	dac_cfg.refSource = config->voltage_ref;
 	dac_cfg.rangeSelect = config->output_range;
- 
+
 	DAC_Init(config->base, &dac_cfg);
- 
+
 	/* Attack clock for GAU and reset */
 	CLOCK_AttachClk(kMAIN_CLK_to_GAU_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 1U);
 	CLOCK_EnableClock(kCLOCK_Gau);
 	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
- 
+
 	POWER_PowerOnGau();
 	return 0;
 };
- 
+
 int nxp_gau_deinit(const struct device *dev){
 	const struct nxp_gau_dac_config *config = dev->config;
 	DAC_Deinit(config->base);
-   
-	pm_policy_device_power_lock_put(dev); /*Free the PM states*/ 
+
+	pm_policy_device_power_lock_put(dev); /*Free the PM states*/
 	return 0;
 }
- 
+
 static int dac_mcux_pm_action(const struct device *dev, enum pm_device_action action)
-{			
+{
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -157,9 +156,9 @@ static int dac_mcux_pm_action(const struct device *dev, enum pm_device_action ac
 	default:
 		return -ENOTSUP;
 	}
-	return 0; 
+	return 0;
 }
- 
+
 #define NXP_GAU_DAC_INIT(inst)							\
 										 \
 	const struct nxp_gau_dac_config nxp_gau_dac_##inst##_config = {		\
@@ -176,6 +175,5 @@ static int dac_mcux_pm_action(const struct device *dev, enum pm_device_action ac
 				&nxp_gau_dac_##inst##_config,			\
 				POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\
 				&nxp_gau_dac_driver_api);
- 
+
 DT_INST_FOREACH_STATUS_OKAY(NXP_GAU_DAC_INIT)
- 
