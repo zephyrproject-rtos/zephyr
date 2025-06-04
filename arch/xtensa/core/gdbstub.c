@@ -178,11 +178,20 @@ static void read_sreg(struct gdb_ctx *ctx, struct xtensa_register *reg)
 		break;
 #endif
 #if XCHAL_HAVE_WINDOWED
+	/*
+	 * Returning 0 for WINDOWBASE and 1 for WINDOWSTART. This is
+	 * effectively telling GDB that only A0-A3 and AR0-AR3 contain
+	 * active data and other physical registers do not. GDB then
+	 * must rely on spilled values on stack. Otherwise, GDB will try
+	 * to look at all AR* registers for previous frame(s). Since we
+	 * do not save all AR* register values, there is nothing for
+	 * GDB to look at, and thus failing to unwind stack.
+	 */
 	case WINDOWBASE:
-		val = get_one_sreg(WINDOWBASE);
+		val = 0;
 		break;
 	case WINDOWSTART:
-		val = get_one_sreg(WINDOWSTART);
+		val = 1;
 		break;
 #endif
 #if XCHAL_NUM_INTLEVELS > 0
@@ -426,6 +435,16 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 {
 	struct xtensa_register *reg;
 	int idx, num_laddr_regs;
+	int32_t a0save;
+
+	/* Need to spill all registers so their values are on the stack instead of
+	 * the physical register file. This is required for GDB backtracing to
+	 * walk through stack.
+	 */
+	__asm__ volatile("mov %0, a0;"
+			 "call0 xtensa_spill_reg_windows;"
+			 "mov a0, %0"
+			 : "=r"(a0save));
 
 	const uint32_t *bsa = *(const int **)stack;
 
@@ -470,26 +489,13 @@ static void copy_to_ctx(struct gdb_ctx *ctx, const struct arch_esf *stack)
 	}
 
 #if XCHAL_HAVE_WINDOWED
-	uint8_t a0_idx, ar_idx, wb_start;
+	uint8_t a0_idx, ar_idx;
 
-	wb_start = (uint8_t)xtensa_gdb_ctx.regs[xtensa_gdb_ctx.wb_idx].val;
-
-	/*
-	 * Copied the logical registers A0-A15 to physical registers (AR*)
-	 * according to WINDOWBASE.
-	 */
+	/* Copied the logical registers A0-A15 to physical registers AR0-AR15. */
 	for (idx = 0; idx < num_laddr_regs; idx++) {
-		/* Index to register description array for A */
+		/* Index to register description array for A and AR */
 		a0_idx = xtensa_gdb_ctx.a0_idx + idx;
-
-		/* Find the start of window (== WINDOWBASE * 4) */
-		ar_idx = wb_start * 4;
-		/* Which logical register we are working on... */
-		ar_idx += idx;
-		/* Wrap around A64 (or A32) -> A0 */
-		ar_idx %= XCHAL_NUM_AREGS;
-		/* Index to register description array for AR */
-		ar_idx += xtensa_gdb_ctx.ar_idx;
+		ar_idx = xtensa_gdb_ctx.ar_idx + idx;
 
 		xtensa_gdb_ctx.regs[ar_idx].val = xtensa_gdb_ctx.regs[a0_idx].val;
 		xtensa_gdb_ctx.regs[ar_idx].seqno = xtensa_gdb_ctx.regs[a0_idx].seqno;
@@ -954,10 +960,6 @@ void arch_gdb_init(void)
 		case XTREG_GRP_ADDR:
 			/* AR0: 0x0100 */
 			xtensa_gdb_ctx.ar_idx = idx;
-			break;
-		case (XTREG_GRP_SPECIAL + WINDOWBASE):
-			/* WINDOWBASE (Special Register) */
-			xtensa_gdb_ctx.wb_idx = idx;
 			break;
 		default:
 			break;
