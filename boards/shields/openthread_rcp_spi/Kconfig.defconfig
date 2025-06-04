@@ -1,0 +1,16 @@
+# Copyright 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_OPENTHREAD_RCP_SPI
+
+if OPENTHREAD
+
+config SPI
+	default y
+
+config HDLC_RCP_IF
+	default y
+
+endif # OPENTHREAD
+
+endif
