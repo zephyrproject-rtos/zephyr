@@ -104,8 +104,6 @@ source "drivers/clock_control/Kconfig.pwm"
 
 source "drivers/clock_control/Kconfig.rpi_pico"
 
-source "drivers/clock_control/Kconfig.nrf_auxpll"
-
 source "drivers/clock_control/Kconfig.arm_scmi"
 
 source "drivers/clock_control/Kconfig.silabs"
