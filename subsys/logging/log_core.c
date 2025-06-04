@@ -286,6 +286,14 @@ void log_core_init(void)
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		z_log_runtime_filters_init();
 	}
+
+	STRUCT_SECTION_FOREACH(log_backend, backend) {
+		uint32_t id;
+		/* As first slot in filtering mask is reserved, backend ID has offset.*/
+		id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
+		id += backend - log_backend_get(0);
+		log_backend_id_set(backend, id);
+	}
 }
 
 static uint32_t activate_foreach_backend(uint32_t mask)
