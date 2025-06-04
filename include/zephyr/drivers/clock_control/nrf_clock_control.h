@@ -172,7 +172,7 @@ uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
 
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF2)
+#if (defined(CONFIG_CLOCK_CONTROL_NRF2) || defined(CONFIG_CLOCK_CONTROL_NRF2_AUXPLL))
 
 /* Specifies to use the maximum available frequency for a given clock. */
 #define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
@@ -377,6 +377,7 @@ static inline int nrf_clock_control_get_startup_time(const struct device *dev,
 	return api->get_startup_time(dev, spec, startup_time_us);
 }
 
+#if (defined(CONFIG_CLOCK_CONTROL_NRF2))
 /** @brief Request the HFXO from Zero Latency Interrupt context.
  *
  * Function is optimized for use in Zero Latency Interrupt context.
@@ -400,8 +401,8 @@ void nrf_clock_control_hfxo_request(void);
  * there are no more pending requests.
  */
 void nrf_clock_control_hfxo_release(void);
-
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
+#endif /* (defined(CONFIG_CLOCK_CONTROL_NRF2) || defined(CONFIG_CLOCK_CONTROL_NRF2_AUXPLL)) */
 
 #ifdef __cplusplus
 }
