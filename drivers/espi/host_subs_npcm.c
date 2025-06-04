@@ -314,29 +314,6 @@ void host_bbram_BKUPSTS_Clear(uint8_t mask)
 				defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || \
 				defined(CONFIG_ESPI_PERIPHERAL_PMCH3) || \
 				defined(CONFIG_ESPI_PERIPHERAL_PMCH4)
-#if !defined(CONFIG_IPMI_KCS_NPCM)
-static void host_pmch_process_input_data(struct pmch_reg *pmch, uint8_t data)
-{
-	struct pmch_reg *const inst_pmch = pmch;
-	struct espi_event evt = {
-		.evt_type = ESPI_BUS_PERIPHERAL_NOTIFICATION,
-		.evt_details = ESPI_PERIPHERAL_HOST_IO,
-		.evt_data = ESPI_PERIPHERAL_NODATA
-	};
-
-	LOG_DBG("%s: pmch data 0x%02x", __func__, data);
-
-	/*
-	 * The high byte contains information from the host, and the lower byte
-	 * indicates if the host sent a command or data. 1 = Command.
-	 */
-	evt.evt_data = (data << NPCM_ACPI_DATA_POS) |
-		       (IS_BIT_SET(inst_pmch->HIPMST, NPCM_HIPMST_CMD) <<
-				       NPCM_ACPI_TYPE_POS);
-	espi_send_callbacks(host_sub_data.callbacks, host_sub_data.host_bus_dev,
-							evt);
-}
-#endif
 
 static void host_pmch_init(struct pmch_reg *pmch)
 {
@@ -839,64 +816,24 @@ static void host_shared_mem_region_init(void)
 }
 #endif
 
+typedef void (*host_pmch_ibf_CB)(void);
+host_pmch_ibf_CB host_pmch_ibfCBFn;
+
+void host_pmch_AddCBtopmchibfISR(void* CB)
+{
+	host_pmch_ibfCBFn = CB;
+}
+
 #if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO) || \
 				defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || \
 				defined(CONFIG_ESPI_PERIPHERAL_PMCH3) || \
 				defined(CONFIG_ESPI_PERIPHERAL_PMCH4)
+
 /* Host pm (host io) sub-module isr function for all channels such as ACPI. */
 static void host_pmch_ibf_isr(void *arg)
 {
 	ARG_UNUSED(arg);
-	struct pmch_reg *const inst_acpi = host_sub_cfg.inst_pm_acpi;
-	struct pmch_reg *const inst_hcmd = host_sub_cfg.inst_pm_hcmd;
-	struct pmch_reg *const inst_pmch3 = host_sub_cfg.inst_pmch3;
-	struct pmch_reg *const inst_pmch4 = host_sub_cfg.inst_pmch4;
-
-	uint8_t in_data;
-
-	/* Host put data on input buffer of ACPI channel */
-	if (IS_BIT_SET(inst_acpi->HIPMST, NPCM_HIPMST_IBF)) {
-		/* Set processing flag before reading command byte */
-		inst_acpi->HIPMST |= BIT(NPCM_HIPMST_F0);
-		/* Read out input data and clear IBF pending bit */
-		in_data = inst_acpi->HIPMDI;
-#if defined(CONFIG_ESPI_PERIPHERAL_HOST_IO)
-		host_pmch_process_input_data(host_sub_cfg.inst_pm_acpi, in_data);
-	}
-
-	/* Host put data on input buffer of HOSTCMD channel */
-	if (IS_BIT_SET(inst_hcmd->HIPMST, NPCM_HIPMST_IBF)) {
-		/* Set processing flag before reading command byte */
-		inst_hcmd->HIPMST |= BIT(NPCM_HIPMST_F0);
-		/* Read out input data and clear IBF pending bit */
-		in_data = inst_hcmd->HIPMDI;
-#if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)
-		host_pmch_process_input_data(host_sub_cfg.inst_pm_hcmd, in_data);
-#endif
-	}
-
-	/* Host put data on input buffer of KCS3/PMCH3 channel */
-	if (IS_BIT_SET(inst_pmch3->HIPMST, NPCM_HIPMST_IBF)) {
-		/* Set processing flag before reading command byte */
-		inst_pmch3->HIPMST |= BIT(NPCM_HIPMST_F0);
-		/* Read out input data and clear IBF pending bit */
-		in_data = inst_pmch3->HIPMDI;
-#if defined(CONFIG_ESPI_PERIPHERAL_PMCH3)
-		host_pmch_process_input_data(host_sub_cfg.inst_pmch3, in_data);
-#endif
-	}
-
-	/* Host put data on input buffer of KCS4/PMCH4 channel */
-	if (IS_BIT_SET(inst_pmch4->HIPMST, NPCM_HIPMST_IBF)) {
-		/* Set processing flag before reading command byte */
-		inst_pmch4->HIPMST |= BIT(NPCM_HIPMST_F0);
-		/* Read out input data and clear IBF pending bit */
-		in_data = inst_pmch4->HIPMDI;
-#if defined(CONFIG_ESPI_PERIPHERAL_PMCH4)
-		host_pmch_process_input_data(host_sub_cfg.inst_pmch4, in_data);
-#endif
-	}
-#endif
+	host_pmch_ibfCBFn();
 }
 #endif
 
@@ -1410,13 +1347,13 @@ bool host_pmch_is_obf(uint8_t pmch)
 	switch(pmch) 
 	{
 		case hs_PMCH_ACPI:
-			return ( (host_sub_cfg.inst_pm_acpi->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pm_acpi->HIPMST, NPCM_HIPMST_OBF);
 		case hs_PMCH_HCMD:
-			return ( (host_sub_cfg.inst_pm_hcmd->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pm_hcmd->HIPMST, NPCM_HIPMST_OBF);
 		case hs_PMCH3:
-			return ( (host_sub_cfg.inst_pmch3->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pmch3->HIPMST, NPCM_HIPMST_OBF);
 		case hs_PMCH4:
-			return ( (host_sub_cfg.inst_pmch4->HIPMST & BIT(NPCM_HIPMST_OBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pmch4->HIPMST, NPCM_HIPMST_OBF);
 		default:
 			return 0;
 	}
@@ -1447,13 +1384,13 @@ bool host_pmch_is_ibf(uint8_t pmch)
 	switch(pmch) 
 	{
 		case hs_PMCH_ACPI:
-			return ( (host_sub_cfg.inst_pm_acpi->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pm_acpi->HIPMST, NPCM_HIPMST_IBF);
 		case hs_PMCH_HCMD:
-			return ( (host_sub_cfg.inst_pm_hcmd->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pm_hcmd->HIPMST, NPCM_HIPMST_IBF);
 		case hs_PMCH3:
-			return ( (host_sub_cfg.inst_pmch3->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pmch3->HIPMST, NPCM_HIPMST_IBF);
 		case hs_PMCH4:
-			return ( (host_sub_cfg.inst_pmch4->HIPMST & BIT(NPCM_HIPMST_IBF)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pmch4->HIPMST, NPCM_HIPMST_IBF);
 		default:
 			return 0;
 	}
@@ -1536,13 +1473,13 @@ bool host_pmch_is_rcv_cmd(uint8_t pmch)
 	switch(pmch) 
 	{
 		case hs_PMCH_ACPI:
-			return ( (host_sub_cfg.inst_pm_acpi->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pm_acpi->HIPMST, NPCM_HIPMST_CMD);
 		case hs_PMCH_HCMD:
-			return ( (host_sub_cfg.inst_pm_hcmd->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pm_hcmd->HIPMST, NPCM_HIPMST_CMD);
 		case hs_PMCH3:
-			return ( (host_sub_cfg.inst_pmch3->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pmch3->HIPMST, NPCM_HIPMST_CMD);
 		case hs_PMCH4:
-			return ( (host_sub_cfg.inst_pmch4->HIPMST & BIT(NPCM_HIPMST_CMD)) != 0 ) ? 1 : 0;
+			return IS_BIT_SET(host_sub_cfg.inst_pmch4->HIPMST, NPCM_HIPMST_CMD);
 		default:
 			return 0;
 	}
@@ -1764,4 +1701,14 @@ void host_pmch_set_enhance_mode(uint8_t pmch)
 			host_sub_cfg.inst_pmch4-> HIPMCTL |= BIT(NPCM_HIPMCTL_EME);
 			break;
 	}
+}
+
+void host_pmch_ibf_irp_enable(void)
+{
+	irq_enable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
+}
+
+void host_pmch_ibf_irp_disable(void)
+{
+	irq_disable(DT_INST_IRQ_BY_NAME(0, pmch_ibf, irq));
 }

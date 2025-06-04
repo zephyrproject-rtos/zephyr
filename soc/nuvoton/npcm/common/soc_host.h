@@ -71,6 +71,9 @@ uint8_t host_pmch_get_st(uint8_t pmch);
 void host_pmch_set_st(uint8_t pmch, uint8_t msk);
 void host_pmch_clr_st(uint8_t pmch, uint8_t msk);
 void host_pmch_set_enhance_mode(uint8_t pmch);
+void host_pmch_ibf_irp_enable(void);
+void host_pmch_ibf_irp_disable(void);
+void host_pmch_AddCBtopmchibfISR(void* CB);
 
 /**
  * @brief Initializes all host sub-modules in Core domain.
