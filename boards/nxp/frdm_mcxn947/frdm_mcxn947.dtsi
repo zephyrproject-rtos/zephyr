@@ -153,9 +153,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
-		/* For the MCUBoot "upgrade only" method,
-		 * the slot sizes must be equal.
-		 */
 		slot0_partition: partition@14000 {
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
