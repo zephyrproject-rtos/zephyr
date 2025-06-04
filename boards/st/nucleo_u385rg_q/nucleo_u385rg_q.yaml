@@ -9,7 +9,9 @@ supported:
   - dac
   - adc
   - dma
+  - arduino_i2c
   - gpio
+  - i2c
   - usart
 ram: 256
 flash: 1024
