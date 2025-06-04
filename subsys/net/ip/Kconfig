@@ -562,10 +562,8 @@ config NET_ROUTE
 	depends on NET_IPV6_NBR_CACHE
 	default y if NET_IPV6_NBR_CACHE
 
-# Temporarily hide the routing option as we do not have RPL in the system
-# that used to populate the routing table.
 config NET_ROUTING
-	bool
+	bool "IP routing between interfaces"
 	depends on NET_ROUTE
 	help
 	  Allow IPv6 routing between different network interfaces and
