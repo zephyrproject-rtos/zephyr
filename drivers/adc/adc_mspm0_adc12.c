@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #include <zephyr/init.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <soc.h>
 
 /* Driverlib includes */
@@ -81,7 +83,13 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 				 ((1 << data->channel_eoc) << ADC12_CPU_INT_IMASK_MEMRESIFG0_OFS));
 	DL_ADC12_enableConversions((ADC12_Regs *)config->base);
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_get(dev);
+#endif
 	DL_ADC12_startConversion((ADC12_Regs *)config->base);
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_put(dev);
+#endif
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
@@ -135,6 +143,11 @@ static int adc_mspm0_init(const struct device *dev)
 	config->irq_cfg_func();
 
 	adc_context_unlock_unconditionally(&data->ctx);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	(void)pm_device_runtime_enable(dev);
+#endif
+
 	return 0;
 }
 
@@ -167,11 +180,11 @@ static DL_VREF_Config gVREFConfig = {
 	.holdCycleCount = DL_VREF_HOLD_MIN,
 	.shCycleCount = DL_VREF_SH_MIN,
 };
+static bool initVREF = false;
 
 static int adc_mspm0_config_Vref(int vref_source, int vref_val, uint32_t *memCtlConfig)
 {
 	int error = 0;
-	bool initVREF = false;
 
 	switch (vref_source) {
 	case ADC_REF_VDD_1:
@@ -232,7 +245,11 @@ static int adc_mspm0_config_Vref(int vref_source, int vref_val, uint32_t *memCtl
 				/* VREF is already configured to external,
 				 *  using internal for another channel is not valid
 				 */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+				break;
+#elif
 				return -EINVAL;
+#endif
 			}
 		}
 		break;
@@ -244,10 +261,9 @@ static int adc_mspm0_config_Vref(int vref_source, int vref_val, uint32_t *memCtl
 		DL_VREF_reset(VREF);
 		DL_VREF_enablePower(VREF);
 		delay_cycles(POWER_STARTUP_DELAY);
-
 		DL_VREF_setClockConfig(VREF, (DL_VREF_ClockConfig *)&gVREFClockConfig);
-		DL_VREF_configReference(VREF, (DL_VREF_Config *)&gVREFConfig);
 	}
+
 	return error;
 }
 
@@ -602,6 +618,30 @@ static void adc_mspm0_isr(const struct device *dev)
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int adc_mspm0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	if (initVREF != true)
+		return 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		gVREFConfig.vrefEnable = DL_VREF_ENABLE_ENABLE;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		gVREFConfig.vrefEnable = DL_VREF_ENABLE_DISABLE;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	DL_VREF_configReference(VREF, (DL_VREF_Config *)&gVREFConfig);
+
+	return 0;
+}
+#endif
+
+
 #define ADC_DT_CLOCK_SOURCE(x) DT_INST_PROP(x, ti_clk_source)
 
 #define ADC_CLOCK_DIV(x)    DT_INST_PROP(x, ti_clk_divider)
@@ -612,6 +652,7 @@ static void adc_mspm0_isr(const struct device *dev)
 #define MSPM0_ADC_INIT(index)                                                                 \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
+	PM_DEVICE_DT_INST_DEFINE(index, adc_mspm0_pm_action);			\
                                                                                                    \
 	static void adc_mspm0_cfg_func_##index(void);                                         \
                                                                                                    \
@@ -632,7 +673,7 @@ static void adc_mspm0_isr(const struct device *dev)
 		ADC_CONTEXT_INIT_LOCK(adc_mspm0_data_##index, ctx),                           \
 		ADC_CONTEXT_INIT_SYNC(adc_mspm0_data_##index, ctx),                           \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, &adc_mspm0_init, NULL, &adc_mspm0_data_##index,     \
+	DEVICE_DT_INST_DEFINE(index, &adc_mspm0_init, PM_DEVICE_DT_INST_GET(index), &adc_mspm0_data_##index,     \
 			      &adc_mspm0_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,  \
 			      &mspm0_driver_api##index);                                      \
                                                                                                    \
