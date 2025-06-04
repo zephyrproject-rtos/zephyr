@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &code_flash;
+		zephyr,flash-controller = &flash;
 		zephyr,console = &uart5;
 		zephyr,shell-uart = &uart5;
 	};
@@ -90,4 +91,17 @@
 	pinctrl-names = "default";
 	ssl-assert = <0>;
 	status = "okay";
+};
+
+&data_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(8)>;
+		};
+	};
 };
