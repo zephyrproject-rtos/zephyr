@@ -1764,7 +1764,6 @@ static void eth_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_sam_dev_data *const dev_data = dev->data;
 	const struct eth_sam_dev_cfg *const cfg = dev->config;
-	static bool init_done;
 	uint32_t gmac_ncfgr_val;
 	int result;
 	int i;
@@ -1774,11 +1773,6 @@ static void eth_iface_init(struct net_if *iface)
 	}
 
 	ethernet_init(iface);
-
-	/* The rest of initialization should only be done once */
-	if (init_done) {
-		return;
-	}
 
 	/* Check the status of data caches */
 	dcache_is_enabled();
@@ -1872,8 +1866,6 @@ static void eth_iface_init(struct net_if *iface)
 	} else {
 		LOG_ERR("%s PHY device not ready", dev->name);
 	}
-
-	init_done = true;
 }
 
 static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *dev)
