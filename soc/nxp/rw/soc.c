@@ -85,8 +85,8 @@ static bool load_gdet_cfg(power_gdet_data_t *data)
 	if ((SYSCTL2->SOURCE_CLK_GATE & SYSCTL2_SOURCE_CLK_GATE_T3PLL_MCI_256M_CG_MASK) != 0U) {
 		retval = false;
 	} else {
-		/* GDET clock has been characterzed to 64MHz */
-		CLKCTL0->ELS_GDET_CLK_SEL = CLKCTL0_ELS_GDET_CLK_SEL_SEL(2);
+		/* GDET clock set to boot value */
+		CLKCTL0->ELS_GDET_CLK_SEL = data->TRIM0;
 	}
 
 	if (retval) {
