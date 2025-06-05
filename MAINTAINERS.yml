@@ -3848,10 +3848,19 @@ NXP Platform Wireless:
     - axelnxp
     - George-Stefan
   files:
-    - drivers/wifi/nxp/
-    - drivers/bluetooth/hci/*nxp*
-    - drivers/ieee802154/ieee802154_kw41z.c
+    - boards/nxp/*mcxw*/
+    - boards/nxp/*rw*/
     - drivers/*/*mcxw*.c
+    - drivers/bluetooth/hci/*nxp*
+    - drivers/hdlc_rcp_if/*nxp*
+    - drivers/ieee802154/ieee802154_kw41z.c
+    - drivers/wifi/nxp/
+    - samples/bluetooth/**/*rw*
+    - samples/net/**/*mcxw*
+    - samples/net/**/*nxp*
+    - samples/net/**/*rw*
+    - soc/nxp/mcx/mcxw/
+    - soc/nxp/rw/
   labels:
     - "platform: NXP Drivers"
 
