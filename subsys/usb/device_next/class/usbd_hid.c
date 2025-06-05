@@ -84,18 +84,28 @@ struct hid_device_data {
 
 static inline uint8_t hid_get_in_ep(struct usbd_class_data *const c_data)
 {
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct hid_device_config *dcfg = dev->config;
 	struct usbd_hid_descriptor *desc = dcfg->desc;
+
+	if (USBD_SUPPORTS_HIGH_SPEED && usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->hs_in_ep.bEndpointAddress;
+	}
 
 	return desc->in_ep.bEndpointAddress;
 }
 
 static inline uint8_t hid_get_out_ep(struct usbd_class_data *const c_data)
 {
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct hid_device_config *dcfg = dev->config;
 	struct usbd_hid_descriptor *desc = dcfg->desc;
+
+	if (USBD_SUPPORTS_HIGH_SPEED && usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->hs_out_ep.bEndpointAddress;
+	}
 
 	return desc->out_ep.bEndpointAddress;
 }
