@@ -33,3 +33,9 @@ target_sources_ifdef(
 	app PRIVATE
 	src/irq_offload.c
 )
+
+target_sources_ifdef(
+	CONFIG_SYS_CLOCK_EXISTS
+	app PRIVATE
+	src/timeout_record.c
+)
