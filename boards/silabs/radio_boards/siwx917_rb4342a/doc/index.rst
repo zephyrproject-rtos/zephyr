@@ -33,6 +33,12 @@ Supported Features
 Programming and Debugging
 *************************
 
+Wi-Fi Features
+==============
+
+Refer to the :ref:`siwx917_wifi_features` page for a list of supported Wi-Fi features.
+
+
 Flashing
 ========
 
