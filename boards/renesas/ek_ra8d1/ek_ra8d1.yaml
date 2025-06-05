@@ -15,4 +15,5 @@ supported:
   - display
   - counter
   - i2s
+  - i3c
 vendor: renesas

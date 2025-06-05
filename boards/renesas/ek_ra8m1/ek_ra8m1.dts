@@ -122,6 +122,11 @@
 		max-bitrate = <5000000>;
 		#phy-cells = <0>;
 	};
+
+	zephyr,user {
+		i3c-pullup-gpios = <&ioportb 0 GPIO_ACTIVE_LOW>,
+				   <&ioport7 11 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &xtal {
@@ -189,6 +194,12 @@
 	status = "okay";
 };
 
+&i3cclk {
+	clocks = <&pllp>;
+	div = <3>;
+	status = "okay";
+};
+
 &ioport0 {
 	status = "okay";
 };
@@ -217,6 +228,10 @@
 	status = "okay";
 };
 
+&ioport7 {
+	status = "okay";
+};
+
 &ioport8 {
 	status = "okay";
 };
@@ -226,6 +241,10 @@
 };
 
 &ioporta {
+	status = "okay";
+};
+
+&ioportb {
 	status = "okay";
 };
 
@@ -310,6 +329,16 @@ mikrobus_serial: &uart3 {};
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c0 {
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	pinctrl-0 = <&i3c0_default>;
+	pinctrl-names = "default";
+	interrupts = <60 1>, <61 1>, <62 1>, <63 1>, <64 1>, <65 1>;
+	interrupt-names = "resp", "rx", "tx", "rcv", "ibi", "eei";
 	status = "okay";
 };
 
