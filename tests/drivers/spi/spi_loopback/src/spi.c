@@ -715,8 +715,8 @@ static struct k_thread thread[3];
 static K_SEM_DEFINE(thread_sem, 0, 3);
 static K_SEM_DEFINE(sync_sem, 0, 1);
 
-static uint8_t __aligned(32) tx_buffer[3][32];
-static uint8_t __aligned(32) rx_buffer[3][32];
+static uint8_t __aligned(32) tx_buffer[3][32] __NOCACHE;
+static uint8_t __aligned(32) rx_buffer[3][32] __NOCACHE;
 
 atomic_t thread_test_fails;
 
