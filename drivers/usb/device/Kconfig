@@ -154,6 +154,7 @@ config USB_MCUX
 	default y
 	depends on DT_HAS_NXP_EHCI_ENABLED || DT_HAS_NXP_LPCIP3511_ENABLED
 	select PINCTRL
+	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
 
