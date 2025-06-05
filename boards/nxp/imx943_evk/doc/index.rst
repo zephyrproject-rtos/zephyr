@@ -38,6 +38,7 @@ Hardware
 - ADC interface
 - SINC interface
 - Debug interface
+
   - One USB-to-UART/MPSSE device, FT4232H
   - One USB 3.2 Type-C connector (J15) for FT4232H provides quad serial ports
   - JTAG header J16
