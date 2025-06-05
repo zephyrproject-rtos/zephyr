@@ -30,6 +30,9 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Refer to the :ref:`siwx917_wifi_features` page for a list of supported Wi-Fi features.
+
+
 Programming and Debugging
 *************************
 
