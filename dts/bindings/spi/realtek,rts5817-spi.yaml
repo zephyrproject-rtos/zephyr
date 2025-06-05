@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTS5817 SPI node
+
+compatible: "realtek,rts5817-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupt-enable:
+    type: boolean
+    description: |
+      Spi works on interrupt mode if true, so asynchronous
+      mode is supported
+
+  serial-target:
+    type: boolean
+    description: |
+      True if it is a Serial Target. False if it is a Serial
+      Master. Corresponds to SSI_IS_MASTER of the Designware
+      Synchronous Serial Interface.

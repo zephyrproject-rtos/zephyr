@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_RTS5817
+	bool "RTS5817 SPI Controller Driver"
+	depends on HEAP_MEM_POOL_SIZE > 0
+	depends on DT_HAS_REALTEK_RTS5817_SPI_ENABLED
+	select PINCTRL
+	default y
+	help
+	  This option enables the spi controller driver for RTS5817.
+	  Please note that driver uses dynamic memory allocation with
+	  k_aligned_alloc(), so CONFIG_HEAP_MEM_POOL_SIZE should be
+	  >= maximum spi buffer size according to your application.

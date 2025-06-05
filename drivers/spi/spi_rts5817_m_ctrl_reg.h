@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_RTS5817_M_CTRL_REG_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_RTS5817_M_CTRL_REG_H_
+
+#define R_MST_SPI_SSI_START_CTRL        0x00
+#define R_MST_SPI_SSI_STOP_CTRL         0x04
+#define R_MST_SPI_SSI_RD_ADDR           0x08
+#define R_MST_SPI_SSI_WR_ADDR           0x0C
+#define R_MST_SPI_SSI_DATA_LEN          0x10
+#define R_MST_SPI_SSI_CONTROL           0x14
+#define R_MST_SPI_SSI_IRQ_ENABLE        0x18
+#define R_MST_SPI_SSI_IRQ_STATUS        0x1C
+#define R_MST_SPI_SSI_MS_SELECT         0x20
+#define R_MST_SPI_SSI_DMA_STATE         0x24
+#define R_MST_SPI_SSI_RD_FIFO_THERSHOLD 0x28
+
+/* Bits of R_MST_SPI_SSI_START_CTRL (0x00) */
+
+#define MST_SSI_START_OFFSET 0
+#define MST_SSI_START_MASK   BIT(0)
+
+/* Bits of R_MST_SPI_SSI_STOP_CTRL (0x04) */
+
+#define MST_SSI_STOP_OFFSET 0
+#define MST_SSI_STOP_MASK   BIT(0)
+
+/* Bits of R_MST_SPI_SSI_RD_ADDR (0x08) */
+
+#define MST_SSI_SRAM_RD_ADDR_OFFSET 0
+#define MST_SSI_SRAM_RD_ADDR_MASK   GENMASK(31, 0)
+
+/* Bits of R_MST_SPI_SSI_WR_ADDR (0x0C) */
+
+#define MST_SSI_SRAM_WR_ADDR_OFFSET 0
+#define MST_SSI_SRAM_WR_ADDR_MASK   GENMASK(31, 0)
+
+/* Bits of R_MST_SPI_SSI_DATA_LEN (0x10) */
+
+#define MST_SSI_SRAM_LEN_OFFSET 0
+#define MST_SSI_SRAM_LEN_MASK   GENMASK(31, 0)
+
+/* Bits of R_MST_SPI_SSI_CONTROL (0x14) */
+
+#define MST_SCK_INTERVAL_EN_OFFSET 0
+#define MST_SCK_INTERVAL_EN_MASK   GENMASK(1, 0)
+
+#define MST_SCK_COUNT_MAX_OFFSET 2
+#define MST_SCK_COUNT_MAX_MASK   GENMASK(9, 2)
+
+#define MST_CK_COOLDOWN_OFFSET 10
+#define MST_CK_COOLDOWN_MASK   GENMASK(17, 10)
+
+#define MST_FORCE_CS_N_OFFSET 18
+#define MST_FORCE_CS_N_MASK   BIT(18)
+
+/* Bits of R_MST_SPI_SSI_IRQ_ENABLE (0x18) */
+
+#define MST_DONE_INT_ENABLE_OFFSET 0
+#define MST_DONE_INT_ENABLE_MASK   BIT(0)
+
+#define MST_SSI_WR_SRAM_OVERFLOW_ENABLE_OFFSET 1
+#define MST_SSI_WR_SRAM_OVERFLOW_ENABLE_MASK   BIT(1)
+
+#define MST_SSI_RD_SRAM_UNDERFLOW_ENABLE_OFFSET 2
+#define MST_SSI_RD_SRAM_UNDERFLOW_ENABLE_MASK   BIT(2)
+
+/* Bits of R_MST_SPI_SSI_IRQ_STATUS (0x1C) */
+
+#define MST_DONE_INT_OFFSET 0
+#define MST_DONE_INT_MASK   BIT(0)
+
+#define MST_SSI_WR_SRAM_OVERFLOW_OFFSET 1
+#define MST_SSI_WR_SRAM_OVERFLOW_MASK   BIT(1)
+
+#define MST_SSI_RD_SRAM_UNDERFLOW_OFFSET 2
+#define MST_SSI_RD_SRAM_UNDERFLOW_MASK   BIT(2)
+
+/* Bits of R_MST_SPI_SSI_MS_SELECT (0x20) */
+
+#define MST_SSI_MS_SEL_OFFSET 0
+#define MST_SSI_MS_SEL_MASK   BIT(0)
+
+/* Bits of R_MST_SPI_SSI_DMA_STATE (0x24) */
+
+#define MST_RD_SRAM_STATE_OFFSET 0
+#define MST_RD_SRAM_STATE_MASK   GENMASK(2, 0)
+
+#define MST_WR_SRAM_STATE_OFFSET 8
+#define MST_WR_SRAM_STATE_MASK   GENMASK(10, 8)
+
+/* Bits of R_MST_SPI_SSI_RD_FIFO_THERSHOLD (0x28) */
+
+#define MST_SSI_RD_FIFO_THRESHOLD_OFFSET 0
+#define MST_SSI_RD_FIFO_THRESHOLD_MASK   GENMASK(7, 0)
+
+/***********************Definition created by FW**********************/
+/* ssi master interrupt mask bits */
+#define SSI_MST_INT_MASK                                                                           \
+	(MST_DONE_INT_MASK | MST_SSI_WR_SRAM_OVERFLOW_MASK | MST_SSI_RD_SRAM_UNDERFLOW_MASK)
+
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_RTS5817_M_CTRL_REG_H_ */
