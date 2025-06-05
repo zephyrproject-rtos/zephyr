@@ -177,6 +177,7 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			open-loop-accuracy-ppm = <20000>;
+			open-loop-startup-time-us = <200>; /* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
@@ -199,6 +200,8 @@
 			status = "okay";
 			lfrc-accuracy-ppm = <500>;
 			lflprc-accuracy-ppm = <1000>;
+			lfrc-startup-time-us = <200>; /* To be measured */
+			lflprc-startup-time-us = <200>; /* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};

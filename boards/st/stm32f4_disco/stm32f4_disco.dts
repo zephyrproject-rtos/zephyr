@@ -164,6 +164,8 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &adc1 {
+	pinctrl-0 = <&adc1_in1_pa1 &adc1_in6_pa6>;
+	pinctrl-names = "default";
 	st,adc-prescaler = <2>;
 	status = "okay";
 };

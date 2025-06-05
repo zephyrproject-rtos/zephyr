@@ -18,6 +18,7 @@ description: |
 
     fll16m {
             open-loop-accuracy-ppm = <20000>;
+            open-loop-startup-time-us = <400>;
             clocks = <&hfxo>, <&lfxo>;
             clock-names = "hfxo", "lfxo";
     };
@@ -32,4 +33,10 @@ properties:
 
   open-loop-accuracy-ppm:
     type: int
-    description: Clock accuracy in parts per million if open-loop clock source is used.
+    description: Clock accuracy in parts per million
+    required: true
+
+  open-loop-startup-time-us:
+    type: int
+    description: Clock startup time if open-loop clock source is used.
+    required: true

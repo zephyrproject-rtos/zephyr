@@ -100,35 +100,56 @@ static void hsfll_work_handler(struct k_work *work)
 	k_timer_start(&dev_data->timer, NRFS_DVFS_TIMEOUT, K_NO_WAIT);
 }
 
-static struct onoff_manager *hsfll_find_mgr(const struct device *dev,
-					    const struct nrf_clock_spec *spec)
+static int hsfll_resolve_spec_to_idx(const struct nrf_clock_spec *req_spec)
 {
-	struct hsfll_dev_data *dev_data = dev->data;
-	uint32_t frequency;
+	uint32_t req_frequency;
 
-	if (!spec) {
-		return &dev_data->clk_cfg.onoff[0].mgr;
-	}
-
-	if (spec->accuracy || spec->precision) {
+	if (req_spec->accuracy || req_spec->precision) {
 		LOG_ERR("invalid specification of accuracy or precision");
-		return NULL;
+		return -EINVAL;
 	}
 
-	frequency = spec->frequency == NRF_CLOCK_CONTROL_FREQUENCY_MAX
-		  ? HSFLL_FREQ_HIGH
-		  : spec->frequency;
+	req_frequency = req_spec->frequency == NRF_CLOCK_CONTROL_FREQUENCY_MAX
+		      ? HSFLL_FREQ_HIGH
+		      : req_spec->frequency;
 
 	for (int i = 0; i < ARRAY_SIZE(clock_options); ++i) {
-		if (frequency > clock_options[i].frequency) {
+		if (req_frequency > clock_options[i].frequency) {
 			continue;
 		}
 
-		return &dev_data->clk_cfg.onoff[i].mgr;
+		return i;
 	}
 
 	LOG_ERR("invalid frequency");
-	return NULL;
+	return -EINVAL;
+}
+
+static void hsfll_get_spec_by_idx(uint8_t idx, struct nrf_clock_spec *spec)
+{
+	spec->frequency = clock_options[idx].frequency;
+	spec->accuracy = 0;
+	spec->precision = 0;
+}
+
+static struct onoff_manager *hsfll_get_mgr_by_idx(const struct device *dev, uint8_t idx)
+{
+	struct hsfll_dev_data *dev_data = dev->data;
+
+	return &dev_data->clk_cfg.onoff[idx].mgr;
+}
+
+static struct onoff_manager *hsfll_find_mgr_by_spec(const struct device *dev,
+						    const struct nrf_clock_spec *spec)
+{
+	int idx;
+
+	if (!spec) {
+		return hsfll_get_mgr_by_idx(dev, 0);
+	}
+
+	idx = hsfll_resolve_spec_to_idx(spec);
+	return idx < 0 ? NULL : hsfll_get_mgr_by_idx(dev, idx);
 }
 #endif /* CONFIG_NRFS_DVFS_LOCAL_DOMAIN */
 
@@ -137,7 +158,7 @@ static int api_request_hsfll(const struct device *dev,
 			     struct onoff_client *cli)
 {
 #ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
-	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
+	struct onoff_manager *mgr = hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return clock_config_request(mgr, cli);
@@ -153,7 +174,7 @@ static int api_release_hsfll(const struct device *dev,
 			     const struct nrf_clock_spec *spec)
 {
 #ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
-	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
+	struct onoff_manager *mgr = hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return onoff_release(mgr);
@@ -170,13 +191,32 @@ static int api_cancel_or_release_hsfll(const struct device *dev,
 				       struct onoff_client *cli)
 {
 #ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
-	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
+	struct onoff_manager *mgr = hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return onoff_cancel_or_release(mgr, cli);
 	}
 
 	return -EINVAL;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int api_resolve_hsfll(const struct device *dev,
+			     const struct nrf_clock_spec *req_spec,
+			     struct nrf_clock_spec *res_spec)
+{
+#ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
+	int idx;
+
+	idx = hsfll_resolve_spec_to_idx(req_spec);
+	if (idx < 0) {
+		return -EINVAL;
+	}
+
+	hsfll_get_spec_by_idx(idx, res_spec);
+	return 0;
 #else
 	return -ENOTSUP;
 #endif
@@ -212,6 +252,7 @@ static DEVICE_API(nrf_clock_control, hsfll_drv_api) = {
 	.request = api_request_hsfll,
 	.release = api_release_hsfll,
 	.cancel_or_release = api_cancel_or_release_hsfll,
+	.resolve = api_resolve_hsfll,
 };
 
 #ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN

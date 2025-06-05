@@ -68,6 +68,28 @@
 		};
 	};
 
+	dcmi_camera_connector: connector_dcmi_camera {
+		compatible = "st,stm32-dcmi-camera-fpu-330zh";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <3  0 &gpiob 6  0>,  /* I2C1_SCL */
+			   <4  0 &gpiog 13  0>,  /* I2C1_SDA */
+			   /* RESET is directly connected to MCU reset */
+			   <6  0 &mfx  12  0>,  /* PWDN_EN */
+			   <12 0 &gpioi  5  0>,  /* DCMI_VSYNC */
+			   <14 0 &gpioa  4  0>,  /* DCMI_HSYNC */
+			   <16 0 &gpioa  8  0>,  /* DCMI_PIXCK */
+			   <20 0 &gpioi  7  0>,  /* DCMI_D7 */
+			   <21 0 &gpiob  8  0>,  /* DCMI_D6 */
+			   <22 0 &gpioi  4  0>,  /* DCMI_D5 */
+			   <23 0 &gpioe  4  0>,  /* DCMI_D4 */
+			   <24 0 &gpioh 12  0>,  /* DCMI_D3 */
+			   <25 0 &gpioh 11  0>,  /* DCMI_D2 */
+			   <26 0 &gpioc  7  0>,  /* DCMI_D1 */
+			   <27 0 &gpioc  6  0>;  /* DCMI_D0 */
+	};
+
 	aliases {
 		led0 = &green_led;
 		led1 = &orange_led;
@@ -185,7 +207,7 @@
 	};
 };
 
-&i2c1 {
+st_cam_i2c: &i2c1 {
 	status = "okay";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pg13>;
 	pinctrl-names = "default";
@@ -314,4 +336,13 @@ zephyr_udc0: &usbotg_fs {
 			};
 		};
 	};
+};
+
+/* alias used by camera shields */
+st_cam_dvp: &dcmi {
+	pinctrl-0 = <&dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_ph11 &dcmi_d3_ph12
+		     &dcmi_d4_pe4 &dcmi_d5_pi4 &dcmi_d6_pb8 &dcmi_d7_pi7
+		     &dcmi_pixclk_ph5 &dcmi_hsync_pa4 &dcmi_vsync_pi5>;
+
+	pinctrl-names = "default";
 };
