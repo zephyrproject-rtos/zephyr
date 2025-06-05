@@ -1,0 +1,12 @@
+#
+# Copyright 2021 Carlo Caione 2021 <ccaione@baylibre.com>
+# Copyright 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+tests:
+  ipc.ipc_msg_service:
+    tags: ipc_msg_service
+    harness: ztest
+    platform_allow: qemu_cortex_a53
