@@ -121,6 +121,9 @@ SECTIONS
     __stack_top = ORIGIN(ram) + LENGTH(ram);
 
 #include <zephyr/linker/debug-sections.ld>
+
+    /DISCARD/ : { *(.note.GNU-stack) }
+
     SECTION_PROLOGUE(.riscv.attributes, 0,)
     {
     KEEP(*(.riscv.attributes))
