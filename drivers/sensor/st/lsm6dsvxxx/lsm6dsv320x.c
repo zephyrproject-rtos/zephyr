@@ -13,6 +13,16 @@
 
 LOG_MODULE_DECLARE(LSM6DSVXXX, CONFIG_SENSOR_LOG_LEVEL);
 
+static bool lsm6dsv320x_is_std_fs(uint8_t fs)
+{
+	return (fs < 4); /* 2g/4g/8g/16g */
+}
+
+static bool lsm6dsv320x_is_hg_fs(uint8_t fs)
+{
+	return (fs >= 4 && fs <= 8); /* 32g/64g/128g/256g/320g */
+}
+
 /*
  * XL configuration
  */
@@ -28,9 +38,7 @@ static uint16_t lsm6dsv320x_accel_gain_ug(uint8_t fs)
 }
 
 /* The first nibble of fs tells if it is High-G or not */
-static int lsm6dsv320x_accel_range_to_fs_val(const struct device *dev,
-					     int32_t range,
-					     uint8_t *fs)
+static int lsm6dsv320x_accel_range_to_fs_val(const struct device *dev, int32_t range, uint8_t *fs)
 {
 	switch (range) {
 	case LSM6DSV320X_DT_FS_2G:
@@ -82,7 +90,7 @@ static int lsm6dsv320x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dsvxxx_data *data = dev->data;
 
-	if (fs < 4) { /* 2g/4g/8g/16g */
+	if (lsm6dsv320x_is_std_fs(fs)) { /* 2g/4g/8g/16g */
 		lsm6dsv320x_xl_full_scale_t val = fs;
 
 		if (lsm6dsv320x_xl_full_scale_set(ctx, val) < 0) {
@@ -90,7 +98,7 @@ static int lsm6dsv320x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 		}
 
 		data->out_xl = LSM6DSV320X_OUTX_L_A;
-	} else if (fs <= 8) { /* 32g/64g/128g/256g/320g */
+	} else if (lsm6dsv320x_is_hg_fs(fs)) { /* 32g/64g/128g/256g/320g */
 		lsm6dsv320x_hg_xl_full_scale_t val = (fs - 4);
 
 		if (lsm6dsv320x_hg_xl_full_scale_set(ctx, val) < 0) {
@@ -153,21 +161,18 @@ static int lsm6dsv320x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
  * should be selected through accel-odr property in DT
  */
 static const float lsm6dsv320x_odr_map[3][13] = {
-			/* High Accuracy off */
-			{0.0f, 1.875f, 7.5f, 15.0f, 30.0f, 60.0f,
-			 120.0f, 240.0f, 480.0f, 960.0f, 1920.0f,
-			 3840.0f, 7680.0f},
+	/* High Accuracy off */
+	{0.0f, 1.875f, 7.5f, 15.0f, 30.0f, 60.0f, 120.0f, 240.0f, 480.0f, 960.0f, 1920.0f, 3840.0f,
+	 7680.0f},
 
-			/* High Accuracy 1 */
-			{0.0f, 1.875f, 7.5f, 15.625f, 31.25f, 62.5f,
-			 125.0f, 250.0f, 500.0f, 1000.0f, 2000.0f,
-			 4000.0f, 8000.0f},
+	/* High Accuracy 1 */
+	{0.0f, 1.875f, 7.5f, 15.625f, 31.25f, 62.5f, 125.0f, 250.0f, 500.0f, 1000.0f, 2000.0f,
+	 4000.0f, 8000.0f},
 
-			/* High Accuracy 2 */
-			{0.0f, 1.875f, 7.5f, 12.5f, 25.0f, 50.0f,
-			 100.0f, 200.0f, 400.0f, 800.0f, 1600.0f,
-			 3200.0f, 6400.0f},
-		};
+	/* High Accuracy 2 */
+	{0.0f, 1.875f, 7.5f, 12.5f, 25.0f, 50.0f, 100.0f, 200.0f, 400.0f, 800.0f, 1600.0f, 3200.0f,
+	 6400.0f},
+};
 
 static uint8_t lsm6dsv320x_freq_to_odr_val(const struct device *dev, int32_t freq)
 {
@@ -295,9 +300,7 @@ static int32_t lsm6dsv320x_accel_get_mode(const struct device *dev, int32_t *mod
  * GY configuration
  */
 
-static int lsm6dsv320x_gyro_range_to_fs_val(const struct device *dev,
-					    int32_t range,
-					    uint8_t *fs)
+static int lsm6dsv320x_gyro_range_to_fs_val(const struct device *dev, int32_t range, uint8_t *fs)
 {
 	switch (range) {
 	case 0:
@@ -467,6 +470,24 @@ static int32_t lsm6dsv320x_gyro_get_mode(const struct device *dev, int32_t *mode
 	return 0;
 }
 
+#if defined(CONFIG_LSM6DSVXXX_TRIGGER)
+int32_t lsm6dsv320x_drdy_mode_set(const struct device *dev)
+{
+	const struct lsm6dsvxxx_config *config = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
+
+	/* enable drdy on int1/int2 in pulse mode */
+	lsm6dsv320x_data_ready_mode_t drdy =
+		(config->drdy_pulsed) ? LSM6DSV320X_DRDY_PULSED : LSM6DSV320X_DRDY_LATCHED;
+	if (lsm6dsv320x_data_ready_mode_set(ctx, drdy)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_LSM6DSVXXX_TRIGGER */
+
+/* init routine */
 static int lsm6dsv320x_init_chip(const struct device *dev)
 {
 	const struct lsm6dsvxxx_config *cfg = dev->config;
@@ -628,8 +649,155 @@ static int lsm6dsv320x_pm_action(const struct device *dev, enum pm_device_action
 }
 #endif /* CONFIG_PM_DEVICE */
 
+#if defined(CONFIG_LSM6DSVXXX_STREAM)
+static void lsm6dsv320x_config_fifo(const struct device *dev, struct trigger_config trig_cfg)
+{
+	struct lsm6dsvxxx_data *data = dev->data;
+	const struct lsm6dsvxxx_config *config = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
+	uint8_t fifo_wtm = 0;
+	lsm6dsv320x_pin_int_route_t pin_int = {0};
+	lsm6dsv320x_fifo_xl_batch_t xl_batch = LSM6DSVXXX_DT_XL_NOT_BATCHED;
+	lsm6dsv320x_fifo_gy_batch_t gy_batch = LSM6DSVXXX_DT_GY_NOT_BATCHED;
+	lsm6dsv320x_fifo_temp_batch_t temp_batch = LSM6DSVXXX_DT_TEMP_NOT_BATCHED;
+	lsm6dsv320x_fifo_mode_t fifo_mode = LSM6DSV320X_BYPASS_MODE;
+	lsm6dsv320x_sflp_data_rate_t sflp_odr = LSM6DSV320X_SFLP_120Hz;
+	lsm6dsv320x_fifo_sflp_raw_t sflp_fifo = {0};
+	lsm6dsv320x_sflp_gbias_t gbias;
+
+	/* disable FIFO as first thing */
+	lsm6dsv320x_fifo_mode_set(ctx, LSM6DSV320X_BYPASS_MODE);
+
+	pin_int.fifo_th = PROPERTY_DISABLE;
+	pin_int.fifo_full = PROPERTY_DISABLE;
+
+	if (trig_cfg.int_fifo_th || trig_cfg.int_fifo_full) {
+		pin_int.fifo_th = (trig_cfg.int_fifo_th) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+		pin_int.fifo_full = (trig_cfg.int_fifo_full) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+		xl_batch = config->accel_batch;
+		gy_batch = config->gyro_batch;
+		temp_batch = config->temp_batch;
+
+		fifo_mode = LSM6DSV320X_STREAM_MODE;
+		fifo_wtm = config->fifo_wtm;
+
+		if (config->sflp_fifo_en & LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION) {
+			sflp_fifo.game_rotation = 1;
+		}
+
+		if (config->sflp_fifo_en & LSM6DSVXXX_DT_SFLP_FIFO_GRAVITY) {
+			sflp_fifo.gravity = 1;
+		}
+
+		if (config->sflp_fifo_en & LSM6DSVXXX_DT_SFLP_FIFO_GBIAS) {
+			sflp_fifo.gbias = 1;
+		}
+
+		sflp_odr = config->sflp_odr;
+	}
+
+	/*
+	 * Set FIFO watermark (number of unread sensor data TAG + 6 bytes
+	 * stored in FIFO) to FIFO_WATERMARK samples
+	 */
+	lsm6dsv320x_fifo_watermark_set(ctx, config->fifo_wtm);
+
+	/* Turn on/off FIFO */
+	lsm6dsv320x_fifo_mode_set(ctx, fifo_mode);
+
+	/* Set FIFO batch rates */
+	lsm6dsv320x_fifo_xl_batch_set(ctx, xl_batch);
+	data->accel_batch_odr = xl_batch;
+	lsm6dsv320x_fifo_gy_batch_set(ctx, gy_batch);
+	data->gyro_batch_odr = gy_batch;
+#if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
+	lsm6dsv320x_fifo_temp_batch_set(ctx, temp_batch);
+	data->temp_batch_odr = temp_batch;
+#endif
+
+	lsm6dsv320x_sflp_data_rate_set(ctx, sflp_odr);
+	data->sflp_batch_odr = sflp_odr;
+	lsm6dsv320x_fifo_sflp_batch_set(ctx, sflp_fifo);
+	lsm6dsv320x_sflp_game_rotation_set(ctx, PROPERTY_ENABLE);
+
+	/*
+	 * Temporarly set Accel and gyro odr same as sensor fusion LP in order to
+	 * make the SFLP gbias setting effective. Then restore it to saved values.
+	 */
+	switch (sflp_odr) {
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_480Hz:
+		lsm6dsv320x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_480Hz);
+		lsm6dsv320x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_480Hz);
+		break;
+
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_240Hz:
+		lsm6dsv320x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_240Hz);
+		lsm6dsv320x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_240Hz);
+		break;
+
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_120Hz:
+		lsm6dsv320x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_120Hz);
+		lsm6dsv320x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_120Hz);
+		break;
+
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_60Hz:
+		lsm6dsv320x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_60Hz);
+		lsm6dsv320x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_60Hz);
+		break;
+
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_30Hz:
+		lsm6dsv320x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_30Hz);
+		lsm6dsv320x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_30Hz);
+		break;
+
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_15Hz:
+	default:
+		lsm6dsv320x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_15Hz);
+		lsm6dsv320x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_15Hz);
+		break;
+	}
+
+	/* set sflp gbias */
+	gbias.gbias_x = (float)data->gbias_x_udps / 1000000;
+	gbias.gbias_y = (float)data->gbias_y_udps / 1000000;
+	gbias.gbias_z = (float)data->gbias_z_udps / 1000000;
+	lsm6dsv320x_sflp_game_gbias_set(ctx, &gbias);
+
+	/* restore accel/gyro odr to saved values */
+	lsm6dsv320x_accel_set_odr_raw(dev, data->accel_freq);
+	lsm6dsv320x_gyro_set_odr_raw(dev, data->gyro_freq);
+
+	/* Set pin interrupt (fifo_th could be on or off) */
+	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
+		lsm6dsv320x_pin_int1_route_set(ctx, &pin_int);
+	} else {
+		lsm6dsv320x_pin_int2_route_set(ctx, &pin_int);
+	}
+}
+
+static void lsm6dsv320x_config_drdy(const struct device *dev, struct trigger_config trig_cfg)
+{
+	const struct lsm6dsvxxx_config *config = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
+	lsm6dsv320x_pin_int_route_t pin_int = {0};
+
+	pin_int.drdy_xl = (trig_cfg.int_drdy) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+
+	/* Set pin interrupt (fifo_th could be on or off) */
+	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
+		lsm6dsv320x_pin_int1_route_set(ctx, &pin_int);
+	} else {
+		lsm6dsv320x_pin_int2_route_set(ctx, &pin_int);
+	}
+}
+#endif /* CONFIG_LSM6DSVXXX_STREAM */
+
 const struct lsm6dsvxxx_chip_api st_lsm6dsv320x_chip_api = {
 	.init_chip = lsm6dsv320x_init_chip,
+#if defined(CONFIG_LSM6DSVXXX_TRIGGER)
+	.drdy_mode_set = lsm6dsv320x_drdy_mode_set,
+#endif /* CONFIG_LSM6DSVXXX_TRIGGER */
 #if defined(CONFIG_PM_DEVICE)
 	.pm_action = lsm6dsv320x_pm_action,
 #endif /* CONFIG_PM_DEVICE */
@@ -645,4 +813,39 @@ const struct lsm6dsvxxx_chip_api st_lsm6dsv320x_chip_api = {
 	.gyro_fs_get = lsm6dsv320x_gyro_get_fs,
 	.gyro_odr_get = lsm6dsv320x_gyro_get_odr,
 	.gyro_mode_get = lsm6dsv320x_gyro_get_mode,
+#if defined(CONFIG_LSM6DSVXXX_STREAM)
+	.config_fifo = lsm6dsv320x_config_fifo,
+	.config_drdy = lsm6dsv320x_config_drdy,
+	.from_f16_to_f32 = lsm6dsv320x_from_f16_to_f32,
+	.from_sflp_to_mg = lsm6dsv320x_from_sflp_to_mg,
+#endif /* CONFIG_LSM6DSVXXX_STREAM */
+};
+
+/* bit shift for Accelerometer for a given range value */
+const int8_t st_lsm6dsv320x_accel_bit_shift[] = {
+	5, /* FS_2G */
+	6, /* FS_4G */
+	7, /* FS_8G */
+	8, /* FS_16G */
+	9, /* FS_32G */
+	10, /* FS_64G */
+	11, /* FS_128G */
+	12, /* FS_256G */
+	13, /* FS_320G */
+};
+
+/*
+ * Accelerometer scaling factors table for a given range value
+ * GAIN_UNIT_XL is expressed in ug/LSB.
+ */
+const int32_t st_lsm6dsv320x_accel_scaler[] = {
+	SENSOR_SCALE_UG_TO_UMS2(61),    /* FS_2G */
+	SENSOR_SCALE_UG_TO_UMS2(122),   /* FS_4G */
+	SENSOR_SCALE_UG_TO_UMS2(244),   /* FS_8G */
+	SENSOR_SCALE_UG_TO_UMS2(488),   /* FS_16G */
+	SENSOR_SCALE_UG_TO_UMS2(976),   /* FS_32G */
+	SENSOR_SCALE_UG_TO_UMS2(1952),  /* FS_64G */
+	SENSOR_SCALE_UG_TO_UMS2(2904),  /* FS_128G */
+	SENSOR_SCALE_UG_TO_UMS2(7808),  /* FS_256G */
+	SENSOR_SCALE_UG_TO_UMS2(10417), /* FS_320G */
 };

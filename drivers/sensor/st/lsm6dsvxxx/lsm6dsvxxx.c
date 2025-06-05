@@ -166,6 +166,7 @@ static void lsm6dsvxxx_one_shot_complete_cb(struct rtio *ctx, const struct rtio_
 
 static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
+	const struct lsm6dsvxxx_config *config = dev->config;
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
@@ -196,8 +197,9 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 		return;
 	}
 
+	edata->header.cfg = config;
 	edata->header.is_fifo = false;
-	edata->header.range = data->accel_fs;
+	edata->header.accel_fs = data->accel_fs;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	for (int i = 0; i < num_channels; i++) {
@@ -287,6 +289,8 @@ void lsm6dsvxxx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sq
 
 	if (!cfg->is_streaming) {
 		lsm6dsvxxx_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_LSM6DSVXXX_STREAM)) {
+		lsm6dsvxxx_submit_stream(dev, iodev_sqe);
 	} else {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
@@ -360,12 +364,15 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 
 #define LSM6DSVXXX_CONFIG_COMMON(inst, prefix)					\
 	.chip_api = &prefix##_chip_api,						\
+	.accel_bit_shift = prefix##_accel_bit_shift,				\
+	.accel_scaler = prefix##_accel_scaler,					\
 	.accel_odr = DT_INST_PROP(inst, accel_odr),				\
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, accel_hg_odr),			\
 		(.accel_hg_odr = DT_INST_PROP(inst, accel_hg_odr),))		\
 	.accel_range = DT_INST_ENUM_IDX(inst, accel_range),			\
 	.gyro_odr = DT_INST_PROP(inst, gyro_odr),				\
 	.gyro_range = DT_INST_PROP(inst, gyro_range),				\
+										\
 	IF_ENABLED(CONFIG_LSM6DSVXXX_STREAM,					\
 		   (.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),		\
 		    .accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),	\
@@ -373,6 +380,7 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 		    .sflp_odr  = DT_INST_PROP(inst, sflp_odr),			\
 		    .sflp_fifo_en  = DT_INST_PROP(inst, sflp_fifo_enable),	\
 		    .temp_batch  = DT_INST_PROP(inst, temp_fifo_batch_rate),))	\
+										\
 	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
 		   (LSM6DSVXXX_CFG_IRQ(inst)))
@@ -388,7 +396,7 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 
 #define LSM6DSVXXX_SPI_RTIO_DEFINE(inst, prefix)			\
 	SPI_DT_IODEV_DEFINE(prefix##_iodev_##inst,			\
-		DT_DRV_INST(inst), LSM6DSVXXX_SPI_OP, 0U);		\
+		DT_DRV_INST(inst), LSM6DSVXXX_SPI_OP);			\
 	RTIO_DEFINE(prefix##_rtio_ctx_##inst, 8, 8);
 
 #define LSM6DSVXXX_CONFIG_SPI(inst, prefix)				\
@@ -396,9 +404,9 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 		STMEMSC_CTX_SPI(&prefix##_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   LSM6DSVXXX_SPI_OP,		\
-					   0),				\
+					   LSM6DSVXXX_SPI_OP),		\
 		},							\
+									\
 		LSM6DSVXXX_CONFIG_COMMON(inst, prefix)			\
 	}
 
