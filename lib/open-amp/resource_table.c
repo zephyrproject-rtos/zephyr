@@ -43,6 +43,10 @@ static struct fw_resource_table __resource resource_table = RESOURCE_TABLE_INIT;
 
 void rsc_table_get(void **table_ptr, int *length)
 {
+#if defined(CONFIG_RAM_CONSOLE)
+	resource_table.cm_trace.da = (uint32_t)(uintptr_t)ram_console_buf;
+#endif
+
 	*length = sizeof(resource_table);
 #ifdef CONFIG_OPENAMP_COPY_RSC_TABLE
 	*table_ptr = (void *)RSC_TABLE_ADDR;

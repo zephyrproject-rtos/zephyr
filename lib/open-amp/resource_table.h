@@ -85,7 +85,8 @@ struct fw_resource_table {
 	#define CM_TRACE_ENTRY							\
 		.cm_trace = {							\
 			RSC_TRACE,						\
-			(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,\
+			0, /* Will be initialized at runtime */			\
+			CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,			\
 			"Zephyr_log",						\
 		},
 #else
