@@ -38,6 +38,14 @@
 			status = "okay";
 		};
 
+		elc: elc@40082000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40082000  0x70>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
 		flash: flash-controller@407e0000 {
 			compatible = "renesas,ra-flash-hp-controller";
 			reg = <0x407e0000 0x10000>;
