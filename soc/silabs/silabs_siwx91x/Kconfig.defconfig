@@ -45,6 +45,12 @@ config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 2048
 
+configdefault CMSIS_V2_MUTEX_MAX_COUNT
+	default 10
+
+configdefault CMSIS_V2_EVT_FLAGS_MAX_COUNT
+	default 10
+
 endif # WISECONNECT_NETWORK_STACK
 
 rsource "*/Kconfig.defconfig"
