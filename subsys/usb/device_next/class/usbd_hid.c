@@ -86,8 +86,11 @@ static inline uint8_t hid_get_in_ep(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct hid_device_config *dcfg = dev->config;
 	struct usbd_hid_descriptor *desc = dcfg->desc;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct usb_ep_descriptor *ep_desc =
+		(usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) ? &desc->hs_in_ep : &desc->in_ep;
 
-	return desc->in_ep.bEndpointAddress;
+	return ep_desc->bEndpointAddress;
 }
 
 static inline uint8_t hid_get_out_ep(struct usbd_class_data *const c_data)
@@ -95,8 +98,11 @@ static inline uint8_t hid_get_out_ep(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct hid_device_config *dcfg = dev->config;
 	struct usbd_hid_descriptor *desc = dcfg->desc;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct usb_ep_descriptor *ep_desc =
+		(usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) ? &desc->hs_out_ep : &desc->out_ep;
 
-	return desc->out_ep.bEndpointAddress;
+	return ep_desc->bEndpointAddress;
 }
 
 static int usbd_hid_request(struct usbd_class_data *const c_data,
