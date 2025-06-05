@@ -295,6 +295,11 @@ int openthread_init(void)
 		return 0;
 	}
 
+	/* Start work queue for the OpenThread module */
+	k_work_queue_start(&openthread_work_q, ot_stack_area,
+			   K_KERNEL_STACK_SIZEOF(ot_stack_area),
+			   OT_PRIORITY, &q_cfg);
+
 	openthread_mutex_lock();
 
 	otSysInit(0, NULL);
@@ -341,10 +346,6 @@ int openthread_init(void)
 	}
 
 	openthread_mutex_unlock();
-
-	/* Start work queue for the OpenThread module */
-	k_work_queue_start(&openthread_work_q, ot_stack_area, K_KERNEL_STACK_SIZEOF(ot_stack_area),
-			   OT_PRIORITY, &q_cfg);
 
 	(void)k_work_submit_to_queue(&openthread_work_q, &openthread_work);
 
