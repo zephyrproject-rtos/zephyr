@@ -13,5 +13,6 @@ toolchain:
   - cross-compile
 ram: 1024
 supported:
+  - gpio
   - uart
 vendor: nxp
