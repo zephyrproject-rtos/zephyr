@@ -36,7 +36,7 @@ below to retrieve those files.
 .. code-block:: console
 
    west update
-   west blobs fetch hal_nordic
+   west blobs fetch nrf_wifi
 
 Usage
 *****
