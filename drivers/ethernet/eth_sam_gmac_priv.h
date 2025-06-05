@@ -276,6 +276,7 @@ struct eth_sam_dev_cfg {
 	void (*config_func)(void);
 	const struct device *phy_dev;
 	const uint8_t num_queues;
+	const uint8_t phy_conn_type;
 };
 
 /* Device run time data */
