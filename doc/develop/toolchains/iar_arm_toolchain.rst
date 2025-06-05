@@ -18,7 +18,7 @@ IAR Arm Toolchain
    - Set :envvar:`IAR_TOOLCHAIN_PATH` to the toolchain installation directory.
 
 #. The CXARM toolchain needs the :envvar:`IAR_LMS_BEARER_TOKEN` environment
-   variable to be set to a valid **license bearer token**.
+   variable to be set to a valid *license bearer token*.
 
 For example:
 
@@ -40,8 +40,8 @@ For example:
 
    The IAR Toolchain uses ``ilink`` for linking. This is incompatible with Zephyr’s
    linker script template, which works with GNU ld. Zephyr’s IAR Arm Toolchain depends on
-   Zephyr’s CMake linker script generator, which supports generating icf-files.
-   Basic icf-file support is in place, but there are still areas which are not fully
+   Zephyr’s CMake linker script generator, which supports generating icf files.
+   Basic icf file support is in place, but there are still areas which are not fully
    supported by the CMake linker script generator.
 
 .. note::
