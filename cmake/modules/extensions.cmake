@@ -585,7 +585,7 @@ endfunction()
 # constructor but must be called explicitly on CMake libraries that do
 # not use a zephyr library constructor.
 function(zephyr_append_cmake_library library)
-  if(TARGET zephyr_prebuilt)
+  if(TARGET zephyr_pre0)
     message(WARNING
       "zephyr_library() or zephyr_library_named() called in Zephyr CMake "
       "application mode. `${library}` will not be treated as a Zephyr library."
