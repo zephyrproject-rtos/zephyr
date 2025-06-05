@@ -1559,10 +1559,10 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 
 	if (params->setup.twt_wake_interval > 255 * 256) {
 		twt_req.wake_duration_unit = 1;
-		twt_req.wake_duration = params->setup.twt_wake_interval / 256;
+		twt_req.wake_duration = params->setup.twt_wake_interval / 1024;
 	} else {
 		twt_req.wake_duration_unit = 0;
-		twt_req.wake_duration = params->setup.twt_wake_interval / 1024;
+		twt_req.wake_duration = params->setup.twt_wake_interval / 256;
 	}
 
 	status = sl_wifi_enable_target_wake_time(&twt_req);
