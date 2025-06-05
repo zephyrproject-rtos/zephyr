@@ -583,6 +583,18 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	return 0;
 }
 
+int usb_dc_wakeup_request(void)
+{
+	usb_status_t status = dev_state.dev_struct.controllerInterface->deviceControl(
+		dev_state.dev_struct.controllerHandle, kUSB_DeviceControlResume, NULL);
+
+	if (status != kStatus_USB_Success) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static void update_control_stage(usb_device_callback_message_struct_t *cb_msg,
 				 uint32_t data_len, uint32_t max_data_len)
 {
