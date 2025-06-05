@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Silicon Signals Pvt. Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX98091 I2S Audio Codec
+
+compatible: "maxim,max98091"
+
+include: [i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+  mclk-frequency:
+    type: int
+    required: true
+    description: External MCLK frequency in Hz
