@@ -214,5 +214,6 @@ rsource "Kconfig.dw"
 rsource "Kconfig.test"
 rsource "Kconfig.stm32"
 rsource "Kconfig.it51xxx"
+rsource "Kconfig.renesas"
 
 endif # I3C
