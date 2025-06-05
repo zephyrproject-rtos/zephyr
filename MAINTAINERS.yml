@@ -4280,14 +4280,17 @@ ITE Platforms:
     - Dino-Li
     - GTLin08
     - RuibinChang
+    - Chenhongren
   collaborators:
     - jackrosenthal
     - keith-zephyr
-    - brockus-zephyr
-    - sjg20
+    - fabiobaltieri
   files:
     - boards/ite/
     - drivers/sensor/ite/
+    - drivers/usb/udc/*it82xx2*.c
+    - drivers/usb/device/*it82xx2*.c
+    - drivers/*/*it51xxx*.c
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
     - dts/bindings/*/ite*
