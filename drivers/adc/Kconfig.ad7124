@@ -8,6 +8,7 @@ config ADC_AD7124
 	select SPI
 	select CRC
 	select ADC_CONFIGURABLE_INPUTS
+	select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
 	help
 	  Enable the ad7124 adc
 
