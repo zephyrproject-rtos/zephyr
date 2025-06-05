@@ -24,5 +24,6 @@ source "drivers/misc/stm32n6_axisram/Kconfig"
 source "drivers/misc/nxp_inputmux/Kconfig"
 source "drivers/misc/anx7533/Kconfig"
 source "drivers/misc/anx7327/Kconfig"
+source "drivers/misc/usb3803/Kconfig"
 
 endmenu
