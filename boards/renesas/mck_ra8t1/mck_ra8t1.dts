@@ -97,6 +97,12 @@
 	status = "okay";
 };
 
+&i3cclk {
+	clocks = <&pllp>;
+	div = <3>;
+	status = "okay";
+};
+
 &ioport3 {
 	status = "okay";
 };
@@ -137,6 +143,16 @@
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c0 {
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	pinctrl-0 = <&i3c0_default>;
+	pinctrl-names = "default";
+	interrupts = <60 1>, <61 1>, <62 1>, <63 1>, <64 1>, <65 1>;
+	interrupt-names = "resp", "rx", "tx", "rcv", "ibi", "eei";
 	status = "okay";
 };
 
