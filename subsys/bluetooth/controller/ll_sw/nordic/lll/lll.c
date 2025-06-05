@@ -38,9 +38,9 @@
 
 #if defined(CONFIG_BT_CTLR_ZLI)
 #define IRQ_CONNECT_FLAGS IRQ_ZERO_LATENCY
-#else
+#else /* !CONFIG_BT_CTLR_ZLI */
 #define IRQ_CONNECT_FLAGS 0
-#endif
+#endif /* !CONFIG_BT_CTLR_ZLI */
 
 static struct {
 	struct {
@@ -103,7 +103,9 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 
 	isr_radio();
 
+#if !defined(CONFIG_BT_CTLR_ZLI)
 	ISR_DIRECT_PM();
+#endif /* !CONFIG_BT_CTLR_ZLI */
 
 	lll_prof_exit_radio();
 
@@ -111,7 +113,11 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 
 #if !defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS) || \
 	!defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
-	return 1;
+#if !defined(CONFIG_BT_CTLR_ZLI)
+	return 1; /* reschedule when non-ZLI, k_sem_give() may have been invoked */
+#else /* CONFIG_BT_CTLR_ZLI */
+	return 0; /* no_reschedule when ZLI, non-ZLI mayfly will be used to call k_sem_give() */
+#endif /* CONFIG_BT_CTLR_ZLI */
 #endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 }
 
@@ -129,7 +135,9 @@ ISR_DIRECT_DECLARE(timer_nrf5_isr)
 
 	isr_radio_tmr();
 
+#if !defined(CONFIG_BT_CTLR_ZLI)
 	ISR_DIRECT_PM();
+#endif /* !CONFIG_BT_CTLR_ZLI */
 
 	lll_prof_exit_radio();
 
@@ -137,7 +145,11 @@ ISR_DIRECT_DECLARE(timer_nrf5_isr)
 
 #if !defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS) || \
 	!defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
-	return 1;
+#if !defined(CONFIG_BT_CTLR_ZLI)
+	return 1; /* reschedule when non-ZLI, k_sem_give() may have been invoked */
+#else /* CONFIG_BT_CTLR_ZLI */
+	return 0; /* no_reschedule when ZLI, non-ZLI mayfly will be used to call k_sem_give() */
+#endif /* CONFIG_BT_CTLR_ZLI */
 #endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 }
 #endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
@@ -284,10 +296,10 @@ int lll_init(void)
 #if defined(CONFIG_BT_CTLR_ZLI)
 	IRQ_DIRECT_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 			   swi_lll_nrf5_isr, IRQ_CONNECT_FLAGS);
-#else
+#else /* !CONFIG_BT_CTLR_ZLI */
 	IRQ_CONNECT(HAL_SWI_RADIO_IRQ, CONFIG_BT_CTLR_LLL_PRIO,
 		    swi_lll_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
-#endif
+#endif /* !CONFIG_BT_CTLR_ZLI */
 #if defined(CONFIG_BT_CTLR_LOW_LAT) || \
 	(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	IRQ_CONNECT(HAL_SWI_JOB_IRQ, CONFIG_BT_CTLR_ULL_LOW_PRIO,
