@@ -3,12 +3,7 @@
 IAR Arm Toolchain
 #################
 
-#. Download and install a release of  `IAR Arm Toolchain`_ (EWARM/CXARM) on your host.
-
-.. note::
-   As of now, a Development version of the IAR build tools for Arm is required to work with Zephyr.
-   It is distributed to selected partners and customers for evaluation. If you are interested in being
-   part of this program, please send a request to the IAR FAE team at fae.emea@iar.com.
+#. Download and install `IAR Arm Toolchain`_ (EWARM/BXARM/CXARM) version 9.70 or higher on your host.
 
 #. Make sure you have :ref:`Zephyr SDK <toolchain_zephyr_sdk>` installed on your host.
 
@@ -22,8 +17,8 @@ IAR Arm Toolchain
    - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``iar``.
    - Set :envvar:`IAR_TOOLCHAIN_PATH` to the toolchain installation directory.
 
-#. The IAR Toolchain needs the :envvar:`IAR_LMS_BEARER_TOKEN` environment
-   variable to be set to a valid ``license bearer token``.
+#. The CXARM toolchain needs the :envvar:`IAR_LMS_BEARER_TOKEN` environment
+   variable to be set to a valid **license bearer token**.
 
 For example:
 
@@ -37,7 +32,7 @@ For example:
    .. code-block:: batch
 
       # Windows:
-      set IAR_TOOLCHAIN_PATH=c:\<path>\arm
+      set IAR_TOOLCHAIN_PATH=C:\iar\ewarm-9.70.1\arm
       set ZEPHYR_TOOLCHAIN_VARIANT=iar
       set IAR_LMS_BEARER_TOKEN="<BEARER-TOKEN>"
 
@@ -52,11 +47,11 @@ For example:
 .. note::
 
    The IAR Toolchain uses the GNU Assembler which is distributed with the Zephyr SDK
-   for ``.S-files``.
+   for .S-files.
 
 .. note::
 
    Some Zephyr subsystems or modules may also contain C or assembly code that relies
-   on GNU intrinsics and have not yet been updated to work fully with ``iar``.
+   on GNU intrinsics and have not yet been updated to work fully with IAR.
 
 .. _IAR Arm Toolchain: https://www.iar.com/products/architectures/arm/
