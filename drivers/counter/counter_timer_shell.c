@@ -218,15 +218,18 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_timer,
 	SHELL_CMD_ARG(periodic, &dsub_device_name,
-		      "timer periodic <timer_instance_node_id> <time_in_us>", cmd_timer_periodic, 3,
-		      0),
+		      SHELL_HELP("Start a periodic timer with specified interval",
+				 "<timer_instance_node_id> <time_in_us>"),
+		      cmd_timer_periodic, 3, 0),
 	SHELL_CMD_ARG(oneshot, &dsub_device_name,
-		      "timer oneshot <timer_instance_node_id> <channel_id> <time_in_us>",
+		      SHELL_HELP("Set a one-shot alarm on specified channel",
+				 "<timer_instance_node_id> <channel_id> <time_in_us>"),
 		      cmd_timer_oneshot, 4, 0),
-	SHELL_CMD_ARG(freerun, &dsub_device_name, "timer freerun <timer_instance_node_id>",
+	SHELL_CMD_ARG(freerun, &dsub_device_name,
+		      SHELL_HELP("Start a timer in free-running mode", "<timer_instance_node_id>"),
 		      cmd_timer_free_running, 2, 0),
-	SHELL_CMD_ARG(stop, &dsub_device_name, "timer stop <timer_instance_node_id>",
-		      cmd_timer_stop, 2, 0),
+	SHELL_CMD_ARG(stop, &dsub_device_name,
+		      SHELL_HELP("Stop a timer", "<timer_instance_node_id>"), cmd_timer_stop, 2, 0),
 	SHELL_SUBCMD_SET_END /* array terminated. */
 );
 
