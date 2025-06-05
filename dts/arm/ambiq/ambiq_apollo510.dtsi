@@ -469,6 +469,7 @@
 			interrupts = <15 0>;
 			clk-src = <0>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		uart1: uart@UART1_BASE_NAME {
@@ -477,6 +478,7 @@
 			interrupts = <16 0>;
 			clk-src = <0>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		uart2: uart@UART2_BASE_NAME {
@@ -485,6 +487,7 @@
 			interrupts = <17 0>;
 			clk-src = <0>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		uart3: uart@UART3_BASE_NAME {
@@ -493,6 +496,7 @@
 			interrupts = <18 0>;
 			clk-src = <0>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		mspi0: mspi@MSPI0_BASE_NAME {
@@ -547,6 +551,7 @@
 			channel-count = <10>;
 			internal-vref-mv = <1190>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 			#io-channel-cells = <1>;
 		};
 
