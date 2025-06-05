@@ -14,3 +14,21 @@ config FLASH_ADI_MAX32_SPIXF
 	select PINCTRL
 	help
 	  Enable QSPI-NOR support on the MAX32 family of processors.
+
+if FLASH_ADI_MAX32_SPIXF
+
+config FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME
+	bool "Read flash parameters at runtime"
+	depends on FLASH_ADI_MAX32_SPIXF
+	help
+	  Read flash device characteristics from the device at runtime.
+	  This option should provide functionality for all supported
+	  JESD216-compatible devices, with the following notes:
+	  - Quad Enable Requirements bitfield (DW15) must be present in the SFDP
+	    tables to configure Quad mode. Otherwise it defaults to Dual or
+	    Single mode as supported by the device.
+
+	  If not selected, the driver uses a fixed configuration, and the device
+	  size, page size, and jedec-id properties must be set in devicetree node.
+
+endif
