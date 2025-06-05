@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		fuel-gauge0 = &max17048;
+	};
+};
+
 &i2c0 {
 	status = "okay";
 	compatible = "nordic,nrf-twim";

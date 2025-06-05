@@ -1,0 +1,20 @@
+sample:
+  name: Fuel Gauge Sensor Sample
+tests:
+  sample.sensor.fuel_gauge:
+    build_only: true
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - adafruit_feather_esp32s2@B
+      - adafruit_feather_esp32s2@C
+      - adafruit_feather_esp32s2_tft
+      - adafruit_feather_esp32s2_tft_reverse/esp32s2
+      - adafruit_feather_esp32s3/esp32s3/procpu
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - adafruit_feather_esp32s2@B
+      - adafruit_feather_esp32s2@C
+      - adafruit_feather_esp32s2_tft
+      - adafruit_feather_esp32s2_tft_reverse/esp32s2
+      - adafruit_feather_esp32s3/esp32s3/procpu
+    tags: fuel_gauge
