@@ -1,7 +1,7 @@
 # Copyright (c) 2025 TOKITA Hiroshi
 # SPDX-License-Identifier: Apache-2.0
 
-description: VirtIO Entropy device (ID:4)
+description: VIRTIO Entropy device (ID:4)
 
 compatible: "virtio,device4"
 
