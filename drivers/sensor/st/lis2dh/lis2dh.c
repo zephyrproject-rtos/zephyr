@@ -344,7 +344,7 @@ static DEVICE_API(sensor, lis2dh_driver_api) = {
 	.channel_get = lis2dh_channel_get,
 };
 
-int lis2dh_init(const struct device *dev)
+int lis2dh_init_chip(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
@@ -352,10 +352,8 @@ int lis2dh_init(const struct device *dev)
 	uint8_t id;
 	uint8_t raw[6];
 
-	status = cfg->bus_init(dev);
-	if (status < 0) {
-		return status;
-	}
+	/* AN5005: LIS2DH needs 5ms delay to boot */
+	k_sleep(K_MSEC(LIS2DH_POR_WAIT_MS));
 
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
 	if (status < 0) {
@@ -446,15 +444,17 @@ int lis2dh_init(const struct device *dev)
 					LIS2DH_ODR_BITS);
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int lis2dh_pm_action(const struct device *dev,
 			    enum pm_device_action action)
 {
-	int status;
+	int status = 0;
 	struct lis2dh_data *lis2dh = dev->data;
 	uint8_t regdata;
 
 	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		status = lis2dh_init_chip(dev);
+		break;
 	case PM_DEVICE_ACTION_RESUME:
 		/* read REFERENCE register (see datasheet rev 6 section 8.9 footnote 1) */
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_REFERENCE, &regdata);
@@ -486,13 +486,28 @@ static int lis2dh_pm_action(const struct device *dev,
 			return status;
 		}
 		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return status;
 }
-#endif /* CONFIG_PM_DEVICE */
+
+static int lis2dh_init(const struct device *dev)
+{
+	const struct lis2dh_config *cfg = dev->config;
+	int status;
+
+	status = cfg->bus_init(dev);
+	if (status < 0) {
+		LOG_ERR("Failed to initialize the bus.");
+		return status;
+	}
+
+	return pm_device_driver_init(dev, lis2dh_pm_action);
+}
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LIS2DH driver enabled without any devices"
