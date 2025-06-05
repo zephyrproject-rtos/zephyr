@@ -11,4 +11,5 @@ zephyr_library_compile_definitions_ifdef(
 zephyr_library_sources(
   openthread.c
   openthread_utils.c
+  infra_if.c
   )
