@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Applied Materials
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip USB3803 High Speed Hub Controller
+
+compatible: "microchip,usb3803"
+
+include: i2c-device.yaml
+
+properties:
+  rst-pin-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to reset pin of usb3803.
+  bypass-pin-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to bypass pin of usb3803.

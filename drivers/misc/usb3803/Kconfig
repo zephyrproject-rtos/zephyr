@@ -1,0 +1,21 @@
+# Copyright (c) 2025, Applied Materials
+# SPDX-License-Identifier: Apache-2.0
+
+config USB3803
+	bool "USB3803 High Speed Hub Controller"
+	help
+	  USB3803 High Speed Hub Controller
+
+if USB3803
+
+config USB3803_INIT_PRIORITY
+	int "usb3803 init priority"
+	default 50
+	help
+	  Init priority for the usb3803 driver.
+
+module = USB3803
+module-str = USB3803 HSHC
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
