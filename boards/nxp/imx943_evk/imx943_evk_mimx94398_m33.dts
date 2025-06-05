@@ -1,0 +1,31 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx943_m33.dtsi>
+#include "imx943_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX943 EVK board";
+	compatible = "nxp,imx943_evk";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart8;
+		zephyr,shell-uart = &lpuart8;
+	};
+};
+
+&lpuart8 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart8_default>;
+	pinctrl-names = "default";
+};
