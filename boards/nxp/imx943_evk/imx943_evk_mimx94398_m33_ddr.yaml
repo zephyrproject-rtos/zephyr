@@ -1,0 +1,17 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx943_evk/mimx94398/m33/ddr
+name: NXP i.MX943 EVK M33 DDR variant
+type: mcu
+arch: arm
+ram: 4096
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+vendor: nxp
