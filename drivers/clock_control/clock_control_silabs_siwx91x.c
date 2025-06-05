@@ -239,6 +239,8 @@ static int siwx91x_clock_init(const struct device *dev)
 {
 	SystemCoreClockUpdate();
 
+	sl_si91x_clock_manager_init();
+
 	/* Use SoC PLL at configured frequency as core clock */
 	sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
