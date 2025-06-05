@@ -3,5 +3,8 @@
 
 zephyr_include_directories(.)
 
+zephyr_library()
+zephyr_library_sources(board.c)
+
 zephyr_linker_sources_ifdef(CONFIG_MEMC
   SECTIONS sdram.ld)
