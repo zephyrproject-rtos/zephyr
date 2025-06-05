@@ -1,4 +1,4 @@
-/* Copyright 2017, 2019-2023 NXP
+/* Copyright 2017, 2019-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@
 #ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
 #endif
-#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
+#if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511 || CONFIG_UHC_NXP_IP3516HS
 #include "usb_phy.h"
 #include "usb.h"
 #endif
@@ -286,6 +286,48 @@ __weak void clock_init(void)
 #endif /* USB_DEVICE_TYPE_HS */
 
 #endif /* CONFIG_USB_DC_NXP_LPCIP3511 */
+
+#if CONFIG_UHC_NXP_OHCI
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhfs), nxp_uhc_ohci, okay)
+	/* set BOD VBAT level to 1.65V */
+	POWER_SetBodVbatLevel(kPOWER_BodVbatLevel1650mv, kPOWER_BodHystLevel50mv, false);
+	NVIC_ClearPendingIRQ(USB0_IRQn);
+	NVIC_ClearPendingIRQ(USB0_NEEDCLK_IRQn);
+	/*< Turn on USB Phy */
+#if defined(CONFIG_SOC_LPC55S36)
+	POWER_DisablePD(kPDRUNCFG_PD_USBFSPHY);
+#else
+	POWER_DisablePD(kPDRUNCFG_PD_USB0_PHY);
+#endif
+	RESET_PeripheralReset(kUSB1H_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSB1D_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSB1_RST_SHIFT_RSTn);
+	RESET_PeripheralReset(kUSB1RAM_RST_SHIFT_RSTn);
+	CLOCK_EnableUsbfs0HostClock(kCLOCK_UsbfsSrcPll0, 48000000U);
+#if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
+	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USBHSD_USB_RAM);
+#endif
+#endif
+
+#endif
+
+#if CONFIG_UHC_NXP_IP3516HS
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhhs), nxp_uhc_ip3516hs, okay)
+	/*< Turn on USB Phy */
+#if !defined(CONFIG_SOC_LPC55S36)
+	POWER_DisablePD(kPDRUNCFG_PD_USB1_PHY);
+#endif
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_UsbPhySrcExt, CLK_CLK_IN);
+	CLOCK_EnableUsbhs0HostClock(kCLOCK_UsbSrcUnused, 0U);
+	USB_EhciPhyInit(kUSB_ControllerLpcIp3511Hs0, CLK_CLK_IN, NULL);
+#if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
+	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0, FSL_FEATURE_USBHSD_USB_RAM);
+#endif
+#endif
+
+#endif
 
 DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 

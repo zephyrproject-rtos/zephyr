@@ -22,10 +22,24 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 void llext_free_regions(struct llext *ext);
 void llext_adjust_mmu_permissions(struct llext *ext);
 
+static inline bool llext_heap_is_inited(void)
+{
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+	extern bool llext_heap_inited;
+
+	return llext_heap_inited;
+#else
+	return true;
+#endif
+}
+
 static inline void *llext_alloc(size_t bytes)
 {
 	extern struct k_heap llext_heap;
 
+	if (!llext_heap_is_inited()) {
+		return NULL;
+	}
 	return k_heap_alloc(&llext_heap, bytes, K_NO_WAIT);
 }
 
@@ -33,6 +47,9 @@ static inline void *llext_aligned_alloc(size_t align, size_t bytes)
 {
 	extern struct k_heap llext_heap;
 
+	if (!llext_heap_is_inited()) {
+		return NULL;
+	}
 	return k_heap_aligned_alloc(&llext_heap, align, bytes, K_NO_WAIT);
 }
 
@@ -40,6 +57,9 @@ static inline void llext_free(void *ptr)
 {
 	extern struct k_heap llext_heap;
 
+	if (!llext_heap_is_inited()) {
+		return;
+	}
 	k_heap_free(&llext_heap, ptr);
 }
 

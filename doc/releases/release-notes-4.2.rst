@@ -186,6 +186,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
 
+  * Wi-Fi
+
+    * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
+
 * Power management
 
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`

@@ -2189,12 +2189,6 @@ static int udc_dwc2_enable(const struct device *dev)
 		return err;
 	}
 
-	err = dwc2_quirk_post_enable(dev);
-	if (err) {
-		LOG_ERR("Quirk post enable failed %d", err);
-		return err;
-	}
-
 	/* Enable global interrupt */
 	sys_set_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
 	config->irq_enable_func(dev);
@@ -2202,6 +2196,12 @@ static int udc_dwc2_enable(const struct device *dev)
 	/* Disable soft disconnect */
 	sys_clear_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_SFTDISCON);
 	LOG_DBG("Enable device %p", base);
+
+	err = dwc2_quirk_post_enable(dev);
+	if (err) {
+		LOG_ERR("Quirk post enable failed %d", err);
+		return err;
+	}
 
 	return 0;
 }

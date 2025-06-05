@@ -1,0 +1,21 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMX94398
+	bool
+	select SOC_SERIES_IMX9
+
+config SOC_MIMX94398_A55
+	bool
+	select SOC_MIMX94398
+	help
+	  NXP i.MX943 A55
+
+config SOC
+	default "mimx94398" if SOC_MIMX94398
+
+config SOC_PART_NUMBER_MIMX94398AVKM
+	bool
+
+config SOC_PART_NUMBER
+	default "MIMX94398AVKM" if SOC_PART_NUMBER_MIMX94398AVKM

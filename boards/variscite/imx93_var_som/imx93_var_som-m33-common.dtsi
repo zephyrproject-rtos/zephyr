@@ -1,0 +1,19 @@
+/*
+ * Copyright 2025 Variscite Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx93_m33.dtsi>
+
+/ {
+	soc {
+		lpuart7: serial@42690000 {
+			compatible = "nxp,imx-lpuart", "nxp,lpuart";
+			reg = <0x42690000 DT_SIZE_K(64)>;
+			interrupts = <20 3>;
+			clocks = <&ccm IMX_CCM_LPUART7_CLK 0x6c 24>;
+			status = "disabled";
+		};
+	};
+};

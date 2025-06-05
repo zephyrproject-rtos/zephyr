@@ -1011,6 +1011,7 @@ void bt_id_add(struct bt_keys *keys)
 
 	struct bt_conn *conn;
 	int err;
+	bool enable_controller_res = true;
 
 	LOG_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
@@ -1067,6 +1068,10 @@ void bt_id_add(struct bt_keys *keys)
 		err = addr_res_enable(BT_HCI_ADDR_RES_DISABLE);
 		if (err) {
 			LOG_WRN("Failed to disable address resolution");
+			/* If it fails to disable, it should already be enabled,
+			 * don't need to enable again.
+			 */
+			enable_controller_res = false;
 			goto done;
 		}
 	}
@@ -1074,6 +1079,10 @@ void bt_id_add(struct bt_keys *keys)
 	if (bt_dev.le.rl_entries == bt_dev.le.rl_size) {
 		LOG_WRN("Resolving list size exceeded. Switching to host.");
 
+		/* Since the controller resolving list is cleared,
+		 * don't need to enable the address resolution.
+		 */
+		enable_controller_res = false;
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_RL, NULL, NULL);
 		if (err) {
 			LOG_ERR("Failed to clear resolution list");
@@ -1114,7 +1123,9 @@ void bt_id_add(struct bt_keys *keys)
 	}
 
 done:
-	addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
+	if (enable_controller_res) {
+		addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
+	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	if (scan_enabled) {

@@ -55,14 +55,14 @@ struct sci_b_i2c_data {
 #ifdef CONFIG_I2C_RENESAS_RA_SCI_B_DTC
 	/* RX */
 	transfer_instance_t rx_transfer;
-	transfer_info_t rx_transfer_info;
+	transfer_info_t rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	transfer_cfg_t rx_transfer_cfg;
 	dtc_instance_ctrl_t rx_transfer_ctrl;
 	dtc_extended_cfg_t rx_transfer_cfg_extend;
 
 	/* TX */
 	transfer_instance_t tx_transfer;
-	transfer_info_t tx_transfer_info;
+	transfer_info_t tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	transfer_cfg_t tx_transfer_cfg;
 	dtc_instance_ctrl_t tx_transfer_ctrl;
 	dtc_extended_cfg_t tx_transfer_cfg_extend;

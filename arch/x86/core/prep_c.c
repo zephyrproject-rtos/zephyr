@@ -61,7 +61,7 @@ FUNC_NORETURN void z_prep_c(void *arg)
 #ifdef CONFIG_X86_VERY_EARLY_CONSOLE
 	z_x86_early_serial_init();
 
-#if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
+#if defined(CONFIG_QEMU_TARGET)
 	/*
 	 * Under QEMU and SeaBIOS, everything gets to be printed
 	 * immediately after "Booting from ROM.." as there is no newline.

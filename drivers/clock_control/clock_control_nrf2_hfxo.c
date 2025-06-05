@@ -271,6 +271,39 @@ static int init_hfxo(const struct device *dev)
 	return 0;
 }
 
+static int api_resolve(const struct device *dev,
+		       const struct nrf_clock_spec *req_spec,
+		       struct nrf_clock_spec *res_spec)
+{
+	const struct dev_config_hfxo *dev_config = dev->config;
+
+	if (!is_clock_spec_valid(dev, req_spec)) {
+		return -EINVAL;
+	}
+
+	res_spec->frequency = dev_config->fixed_frequency;
+	res_spec->accuracy = dev_config->fixed_accuracy;
+	res_spec->precision = NRF_CLOCK_CONTROL_PRECISION_HIGH;
+	return 0;
+}
+
+static int api_get_startup_time(const struct device *dev,
+				const struct nrf_clock_spec *spec,
+				uint32_t *startup_time_us)
+{
+	if (!is_clock_spec_valid(dev, spec)) {
+		return -EINVAL;
+	}
+
+	*startup_time_us = nrf_bicr_hfxo_startup_time_us_get(BICR);
+
+	if (*startup_time_us == NRF_BICR_HFXO_STARTUP_TIME_UNCONFIGURED) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static DEVICE_API(nrf_clock_control, drv_api_hfxo) = {
 	.std_api = {
 		.on = api_nosys_on_off,
@@ -280,6 +313,8 @@ static DEVICE_API(nrf_clock_control, drv_api_hfxo) = {
 	.request = api_request_hfxo,
 	.release = api_release_hfxo,
 	.cancel_or_release = api_cancel_or_release_hfxo,
+	.resolve = api_resolve,
+	.get_startup_time = api_get_startup_time,
 };
 
 static struct dev_data_hfxo data_hfxo;

@@ -88,6 +88,49 @@
 				reg = <0x7>;
 				clocks = <&imx335_input_clock>;
 				reset-gpios = <&test_gpio 0 0>;
+
+				port {
+					test_imx335_ep: endpoint {
+						remote-endpoint-label = "test_mipid02_0";
+					};
+				};
+			};
+
+			test_i2c_mipid02: bridge@8 {
+				compatible = "st,mipid02";
+				reg = <0x8>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+
+						test_mipid02_0: endpoint {
+							data-lanes = <1 2>;
+							remote-endpoint-label = "test_imx335_ep";
+						};
+					};
+
+					port@2 {
+						reg = <2>;
+
+						test_mipid02_2: endpoint {
+							hsync-active = <0>;
+							vsync-active = <0>;
+							pclk-sample = <0>;
+							remote-endpoint-label = "parallel_receiver";
+						};
+					};
+				};
+			};
+
+			test_i2c_ov9655: ov9655@8 {
+				compatible = "ovti,ov9655";
+				reg = <0x8>;
+				reset-gpios = <&test_gpio 0 0>;
 			};
 		};
 

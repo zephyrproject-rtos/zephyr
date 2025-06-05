@@ -1,11 +1,14 @@
 &timer3 {
 	status = "okay";
+	counter {
+		status = "okay";
+	};
 };
 
 &rtc_timer {
 	status = "okay";
 };
 
-&rtc {
+&clock {
 	slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256>;
 };

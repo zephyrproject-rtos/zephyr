@@ -117,7 +117,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: d1b8b20b6278615b00e136374540eb1c00dcabe7
+      revision: 512cc7e895e8491696b61f7ba8066b4a182569b8
       path: modules/hal/cmsis
       groups:
         - hal
@@ -148,6 +148,11 @@ manifest:
       path: modules/hal/adi
       groups:
         - hal
+    - name: hal_afbr
+      revision: 4e1eea7ea283db9d9ce529b0e9f89c0b5c2660e3
+      path: modules/hal/afbr
+      groups:
+        - hal
     - name: hal_ambiq
       revision: f46941f3427bbc05d893a601660e6e3cffe9e29d
       path: modules/hal/ambiq
@@ -164,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e3532f053177077647104ae2ef215f0214dc5713
+      revision: 1f1d6937f8bdd884f907ef455ea1508822a7d75e
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -180,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: e0a50ce02c7cee59b7ce6fe8a3e0e6625f0891a9
+      revision: 0fe4f3aee9c8f7002996a94d91299b2c28d6a8fa
       path: modules/hal/infineon
       groups:
         - hal
@@ -195,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 243c6708278364516c6ca1dcccc00c5f721095fa
+      revision: 1f169d927e367eb1e161972e9504da5aa1f10c42
       path: modules/hal/nordic
       groups:
         - hal
@@ -205,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: d0e49d63ac74208e183ed47ebb4bf8d490ab63fb
+      revision: e0b43431640a565b4500c58fc5e1aaebec2f463d
       path: modules/hal/nxp
       groups:
         - hal
@@ -221,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 9d68ee711aaeab39b216a61101a2646c5a1b0fc0
+      revision: 9b3c0cef9b590b41e0319168c0c4c4205849eed6
       groups:
         - hal
     - name: hal_rpi_pico
@@ -230,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 389726f350880238b9a1034f575ffd46c4309827
+      revision: a0095a7ac356a04e12188bb563e6207594f8e6b2
       path: modules/hal/silabs
       groups:
         - hal
@@ -260,7 +265,7 @@ manifest:
       groups:
         - hal
     - name: hal_wch
-      revision: 941f5182b5577d168e0cbcc0c9dd26294c1806a5
+      revision: 6dd313768b5f4cc69baeac4ce6e59f2038eb8ce5
       path: modules/hal/wch
       groups:
         - hal
@@ -323,7 +328,7 @@ manifest:
       revision: c6296f600a6851bd652f207ab4908d339e1ce705
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 5e185a2b33b4f5b9524999a5bfd96121d25ffdbc
+      revision: 0cd7f28d34a5279cd839940c199658a294165722
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: f7f4d083c7909a39d86e217376c69b416ec4faf3

@@ -6,6 +6,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/arch/cpu.h>
+#include <cmsis_core.h>
+#include <soc.h>
+
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <stdlib.h>
@@ -16,6 +21,7 @@
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/irq.h>
 #include <string.h>
 
 #if defined(CONFIG_PINCTRL)
@@ -51,6 +57,99 @@ LOG_MODULE_REGISTER(i2c_dw);
 static inline uint32_t get_regs(const struct device *dev)
 {
 	return (uint32_t)DEVICE_MMIO_GET(dev);
+}
+
+/*
+ * @param dev: DW I2C device instance
+ * @param wrapper_dev: Callers device instance
+ */
+void i2c_dw_register_recover_bus_cb(const struct device *dev, i2c_api_recover_bus_t recover_bus_cb,
+				    const struct device *wrapper_dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+
+	dw->recover_bus_cb = recover_bus_cb;
+	dw->recover_bus_dev = (struct device *)wrapper_dev;
+}
+
+/* it might call from i2c_transfer api and have already
+ * lock the bus, no need to lock bus again here
+ */
+static int i2c_recovery_bus(const struct device *dev)
+{
+	int ret = 0;
+	struct i2c_dw_dev_config *const dw = dev->data;
+
+	if (dw->recover_bus_cb) {
+		/* callback customize recovery function */
+		ret = dw->recover_bus_cb(dw->recover_bus_dev);
+		if (ret == 0) {
+			/* recovery success */
+			dw->state = I2C_DW_STATE_READY;
+		}
+	}
+	return ret;
+}
+
+int i2c_dw_recovery_bus(const struct device *dev)
+{
+
+	int ret = 0;
+	struct i2c_dw_dev_config *const dw = dev->data;
+
+	/* lock bus */
+	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+	/* do bus recovery */
+	ret = i2c_recovery_bus(dev);
+	/* unlock bus */
+	k_sem_give(&dw->bus_sem);
+
+	return ret;
+}
+
+static int i2c_dw_error_chk(const struct device *dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	uint32_t reg_base = get_regs(dev);
+	union ic_interrupt_register intr_stat;
+	union ic_txabrt_register ic_txabrt_src;
+	uint32_t value;
+	/* Cache ic_intr_stat and txabrt_src for processing,
+	 * so there is no need to read the register multiple times.
+	 */
+	intr_stat.raw = read_intr_stat(reg_base);
+	ic_txabrt_src.raw = read_txabrt_src(reg_base);
+	/* NACK and SDA_STUCK are below TX_Abort */
+	if (intr_stat.bits.tx_abrt) {
+		/* check 7bit NACK Tx Abort */
+		if (ic_txabrt_src.bits.ADDR7BNACK) {
+			dw->state |= I2C_DW_NACK;
+			LOG_ERR("NACK on %s", dev->name);
+		}
+		/* check SDA stuck low Tx abort, need to do bus recover */
+		if (ic_txabrt_src.bits.SDASTUCKLOW) {
+			dw->state |= I2C_DW_SDA_STUCK;
+			LOG_ERR("SDA Stuck Low on %s", dev->name);
+		}
+		/* clear RTS5912_INTR_STAT_TX_ABRT */
+		value = read_clr_tx_abrt(reg_base);
+	}
+	/* check SCL stuck low */
+	if (intr_stat.bits.scl_stuck_low) {
+		dw->state |= I2C_DW_SCL_STUCK;
+		LOG_ERR("SCL Stuck Low on %s", dev->name);
+	}
+	if (dw->state & I2C_DW_ERR_MASK) {
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+		dw->need_setup = true;
+#endif
+		LOG_ERR("IO Fail on %s", dev->name);
+		return -EIO;
+	}
+	return 0;
 }
 
 #ifdef CONFIG_I2C_DW_LPSS_DMA
@@ -255,6 +354,10 @@ static inline void i2c_dw_data_ask(const struct device *dev)
 
 		write_cmd_data(data, reg_base);
 
+		if (i2c_dw_error_chk(dev)) {
+			return;
+		}
+
 		dw->rx_pending++;
 		dw->request_bytes--;
 		cnt--;
@@ -282,6 +385,10 @@ static void i2c_dw_data_read(const struct device *dev)
 
 		if (dw->xfr_len == 0U) {
 			break;
+		}
+
+		if (i2c_dw_error_chk(dev)) {
+			return;
 		}
 	}
 #endif
@@ -333,6 +440,10 @@ static int i2c_dw_data_send(const struct device *dev)
 		if (test_bit_intr_stat_tx_abrt(reg_base)) {
 			return -EIO;
 		}
+
+		if (i2c_dw_error_chk(dev)) {
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -346,7 +457,11 @@ static inline void i2c_dw_transfer_complete(const struct device *dev)
 
 	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
 	value = read_clr_intr(reg_base);
-
+#ifdef CONFIG_CPU_CORTEX_M
+	const struct i2c_dw_rom_config *const rom = dev->config;
+	/* clear pending interrupt */
+	NVIC_ClearPendingIRQ(rom->irqnumber);
+#endif
 	k_sem_give(&dw->device_sync_sem);
 }
 
@@ -398,9 +513,13 @@ static void i2c_dw_isr(const struct device *port)
 
 		/* Bail early if there is any error. */
 		if ((DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_TX_OVER | DW_INTR_STAT_RX_OVER |
-		     DW_INTR_STAT_RX_UNDER) &
+		     DW_INTR_STAT_RX_UNDER | DW_INTR_STAT_SCL_STUCK_LOW) &
 		    intr_stat.raw) {
 			dw->state = I2C_DW_CMD_ERROR;
+			i2c_dw_error_chk(port);
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+			dw->need_setup = true;
+#endif
 			goto done;
 		}
 
@@ -438,6 +557,9 @@ static void i2c_dw_isr(const struct device *port)
 		/* STOP detected: finish processing this message */
 		if (intr_stat.bits.stop_det) {
 			value = read_clr_stop_det(reg_base);
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+			dw->need_setup = true;
+#endif
 			goto done;
 		}
 
@@ -495,10 +617,21 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 	union ic_tar_register ic_tar;
 	uint32_t reg_base = get_regs(dev);
 
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	if (!dw->need_setup) {
+		return 0;
+	}
+#endif
+
 	ic_con.raw = 0U;
 
 	/* Disable the device controller to be able set TAR */
 	clear_bit_enable_en(reg_base);
+
+	/* enable bus clear feature */
+	ic_con.bits.bus_clear = 1U;
+	/* enable tx empty control to fix timing issue */
+	ic_con.bits.tx_empty_ctl = 1U;
 
 	/* Disable interrupts */
 	write_intr_mask(0, reg_base);
@@ -611,7 +744,30 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 
 	write_tar(ic_tar.raw, reg_base);
 
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	dw->need_setup = false;
+#endif
 	return 0;
+}
+
+bool i2c_dw_is_busy(const struct device *dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	uint32_t reg_base = get_regs(dev);
+
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	/* The application explicitly started a transaction without
+	 * a STOP.  Allow the application to continue sending transactions.
+	 */
+	if (!dw->need_setup) {
+		return false;
+	}
+#endif
+	if (test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) {
+		return true;
+	}
+
+	return false;
 }
 
 static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
@@ -630,13 +786,27 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		return 0;
 	}
 
-	ret = k_mutex_lock(&dw->bus_mutex, K_FOREVER);
+	/* semaphore to support I2C_CALLBACK */
+	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
 	if (ret != 0) {
 		return ret;
 	}
 
-	/* First step, check if there is current activity */
-	if (test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) {
+	/* check if the state is sda/scl stuck at low state */
+	if (dw->state & I2C_DW_STUCK_ERR_MASK) {
+		/* try to recovery */
+		if (i2c_recovery_bus(dev)) {
+			ret = -ETIME;
+			goto error;
+		}
+		/* reset state */
+		dw->state = I2C_DW_STATE_READY;
+	}
+
+	/* First step, check if there is current activity
+	 * Skip if last read did not stop
+	 */
+	if (i2c_dw_is_busy(dev)) {
 		ret = -EBUSY;
 		goto error;
 	}
@@ -659,7 +829,7 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	 * not execute PM policies that would turn off this ip block, causing an
 	 * ongoing hw transaction to be left in an inconsistent state.
 	 * Note : This is just a sample to show a possible use of the API, it is
-	 * upto the driver expert to see, if he actually needs it here, or
+	 * up to the driver expert to see, if he actually needs it here, or
 	 * somewhere else, or not needed as the driver's suspend()/resume()
 	 * can handle everything
 	 */
@@ -730,6 +900,15 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 			break;
 		}
 
+		if (dw->state & I2C_DW_ERR_MASK) {
+			if (dw->state & (I2C_DW_SDA_STUCK | I2C_DW_SCL_STUCK)) {
+				ret = -ETIME;
+			} else if (dw->state & (I2C_DW_NACK | I2C_DW_CMD_ERROR)) {
+				ret = -EIO;
+			}
+			break;
+		}
+
 		cur_msg++;
 		msg_left--;
 	}
@@ -737,8 +916,9 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	pm_device_busy_clear(dev);
 
 error:
-	dw->state = I2C_DW_STATE_READY;
-	k_mutex_unlock(&dw->bus_mutex);
+	/* keep error mask for bus recovery */
+	dw->state &= I2C_DW_STUCK_ERR_MASK;
+	k_sem_give(&dw->bus_sem);
 
 	return ret;
 }
@@ -1033,6 +1213,7 @@ static DEVICE_API(i2c, funcs) = {
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
+	.recover_bus = i2c_dw_recovery_bus,
 };
 
 static int i2c_dw_initialize(const struct device *dev)
@@ -1041,6 +1222,10 @@ static int i2c_dw_initialize(const struct device *dev)
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_con_register ic_con;
 	int ret = 0;
+#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
+	uint32_t sda_timeout = rom->sda_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
+	uint32_t scl_timeout = rom->scl_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
+#endif
 
 #if defined(CONFIG_RESET)
 	if (rom->reset.dev) {
@@ -1097,7 +1282,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
-	k_mutex_init(&dw->bus_mutex);
+	k_sem_init(&dw->bus_sem, 1, 1);
 
 	uint32_t reg_base = get_regs(dev);
 
@@ -1134,6 +1319,14 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	dw->state = I2C_DW_STATE_READY;
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	dw->need_setup = true;
+#endif
+#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
+	write_sdatimeout(sda_timeout, reg_base);
+	write_scltimeout(scl_timeout, reg_base);
+#endif
+	LOG_DBG("initialize done");
 
 	return ret;
 }
@@ -1147,7 +1340,7 @@ static int i2c_dw_initialize(const struct device *dev)
 #endif
 
 #if defined(CONFIG_RESET)
-#define RESET_DW_CONFIG(n)                                                    \
+#define RESET_DW_CONFIG(n)                                                                         \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                          \
 		   (.reset = RESET_DT_SPEC_INST_GET(n),))
 #else
@@ -1208,6 +1401,14 @@ static int i2c_dw_initialize(const struct device *dev)
 	(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0)),),	\
 	())), ())
 
+#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
+#define TIMEOUT_DW_CONFIG(n)                                                                       \
+	.sda_timeout_value = DT_INST_PROP_OR(n, sda_timeout_value, __UINT32_MAX__),                \
+	.scl_timeout_value = DT_INST_PROP_OR(n, scl_timeout_value, __UINT32_MAX__),
+#else
+#define TIMEOUT_DW_CONFIG(n)
+#endif
+
 #define I2C_DEVICE_INIT_DW(n)                                                                      \
 	PINCTRL_DW_DEFINE(n);                                                                      \
 	I2C_PCIE_DEFINE(n);                                                                        \
@@ -1215,9 +1416,10 @@ static int i2c_dw_initialize(const struct device *dev)
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {                                \
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
+		.irqnumber = DT_INST_IRQN(n),                                                      \
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
-		RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)                        \
+		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
 			I2C_CONFIG_DMA_INIT(n)};                                                   \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,                  \

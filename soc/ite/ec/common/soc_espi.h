@@ -14,7 +14,10 @@
 extern "C" {
 #endif
 
-#define ESPI_IT8XXX2_SOC_DEV DEVICE_DT_GET(DT_NODELABEL(espi0))
+#define ESPI_IT8XXX2_SOC_DEV         DEVICE_DT_GET(DT_NODELABEL(espi0))
+#define ESPI_ITE_SOC_DEV             ESPI_IT8XXX2_SOC_DEV
+#define espi_ite_ec_enable_pad_ctrl  espi_it8xxx2_enable_pad_ctrl
+#define espi_ite_ec_enable_trans_irq espi_it8xxx2_enable_trans_irq
 
 /**
  * @brief eSPI input pad gating
@@ -22,7 +25,7 @@ extern "C" {
  * @param dev pointer to eSPI device
  * @param enable/disable eSPI pad
  */
-void espi_it8xxx2_enable_pad_ctrl(const struct device *dev, bool enable);
+void espi_ite_ec_enable_pad_ctrl(const struct device *dev, bool enable);
 
 /**
  * @brief eSPI transaction interrupt control
@@ -30,7 +33,7 @@ void espi_it8xxx2_enable_pad_ctrl(const struct device *dev, bool enable);
  * @param dev pointer to eSPI device
  * @param enable/disable eSPI transaction interrupt
  */
-void espi_it8xxx2_enable_trans_irq(const struct device *dev, bool enable);
+void espi_ite_ec_enable_trans_irq(const struct device *dev, bool enable);
 
 #ifdef __cplusplus
 }

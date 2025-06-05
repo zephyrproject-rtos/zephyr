@@ -60,6 +60,7 @@ USBD_CONFIGURATION_DEFINE(sample_hs_config,
 			  CONFIG_SAMPLE_USBD_MAX_POWER, &hs_cfg_desc);
 /* doc configuration instantiation end */
 
+#if CONFIG_SAMPLE_USBD_20_EXTENSION_DESC
 /*
  * This does not yet provide valuable information, but rather serves as an
  * example, and will be improved in the future.
@@ -72,6 +73,7 @@ static const struct usb_bos_capability_lpm bos_cap_lpm = {
 };
 
 USBD_DESC_BOS_DEFINE(sample_usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
+#endif
 
 static void sample_fix_code_triple(struct usbd_context *uds_ctx,
 				   const enum usbd_speed speed)
@@ -175,16 +177,16 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 		/* doc device init-and-msg end */
 	}
 
-	if (IS_ENABLED(CONFIG_SAMPLE_USBD_20_EXTENSION_DESC)) {
-		(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_FS, 0x0201);
-		(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_HS, 0x0201);
+#if CONFIG_SAMPLE_USBD_20_EXTENSION_DESC
+	(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_FS, 0x0201);
+	(void)usbd_device_set_bcd_usb(&sample_usbd, USBD_SPEED_HS, 0x0201);
 
-		err = usbd_add_descriptor(&sample_usbd, &sample_usbext);
-		if (err) {
-			LOG_ERR("Failed to add USB 2.0 Extension Descriptor");
-			return NULL;
-		}
+	err = usbd_add_descriptor(&sample_usbd, &sample_usbext);
+	if (err) {
+		LOG_ERR("Failed to add USB 2.0 Extension Descriptor");
+		return NULL;
 	}
+#endif
 
 	return &sample_usbd;
 }

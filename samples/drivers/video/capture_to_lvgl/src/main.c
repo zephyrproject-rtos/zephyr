@@ -9,23 +9,20 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
+#include <zephyr/logging/log.h>
 #include <lvgl.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main);
-
-#define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 int main(void)
 {
 	struct video_buffer *buffers[2];
 	struct video_buffer *vbuf = &(struct video_buffer){};
 	const struct device *display_dev;
+	const struct device *video_dev;
 	struct video_format fmt;
 	struct video_caps caps;
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
-	const struct device *video_dev;
 	size_t bsize;
 	int i = 0;
 
@@ -35,19 +32,11 @@ int main(void)
 		return 0;
 	}
 
-#if DT_HAS_CHOSEN(zephyr_camera)
 	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	if (!device_is_ready(video_dev)) {
 		LOG_ERR("%s device is not ready", video_dev->name);
 		return 0;
 	}
-#else
-	video_dev = device_get_binding(VIDEO_DEV_SW);
-	if (video_dev == NULL) {
-		LOG_ERR("%s device not found", VIDEO_DEV_SW);
-		return 0;
-	}
-#endif
 
 	LOG_INF("- Device name: %s", video_dev->name);
 

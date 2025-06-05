@@ -108,9 +108,6 @@ struct spi_cdns_cfg {
 	uint32_t clock_frequency;
 	uint32_t ext_clock;
 	irq_config_func_t irq_config;
-#ifdef CONFIG_PINCTRL
-	const struct pinctrl_dev_config *pcfg;
-#endif
 	uint8_t fifo_width;
 	uint16_t rx_fifo_depth;
 	uint16_t tx_fifo_depth;
@@ -219,33 +216,6 @@ static inline void spi_cdns_cs_control(const struct device *dev, bool on)
 		k_busy_wait(data->ctx.config->cs.delay);
 		sys_set_mask32(SPI_REG(dev, SPI_CONF), SPI_CONF_PCSL_MASK, SPI_CONF_PCSL_MASK);
 	}
-}
-
-static void spi_cdns_config_clock_freq(const struct device *dev, uint32_t spi_freq)
-{
-	const struct spi_cdns_cfg *cfg = dev->config;
-	uint32_t ctrl_reg, baud_rate_div;
-	uint32_t clock_freq;
-
-	clock_freq = cfg->clock_frequency;
-
-	ctrl_reg = sys_read32(SPI_REG(dev, SPI_CONF));
-
-	/*
-	 * Set the clock frequency
-	 * first valid value is 0 (/2)
-	 */
-	baud_rate_div = SPI_MBRD_MIN;
-	while ((baud_rate_div < SPI_MBRD_MAX) && (clock_freq / (2 << baud_rate_div)) > spi_freq) {
-		baud_rate_div++;
-	}
-
-	ctrl_reg &= ~SPI_CONF_MBRD_MASK;
-	ctrl_reg |= baud_rate_div << SPI_CONF_MBRD_OFFSET;
-
-	LOG_DBG("%s: spi baud rate %uHz", dev->name, clock_freq / (2 << baud_rate_div));
-
-	sys_write32(ctrl_reg, SPI_REG(dev, SPI_CONF));
 }
 
 /**
@@ -442,7 +412,8 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 {
 	const struct spi_cdns_cfg *dev_config = dev->config;
 	struct spi_cdns_data *data = dev->data;
-	uint32_t word_size, conf_val;
+	uint32_t word_size, conf_val, clock_freq, ext_clock_freq;
+	uint8_t baud_rate_div, ext_baud_rate_div;
 
 	if (spi_cdns_context_configured(dev, config)) {
 		/* Nothing to do */
@@ -476,7 +447,7 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 	data->ctx.config = config;
 	data->config = *config;
 
-	conf_val = SPI_CONF_PCSL_MASK | SPI_CONF_MCSE | SPI_CONF_MRCS;
+	conf_val = SPI_CONF_PCSL_MASK | SPI_CONF_MCSE;
 
 	/* Configure for Master or Slave */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
@@ -504,7 +475,38 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 	 * SPI clock is generated based on pclk or ext_clk, and the frequency closest
 	 * to the value obtained by dividing the two base clocks is selected.
 	 */
-	spi_cdns_config_clock_freq(dev, config->frequency);
+	clock_freq = dev_config->clock_frequency;
+	baud_rate_div = SPI_MBRD_MIN;
+	while ((baud_rate_div < SPI_MBRD_MAX) &&
+	       ((clock_freq / (2 << baud_rate_div)) > config->frequency)) {
+		baud_rate_div++;
+	}
+
+	if (dev_config->ext_clock) {
+		/* check if there is a closer frequency with ext_clock */
+		ext_clock_freq = dev_config->ext_clock;
+		ext_baud_rate_div = SPI_MBRD_MIN;
+		while ((ext_baud_rate_div < SPI_MBRD_MAX) &&
+		       ((ext_clock_freq / (2 << ext_baud_rate_div)) > config->frequency)) {
+			ext_baud_rate_div++;
+		}
+		if (config->frequency - (clock_freq / (2 << baud_rate_div)) >
+		    config->frequency - (ext_clock_freq / (2 << ext_baud_rate_div))) {
+			/* ext_clock is closer, so use it instead */
+			baud_rate_div = ext_baud_rate_div;
+			clock_freq = ext_clock_freq;
+			conf_val |= SPI_CONF_MRCS;
+		} else {
+			conf_val &= ~SPI_CONF_MRCS;
+		}
+	} else {
+		conf_val &= ~SPI_CONF_MRCS;
+	}
+
+	conf_val &= ~SPI_CONF_MBRD_MASK;
+	conf_val |= baud_rate_div << SPI_CONF_MBRD_OFFSET;
+
+	LOG_DBG("%s: spi baud rate %uHz", dev->name, clock_freq / (2 << baud_rate_div));
 
 	/* Set transfer word size */
 	conf_val &= ~(SPI_CONF_TWS_MASK);
@@ -573,7 +575,6 @@ complete:
 			spi_cdns_cs_control(dev, false);
 		}
 		pm_device_busy_clear(dev);
-		pm_device_runtime_put(dev);
 	}
 #endif
 
@@ -642,7 +643,6 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
-	pm_device_runtime_get(dev);
 	pm_device_busy_set(dev);
 
 	spi_cdns_spi_enable(dev, false);
@@ -712,7 +712,6 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 			spi_cdns_cs_control(dev, false);
 		}
 		pm_device_busy_clear(dev);
-		pm_device_runtime_put(dev);
 	}
 
 #ifdef CONFIG_SPI_SLAVE
@@ -795,39 +794,6 @@ static int spi_cdns_release(const struct device *dev, const struct spi_config *c
 	return 0;
 }
 
-#ifdef CONFIG_PM_DEVICE
-static int spi_cdns_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	const struct spi_cdns_cfg *cfg = dev->config;
-	int ret;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		/* TODO: Enable SPI Clock */
-#ifdef CONFIG_PINCTRL
-		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-		if (ret < 0) {
-			return ret;
-		}
-#endif
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* TODO: Disable SPI Clock */
-#ifdef CONFIG_PINCTRL
-		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
-		if (ret < 0) {
-			return ret;
-		}
-#endif
-		break;
-	default:
-		ret = -ENOTSUP;
-	}
-
-	return ret;
-}
-#endif /* CONFIG_PM_DEVICE */
-
 /**
  * SPI driver API registered in Zephyr spi framework
  */
@@ -837,13 +803,10 @@ static DEVICE_API(spi, spi_cdns_api) = {
 	.transceive_async = spi_cdns_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
 	.release = spi_cdns_release,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif /* CONFIG_SPI_RTIO */
 };
-
-/* Set clock-frequency-ext to pclk / 5 if there is no clock-frequency-ext */
-#define SPI_CLOCK_FREQUENCY_EXT(n)                                                                 \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency_ext), \
-		(DT_INST_PROP(n, clock_frequency_ext)),            \
-		(DT_INST_PROP(n, clock_frequency) / 5))
 
 #define SPI_CDNS_INIT(n)                                                                           \
 	static void spi_cdns_irq_config_##n(void);                                                 \
@@ -855,11 +818,13 @@ static DEVICE_API(spi, spi_cdns_api) = {
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.irq_config = spi_cdns_irq_config_##n,                                             \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),                               \
-		.ext_clock = SPI_CLOCK_FREQUENCY_EXT(n),                                           \
+		.ext_clock = DT_INST_PROP_OR(n, clock_frequency_ext, 0),                           \
+		.fifo_width = DT_INST_PROP(n, fifo_width),                                         \
+		.tx_fifo_depth = DT_INST_PROP(n, tx_fifo_depth),                                   \
+		.rx_fifo_depth = DT_INST_PROP(n, rx_fifo_depth),                                   \
 	};                                                                                         \
-	SPI_DEVICE_DT_INST_DEFINE(n, spi_cdns_init, spi_cdns_pm_action, &spi_cdns_data_##n,        \
-				  &spi_cdns_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,        \
-				  &spi_cdns_api);                                                  \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_cdns_init, NULL, &spi_cdns_data_##n, &spi_cdns_cfg_##n,   \
+				  POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_cdns_api);           \
 	static void spi_cdns_irq_config_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_cdns_isr,               \

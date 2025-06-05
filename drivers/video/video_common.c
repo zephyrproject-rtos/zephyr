@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
@@ -389,4 +390,43 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 	}
 
 	return 0;
+}
+
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	struct video_control ctrl = {
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	struct video_ctrl_query ctrl_query = {
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	int ret;
+
+	/* Try to get the LINK_FREQ value from the source device */
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		goto fallback;
+	}
+
+	ret = video_query_ctrl(dev, &ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
+		return -ERANGE;
+	}
+
+	return (int64_t)ctrl_query.int_menu[ctrl.val];
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ctrl.id = VIDEO_CID_PIXEL_RATE;
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
+	return ctrl.val64 * bpp / (2 * lane_nb);
 }

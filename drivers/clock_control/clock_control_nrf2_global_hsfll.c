@@ -62,43 +62,69 @@ static uint32_t global_hsfll_get_max_clock_frequency(const struct device *dev)
 	return dev_config->clock_frequencies[ARRAY_SIZE(dev_config->clock_frequencies) - 1];
 }
 
-static struct onoff_manager *global_hsfll_find_mgr(const struct device *dev,
-						   const struct nrf_clock_spec *spec)
+static int global_hsfll_resolve_spec_to_idx(const struct device *dev,
+					    const struct nrf_clock_spec *req_spec)
 {
-	struct global_hsfll_dev_data *dev_data = dev->data;
 	const struct global_hsfll_dev_config *dev_config = dev->config;
-	uint32_t frequency;
+	uint32_t req_frequency;
 
-	if (!spec) {
-		return &dev_data->clk_cfg.onoff[0].mgr;
-	}
-
-	if (spec->accuracy || spec->precision) {
+	if (req_spec->accuracy || req_spec->precision) {
 		LOG_ERR("invalid specification of accuracy or precision");
-		return NULL;
+		return -EINVAL;
 	}
 
-	frequency = spec->frequency == NRF_CLOCK_CONTROL_FREQUENCY_MAX
-		  ? global_hsfll_get_max_clock_frequency(dev)
-		  : spec->frequency;
+	req_frequency = req_spec->frequency == NRF_CLOCK_CONTROL_FREQUENCY_MAX
+		      ? global_hsfll_get_max_clock_frequency(dev)
+		      : req_spec->frequency;
 
 	for (uint8_t i = 0; i < ARRAY_SIZE(dev_config->clock_frequencies); i++) {
-		if (dev_config->clock_frequencies[i] < frequency) {
+		if (dev_config->clock_frequencies[i] < req_frequency) {
 			continue;
 		}
 
-		return &dev_data->clk_cfg.onoff[i].mgr;
+		return i;
 	}
 
 	LOG_ERR("invalid frequency");
-	return NULL;
+	return -EINVAL;
+}
+
+static void global_hsfll_get_spec_by_idx(const struct device *dev,
+					 uint8_t idx,
+					 struct nrf_clock_spec *spec)
+{
+	const struct global_hsfll_dev_config *dev_config = dev->config;
+
+	spec->frequency = dev_config->clock_frequencies[idx];
+	spec->accuracy = 0;
+	spec->precision = 0;
+}
+
+static struct onoff_manager *global_hsfll_get_mgr_by_idx(const struct device *dev, uint8_t idx)
+{
+	struct global_hsfll_dev_data *dev_data = dev->data;
+
+	return &dev_data->clk_cfg.onoff[idx].mgr;
+}
+
+static struct onoff_manager *global_hsfll_find_mgr_by_spec(const struct device *dev,
+							   const struct nrf_clock_spec *spec)
+{
+	int idx;
+
+	if (!spec) {
+		return global_hsfll_get_mgr_by_idx(dev, 0);
+	}
+
+	idx = global_hsfll_resolve_spec_to_idx(dev, spec);
+	return idx < 0 ? NULL : global_hsfll_get_mgr_by_idx(dev, idx);
 }
 
 static int api_request_global_hsfll(const struct device *dev,
 				    const struct nrf_clock_spec *spec,
 				    struct onoff_client *cli)
 {
-	struct onoff_manager *mgr = global_hsfll_find_mgr(dev, spec);
+	struct onoff_manager *mgr = global_hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return clock_config_request(mgr, cli);
@@ -110,7 +136,7 @@ static int api_request_global_hsfll(const struct device *dev,
 static int api_release_global_hsfll(const struct device *dev,
 				    const struct nrf_clock_spec *spec)
 {
-	struct onoff_manager *mgr = global_hsfll_find_mgr(dev, spec);
+	struct onoff_manager *mgr = global_hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return onoff_release(mgr);
@@ -123,13 +149,28 @@ static int api_cancel_or_release_global_hsfll(const struct device *dev,
 					      const struct nrf_clock_spec *spec,
 					      struct onoff_client *cli)
 {
-	struct onoff_manager *mgr = global_hsfll_find_mgr(dev, spec);
+	struct onoff_manager *mgr = global_hsfll_find_mgr_by_spec(dev, spec);
 
 	if (mgr) {
 		return onoff_cancel_or_release(mgr, cli);
 	}
 
 	return -EINVAL;
+}
+
+static int api_resolve_global_hsfll(const struct device *dev,
+				    const struct nrf_clock_spec *req_spec,
+				    struct nrf_clock_spec *res_spec)
+{
+	int idx;
+
+	idx = global_hsfll_resolve_spec_to_idx(dev, req_spec);
+	if (idx < 0) {
+		return -EINVAL;
+	}
+
+	global_hsfll_get_spec_by_idx(dev, idx, res_spec);
+	return 0;
 }
 
 static DEVICE_API(nrf_clock_control, driver_api) = {
@@ -140,6 +181,7 @@ static DEVICE_API(nrf_clock_control, driver_api) = {
 	.request = api_request_global_hsfll,
 	.release = api_release_global_hsfll,
 	.cancel_or_release = api_cancel_or_release_global_hsfll,
+	.resolve = api_resolve_global_hsfll,
 };
 
 static enum gdfs_frequency_setting global_hsfll_freq_idx_to_nrfs_freq(const struct device *dev,

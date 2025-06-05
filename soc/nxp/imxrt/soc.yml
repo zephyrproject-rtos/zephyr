@@ -57,6 +57,10 @@ runners:
       - qualifiers:
         - mimxrt10([0-9]{2})
       - qualifiers:
+        - mimxrt1052/(qspi|hyperflash)
+      - qualifiers:
+        - mimxrt1062/(qspi|hyperflash)
+      - qualifiers:
         - mimxrt1166/cm7
         - mimxrt1166/cm4
       - qualifiers:
@@ -77,6 +81,10 @@ runners:
       groups:
       - qualifiers:
         - mimxrt10([0-9]{2})
+      - qualifiers:
+        - mimxrt1052/(qspi|hyperflash)
+      - qualifiers:
+        - mimxrt1062/(qspi|hyperflash)
       - qualifiers:
         - mimxrt1166/cm7
         - mimxrt1166/cm4

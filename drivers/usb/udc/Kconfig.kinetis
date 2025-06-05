@@ -6,6 +6,7 @@ config UDC_KINETIS
 	imply UDC_WORKQUEUE
 	default y
 	depends on DT_HAS_NXP_KINETIS_USBD_ENABLED
+	select DYNAMIC_INTERRUPTS if UHC_NXP_KHCI
 	help
 	  Kinetis USB device controller criver.
 

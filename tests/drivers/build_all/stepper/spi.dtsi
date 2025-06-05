@@ -124,7 +124,7 @@ adi_tmc51xx_1: adi_tmc51xx@1 {
 adi_tmc51xx_2: adi_tmc51xx@2 {
 	compatible = "adi,tmc51xx";
 	status = "okay";
-	reg = <0x01>;
+	reg = <0x02>;
 	spi-max-frequency = <8000000>;
 	label = "tmc5160_2";
 

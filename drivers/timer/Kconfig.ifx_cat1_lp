@@ -1,0 +1,17 @@
+# Infineon CAT1 LPTIMER configuration options
+
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_CAT1_LP_TIMER
+	bool "Infineon CAT1 Low Power Timer driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_LP_TIMER_ENABLED
+	depends on PM
+	select USE_INFINEON_LPTIMER
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the LowPower Timer
+	  and provides the standard "system clock driver" interfaces.

@@ -207,36 +207,6 @@ Here is an example for the :zephyr:code-sample:`mbox_data` application.
    :goals: flash
    :west-args: --sysbuild
 
-Flashing to QSPI
-================
-
-In order to load Zephyr application from QSPI, program a bootloader like
-MCUboot bootloader to internal flash. Here are the steps for the
-:zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :app: zephyr/samples/hello_world
-   :board: mcx_n9xx_evk/mcxn947/cpu0/qspi
-   :gen-args: --sysbuild -- -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
-   :goals: flash
-
-Open a serial terminal, reset the board (press the RESET button), and you should
-see the following message in the terminal:
-
-.. code-block:: console
-
-  *** Booting MCUboot vX.X.X ***
-  *** Using Zephyr OS build vX.X.X ***
-  I: Starting bootloader
-  I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-  I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
-  I: Boot source: none
-  I: Image index: 0, Swap type: none
-  I: Bootloader chainload address offset: 0x0
-  I: Jumping to the first image slot
-  *** Booting Zephyr OS build vX.X.X ***
-  Hello World! mcx_n9xx_evk/mcxn947/cpu0/qspi
-
 Debugging
 =========
 
@@ -262,6 +232,122 @@ For dual core builds, the secondary core should be placed into a loop,
 then a debugger can be attached.
 As a reference please see (`AN13264`_, section 4.2.3 for more information).
 The reference is for the RT1170 but similar technique can be also used here.
+
+Using QSPI board variant
+========================
+The MCX-N9XX-EVK board includes an external QSPI flash.  The MCXN947 can boot and
+XIP directly from this flash using the FlexSPI interface.  The QSPI variant
+enables building applications and code to execute from the QSPI.
+
+Programming the ROM bootloader for external QSPI
+------------------------------------------------
+By default, the MCXN947 bootloader in ROM will boot using internal flash.  But
+the MCU can be programmed to boot from external memory on the FlexSPI interface.
+Before using the QSPI board variant, the board should be programmed to boot from
+QSPI using the steps below.
+
+To configure the ROM bootloader, the Protected Flash Region (PFR) must be
+programmed.  Programming the PFR is done using NXP's ROM bootloader tools.
+Some simple steps are provided in NXP's
+`MCUXpresso SDK example hello_world_qspi_xip readme`_.  The binary to program
+with blhost is found at `bootfromflexspi.bin`_.  A much more detailed explanation
+is available at this post `Running code from external memory with MCX N94x`_.
+The steps below program the MCX-N9XX-EVK board.  Note that these steps interface
+to the ROM bootloader through the UART serial port, but USB is another option.
+
+1. Disconnect any terminal from the UART serial port, since these steps use that
+   serial port.
+#. Connect a micro USB cable to the host computer and J5 on the board, in the
+   upper left corner.  This powers the board, connects the debug probe, and
+   connects the UART serial port used for the ``blhost`` command.
+#. Place the MCU in ISP mode.  On the MCX-N9XX-EVK board, the ISP button
+   can be used for this.  Press and hold the ISP button SW3, on the bottom right
+   corner of the board.  Press and release the Reset button SW1 on the lower left
+   corner of the board.  The MCU has booted into ISP mode.  Release the ISP
+   button.
+#. Run the ``blhost`` command:
+
+.. tabs::
+
+   .. group-tab:: Ubuntu
+
+      This step assumes the MCU serial port is connected to `/dev/ttyACM0`
+
+      .. code-block:: shell
+
+         blhost -t 2000 -p /dev/ttyACM0,115200 -j -- write-memory 0x01004000 bootfromflexspi.bin
+
+   .. group-tab:: Windows
+
+      Change `COMxx` to match the COM port number connected to the MCU serial port.
+
+      .. code-block:: shell
+
+         blhost -t 2000 -p COMxx -j -- write-memory 0x01004000 bootfromflexspi.bin
+
+Successful programming should look something like this:
+
+.. code-block:: console
+
+   $ blhost -t 2000 -p /dev/ttyACM0,115200 -j -- write-memory 0x01004000 bootfromflexspi.bin
+   {
+      "command": "write-memory",
+      "response": [
+         256
+      ],
+      "status": {
+         "description": "0 (0x0) Success.",
+         "value": 0
+      }
+   }
+
+5. Reset the board with SW1 to exit ISP mode.  Now the MCU is ready to boot from
+   QSPI.
+
+The ROM bootloader can be configured to boot from internal flash again.  Repeat
+the steps above to program the PFR, and program the file `bootfromflash.bin`_.
+
+Build, flash, and debug with the QSPI variant
+---------------------------------------------
+
+Once the PFR is programmed to boot from QSPI, the normal Zephyr steps to build,
+flash, and debug can be used with the QSPI board variant.  Here are some examples.
+
+Here is an example for the :zephyr:code-sample:`hello_world` application:
+
+.. zephyr-app-commands::
+   :app: zephyr/samples/hello_world
+   :board: mcx_n9xx_evk//cpu0/qspi
+   :goals: flash
+
+MCUboot can also be used with the QSPI variant.  By default, this places the
+MCUboot bootloader in the ``boot-partition`` in QSPI flash, with the application
+images.  The ROM bootloader will boot first and load MCUboot in the QSPI, which
+will load the app.  This example builds and loads the :zephyr:code-sample:`blinky`
+sample with MCUboot using Sysbuild:
+
+.. zephyr-app-commands::
+   :app: zephyr/samples/basic/blinky
+   :board: mcx_n9xx_evk//cpu0/qspi
+   :west-args: --sysbuild
+   :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
+   :goals: flash
+
+Open a serial terminal, reset the board with the SW1 button, and the console
+will print:
+
+.. code-block:: console
+
+   *** Booting MCUboot vX.Y.Z ***
+   *** Using Zephyr OS build vX.Y.Z ***
+   I: Starting bootloader
+   I: Image index: 0, Swap type: none
+   I: Bootloader chainload address offset: 0x14000
+   I: Image version: v0.0.0
+   I: Jumping to the first image slot
+   *** Booting Zephyr OS build vX.Y.Z ***
+   LED state: OFF
+   LED state: ON
 
 Troubleshooting
 ===============
@@ -292,3 +378,15 @@ Troubleshooting
 
 .. _AN13264:
    https://www.nxp.com/docs/en/application-note/AN13264.pdf
+
+.. _MCUXpresso SDK example hello_world_qspi_xip readme:
+   https://github.com/nxp-mcuxpresso/mcuxsdk-examples/blob/main/_boards/mcxn9xxevk/demo_apps/hello_world_qspi_xip/example_board_readme.md
+
+.. _bootfromflash.bin:
+   https://github.com/nxp-mcuxpresso/mcuxsdk-examples/blob/main/_boards/mcxn9xxevk/demo_apps/hello_world_qspi_xip/cm33_core0/bootfromflash.bin
+
+.. _bootfromflexspi.bin:
+   https://github.com/nxp-mcuxpresso/mcuxsdk-examples/blob/main/_boards/mcxn9xxevk/demo_apps/hello_world_qspi_xip/cm33_core0/bootfromflexspi.bin
+
+.. _Running code from external memory with MCX N94x:
+   https://community.nxp.com/t5/MCX-Microcontrollers-Knowledge/Running-code-from-external-memory-with-MCX-N94x/ta-p/1792204

@@ -13,6 +13,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/pm/device.h>
 
 #include <stdlib.h>
 
@@ -1085,8 +1086,13 @@ static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_d
 	/* TODO: check for duplicate in SIR */
 
 	sir_cfg = SIR_MAP_DEV_ROLE(I3C_BCR_DEVICE_ROLE(target->bcr)) |
-		  SIR_MAP_DEV_DA(target->dynamic_addr) |
-		  SIR_MAP_DEV_PL(target->data_length.max_ibi);
+		  SIR_MAP_DEV_DA(target->dynamic_addr);
+	if (i3c_ibi_has_payload(target)) {
+		sir_cfg |= SIR_MAP_DEV_PL(target->data_length.max_ibi);
+	} else {
+		/* Set to 1 for MDB */
+		sir_cfg |= SIR_MAP_DEV_PL(1);
+	}
 	/* ACK if there is an ibi tir cb or if it is controller capable*/
 	if ((target->ibi_cb != NULL) || i3c_device_is_controller_capable(target)) {
 		sir_cfg |= SIR_MAP_DEV_ACK;
@@ -1249,33 +1255,47 @@ static int cdns_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *r
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
+	int ret;
 
 	__ASSERT_NO_MSG(request != NULL);
 
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
+
 	/* make sure we are not currently the active controller */
 	if (sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE) {
-		return -EACCES;
+		ret = -EACCES;
+		goto error;
 	}
 
 	switch (request->ibi_type) {
 	case I3C_IBI_TARGET_INTR:
 		/* Check IP Revision since older versions of CDNS IP do not support IBI interrupt*/
 		if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
-			return cdns_i3c_target_ibi_raise_intr(dev, request);
+			ret = cdns_i3c_target_ibi_raise_intr(dev, request);
 		} else {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
 		}
+		break;
 	case I3C_IBI_CONTROLLER_ROLE_REQUEST:
 #ifdef CONFIG_I3C_CONTROLLER
-		return cdns_i3c_target_ibi_raise_cr(dev);
+		ret = cdns_i3c_target_ibi_raise_cr(dev);
 #else
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 #endif
+		break;
 	case I3C_IBI_HOTJOIN:
-		return cdns_i3c_target_ibi_raise_hj(dev);
+		ret = cdns_i3c_target_ibi_raise_hj(dev);
+		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		break;
 	}
+error:
+	pm_device_busy_clear(dev);
+	k_mutex_unlock(&data->bus_lock);
+
+	return ret;
 }
 #endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_USE_IBI */
@@ -1434,14 +1454,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	int ret = 0;
 	uint8_t num_cmds = 0;
 
-	/* make sure we are currently the active controller */
-	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
-		return -EACCES;
-	}
-
-	if (payload == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(payload != NULL);
 
 	/*
 	 * Ensure data will fit within FIFOs.
@@ -1475,9 +1488,16 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		return -ENOMEM;
 	}
 
-	LOG_DBG("%s: CCC[0x%02x]", dev->name, payload->ccc.id);
-
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
+
+	/* make sure we are currently the active controller */
+	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
+		ret = -EACCES;
+		goto error;
+	}
+
+	LOG_DBG("%s: CCC[0x%02x]", dev->name, payload->ccc.id);
 
 	/* wait for idle */
 	ret = cdns_i3c_wait_for_idle(dev);
@@ -1584,6 +1604,7 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	}
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -1760,7 +1781,11 @@ static int cdns_i3c_i2c_api_configure(const struct device *dev, uint32_t config)
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
+
 	cdns_i3c_set_prescalers(dev);
+
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
@@ -1795,7 +1820,11 @@ static int cdns_i3c_configure(const struct device *dev, enum i3c_config_type typ
 		data->common.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
 
 		k_mutex_lock(&data->bus_lock, K_FOREVER);
+		pm_device_busy_set(dev);
+
 		cdns_i3c_set_prescalers(dev);
+
+		pm_device_busy_clear(dev);
 		k_mutex_unlock(&data->bus_lock);
 #else
 		return -ENOTSUP;
@@ -2018,14 +2047,7 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 	uint32_t rxsize = 0;
 	int ret;
 
-	/* make sure we are currently the active controller */
-	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
-		return -EACCES;
-	}
-
-	if (num_msgs == 0) {
-		return 0;
-	}
+	__ASSERT_NO_MSG(num_msgs > 0);
 
 	if (num_msgs > data->hw_cfg.cmd_mem_depth || num_msgs > data->hw_cfg.cmdr_mem_depth) {
 		LOG_ERR("%s: Too many messages", dev->name);
@@ -2048,6 +2070,13 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
+
+	/* make sure we are currently the active controller */
+	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
+		ret = -EACCES;
+		goto error;
+	}
 
 	/* wait for idle */
 	ret = cdns_i3c_wait_for_idle(dev);
@@ -2095,6 +2124,7 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 
 	ret = data->xfer.ret;
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -2149,15 +2179,19 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 	if ((desc->static_addr != 0) || (desc->dynamic_addr != 0)) {
 		const struct cdns_i3c_config *config = dev->config;
 		struct cdns_i3c_data *data = dev->data;
+		int slot;
 
-		int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
+		k_mutex_lock(&data->bus_lock, K_FOREVER);
+		pm_device_busy_set(dev);
+
+		slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
 
 		if (slot < 0) {
 			LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
+			pm_device_busy_clear(dev);
+			k_mutex_unlock(&data->bus_lock);
 			return slot;
 		}
-
-		k_mutex_lock(&data->bus_lock, K_FOREVER);
 
 		sys_write32(sys_read32(config->base + DEVS_CTRL) | DEVS_CTRL_DEV_ACTIVE(slot),
 			    config->base + DEVS_CTRL);
@@ -2177,6 +2211,7 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 		sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(slot));
 		sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(slot));
 
+		pm_device_busy_clear(dev);
 		k_mutex_unlock(&data->bus_lock);
 	}
 
@@ -2196,6 +2231,7 @@ static int cdns_i3c_reattach_device(const struct device *dev, struct i3c_device_
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
 
 	uint32_t dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(desc->dynamic_addr);
 	uint32_t dev_id_rr1 = DEV_ID_RR1_PID_MSB((desc->pid & 0xFFFFFFFF0000) >> 16);
@@ -2206,6 +2242,7 @@ static int cdns_i3c_reattach_device(const struct device *dev, struct i3c_device_
 	sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(cdns_i3c_device_data->id));
 	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(cdns_i3c_device_data->id));
 
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
@@ -2223,6 +2260,7 @@ static int cdns_i3c_detach_device(const struct device *dev, struct i3c_device_de
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
 
 	sys_write32(sys_read32(config->base + DEVS_CTRL) |
 			    DEVS_CTRL_DEV_CLR(cdns_i3c_device_data->id),
@@ -2230,6 +2268,7 @@ static int cdns_i3c_detach_device(const struct device *dev, struct i3c_device_de
 	data->free_rr_slots |= BIT(cdns_i3c_device_data->id);
 	desc->controller_priv = NULL;
 
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
@@ -2248,6 +2287,7 @@ static int cdns_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_d
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
 
 	uint32_t dev_id_rr0 = prepare_rr0_dev_address(desc->addr);
 	uint32_t dev_id_rr2 = DEV_ID_RR2_LVR(desc->lvr);
@@ -2263,6 +2303,7 @@ static int cdns_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_d
 	sys_write32(sys_read32(config->base + DEVS_CTRL) | DEVS_CTRL_DEV_ACTIVE(slot),
 		    config->base + DEVS_CTRL);
 
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
@@ -2280,6 +2321,7 @@ static int cdns_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_d
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
 
 	sys_write32(sys_read32(config->base + DEVS_CTRL) |
 			    DEVS_CTRL_DEV_CLR(cdns_i2c_device_data->id),
@@ -2287,6 +2329,7 @@ static int cdns_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_d
 	data->free_rr_slots |= BIT(cdns_i2c_device_data->id);
 	desc->controller_priv = NULL;
 
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
@@ -2313,14 +2356,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	int rxsize = 0;
 	int ret;
 
-	/* make sure we are currently the active controller */
-	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
-		return -EACCES;
-	}
-
-	if (num_msgs == 0) {
-		return 0;
-	}
+	__ASSERT_NO_MSG(num_msgs > 0);
 
 	if (num_msgs > data->hw_cfg.cmd_mem_depth || num_msgs > data->hw_cfg.cmdr_mem_depth) {
 		LOG_ERR("%s: Too many messages", dev->name);
@@ -2347,6 +2383,13 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
+
+	/* make sure we are currently the active controller */
+	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
+		ret = -EACCES;
+		goto error;
+	}
 
 	/* wait for idle */
 	ret = cdns_i3c_wait_for_idle(dev);
@@ -2479,6 +2522,7 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 	ret = data->xfer.ret;
 error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
@@ -3166,17 +3210,20 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 	uint32_t val = 0;
 	uint16_t remain = len;
 
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+	pm_device_busy_set(dev);
+
 	/* check if we are currently a target */
 	if (sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE) {
-		return -EACCES;
+		i = -EACCES;
+		goto error;
 	}
 
 	/* check if there is space available in the tx fifo */
 	if (sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_SDR_TX_FULL) {
-		return -ENOSPC;
+		i = -ENOSPC;
+		goto error;
 	}
-
-	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
 	/* rev 1p7 requires the length be written to the SLV_CTRL reg */
 	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
@@ -3228,7 +3275,8 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 		LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, hdr_mode);
 		i = -ENOTSUP;
 	}
-
+error:
+	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->bus_lock);
 
 	/* return total bytes written */

@@ -734,7 +734,7 @@ class Reporting:
                     f'.'
                 )
 
-        built_only = results.total - run - results.filtered_configs
+        built_only = results.total - run - results.filtered_configs - results.skipped
         logger.info(
             f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms,"
             f" {TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET}"

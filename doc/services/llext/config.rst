@@ -8,12 +8,28 @@ The following Kconfig options are available for the LLEXT subsystem:
 Heap size
 ----------
 
-The LLEXT subsystem needs a static heap to be allocated for extension related
-data. The following option controls this allocation.
+The LLEXT subsystem needs a heap to be allocated for extension related data.
+The following option controls this allocation, when allocating a static heap.
 
 :kconfig:option:`CONFIG_LLEXT_HEAP_SIZE`
 
         Size of the LLEXT heap in kilobytes.
+
+Alternatively the application can configure a dynamic heap using the following
+option.
+
+:kconfig:option:`CONFIG_LLEXT_HEAP_DYNAMIC`
+
+        Some applications require loading extensions into the memory which does
+        not exist during the boot time and cannot be allocated statically. Make
+        the application responsible for LLEXT heap allocation. Do not allocate
+        LLEXT heap statically.
+
+        Application must call :c:func:`llext_heap_init` in order to assign a
+        buffer to be used as the LLEXT heap, otherwise LLEXT modules will not
+        load. When the application does not need LLEXT functionality any more,
+        it should call :c:func:`llext_heap_uninit` which releases control of
+        the buffer back to the application.
 
 .. note::
 

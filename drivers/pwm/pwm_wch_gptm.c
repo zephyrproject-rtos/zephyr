@@ -27,6 +27,20 @@
 /* Each of the 4 channels uses 1 nibble of CCER */
 #define CCER_MASK              (TIM_CC1P | TIM_CC1E)
 
+#ifdef TIM2_CTLR1_CEN
+/* ch32fun.h uses a different set of names for the CH32V00x series. Remap. */
+typedef GPTM_TypeDef TIM_TypeDef;
+#define TIM_CEN  TIM2_CTLR1_CEN
+#define TIM_OC1M TIM2_CHCTLR1_OC1M
+#define TIM_OC2M TIM2_CHCTLR1_OC2M
+#define TIM_OC3M TIM2_CHCTLR2_OC3M
+#define TIM_OC4M TIM2_CHCTLR2_OC4M
+#define TIM_CC1P TIM2_CCER_CC1P
+#define TIM_CC1E TIM2_CCER_CC1E
+#define TIM_CC1E TIM2_CCER_CC1E
+#define TIM_ARPE TIM2_CTLR1_ARPE
+#endif
+
 struct pwm_wch_gptm_config {
 	TIM_TypeDef *regs;
 	const struct device *clock_dev;

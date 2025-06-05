@@ -560,7 +560,7 @@ class ZephyrBinaryRunner(abc.ABC):
             parser.add_argument('-i', '--dev-id', help=argparse.SUPPRESS)
 
         if caps.flash_addr:
-            parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
+            parser.add_argument('--dt-flash', default=False, choices=_YN_CHOICES,
                                 action=_DTFlashAction,
                                 help='''If 'yes', try to use flash address
                                 information from devicetree when flash

@@ -5,6 +5,7 @@
  */
 
 #include <kernel_internal.h>
+#include <zephyr/arch/cache.h>
 #include <zephyr/sys/barrier.h>
 #include "boot.h"
 
@@ -122,6 +123,21 @@ void z_arm64_el2_init(void)
 	uint64_t reg;
 
 	reg = read_sctlr_el2();
+#ifdef CONFIG_ARM64_BOOT_DISABLE_DCACHE
+	/* Disable D-Cache if it is enabled, it will re-enabled when MMU is enabled at EL1 */
+	if (reg & SCTLR_C_BIT) {
+		/* Clean and invalidate the data cache before disabling it to ensure memory
+		 * remains coherent.
+		 */
+		arch_dcache_flush_and_invd_all();
+		barrier_isync_fence_full();
+		/* Disable D-Cache and MMU for EL2 */
+		reg &= ~(SCTLR_C_BIT | SCTLR_M_BIT);
+		write_sctlr_el2(reg);
+		/* Invalidate TLB entries */
+		__asm__ volatile("dsb ishst; tlbi alle2; dsb ish; isb" : : : "memory");
+	}
+#endif
 	reg |= (SCTLR_EL2_RES1 |	/* RES1 */
 		SCTLR_I_BIT |		/* Enable i-cache */
 		SCTLR_SA_BIT);		/* Enable SP alignment check */

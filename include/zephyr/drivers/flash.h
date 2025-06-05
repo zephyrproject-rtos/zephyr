@@ -125,6 +125,18 @@ int flash_params_get_erase_cap(const struct flash_parameters *p)
  * @{
  */
 
+/**
+ * @brief Flash read implementation handler type
+ *
+ * @return 0 on success or len is zero, -EINVAL if page offset doesn't exist or data
+ *         destination is NULL
+ *
+ * @note Any necessary read protection management must be performed by
+ * the driver.
+ *
+ * For consistency across implementations, value check len parameter equal zero and
+ * return result 0 before validating the data destination parameter.
+ */
 typedef int (*flash_api_read)(const struct device *dev, off_t offset,
 			      void *data,
 			      size_t len);

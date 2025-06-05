@@ -1,0 +1,20 @@
+# Copyright 2025 ST Microelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: OV9655 CMOS video sensor
+
+compatible: "ovti,ov9655"
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset. The sensor receives this as an active-low signal.
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      The PWDN pin is asserted to power down the sensor. The sensor
+      receives this as an active high signal
+
+include: i2c-device.yaml

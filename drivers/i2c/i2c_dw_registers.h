@@ -25,6 +25,8 @@ union ic_con_register {
 		uint32_t stop_det: 1 __packed;
 		uint32_t tx_empty_ctl: 1 __packed;
 		uint32_t rx_fifo_full: 1 __packed;
+		uint32_t stop_det_mstactive: 1 __packed;
+		uint32_t bus_clear: 1 __packed;
 	} bits;
 };
 
@@ -35,20 +37,21 @@ union ic_con_register {
 #define IC_DATA_CMD_RESTART  BIT(10)
 
 /* DesignWare Interrupt bits positions */
-#define DW_INTR_STAT_RX_UNDER    BIT(0)
-#define DW_INTR_STAT_RX_OVER     BIT(1)
-#define DW_INTR_STAT_RX_FULL     BIT(2)
-#define DW_INTR_STAT_TX_OVER     BIT(3)
-#define DW_INTR_STAT_TX_EMPTY    BIT(4)
-#define DW_INTR_STAT_RD_REQ      BIT(5)
-#define DW_INTR_STAT_TX_ABRT     BIT(6)
-#define DW_INTR_STAT_RX_DONE     BIT(7)
-#define DW_INTR_STAT_ACTIVITY    BIT(8)
-#define DW_INTR_STAT_STOP_DET    BIT(9)
-#define DW_INTR_STAT_START_DET   BIT(10)
-#define DW_INTR_STAT_GEN_CALL    BIT(11)
-#define DW_INTR_STAT_RESTART_DET BIT(12)
-#define DW_INTR_STAT_MST_ON_HOLD BIT(13)
+#define DW_INTR_STAT_RX_UNDER      BIT(0)
+#define DW_INTR_STAT_RX_OVER       BIT(1)
+#define DW_INTR_STAT_RX_FULL       BIT(2)
+#define DW_INTR_STAT_TX_OVER       BIT(3)
+#define DW_INTR_STAT_TX_EMPTY      BIT(4)
+#define DW_INTR_STAT_RD_REQ        BIT(5)
+#define DW_INTR_STAT_TX_ABRT       BIT(6)
+#define DW_INTR_STAT_RX_DONE       BIT(7)
+#define DW_INTR_STAT_ACTIVITY      BIT(8)
+#define DW_INTR_STAT_STOP_DET      BIT(9)
+#define DW_INTR_STAT_START_DET     BIT(10)
+#define DW_INTR_STAT_GEN_CALL      BIT(11)
+#define DW_INTR_STAT_RESTART_DET   BIT(12)
+#define DW_INTR_STAT_MST_ON_HOLD   BIT(13)
+#define DW_INTR_STAT_SCL_STUCK_LOW BIT(14)
 
 #define DW_INTR_MASK_RX_UNDER    BIT(0)
 #define DW_INTR_MASK_RX_OVER     BIT(1)
@@ -83,6 +86,32 @@ union ic_interrupt_register {
 		uint32_t gen_call: 1 __packed;
 		uint32_t restart_det: 1 __packed;
 		uint32_t mst_on_hold: 1 __packed;
+		uint32_t scl_stuck_low: 1 __packed;
+		uint32_t reserved: 2 __packed;
+	} bits;
+};
+
+union ic_txabrt_register {
+	uint32_t raw;
+	struct {
+		uint32_t ADDR7BNACK: 1 __packed;
+		uint32_t ADDR10BNACK1: 1 __packed;
+		uint32_t ADDR10BNACK2: 1 __packed;
+		uint32_t TXDATANACK: 1 __packed;
+		uint32_t GCALLNACK: 1 __packed;
+		uint32_t GCALLREAD: 1 __packed;
+		uint32_t HSACKDET: 1 __packed;
+		uint32_t SBYTEACKET: 1 __packed;
+		uint32_t HSNORSTRT: 1 __packed;
+		uint32_t SBYTENORSTRT: 1 __packed;
+		uint32_t ADDR10BRDNORSTRT: 1 __packed;
+		uint32_t MASTERIDS: 1 __packed;
+		uint32_t ARBLOST: 1 __packed;
+		uint32_t SLVFLUSHTXFIFO: 1 __packed;
+		uint32_t SLVARBLOST: 1 __packed;
+		uint32_t SLVRDINTX: 1 __packed;
+		uint32_t USRABRT: 1 __packed;
+		uint32_t SDASTUCKLOW: 1 __packed;
 		uint32_t reserved: 2 __packed;
 	} bits;
 };
@@ -127,6 +156,7 @@ union ic_comp_param_1_register {
 #define DW_IC_REG_HS_SCL_LCNT   (0x28)
 #define DW_IC_REG_INTR_STAT     (0x2C)
 #define DW_IC_REG_INTR_MASK     (0x30)
+#define DW_IC_REG_RAWINTR_MASK  (0x34)
 #define DW_IC_REG_RX_TL         (0x38)
 #define DW_IC_REG_TX_TL         (0x3C)
 #define DW_IC_REG_CLR_INTR      (0x40)
@@ -144,11 +174,15 @@ union ic_comp_param_1_register {
 #define DW_IC_REG_STATUS        (0x70)
 #define DW_IC_REG_TXFLR         (0x74)
 #define DW_IC_REG_RXFLR         (0x78)
+#define DW_IC_REG_SDAHOLD       (0x7c)
+#define DW_IC_REG_TXABRTSRC     (0x80)
 #define DW_IC_REG_DMA_CR        (0x88)
 #define DW_IC_REG_TDLR          (0x8C)
 #define DW_IC_REG_RDLR          (0x90)
 #define DW_IC_REG_FS_SPKLEN     (0xA0)
 #define DW_IC_REG_HS_SPKLEN     (0xA4)
+#define DW_IC_REG_SCL_TIMEOUT   (0xAC)
+#define DW_IC_REG_SDA_TIMEOUT   (0xB0)
 #define DW_IC_REG_COMP_PARAM_1  (0xF4)
 #define DW_IC_REG_COMP_TYPE     (0xFC)
 
@@ -167,6 +201,11 @@ DEFINE_TEST_BIT_OP(con_master_mode, DW_IC_REG_CON, DW_IC_CON_MASTER_MODE_BIT)
 DEFINE_MM_REG_WRITE(con, DW_IC_REG_CON, 32)
 DEFINE_MM_REG_READ(con, DW_IC_REG_CON, 32)
 
+DEFINE_MM_REG_READ(tar, DW_IC_REG_TAR, 32)
+DEFINE_MM_REG_WRITE(tar, DW_IC_REG_TAR, 32)
+
+DEFINE_MM_REG_WRITE(sar, DW_IC_REG_SAR, 32)
+
 DEFINE_MM_REG_WRITE(cmd_data, DW_IC_REG_DATA_CMD, 32)
 DEFINE_MM_REG_READ(cmd_data, DW_IC_REG_DATA_CMD, 32)
 
@@ -184,6 +223,8 @@ DEFINE_MM_REG_READ(intr_stat, DW_IC_REG_INTR_STAT, 32)
 DEFINE_TEST_BIT_OP(intr_stat_tx_abrt, DW_IC_REG_INTR_STAT, DW_IC_INTR_STAT_TX_ABRT_BIT)
 
 DEFINE_MM_REG_WRITE(intr_mask, DW_IC_REG_INTR_MASK, 32)
+DEFINE_MM_REG_READ(rawintr_stat, DW_IC_REG_RAWINTR_MASK, 32)
+
 #define DW_IC_INTR_MASK_TX_EMPTY_BIT (4)
 DEFINE_CLEAR_BIT_OP(intr_mask_tx_empty, DW_IC_REG_INTR_MASK, DW_IC_INTR_MASK_TX_EMPTY_BIT)
 DEFINE_SET_BIT_OP(intr_mask_tx_empty, DW_IC_REG_INTR_MASK, DW_IC_INTR_MASK_TX_EMPTY_BIT)
@@ -203,21 +244,40 @@ DEFINE_MM_REG_READ(clr_rx_done, DW_IC_REG_CLR_RX_DONE, 32)
 DEFINE_MM_REG_READ(clr_rd_req, DW_IC_REG_CLR_RD_REQ, 32)
 DEFINE_MM_REG_READ(clr_activity, DW_IC_REG_CLR_ACTIVITY, 32)
 
-#define DW_IC_ENABLE_EN_BIT    (0)
-#define DW_IC_ENABLE_ABORT_BIT (1)
+#define DW_IC_ENABLE_EN_BIT         (0)
+#define DW_IC_ENABLE_ABORT_BIT      (1)
+#define DW_IC_ENABLE_BLOCK_BIT      (2)
+#define DW_IC_ENABLE_SDARECOVEN_BIT (3)
+#define DW_IC_ENABLE_CLK_RESET_BIT  (16)
 DEFINE_CLEAR_BIT_OP(enable_en, DW_IC_REG_ENABLE, DW_IC_ENABLE_EN_BIT)
 DEFINE_SET_BIT_OP(enable_en, DW_IC_REG_ENABLE, DW_IC_ENABLE_EN_BIT)
 DEFINE_SET_BIT_OP(enable_abort, DW_IC_REG_ENABLE, DW_IC_ENABLE_ABORT_BIT)
+DEFINE_TEST_BIT_OP(enable_abort, DW_IC_REG_ENABLE, DW_IC_ENABLE_ABORT_BIT)
+DEFINE_CLEAR_BIT_OP(enable_block, DW_IC_REG_ENABLE, DW_IC_ENABLE_BLOCK_BIT)
+DEFINE_SET_BIT_OP(enable_block, DW_IC_REG_ENABLE, DW_IC_ENABLE_BLOCK_BIT)
+DEFINE_CLEAR_BIT_OP(enable_sdarecov, DW_IC_REG_ENABLE, DW_IC_ENABLE_SDARECOVEN_BIT)
+DEFINE_SET_BIT_OP(enable_sdarecov, DW_IC_REG_ENABLE, DW_IC_ENABLE_SDARECOVEN_BIT)
+DEFINE_TEST_BIT_OP(enable_sdarecov, DW_IC_REG_ENABLE, DW_IC_ENABLE_SDARECOVEN_BIT)
+DEFINE_CLEAR_BIT_OP(enable_clk_reset, DW_IC_REG_ENABLE, DW_IC_ENABLE_CLK_RESET_BIT)
+DEFINE_SET_BIT_OP(enable_clk_reset, DW_IC_REG_ENABLE, DW_IC_ENABLE_CLK_RESET_BIT)
+DEFINE_TEST_BIT_OP(enable_clk_reset, DW_IC_REG_ENABLE, DW_IC_ENABLE_CLK_RESET_BIT)
 
-#define DW_IC_STATUS_ACTIVITY_BIT (0)
-#define DW_IC_STATUS_TFNT_BIT     (1)
-#define DW_IC_STATUS_RFNE_BIT     (3)
+#define DW_IC_STATUS_ACTIVITY_BIT    (0)
+#define DW_IC_STATUS_TFNT_BIT        (1)
+#define DW_IC_STATUS_RFNE_BIT        (3)
+#define DW_IC_STATUS_SDANOTRECOV_BIT (11)
 DEFINE_TEST_BIT_OP(status_activity, DW_IC_REG_STATUS, DW_IC_STATUS_ACTIVITY_BIT)
 DEFINE_TEST_BIT_OP(status_tfnt, DW_IC_REG_STATUS, DW_IC_STATUS_TFNT_BIT)
 DEFINE_TEST_BIT_OP(status_rfne, DW_IC_REG_STATUS, DW_IC_STATUS_RFNE_BIT)
+DEFINE_TEST_BIT_OP(status_sdanotrecov, DW_IC_REG_STATUS, DW_IC_STATUS_SDANOTRECOV_BIT)
 
 DEFINE_MM_REG_READ(txflr, DW_IC_REG_TXFLR, 32)
 DEFINE_MM_REG_READ(rxflr, DW_IC_REG_RXFLR, 32)
+
+DEFINE_MM_REG_READ(sdahold, DW_IC_REG_SDAHOLD, 32)
+DEFINE_MM_REG_WRITE(sdahold, DW_IC_REG_SDAHOLD, 32)
+
+DEFINE_MM_REG_READ(txabrt_src, DW_IC_REG_TXABRTSRC, 32)
 
 DEFINE_MM_REG_READ(dma_cr, DW_IC_REG_DMA_CR, 32)
 DEFINE_MM_REG_WRITE(dma_cr, DW_IC_REG_DMA_CR, 32)
@@ -230,11 +290,13 @@ DEFINE_MM_REG_WRITE(rdlr, DW_IC_REG_RDLR, 32)
 DEFINE_MM_REG_READ(fs_spklen, DW_IC_REG_FS_SPKLEN, 32)
 DEFINE_MM_REG_READ(hs_spklen, DW_IC_REG_HS_SPKLEN, 32)
 
+DEFINE_MM_REG_WRITE(scltimeout, DW_IC_REG_SCL_TIMEOUT, 32)
+DEFINE_MM_REG_READ(scltimeout, DW_IC_REG_SCL_TIMEOUT, 32)
+DEFINE_MM_REG_WRITE(sdatimeout, DW_IC_REG_SDA_TIMEOUT, 32)
+DEFINE_MM_REG_READ(sdatimeout, DW_IC_REG_SDA_TIMEOUT, 32)
+
 DEFINE_MM_REG_READ(comp_param_1, DW_IC_REG_COMP_PARAM_1, 32)
 DEFINE_MM_REG_READ(comp_type, DW_IC_REG_COMP_TYPE, 32)
-DEFINE_MM_REG_READ(tar, DW_IC_REG_TAR, 32)
-DEFINE_MM_REG_WRITE(tar, DW_IC_REG_TAR, 32)
-DEFINE_MM_REG_WRITE(sar, DW_IC_REG_SAR, 32)
 
 #ifdef __cplusplus
 }

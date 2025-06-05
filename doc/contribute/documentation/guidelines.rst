@@ -1083,6 +1083,31 @@ Make sure to use the full name of the Kconfig option, including the ``CONFIG_`` 
 
       Check out :kconfig:option:`CONFIG_GPIO` for more information.
 
+.. rst:role:: kconfig:option-regex
+
+   This role is used to create links to regex searches for Kconfig options. It generates a link to
+   the Kconfig search page with the provided regex pattern automatically filled in as the search
+   query. It is useful for referencing multiple Kconfig options that share a common prefix, or
+   belong to a common category. For example::
+
+      Check out :kconfig:option-regex:`CONFIG_SECURE_STORAGE_ITS_(STORE|TRANSFORM)_.*_CUSTOM` for
+      the various customization possibilities.
+
+   Will render as:
+
+      Check out :kconfig:option-regex:`CONFIG_SECURE_STORAGE_ITS_(STORE|TRANSFORM)_.*_CUSTOM` for
+      the various customization possibilities.
+
+   It is encouraged to provide a custom link text to make the reference more readable. For example::
+
+      Check out the :kconfig:option-regex:`ITS Kconfig options <CONFIG_SECURE_STORAGE_ITS_.*>`
+      for more information.
+
+   Will render as:
+
+      Check out the :kconfig:option-regex:`ITS Kconfig options <CONFIG_SECURE_STORAGE_ITS_.*>`
+      for more information.
+
 Devicetree bindings
 ===================
 

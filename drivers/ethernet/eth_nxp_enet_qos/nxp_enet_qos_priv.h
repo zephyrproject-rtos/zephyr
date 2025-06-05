@@ -7,6 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/drivers/ethernet/eth_nxp_enet_qos.h>
@@ -111,6 +112,7 @@ struct nxp_enet_qos_tx_data {
 
 struct nxp_enet_qos_rx_data {
 	struct k_work rx_work;
+	atomic_t rbu_flag;
 	volatile union nxp_enet_qos_rx_desc descriptors[NUM_RX_BUFDESC];
 	struct net_buf *reserved_bufs[NUM_RX_BUFDESC];
 };

@@ -24,6 +24,7 @@ config SPI_SHELL
 
 config SPI_ASYNC
 	bool "Asynchronous call support"
+	depends on MULTITHREADING
 	select POLL
 	help
 	  This option enables the asynchronous API calls.
@@ -141,6 +142,7 @@ source "drivers/spi/Kconfig.smartbond"
 source "drivers/spi/Kconfig.spi_emul"
 source "drivers/spi/Kconfig.stm32"
 source "drivers/spi/Kconfig.test"
+source "drivers/spi/Kconfig.wch"
 source "drivers/spi/Kconfig.xec_qmspi"
 source "drivers/spi/Kconfig.xlnx"
 source "drivers/spi/Kconfig.xmc4xxx"

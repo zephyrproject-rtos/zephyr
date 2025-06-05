@@ -297,12 +297,12 @@ static int gpio_rz_int_disable(const struct device *dev, const struct device *gp
 #if defined(CONFIG_GPIO_RENESAS_RZ_HAS_GPIO_INTERRUPT)
 	volatile uint32_t *tssr = &R_INTC->TSSR0;
 	volatile uint32_t *titsr = &R_INTC->TITSR0;
-	volatile uint32_t *tscr = &R_INTC->TSCR;
 	struct gpio_rz_int_data *data = dev->data;
 
 	/* Get register offset base on interrupt number. */
 	tssr = &tssr[int_num / 4];
 	titsr = &titsr[int_num / 16];
+	GPIO_RZ_TINT_SELECT_SOURCE_REG_CLEAR(int_num);
 
 	irq_disable(GPIO_RZ_TINT_IRQ_GET(int_num));
 	/* Disable interrupt and clear interrupt source. */
@@ -312,7 +312,7 @@ static int gpio_rz_int_disable(const struct device *dev, const struct device *gp
 
 	/* Clear interrupt detection status. */
 	if (data->irq_set_edge & BIT(int_num)) {
-		*tscr &= ~BIT(int_num);
+		GPIO_RZ_TINT_STATUS_REG_CLEAR(int_num);
 		data->irq_set_edge &= ~BIT(int_num);
 	}
 
@@ -350,13 +350,18 @@ static int gpio_rz_int_enable(const struct device *gpio_int_dev, const struct de
 	*titsr &= ~(3U << GPIO_RZ_TITSR_OFFSET(int_num));
 	*titsr |= (irq_type << GPIO_RZ_TITSR_OFFSET(int_num));
 	/* Select interrupt source base on port and pin number. */
+	*tssr &= ~(0xFF << (int_num));
 	*tssr |= (GPIO_RZ_TSSR_VAL(gpio_config->port_num, pin)) << GPIO_RZ_TSSR_OFFSET(int_num);
+	/* Select TINT source(only for RZV2H) */
+	GPIO_RZ_TINT_SELECT_SOURCE_REG_CLEAR(int_num);
+	GPIO_RZ_TINT_SELECT_SOURCE_REG_SET(int_num);
 
 	if (irq_type == GPIO_RZ_INT_EDGE_RISING || irq_type == GPIO_RZ_INT_EDGE_FALLING) {
 		gpio_int_data->irq_set_edge |= BIT(int_num);
 		/* Clear interrupt status. */
-		R_INTC->TSCR &= ~BIT(int_num);
+		GPIO_RZ_TINT_STATUS_REG_CLEAR(int_num);
 	}
+	GPIO_RZ_TINT_CLEAR_PENDING(int_num);
 	irq_enable(GPIO_RZ_TINT_IRQ_GET(int_num));
 	gpio_int_data->gpio_mapping[int_num].gpio_dev = gpio_dev;
 	gpio_int_data->gpio_mapping[int_num].pin = pin;
@@ -448,15 +453,16 @@ static void gpio_rz_isr(uint16_t irq, void *param)
 #if defined(CONFIG_GPIO_RENESAS_RZ_HAS_GPIO_INTERRUPT)
 	const struct device *dev = param;
 	struct gpio_rz_int_data *gpio_int_data = dev->data;
-	volatile uint32_t *tscr = &R_INTC->TSCR;
 
-	if (!(*tscr & BIT(irq))) {
+#if GPIO_RZ_TINT_SPURIOUS_HANDLE
+	if (!(*GPIO_RZ_TINT_STATUS_REG_GET & BIT(irq))) {
 		LOG_DEV_DBG(dev, "tint:%u spurious irq, status 0", irq);
 		return;
 	}
+#endif /* GPIO_RZ_TINT_SPURIOUS_HANDLE */
 
 	if (gpio_int_data->irq_set_edge & BIT(irq)) {
-		*tscr &= ~BIT(irq);
+		GPIO_RZ_TINT_STATUS_REG_CLEAR(irq);
 	}
 
 	uint8_t pin = gpio_int_data->gpio_mapping[irq].pin;

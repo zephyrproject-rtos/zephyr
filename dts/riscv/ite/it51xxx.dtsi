@@ -1158,9 +1158,17 @@
 			interrupts = <IT51XXX_IRQ_TIMER3_DW IRQ_TYPE_EDGE_RISING   /* Event timer */
 				      IT51XXX_IRQ_TIMER4_DW IRQ_TYPE_EDGE_RISING   /* Free run */
 				      IT51XXX_IRQ_TIMER5_DW IRQ_TYPE_EDGE_RISING   /* Busy wait */
-				      IT51XXX_IRQ_TIMER6_DW IRQ_TYPE_EDGE_RISING   /* Busy wait */
-				      IT51XXX_IRQ_TIMER7_DW IRQ_TYPE_EDGE_RISING>;
+				      IT51XXX_IRQ_TIMER6_DW IRQ_TYPE_EDGE_RISING>; /* Busy wait */
 			interrupt-parent = <&intc>;
+		};
+
+		counter0: counter@f04730 {
+			compatible = "ite,it51xxx-counter";
+			reg = <0x00f04730 0xcf>;
+			interrupts = <IT51XXX_IRQ_TIMER7_DW IRQ_TYPE_EDGE_RISING   /* Alarm timer */
+				      IT51XXX_IRQ_TIMER8_DW IRQ_TYPE_EDGE_RISING>; /* Top timer */
+			interrupt-parent = <&intc>;
+			status = "disabled";
 		};
 
 		kbd: kbd@f01d00 {

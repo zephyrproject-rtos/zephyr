@@ -61,7 +61,7 @@ config I2C_ALLOW_NO_STOP_TRANSACTIONS
 	depends on !I2C_STM32
 	depends on !I2C_GD32
 	depends on !I2C_ESP32
-	depends on !I2C_DW
+	depends on (!I2C_DW || I2C_RTS5912)
 	select DEPRECATED
 	help
 	  Allow I2C transactions with no STOP on the last message. This is
@@ -146,6 +146,7 @@ source "drivers/i2c/Kconfig.omap"
 source "drivers/i2c/Kconfig.rcar"
 source "drivers/i2c/Kconfig.renesas_ra"
 source "drivers/i2c/Kconfig.renesas_rz"
+source "drivers/i2c/Kconfig.rts5912"
 source "drivers/i2c/Kconfig.sam0"
 source "drivers/i2c/Kconfig.sam_twihs"
 source "drivers/i2c/Kconfig.sbcon"

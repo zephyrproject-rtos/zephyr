@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Flash Map test configuration"
+
+config TEST_FLASH_MAP_DISABLED_PARTITIONS
+	bool "Test support for disabled partitions"
+	default y if !FLASH_MAP_CUSTOM
+	help
+	  Test flash_area_open for returning -ENOENT for disabled partitions.
+	  Note that custom flash maps may not support disabled partitions
+	  and therefore not even generated id for them. In such case it would
+	  not be possible to provide disabled partition id to flash_area_open,
+	  making this test impossible to run.
+
+config TEST_FLASH_MAP_NODE_MACROS
+	bool "Test DTS macros for accessing partition info via DTS node"
+	default y if !FLASH_MAP_CUSTOM
+	help
+	  Custom flash map may be defined outside of DTS definition, therefore
+	  not have a DTS nodes for partitions.
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu

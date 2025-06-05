@@ -70,6 +70,7 @@ static inline int check_range(enum video_ctrl_type type, struct video_ctrl_range
 		}
 		return 0;
 	case VIDEO_CTRL_TYPE_MENU:
+	case VIDEO_CTRL_TYPE_INTEGER_MENU:
 		if (!IN_RANGE(range.min, 0, range.max) ||
 		    !IN_RANGE(range.def, range.min, range.max)) {
 			return -ERANGE;
@@ -106,6 +107,9 @@ static inline void set_type_flag(uint32_t id, enum video_ctrl_type *type, uint32
 	case VIDEO_CID_PIXEL_RATE:
 		*type = VIDEO_CTRL_TYPE_INTEGER64;
 		*flags |= VIDEO_CTRL_FLAG_READ_ONLY;
+		break;
+	case VIDEO_CID_LINK_FREQ:
+		*type = VIDEO_CTRL_TYPE_INTEGER_MENU;
 		break;
 	default:
 		*type = VIDEO_CTRL_TYPE_INTEGER;
@@ -196,6 +200,28 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
 	}
 
 	ctrl->menu = _menu;
+
+	return 0;
+}
+
+int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			     uint8_t def, const int64_t menu[], size_t menu_len)
+{
+	int ret;
+
+	if (!menu) {
+		return -EINVAL;
+	}
+
+	ret = video_init_ctrl(
+		ctrl, dev, id,
+		(struct video_ctrl_range){.min = 0, .max = menu_len - 1, .step = 1, .def = def});
+
+	if (ret) {
+		return ret;
+	}
+
+	ctrl->int_menu = menu;
 
 	return 0;
 }
@@ -516,6 +542,8 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Pixel Rate";
 	case VIDEO_CID_TEST_PATTERN:
 		return "Test Pattern";
+	case VIDEO_CID_LINK_FREQ:
+		return "Link Frequency";
 	default:
 		return NULL;
 	}
@@ -554,7 +582,11 @@ fill_query:
 	cq->type = ctrl->type;
 	cq->flags = ctrl->flags;
 	cq->range = ctrl->range;
-	cq->menu = ctrl->menu;
+	if (cq->type == VIDEO_CTRL_TYPE_MENU) {
+		cq->menu = ctrl->menu;
+	} else if (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU) {
+		cq->int_menu = ctrl->int_menu;
+	}
 	cq->name = video_get_ctrl_name(cq->id);
 
 	return 0;
@@ -583,6 +615,9 @@ void video_print_ctrl(const struct device *const dev, const struct video_ctrl_qu
 	case VIDEO_CTRL_TYPE_MENU:
 		type = "menu";
 		break;
+	case VIDEO_CTRL_TYPE_INTEGER_MENU:
+		type = "integer menu";
+		break;
 	case VIDEO_CTRL_TYPE_STRING:
 		type = "string";
 		break;
@@ -609,9 +644,14 @@ void video_print_ctrl(const struct device *const dev, const struct video_ctrl_qu
 			cq->range.step, cq->range.def, vc.val);
 	}
 
-	if (cq->menu) {
+	if (cq->type == VIDEO_CTRL_TYPE_MENU && cq->menu) {
 		while (cq->menu[i]) {
 			LOG_INF("%*s %u: %s", 32, "", i, cq->menu[i]);
+			i++;
+		}
+	} else if (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU && cq->int_menu) {
+		while (cq->int_menu[i]) {
+			LOG_INF("%*s %u: %lld", 12, "", i, cq->int_menu[i]);
 			i++;
 		}
 	}

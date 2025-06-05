@@ -117,8 +117,12 @@ enum ov5640_frame_rate {
 
 struct ov5640_config {
 	struct i2c_dt_spec i2c;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	struct gpio_dt_spec reset_gpio;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	struct gpio_dt_spec powerdown_gpio;
+#endif
 	int bus_type;
 };
 
@@ -1329,42 +1333,54 @@ static int ov5640_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset_gpio.port != NULL && !gpio_is_ready_dt(&cfg->reset_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
+#endif
 
-	if (!gpio_is_ready_dt(&cfg->powerdown_gpio)) {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
+	if (cfg->powerdown_gpio.port != NULL && !gpio_is_ready_dt(&cfg->powerdown_gpio)) {
 		LOG_ERR("%s: device %s is not ready", dev->name, cfg->powerdown_gpio.port->name);
 		return -ENODEV;
 	}
+#endif
 
 	/* Power up sequence */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	if (cfg->powerdown_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&cfg->powerdown_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
 			return ret;
 		}
 	}
+#endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (cfg->reset_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
 			return ret;
 		}
 	}
+#endif
 
 	k_sleep(K_MSEC(5));
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	if (cfg->powerdown_gpio.port != NULL) {
 		gpio_pin_set_dt(&cfg->powerdown_gpio, 0);
 	}
+#endif
 
 	k_sleep(K_MSEC(1));
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (cfg->reset_gpio.port != NULL) {
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
 	}
+#endif
 
 	k_sleep(K_MSEC(20));
 
@@ -1443,13 +1459,27 @@ static int ov5640_init(const struct device *dev)
 	return ov5640_init_controls(dev);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define OV5640_GET_RESET_GPIO(n)								   \
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define OV5640_GET_RESET_GPIO(n)
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
+#define OV5640_GET_POWERDOWN_GPIO(n)								   \
+	.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),
+#else
+#define OV5640_GET_POWERDOWN_GPIO(n)
+#endif
+
 #define OV5640_INIT(n)                                                                             \
 	static struct ov5640_data ov5640_data_##n;                                                 \
                                                                                                    \
 	static const struct ov5640_config ov5640_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
-		.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),               \
+		OV5640_GET_RESET_GPIO(n)							   \
+		OV5640_GET_POWERDOWN_GPIO(n)							   \
 		.bus_type = DT_PROP_OR(DT_CHILD(DT_INST_CHILD(n, port), endpoint), bus_type,       \
 				       VIDEO_BUS_TYPE_CSI2_DPHY),                                  \
 	};                                                                                         \

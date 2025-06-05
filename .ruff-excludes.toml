@@ -1078,23 +1078,6 @@
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/west_commands/build.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/west_commands/build_helpers.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/west_commands/debug.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
 "./scripts/west_commands/fetchers/__init__.py" = [
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -1106,14 +1089,6 @@
 "./scripts/west_commands/fetchers/http.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
-"./scripts/west_commands/flash.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
-"./scripts/west_commands/robot.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
 ]
 "./scripts/west_commands/run_common.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
@@ -1141,10 +1116,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/west_commands/simulate.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
 ]
 "./scripts/west_commands/spdx.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
@@ -1218,51 +1189,6 @@
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/west_commands/zspdx/cmakecache.py" = [
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/west_commands/zspdx/cmakefileapi.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
-"./scripts/west_commands/zspdx/cmakefileapijson.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM116",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-lookup
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/west_commands/zspdx/datatypes.py" = [
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
-"./scripts/west_commands/zspdx/getincludes.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
-    "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
-]
-"./scripts/west_commands/zspdx/sbom.py" = [
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
-"./scripts/west_commands/zspdx/scanner.py" = [
-    "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/west_commands/zspdx/walker.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
-]
-"./scripts/west_commands/zspdx/writer.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/zephyr_module.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long

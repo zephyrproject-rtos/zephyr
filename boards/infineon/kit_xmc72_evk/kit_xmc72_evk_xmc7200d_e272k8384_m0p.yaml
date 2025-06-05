@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2025 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: kit_xmc72_evk/xmc7200d_e272k8384/m0p
+name: XMC7200 Evaluation Kit (M0P)
+type: mcu
+arch: arm
+ram: 1024
+flash: 8384
+toolchain:
+  - zephyr
+  - gnuarmemb
+vendor: infineon

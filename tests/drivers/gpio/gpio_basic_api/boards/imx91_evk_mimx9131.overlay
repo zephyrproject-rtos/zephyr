@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	resources {
+		compatible = "test-gpio-basic-api";
+		/*
+		 * Use connector J1001 Pin 8 which connect to EXP_GPIO_IO14 as input
+		 * GPIO, and connector J1001 Pin 33 which connect to EXP_GPIO_IO13 as
+		 * output GPIO, connect these two pins with a Dupont Line.
+		 */
+		out-gpios = <&gpio2 13 0>;
+		in-gpios = <&gpio2 14 0>;
+	};
+};

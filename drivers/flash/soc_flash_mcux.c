@@ -238,8 +238,8 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	 * on erased or otherwise unreadable pages. Emulate erased pages,
 	 * return other errors.
 	 */
-  #ifdef CONFIG_SOC_LPC55S36
-	/* On LPC55S36, use a HAL function to safely copy from Flash. */
+  #ifdef CONFIG_SOC_SERIES_LPC55XXX
+	/* On LPC55XXX, use a HAL function to safely copy from Flash. */
 	rc = FLASH_Read(&priv->config, addr, data, len);
 	switch (rc) {
 	case kStatus_FLASH_Success:
@@ -262,7 +262,7 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 		rc = -EIO;
 		break;
 	}
-  #else /* CONFIG_SOC_LPC55S36 */
+  #else /* CONFIG_SOC_SERIES_LPC55XXX */
 	/* On all other targets, check if the Flash area is readable.
 	 * If so, copy data from it directly.
 	 */
@@ -270,7 +270,7 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	if (!rc) {
 		memcpy(data, (void *) addr, len);
 	}
-  #endif /* CONFIG_SOC_LPC55S36 */
+  #endif /* CONFIG_SOC_SERIES_LPC55XXX */
 
 	if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */
