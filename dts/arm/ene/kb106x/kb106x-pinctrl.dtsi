@@ -1,0 +1,641 @@
+/*
+ * Copyright (c) 2025 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ene-kb106x-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&pinctrl {
+	/* serial port */
+	/omit-if-no-ref/ ser0_tx_gpio16: ser0_tx_gpio16 {
+		pinmux = <ENE_KB106X_PINMUX(0x16, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ ser0_tx_gpio30: ser0_tx_gpio30 {
+		pinmux = <ENE_KB106X_PINMUX(0x30, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ ser0_rx_gpio17: ser0_rx_gpio17 {
+		pinmux = <ENE_KB106X_PINMUX(0x17, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/* adc */
+	/omit-if-no-ref/ adc0_gpio38: adc0_gpio38 {
+		pinmux = <ENE_KB106X_PINMUX(0x38, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc1_gpio39: adc1_gpio39 {
+		pinmux = <ENE_KB106X_PINMUX(0x39, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc2_gpio3a: adc2_gpio3a {
+		pinmux = <ENE_KB106X_PINMUX(0x3A, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc3_gpio3b: adc3_gpio3b {
+		pinmux = <ENE_KB106X_PINMUX(0x3B, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc4_gpio42: adc4_gpio42 {
+		pinmux = <ENE_KB106X_PINMUX(0x42, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc5_gpio43: adc5_gpio43 {
+		pinmux = <ENE_KB106X_PINMUX(0x43, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc6_gpio40: adc6_gpio40 {
+		pinmux = <ENE_KB106X_PINMUX(0x40, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc7_gpio41: adc7_gpio41 {
+		pinmux = <ENE_KB106X_PINMUX(0x41, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc8_gpio78: adc8_gpio78 {
+		pinmux = <ENE_KB106X_PINMUX(0x78, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ adc9_gpio65: adc9_gpio65 {
+		pinmux = <ENE_KB106X_PINMUX(0x65, PINMUX_FUNC_A)>;
+	};
+
+	/* fsmbus */
+	/omit-if-no-ref/ i2c0_clk_gpio44: i2c0_clk_gpio44 {
+		pinmux = <ENE_KB106X_PINMUX(0x44, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c0_dat_gpio45: i2c0_dat_gpio45 {
+		pinmux = <ENE_KB106X_PINMUX(0x45, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c1_clk_gpio46: i2c1_clk_gpio46 {
+		pinmux = <ENE_KB106X_PINMUX(0x46, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c1_dat_gpio47: i2c1_dat_gpio47 {
+		pinmux = <ENE_KB106X_PINMUX(0x47, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c2_clk_gpio4a: i2c2_clk_gpio4a {
+		pinmux = <ENE_KB106X_PINMUX(0x4A, PINMUX_FUNC_C)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c2_dat_gpio4b: i2c2_dat_gpio4b {
+		pinmux = <ENE_KB106X_PINMUX(0x4B, PINMUX_FUNC_C)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c3_clk_gpio4c: i2c3_clk_gpio4c {
+		pinmux = <ENE_KB106X_PINMUX(0x4C, PINMUX_FUNC_C)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c3_dat_gpio4d: i2c3_dat_gpio4d {
+		pinmux = <ENE_KB106X_PINMUX(0x4D, PINMUX_FUNC_C)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c4_clk_gpio08: i2c4_clk_gpio08 {
+		pinmux = <ENE_KB106X_PINMUX(0x08, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c4_dat_gpio0d: i2c4_dat_gpio0d {
+		pinmux = <ENE_KB106X_PINMUX(0x0D, PINMUX_FUNC_C)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c5_clk_gpio0b: i2c5_clk_gpio0b {
+		pinmux = <ENE_KB106X_PINMUX(0x0B, PINMUX_FUNC_C)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2c5_dat_gpio0c: i2c5_dat_gpio0c {
+		pinmux = <ENE_KB106X_PINMUX(0x0C, PINMUX_FUNC_C)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/* spi host - shi pinout */
+	/omit-if-no-ref/ shi_cs_gpio60: shi_cs_gpio60 {
+		pinmux = < ENE_KB106X_PINMUX(0x60, PINMUX_FUNC_B) >;
+		drive-strength = <16> ;
+	};
+
+	/omit-if-no-ref/ shi_clk_gpio61: shi_clk_gpio61 {
+		pinmux = < ENE_KB106X_PINMUX(0x61, PINMUX_FUNC_B) >;
+		drive-strength = <16> ;
+	};
+
+	/omit-if-no-ref/ shi_mosi_gpio62: shi_mosi_gpio62 {
+		pinmux = < ENE_KB106X_PINMUX(0x62, PINMUX_FUNC_B) >;
+		drive-strength = <16> ;
+	};
+
+	/omit-if-no-ref/ shi_miso_gpio78: shi_miso_gpio78 {
+		pinmux = < ENE_KB106X_PINMUX(0x78, PINMUX_FUNC_A) >;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ shi_cs_off_gpio60: shi_cs_off_gpio60 {
+		pinmux = < ENE_KB106X_PINMUX(0x60, PINMUX_FUNC_A) >;
+	};
+
+	/omit-if-no-ref/ shi_clk_off_gpio61: shi_clk_off_gpio61 {
+		pinmux = < ENE_KB106X_PINMUX(0x61, PINMUX_FUNC_A) >;
+	};
+
+	/omit-if-no-ref/ shi_mosi_off_gpio62: shi_mosi_off_gpio62 {
+		pinmux = < ENE_KB106X_PINMUX(0x62, PINMUX_FUNC_A) >;
+	};
+
+	/omit-if-no-ref/ shi_miso_off_gpio78: shi_miso_off_gpio78 {
+		pinmux = < ENE_KB106X_PINMUX(0x78, PINMUX_FUNC_A) >;
+	};
+
+	/* spi host - share rom pinout */
+	/omit-if-no-ref/ shr_cs_gpio5a: shr_cs_gpio5a {
+		pinmux = < ENE_KB106X_PINMUX(0x5A, PINMUX_FUNC_B) >;
+		drive-strength = <16> ;
+	};
+
+	/omit-if-no-ref/ shr_clk_gpio58: shr_clk_gpio58 {
+		pinmux = < ENE_KB106X_PINMUX(0x58, PINMUX_FUNC_B) >;
+		drive-strength = <16> ;
+	};
+
+	/omit-if-no-ref/ shr_mosi_gpio5c: shr_mosi_gpio5c {
+		pinmux = < ENE_KB106X_PINMUX(0x5C, PINMUX_FUNC_B) >;
+		drive-strength = <16> ;
+	};
+
+	/omit-if-no-ref/ shr_miso_gpio5b: shr_miso_gpio5b {
+		pinmux = < ENE_KB106X_PINMUX(0x5B, PINMUX_FUNC_A) >;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ shr_cs_off_gpio5a: shr_cs_off_gpio5a {
+		pinmux = < ENE_KB106X_PINMUX(0x5A, PINMUX_FUNC_A) >;
+	};
+
+	/omit-if-no-ref/ shr_clk_off_gpio58: shr_clk_off_gpio58 {
+		pinmux = < ENE_KB106X_PINMUX(0x58, PINMUX_FUNC_A) >;
+	};
+
+	/omit-if-no-ref/ shr_mosi_off_gpio5c: shr_mosi_off_gpio5c {
+		pinmux = < ENE_KB106X_PINMUX(0x5C, PINMUX_FUNC_A) >;
+	};
+
+	/omit-if-no-ref/ shr_miso_off_gpio5b: shr_miso_off_gpio5b {
+		pinmux = < ENE_KB106X_PINMUX(0x5B, PINMUX_FUNC_A) >;
+	};
+
+	/* pwm */
+	/omit-if-no-ref/ pwm0_gpio0f: pwm0_gpio0f {
+		pinmux = <ENE_KB106X_PINMUX(0x0F, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm1_gpio10: pwm1_gpio10 {
+		pinmux = <ENE_KB106X_PINMUX(0x10, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm2_gpio11: pwm2_gpio11 {
+		pinmux = <ENE_KB106X_PINMUX(0x11, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm3_gpio19: pwm3_gpio19 {
+		pinmux = <ENE_KB106X_PINMUX(0x19, PINMUX_FUNC_B)>;
+	};
+
+	/* fan pwm */
+	/omit-if-no-ref/ fanpwm0_gpio12: fanpwm0_gpio12 {
+		pinmux = <ENE_KB106X_PINMUX(0x12, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ fanpwm1_gpio13: fanpwm1_gpio13 {
+		pinmux = <ENE_KB106X_PINMUX(0x13, PINMUX_FUNC_B)>;
+	};
+
+	/* fan tachometer */
+	/omit-if-no-ref/ tach0_gpio14: tach0_gpio14 {
+		pinmux = <ENE_KB106X_PINMUX(0x14, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tach1_gpio15: tach1_gpio15 {
+		pinmux = <ENE_KB106X_PINMUX(0x15, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tach2_gpio43: tach2_gpio43 {
+		pinmux = <ENE_KB106X_PINMUX(0x43, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tach3_gpio64: tach3_gpio64 {
+		pinmux = <ENE_KB106X_PINMUX(0x64, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/* external clock xclki */
+	/omit-if-no-ref/ xclki_gpio5d: xclki_gpio5d {
+		pinmux = <ENE_KB106X_PINMUX(0x5D, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/* keyboard ksi */
+	/omit-if-no-ref/ ksi00_gpio30: ksi00_gpio30 {
+		pinmux = <ENE_KB106X_PINMUX(0x30, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ ksi01_gpio31: ksi01_gpio31 {
+		pinmux = <ENE_KB106X_PINMUX(0x31, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ ksi02_gpio32: ksi02_gpio32 {
+		pinmux = <ENE_KB106X_PINMUX(0x32, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ ksi03_gpio33: ksi03_gpio33 {
+		pinmux = <ENE_KB106X_PINMUX(0x33, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ ksi04_gpio34: ksi04_gpio34 {
+		pinmux = <ENE_KB106X_PINMUX(0x34, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ ksi05_gpio35: ksi05_gpio35 {
+		pinmux = <ENE_KB106X_PINMUX(0x35, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ ksi06_gpio36: ksi06_gpio36 {
+		pinmux = <ENE_KB106X_PINMUX(0x36, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ ksi07_gpio37: ksi07_gpio37 {
+		pinmux = <ENE_KB106X_PINMUX(0x37, PINMUX_FUNC_A)>;
+		bias-pull-up;
+		input-enable;
+	};
+
+	/* keyboard kso */
+	/omit-if-no-ref/ kso00_gpio20: kso00_gpio20 {
+		pinmux = <ENE_KB106X_PINMUX(0x20, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso01_gpio21: kso01_gpio21 {
+		pinmux = <ENE_KB106X_PINMUX(0x21, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso02_gpio22: kso02_gpio22 {
+		pinmux = <ENE_KB106X_PINMUX(0x22, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso03_gpio23: kso03_gpio23 {
+		pinmux = <ENE_KB106X_PINMUX(0x23, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso04_gpio24: kso04_gpio24 {
+		pinmux = <ENE_KB106X_PINMUX(0x24, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso05_gpio25: kso05_gpio25 {
+		pinmux = <ENE_KB106X_PINMUX(0x25, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso06_gpio26: kso06_gpio26 {
+		pinmux = <ENE_KB106X_PINMUX(0x26, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso07_gpio27: kso07_gpio27 {
+		pinmux = <ENE_KB106X_PINMUX(0x27, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso08_gpio28: kso08_gpio28 {
+		pinmux = <ENE_KB106X_PINMUX(0x28, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso09_gpio29: kso09_gpio29 {
+		pinmux = <ENE_KB106X_PINMUX(0x29, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso10_gpio2a: kso10_gpio2a {
+		pinmux = <ENE_KB106X_PINMUX(0x2A, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso11_gpio2b: kso11_gpio2b {
+		pinmux = <ENE_KB106X_PINMUX(0x2B, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso12_gpio2c: kso12_gpio2c {
+		pinmux = <ENE_KB106X_PINMUX(0x2C, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso13_gpio2d: kso13_gpio2d {
+		pinmux = <ENE_KB106X_PINMUX(0x2D, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso14_gpio2e: kso14_gpio2e {
+		pinmux = <ENE_KB106X_PINMUX(0x2E, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso15_gpio2f: kso15_gpio2f {
+		pinmux = <ENE_KB106X_PINMUX(0x2F, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso16_gpio48: kso16_gpio48 {
+		pinmux = <ENE_KB106X_PINMUX(0x48, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso17_gpio49: kso17_gpio49 {
+		pinmux = <ENE_KB106X_PINMUX(0x49, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ kso18_gpio4e: kso18_gpio4e {
+		pinmux = <ENE_KB106X_PINMUX(0x4E, PINMUX_FUNC_C)>;
+	};
+
+	/omit-if-no-ref/ kso19_gpio4f: kso19_gpio4f {
+		pinmux = <ENE_KB106X_PINMUX(0x4F, PINMUX_FUNC_C)>;
+	};
+
+	/omit-if-no-ref/ kso20_gpio52: kso20_gpio52 {
+		pinmux = <ENE_KB106X_PINMUX(0x52, PINMUX_FUNC_B)>;
+	};
+
+	/* keyboard nkro ksi */
+	/omit-if-no-ref/ nkro_ksi00_gpio30: nkro_ksi00_gpio30 {
+		pinmux = <ENE_KB106X_PINMUX(0x30, PINMUX_FUNC_C)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi01_gpio31: nkro_ksi01_gpio31 {
+		pinmux = <ENE_KB106X_PINMUX(0x31, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi02_gpio32: nkro_ksi02_gpio32 {
+		pinmux = <ENE_KB106X_PINMUX(0x32, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi03_gpio33: nkro_ksi03_gpio33 {
+		pinmux = <ENE_KB106X_PINMUX(0x33, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi04_gpio34: nkro_ksi04_gpio34 {
+		pinmux = <ENE_KB106X_PINMUX(0x34, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi05_gpio35: nkro_ksi05_gpio35 {
+		pinmux = <ENE_KB106X_PINMUX(0x35, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi06_gpio36: nkro_ksi06_gpio36 {
+		pinmux = <ENE_KB106X_PINMUX(0x36, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi07_gpio37: nkro_ksi07_gpio37 {
+		pinmux = <ENE_KB106X_PINMUX(0x37, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi08_gpio28: nkro_ksi08_gpio28 {
+		pinmux = <ENE_KB106X_PINMUX(0x28, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi09_gpio29: nkro_ksi09_gpio29 {
+		pinmux = <ENE_KB106X_PINMUX(0x29, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi10_gpio2a: nkro_ksi10_gpio2a {
+		pinmux = <ENE_KB106X_PINMUX(0x2A, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi11_gpio2b: nkro_ksi11_gpio2b {
+		pinmux = <ENE_KB106X_PINMUX(0x2B, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi12_gpio2c: nkro_ksi12_gpio2c {
+		pinmux = <ENE_KB106X_PINMUX(0x2C, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi13_gpio2d: nkro_ksi13_gpio2d {
+		pinmux = <ENE_KB106X_PINMUX(0x2D, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi14_gpio2e: nkro_ksi14_gpio2e {
+		pinmux = <ENE_KB106X_PINMUX(0x2E, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi15_gpio2f: nkro_ksi15_gpio2f {
+		pinmux = <ENE_KB106X_PINMUX(0x2F, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi16_gpio48: nkro_ksi16_gpio48 {
+		pinmux = <ENE_KB106X_PINMUX(0x48, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi17_gpio49: nkro_ksi17_gpio49 {
+		pinmux = <ENE_KB106X_PINMUX(0x49, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi18_gpio4e: nkro_ksi18_gpio4e {
+		pinmux = <ENE_KB106X_PINMUX(0x4E, PINMUX_FUNC_C)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi19_gpio4f: nkro_ksi19_gpio4f {
+		pinmux = <ENE_KB106X_PINMUX(0x4F, PINMUX_FUNC_C)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ nkro_ksi20_gpio52: nkro_ksi20_gpio52 {
+		pinmux = <ENE_KB106X_PINMUX(0x52, PINMUX_FUNC_B)>;
+		bias-disable;
+		input-enable;
+	};
+
+	/* keyboard nkro kso */
+	/omit-if-no-ref/ nkro_kso00_gpio20: nkro_kso00_gpio20 {
+		pinmux = <ENE_KB106X_PINMUX(0x20, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/omit-if-no-ref/ nkro_kso01_gpio21: nkro_kso01_gpio21 {
+		pinmux = <ENE_KB106X_PINMUX(0x21, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/omit-if-no-ref/ nkro_kso02_gpio22: nkro_kso02_gpio22 {
+		pinmux = <ENE_KB106X_PINMUX(0x22, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/omit-if-no-ref/ nkro_kso03_gpio23: nkro_kso03_gpio23 {
+		pinmux = <ENE_KB106X_PINMUX(0x23, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/omit-if-no-ref/ nkro_kso04_gpio24: nkro_kso04_gpio24 {
+		pinmux = <ENE_KB106X_PINMUX(0x24, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/omit-if-no-ref/ nkro_kso05_gpio25: nkro_kso05_gpio25 {
+		pinmux = <ENE_KB106X_PINMUX(0x25, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/omit-if-no-ref/ nkro_kso06_gpio26: nkro_kso06_gpio26 {
+		pinmux = <ENE_KB106X_PINMUX(0x26, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/omit-if-no-ref/ nkro_kso07_gpio27: nkro_kso07_gpio27 {
+		pinmux = <ENE_KB106X_PINMUX(0x27, PINMUX_FUNC_B)>;
+		bias-pull-up;
+		drive-strength = <16>;
+	};
+
+	/* ps2 channel 1 */
+	/omit-if-no-ref/ psclk1_gpio4a: psclk1_gpio4a {
+		pinmux = <ENE_KB106X_PINMUX(0x4A, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ psdat1_gpio4b: psdat1_gpio4b {
+		pinmux = <ENE_KB106X_PINMUX(0x4B, PINMUX_FUNC_B)>;
+	};
+
+	/* ps2 channel 2 */
+	/omit-if-no-ref/ psclk2_gpio4c: psclk2_gpio4c {
+		pinmux = <ENE_KB106X_PINMUX(0x4C, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ psdat2_gpio4d: psdat2_gpio4d {
+		pinmux = <ENE_KB106X_PINMUX(0x4D, PINMUX_FUNC_B)>;
+	};
+
+	/* ps2 channel 3 */
+	/omit-if-no-ref/ psclk3_gpio4e: psclk3_gpio4e {
+		pinmux = <ENE_KB106X_PINMUX(0x4E, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ psdat3_gpio4f: psdat3_gpio4f {
+		pinmux = <ENE_KB106X_PINMUX(0x4F, PINMUX_FUNC_B)>;
+	};
+
+	/* peci */
+	/omit-if-no-ref/ peci_gpio7f: peci_gpio7f {
+		pinmux = <ENE_KB106X_PINMUX(0x7f, PINMUX_FUNC_B)>;
+		input-enable;
+	};
+
+	/* espi */
+	/omit-if-no-ref/ espi_alert_gpio01: espi_alert_gpio01 {
+		pinmux = <ENE_KB106X_PINMUX(0x01, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ espi_cs_gpio03: espi_cs_gpio03 {
+		pinmux = <ENE_KB106X_PINMUX(0x03, PINMUX_FUNC_A)>;
+	};
+
+	/omit-if-no-ref/ espi_rst_gpio07: espi_rst_gpio07 {
+		pinmux = <ENE_KB106X_PINMUX(0x07, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/* uart */
+	/omit-if-no-ref/ uart_sin_gpio17: uart_sin_gpio17 {
+		pinmux = <ENE_KB106X_PINMUX(0x17, PINMUX_FUNC_C)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uart_sout_gpio16: uart_sout_gpio16 {
+		pinmux = <ENE_KB106X_PINMUX(0x16, PINMUX_FUNC_C)>;
+	};
+
+	/omit-if-no-ref/ uart_sin2_gpio49: uart_sin2_gpio49 {
+		pinmux = <ENE_KB106X_PINMUX(0x49, PINMUX_FUNC_A)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uart_sout2_gpio48: uart_sout2_gpio48 {
+		pinmux = <ENE_KB106X_PINMUX(0x48, PINMUX_FUNC_C)>;
+	};
+};
