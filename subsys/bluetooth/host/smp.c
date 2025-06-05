@@ -2555,22 +2555,35 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 static uint8_t legacy_pairing_random(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	uint8_t tmp[16];
+	uint8_t tmp[16], cfm_i[16];
 	int err;
 
 	LOG_DBG("");
 
-	/* calculate confirmation */
+	/* calculate LP_CONFIRM_R */
 	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp,
 		     &conn->le.init_addr, &conn->le.resp_addr, tmp);
 	if (err) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
-	LOG_DBG("cfm %s", bt_hex(tmp, 16));
+	/* calculate LP_CONFIRM_I */
+	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
+		     &conn->le.init_addr, &conn->le.resp_addr, cfm_i);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
 
-	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
+	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
+	LOG_DBG("cfm (remote) %s", bt_hex(tmp, 16));
+	LOG_DBG("cfm (local) %s", bt_hex(cfm_i, 16));
+
+	/* Core Specification, Vol 3, Part H, section 2.3.5.5 (Errata ES-24491): If the computed
+	 * LP_CONFIRM_R value is not equal to the received LP_CONFIRM_R value, or the received
+	 * LP_CONFIRM_R value is equal to the LP_CONFIRM_I value, fail pairing.
+	 */
+	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf)) ||
+	    !memcmp(smp->pcnf, cfm_i, sizeof(smp->pcnf))) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
