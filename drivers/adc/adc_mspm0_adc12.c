@@ -247,7 +247,7 @@ static int adc_mspm0_config_Vref(int vref_source, int vref_val, uint32_t *memCtl
 				 */
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 				break;
-#elif
+#else
 				return -EINVAL;
 #endif
 			}
@@ -262,6 +262,9 @@ static int adc_mspm0_config_Vref(int vref_source, int vref_val, uint32_t *memCtl
 		DL_VREF_enablePower(VREF);
 		delay_cycles(POWER_STARTUP_DELAY);
 		DL_VREF_setClockConfig(VREF, (DL_VREF_ClockConfig *)&gVREFClockConfig);
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+		DL_VREF_configReference(VREF, (DL_VREF_Config *)&gVREFConfig);
+#endif
 	}
 
 	return error;
