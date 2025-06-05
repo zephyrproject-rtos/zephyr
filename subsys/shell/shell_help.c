@@ -38,6 +38,7 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 
 	while (true) {
 		size_t idx = 0;
+		bool newline_found = false;
 
 		length = z_shell_strlen(str) - offset;
 
@@ -51,8 +52,14 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 					z_cursor_next_line_move(sh);
 					z_shell_op_cursor_horiz_move(sh,
 							terminal_offset);
+					newline_found = true;
 					break;
 				}
+			}
+
+			/* If we found a newline, continue processing the remaining text */
+			if (newline_found) {
+				continue;
 			}
 
 			/* String will fit in one line. */
