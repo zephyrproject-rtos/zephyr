@@ -288,8 +288,8 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 	enet_qos_t *base = config->base;
 
 	/* cleared on read */
-	uint32_t mac_interrupts = base->MAC_INTERRUPT_STATUS;
-	uint32_t mac_rx_tx_status = base->MAC_RX_TX_STATUS;
+	(void)base->MAC_INTERRUPT_STATUS;
+	(void)base->MAC_RX_TX_STATUS;
 	uint32_t dma_interrupts = base->DMA_INTERRUPT_STATUS;
 	uint32_t dma_ch0_interrupts = base->DMA_CH[0].DMA_CHX_STAT;
 
