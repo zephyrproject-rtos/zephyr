@@ -133,8 +133,6 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 #endif /* !CONFIG_NET_TEST */
 
-BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection");
-
 /* RX descriptors list */
 #define DEFN_RX_DESC(n)									\
 		static struct gmac_desc rx_desc##n##_que[PRIORITY_QUEUE_RX_DESC_COUNT]	\
@@ -983,7 +981,7 @@ static void gmac_setup_ptp_clock_divisors(Gmac *gmac)
 }
 #endif
 
-static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
+static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_dev_cfg *const cfg)
 {
 	int mck_divisor;
 
@@ -1010,7 +1008,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
 	/* Default (RMII) is defined at atmel,gmac-common.yaml file */
-	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
+	switch (cfg->phy_conn_type) {
 	case 0: /* mii */
 		gmac->GMAC_UR = 0x1;
 		break;
@@ -1018,7 +1016,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 		gmac->GMAC_UR = 0x0;
 		break;
 	default:
-		/* Build assert at top of file should catch this case */
+		/* Build assert in this file should catch this case */
 		LOG_ERR("The phy connection type is invalid");
 
 		return -EINVAL;
@@ -1778,7 +1776,7 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
-	result = gmac_init(cfg->regs, gmac_ncfgr_val);
+	result = gmac_init(cfg->regs, gmac_ncfgr_val, cfg);
 	if (result < 0) {
 		LOG_ERR("%s Unable to initialize ETH driver", dev->name);
 		return;
@@ -2111,6 +2109,8 @@ static const struct ethernet_api eth_api = {
 			     DT_INST_PROP(n, max_frame_size) == 1536 ||			\
 			     DT_INST_PROP(n, max_frame_size) == 10240,			\
 			     "max-frame-size is invalid, fix it at device tree.");	\
+		BUILD_ASSERT(DT_INST_ENUM_IDX(n, phy_connection_type) <= 1,		\
+			     "Invalid PHY connection");					\
 		static const struct eth_sam_dev_cfg eth##n##_config = {			\
 			.regs = (Gmac *)DT_INST_REG_ADDR(n),				\
 			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
@@ -2119,6 +2119,7 @@ static const struct ethernet_api eth_api = {
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
 			.max_frame_size = DT_INST_PROP(n, max_frame_size),		\
 			.num_queues = DT_INST_PROP(n, num_queues),			\
+			.phy_conn_type = DT_INST_ENUM_IDX(n, phy_connection_type),	\
 		};
 
 #define DEFN_RX_FLAG_LIST_0(n)								\

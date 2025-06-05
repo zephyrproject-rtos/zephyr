@@ -260,6 +260,7 @@ struct eth_sam_dev_cfg {
 	const struct device *phy_dev;
 	const uint32_t max_frame_size;
 	const uint8_t num_queues;
+	const uint8_t phy_conn_type;
 };
 
 /* Device run time data */
