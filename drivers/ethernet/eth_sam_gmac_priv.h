@@ -262,6 +262,12 @@ struct gmac_queue {
 	enum queue_idx que_idx;
 };
 
+enum mac_address_source {
+	MAC_ADDR_SOURCE_EMPTY,
+	MAC_ADDR_SOURCE_RANDOM,
+	MAC_ADDR_SOURCE_EEPROM,
+};
+
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
 	Gmac *regs;
@@ -273,6 +279,8 @@ struct eth_sam_dev_cfg {
 	const struct device *phy_dev;
 	const uint8_t num_queues;
 	const uint8_t phy_conn_type;
+	const enum mac_address_source mac_addr_src;
+	const struct i2c_dt_spec mac_eeprom;
 };
 
 /* Device run time data */

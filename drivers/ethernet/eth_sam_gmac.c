@@ -1660,12 +1660,11 @@ static int eth_initialize(const struct device *dev)
 	return retval;
 }
 
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mac_eeprom)
+static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6], const struct i2c_dt_spec i2c)
 {
 	uint32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
 	int ret;
-	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_INST_PHANDLE(0, mac_eeprom));
 
 	if (!device_is_ready(i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
@@ -1683,12 +1682,17 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 }
 #endif
 
-static void generate_mac(uint8_t mac_addr[6])
+static void generate_mac(uint8_t mac_addr[6], const struct eth_sam_dev_cfg *const cfg)
 {
-#if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
-	get_mac_addr_from_i2c_eeprom(mac_addr);
-#elif DT_INST_PROP(0, zephyr_random_mac_address)
-	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mac_eeprom)
+	if (cfg->mac_addr_src == MAC_ADDR_SOURCE_EEPROM) {
+		get_mac_addr_from_i2c_eeprom(mac_addr, cfg->mac_eeprom);
+	}
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(zephyr_random_mac_address)
+	if (cfg->mac_addr_src == MAC_ADDR_SOURCE_RANDOM) {
+		gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
+	}
 #endif
 }
 
@@ -1761,7 +1765,7 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
-	generate_mac(dev_data->mac_addr);
+	generate_mac(dev_data->mac_addr, cfg);
 
 	LOG_INF("%s MAC: %02x:%02x:%02x:%02x:%02x:%02x", dev->name,
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -2081,6 +2085,21 @@ static const struct ethernet_api eth_api = {
 #else
 #define CFG_CLK_DEFN(n)
 #endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mac_eeprom)
+#define SAM_GMAC_MAC_EEPROM_I2C(n)							\
+		.mac_eeprom = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), mac_eeprom),	\
+				(I2C_DT_SPEC_GET(DT_INST_PHANDLE(n, mac_eeprom))),	\
+				({})),
+#endif
+
+#define SAM_GMAC_MAC_ADDR_SOURCE(n)							\
+		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), mac_eeprom),		\
+				(MAC_ADDR_SOURCE_EEPROM),				\
+		(COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),		\
+				(MAC_ADDR_SOURCE_RANDOM),				\
+				(MAC_ADDR_SOURCE_EMPTY))))
+
 #define SAM_GMAC_CFG_DEFN(n)								\
 		static const struct eth_sam_dev_cfg eth##n##_config = {			\
 			.regs = (Gmac *)DT_INST_REG_ADDR(n),				\
@@ -2090,6 +2109,8 @@ static const struct ethernet_api eth_api = {
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
 			.num_queues = DT_INST_PROP(n, num_queues),			\
 			.phy_conn_type = DT_INST_ENUM_IDX(n, phy_connection_type),	\
+			.mac_addr_src = SAM_GMAC_MAC_ADDR_SOURCE(n),			\
+			SAM_GMAC_MAC_EEPROM_I2C(n)					\
 		};
 
 #define DEFN_RX_FLAG_LIST_0(n)								\
