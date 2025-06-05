@@ -49,6 +49,7 @@ int main(void)
 		.buffer_size = sizeof(channel_reading),
 		.resolution = CONFIG_SEQUENCE_RESOLUTION,
 		.options = &options,
+		.oversampling = CONFIG_SEQUENCE_OVERSAMPLING,
 	};
 
 	if (!device_is_ready(adc)) {
