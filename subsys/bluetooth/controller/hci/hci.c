@@ -5896,6 +5896,9 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000002
+__attribute__((optimize("O0")))
+#endif
 int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_iso_sdu_hdr *iso_sdu_hdr;
@@ -6116,7 +6119,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		return 0;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO)
+#if defined(CONFIG_BT_CTLR_ADV_ISO) && !defined(CONFIG_BT_ISO_BIS_RECV_SEND)
 	} else if (IS_ADV_ISO_HANDLE(handle)) {
 		struct lll_adv_iso_stream *stream;
 		struct ll_adv_iso_set *adv_iso;
@@ -6255,7 +6258,148 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		return 0;
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
+#endif /* CONFIG_BT_CTLR_ADV_ISO  && !CONFIG_BT_ISO_BIS_RECV_SEND*/
+
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+	} else if (IS_SYNC_ISO_HANDLE(handle)) {
+		struct lll_sync_iso_stream *stream;
+		struct ll_sync_iso_set *sync_iso;
+		struct lll_sync_iso *lll_iso;
+		uint16_t latency_prepare;
+		uint16_t stream_handle;
+		uint64_t target_event;
+		uint8_t event_offset;
+
+		/* Get BIS stream handle and stream context */
+		stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
+		stream = ull_sync_iso_stream_get(stream_handle);
+		if (!stream || !stream->dp) {
+			LOG_ERR("Invalid BIS stream");
+			return -EINVAL;
+		}
+
+		sync_iso = ull_sync_iso_by_stream_get(stream_handle);
+		if (!sync_iso) {
+			LOG_ERR("No BIG associated with stream handle");
+			return -EINVAL;
+		}
+
+		lll_iso = &sync_iso->lll;
+
+		/* Determine the target event and the first event offset after
+		 * datapath setup.
+		 * event_offset mitigates the possibility of first SDU being
+		 * late on the datapath and avoid all subsequent SDUs being
+		 * dropped for a said SDU interval. i.e. upper layer is not
+		 * drifting, say first SDU dropped, hence subsequent SDUs all
+		 * dropped, is mitigated by offsetting the grp_ref_point.
+		 *
+		 * It is ok to do the below for every received ISO data, ISOAL
+		 * will not consider subsequent skewed target_event after the
+		 * first use of target_event value.
+		 *
+		 * In BIG implementation in LLL, payload_count corresponds to
+		 * the next BIG event, hence calculate grp_ref_point for next
+		 * BIG event by incrementing the previous elapsed big_ref_point
+		 * by one additional ISO interval.
+		 */
+		target_event = lll_iso->payload_count / lll_iso->bn;
+		latency_prepare = lll_iso->latency_prepare;
+		if (latency_prepare) {
+			/* big_ref_point has been updated, but payload_count
+			 * hasn't been updated yet - increment target_event to
+			 * compensate
+			 */
+			target_event += latency_prepare;
+		}
+		event_offset = ull_ref_get(&sync_iso->ull) ? 0U : 1U;
+
+#if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
+		uint64_t event_count;
+		uint64_t pkt_seq_num;
+
+		/* Catch up local pkt_seq_num with internal pkt_seq_num */
+		event_count = target_event + event_offset;
+		pkt_seq_num = event_count + 1U;
+
+		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
+		 * then we simply check that the pb_flag is an even value, and
+		 * then  pkt_seq_num is a future sequence number value compare
+		 * to last recorded number in cis->pkt_seq_num.
+		 *
+		 * When (pkt_seq_num - stream->pkt_seq_num) is negative then
+		 * BIT64(39) will be set (2's compliment value). The diff value
+		 * less than or equal to BIT64_MASK(38) means the diff value is
+		 * positive and hence pkt_seq_num is greater than
+		 * stream->pkt_seq_num. This calculation is valid for when value
+		 * rollover too.
+		 */
+		if (!(pb_flag & 0x01) &&
+		    (((pkt_seq_num - stream->pkt_seq_num) &
+		      BIT64_MASK(39)) <= BIT64_MASK(38))) {
+			stream->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = stream->pkt_seq_num;
+		}
+
+		/* Pre-increment, when pg_flag is BT_ISO_SINGLE (0b10) or
+		 * BT_ISO_END (0b11) then we simple check if pb_flag has bit 1
+		 * is set, for next ISO data packet seq num comparison.
+		 */
+		if (pb_flag & 0x10) {
+			stream->pkt_seq_num++;
+		}
+
+		/* Target next ISO event to avoid overlapping with, if any,
+		 * current ISO event
+		 */
+		/* FIXME: Implement ISO Tx ack generation early in done compared
+		 *        to currently only in prepare. I.e. to ensure upper
+		 *        layer has the number of completed packet before the
+		 *        next BIG event, so as to supply new ISO data packets.
+		 *        Without which upper layers need extra buffers to
+		 *        buffer next ISO data packet.
+		 *
+		 *        Enable below increment once early Tx ack is
+		 *        implemented.
+		 *
+		 * pkt_seq_num++;
+		 */
+		sdu_frag_tx.target_event = pkt_seq_num;
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(sync_iso->big_ref_point,
+						  (((pkt_seq_num + 1U) -
+						    event_count) *
+						   lll_iso->iso_interval *
+						   ISO_INT_UNIT_US));
+
+#else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+		sdu_frag_tx.target_event = target_event + event_offset;
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(sync_iso->big_ref_point,
+						  ((event_offset + 1U) *
+						   lll_iso->iso_interval *
+						   ISO_INT_UNIT_US));
+#endif /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+
+		/* Start Fragmentation */
+		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
+		 * Currently there are cases where ISO-AL calls LL_ASSERT.
+		 */
+		isoal_status_t isoal_status =
+			isoal_tx_sdu_fragment(stream->dp->source_hdl, &sdu_frag_tx);
+
+		if (isoal_status) {
+			if (isoal_status & ISOAL_STATUS_ERR_PDU_ALLOC) {
+				data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO);
+				return -ENOBUFS;
+			}
+
+			return -EINVAL;
+		}
+
+		return 0;
+#endif /* CONFIG_BT_ISO_BIS_RECV_SEND*/
 
 	}
 

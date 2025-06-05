@@ -222,6 +222,27 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		stream->big_handle = big_handle;
 		stream->bis_index = bis[i];
 		stream->dp = NULL;
+
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+		/* In this mode of operation all BISes apart from the first is setup
+		   with a datapath for sending and not receiving. Hence we need to  
+		   allocate the fifos for all except the first one.
+		   The first BIS has bis_index == 1 and is used for receiving
+		   so it does not have a datapath allocated.
+		*/
+		__ASSERT_NO_MSG(stream->bis_index == i+1)
+		if(i>0) {
+			if (!stream->link_tx_free) {
+				stream->link_tx_free = &stream->link_tx;
+			}
+			memq_init(stream->link_tx_free, &stream->memq_tx.head,
+				&stream->memq_tx.tail);
+			stream->link_tx_free = NULL;
+
+			stream->pkt_seq_num = 0U;
+		} 
+#endif		
+
 		stream->test_mode = &test_mode[i];
 		memset(stream->test_mode, 0, sizeof(struct ll_iso_rx_test_mode));
 		lll->stream_handle[i] = sync_iso_stream_handle_get(stream);
@@ -391,6 +412,23 @@ void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 		stream = ull_sync_iso_stream_get(stream_handle);
 		LL_ASSERT(stream);
 
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+		/* In this mode of operation all BISes apart from the first is setup
+		   with a datapath for sending and not receiving so we need deallocate 
+		   the fifos that were setup at establishment time.
+		   The first BIS has bis_index == 1 and is used for receiving
+		   so it does not have a datapath allocated.
+		*/
+		memq_link_t *link;
+		if(stream->bis_index>1){
+			LL_ASSERT(!stream->link_tx_free);
+			link = memq_deinit(&stream->memq_tx.head,
+					&stream->memq_tx.tail);
+			LL_ASSERT(link);
+			stream->link_tx_free = link;
+		}		
+#endif		
+	
 		dp = stream->dp;
 		if (dp) {
 			stream->dp = NULL;
@@ -1011,6 +1049,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0U,
 			     &mfy_lll_prepare);
 	LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+	/* Calculate the BIG reference point of current BIG event */
+	uint32_t remainder_us = remainder;
+	hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+	ticks_at_expire &= HAL_TICKER_CNTR_MASK;
+	sync_iso->big_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_at_expire),
+							   (remainder_us +
+							    EVENT_OVERHEAD_START_US));
+#endif /* CONFIG_BT_ISO_BIS_RECV_SEND */
 
 	DEBUG_RADIO_PREPARE_O(1);
 }

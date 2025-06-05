@@ -9,6 +9,16 @@ struct lll_sync_iso_stream {
 	uint8_t bis_index;
 	struct ll_iso_rx_test_mode *test_mode;
 	struct ll_iso_datapath *dp;
+
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+	/* Transmission queue */
+	MEMQ_DECLARE(tx);
+	memq_link_t link_tx;
+	memq_link_t *link_tx_free;
+
+	/* Downstream last packet sequence number */
+	uint16_t pkt_seq_num;
+#endif
 };
 
 struct lll_sync_iso_data_chan {

@@ -214,6 +214,9 @@ static inline bool path_is_vendor_specific(uint8_t path_id)
 		path_id <= BT_HCI_DATAPATH_ID_VS_END);
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000004
+__attribute__((optimize("O0")))
+#endif
 uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 			  uint8_t coding_format, uint16_t company_id,
 			  uint16_t vs_codec_id, uint32_t controller_delay,
@@ -235,6 +238,8 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 	ARG_UNUSED(controller_delay);
 	ARG_UNUSED(codec_config);
+
+	printk("~MT~ ll_setup_iso_path(handle=%u path=%u)\n", handle, path_dir); 
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_group *cig;
@@ -351,7 +356,17 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		sync_iso = ull_sync_iso_by_stream_get(stream_handle);
 		lll_iso = &sync_iso->lll;
 
+#if !defined(CONFIG_BT_ISO_BIS_RECV_SEND)
 		role = ISOAL_ROLE_BROADCAST_SINK;
+#else /* CONFIG_BT_ISO_BIS_RECV_SEND */
+		if(path_dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
+			/* BIS receive */
+			role = ISOAL_ROLE_BROADCAST_SINK;
+		} else {
+			/* BIS send */
+			role = ISOAL_ROLE_BROADCAST_SOURCE;
+		}
+#endif /* !CONFIG_BT_ISO_BIS_RECV_SEND */	
 		iso_interval = lll_iso->iso_interval;
 		sdu_interval = lll_iso->sdu_interval;
 		burst_number = lll_iso->bn;
@@ -469,7 +484,11 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	} else if ((path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) &&
+#if !defined(CONFIG_BT_ISO_BIS_RECV_SEND)
 		   (cis || adv_stream)) {
+#else /* CONFIG_BT_ISO_BIS_RECV_SEND */
+		   sync_stream) {
+#endif /* !CONFIG_BT_ISO_BIS_RECV_SEND */			
 		isoal_source_handle_t source_handle;
 		isoal_status_t err;
 
@@ -511,10 +530,15 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 				cis->hdr.datapath_in = dp;
 			}
 
+#if !defined(CONFIG_BT_ISO_BIS_RECV_SEND)
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && adv_stream != NULL) {
 				adv_stream->dp = dp;
 			}
-
+#else /* CONFIG_BT_ISO_BIS_RECV_SEND */
+			if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO) && sync_stream != NULL) {
+				sync_stream->dp = dp;
+			}
+#endif /* !CONFIG_BT_ISO_BIS_RECV_SEND */
 			dp->source_hdl = source_handle;
 			isoal_source_enable(source_handle);
 		} else {
@@ -534,6 +558,9 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	return BT_HCI_ERR_SUCCESS;
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000004
+__attribute__((optimize("O0")))
+#endif
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
 	/* If the Host issues this command with a Connection_Handle that does
@@ -1409,6 +1436,9 @@ void ll_iso_tx_mem_release(void *node_tx)
 	mem_release(node_tx, &mem_iso_tx.free);
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000020
+__attribute__((optimize("O0")))
+#endif
 int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx, void *link)
 {
 	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) &&
@@ -1427,6 +1457,16 @@ int ll_iso_tx_mem_enqueue(uint16_t handle, void *node_tx, void *link)
 		stream = ull_adv_iso_stream_get(stream_handle);
 		memq_enqueue(link, node_tx, &stream->memq_tx.tail);
 
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO) &&
+		   IS_SYNC_ISO_HANDLE(handle)) {
+		struct lll_sync_iso_stream *sync_stream;
+		uint16_t stream_handle;
+
+		stream_handle = LL_BIS_SYNC_IDX_FROM_HANDLE(handle);
+		sync_stream = ull_sync_iso_stream_get(stream_handle);
+		memq_enqueue(link, node_tx, &sync_stream->memq_tx.tail);
+#endif		
 	} else {
 		return -EINVAL;
 	}
@@ -1875,6 +1915,9 @@ static isoal_status_t ll_iso_pdu_write(struct isoal_pdu_buffer *pdu_buffer,
  * @param handle  CIS/BIS handle
  * @return        Error status of enqueue operation
  */
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000020
+__attribute__((optimize("O0")))
+#endif
 static isoal_status_t ll_iso_pdu_emit(struct node_tx_iso *node_tx,
 				      const uint16_t handle)
 {

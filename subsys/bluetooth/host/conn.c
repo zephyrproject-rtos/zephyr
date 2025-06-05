@@ -759,7 +759,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	atomic_dec(&conn->in_ll);
 	(void)sys_slist_find_and_remove(&conn->tx_pending, &tx->node);
 
-	LOG_ERR("Unable to send to driver (err %d)", err);
+	LOG_ERR("send_buf() - unable to send to driver (err %d)", err);
 
 	/* If we get here, something has seriously gone wrong: the `parent` buf
 	 * (of which the current fragment belongs) should also be destroyed.
