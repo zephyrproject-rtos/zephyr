@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
@@ -25,6 +27,10 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <platform-zephyr.h>
 
 #include "openthread_utils.h"
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+#include "openthread_border_router.h"
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 static struct net_linkaddr *ll_addr;
 static struct openthread_state_changed_callback ot_l2_state_changed_cb;
@@ -58,6 +64,7 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 		 "please enable CONFIG_NET_MGMT_EVENT_INFO");
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 }
+
 #endif /* CONFIG_NET_MGMT_EVENT */
 
 #ifndef CONFIG_HDLC_RCP_IF
@@ -181,6 +188,8 @@ static void ot_receive_handler(otMessage *message, void *context)
 		}
 	}
 
+	net_pkt_set_ll_proto_type(pkt, PKT_IS_IPv4(pkt) ? ETH_P_IP : ETH_P_IPV6);
+
 	if (!pkt_list_is_full(ot_context)) {
 		if (pkt_list_add(ot_context, pkt) != 0) {
 			NET_ERR("pkt_list_add failed");
@@ -292,6 +301,9 @@ static int openthread_l2_init(struct net_if *iface)
 		net_if_dormant_on(iface);
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+		openthread_border_router_init(ot_l2_context);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 		/* To keep backward compatibility use the additional state change callback list from
 		 * the ot l2 context and register the callback to the openthread module.
