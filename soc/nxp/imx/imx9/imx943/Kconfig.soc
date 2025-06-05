@@ -11,6 +11,12 @@ config SOC_MIMX94398_A55
 	help
 	  NXP i.MX943 A55
 
+config SOC_MIMX94398_M33
+	bool
+	select SOC_MIMX94398
+	help
+	  NXP i.MX943 M33
+
 config SOC
 	default "mimx94398" if SOC_MIMX94398
 
