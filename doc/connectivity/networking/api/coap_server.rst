@@ -46,8 +46,7 @@ Add this linker file to your application using CMake:
 
     # Support CMake linker generator
     zephyr_iterable_section(NAME coap_resource_my_service
-                            GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT}
-                            SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+                            GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 
 You can now define your service as part of the application:
 
