@@ -174,9 +174,9 @@ static int cmd_lvgl_stats_memory(const struct shell *sh, size_t argc, char *argv
 
 SHELL_STATIC_SUBCMD_SET_CREATE(lvgl_cmd_stats,
 			       SHELL_CMD_ARG(memory, NULL,
-					     "Show LVGL memory statistics\n"
-					     "Usage: lvgl stats memory [-c]\n"
-					     "-c  dump chunk information",
+					     SHELL_HELP("Show LVGL memory statistics",
+							"[-c]\n"
+							"-c  dump chunk information"),
 					     cmd_lvgl_stats_memory, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
@@ -184,12 +184,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(lvgl_cmd_stats,
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	lvgl_cmd_monkey,
 	SHELL_CMD_ARG(create, NULL,
-		      "Create a new monkey instance (default: pointer)\n"
-		      "Usage: lvgl monkey create [pointer|keypad|button|encoder]",
+		      SHELL_HELP("Create a new monkey instance (default: pointer)",
+				 "[pointer|keypad|button|encoder]"),
 		      cmd_lvgl_monkey_create, 1, 1),
 	SHELL_CMD_ARG(set, NULL,
-		      "Activate/deactive a monkey instance\n"
-		      "Usage: lvgl monkey set <index> <active|inactive>\n",
+		      SHELL_HELP("Activate/deactivate a monkey instance",
+				 "<index> <active|inactive>"),
 		      cmd_lvgl_monkey_set, 3, 0),
 	SHELL_SUBCMD_SET_END);
 #endif /* CONFIG_LV_USE_MONKEY */
