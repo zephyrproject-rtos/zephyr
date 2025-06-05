@@ -2187,6 +2187,7 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.sta_remove               = wifi_nxp_hostapd_sta_remove,
 	.sta_add                  = wifi_nxp_hostapd_sta_add,
 	.do_acs                   = wifi_nxp_hostapd_do_acs,
+	.get_inact_sec            = wifi_nxp_wpa_supp_sta_get_inact_sec,
 #endif
 	.dpp_listen               = wifi_nxp_wpa_dpp_listen,
 	.remain_on_channel        = wifi_nxp_wpa_supp_remain_on_channel,
