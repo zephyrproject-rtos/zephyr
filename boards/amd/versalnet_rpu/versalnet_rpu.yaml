@@ -10,3 +10,4 @@ testing:
 vendor: amd
 supported:
   - sdhc
+  - mbox
