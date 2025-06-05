@@ -20,6 +20,7 @@
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&ft3267_g1120b0mipi>;
+		display = <&rm67162_g1120b0mipi>;
 		invert-y;
 	};
 };
