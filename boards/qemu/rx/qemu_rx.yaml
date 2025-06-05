@@ -10,7 +10,6 @@ arch: rx
 toolchain:
   - cross-compile
   - zephyr
-  - zephyr-gnu
 supported:
   - serial
 testing:
