@@ -13,4 +13,5 @@ supported:
   - watchdog
   - usbd
   - counter
+  - i2s
 vendor: renesas
