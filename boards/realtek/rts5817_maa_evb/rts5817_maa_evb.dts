@@ -41,3 +41,7 @@
 &uart1 {
 	status = "disabled";
 };
+
+&regulator {
+	status = "okay";
+};
