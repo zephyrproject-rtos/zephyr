@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2021 Nordic Semiconductor (ASA)
+# Copyright (c) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig IPC_MSG_SERVICE
+	bool "IPC message service support multiple backends [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enables support for a service that can be shared by multiple
+	  users. Ability to work in different backends. The backend
+	  should be registered before application starts using
+	  the IPC Message Service.
+
+if IPC_MSG_SERVICE
+
+rsource "backends/Kconfig"
+
+module = IPC_MSG_SERVICE
+module-str = IPC message service and backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # IPC_MSG_SERVICE
