@@ -173,24 +173,9 @@ static DEVICE_API(sensor, lps22hh_driver_api) = {
 static int lps22hh_init_chip(const struct device *dev)
 {
 	const struct lps22hh_config *const cfg = dev->config;
-	struct lps22hh_data *data = dev->data;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t chip_id;
 	int ret;
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
-	if (cfg->i3c.bus != NULL) {
-		/*
-		 * Need to grab the pointer to the I3C device descriptor
-		 * before we can talk to the sensor.
-		 */
-		data->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
-		if (data->i3c_dev == NULL) {
-			LOG_ERR("Cannot find I3C device descriptor");
-			return -ENODEV;
-		}
-	}
-#endif
 
 	if (lps22hh_device_id_get(ctx, &chip_id) < 0) {
 		LOG_ERR("%s: Not able to read dev id", dev->name);
@@ -224,8 +209,6 @@ static int lps22hh_init_chip(const struct device *dev)
 			return ret;
 		}
 	}
-#else
-	ARG_UNUSED(data);
 #endif
 
 	/* set sensor default odr */
@@ -286,6 +269,22 @@ static int lps22hh_pm_action(const struct device *dev, enum pm_device_action act
 
 static int lps22hh_init(const struct device *dev)
 {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	const struct lps22hh_config *const cfg = dev->config;
+	struct lps22hh_data *data = dev->data;
+
+	if (cfg->i3c.bus != NULL) {
+		/*
+		 * Need to grab the pointer to the I3C device descriptor
+		 * before we can talk to the sensor.
+		 */
+		data->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
+		if (data->i3c_dev == NULL) {
+			LOG_ERR("Cannot find I3C device descriptor");
+			return -ENODEV;
+		}
+	}
+#endif
 #ifdef CONFIG_LPS22HH_TRIGGER
 	if (lps22hh_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt.");
