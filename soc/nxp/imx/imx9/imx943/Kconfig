@@ -7,3 +7,14 @@ config SOC_MIMX94398_A55
 	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
+
+config SOC_MIMX94398_M33
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select ARM_MPU
+	select ARMV8_M_DSP
+	select HAS_MCUX
+	select HAS_MCUX_XCACHE
