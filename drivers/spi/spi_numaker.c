@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(spi_numaker, CONFIG_SPI_LOG_LEVEL);
 #include <NuMicro.h>
 
 #define SPI_NUMAKER_TX_NOP 0x00
+#define SPI_NUMAKER_CTL_MSK (SPI_CTL_DWIDTH_Msk | SPI_CTL_SLAVE_Msk | \
+			     SPI_CTL_CLKPOL_Msk | SPI_CTL_RXNEG_Msk | \
+			     SPI_CTL_TXNEG_Msk)
 
 struct spi_numaker_config {
 	SPI_T *spi;
@@ -91,6 +94,8 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 			  qsmode_tbl[mode],
 			  SPI_WORD_SIZE_GET(config->operation), config->frequency);
 	} else {
+		/* Clear SPI CTL before set */
+		dev_cfg->spi->CTL &= ~SPI_NUMAKER_CTL_MSK;
 		SPI_Open(dev_cfg->spi,
 			 (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) ? SPI_SLAVE
 										   : SPI_MASTER,
@@ -137,66 +142,26 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 	return 0;
 }
 
-static int spi_numaker_txrx(const struct device *dev)
+static int spi_numaker_txrx(const struct device *dev, uint8_t spi_dfs)
 {
 	struct spi_numaker_data *data = dev->data;
 	const struct spi_numaker_config *dev_cfg = dev->config;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t tx_frame, rx_frame;
-	uint8_t word_size, spi_dfs;
 	uint32_t time_out_cnt;
 
 	LOG_DBG("%s", __func__);
-	word_size = SPI_WORD_SIZE_GET(ctx->config->operation);
-
-	switch (word_size) {
-	case 8:
-		spi_dfs = 1;
-		break;
-	case 16:
-		spi_dfs = 2;
-		break;
-	case 24:
-		spi_dfs = 3;
-		break;
-	case 32:
-		spi_dfs = 4;
-		break;
-	default:
-		spi_dfs = 0;
-		LOG_ERR("Not support SPI WORD size as [%d] bits", word_size);
-		return -EIO;
-	}
-
-	LOG_DBG("%s -->word_size [%d]", __func__, word_size);
 
 	if (spi_context_tx_on(ctx)) {
 		tx_frame = ((ctx->tx_buf == NULL) ? SPI_NUMAKER_TX_NOP
-						  : UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf)));
+			   : UNALIGNED_GET((uint32_t *)data->ctx.tx_buf));
 		/* Write to TX register */
 		SPI_WRITE_TX(dev_cfg->spi, tx_frame);
 		spi_context_update_tx(ctx, spi_dfs, 1);
-
-		/* Check SPI busy status */
-		time_out_cnt = SystemCoreClock; /* 1 second time-out */
-		while (SPI_IS_BUSY(dev_cfg->spi)) {
-			if (--time_out_cnt == 0) {
-				LOG_ERR("Wait for SPI time-out");
-				return -EIO;
-			}
-		}
-
 		LOG_DBG("%s --> TX [0x%x] done", __func__, tx_frame);
 	} else {
 		/* Write dummy data to TX register */
 		SPI_WRITE_TX(dev_cfg->spi, 0x00U);
-		time_out_cnt = SystemCoreClock; /* 1 second time-out */
-		while (SPI_IS_BUSY(dev_cfg->spi)) {
-			if (--time_out_cnt == 0) {
-				LOG_ERR("Wait for SPI time-out");
-				return -EIO;
-			}
-		}
 	}
 
 	/* Read received data */
@@ -204,10 +169,28 @@ static int spi_numaker_txrx(const struct device *dev)
 		if (SPI_GET_RX_FIFO_COUNT(dev_cfg->spi) > 0) {
 			rx_frame = SPI_READ_RX(dev_cfg->spi);
 			if (ctx->rx_buf != NULL) {
-				UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+				if (spi_dfs > 2) {
+					UNALIGNED_PUT(rx_frame,
+					(uint32_t *)data->ctx.rx_buf);
+				} else if (spi_dfs > 1) {
+					UNALIGNED_PUT(rx_frame,
+					(uint16_t *)data->ctx.rx_buf);
+				} else {
+					UNALIGNED_PUT(rx_frame,
+					(uint8_t *)data->ctx.rx_buf);
+				}
 			}
 			spi_context_update_rx(ctx, spi_dfs, 1);
 			LOG_DBG("%s --> RX [0x%x] done", __func__, rx_frame);
+		}
+	}
+
+	/* Check SPI busy status */
+	time_out_cnt = SystemCoreClock; /* 1 second time-out */
+	while (SPI_IS_BUSY(dev_cfg->spi)) {
+		if (--time_out_cnt == 0) {
+			LOG_ERR("Wait for SPI time-out");
+			return -EIO;
 		}
 	}
 
@@ -229,19 +212,43 @@ static int spi_numaker_transceive(const struct device *dev, const struct spi_con
 	struct spi_context *ctx = &data->ctx;
 	const struct spi_numaker_config *dev_cfg = dev->config;
 	int ret;
+	uint8_t word_size, spi_dfs;
 
 	LOG_DBG("%s", __func__);
 	spi_context_lock(ctx, false, NULL, NULL, config);
-	ctx->config = config;
 
 	ret = spi_numaker_configure(dev, config);
 	if (ret < 0) {
 		goto done;
 	}
 
+	word_size = SPI_WORD_SIZE_GET(ctx->config->operation);
+
+	switch (word_size) {
+	case 8:
+		spi_dfs = 1;
+		break;
+	case 16:
+		spi_dfs = 2;
+		break;
+	case 24:
+		spi_dfs = 3;
+		break;
+	case 32:
+		spi_dfs = 4;
+		break;
+	default:
+		spi_dfs = 0;
+		LOG_ERR("Not support SPI WORD size as [%d] bits", word_size);
+		ret = -ENOTSUP;
+		goto done;
+	}
+
+	LOG_DBG("%s -->word_size [%d]", __func__, word_size);
+
 	SPI_ENABLE(dev_cfg->spi);
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, spi_dfs);
 
 	/* if cs is defined: software cs control, set active true */
 	if (spi_cs_is_gpio(config)) {
@@ -250,7 +257,7 @@ static int spi_numaker_transceive(const struct device *dev, const struct spi_con
 
 	/* transceive tx/rx data */
 	do {
-		ret = spi_numaker_txrx(dev);
+		ret = spi_numaker_txrx(dev, spi_dfs);
 		if (ret < 0) {
 			break;
 		}
