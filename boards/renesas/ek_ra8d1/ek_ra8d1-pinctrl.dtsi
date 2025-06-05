@@ -35,6 +35,14 @@
 		};
 	};
 
+	i3c0_default: i3c0_default {
+		group1 {
+			/* SCL SDA */
+			psels = <RA_PSEL(RA_PSEL_I3C, 4, 0)>,
+				<RA_PSEL(RA_PSEL_I3C, 4, 1)>;
+		};
+	};
+
 	pwm7_default: pwm7_default {
 		group1 {
 			/* GTIOC7A */
