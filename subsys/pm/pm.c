@@ -137,6 +137,8 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 
 	key = k_spin_lock(&pm_forced_state_lock);
 	z_cpus_pm_forced_state[cpu] = info;
+	if (info->state == PM_STATE_SOFT_OFF && cpu == 0)
+		atomic_set_bit(z_post_ops_required, cpu);
 	k_spin_unlock(&pm_forced_state_lock, key);
 
 	return true;
