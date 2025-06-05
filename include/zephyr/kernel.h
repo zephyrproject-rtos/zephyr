@@ -6513,6 +6513,92 @@ void k_sys_runtime_stats_enable(void);
  */
 void k_sys_runtime_stats_disable(void);
 
+struct k_timeout_record;
+
+/**
+ * @brief Kernel timeout record elapsed callback function template.
+ *
+ * @param record Address of kernel timeout record.
+ */
+typedef void (*k_timeout_record_fn_t)(struct k_timeout_record *record);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+struct k_timeout_record {
+	struct _timeout to;
+};
+
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
+int z_abort_timeout(struct _timeout *to);
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/** Initialize a kernel timeout record */
+static inline void k_timeout_record_init(struct k_timeout_record *record)
+{
+	sys_dnode_init(&record->to.node);
+}
+
+/**
+ * @brief Add a kernel timeout record.
+ *
+ * @details The kernel timeout record is the most primitive timeout
+ * in the kernel. @p fn is called only once once the timeout elapses,
+ * at which point the kernel timeout record can be re-added.
+ *
+ * @warning @p fn is likely called from ISR context.
+ *
+ * @warning Timeout record can only be re-added once it has elapsed
+ * or has been aborted.
+ *
+ * @note The timeout is called at the next kernel tick if timeout
+ * is in the past or now.
+ *
+ * @see k_timeout_record_abort()
+ *
+ * @param record The timeout record structure.
+ * @param fn The function called when timeout elapses.
+ * @param timeout The time at which timeout elapses.
+ *
+ * @retval Absolute ticks at which timeout elapses.
+ */
+static inline k_ticks_t k_timeout_record_add(struct k_timeout_record *record,
+					     k_timeout_record_fn_t fn,
+					     k_timeout_t timeout)
+{
+	return z_add_timeout(&record->to, (_timeout_func_t)fn, timeout);
+}
+
+/**
+ * @brief Abort a kernel timeout record.
+ *
+ * @details Abort a kernel timeout record and check if the
+ * kernel timeout record's timeout elapsed.
+ *
+ * @note This function must be called before re-adding the
+ * kernel timeout record if caller is unsure whether the
+ * timeout has elapsed.
+ *
+ * @see k_timeout_record_add()
+ *
+ * @param record The timeout record structure.
+ *
+ * @retval true if timeout record has not elapsed.
+ * @retval false if timeout record has elapsed or was never added.
+ */
+static inline bool k_timeout_record_abort(struct k_timeout_record *record)
+{
+	return z_abort_timeout(&record->to) == 0;
+}
+
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+
 #ifdef __cplusplus
 }
 #endif
