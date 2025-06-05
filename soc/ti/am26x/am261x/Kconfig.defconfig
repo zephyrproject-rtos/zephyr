@@ -13,7 +13,8 @@ config SOC_SERIES
 	default "am261x"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 250000000 if SOC_PACKAGE_ZFG
+# Input frequency to RTI is 250MHz, but prescaler halves frequency to 125MHz by default
+	default 125000000 if SOC_PACKAGE_ZFG
 
 config NUM_IRQS
 	default 222
