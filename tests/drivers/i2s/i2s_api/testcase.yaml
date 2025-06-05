@@ -10,6 +10,7 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt685_evk/mimxrt685s/cm33
+      - nrf54h20dk/nrf54h20/cpuapp
   drivers.i2s.gpio_loopback:
     depends_on:
       - i2s
@@ -24,5 +25,17 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt685_evk/mimxrt685s/cm33
+      - nrf54h20dk/nrf54h20/cpuapp
     harness_config:
       fixture: gpio_loopback
+  drivers.i2s.gpio_loopback.nrf54h:
+    depends_on: i2s
+    tags:
+      - drivers
+      - userspace
+    harness_config:
+      fixture: i2s_loopback
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
