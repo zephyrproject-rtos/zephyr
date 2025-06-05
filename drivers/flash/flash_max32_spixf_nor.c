@@ -70,6 +70,18 @@ struct flash_max32_spixf_nor_config {
 #if MAX32_QSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
 #endif
+#if !defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
+	/* Length of BFP structure, in 32-bit words. */
+	uint8_t bfp_len;
+
+	/* Pointer to the BFP table as read from the device
+	 * (little-endian stored words), from sfdp-bfp property
+	 */
+	const struct jesd216_bfp *bfp;
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	struct flash_pages_layout layout;
+#endif
+#endif
 #if MAX32_QSPI_HAS_JEDEC_ID
 	uint8_t jedec_id[DT_INST_PROP_LEN(0, jedec_id)];
 #endif /* jedec_id */
@@ -79,7 +91,7 @@ struct flash_max32_spixf_nor_config {
 struct flash_max32_spixf_nor_data {
 	struct k_sem sem;
 	struct k_sem sync;
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT) && defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
 	struct flash_pages_layout layout;
 #endif
 	struct jesd216_erase_type erase_types[JESD216_NUM_ERASE_TYPES];
@@ -360,6 +372,7 @@ static int qspi_write_unprotect(const struct device *dev)
 	return ret;
 }
 
+#if IS_ENABLED(CONFIG_FLASH_JESD216_API) || IS_ENABLED(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
 /*
  * Read Serial Flash Discovery Parameter
  */
@@ -403,6 +416,8 @@ static int qspi_read_sfdp_priv(const struct device *dev, off_t addr, void *data,
 	return ret;
 }
 
+#endif
+
 #if IS_ENABLED(CONFIG_FLASH_JESD216_API)
 
 static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data, size_t size)
@@ -434,16 +449,16 @@ static int flash_max32_spixf_nor_read(const struct device *dev, off_t addr, void
 {
 	const struct flash_max32_spixf_nor_config *dev_cfg = dev->config;
 
+	/* read non-zero size */
+	if (size == 0) {
+		return 0;
+	}
+
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
 			"addr 0x%lx, size %zu",
 			(long)addr, size);
 		return -EINVAL;
-	}
-
-	/* read non-zero size */
-	if (size == 0) {
-		return 0;
 	}
 
 	qspi_lock_thread(dev);
@@ -500,16 +515,16 @@ static int flash_max32_spixf_nor_write(const struct device *dev, off_t addr, con
 	struct flash_max32_spixf_nor_req_wrapper req = {0};
 	uint8_t addr_width, data_width;
 
+	/* write non-zero size */
+	if (size == 0) {
+		return 0;
+	}
+
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
 			"addr 0x%lx, size %zu",
 			(long)addr, size);
 		return -EINVAL;
-	}
-
-	/* write non-zero size */
-	if (size == 0) {
-		return 0;
 	}
 
 	if (IS_ENABLED(MAX32_QSPI_USE_QUAD_IO)) {
@@ -608,16 +623,16 @@ static int flash_max32_spixf_nor_erase(const struct device *dev, off_t addr, siz
 	struct flash_max32_spixf_nor_req_wrapper req = {.req.deass = 1};
 	int ret = 0;
 
+	/* erase non-zero size */
+	if (size == 0) {
+		return 0;
+	}
+
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
 			"addr 0x%lx, size %zu",
 			(long)addr, size);
 		return -EINVAL;
-	}
-
-	/* erase non-zero size */
-	if (size == 0) {
-		return 0;
 	}
 
 	qspi_lock_thread(dev);
@@ -714,8 +729,13 @@ static void flash_max32_spixf_nor_pages_layout(const struct device *dev,
 					       size_t *layout_size)
 {
 	struct flash_max32_spixf_nor_data *dev_data = dev->data;
+	const struct flash_max32_spixf_nor_config *dev_cfg = dev->config;
 
-	*layout = &dev_data->layout;
+	ARG_UNUSED(dev_data);
+	ARG_UNUSED(dev_cfg);
+
+	*layout = COND_CODE_1(IS_ENABLED(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME),
+						  (&dev_data->layout), (&dev_cfg->layout));
 	*layout_size = 1;
 }
 #endif
@@ -734,7 +754,7 @@ static DEVICE_API(flash, flash_max32_spixf_nor_driver_api) = {
 #endif /* CONFIG_FLASH_JESD216_API */
 };
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT) && defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
 static int setup_pages_layout(const struct device *dev)
 {
 	const struct flash_max32_spixf_nor_config *dev_cfg = dev->config;
@@ -813,10 +833,13 @@ static int qspi_program_addr_4b(const struct device *dev, bool write_enable)
 	return qspi_send_req(dev, &req);
 }
 
+#define WRITE_ENABLE_MAX_RETRIES 4
+
 static int qspi_write_enable(const struct device *dev)
 {
 	uint8_t reg;
 	int ret;
+	int retries = 0;
 
 	ret = qspi_send_write_enable(dev);
 	if (ret) {
@@ -825,7 +848,7 @@ static int qspi_write_enable(const struct device *dev)
 
 	do {
 		ret = qspi_read_status_register(dev, 1U, &reg);
-	} while (!ret && !(reg & SPI_NOR_WEL_BIT));
+	} while (!ret && !(reg & SPI_NOR_WEL_BIT) && (retries++) < WRITE_ENABLE_MAX_RETRIES);
 
 	if (retries >= WRITE_ENABLE_MAX_RETRIES) {
 		LOG_WRN("Timed-out waiting for write-enabled status");
@@ -1119,7 +1142,8 @@ static void flash_max32_spixf_nor_irq_config(const struct device *dev)
 
 static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 {
-	int ret;
+	int ret = 0;
+#if defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
 	const uint8_t decl_nph = 2;
 	union {
 		/* We only process BFP so use one parameter block */
@@ -1174,8 +1198,17 @@ static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 		}
 		++php;
 	}
+#else
+	/* Synthesize a header and process the version from DTS */
+	const struct flash_max32_spixf_nor_config *dev_cfg = dev->config;
+	struct jesd216_param_header bfp_hdr = {
+		.len_dw = dev_cfg->bfp_len,
+	};
 
-	return 0;
+	ret = spi_nor_process_bfp(dev, &bfp_hdr, dev_cfg->bfp);
+#endif
+
+	return ret;
 }
 
 static void flash_max32_spixf_update_read_settings(uint8_t cmd_read, uint8_t read_latency)
@@ -1247,6 +1280,7 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 	/* Run NOR init */
 	ret = flash_max32_spixf_nor_fetch_jesd216_details(dev);
 	if (ret < 0) {
+		LOG_WRN("Loading initial flash table details failed (%d)", ret);
 		return -ENODEV;
 	}
 
@@ -1258,11 +1292,16 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 #endif
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
 	ret = setup_pages_layout(dev);
 	if (ret != 0) {
 		LOG_ERR("layout setup failed: %d", ret);
 		return -ENODEV;
 	}
+#else
+	LOG_INF("Default page layout is %d by %d", dev_cfg->layout.pages_count,
+		dev_cfg->layout.pages_size);
+#endif
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 	ret = qspi_write_unprotect(dev);
@@ -1313,6 +1352,10 @@ static const struct max32_perclk perclkens[] = {
 BUILD_ASSERT(DT_INST_PROP_LEN(0, jedec_id) >= 3, "jedec-id must be at least 3 bytes.");
 #endif
 
+#if !defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
+static const __aligned(4) uint8_t bfp_data[] = DT_INST_PROP(0, sfdp_bfp);
+#endif
+
 static const struct flash_max32_spixf_nor_config flash_max32_spixf_nor_cfg = {
 	.clock = DEVICE_DT_GET_OR_NULL(DT_CLOCKS_CTLR(MAX32_QSPI_NODE)),
 	.perclkens = perclkens,
@@ -1322,6 +1365,14 @@ static const struct flash_max32_spixf_nor_config flash_max32_spixf_nor_cfg = {
 	.spixf_base_addr = DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(MAX32_QSPI_NODE),
 	.force_quad_addr_writes = DT_INST_PROP_OR(0, force_quad_address_write, false),
+#if !defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
+	.bfp_len = sizeof(bfp_data) / 4,
+	.bfp = (const struct jesd216_bfp *)bfp_data,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.layout.pages_size = DT_INST_PROP(0, page_size),
+	.layout.pages_count = DT_INST_REG_SIZE(0) / DT_INST_PROP(0, page_size),
+#endif
+#endif
 #if MAX32_QSPI_RESET_GPIO
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif
