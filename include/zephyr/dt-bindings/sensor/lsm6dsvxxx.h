@@ -95,4 +95,45 @@
 #define LSM6DSVXXX_DT_SFLP_FIFO_GRAVITY_GBIAS			0x6
 #define LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS	0x7
 
+/* FIFO tags */
+#define LSM6DSVXXX_FIFO_EMPTY                    0x0
+#define LSM6DSVXXX_GY_NC_TAG                     0x1
+#define LSM6DSVXXX_XL_NC_TAG                     0x2
+#define LSM6DSVXXX_TEMPERATURE_TAG               0x3
+#define LSM6DSVXXX_TIMESTAMP_TAG                 0x4
+#define LSM6DSVXXX_CFG_CHANGE_TAG                0x5
+#define LSM6DSVXXX_XL_NC_T_2_TAG                 0x6
+#define LSM6DSVXXX_XL_NC_T_1_TAG                 0x7
+#define LSM6DSVXXX_XL_2XC_TAG                    0x8
+#define LSM6DSVXXX_XL_3XC_TAG                    0x9
+#define LSM6DSVXXX_GY_NC_T_2_TAG                 0xA
+#define LSM6DSVXXX_GY_NC_T_1_TAG                 0xB
+#define LSM6DSVXXX_GY_2XC_TAG                    0xC
+#define LSM6DSVXXX_GY_3XC_TAG                    0xD
+#define LSM6DSVXXX_SENSORHUB_TARGET0_TAG         0xE
+#define LSM6DSVXXX_SENSORHUB_TARGET1_TAG         0xF
+#define LSM6DSVXXX_SENSORHUB_TARGET2_TAG         0x10
+#define LSM6DSVXXX_SENSORHUB_TARGET3_TAG         0x11
+#define LSM6DSVXXX_STEP_COUNTER_TAG              0x12
+#define LSM6DSVXXX_SFLP_GAME_ROTATION_VECTOR_TAG 0x13
+#define LSM6DSVXXX_SFLP_GYROSCOPE_BIAS_TAG       0x16
+#define LSM6DSVXXX_SFLP_GRAVITY_VECTOR_TAG       0x17
+#define LSM6DSVXXX_HG_XL_PEAK_TAG                0x18
+#define LSM6DSVXXX_SENSORHUB_NACK_TAG            0x19
+#define LSM6DSVXXX_MLC_RESULT_TAG                0x1A
+#define LSM6DSVXXX_MLC_FILTER                    0x1B
+#define LSM6DSVXXX_MLC_FEATURE                   0x1C
+#define LSM6DSVXXX_XL_HG_TAG                     0x1D
+#define LSM6DSVXXX_GY_ENHANCED_EIS               0x1E
+
+/* status registers */
+#define LSM6DSVXXX_STATUS_REG			0x1EU
+#define LSM6DSVXXX_OUTX_L_A			0x28U
+#define LSM6DSVXXX_FIFO_STATUS1			0x1BU
+#define LSM6DSVXXX_FIFO_DATA_OUT_TAG		0x78U
+
+/* FIFO settings */
+#define LSM6DSVXXX_BYPASS_MODE			0x00U
+#define LSM6DSVXXX_FIFO_CTRL4			0x0AU
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSVXXX_H_ */
