@@ -9,6 +9,7 @@
 #
 
 add_library(mocks STATIC
+  src/adv.c
   src/assert.c
   src/bap_stream.c
   src/conn.c
