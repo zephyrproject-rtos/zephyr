@@ -7,9 +7,12 @@
  */
 
 #if CONFIG_RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
+#include <zephyr/devicetree.h>
+
 MEMORY
 {
-	IMAGE_DEF_FLASH (r) : ORIGIN = 0x10000000, LENGTH = 128
+	/* place image definition before the image start as per DT */
+	IMAGE_DEF_FLASH (r) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_flash)), LENGTH = 128
 }
 
 SECTIONS
