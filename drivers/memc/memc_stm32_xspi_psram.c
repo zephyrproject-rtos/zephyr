@@ -14,10 +14,19 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/multi_heap/shared_multi_heap.h>
 
 LOG_MODULE_REGISTER(memc_stm32_xspi_psram, CONFIG_MEMC_LOG_LEVEL);
 
 #define STM32_XSPI_NODE DT_INST_PARENT(0)
+
+#ifdef CONFIG_SHARED_MULTI_HEAP
+struct shared_multi_heap_region smh_psram = {
+	.addr = DT_REG_ADDR(DT_NODELABEL(psram)),
+	.size = DT_REG_SIZE(DT_NODELABEL(psram)),
+	.attr = SMH_REG_ATTR_EXTERNAL,
+};
+#endif
 
 /* Memory registers definition */
 #define MR0		0x00000000U
@@ -345,6 +354,14 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 
 #if defined(XSPI_CR_NOPREF)
 	MODIFY_REG(hxspi.Instance->CR, XSPI_CR_NOPREF, HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
+#endif
+
+#ifdef CONFIG_SHARED_MULTI_HEAP
+	shared_multi_heap_pool_init();
+	ret = shared_multi_heap_add(&smh_psram, NULL);
+	if (ret < 0) {
+		return ret;
+	}
 #endif
 
 	return 0;
