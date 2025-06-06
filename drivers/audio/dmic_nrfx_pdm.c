@@ -30,7 +30,7 @@ struct dmic_nrfx_pdm_drv_data {
 	const nrfx_pdm_t *pdm;
 #if CONFIG_CLOCK_CONTROL_NRF
 	struct onoff_manager *clk_mgr;
-#elif CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	const struct device *audiopll_dev;
 #endif
 	struct onoff_client clk_cli;
@@ -75,7 +75,7 @@ static int request_clock(struct dmic_nrfx_pdm_drv_data *drv_data)
 	}
 #if CONFIG_CLOCK_CONTROL_NRF
 	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
-#elif CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	return nrf_clock_control_request(drv_data->audiopll_dev, NULL, &drv_data->clk_cli);
 #else
 	return -ENOTSUP;
@@ -90,7 +90,7 @@ static int release_clock(struct dmic_nrfx_pdm_drv_data *drv_data)
 
 #if CONFIG_CLOCK_CONTROL_NRF
 	return onoff_release(drv_data->clk_mgr);
-#elif CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	return nrf_clock_control_release(drv_data->audiopll_dev, NULL);
 #else
 	return -ENOTSUP;
@@ -673,7 +673,7 @@ static void init_clock_manager(const struct device *dev)
 
 	drv_data->clk_mgr = z_nrf_clock_control_get_onoff(subsys);
 	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
-#elif CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	struct dmic_nrfx_pdm_drv_data *drv_data = dev->data;
 
 	drv_data->audiopll_dev = DEVICE_DT_GET(DT_NODELABEL(audiopll));
