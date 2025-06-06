@@ -42,6 +42,13 @@
 				status = "okay";
 				reg = <0x2>;
 			};
+
+			test_i2c_max98091: max98091@3 {
+				compatible = "maxim,max98091";
+				status = "okay";
+				reg = <0x3>;
+				mclk-frequency = <13000000>;
+			};
 		};
 	};
 };
