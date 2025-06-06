@@ -1,0 +1,11 @@
+# Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_TMS570
+	bool "TI TMS570 series SCI USART driver"
+	default y
+	depends on DT_HAS_TI_TMS570_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PINCTRL
+	help
+	  This option enables the TMS570 UART driver.
