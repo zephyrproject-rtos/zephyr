@@ -1,0 +1,12 @@
+# Copyright (c) 2025, ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI TMS570 UART
+
+compatible: "ti,tms570-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
