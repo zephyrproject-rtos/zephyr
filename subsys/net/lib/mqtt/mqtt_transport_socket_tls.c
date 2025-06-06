@@ -32,6 +32,24 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 
 	NET_DBG("Created socket %d", client->transport.tls.sock);
 
+	if (client->transport.if_name != NULL) {
+		struct ifreq ifname = { 0 };
+
+		strncpy(ifname.ifr_name, client->transport.if_name,
+			sizeof(ifname.ifr_name) - 1);
+
+		ret = zsock_setsockopt(client->transport.tls.sock, SOL_SOCKET,
+				       SO_BINDTODEVICE, &ifname,
+				       sizeof(struct ifreq));
+		if (ret < 0) {
+			NET_ERR("Failed to bind ot interface %s error (%d)",
+				ifname.ifr_name, -errno);
+			goto error;
+		}
+
+		NET_DBG("Bound to interface %s", ifname.ifr_name);
+	}
+
 #if defined(CONFIG_SOCKS)
 	if (client->transport.proxy.addrlen != 0) {
 		ret = setsockopt(client->transport.tls.sock,
