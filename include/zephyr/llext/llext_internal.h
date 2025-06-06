@@ -20,14 +20,7 @@ extern "C" {
 
 /** @cond ignore */
 
-
-struct llext_elf_sect_map {
-	enum llext_mem mem_idx;
-	size_t offset;
-};
-
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx);
-
 
 static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
 	enum llext_mem mem_idx, unsigned int idx)
