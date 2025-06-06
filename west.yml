@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: ceolin
+      url-base: https://github.com/ceolin
 
   group-filter: [-babblesim, -optional]
 
@@ -360,7 +362,8 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: c150f48855f04d77451a39bfaa80d14eb61d918b
+      remote: ceolin
+      revision: acd3a7c9c4c2cf944f9e1b3b26fa2f300f5f2d1c
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
