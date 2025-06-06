@@ -117,11 +117,11 @@ static struct bt_bap_ep *get_ep_from_index(struct cap_initiator_test_unicast_sto
 	 * [0]: conn[0] src[0]
 	 * [1]: conn[0] snk[0]
 	 * [2]: conn[1] src[0]
-	 * [3]: conn[0] snk[0]
+	 * [3]: conn[1] snk[0]
 	 * [4]: conn[0] src[1]
 	 * [5]: conn[0] snk[1]
 	 * [6]: conn[1] src[1]
-	 * [7]: conn[0] snk[1]
+	 * [7]: conn[1] snk[1]
 	 */
 	if (dir == BT_AUDIO_DIR_SINK) {
 		ep = fixture->snk_eps[conn_index][ep_index];

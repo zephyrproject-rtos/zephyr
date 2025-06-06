@@ -132,11 +132,11 @@ static void init_default_params(struct cap_initiator_test_unicast_start_fixture 
 		 * [0]: conn[0] src[0]
 		 * [1]: conn[0] snk[0]
 		 * [2]: conn[1] src[0]
-		 * [3]: conn[0] snk[0]
+		 * [3]: conn[1] snk[0]
 		 * [4]: conn[0] src[1]
 		 * [5]: conn[0] snk[1]
 		 * [6]: conn[1] src[1]
-		 * [7]: conn[0] snk[1]
+		 * [7]: conn[1] snk[1]
 		 */
 		stream_param->member.member = &fixture->conns[conn_index];
 		if (dir == BT_AUDIO_DIR_SINK) {
