@@ -95,7 +95,7 @@ static uint32_t get_cmd_status(uint32_t cmd, uint32_t addr, size_t len)
 /* This function prevents erroneous reading. Some ECC enabled devices will
  * crash when reading an erased area.
  */
-static status_t is_area_readable(uint32_t addr, size_t len)
+static status_t __attribute__((unused))  is_area_readable(uint32_t addr, size_t len)
 {
 	uint32_t key;
 	status_t status;
