@@ -12,7 +12,7 @@
 static void func1(int a);
 static void func2(int a);
 
-static void func2(int a)
+static void __noinline func2(int a)
 {
 	printf("%d: %s\n", a, __func__);
 
@@ -21,12 +21,14 @@ static void func2(int a)
 	}
 
 	func1(a + 1);
+	printf("bottom %d: %s\n", a, __func__);
 }
 
-static void func1(int a)
+static void __noinline func1(int a)
 {
 	printf("%d: %s\n", a, __func__);
 	func2(a + 1);
+	printf("bottom %d: %s\n", a, __func__);
 }
 
 int main(void)
