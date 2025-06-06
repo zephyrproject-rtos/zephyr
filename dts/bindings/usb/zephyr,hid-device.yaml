@@ -8,11 +8,10 @@ compatible: "zephyr,hid-device"
 include: base.yaml
 
 properties:
-  interface-name:
-    type: string
+  label:
     description: |
-      HID device name. When this property is present, a USB device will use it
-      as the string descriptor of the interface.
+      The string defined by the label property is also used for the USB device
+      interface string descriptor.
 
   protocol-code:
     type: string
