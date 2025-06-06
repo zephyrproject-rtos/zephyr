@@ -1121,6 +1121,7 @@ static int transceive_dma(const struct device *dev,
 #ifdef CONFIG_DCACHE
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
+		LOG_ERR("SPI DMA transfers not supported on cached memory");
 		return -EFAULT;
 	}
 #endif /* CONFIG_DCACHE */
