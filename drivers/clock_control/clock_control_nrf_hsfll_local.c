@@ -259,7 +259,7 @@ static DEVICE_API(nrf_clock_control, hsfll_drv_api) = {
 static struct hsfll_dev_data hsfll_data;
 #endif
 
-#ifdef CONFIG_CLOCK_CONTROL_NRF2_HSFLL_REQ_LOW_FREQ
+#ifdef CONFIG_CLOCK_CONTROL_NRF_HSFLL_LOCAL_REQ_LOW_FREQ
 static int dvfs_low_init(void)
 {
 	static const k_timeout_t timeout = NRFS_DVFS_TIMEOUT;
