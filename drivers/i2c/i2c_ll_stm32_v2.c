@@ -1194,6 +1194,8 @@ int stm32_i2c_transaction(const struct device *dev,
 
 #ifndef CONFIG_I2C_STM32_INTERRUPT
 	struct i2c_stm32_data *data = dev->data;
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
 
 	if (ret == -ETIMEDOUT) {
 		if (LL_I2C_IsEnabledReloadMode(i2c)) {
