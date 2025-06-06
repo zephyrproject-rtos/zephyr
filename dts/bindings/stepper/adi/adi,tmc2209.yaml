@@ -13,6 +13,7 @@ description: |
       step-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
       dir-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
       dual-edge-step;
+      step-dir = "common";
   }
 
 compatible: "adi,tmc2209"
