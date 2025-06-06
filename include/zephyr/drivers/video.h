@@ -1252,6 +1252,13 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  */
 
 /**
+ * @code{.unparsed}
+ * | RrrGggBb | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGB332 VIDEO_FOURCC('R', 'G', 'B', '1')
+
+/**
  * 5 red bits [15:11], 6 green bits [10:5], 5 blue bits [4:0].
  * This 16-bit integer is then packed in big endian format over two bytes:
  *
@@ -1374,6 +1381,13 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_UYVY VIDEO_FOURCC('U', 'Y', 'V', 'Y')
 
 /**
+ * @code{.unparsed}
+ * | Yyyyyyyy Uuuuuuuu Vvvvvvvv | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV24 VIDEO_FOURCC('Y', 'U', 'V', '3')
+
+/**
  * The first byte is empty (X) for each pixel.
  *
  * @code{.unparsed}
@@ -1416,6 +1430,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGRBG8:
 	case VIDEO_PIX_FMT_SRGGB8:
 	case VIDEO_PIX_FMT_GREY:
+	case VIDEO_PIX_FMT_RGB332:
 		return 8;
 	case VIDEO_PIX_FMT_SBGGR10P:
 	case VIDEO_PIX_FMT_SGBRG10P:
@@ -1436,6 +1451,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_Y14P:
 		return 14;
 	case VIDEO_PIX_FMT_RGB565:
+	case VIDEO_PIX_FMT_RGB565X:
 	case VIDEO_PIX_FMT_YUYV:
 	case VIDEO_PIX_FMT_YVYU:
 	case VIDEO_PIX_FMT_UYVY:
@@ -1459,6 +1475,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_YUV24:
 		return 24;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:
