@@ -28,3 +28,39 @@ config SIWX91X_NWP_INIT_PRIORITY
 	  Wi-Fi and crypto.
 
 endif # SOC_FAMILY_SILABS_SIWX91X
+
+if SOC_FAMILY_SILABS_SIWX91X
+config SIWX91X_SILABS_OTA_SIGN_ENABLE
+	bool "Silicon Labs Commander Signing Support"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  Activates signing of Zephyr binary with Silicon Labs Commander during build process.
+	  For more information refer this
+	  "https://www.silabs.com/documents/public/user-guides/ug574-siwx917-soc-manufacturing-utility-user-guide.pdf"
+
+config SIWX91X_SILABS_OTA_MIC_ENABLE
+	bool "Silicon Labs Commander MIC Support"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  Activates mic of Zephyr binary with Silicon Labs Commander during build process.
+	  For more information refer this
+	  "https://www.silabs.com/documents/public/user-guides/ug574-siwx917-soc-manufacturing-utility-user-guide.pdf"
+
+config SIWX91X_SILABS_OTA_ENCRYPT_ENABLE
+	bool "Silicon Labs Commander Encryption Support"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  Activates encryption of Zephyr binary with Silicon Labs Commander during build process.
+	  For more information refer this
+	  "https://www.silabs.com/documents/public/user-guides/ug574-siwx917-soc-manufacturing-utility-user-guide.pdf"
+
+config SIWX91X_OTA_ENCRYPT_KEY
+	string "OTA Key for Encryption."
+	help
+	  Specifies Over the Air key (hex) for encryption with Silicon Labs Commander.
+
+config SIWX91X_OTA_SIGN_KEY
+	string "Private Key Path for Signing."
+	help
+	  Path to private key file for signing with Silicon Labs Commander.
+endif
