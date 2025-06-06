@@ -127,7 +127,7 @@ static int audio_clock_request(struct tdm_drv_data *drv_data)
 {
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	return nrf_clock_control_request(audiopll, &aclk_spec, &drv_data->clk_cli);
 #else
 	(void)drv_data;
@@ -140,7 +140,7 @@ static int audio_clock_release(struct tdm_drv_data *drv_data)
 {
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_release(drv_data->clk_mgr);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF2_AUDIOPLL
+#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	(void)drv_data;
 
 	return nrf_clock_control_release(audiopll, &aclk_spec);
