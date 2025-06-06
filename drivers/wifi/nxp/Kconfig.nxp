@@ -830,6 +830,12 @@ config NXP_WIFI_RECOVERY
 	help
 	  This option is used to enable wifi recovery support.
 
+config NXP_WIFI_MMSF
+	bool "11AX density config"
+	default y if NXP_RW610 || NXP_IW610
+	help
+	  This option is used to specify/get 11ax density config in the Wi-Fi driver.
+
 if NXP_RW610
 
 config NXP_WIFI_FW_VDLLV2
@@ -899,12 +905,6 @@ config NXP_WIFI_COEX_DUTY_CYCLE
 	default y
 	help
 	  This option sets duty cycle in the Wi-Fi driver.
-
-config NXP_WIFI_MMSF
-	bool "11AX density config"
-	default y
-	help
-	  This option is used to specify/get 11ax density config in the Wi-Fi driver.
 
 config NXP_WIFI_IMD3_CFG
 	bool "Set imd validation parameters"
