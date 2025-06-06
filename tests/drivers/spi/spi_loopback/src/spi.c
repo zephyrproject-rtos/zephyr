@@ -693,7 +693,8 @@ ZTEST(spi_loopback, test_spi_word_size_32)
 				    sizeof(buffer_tx_32), &spec_copies[4], 32);
 }
 
-static K_THREAD_STACK_DEFINE(thread_stack[3], 512);
+static K_THREAD_STACK_DEFINE(thread_stack[3], CONFIG_ZTEST_STACK_SIZE +
+					      CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread thread[3];
 
 static K_SEM_DEFINE(thread_sem, 0, 3);
