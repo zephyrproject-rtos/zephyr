@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,6 +176,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	volatile union nxp_enet_qos_rx_desc *desc;
+	uint32_t desc_idx;
 	struct net_pkt *pkt;
 	struct net_buf *new_buf;
 	struct net_buf *buf;
@@ -184,12 +185,15 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	LOG_DBG("iteration work:%p, rx_data:%p, data:%p", work, rx_data, data);
 	/* We are going to find all of the descriptors we own and update them */
 	for (int i = 0; i < NUM_RX_BUFDESC; i++) {
-		desc = &desc_arr[i];
+		desc_idx = rx_data->next_desc_idx;
+		desc = &desc_arr[desc_idx];
 
 		if (desc->write.control3 & OWN_FLAG) {
 			/* The DMA owns the descriptor, we cannot touch it */
-			continue;
+			break;
 		}
+
+		rx_data->next_desc_idx = (desc_idx + 1U) % NUM_RX_BUFDESC;
 
 		if ((desc->write.control3 & (FIRST_TX_DESCRIPTOR_FLAG | LAST_TX_DESCRIPTOR_FLAG)) !=
 		    (FIRST_TX_DESCRIPTOR_FLAG | LAST_TX_DESCRIPTOR_FLAG)) {
@@ -211,7 +215,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			continue;
 		}
 
-		LOG_DBG("Created new RX pkt %d of %d: %p", i + 1, NUM_RX_BUFDESC, pkt);
+		LOG_DBG("Created new RX pkt %u of %d: %p", desc_idx + 1U, NUM_RX_BUFDESC, pkt);
 		/* We need to know if we can replace the reserved fragment in advance.
 		 * At no point can we allow the driver to have less the amount of reserved
 		 * buffers it needs to function, so we will not give up our previous buffer
@@ -231,7 +235,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			continue;
 		}
 
-		buf = data->rx.reserved_bufs[i];
+		buf = data->rx.reserved_bufs[desc_idx];
 		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
 
 		LOG_DBG("Receiving RX packet");
@@ -252,7 +256,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 
 		LOG_DBG("Swap RX buf");
 		/* Fresh meat */
-		data->rx.reserved_bufs[i] = new_buf;
+		data->rx.reserved_bufs[desc_idx] = new_buf;
 		desc->read.buf1_addr = (uint32_t)new_buf->data;
 		desc->read.control = rx_desc_refresh_flags;
 
@@ -529,6 +533,9 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 		rx->descriptors[i].read.buf1_addr = (uint32_t)buf->data;
 		rx->descriptors[i].read.control |= rx_desc_refresh_flags;
 	}
+
+	/* Set next descriptor where data will be received */
+	rx->next_desc_idx = 0U;
 
 	/* Set up RX descriptors on channel 0 */
 	base->DMA_CH[0].DMA_CHX_RXDESC_LIST_ADDR =
