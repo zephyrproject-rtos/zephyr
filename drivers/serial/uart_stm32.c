@@ -19,6 +19,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
+#include <stm32_cache.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
@@ -411,13 +412,11 @@ static inline uint32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db,
 #endif	/* LL_USART_DATAWIDTH_9B */
 	case UART_CFG_DATA_BITS_8:
 	default:
-		if (p == UART_CFG_PARITY_NONE) {
-			return LL_USART_DATAWIDTH_8B;
 #ifdef LL_USART_DATAWIDTH_9B
-		} else {
+		if (p != UART_CFG_PARITY_NONE) {
 			return LL_USART_DATAWIDTH_9B;
-#endif
 		}
+#endif
 		return LL_USART_DATAWIDTH_8B;
 	}
 }
@@ -1380,34 +1379,6 @@ static void uart_stm32_isr(const struct device *dev)
 
 #ifdef CONFIG_UART_ASYNC_API
 
-#ifdef CONFIG_DCACHE
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#ifdef CONFIG_MEM_ATTR
-	buf_within_nocache = mem_attr_check_buf(
-		(void *)buf, len_bytes, DT_MEM_ARM_MPU_RAM_NOCACHE) == 0;
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_MEM_ATTR */
-
-	buf_within_nocache = (buf >= ((uintptr_t)__rodata_region_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)__rodata_region_end));
-
-	return buf_within_nocache;
-}
-#endif /* CONFIG_DCACHE */
-
 static int uart_stm32_async_callback_set(const struct device *dev,
 					 uart_callback_t callback,
 					 void *user_data)
@@ -1633,12 +1604,10 @@ static int uart_stm32_async_tx(const struct device *dev,
 		return -EBUSY;
 	}
 
-#ifdef CONFIG_DCACHE
-	if (!buf_in_nocache((uintptr_t)tx_data, buf_size)) {
+	if (!stm32_buf_in_nocache((uintptr_t)tx_data, buf_size)) {
 		LOG_ERR("Tx buffer should be placed in a nocache memory region");
 		return -EFAULT;
 	}
-#endif /* CONFIG_DCACHE */
 
 #ifdef CONFIG_PM
 	data->tx_poll_stream_on = false;
@@ -1745,12 +1714,10 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 		return -EBUSY;
 	}
 
-#ifdef CONFIG_DCACHE
-	if (!buf_in_nocache((uintptr_t)rx_buf, buf_size)) {
+	if (!stm32_buf_in_nocache((uintptr_t)rx_buf, buf_size)) {
 		LOG_ERR("Rx buffer should be placed in a nocache memory region");
 		return -EFAULT;
 	}
-#endif /* CONFIG_DCACHE */
 
 	data->dma_rx.offset = 0;
 	data->dma_rx.buffer = rx_buf;
@@ -1876,12 +1843,10 @@ static int uart_stm32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	} else if (!data->dma_rx.enabled) {
 		err = -EACCES;
 	} else {
-#ifdef CONFIG_DCACHE
-		if (!buf_in_nocache((uintptr_t)buf, len)) {
+		if (!stm32_buf_in_nocache((uintptr_t)buf, len)) {
 			LOG_ERR("Rx buffer should be placed in a nocache memory region");
 			return -EFAULT;
 		}
-#endif /* CONFIG_DCACHE */
 		data->rx_next_buffer = buf;
 		data->rx_next_buffer_len = len;
 	}

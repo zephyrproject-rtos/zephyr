@@ -574,6 +574,14 @@ endmenu
 
 rsource "Kconfig.obj_core"
 
+config WORKQUEUE_WORK_TIMEOUT
+	bool "Support workqueue work timeout monitoring"
+	help
+	  If enabled, the workqueue will monitor the duration of each work item.
+	  If the work item handler takes longer than the specified time to
+	  execute, the work queue thread will be aborted, and an error will be
+	  logged.
+
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
@@ -599,6 +607,14 @@ config SYSTEM_WORKQUEUE_NO_YIELD
 	  this yield, which may be useful if the work queue thread is
 	  cooperative and a sequence of work items is expected to complete
 	  without yielding.
+
+config SYSTEM_WORKQUEUE_WORK_TIMEOUT_MS
+	int "Select system work queue work timeout in milliseconds"
+	default 5000 if ASSERT
+	default 0
+	help
+	  Set to 0 to disable work timeout for system workqueue. Option
+	  has no effect if WORKQUEUE_WORK_TIMEOUT is not enabled.
 
 endmenu
 

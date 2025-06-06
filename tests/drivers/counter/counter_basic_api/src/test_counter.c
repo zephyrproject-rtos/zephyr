@@ -126,6 +126,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
+#ifdef CONFIG_COUNTER_ITE_IT51XXX
+	DEVS_FOR_DT_COMPAT(ite_it51xxx_counter)
+#endif
 #ifdef CONFIG_COUNTER_ITE_IT8XXX2
 	DEVS_FOR_DT_COMPAT(ite_it8xxx2_counter)
 #endif

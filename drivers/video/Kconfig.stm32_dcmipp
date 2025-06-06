@@ -1,0 +1,36 @@
+# STM32 DCMIPP driver configuration options
+
+# Copyright (c) 2025 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_STM32_DCMIPP
+	bool "STM32 Digital Camera Memory Interface Pixel Processor (DCMIPP) driver"
+	default y
+	depends on DT_HAS_ST_STM32_DCMIPP_ENABLED
+	select USE_STM32_HAL_DCMIPP
+	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
+	help
+	  Enable driver for STM32 Digital Camera Memory Interface Pixel Processor
+	  (DCMIPP) peripheral
+
+if VIDEO_STM32_DCMIPP
+
+config VIDEO_STM32_DCMIPP_SENSOR_WIDTH
+	int "Width of the sensor frame"
+	default 2592
+	help
+	  Width of the sensor video frame.
+
+config VIDEO_STM32_DCMIPP_SENSOR_HEIGHT
+	int "Height of the sensor frame"
+	default 1944
+	help
+	  Height of the sensor video frame.
+
+config VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT
+	string "Pixel format of the sensor frame"
+	default "RG12"
+	help
+	  Pixel format of the sensor video frame.
+
+endif

@@ -496,7 +496,7 @@ void spi_context_update_tx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		return;
 	}
 
-	ctx->tx_len -= len * dfs;
+	ctx->tx_len -= len;
 	if (!ctx->tx_len) {
 		/* Current buffer is done. Get the next one to be processed. */
 		++ctx->current_tx;
@@ -555,7 +555,7 @@ void spi_context_update_rx(struct spi_context *ctx, uint8_t dfs, uint32_t len)
 		return;
 	}
 
-	ctx->rx_len -= len * dfs;
+	ctx->rx_len -= len;
 	if (!ctx->rx_len) {
 		/* Current buffer is done. Get the next one to be processed. */
 		++ctx->current_rx;
@@ -661,17 +661,17 @@ static inline size_t spi_context_total_rx_len(struct spi_context *ctx)
 /* Similar to spi_context_total_tx_len, except does not count words that have been finished
  * in the current buffer, ie only including what is remaining in the current buffer in the sum.
  */
-static inline size_t spi_context_tx_len_left(struct spi_context *ctx)
+static inline size_t spi_context_tx_len_left(struct spi_context *ctx, uint8_t dfs)
 {
-	return ctx->tx_len + spi_context_count_tx_buf_lens(ctx, 1);
+	return (ctx->tx_len * dfs) + spi_context_count_tx_buf_lens(ctx, 1);
 }
 
 /* Similar to spi_context_total_rx_len, except does not count words that have been finished
  * in the current buffer, ie only including what is remaining in the current buffer in the sum.
  */
-static inline size_t spi_context_rx_len_left(struct spi_context *ctx)
+static inline size_t spi_context_rx_len_left(struct spi_context *ctx, uint8_t dfs)
 {
-	return ctx->rx_len + spi_context_count_rx_buf_lens(ctx, 1);
+	return (ctx->rx_len * dfs) + spi_context_count_rx_buf_lens(ctx, 1);
 }
 
 #ifdef __cplusplus

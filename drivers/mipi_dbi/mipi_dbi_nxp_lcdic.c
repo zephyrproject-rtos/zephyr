@@ -430,9 +430,7 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 		goto release_sem;
 	}
 
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	pm_policy_device_power_lock_get(dev);
-#endif
 
 	ret = mipi_dbi_lcdic_configure(dev, dbi_config);
 	if (ret) {
@@ -527,9 +525,7 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 	}
 
 release_power_lock:
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	pm_policy_device_power_lock_put(dev);
-#endif
 
 release_sem:
 	k_sem_give(&dev_data->lock);
@@ -554,9 +550,7 @@ static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
 		goto release_sem;
 	}
 
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	pm_policy_device_power_lock_get(dev);
-#endif
 
 	ret = mipi_dbi_lcdic_configure(dev, dbi_config);
 	if (ret) {
@@ -632,9 +626,7 @@ static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
 	}
 
 release_power_lock:
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 	pm_policy_device_power_lock_put(dev);
-#endif
 
 release_sem:
 	k_sem_give(&dev_data->lock);
@@ -821,9 +813,7 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 			base->IMR |= LCDIC_ALL_INTERRUPTS;
 			/* All data has been sent. */
 			k_sem_give(&data->xfer_sem);
-#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
 			pm_policy_device_power_lock_put(dev);
-#endif
 		} else {
 			/* Command done. Queue next command */
 			data->cmd_bytes = MIN(data->xfer_bytes, LCDIC_MAX_XFER);

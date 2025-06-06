@@ -147,13 +147,13 @@ static void hs400x_all_measurements_stop(const struct device *dev)
 	 * Stop previous periodic measurement.
 	 * If a periodic measurement is not running, HS400x device replies with NACK.
 	 */
-	i2c_write_dt(&cfg->bus, &periodic_measurement_stop, 1);
+	(void)i2c_write_dt(&cfg->bus, &periodic_measurement_stop, 1);
 
 	/*
 	 * Clear previous no-hold measurement.
 	 * If a measurement is not complete, HS400x device replies with NACK.
 	 */
-	i2c_read_dt(&cfg->bus, dummy, 2);
+	(void)i2c_read_dt(&cfg->bus, dummy, 2);
 }
 
 static int hs400x_init(const struct device *dev)

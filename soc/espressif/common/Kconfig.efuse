@@ -1,0 +1,47 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ESPRESSIF_ESP32
+
+config ESP32_EFUSE_VIRTUAL
+	bool "Simulate eFuse operations in RAM"
+	help
+	  If "y" - The virtual mode is enabled and all eFuse operations (read and write) are redirected
+	  to RAM instead of eFuse registers, all permanent changes (via eFuse) are disabled.
+
+	  If it is "y", then SECURE_FLASH_ENCRYPTION_MODE_RELEASE cannot be used.
+	  Because the EFUSE VIRT mode is for testing only.
+
+	  During startup, the eFuses are copied into RAM. This mode is useful for fast tests.
+
+config ESP32_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	bool "Keep eFuses in flash"
+	depends on ESP32_EFUSE_VIRTUAL
+	help
+	  In addition to the "Simulate eFuse operations in RAM" option, this option just adds
+	  a feature to keep eFuses after reboots in flash memory. To use this mode the partition_table
+	  should have the `sys_partition` partition.
+
+	  During startup, the eFuses are copied from flash or,
+	  in case if flash is empty, from real eFuse to RAM and then update flash.
+	  This mode is useful when need to keep changes after reboot
+	  (testing secure_boot and flash_encryption).
+
+config ESP32_EFUSE_VIRTUAL_OFFSET
+	hex
+	depends on ESP32_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	default $(dt_nodelabel_reg_addr_hex,sys_partition) if $(dt_nodelabel_exists,sys_partition)
+	default 0x0
+
+config ESP32_EFUSE_VIRTUAL_SIZE
+	hex
+	depends on ESP32_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	default 0x2000 if $(dt_nodelabel_exists,sys_partition)
+	default 0x0
+
+config ESP32_EFUSE_MAX_BLK_LEN
+	int
+	default 192 if SOC_SERIES_ESP32
+	default 256
+
+endif # SOC_FAMILY_ESPRESSIF_ESP32

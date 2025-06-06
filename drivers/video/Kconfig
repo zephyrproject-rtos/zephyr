@@ -80,6 +80,8 @@ source "drivers/video/Kconfig.ov5640"
 
 source "drivers/video/Kconfig.ov7670"
 
+source "drivers/video/Kconfig.ov9655"
+
 source "drivers/video/Kconfig.gc2145"
 
 source "drivers/video/Kconfig.mcux_sdma"
@@ -91,5 +93,7 @@ source "drivers/video/Kconfig.emul_rx"
 source "drivers/video/Kconfig.imx335"
 
 source "drivers/video/Kconfig.st_mipid02"
+
+source "drivers/video/Kconfig.stm32_dcmipp"
 
 endif # VIDEO

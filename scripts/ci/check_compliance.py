@@ -1815,6 +1815,66 @@ class Ruff(ComplianceTest):
                 desc = f"Run 'ruff format {file}'"
                 self.fmtd_failure("error", "Python format error", file, desc=desc)
 
+class PythonCompatCheck(ComplianceTest):
+    """
+    Python Compatibility Check
+    """
+    name = "PythonCompat"
+    doc = "Check that Python files are compatible with Zephyr minimum supported Python version."
+
+    MAX_VERSION = (3, 10)
+    MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
+
+    def run(self):
+        py_files = [f for f in get_files(filter="d") if f.endswith(".py")]
+        if not py_files:
+            return
+        cmd = ["vermin", "-f", "parsable", "--violations",
+               f"-t={self.MAX_VERSION_STR}", "--no-make-paths-absolute"] + py_files
+        try:
+            result = subprocess.run(cmd,
+                                    check=False,
+                                    capture_output=True,
+                                    cwd=GIT_TOP)
+        except Exception as ex:
+            self.error(f"Failed to run vermin: {ex}")
+        output = result.stdout.decode("utf-8")
+        failed = False
+        for line in output.splitlines():
+            parts = line.split(":")
+            if len(parts) < 6:
+                continue
+            filename, line_number, column, _, py3ver, feature = parts[:6]
+            if not line_number:
+                # Ignore all file-level messages
+                continue
+
+            desc = None
+            if py3ver.startswith('!'):
+                desc = f"{feature} is known to be incompatible with Python 3."
+            elif py3ver.startswith('~'):
+                # "no known reason it won't work", just skip
+                continue
+            else:
+                major, minor = map(int, py3ver.split(".")[:2])
+                if (major, minor) > self.MAX_VERSION:
+                    desc = f"{feature} requires Python {major}.{minor}, which is higher than " \
+                           f"Zephyr's minimum supported Python version ({self.MAX_VERSION_STR})."
+
+            if desc is not None:
+                self.fmtd_failure(
+                    "error",
+                    "PythonCompat",
+                    filename,
+                    line=int(line_number),
+                    col=int(column) if column else None,
+                    desc=desc,
+                )
+                failed = True
+        if failed:
+            self.failure("Some Python files use features that are not compatible with Python " \
+                         f"{self.MAX_VERSION_STR}.")
+
 
 class TextEncoding(ComplianceTest):
     """

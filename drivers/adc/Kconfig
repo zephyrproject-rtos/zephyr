@@ -80,6 +80,8 @@ source "drivers/adc/Kconfig.lmp90xxx"
 
 source "drivers/adc/Kconfig.mcp320x"
 
+source "drivers/adc/Kconfig.mcp356xr"
+
 source "drivers/adc/Kconfig.npcx"
 
 source "drivers/adc/Kconfig.cc32xx"
@@ -151,5 +153,7 @@ source "drivers/adc/Kconfig.ad405x"
 source "drivers/adc/Kconfig.ad4130"
 
 source "drivers/adc/Kconfig.rts5912"
+
+source "drivers/adc/Kconfig.ti_am335x"
 
 endif # ADC

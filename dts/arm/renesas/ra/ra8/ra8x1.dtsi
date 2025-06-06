@@ -582,6 +582,15 @@
 			};
 		};
 
+		ospi0: ospi@40268000 {
+			compatible = "renesas,ra-ospi-b";
+			reg = <0x40268000 0x19c>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&octaspiclk MSTPB 16>;
+			status = "disabled";
+		};
+
 		option_setting_ofs: option_setting_ofs@300a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0300a100 0x18>;

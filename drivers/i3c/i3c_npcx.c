@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(npcx_i3c, CONFIG_I3C_LOG_LEVEL);
 #define MCTRL_REQUEST_IBIACKNACK    3 /* Manually ACK or NACK an IBI */
 #define MCTRL_REQUEST_PROCESSDAA    4 /* Starts the DAA process */
 #define MCTRL_REQUEST_FORCEEXIT     6 /* Emit HDR Exit Pattern  */
+#define MCTRL_REQUEST_TGT_RST       6 /* Emit Target Reset Pattern  */
 /* Emits a START with address 7Eh when a slave pulls I3C_SDA low to request an IBI */
 #define MCTRL_REQUEST_AUTOIBI       7
 
@@ -571,6 +572,24 @@ static inline int npcx_i3c_request_hdr_exit(struct i3c_reg *inst)
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
 		LOG_ERR("Request hdr exit error %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static inline int npcx_i3c_request_tgt_reset(struct i3c_reg *inst)
+{
+	uint32_t val = 0;
+	int ret;
+
+	LOG_WRN("Send target reset pattern");
+	SET_FIELD(val, NPCX_I3C_MCTRL_TYPE, MCTRL_TYPE_TGT_RESTART);
+	SET_FIELD(val, NPCX_I3C_MCTRL_REQUEST, MCTRL_REQUEST_TGT_RST);
+
+	ret = npcx_i3c_send_request(inst, val);
+	if (ret != 0) {
+		LOG_ERR("Sending tgt reset pattern error %d", ret);
 		return ret;
 	}
 
@@ -1525,9 +1544,9 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	npcx_i3c_errwarn_clear_all(inst);
 	xfered_len = npcx_i3c_xfer_write_fifo(inst, &payload->ccc.id, 1, payload->ccc.data_len > 0);
 	if (xfered_len < 0) {
+		ret = xfered_len;
 		LOG_ERR("CCC[0x%02x] %s command error (%d)", payload->ccc.id,
 			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
-		ret = xfered_len;
 
 		goto out_do_ccc;
 	}
@@ -1539,10 +1558,10 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		xfered_len = npcx_i3c_xfer_write_fifo(inst, payload->ccc.data,
 						      payload->ccc.data_len, false);
 		if (xfered_len < 0) {
+			ret = xfered_len;
 			LOG_ERR("CCC[0x%02x] %s command payload error (%d)", payload->ccc.id,
 				i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
 				ret);
-			ret = xfered_len;
 
 			goto out_do_ccc;
 		}
@@ -1577,9 +1596,9 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 				inst, tgt_payload->addr, NPCX_I3C_MCTRL_TYPE_I3C, tgt_payload->data,
 				tgt_payload->data_len, is_read, true, false, false);
 			if (xfered_len < 0) {
+				ret = xfered_len;
 				LOG_ERR("CCC[0x%02x] target payload error (%d)", payload->ccc.id,
 					ret);
-				ret = xfered_len;
 
 				goto out_do_ccc;
 			}
@@ -1587,6 +1606,20 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 			/* Write back the total number of bytes transferred */
 			tgt_payload->num_xfer = xfered_len;
 		}
+	}
+
+	/* Currently handle broadcast RSTACT command only */
+	if (payload->ccc.id == I3C_CCC_RSTACT(true)) {
+		/* Handle invalid or unsupported defining bytes */
+		if (payload->ccc.data[0] > I3C_CCC_RSTACT_VIRTUAL_TARGET_DETECT) {
+			LOG_ERR("Invalid or unsupported RSTACT defining byte: %#x",
+				payload->ccc.data[0]);
+			ret = -EINVAL;
+			goto out_do_ccc;
+		}
+
+		/* Emit target reset pattern */
+		ret = npcx_i3c_request_tgt_reset(inst);
 	}
 
 out_do_ccc:

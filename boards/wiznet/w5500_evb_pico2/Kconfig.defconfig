@@ -13,7 +13,4 @@ endif # NETWORKING
 config USB_SELF_POWERED
 	default n
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 150000000
-
 endif # BOARD_W5500_EVB_PICO2
