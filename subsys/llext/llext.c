@@ -19,9 +19,9 @@ LOG_MODULE_REGISTER(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 #include "llext_priv.h"
 
-static sys_slist_t llext_list = SYS_SLIST_STATIC_INIT(&llext_list);
+sys_slist_t llext_list = SYS_SLIST_STATIC_INIT(&llext_list);
 
-static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
+struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
 
 int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
 			const char *sect_name)

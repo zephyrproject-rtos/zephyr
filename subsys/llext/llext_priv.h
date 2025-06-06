@@ -10,6 +10,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/llext_internal.h>
+#include <zephyr/sys/slist.h>
+
+/*
+ * Global extension list
+ */
+
+extern sys_slist_t llext_list;
+extern struct k_mutex llext_lock;
 
 /*
  * Memory management (llext_mem.c)
