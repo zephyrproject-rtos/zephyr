@@ -37,6 +37,82 @@ USBD_DEVICE_DEFINE(test_usbd,
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
+static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
+{
+	static struct usbd_desc_node *desc_nd;
+	size_t len;
+
+	if (idx == test_mfg.str.idx) {
+		desc_nd = &test_mfg;
+	} else if (idx == test_product.str.idx) {
+		desc_nd = &test_product;
+	} else if (idx == test_sn.str.idx) {
+		desc_nd = &test_sn;
+	} else {
+		return -ENOTSUP;
+	}
+
+	if (net_buf_pull_u8(buf) != desc_nd->bLength) {
+		return -EINVAL;
+	}
+
+	if (net_buf_pull_u8(buf) != USB_DESC_STRING) {
+		return -EINVAL;
+	}
+
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "");
+	len = MIN(buf->len / 2, desc_nd->bLength / 2);
+	for (size_t i = 0; i < len; i++) {
+		uint16_t a = net_buf_pull_le16(buf);
+		uint16_t b = ((uint8_t *)(desc_nd->ptr))[i];
+
+		if (a != b) {
+			LOG_INF("%c != %c", a, b);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+ZTEST(device_next, test_get_desc_string)
+{
+	const uint8_t type = USB_DESC_STRING;
+	const uint16_t id = 0x0409;
+	static struct usb_device *udev;
+	struct net_buf *buf;
+	int err;
+
+	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	buf = usbh_xfer_buf_alloc(udev, UINT8_MAX);
+	zassert_not_null(udev, "Failed to allocate buffer");
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
+	err = usbh_req_desc(udev, type, 1, id, UINT8_MAX, buf);
+	zassert_equal(err, 0, "Transfer status is an error");
+	err = test_cmp_string_desc(buf, 1);
+	zassert_equal(err, 0, "Descriptor comparison failed");
+
+	net_buf_reset(buf);
+	err = usbh_req_desc(udev, type, 2, id, UINT8_MAX, buf);
+	zassert_equal(err, 0, "Transfer status is an error");
+	err = test_cmp_string_desc(buf, 2);
+	zassert_equal(err, 0, "Descriptor comparison failed");
+
+	net_buf_reset(buf);
+	err = usbh_req_desc(udev, type, 3, id, UINT8_MAX, buf);
+	zassert_equal(err, 0, "Transfer status is an error");
+	err = test_cmp_string_desc(buf, 3);
+	zassert_equal(err, 0, "Descriptor comparison failed");
+
+	k_mutex_unlock(&udev->mutex);
+	usbh_xfer_buf_free(udev, buf);
+}
+
 ZTEST(device_next, test_vendor_control_in)
 {
 	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_HOST << 7) |
