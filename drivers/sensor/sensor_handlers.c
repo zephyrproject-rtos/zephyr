@@ -63,7 +63,7 @@ static inline int z_vrfy_sensor_get_decoder(const struct device *dev,
 					    const struct sensor_decoder_api **decoder)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SENSOR));
-	K_OOPS(K_SYSCALL_MEMORY_READ(decoder, sizeof(struct sensor_decoder_api)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(decoder, sizeof(struct sensor_decoder_api *)));
 	return z_impl_sensor_get_decoder(dev, decoder);
 }
 #include <zephyr/syscalls/sensor_get_decoder_mrsh.c>
@@ -75,7 +75,7 @@ static inline int z_vrfy_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 {
 	K_OOPS(K_SYSCALL_OBJ(iodev, K_OBJ_RTIO_IODEV));
 	K_OOPS(K_SYSCALL_OBJ(sensor, K_OBJ_DRIVER_SENSOR));
-	K_OOPS(K_SYSCALL_MEMORY_READ(channels, sizeof(enum sensor_channel) * num_channels));
+	K_OOPS(K_SYSCALL_MEMORY_READ(channels, sizeof(struct sensor_chan_spec) * num_channels));
 	return z_impl_sensor_reconfigure_read_iodev(iodev, sensor, channels, num_channels);
 }
 #include <zephyr/syscalls/sensor_reconfigure_read_iodev_mrsh.c>
