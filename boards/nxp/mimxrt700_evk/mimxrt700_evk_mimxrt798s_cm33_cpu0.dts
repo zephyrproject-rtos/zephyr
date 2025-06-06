@@ -22,6 +22,8 @@
 		sw1 = &user_button_2;
 		watchdog0 = &wwdt0;
 		pwm-0 = &sc_timer;
+		i2s-codec-tx = &sai0;
+		i2s-tx = &sai0;
 	};
 
 	chosen {
@@ -127,6 +129,27 @@
 	pinctrl-names = "default";
 };
 
+&flexcomm2{
+	status = "okay";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&clkctl0 MCUX_SAI0_CLK>;
+		clock-names = "mclk";
+	};
+};
+
 &flexcomm8{
 	status = "okay";
 };
@@ -175,6 +198,12 @@ zephyr_lcdif: &lcdif {};
 
 &mrt0_channel0 {
 	status = "okay";
+};
+
+&sai0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai0>;
+	pinctrl-names = "default";
 };
 
 &sc_timer {

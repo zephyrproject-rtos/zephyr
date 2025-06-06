@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -15,3 +15,5 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable TrustZone-M
 CONFIG_TRUSTED_EXECUTION_SECURE=y
+# Nocache memory options
+CONFIG_NOCACHE_MEMORY=y
