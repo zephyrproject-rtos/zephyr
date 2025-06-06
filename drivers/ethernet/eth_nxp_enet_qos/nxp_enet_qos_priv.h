@@ -1,6 +1,6 @@
 /* NXP ENET QOS Header
  *
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,6 +113,7 @@ struct nxp_enet_qos_tx_data {
 struct nxp_enet_qos_rx_data {
 	struct k_work rx_work;
 	atomic_t rbu_flag;
+	uint32_t next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc descriptors[NUM_RX_BUFDESC];
 	struct net_buf *reserved_bufs[NUM_RX_BUFDESC];
 };
