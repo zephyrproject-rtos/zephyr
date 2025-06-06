@@ -14,3 +14,18 @@ properties:
     required: true
   interrupts-extended:
     required: true
+  mtime-is-csr:
+    type: boolean
+    description: |
+      If present, the value of the timer is read with the `time` CSR instead of
+      the memory-mapped `MTIME` register.
+  mtime-is-32bits:
+    type: boolean
+    description: |
+      If present, the `MTIME` register is accessed as two separate 32-bit
+      registers (low and high), even on 64-bit platforms.
+  mtimecmp-is-32bits:
+    type: boolean
+    description: |
+      If present, the `MTIMECMP` register is accessed as two separate 32-bit
+      registers (low and high), even on 64-bit platforms.

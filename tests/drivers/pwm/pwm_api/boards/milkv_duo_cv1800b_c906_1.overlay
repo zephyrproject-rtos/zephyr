@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-0 = &pwm1;
+	};
+};
+
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group1 {
+			pinmux = <CVI_PINMUX(SD1_D2, PWM_5)>;  /* GP4 */
+		};
+	};
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+};

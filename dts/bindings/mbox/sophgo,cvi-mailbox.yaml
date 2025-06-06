@@ -1,0 +1,38 @@
+# Copyright (c) 2024 honglin leng <a909204013@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SOPHGO CVI series Mailbox controller
+
+compatible: "sophgo,cvi-mailbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  channel-max:
+    type: int
+    required: true
+    description: Supported channels max
+
+  rx-cpu:
+    type: int
+    enum: [1, 2, 3, 4]
+    description: |
+      Receiver CPU Index.
+
+  tx-cpu:
+    type: int
+    enum: [1, 2, 3, 4]
+    description: |
+      Sender CPU Index.The CVI platform has a total of 4 CPUs, each with its own
+      mailbox.
+
+      The mailbox controller can be used to send messages between CPUs.
+
+mbox-cells:
+  - channel
