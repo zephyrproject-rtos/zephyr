@@ -4,18 +4,30 @@
 if SOC_TI_TMS570LC43X
 
 config SYS_CLOCK_EXISTS
-	default n
+	default y
 
-config MULTITHREADING
+config DYNAMIC_INTERRUPTS
 	default n
 
 config GEN_SW_ISR_TABLE
-	default n
+	default y
 
 config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
 	default n
 
-# launchpad is 16MHz
+config USE_SWITCH
+	default n
+
+config RUNTIME_NMI
+	default y
+
+# 10ms OS tick from a 1MHz free-running clock
+config SYS_CLOCK_TICKS_PER_SEC
+	default 100
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/soc/rti,clock-frequency)
 

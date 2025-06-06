@@ -94,6 +94,17 @@
 			status = "okay";
 		};
 
+		vim: interrupt-controller@fffffe00 {
+				compatible = "ti,tms570-vim";
+				reg = <0xfffffe00 0x00000100>, /* VIM control */
+				<0xfffffd00 0x00000100>, /* ECC related */
+				<0xfff82000 128>;      /* VIM_RAM     */
+				status = "okay";
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				#address-cells = <1>;
+		};
+
 		sci1: uart@fff7e400 {
 			compatible = "ti,tms570-uart";
 			reg = <0xfff7e400 256>;

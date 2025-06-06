@@ -1,0 +1,11 @@
+# Copyright (C) 2025 ispace, inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TMS570_VIM
+	bool "TI Vectored Interrupt Manager (TMS570)"
+	default y
+	depends on DT_HAS_TI_TMS570_VIM_ENABLED
+	help
+	  The TI Vectored Interrupt Manager provides hardware assistance for prioritizing
+	  and aggregating the interrupt sources for TI herules ARM Cortex-R4/R5 processor cores.
