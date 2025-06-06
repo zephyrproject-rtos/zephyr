@@ -11,6 +11,14 @@ config SPI_LARGE_BUFFER_SIZE
 	int "Large buffer size"
 	default 8192
 
+config SPI_LATENCY_TOLERANCE
+	int "Latency tolerance  to set"
+	default 10
+	range 1 100
+	help
+	  Set the SPI_LATENCY_TOLERANCE value to use when setting
+	  SPI loopback during testing.
+
 if SOC_SERIES_STM32H7X
 
 config SPI_LOOPBACK_16BITS_FRAMES

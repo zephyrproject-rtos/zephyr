@@ -337,7 +337,8 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 	TC_PRINT("Latency measurement: %llu us\n", latency_measurement);
 
 	/* Allow some overhead, but not too much */
-	zassert_true(time_spent_us <= expected_transfer_time_us * 8, "Very high latency");
+	zassert_true(time_spent_us <= expected_transfer_time_us * CONFIG_SPI_LATENCY_TOLERANCE,
+		 "Very high latency");
 
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
 				  buffer_print_tx, buffer_print_rx);
@@ -619,7 +620,11 @@ static void spi_loopback_test_word_size(struct spi_dt_spec *spec,
 	struct spi_config config_copy = spec->config;
 
 	config_copy.operation &= ~SPI_WORD_SIZE_MASK;
-	config_copy.operation |= SPI_WORD_SET(word_size);
+	if (word_size == 16) {
+		config_copy.operation |= SPI_WORD_SET(word_size - 1);
+	} else {
+		config_copy.operation |= SPI_WORD_SET(word_size);
+	}
 	spec_copy->config = config_copy;
 	spec_copy->bus = spec->bus;
 
@@ -697,8 +702,8 @@ static struct k_thread thread[3];
 static K_SEM_DEFINE(thread_sem, 0, 3);
 static K_SEM_DEFINE(sync_sem, 0, 1);
 
-static uint8_t __aligned(32) tx_buffer[3][32];
-static uint8_t __aligned(32) rx_buffer[3][32];
+static uint8_t __aligned(32) tx_buffer[3][32] __NOCACHE;
+static uint8_t __aligned(32) rx_buffer[3][32] __NOCACHE;
 
 atomic_t thread_test_fails;
 

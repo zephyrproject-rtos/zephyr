@@ -1121,7 +1121,7 @@ static int transceive_dma(const struct device *dev,
 #ifdef CONFIG_DCACHE
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
-		return -EFAULT;
+		return -ENOTSUP;
 	}
 #endif /* CONFIG_DCACHE */
 
