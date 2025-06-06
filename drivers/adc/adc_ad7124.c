@@ -326,7 +326,12 @@ static uint16_t adc_ad7124_odr_to_fs(const struct device *dev, int16_t odr)
 		return -EINVAL;
 	}
 
-	odr_sel_bits = DIV_ROUND_CLOSEST(master_clk_freq, odr * 32);
+	if (odr <= 0) {
+		LOG_ERR("Invalid ODR value: %d", odr);
+		return -EINVAL;
+	}
+
+	odr_sel_bits = DIV_ROUND_CLOSEST(master_clk_freq, (uint32_t)odr * 32);
 
 	if (odr_sel_bits < ADC_ODR_SEL_BITS_MIN) {
 		odr_sel_bits = ADC_ODR_SEL_BITS_MIN;
