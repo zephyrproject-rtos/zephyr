@@ -133,6 +133,12 @@ config LLEXT_IMPORT_ALL_GLOBALS
 	  used by the main application. This is useful to load basic extensions
 	  that have been compiled without the full Zephyr EDK.
 
+config LLEXT_EXPERIMENTAL
+	bool "LLEXT experimental functionality"
+	help
+	  Include support for LLEXT experimental and unstable functionality that
+	  has a very high likelihood to change in the future.
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"
