@@ -77,4 +77,9 @@
 			};
 		};
 	};
+
+	die_temp: dietemp {
+		ts-cal1-addr = <0x0BFA0710>;
+		ts-cal2-addr = <0x0BFA0742>;
+	};
 };
