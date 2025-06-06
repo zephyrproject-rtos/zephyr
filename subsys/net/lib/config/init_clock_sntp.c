@@ -89,7 +89,7 @@ static void sntp_resync_handler(struct k_work *work)
 #endif /* CONFIG_NET_CONFIG_SNTP_INIT_RESYNC */
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER
-static void l4_event_handler(uint32_t mgmt_event, struct net_if *iface, void *info,
+static void l4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
 			     size_t info_length, void *user_data)
 {
 	ARG_UNUSED(iface);
