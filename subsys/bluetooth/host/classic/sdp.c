@@ -1515,6 +1515,7 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 		break;
 	default:
 		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		net_buf_unref(buf);
 		return -EINVAL;
 	}
 
@@ -1620,6 +1621,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 		break;
 	default:
 		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		net_buf_unref(buf);
 		return -EINVAL;
 	}
 
