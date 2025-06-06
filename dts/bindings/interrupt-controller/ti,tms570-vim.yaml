@@ -1,0 +1,24 @@
+# Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: VIM for TMS570
+
+compatible: "ti,tms570-vim"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+
+properties:
+  # NOTE: Register ranges:
+  #        - 0 : VIM control registers
+  #        - 1 : VIM ECC related registers
+  #        - 2 : VIM RAM
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
