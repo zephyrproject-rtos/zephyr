@@ -201,34 +201,16 @@ config CLOCK_CONTROL_NRF_ACCURACY
 
 endif # CLOCK_CONTROL_NRF
 
-config CLOCK_CONTROL_NRF2
-	bool "nRF clock control support"
-	default y
-	depends on SOC_SERIES_NRF54HX && !RISCV_CORE_NORDIC_VPR
+config CLOCK_CONTROL_NRF2_COMMON
+	bool "NRF2 clock control common framework"
 	select ONOFF
-	select NRFS if HAS_NRFS
-	help
-	  Support for nRF clock control devices.
-
-if CLOCK_CONTROL_NRF2
-
-config CLOCK_CONTROL_NRF_HSFLL_LOCAL_REQ_LOW_FREQ
-	bool "Local domain scale down after init"
-	default y if NRFS_DVFS_LOCAL_DOMAIN
-	help
-	  Request the lowest operating point after DVFS initialization.
-
-config CLOCK_CONTROL_NRF_HSFLL_LOCAL_NRFS_DVFS_TIMEOUT_MS
-	int "Timeout waiting for nrfs dvfs service callback in milliseconds"
-	default 2000
-
-config CLOCK_CONTROL_NRF_LFCLK_CLOCK_TIMEOUT_MS
-	int "Timeout waiting for nrfs clock service callback in milliseconds"
-	default 1000
 
 config CLOCK_CONTROL_NRF_HSFLL_GLOBAL
 	bool "Clock control for global HSFLL"
-	depends on NRFS_GDFS_SERVICE_ENABLED
+	depends on DT_HAS_NORDIC_NRF_HSFLL_GLOBAL_ENABLED
+	select NRFS
+	select NRFS_GDFS_SERVICE_ENABLED
+	select CLOCK_CONTROL_NRF2_COMMON
 	default y
 
 if CLOCK_CONTROL_NRF_HSFLL_GLOBAL
@@ -262,7 +244,56 @@ endif # CLOCK_CONTROL_NRF_HSFLL_GLOBAL
 config CLOCK_CONTROL_NRFS_AUDIOPLL
 	bool "NRFS AudioPLL driver support"
 	depends on DT_HAS_NORDIC_NRFS_AUDIOPLL_ENABLED
-	depends on NRFS_AUDIOPLL_SERVICE_ENABLED
+	select NRFS
+	select NRFS_AUDIOPLL_SERVICE_ENABLED
+	select CLOCK_CONTROL_NRF2_COMMON
 	default y
 
-endif # CLOCK_CONTROL_NRF2
+config CLOCK_CONTROL_NRF_FLL16M
+	bool "NRF FLL16M driver support"
+	depends on DT_HAS_NORDIC_NRF_FLL16M_ENABLED
+	select CLOCK_CONTROL_NRF2_COMMON
+	default y
+
+config CLOCK_CONTROL_NRF54H_HFXO
+	bool "NRF54H HFXO driver support"
+	depends on DT_HAS_NORDIC_NRF54H_HFXO_ENABLED
+	select CLOCK_CONTROL_NRF2_COMMON
+	default y
+
+config CLOCK_CONTROL_NRF_HSFLL_LOCAL
+	bool "NRF HSFLL LOCAL driver support"
+	depends on DT_HAS_NORDIC_NRF_HSFLL_LOCAL_ENABLED
+	select NRFS
+	select NRFS_DVFS_LOCAL_DOMAIN
+	select CLOCK_CONTROL_NRF2_COMMON
+	default y
+
+if CLOCK_CONTROL_NRF_HSFLL_LOCAL
+
+config CLOCK_CONTROL_NRF_HSFLL_LOCAL_REQ_LOW_FREQ
+	bool "Local domain scale down after init"
+	help
+	  Request the lowest operating point after DVFS initialization.
+
+config CLOCK_CONTROL_NRF_HSFLL_LOCAL_NRFS_DVFS_TIMEOUT_MS
+	int "Timeout waiting for nrfs dvfs service callback in milliseconds"
+	default 2000
+
+endif # CLOCK_CONTROL_NRF_HSFLL_LOCAL
+
+config CLOCK_CONTROL_NRF_LFCLK
+	bool "NRF LFCLK driver support"
+	depends on DT_HAS_NORDIC_NRF_LFCLK_ENABLED
+	select NRFS
+	select NRFS_CLOCK_SERVICE_ENABLED
+	select CLOCK_CONTROL_NRF2_COMMON
+	default y
+
+if CLOCK_CONTROL_NRF_LFCLK
+
+config CLOCK_CONTROL_NRF_LFCLK_CLOCK_TIMEOUT_MS
+	int "Timeout waiting for nrfs clock service callback in milliseconds"
+	default 1000
+
+endif # CLOCK_CONTROL_NRF_LFCLK
