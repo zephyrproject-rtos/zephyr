@@ -53,7 +53,7 @@ BUILD_ASSERT(IRONSIDE_CPUCONF_NUM_ARGS <= NRF_IRONSIDE_CALL_NUM_ARGS);
  * @param cpu The CPU to be booted
  * @param vector_table Pointer to the vector table used to boot the CPU.
  * @param cpu_wait When this is true, the CPU will WAIT even if the CPU has clock.
- * @param msg A message that can be placed in radiocore's boot report.
+ * @param msg A message that can be placed in cpu's boot report.
  * @param msg_size Size of the message in bytes.
  *
  * @note cpu_wait is only intended to be enabled for debug purposes
