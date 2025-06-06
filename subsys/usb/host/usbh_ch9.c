@@ -73,7 +73,8 @@ int usbh_req_setup(struct usb_device *const udev,
 
 	memcpy(xfer->setup_pkt, &req, sizeof(req));
 
-	__ASSERT((buf != NULL && wLength) || (buf == NULL && !wLength),
+	__ASSERT(IS_ENABLED(CONFIG_ZTEST) ||
+		 (buf != NULL && wLength) || (buf == NULL && !wLength),
 		 "Unresolved conditions for data stage");
 	if (wLength) {
 		ret = usbh_xfer_buf_add(udev, xfer, buf);
