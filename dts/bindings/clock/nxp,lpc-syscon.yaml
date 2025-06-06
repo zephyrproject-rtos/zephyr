@@ -16,3 +16,7 @@ properties:
 
 clock-cells:
   - name
+
+pinmux-cells:
+  - offset
+  - mask
