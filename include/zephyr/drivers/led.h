@@ -61,6 +61,18 @@ typedef int (*led_api_blink)(const struct device *dev, uint32_t led,
 			     uint32_t delay_on, uint32_t delay_off);
 
 /**
+ * @typedef led_api_get_blink_data()
+ * @brief Callback API for getting data used by software blinking
+ *
+ * @param dev LED device
+ * @param led LED number
+ * @return Pointer to the software blinking data structure for the specified LED,
+ *         or NULL if not supported or in case of an error.
+ */
+typedef struct led_blink_software_data *(*led_api_get_blink_data)(const struct device *dev,
+								  uint32_t led);
+
+/**
  * @typedef led_api_get_info()
  * @brief Optional API callback to get LED information
  *
@@ -123,6 +135,7 @@ __subsystem struct led_driver_api {
 	led_api_set_brightness set_brightness;
 	/* Optional callbacks. */
 	led_api_blink blink;
+	led_api_get_blink_data get_blink_data;
 	led_api_get_info get_info;
 	led_api_set_color set_color;
 	led_api_write_channels write_channels;
