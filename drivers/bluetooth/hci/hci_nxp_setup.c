@@ -29,12 +29,24 @@ LOG_MODULE_REGISTER(bt_nxp_ctlr);
 
 #define DT_DRV_COMPAT nxp_bt_hci_uart
 
-#define FW_UPLOAD_CHANGE_TIMEOUT_RETRY_COUNT 6
+#define FW_UPLOAD_CHANGE_TIMEOUT_RETRY_COUNT            6
+#define HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF          0xFF
+#define HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH 16
+#define HCI_CMD_STORE_BT_CAL_DATA_OCF                   0x61
+#define HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH          32
 
 extern const unsigned char *bt_fw_bin;
 extern const unsigned int bt_fw_bin_len;
 
 static const struct device *uart_dev = DEVICE_DT_GET(DT_INST_GPARENT(0));
+
+#if !defined(CONFIG_HCI_NXP_SET_CAL_DATA)
+#define bt_nxp_set_calibration_data_annex55() 0
+#endif
+
+#if !defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
+#define bt_nxp_set_calibration_data_annex100() 0
+#endif
 
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), sdio_reset_gpios)
 struct gpio_dt_spec sdio_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), sdio_reset_gpios);
@@ -1171,6 +1183,189 @@ static int bt_nxp_ctlr_init(void)
 	return 0;
 }
 
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA)
+
+static int bt_nxp_set_calibration_data_annex55(void)
+{
+	int ret = 0;
+	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_OCF);
+
+	const uint8_t hci_cal_data_annex55[HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH] = {
+#if defined(CONFIG_BT_NXP_NW612)
+			0x00,        /* Sequence Number : 0x00 */
+			0x01,        /* Action : 0x01 */
+			0x01,        /* Type : Not use CheckSum */
+			0x1C,        /* File Length : 0x1C */
+			0x37,        /* BT Annex Type : BT CFG */
+			0x33,        /* Checksum : 0x71 */
+			0x1C,        /* Annex Length LSB: 0x001C */
+			0x00,        /* Annex Length MSB: 0x001C */
+			0x00,        /* Pointer For Next Annex[0] : 0x00000000 */
+			0x00,        /* Pointer For Next Annex[1] : 0x00000000 */
+			0x00,        /* Pointer For Next Annex[2] : 0x00000000 */
+			0x00,        /* Pointer For Next Annex[3] : 0x00000000 */
+			0x01,        /* Annex Version : 0x01 */
+			0x81,        /* External Xtal Calibration Value : 0x7d */
+			0x0D,        /* Initial TX Power : 13 */
+			0x07,        /* Front End Loss : 0x07 */
+			0x28,        /* BT Options : */
+							/* BIT[0] Force Class 2 operation = 0 */
+							/* BIT[1] Disable Pwr-ctrl for class 2=0 */
+							/* BIT[2] MiscFlg(to indicate ext.XTAL)=0 */
+							/* BIT[3] Used Internal Sleep Clock = 1 */
+							/* BIT[4] BT AOA location support = 0 */
+							/* BIT[5] Force Class 1 mode = 1 */
+							/* BIT[7:6] Reserved */
+			0x00,        /* AOANumberOfAntennas: 0x00 */
+			0x00,        /* RSSI Golden Low : 0 */
+			0x00,        /* RSSI Golden High : 0 */
+			0xC0,        /* UART Baud Rate[0] : 0x002DC6C0(3000000) */
+			0xC6,        /* UART Baud Rate[1] : 0x002DC6C0(3000000) */
+			0x2D,        /* UART Baud Rate[2] : 0x002DC6C0(3000000) */
+			0x00,        /* UART Baud Rate[3] : 0x002DC6C0(3000000) */
+			0x00,        /* BdAddress[0] : 0x000000000000 */
+			0x00,        /* BdAddress[1] : 0x000000000000 */
+			0x00,        /* BdAddress[2] : 0x000000000000 */
+			0x00,        /* BdAddress[3] : 0x000000000000 */
+			0x00,        /* BdAddress[4] : 0x000000000000 */
+			0x00,        /* BdAddress[5] : 0x000000000000 */
+			0xF0,        /* Encr_Key_Len[3:0]: MinEncrKeyLen = 0x0 */
+						 /* ExEncrKeyLen = 0xF */
+			0x00,        /* RegionCode : 0x00 */
+#elif defined(CONFIG_BT_NXP_IW416)
+			0x00,        /* Sequence Number : 0x00 */
+			0x01,        /* Action : 0x01 */
+			0x01,        /* Type : Not use CheckSum */
+			0x1C,        /* File Length : 0x1C */
+			0x37,        /* BT Annex Type : BT CFG */
+			0x33,        /* Checksum : 0x71 */
+			0x1C,        /* Annex Length LSB: 0x001C */
+			0x00,        /* Annex Length MSB: 0x001C */
+			0x00,        /* Pointer For Next Annex[0] : 0x00000000 */
+			0x00,        /* Pointer For Next Annex[1] : 0x00000000 */
+			0x00,        /* Pointer For Next Annex[2] : 0x00000000 */
+			0x00,        /* Pointer For Next Annex[3] : 0x00000000 */
+			0x01,        /* Annex Version : 0x01 */
+			0x00,        /* External Xtal Calibration Value */
+			0x03,        /* Initial TX Power : 0x03 */
+			0x03,        /* Front End Loss : 0x03 */
+			0x00,        /* BT Options : */
+							/* BIT[0] Force Class 2 operation = 0 */
+							/* BIT[1] Disable Pwr Ctrl for class 2=0 */
+							/* BIT[2] MiscFlg(to indicate ext.XTAL)=0 */
+							/* BIT[3] Used Internal Sleep Clock = 0 */
+							/* BIT[4] BT AOA localtion support = 0 */
+							/* BIT[5] Force Class 1 mode = 0 */
+							/* BIT[7:6] Reserved */
+			0x00,        /* AOANumberOfAntennas: 0x00 */
+			0xBA,        /* RSSI Golden Low : 0 */
+			0xCE,        /* RSSI Golden High : 0 */
+			0xC0,        /* UART Baud Rate[0] : 0x002DC6C0(3000000) */
+			0xC6,        /* UART Baud Rate[1] : 0x002DC6C0(3000000) */
+			0x2D,        /* UART Baud Rate[2] : 0x002DC6C0(3000000) */
+			0x00,        /* UART Baud Rate[3] : 0x002DC6C0(3000000) */
+			0x00,        /* BdAddress[0] : 0x000000000000 */
+			0x00,        /* BdAddress[1] : 0x000000000000 */
+			0x00,        /* BdAddress[2] : 0x000000000000 */
+			0x00,        /* BdAddress[3] : 0x000000000000 */
+			0x00,        /* BdAddress[4] : 0x000000000000 */
+			0x00,        /* BdAddress[5] : 0x000000000000 */
+			0xF0,        /* Encr_Key_Len[3:0]: MinEncrKeyLen = 0x0 */
+						 /* ExEncrKeyLen = 0xF */
+			0x00,        /* RegionCode : 0x00 */
+#else
+#error "BT Calibration data (annex-55) is not given for selected chipset"
+#endif
+	};
+
+	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
+		struct net_buf *buf;
+
+		buf = bt_hci_cmd_create(opcode, HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
+		if (buf == NULL) {
+			LOG_ERR("Unable to allocate command buffer");
+			return -ENOMEM;
+		}
+
+		net_buf_add_mem(buf, hci_cal_data_annex55, HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
+
+		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
+		if (ret) {
+			LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
+			return ret;
+		}
+
+		(void)k_msleep(CONFIG_BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE);
+	}
+
+	return ret;
+}
+#endif /*CONFIG_HCI_NXP_SET_CAL_DATA*/
+
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
+
+static int bt_nxp_set_calibration_data_annex100(void)
+{
+	int ret = 0;
+	const uint8_t hci_cal_data_annex100[HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH] = {
+#if defined(CONFIG_BT_NXP_NW612)
+		0x64,                   /* Annex Type : 0x64 */
+		0x83,                   /* Checksum */
+		0x10, 0x00,             /* Length */
+		0x00, 0x00, 0x00, 0x00, /* Pointer for next Annex-Structure */
+		0x01,                   /* Ext PA Present (1 bit) + */
+								/* Ext. PA Gain (7 bits) */
+		0x00,                   /* Ext Antenna Gain(1 bit) + */
+								/* Ext. Antenna Gain Val(4 bits) */
+		0x04, 0x00,             /* BT / LE Ext PA FEM CTRL Bitmask */
+		0x01,                   /* Ext LNA Present (1 bit) + */
+								/* Ext LNA Gain (7 bits) */
+		0x00,                   /* Reserved */
+		0x04, 0x00              /* BT / LE Ext LNA FEM CTRL Bitmask */
+#elif defined(CONFIG_BT_NXP_IW416)
+		0x64,                   /* Annex Type : 0x64 */
+		0x83,                   /* Checksum */
+		0x10, 0x00,             /* Length */
+		0x00, 0x00, 0x00, 0x00, /* Pointer for next Annex-Structure */
+		0x01,                   /* Ext PA Present (1 bit) + */
+								/* Ext. PA Gain (7 bits) */
+		0x00,                   /* Ext Antenna Gain(1 bit) + */
+								/* Ext. Antenna Gain Val (4 bits) */
+		0x0C, 0x00,             /* BT / LE Ext PA FEM CTRL Bitmask */
+		0x01,                   /* Ext LNA Present (1 bit) + */
+								/* Ext LNA Gain (7 bits) */
+		0x00,                   /* Reserved */
+		0x0C, 0x00              /* BT/LE Ext LNA FEM CTRL Bitmask */
+#else
+#error "BT Calibration data (annex-100) is not given for selected chipset"
+#endif
+	};
+
+	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF);
+
+	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
+		struct net_buf *buf;
+
+		buf = bt_hci_cmd_create(opcode, HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH);
+		if (buf == NULL) {
+			LOG_ERR("Unable to allocate command buffer");
+			return -ENOMEM;
+		}
+
+		net_buf_add_mem(buf, hci_cal_data_annex100,
+					HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH);
+
+		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
+		if (ret) {
+			LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
+			return ret;
+		}
+	}
+
+	return ret;
+}
+#endif /* defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100) */
+
 int bt_hci_transport_setup(const struct device *dev)
 {
 	int ret = 0;
@@ -1231,6 +1426,7 @@ int bt_h4_vnd_setup(const struct device *dev)
 	flowcontrol_of_hci = (bool)DT_PROP_OR(DT_DRV_INST(0), hw_flow_control, false);
 
 	if (operation_speed == default_speed) {
+		fw_upload.is_setup_done = true;
 		return 0;
 	}
 
@@ -1240,7 +1436,7 @@ int bt_h4_vnd_setup(const struct device *dev)
 			return err;
 		}
 
-		/* BT waiting time after controller bandrate updated */
+		 /* BT waiting time after controller bandrate updated */
 		(void)k_msleep(CONFIG_BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE);
 	}
 
@@ -1250,7 +1446,21 @@ int bt_h4_vnd_setup(const struct device *dev)
 		return err;
 	}
 
-	fw_upload.is_setup_done = true;
+	if (!fw_upload.is_setup_done) {
+		err = bt_nxp_set_calibration_data_annex55();
+		if (err) {
+			LOG_ERR("Fail to load annex-55 calibration data");
+			return err;
+		}
+
+		err = bt_nxp_set_calibration_data_annex100();
+		if (err) {
+			LOG_ERR("Fail to load annex-100 calibration data");
+			return err;
+		}
+
+		fw_upload.is_setup_done = true;
+	}
 
 	return 0;
 }
