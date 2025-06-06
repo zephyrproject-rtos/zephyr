@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2025 Texas Instruments Incorporated
 # Copyright (c) 2024 BayLibre, SAS
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -6,6 +6,7 @@
 config CC23X0_SYSTIM_TIMER
 	bool "SYSTIM timer"
 	default y
+	depends on HAS_CC23X0_SDK
 	select TICKLESS_CAPABLE
 	help
 	  This module provides SYSTIM as "system clock driver" interfaces
