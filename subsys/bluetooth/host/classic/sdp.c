@@ -1490,6 +1490,9 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 {
 	struct net_buf *buf;
 
+	/* Update context param directly. */
+	session->param = param;
+
 	buf = bt_sdp_create_pdu();
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
@@ -1535,8 +1538,6 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
 	}
 
-	/* Update context param to the one being resolving now */
-	session->param = param;
 	session->tid++;
 
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_REQ, session->tid);
@@ -1547,6 +1548,9 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 				const struct bt_sdp_discover_params *param)
 {
 	struct net_buf *buf;
+
+	/* Update context param directly. */
+	session->param = param;
 
 	buf = bt_sdp_create_pdu();
 
@@ -1580,8 +1584,6 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
 	}
 
-	/* Update context param to the one being resolving now */
-	session->param = param;
 	session->tid++;
 
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_ATTR_REQ, session->tid);
@@ -1592,6 +1594,9 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 				 const struct bt_sdp_discover_params *param)
 {
 	struct net_buf *buf;
+
+	/* Update context param directly. */
+	session->param = param;
 
 	buf = bt_sdp_create_pdu();
 
@@ -1651,8 +1656,6 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 				session->cstate.length);
 	}
 
-	/* Update context param to the one being resolving now */
-	session->param = param;
 	session->tid++;
 
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_ATTR_REQ,
