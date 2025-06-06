@@ -229,3 +229,23 @@ int spi_nxp_init_common(const struct device *dev)
 
 	return err;
 }
+
+int spi_nxp_deinit_common(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct lpspi_config *config = dev->config;
+
+	LPSPI_Reset(base);
+
+#ifdef LPSPI_RSTS
+	RESET_SetPeripheralReset(lpspi_get_reset(base));
+#endif
+
+#ifdef LPSPI_CLOCKS
+	CLOCK_DisableClock(lpspi_get_clock(base));
+#endif
+
+	config->irq_deinit_func(dev);
+
+	return 0;
+}
