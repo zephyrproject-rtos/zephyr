@@ -2544,7 +2544,7 @@ static int uarte_instance_init(const struct device *dev,
  */
 #define UARTE_INIT_PRIO(idx)								\
 	COND_CODE_1(INSTANCE_IS_FAST_PD(_, /*empty*/, idx, _),				\
-		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)),	\
+		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
 		    (CONFIG_SERIAL_INIT_PRIORITY))
 
 /* Macro for setting nRF specific configuration structures. */
