@@ -1745,7 +1745,7 @@ TESTDATA_14 = [
     ('bad platform', 'dummy reason', [],
      'dummy status', 'dummy reason'),
     ('good platform', 'quarantined', [],
-     TwisterStatus.ERROR, 'quarantined but is one of the integration platforms'),
+     'dummy status', 'quarantined'),
     ('good platform', 'dummy reason', [{'type': 'command line filter'}],
      'dummy status', 'dummy reason'),
     ('good platform', 'dummy reason', [{'type': 'Skip filter'}],
