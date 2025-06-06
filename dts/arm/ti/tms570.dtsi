@@ -93,5 +93,17 @@
 			reg = <0xffff1c00 0x400>;
 			status = "okay";
 		};
+
+		sci1: uart@fff7e400 {
+			compatible = "ti,tms570-uart";
+			reg = <0xfff7e400 256>;
+			status = "disabled";
+		};
+
+		sci3: uart@fff7e500 {
+			compatible = "ti,tms570-uart";
+			reg = <0xfff7e500 256>;
+			status = "disabled";
+		};
 	};
 };
