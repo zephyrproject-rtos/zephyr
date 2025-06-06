@@ -2,7 +2,11 @@
 
 if(TOOLCHAIN_VARIANT_COMPILER STREQUAL "gnu" OR
     NOT DEFINED TOOLCHAIN_VARIANT_COMPILER)
-  include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/gnu/generic.cmake)
+  if(EXISTS ${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/gnu/generic.cmake)
+    include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/gnu/generic.cmake)
+  else()
+    include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/generic.cmake)
+  endif()
   set(TOOLCHAIN_VARIANT_COMPILER "gnu" CACHE STRING "compiler used by the toolchain variant" FORCE)
 
   set(TOOLCHAIN_KCONFIG_DIR ${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr)
