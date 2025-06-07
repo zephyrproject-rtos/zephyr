@@ -20,4 +20,5 @@ supported:
   - spi
   - netif:eth
   - counter
+  - dma
 vendor: nxp
