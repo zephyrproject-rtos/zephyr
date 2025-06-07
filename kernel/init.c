@@ -311,23 +311,18 @@ static int do_device_init(const struct device *dev)
 {
 	int rc = 0;
 
+	/* device initialization has been invoked */
+	dev->state->initialized = true;
+
 	if (dev->ops.init != NULL) {
 		rc = dev->ops.init(dev);
-		/* Mark device initialized. If initialization
-		 * failed, record the error condition.
-		 */
+		/* If initialization failed, record the error condition. */
 		if (rc != 0) {
-			if (rc < 0) {
-				rc = -rc;
-			}
-			if (rc > UINT8_MAX) {
-				rc = UINT8_MAX;
-			}
-			dev->state->init_res = rc;
+			int res = (rc < 0) ? -rc : rc;
+
+			dev->state->init_res = (res <= UINT8_MAX) ? res : UINT8_MAX;
 		}
 	}
-
-	dev->state->initialized = true;
 
 	if (rc == 0) {
 		/* Run automatic device runtime enablement */

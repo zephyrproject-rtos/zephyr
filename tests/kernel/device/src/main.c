@@ -24,6 +24,7 @@
 
 #define FAKEDEFERDRIVER0	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e7000000))
 #define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
+#define FAKEDEFERDRIVER2        DEVICE_DT_GET(DT_PATH(fakedeferdriver_f9000000))
 
 /* A device without init call */
 DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
@@ -38,6 +39,12 @@ DEVICE_DT_DEFINE(DT_INST(0, fakedeferdriver), NULL, NULL, NULL, NULL,
 DEVICE_DT_DEFINE(DT_INST(1, fakedeferdriver), NULL, NULL, NULL, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 	      &fakedeferdriverapi);
+
+/* fake devices used to test deferred initialization failure */
+static int fakedeferdriver_init(const struct device *dev);
+
+DEVICE_DT_DEFINE(DT_INST(2, fakedeferdriver), fakedeferdriver_init, NULL, NULL, NULL, POST_KERNEL,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 /**
  * @brief Test cases to verify device objects
@@ -413,6 +420,38 @@ ZTEST(device, test_deferred_init)
 	zassert_true(ret == 0);
 
 	zassert_true(device_is_ready(FAKEDEFERDRIVER0));
+}
+
+static int fakedeferdriver_init(const struct device *dev)
+{
+	return -EIO;
+}
+
+/**
+ * @brief Test deferred initialization error
+ *
+ * @details Verify device_init error cases and expected device states
+ *
+ * - case -errno: if the device initialization fails
+ * - case -EALREADY: if the device is already initialized.
+ *
+ * @see device_init
+ * @ingroup kernel_device_tests
+ */
+ZTEST(device, test_deferred_init_failure)
+{
+	int ret;
+	const struct device *dev = FAKEDEFERDRIVER2;
+
+	zassert_false(device_is_ready(dev));
+	ret = device_init(dev);
+	zassert_true(ret == -EIO);
+	zassert_false(device_is_ready(dev));
+	zassert_true(dev->state->init_res == EIO);
+
+	ret = device_init(dev);
+	zassert_true(ret == -EALREADY);
+	zassert_true(dev->state->init_res == EIO);
 }
 
 ZTEST(device, test_device_api)
