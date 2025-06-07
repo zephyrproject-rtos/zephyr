@@ -1816,10 +1816,19 @@ static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
 	node_tx = ll_iso_tx_mem_acquire();
 	if (!node_tx) {
 		LOG_ERR("Tx Buffer Overflow");
-		/* TODO: Report overflow to HCI and remove assert
+
+		/* Assert if allocation requested in ISR context, i.e. non-HCI packet initiated call
+		 * path.
+		 *
+		 * FIXME: isoal_tx_sdu_fragment() is invoked by ll_iso_transmit_test_send_sdu() in
+		 *        ull_conn_iso_ticker_cb() which executes in ISR context.
+		 * TODO: Handling assertion in Controller implementations using meta-IRQ.
+		 */
+		LL_ASSERT(k_is_in_isr() == false);
+
+		/* Report overflow to HCI, upper layer (hci.c) calls
 		 * data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO)
 		 */
-		LL_ASSERT(0);
 		return ISOAL_STATUS_ERR_PDU_ALLOC;
 	}
 
