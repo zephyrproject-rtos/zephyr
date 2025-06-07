@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETHOS_U
+	bool "Ethos-U NPU driver"
+	select ARM_ETHOS_U
+	help
+	  Enable Ethos-U NPU driver.
+
+if ETHOS_U
+
+config ETHOS_U_INIT_PRIORITY
+	int "Ethos-U init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Ethos-U device driver initialization priority.
+
+module = ETHOS_U
+module-str = ethos_u
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.arm_mps3"
+
+endif # ETHOS_U
