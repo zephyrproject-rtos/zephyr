@@ -20,6 +20,11 @@ config NRF_GRTC_ALWAYS_ON
 	help
 	  Always keep the SYSCOUNTER active even if the CPU is in sleep mode.
 
+config NRF_GRTC_CLEAR_AT_INIT
+	bool "Clear the GRTC on driver init."
+	help
+	  Clear the GRTC counter on initialization.
+
 config NRF_GRTC_TIMER_APP_DEFINED_INIT
 	bool "Application defines GRTC initialization"
 	help
