@@ -189,6 +189,10 @@ Default Zephyr Peripheral Mapping:
 - LD1 : PA5
 - LPUART_1_TX : PA9
 - LPUART_1_RX : PA10
+- SPI3_NSS : PA4
+- SPI3_SCK : PB3
+- SPI3_MISO : PC11
+- SPI3_MOSI : PC12
 - UART_4_TX : PA0
 - UART_4_RX : PA1
 - UART_5_TX : PC12

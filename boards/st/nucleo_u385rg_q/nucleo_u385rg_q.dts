@@ -96,3 +96,10 @@
 &clk_lsi {
 	status = "okay";
 };
+
+&spi3 {
+	pinctrl-0 = <&spi3_nss_pa4 &spi3_sck_pb3
+		     &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
