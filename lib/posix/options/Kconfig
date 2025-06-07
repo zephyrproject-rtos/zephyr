@@ -6,6 +6,8 @@
 
 menu "POSIX Options"
 
+rsource "Kconfig.build"
+
 rsource "Kconfig.profile"
 
 rsource "Kconfig.aio"
