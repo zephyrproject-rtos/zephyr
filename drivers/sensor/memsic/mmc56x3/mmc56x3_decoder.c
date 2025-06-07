@@ -55,6 +55,7 @@ static int mmc56x3_decoder_get_size_info(struct sensor_chan_spec chan_spec, size
 	case SENSOR_CHAN_MAGN_Z:
 		*base_size = sizeof(struct sensor_q31_sample_data);
 		*frame_size = sizeof(struct sensor_q31_sample_data);
+		return 0;
 	case SENSOR_CHAN_MAGN_XYZ:
 		*base_size = sizeof(struct sensor_three_axis_data);
 		*frame_size = sizeof(struct sensor_three_axis_sample_data);
