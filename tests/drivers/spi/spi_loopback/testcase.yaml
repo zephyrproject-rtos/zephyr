@@ -69,6 +69,7 @@ tests:
       - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_u385rg_q
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
@@ -102,6 +103,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_u385rg_q
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
