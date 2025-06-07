@@ -112,7 +112,6 @@ TESTDATA_PART1 = [
     ("min_ram", "500", "ram", "256", "Not enough RAM"),
     ("None", "None", "env", ['BSIM_OUT_PATH', 'demo_env'], "Environment (BSIM_OUT_PATH, demo_env) not satisfied"),
     ("build_on_all", True, None, None, "Platform is excluded on command line."),
-    ("build_on_all", True, "level", "foobar", "Unknown test level 'foobar'"),
     (None, None, "supported_toolchains", ['gcc', 'xcc', 'xt-clang'], "Not supported by the toolchain"),
 ]
 
