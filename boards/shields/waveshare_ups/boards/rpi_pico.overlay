@@ -8,11 +8,17 @@
 &pinctrl {
 	i2c1_default: i2c1_default {
 		group1 {
+			pinmux = <I2C1_SDA_P6>, <I2C1_SCL_P7>;
+			input-enable;
+			input-schmitt-enable;
 			bias-pull-up;
 		};
 	};
 };
 
-&pico_i2c1 {
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 };
