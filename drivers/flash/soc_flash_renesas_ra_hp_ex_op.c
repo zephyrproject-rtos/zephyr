@@ -313,7 +313,7 @@ int flash_ra_ex_op_write_protect(const struct device *dev, const uintptr_t in, v
 		    (request->protect_enable.BPS[1] & request->protect_disable.BPS[1]) ||
 		    (request->protect_enable.BPS[2] & request->protect_disable.BPS[2]) ||
 		    (request->protect_enable.BPS[3] & request->protect_disable.BPS[3])) {
-			return EINVAL;
+			return -EINVAL;
 		}
 
 		rc = flash_ra_block_protect_set(dev, request);
