@@ -434,6 +434,21 @@ static int set_up_plls(void)
 #endif
 
 #if defined(STM32_PLL_ENABLED)
+
+#if defined(CONFIG_STM32_MEMMAP) && defined(CONFIG_BOOTLOADER_MCUBOOT)
+	/*
+	 * Don't disable PLL during application initialization
+	 * that runs in memmap mode when (Q/O)SPI uses PLL
+	 * as its clock source.
+	 */
+#if defined(XSPI1) || defined(XSPI2)
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL1Q) {
+		LL_RCC_PLL1_Disable();
+	}
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL2R) {
+		LL_RCC_PLL2_Disable();
+	}
+#else
 	/*
 	 * Switch to HSI and disable the PLL before configuration.
 	 * (Switching to HSI makes sure we have a SYSCLK source in
@@ -445,6 +460,12 @@ static int set_up_plls(void)
 	}
 
 	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
+#else
+	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
 
 	/* Configure PLL source : Can be HSE, HSI, MSIS */
 	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
