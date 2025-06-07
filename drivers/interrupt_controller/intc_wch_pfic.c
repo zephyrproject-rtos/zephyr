@@ -23,7 +23,7 @@ void arch_irq_enable(unsigned int irq)
 
 void arch_irq_disable(unsigned int irq)
 {
-	PFIC->IRER[irq / 32] |= 1 << (irq % 32);
+	PFIC->IRER[irq / 32] = 1 << (irq % 32);
 }
 
 int arch_irq_is_enabled(unsigned int irq)
