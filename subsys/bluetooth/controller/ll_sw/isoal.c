@@ -1766,11 +1766,12 @@ static isoal_status_t isoal_tx_allocate_pdu(struct isoal_source *source,
 			pdu->contents.size
 		);
 
+		LL_ASSERT(err != ISOAL_STATUS_OK || available_len > 0);
+
 		/* Nothing has been written into buffer yet */
 		pp->pdu_written   = 0;
 		pp->pdu_available = available_len;
 		pp->pdu_allocated = 1U;
-		LL_ASSERT(available_len > 0);
 
 		pp->pdu_cnt++;
 	}
