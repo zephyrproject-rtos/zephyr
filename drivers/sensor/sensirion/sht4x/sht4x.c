@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
@@ -180,15 +181,12 @@ static int sht4x_attr_set(const struct device *dev,
 	return 0;
 }
 
-static int sht4x_init(const struct device *dev)
+static int sht4x_init_chip(const struct device *dev)
 {
-	const struct sht4x_config *cfg = dev->config;
-	int rc = 0;
+	int rc;
 
-	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("Device not ready.");
-		return -ENODEV;
-	}
+	/* 1 ms (max) power up time according to datasheet */
+	k_sleep(K_MSEC(SHT4X_POR_WAIT_MS));
 
 	rc = sht4x_write_command(dev, SHT4X_CMD_RESET);
 	if (rc < 0) {
@@ -197,8 +195,40 @@ static int sht4x_init(const struct device *dev)
 	}
 
 	k_sleep(K_MSEC(SHT4X_RESET_WAIT_MS));
-
 	return 0;
+}
+
+static int sht4x_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int rc = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		rc = sht4x_init_chip(dev);
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return rc;
+}
+
+static int sht4x_init(const struct device *dev)
+{
+	const struct sht4x_config *cfg = dev->config;
+
+	if (!device_is_ready(cfg->bus.bus)) {
+		LOG_ERR("Device not ready.");
+		return -ENODEV;
+	}
+
+	return pm_device_driver_init(dev, sht4x_pm_action);
 }
 
 
@@ -215,10 +245,10 @@ static DEVICE_API(sensor, sht4x_api) = {
 		.bus = I2C_DT_SPEC_INST_GET(n),			\
 		.repeatability = DT_INST_PROP(n, repeatability)	\
 	};							\
-								\
+	PM_DEVICE_DT_INST_DEFINE(n, sht4x_pm_action);	\
 	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
 			      sht4x_init,			\
-			      NULL,				\
+			      PM_DEVICE_DT_INST_GET(n),			\
 			      &sht4x_data_##n,			\
 			      &sht4x_config_##n,		\
 			      POST_KERNEL,			\
