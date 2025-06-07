@@ -57,6 +57,7 @@ static int test_task_voltage_divider(void)
 {
 	int ret;
 	int32_t calculated_voltage = 0;
+	int32_t calculated_microvolts;
 	int32_t input_mv = 1000;
 	const struct voltage_divider_dt_spec adc_node_0 =
 		VOLTAGE_DIVIDER_DT_SPEC_GET(ADC_TEST_NODE_0);
@@ -72,9 +73,14 @@ static int test_task_voltage_divider(void)
 
 	ret = adc_read_dt(&adc_node_0.port, &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	calculated_microvolts = calculated_voltage;
 
 	ret = adc_raw_to_millivolts_dt(&adc_node_0.port, &calculated_voltage);
 	zassert_equal(ret, 0, "adc_raw_to_millivolts_dt() failed with code %d", ret);
+
+	ret = adc_raw_to_microvolts_dt(&adc_node_0.port, &calculated_microvolts);
+	zassert_equal(ret, 0, "adc_raw_to_microvolts_dt() failed with code %d", ret);
+	zassert_equal(calculated_microvolts / 1000, calculated_voltage);
 
 	ret = voltage_divider_scale_dt(&adc_node_0, &calculated_voltage);
 	zassert_equal(ret, 0, "divider_scale_voltage_dt() failed with code %d", ret);
@@ -97,6 +103,7 @@ static int test_task_current_sense_shunt(void)
 {
 	int ret;
 	int32_t calculated_current = 0;
+	int32_t calculated_microvolts;
 	int32_t input_mv = 3000;
 	const struct current_sense_shunt_dt_spec adc_node_1 =
 		CURRENT_SENSE_SHUNT_DT_SPEC_GET(ADC_TEST_NODE_1);
@@ -112,9 +119,14 @@ static int test_task_current_sense_shunt(void)
 
 	ret = adc_read_dt(&adc_node_1.port, &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	calculated_microvolts = calculated_current;
 
 	ret = adc_raw_to_millivolts_dt(&adc_node_1.port, &calculated_current);
 	zassert_equal(ret, 0, "adc_raw_to_millivolts_dt() failed with code %d", ret);
+
+	ret = adc_raw_to_microvolts_dt(&adc_node_1.port, &calculated_microvolts);
+	zassert_equal(ret, 0, "adc_raw_to_microvolts_dt() failed with code %d", ret);
+	zassert_equal(calculated_microvolts / 1000, calculated_current);
 
 	current_sense_shunt_scale_dt(&adc_node_1, &calculated_current);
 
@@ -137,6 +149,7 @@ static int test_task_current_sense_amplifier(void)
 {
 	int ret;
 	int32_t calculated_current = 0;
+	int32_t calculated_microvolts;
 	int32_t input_mv = 3000;
 	const struct current_sense_amplifier_dt_spec adc_node_2 =
 		CURRENT_SENSE_AMPLIFIER_DT_SPEC_GET(ADC_TEST_NODE_2);
@@ -152,9 +165,14 @@ static int test_task_current_sense_amplifier(void)
 
 	ret = adc_read_dt(&adc_node_2.port, &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	calculated_microvolts = calculated_current;
 
 	ret = adc_raw_to_millivolts_dt(&adc_node_2.port, &calculated_current);
 	zassert_equal(ret, 0, "adc_raw_to_millivolts_dt() failed with code %d", ret);
+
+	ret = adc_raw_to_microvolts_dt(&adc_node_2.port, &calculated_microvolts);
+	zassert_equal(ret, 0, "adc_raw_to_microvolts_dt() failed with code %d", ret);
+	zassert_equal(calculated_microvolts / 1000, calculated_current);
 
 	current_sense_amplifier_scale_dt(&adc_node_2, &calculated_current);
 
