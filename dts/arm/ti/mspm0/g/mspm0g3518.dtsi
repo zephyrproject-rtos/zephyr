@@ -29,11 +29,11 @@
 		};
 
 		flash0: nv-flash@0 {
-			reg = <0x0 DT_SIZE_K(256)>;
+			reg = <0x0 DT_SIZE_K(128)>;
 		};
 
 		flash1: nv-flash@40000 {
-			reg = <0x40000 DT_SIZE_K(256)>;
+			reg = <0x40000 DT_SIZE_K(128)>;
 		};
 
 		flash2: nv-flash@41E00000 {
