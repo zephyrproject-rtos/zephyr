@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MSPM0_TIMER
+	bool "TI MSPM0 MCU family counter driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_TIMER_COUNTER_ENABLED
+	select USE_MSPM0_DL_TIMER
+	help
+	  Enable the TI MSPM0 MCU family counter driver.
