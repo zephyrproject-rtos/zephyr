@@ -16,6 +16,14 @@ GTEXT(__start)
 /* Imports */
 GTEXT(__initialize)
 
+#ifdef CONFIG_BOARD_CH32V307EVT
+SECTION_FUNC(vectors, ivt)
+	.option norvc
+	j       __start
+	.rept   CONFIG_VECTOR_TABLE_SIZE
+	.word	_isr_wrapper
+	.endr
+#else
 SECTION_FUNC(vectors, ivt)
 	.option norvc
 	/* Jump to 0x08000008, into the main flash zone where j __start is */
@@ -25,6 +33,7 @@ SECTION_FUNC(vectors, ivt)
 	.rept   CONFIG_VECTOR_TABLE_SIZE
 	.word	_isr_wrapper
 	.endr
+#endif
 
 SECTION_FUNC(vectors, __start)
 	li 	a0, 0xf
