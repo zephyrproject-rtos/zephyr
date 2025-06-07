@@ -1,0 +1,38 @@
+# Copyright (c) 2025, Srishtik Bhandarkar
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PZEM004T Sensor Sample Application"
+
+config READ_MEASUREMENT_VALUES
+	bool "Build sample for reading measurement values"
+	default n
+	help
+	  Build the sample application for reading measurement values from the
+	  PZEM004T sensor. This sample demonstrates how to read and display
+	  various measurement values such as voltage, current, power, and energy.
+
+config READ_SENSOR_PARAMETERS
+	bool "Build sample for reading sensor parameters"
+	default n
+	help
+	  Build the sample application for reading sensor parameters from the
+	  PZEM004T sensor. This sample demonstrates how to read and display
+	  sensor parameters power alarm threshold and modbus rtu address.
+
+config SET_SENSOR_PARAMETERS
+	bool "Build sample for setting sensor parameters"
+	default n
+	help
+	  Build the sample application for setting sensor parameters on the
+	  PZEM004T sensor. This sample demonstrates how to set sensor parameters
+	  such as power alarm threshold and modbus rtu modbus address.
+
+config RESET_ENERGY
+	bool "Build sample for setting sensor parameters"
+	default n
+	help
+	  Build the sample application for resetting energy on the
+	  PZEM004T sensor. This sample demonstrates how to reset the energy
+	  counter on the sensor.
+
+source "Kconfig.zephyr"
