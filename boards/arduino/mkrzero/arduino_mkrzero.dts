@@ -40,7 +40,7 @@
 	clock-frequency = <48000000>;
 };
 
-&sercom0 {
+zephyr_i2c: &sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-i2c";
 	clock-frequency = <I2C_BITRATE_FAST>;

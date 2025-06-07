@@ -14,4 +14,4 @@
 	};
 };
 
-grove_i2c1: &i2c1 {};
+zephyr_i2c: &i2c1 {};
