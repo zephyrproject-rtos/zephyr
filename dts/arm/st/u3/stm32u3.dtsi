@@ -231,6 +231,14 @@
 			interrupts = <66 0>;
 			status = "disabled";
 		};
+
+		wwdg: watchdog@40002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x40002c00 0x1000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
+			interrupts = <0 7>;
+			status = "disabled";
+		};
 	};
 };
 
