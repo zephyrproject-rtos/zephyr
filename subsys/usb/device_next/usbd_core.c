@@ -118,6 +118,9 @@ static int event_handler_bus_reset(struct usbd_context *const uds_ctx)
 	LOG_INF("Actual device speed %u", udc_device_speed(uds_ctx->dev));
 	udc_speed = udc_device_speed(uds_ctx->dev);
 	switch (udc_speed) {
+	case UDC_BUS_SPEED_SS:
+		uds_ctx->status.speed = USBD_SPEED_SS;
+		break;
 	case UDC_BUS_SPEED_HS:
 		uds_ctx->status.speed = USBD_SPEED_HS;
 		break;
@@ -228,6 +231,17 @@ int usbd_device_shutdown_core(struct usbd_context *const uds_ctx)
 	struct usbd_config_node *cfg_nd;
 	int ret;
 
+	if (USBD_SUPPORTS_SUPER_SPEED) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->ss_configs, cfg_nd, node) {
+			uint8_t cfg_value = usbd_config_get_value(cfg_nd);
+
+			ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_SS, cfg_value);
+			if (ret) {
+				LOG_ERR("Failed to cleanup registered classes, %d", ret);
+			}
+		}
+	}
+
 	if (USBD_SUPPORTS_HIGH_SPEED) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
 			uint8_t cfg_value = usbd_config_get_value(cfg_nd);
@@ -274,6 +288,10 @@ static int usbd_pre_init(void)
 		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
 	}
 	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
+		atomic_set(&c_nd->state, 0);
+		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
+	}
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_ss, usbd_class_node, c_nd) {
 		atomic_set(&c_nd->state, 0);
 		LOG_DBG("\t%p->%p, name %s", c_nd, c_nd->c_data, c_nd->c_data->name);
 	}
