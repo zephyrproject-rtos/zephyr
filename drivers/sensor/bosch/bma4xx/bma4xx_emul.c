@@ -244,6 +244,7 @@ static int bma4xx_emul_backend_set_channel(const struct emul *target, struct sen
 		bma4xx_emul_set_accel_data(target, value[0], shift, BMA4XX_REG_DATA_8);
 		bma4xx_emul_set_accel_data(target, value[1], shift, BMA4XX_REG_DATA_10);
 		bma4xx_emul_set_accel_data(target, value[2], shift, BMA4XX_REG_DATA_12);
+		break;
 	default:
 		return -ENOTSUP;
 	}
