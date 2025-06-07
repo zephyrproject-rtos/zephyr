@@ -6,6 +6,7 @@ name: Renesas Starter Kit+ RX130-512KB
 type: mcu
 arch: rx
 toolchain:
+  - zephyr
   - cross-compile
 supported:
   - gpio

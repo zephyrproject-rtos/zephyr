@@ -156,6 +156,8 @@ extern "C" {
 #define PROCESSOR_NAME "xtensa"
 #elif defined(CONFIG_SPARC)
 #define PROCESSOR_NAME "sparc"
+#elif defined(CONFIG_RX)
+#define PROCESSOR_NAME "rx"
 #endif
 
 #ifndef PROCESSOR_NAME
