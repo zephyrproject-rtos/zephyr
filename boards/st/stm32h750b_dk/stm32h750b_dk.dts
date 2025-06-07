@@ -187,9 +187,10 @@
 
 	/* Sector erase 64KB uniform granularity */
 	/* Subsector erase 4KB, 32KB granularity */
-	mt25ql512ab1: qspi-nor-flash-1@90000000 {
+	mt25ql512ab1: qspi-nor-flash-1@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		spi-bus-width = <4>;
 		reset-cmd;
@@ -217,9 +218,10 @@
 		};
 	};
 
-	mt25ql512ab2: qspi-nor-flash-2@90000000 {
+	mt25ql512ab2: qspi-nor-flash-2@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 	};

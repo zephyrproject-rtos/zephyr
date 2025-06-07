@@ -127,9 +127,10 @@
 	flash-id = <1>;
 	status = "okay";
 
-	mx25r512: qspi-nor-flash@90000000 {
+	mx25r512: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <8000000>;
 		status = "okay";
 		spi-bus-width = <4>;

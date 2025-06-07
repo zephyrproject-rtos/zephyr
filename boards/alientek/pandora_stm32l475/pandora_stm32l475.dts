@@ -75,16 +75,17 @@
 			&quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
 			&quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
 	pinctrl-names = "default";
-
 	status = "okay";
-	w25q128jv: qspi-nor-flash@90000000 {
-			compatible = "st,stm32-qspi-nor";
-			reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
-			qspi-max-frequency = <80000000>;
-			jedec-id = [ef 40 18];
-			spi-bus-width = <4>;
-			writeoc = "PP_1_1_4";
-			status = "okay";
+
+	w25q128jv: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
+		qspi-max-frequency = <80000000>;
+		jedec-id = [ef 40 18];
+		spi-bus-width = <4>;
+		writeoc = "PP_1_1_4";
+		status = "okay";
 	};
 };
 
