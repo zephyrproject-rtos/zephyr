@@ -142,6 +142,7 @@ resetwait:
 
 	/* signal our desire to vote */
 	mov	w5, #1
+	ldr	x2, [x0, #BOOT_PARAM_CPU_NUM_OFFSET]
 	strb	w5, [x4, x2]
 	ldr	x3, [x0, #BOOT_PARAM_MPID_OFFSET]
 	cmn	x3, #1
