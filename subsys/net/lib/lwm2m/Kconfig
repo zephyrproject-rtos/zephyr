@@ -227,7 +227,7 @@ config LWM2M_RD_CLIENT_MAX_RETRIES
 config LWM2M_RESOURCE_DATA_CACHE_SUPPORT
 	bool "Resource Time series data cache support"
 	depends on (LWM2M_RW_SENML_JSON_SUPPORT || LWM2M_RW_SENML_CBOR_SUPPORT)
-	depends on (XSI_SINGLE_PROCESS && RING_BUFFER)
+	depends on RING_BUFFER
 	help
 	  Enable time series data storage.
 	  Requires time() to provide current Unix timestamp.
