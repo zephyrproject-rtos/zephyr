@@ -61,8 +61,6 @@ class Filters:
     TESTPLAN = 'testplan filter'
     # filters related to platform definition
     PLATFORM = 'Platform related filter'
-    # in case a test suite was quarantined.
-    QUARANTINE = 'Quarantine filter'
     # in case a test suite is skipped intentionally .
     SKIP = 'Skip filter'
     # in case of incompatibility between selected and allowed toolchains.
@@ -1154,13 +1152,15 @@ class TestPlan:
 
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
-        filtered_instances = list(
-            filter(lambda item:  item.status == TwisterStatus.FILTER, self.instances.values())
+        filtered_and_skipped_instances = list(
+            filter(
+            lambda item: item.status in [TwisterStatus.FILTER, TwisterStatus.SKIP],
+            self.instances.values()
+            )
         )
-        for filtered_instance in filtered_instances:
-            change_skip_to_error_if_integration(self.options, filtered_instance)
-
-            filtered_instance.add_missing_case_status(filtered_instance.status)
+        for inst in filtered_and_skipped_instances:
+            change_skip_to_error_if_integration(self.options, inst)
+            inst.add_missing_case_status(inst.status)
 
     def add_instances(self, instance_list):
         for instance in instance_list:
@@ -1249,8 +1249,10 @@ def change_skip_to_error_if_integration(options, instance):
         filters = {t['type'] for t in instance.filters}
         ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
                          Filters.TOOLCHAIN, Filters.MODULE, Filters.TESTPLAN,
-                         Filters.QUARANTINE, Filters.ENVIRONMENT}
+                         Filters.ENVIRONMENT}
         if filters.intersection(ignore_filters):
+            return
+        if "quarantine" in instance.reason.lower():
             return
         instance.status = TwisterStatus.ERROR
         instance.reason += " but is one of the integration platforms"
