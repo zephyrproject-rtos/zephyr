@@ -29,7 +29,10 @@ extern "C" {
 #include <zephyr/llext/llext.h>
 
 /** @cond ignore */
-struct llext_elf_sect_map; /* defined in llext_priv.h */
+struct llext_elf_sect_map {
+	enum llext_mem mem_idx;
+	size_t offset;
+};
 /** @endcond */
 
 /**
