@@ -1,0 +1,4 @@
+shields:
+  - name: openthread_rcp_spi
+    full_name: OpenThread RCP over Arduino SPI
+    vendor: others

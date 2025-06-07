@@ -1,0 +1,5 @@
+# Copyright 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_OPENTHREAD_RCP_SPI
+	def_bool $(shields_list_contains,openthread_rcp_spi)
