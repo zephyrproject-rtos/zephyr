@@ -130,7 +130,7 @@ static void prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	p = param;
 
@@ -157,7 +157,7 @@ static void create_prepare_bh(void *param)
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0U,
 			  param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static void prepare_bh(void *param)
@@ -166,7 +166,7 @@ static void prepare_bh(void *param)
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0U, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static int create_prepare_cb(struct lll_prepare_param *p)
@@ -319,7 +319,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED */
 
 		} else {
-			LL_ASSERT(false);
+			LL_ASSERT_DBG(false);
 		}
 	}
 
@@ -344,7 +344,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	 * setting up radio for new PDU reception.
 	 */
 	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	/* Encryption */
 	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
@@ -431,7 +431,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	/* Calculate ahead the next subevent channel index */
 	if (false) {
@@ -453,7 +453,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED */
 
 	} else {
-		LL_ASSERT(false);
+		LL_ASSERT_DBG(false);
 	}
 
 	return 0;
@@ -498,11 +498,11 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
 	e->estab_failed = 0U;
@@ -547,7 +547,7 @@ static void isr_rx_estab(void *param)
 		 * for new PDU reception.
 		 */
 		node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-		LL_ASSERT(node_rx);
+		LL_ASSERT_DBG(node_rx);
 
 		/* Get reference to received PDU and validate MIC for non-empty PDU */
 		pdu = (void *)node_rx->pdu;
@@ -556,7 +556,7 @@ static void isr_rx_estab(void *param)
 			uint32_t done;
 
 			done = radio_ccm_is_done();
-			LL_ASSERT(done);
+			LL_ASSERT_ERR(done);
 
 			mic_failure = !radio_ccm_mic_is_valid();
 			if (mic_failure) {
@@ -571,7 +571,7 @@ static void isr_rx_estab(void *param)
 
 	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB;
 	e->estab_failed = lll->term_reason ? 1U : 0U;
@@ -675,7 +675,7 @@ static void isr_rx(void *param)
 		} else {
 			se_offset_us = 0U;
 
-			LL_ASSERT(false);
+			LL_ASSERT_DBG(false);
 		}
 
 		radio_tmr_aa_save(radio_tmr_aa_get() - se_offset_us);
@@ -767,7 +767,7 @@ static void isr_rx(void *param)
 				uint32_t done;
 
 				done = radio_ccm_is_done();
-				LL_ASSERT(done);
+				LL_ASSERT_ERR(done);
 
 				mic_failure = !radio_ccm_mic_is_valid();
 				if (mic_failure) {
@@ -864,7 +864,7 @@ isr_rx_find_subevent:
 			 *        skip subevents as buffers at these high offset are unavailable.
 			 */
 			payload_offset = (lll->latency_event * lll->bn);
-			LL_ASSERT(payload_offset <= UINT8_MAX);
+			LL_ASSERT_ERR(payload_offset <= UINT8_MAX);
 
 			/* Find the index of the (irc_curr)th bn = 1 Rx PDU
 			 * buffer.
@@ -955,7 +955,7 @@ isr_rx_find_subevent:
 				 *        these high offsets are unavailable.
 				 */
 				payload_offset = (lll->latency_event * lll->bn);
-				LL_ASSERT(payload_offset <= UINT8_MAX);
+				LL_ASSERT_ERR(payload_offset <= UINT8_MAX);
 
 				/* Find the index of the (irc_curr)th bn = 1 Rx
 				 * PDU buffer.
@@ -1076,7 +1076,7 @@ isr_rx_interleaved:
 			lll->bis_curr = sync_stream->bis_index;
 			bis_idx = lll->bis_curr - 1U;
 		} else {
-			LL_ASSERT(false);
+			LL_ASSERT_DBG(false);
 		}
 	}
 
@@ -1275,7 +1275,7 @@ isr_rx_next_subevent:
 			 * available for setting up radio for new PDU reception.
 			 */
 			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-			LL_ASSERT(node_rx);
+			LL_ASSERT_DBG(node_rx);
 
 			pdu = (void *)node_rx->pdu;
 		} else {
@@ -1302,7 +1302,7 @@ isr_rx_next_subevent:
 			 * available for setting up radio for new PDU reception.
 			 */
 			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
-			LL_ASSERT(node_rx);
+			LL_ASSERT_DBG(node_rx);
 
 			pdu = (void *)node_rx->pdu;
 		} else {
@@ -1338,7 +1338,7 @@ isr_rx_next_subevent:
 		nse = 0U;
 		hcto = 0U;
 
-		LL_ASSERT(false);
+		LL_ASSERT_DBG(false);
 	}
 
 	if (trx_cnt) {
@@ -1372,7 +1372,7 @@ isr_rx_next_subevent:
 
 		start_us = hcto;
 		hcto = radio_tmr_start_us(0U, start_us);
-		LL_ASSERT(hcto == (start_us + 1U));
+		LL_ASSERT_ERR(hcto == (start_us + 1U));
 
 		/* Add 8 us * subevents so far, as radio was setup to listen
 		 * 4 us early and subevents could have a 4 us drift each until
@@ -1390,7 +1390,7 @@ isr_rx_next_subevent:
 
 		start_us = hcto;
 		hcto = radio_tmr_start_us(0U, start_us);
-		LL_ASSERT(hcto == (start_us + 1U));
+		LL_ASSERT_ERR(hcto == (start_us + 1U));
 
 		hcto += ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
 			  lll->window_widening_event_us) << 1) +
@@ -1439,7 +1439,7 @@ isr_rx_next_subevent:
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED */
 
 	} else {
-		LL_ASSERT(false);
+		LL_ASSERT_DBG(false);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1537,7 +1537,7 @@ static void isr_rx_done(void *param)
 	}
 
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	/* Check if BIG terminate procedure received */
 	if (lll->term_reason) {
