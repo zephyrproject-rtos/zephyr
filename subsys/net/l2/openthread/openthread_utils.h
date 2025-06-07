@@ -28,6 +28,10 @@ void add_ipv6_maddr_to_zephyr(struct openthread_context *context);
 void rm_ipv6_addr_from_zephyr(struct openthread_context *context);
 void rm_ipv6_maddr_from_zephyr(struct openthread_context *context);
 
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+const otIp6Address *get_ot_slaac_address(otInstance *instance);
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
+
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt);
 struct net_pkt *pkt_list_peek(struct openthread_context *context);
 void pkt_list_remove_last(struct openthread_context *context);

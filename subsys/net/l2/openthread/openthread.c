@@ -26,6 +26,15 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "openthread_utils.h"
 
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+#include <openthread/backbone_router_ftd.h>
+#include <openthread/ip6.h>
+#include <openthread/platform/infra_if.h>
+#include <zephyr/net/ethernet.h>
+#include <route.h>
+#include <icmpv6.h>
+#endif /*CONFIG_OPENTHREAD_BORDER_ROUTING*/
+
 static struct net_linkaddr *ll_addr;
 static struct openthread_state_changed_callback ot_l2_state_changed_cb;
 
@@ -33,6 +42,36 @@ static struct openthread_state_changed_callback ot_l2_state_changed_cb;
 
 #ifdef CONFIG_NET_MGMT_EVENT
 static struct net_mgmt_event_callback ip6_addr_cb;
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+static struct net_mgmt_event_callback ail_net_event_connection_cb;
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
+
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+static struct net_icmp_ctx ra_ctx;
+static struct net_icmp_ctx rs_ctx;
+
+static int handle_ra_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
+			   struct net_icmp_ip_hdr *hdr, struct net_icmp_hdr *icmp_hdr,
+			   void *user_data)
+{
+	otInstance *ot_instance = openthread_get_default_instance();
+	otIp6Address srcAddr = {0};
+	uint16_t length = 0;
+	length = net_pkt_get_len(pkt);
+	uint8_t payload[255] = {0};
+	uint8_t *p = payload;
+	struct net_buf *buf = pkt->buffer;
+	while (buf) {
+		memcpy(p, buf->data, buf->len);
+		p += buf->len;
+		buf = buf->frags;
+	}
+	p = &payload[0];
+	memcpy(&srcAddr, hdr->ipv6->src, sizeof(otIp6Address));
+	otPlatInfraIfRecvIcmp6Nd(ot_instance, net_if_get_by_iface(net_pkt_iface(pkt)), &srcAddr,
+				 (const uint8_t *)(p + 40) /*offset of type*/, length);
+}
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
 
 static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
 				    struct net_if *iface)
@@ -58,6 +97,29 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint32_t
 		 "please enable CONFIG_NET_MGMT_EVENT_INFO");
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 }
+
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+static void ail_connection_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+				   struct net_if *iface)
+{
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return;
+	}
+
+	struct openthread_context *ot_context = openthread_get_default_context();
+
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		(void)openthread_start_border_router_services(
+			ot_context->iface, net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET)));
+	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+		openthread_mutex_unlock();
+		otPlatInfraIfStateChanged(openthread_get_default_instance(),
+					  (uint32_t)net_if_get_by_iface(iface), false);
+		openthread_mutex_unlock();
+	}
+}
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
 #endif /* CONFIG_NET_MGMT_EVENT */
 
 #ifndef CONFIG_HDLC_RCP_IF
@@ -170,6 +232,11 @@ static void ot_receive_handler(otMessage *message, void *context)
 		}
 	}
 
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+	// this is done in order to be able to send the packet via AIL
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
+
 	NET_DBG("Injecting %s packet to Zephyr net stack",
 		PKT_IS_IPv4(pkt) ? "translated IPv4" : "Ip6");
 
@@ -204,6 +271,26 @@ out:
 
 	otMessageFree(message);
 }
+
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+static void ot_bbr_multicast_listener_handler(void *context,
+					      otBackboneRouterMulticastListenerEvent event,
+					      const otIp6Address *address)
+{
+	struct openthread_context *ot_context = context;
+	struct in6_addr mcast_prefix = {0};
+	memcpy(mcast_prefix.s6_addr, address->mFields.m32, sizeof(otIp6Address));
+
+	if (event == OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED) {
+		net_route_mcast_add((struct net_if *)ot_context->iface, &mcast_prefix, 16);
+	} else {
+		struct net_route_entry_mcast *route_to_del = net_route_mcast_lookup(&mcast_prefix);
+		if (route_to_del != NULL) {
+			net_route_mcast_del(route_to_del);
+		}
+	}
+}
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING*/
 
 static bool is_ipv6_frag(struct net_pkt *pkt)
 {
@@ -278,6 +365,11 @@ static int openthread_l2_init(struct net_if *iface)
 
 	ll_addr = net_if_get_link_addr(iface);
 
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+	struct net_if *external_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	net_if_set_default(external_iface);
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
+
 	error = openthread_init();
 	if (error) {
 		return error;
@@ -289,9 +381,20 @@ static int openthread_l2_init(struct net_if *iface)
 		net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
 					     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD);
 		net_mgmt_add_event_callback(&ip6_addr_cb);
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+		net_mgmt_init_event_callback(&ail_net_event_connection_cb, ail_connection_handler,
+					     NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED);
+		net_mgmt_add_event_callback(&ail_net_event_connection_cb);
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
 		net_if_dormant_on(iface);
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);
+#if defined(CONFIG_OPENTHREAD_BORDER_ROUTING)
+		net_icmp_init_ctx(&ra_ctx, NET_ICMPV6_RA, 0, handle_ra_input);
+		net_icmp_init_ctx(&rs_ctx, NET_ICMPV6_RS, 0, handle_ra_input);
+		openthread_set_bbr_multicast_listener_cb(ot_bbr_multicast_listener_handler,
+							 (void *)ot_l2_context);
+#endif /* CONFIG_OPENTHREAD_BORDER_ROUTING */
 
 		/* To keep backward compatibility use the additional state change callback list from
 		 * the ot l2 context and register the callback to the openthread module.
