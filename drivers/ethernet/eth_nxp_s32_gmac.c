@@ -564,7 +564,6 @@ static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *d
 #if (FEATURE_GMAC_RGMII_EN == 1U)
 		| ETHERNET_LINK_1000BASE
 #endif
-		| ETHERNET_DUPLEX_SET
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
 #if defined(CONFIG_NET_VLAN)
