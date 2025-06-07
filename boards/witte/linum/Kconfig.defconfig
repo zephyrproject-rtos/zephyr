@@ -5,6 +5,13 @@
 
 if BOARD_LINUM
 
+if DISPLAY
+
+config MEMC
+	default y
+
+endif # DISPLAY
+
 if NETWORKING
 
 config NET_L2_ETHERNET

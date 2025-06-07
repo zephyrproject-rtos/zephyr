@@ -10,11 +10,9 @@ flash: 2048
 supported:
   - uart
   - gpio
-  - counter
   - i2c
   - pwm
   - netif:eth
   - spi
-  - usb_device
   - can
 vendor: witte
