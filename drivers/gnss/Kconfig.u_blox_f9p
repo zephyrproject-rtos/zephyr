@@ -49,4 +49,14 @@ config GNSS_U_BLOX_F9P_SATELLITES_COUNT
 	default 24
 
 endif # GNSS_SATELLITES
+
+if GNSS_RTK
+
+config GNSS_U_BLOX_F9P_RTK
+	bool "Use RTK to improve fix accuracy"
+	default y
+	depends on GNSS_RTK_PROTOCOL_RTCM3
+
+endif # GNSS_RTK
+
 endif # GNSS_U_BLOX_F9P
