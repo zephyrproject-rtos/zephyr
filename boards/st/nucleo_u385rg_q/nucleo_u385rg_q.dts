@@ -93,3 +93,7 @@
 &clk_lsi {
 	status = "okay";
 };
+
+&wwdg {
+	status = "okay";
+};

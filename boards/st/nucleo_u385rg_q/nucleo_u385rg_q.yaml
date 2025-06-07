@@ -8,5 +8,6 @@ supported:
   - arduino_gpio
   - gpio
   - usart
+  - watchdog
 ram: 256
 flash: 1024
