@@ -97,6 +97,16 @@ config BT_NXP_IW416
 	  wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5-ghz-
 	  dual-band-1x1-wi-fi-4-802-11n-plus-bluetooth-5-2-solution:IW416.
 
+config BT_NXP_IW610
+	bool "IW610 firmware for NXP IW610 Chipset"
+	help
+	  NXP IW610 Chipset supports Wi-Fi™ 802.11a/b/g/n/ac/ax HE20 + Bluetooth®. 5.4
+	  Low Energy + 802.15.4
+	  Details of the module could be found on https://www.nxp.com/products/
+	  wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5ghz-
+	  dual-band-1x1-wi-fi-6-plus-bluetooth-low-energy-5-4-plus-802-15-4-tri-
+	  radio-solution:IW610
+
 endchoice # BT_NXP_MODULE
 
 endif # BT_H4_NXP_CTLR
