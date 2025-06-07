@@ -83,9 +83,9 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
-  foreach(lib ${ZEPHYR_LIBS_PROPERTY})
-    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_OBJECTS:${lib}>)
-    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_PROPERTY:${lib},LINK_LIBRARIES>)
+  set(whole_libs)
+  foreach(lib ${WHOLE_ARCHIVE_LIBS})
+	  list(APPEND whole_libs --whole_archive ${lib})
   endforeach()
 
   set(ILINK_SEMIHOSTING)
@@ -117,8 +117,8 @@ function(toolchain_ld_link_elf)
     --map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     --log_file=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}.log
 
-    ${ZEPHYR_LIBS_OBJECTS}
-    kernel
+    ${whole_libs}
+    ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     --entry=$<TARGET_PROPERTY:linker,ENTRY>
 
