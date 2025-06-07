@@ -713,10 +713,17 @@ static int stm32_sdmmc_pwr_on(struct stm32_sdmmc_priv *priv)
 
 static int stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv)
 {
+	int err;
+
 	if (!priv->pe.port) {
 		return 0;
 	}
 
+	/* PINCTRL sleep mode when powered down */
+	err = pinctrl_apply_state(priv->pcfg, PINCTRL_STATE_SLEEP);
+	if ((err != 0) && (err != -ENOENT)) {
+		LOG_WRN("Failed to apply pin sleep states");
+	}
 	gpio_pin_configure_dt(&priv->pe, GPIO_OUTPUT_INACTIVE);
 	return 0;
 }
