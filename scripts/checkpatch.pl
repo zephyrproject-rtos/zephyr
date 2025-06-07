@@ -4723,6 +4723,11 @@ sub process {
 						}
 					}
 
+				# Handle 'default:' explicitly to allow any macros to be used above
+				# the default label in switch-statements
+				} elsif ($sline =~ /^.\s+default:/ && $opv eq ':O') {
+					# Do nothing
+
 				# All the others need spaces both sides.
 				} elsif ($ctx !~ /[EWC]x[CWE]/) {
 					my $ok = 0;
