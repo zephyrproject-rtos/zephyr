@@ -357,8 +357,10 @@ class Walker:
                 return False
 
             module_ext_ref = []
+            module_ext_ref_comment = []
             if module_security:
                 module_ext_ref = module_security.get("external-references")
+                module_ext_ref_comment = module_security.get("external-references-comment")
 
             # set up zephyr sources package
             cfgPackageModuleExtRef = PackageConfig()
@@ -367,6 +369,10 @@ class Walker:
 
             for ref in module_ext_ref:
                 cfgPackageModuleExtRef.externalReferences.append(ref)
+
+            if module_ext_ref_comment:
+                for line in module_ext_ref_comment:
+                    cfgPackageModuleExtRef.externalReferencesComment.append(line)
 
             pkgModule = Package(cfgPackageModuleExtRef, self.docModulesExtRefs)
             self.docModulesExtRefs.pkgs[pkgModule.cfg.spdxID] = pkgModule
