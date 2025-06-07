@@ -559,17 +559,25 @@ int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq)
 	__ASSERT_NO_MSG(cq != NULL);
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
-		vdev = video_find_vdev(dev);
+		uint32_t next_lowest_id = UINT32_MAX;
+
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
+		vdev = video_find_vdev(dev);
+
 		while (vdev) {
 			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
-				if (ctrl->id > cq->id) {
-					goto fill_query;
+				if (ctrl->id > cq->id && ctrl->id < next_lowest_id) {
+					next_lowest_id = ctrl->id;
 				}
 			}
 			vdev = video_find_vdev(vdev->src_dev);
 		}
-		return -ENOTSUP;
+
+		if (next_lowest_id == UINT32_MAX) {
+			return -ENOTSUP;
+		}
+
+		cq->id = next_lowest_id;
 	}
 
 	ret = video_find_ctrl(dev, cq->id, &ctrl);
@@ -577,7 +585,6 @@ int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq)
 		return ret;
 	}
 
-fill_query:
 	cq->id = ctrl->id;
 	cq->type = ctrl->type;
 	cq->flags = ctrl->flags;
