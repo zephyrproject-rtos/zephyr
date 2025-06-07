@@ -52,8 +52,9 @@ class CoredumpElfFile():
     and can be retrieved from the ELF file.
     """
 
-    def __init__(self, elffile):
+    def __init__(self, elffile, textaddr=None):
         self.elffile = elffile
+        self.textaddr = textaddr
         self.fd = None
         self.elf = None
         self.memory_regions = list()
@@ -119,6 +120,9 @@ class CoredumpElfFile():
                     # Text section
                     store = True
                     sect_desc = "text"
+                    if self.textaddr is not None:
+                        sec_start += self.textaddr
+                        sec_end += self.textaddr
                 elif (flags & SHF_WRITE_ALLOC) == SHF_WRITE_ALLOC:
                     # Data section
                     #
