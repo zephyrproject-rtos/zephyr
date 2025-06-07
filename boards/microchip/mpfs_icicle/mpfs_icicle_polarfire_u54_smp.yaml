@@ -9,4 +9,10 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+  renode:
+    uart: sysbus.mmuart1
+    resc: boards/microchip/mpfs_icicle/support/mpfs_icicle_polarfire_u54_smp.resc
 vendor: microchip
+simulation:
+  - name: renode
+    exec: renode
