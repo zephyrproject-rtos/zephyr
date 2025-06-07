@@ -6,6 +6,7 @@ tests:
     filter: dt_compat_enabled("pwm-leds")
     tags: LED
     depends_on: pwm
+    min_ram: 8
     platform_exclude: reel_board
     integration_platforms:
       - frdm_k22f
