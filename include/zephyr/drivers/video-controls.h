@@ -367,7 +367,10 @@ enum video_camera_orientation {
  */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
 
-/** Analogue gain control. */
+/** Analogue gain is gain affecting all colour components in the pixel
+ * matrix. The gain operation is performed in the analogue domain
+ * before A/D conversion.
+ */
 #define VIDEO_CID_ANALOGUE_GAIN (VIDEO_CID_IMAGE_SOURCE_CLASS_BASE + 3)
 
 /**
@@ -388,6 +391,14 @@ enum video_camera_orientation {
 
 /** Selection of the type of test pattern to represent */
 #define VIDEO_CID_TEST_PATTERN (VIDEO_CID_IMAGE_PROC_CLASS_BASE + 3)
+
+/** Digital gain is the value by which all colour components
+ * are multiplied by. Typically the digital gain applied is the
+ * control value divided by e.g. 0x100, meaning that to get no
+ * digital gain the control value needs to be 0x100. The no-gain
+ * configuration is also typically the default.
+ */
+#define VIDEO_CID_DIGITAL_GAIN (VIDEO_CID_IMAGE_PROC_CLASS_BASE + 5)
 
 /**
  * @}
