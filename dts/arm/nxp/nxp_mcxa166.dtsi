@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 / {
 	cpus {
@@ -287,7 +288,7 @@
 
 			reg = <0x40080000 0x1000>;
 			interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
-				<6 0>, <7 0>, <8 0>, <9 0>;
+						 <6 0>, <7 0>, <8 0>, <9 0>;
 			no-error-irq;
 			status = "disabled";
 		};
@@ -299,13 +300,30 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <0>;
 			offset-value-a = <0>;
 			offset-value-b = <0>;
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			channel@0 {
+				reg = <0>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_EXTERNAL0";
+				zephyr,acquisition-time = <131>;
+				zephyr,input-positive = <MCUX_LPADC_CH26A>;
+				zephyr,resolution = <16>;
+				zephyr,oversampling = <7>;
+
+				temp0: temp0 {
+					compatible = "nxp,lpadc-temp40";
+					status = "disabled";
+				};
+			};
 		};
 
 		lpadc1: lpadc@400b0000 {
@@ -315,7 +333,7 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <1>;
 			offset-value-a = <0>;

@@ -1,0 +1,9 @@
+description: NXP LPADC_TEMP40 temperature sensor
+
+compatible: "nxp,lpadc-temp40"
+
+include: sensor-device.yaml
+
+properties:
+  status:
+    required: true
