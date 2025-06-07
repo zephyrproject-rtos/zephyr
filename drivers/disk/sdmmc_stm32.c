@@ -177,8 +177,7 @@ static int stm32_sdmmc_clock_disable(struct stm32_sdmmc_priv *priv)
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	return clock_control_off(clock,
-				 (clock_control_subsys_t)&priv->pclken);
+	return clock_control_off(clock, (clock_control_subsys_t)&priv->pclken[0]);
 }
 #endif
 
