@@ -37,6 +37,9 @@ enum rsc_table_entries {
 #if defined(CONFIG_RAM_CONSOLE)
 	RSC_TABLE_TRACE_ENTRY,
 #endif
+#if defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE_ENTRY)
+	RSC_TABLE_VENDOR_ENTRY,
+#endif
 	RSC_TABLE_NUM_ENTRY
 };
 
@@ -54,7 +57,79 @@ struct fw_resource_table {
 	/* rpmsg trace entry */
 	struct fw_rsc_trace cm_trace;
 #endif
+
+#if defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE_ENTRY)
+	/* vendor-specific resource type can be values 128-512 */
+	uint32_t vendor_type;
+#endif
 } METAL_PACKED_END;
+
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	#define vdev_offset	offsetof(struct fw_resource_table, vdev),
+#else
+	#define vdev_offset
+#endif
+
+#if defined(CONFIG_RAM_CONSOLE)
+	#define cm_trace_offset	offsetof(struct fw_resource_table, cm_trace),
+#else
+	#define cm_trace_offset
+#endif
+
+#if defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE_ENTRY)
+	#define vendor_type_offset	offsetof(struct fw_resource_table, vendor_type),
+#else
+	#define vendor_type_offset
+#endif
+
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+	#define vdev_entry							\
+	.vdev = {								\
+		RSC_VDEV, VIRTIO_ID_RPMSG, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,	\
+		VRING_COUNT, {0, 0},						\
+	},									\
+	.vring0 = {VRING_TX_ADDRESS, VRING_ALIGNMENT,				\
+		   CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF,			\
+		   VRING0_ID, 0},						\
+	.vring1 = {VRING_RX_ADDRESS, VRING_ALIGNMENT,				\
+		   CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF,			\
+		   VRING1_ID, 0},
+#else
+	#define vdev_entry
+#endif
+
+#if defined(CONFIG_RAM_CONSOLE)
+	#define cm_trace_entry							\
+		.cm_trace = {							\
+			RSC_TRACE,						\
+			(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,\
+			"Zephyr_log",						\
+		},
+#else
+	#define cm_trace_entry
+#endif
+
+#if defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE_ENTRY)
+	#define vendor_type_entry	.vendor_type = CONFIG_OPENAMP_VENDOR_RSC_TYPE,
+#else
+	#define vendor_type_entry
+#endif
+
+#define RESOURCE_TABLE_INIT			\
+{						\
+	.hdr = {				\
+		.ver = 1,			\
+		.num = RSC_TABLE_NUM_ENTRY,	\
+	},					\
+	.offset = {				\
+		vdev_offset			\
+		cm_trace_offset			\
+		vendor_type_offset		\
+	},					\
+	vdev_entry				\
+	cm_trace_entry				\
+	vendor_type_entry			\
+}
 
 void rsc_table_get(struct fw_resource_table **table_ptr, int *length);
 
