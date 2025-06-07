@@ -13,6 +13,8 @@
 
 #include <soc.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree/nvmem.h>
+#include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/net/ethernet.h>
@@ -799,6 +801,31 @@ static inline int eth_xmc4xxx_init_timestamp_control_reg(ETH_GLOBAL_TypeDef *reg
 	return 0;
 }
 
+static int eth_xmc4xxx_get_mac_address_eeprom(const struct device *dev)
+{
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells)
+	struct eth_xmc4xxx_data *dev_data = dev->data;
+	const struct device *eeprom_dev = DT_NVMEM_DEV_BY_IDX(DT_DRV_INST(0), 0);
+	uint16_t addr = DT_NVMEM_ADDR_BY_IDX(DT_DRV_INST(0), 0);
+
+	int ret;
+
+	if (!device_is_ready(eeprom_dev)) {
+		LOG_ERR("EEPROM device not ready.");
+		return -ENODEV;
+	}
+
+	ret = eeprom_read(eeprom_dev, addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
+	if (ret < 0) {
+		LOG_ERR("Error reading MAC address from EEPROM [%d]", ret);
+	}
+
+	return ret;
+#else
+	return -ENODEV;
+#endif
+}
+
 static int eth_xmc4xxx_init(const struct device *dev)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
@@ -867,7 +894,10 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	eth_xmc4xxx_mask_unused_interrupts(dev_cfg->regs);
 
 #if !DT_INST_NODE_HAS_PROP(0, local_mac_address)
-	gen_random_mac(dev_data->mac_addr, INFINEON_OUI_B0, INFINEON_OUI_B1, INFINEON_OUI_B2);
+	if (eth_xmc4xxx_get_mac_address_eeprom(dev) < 0) {
+		gen_random_mac(dev_data->mac_addr, INFINEON_OUI_B0, INFINEON_OUI_B1,
+			       INFINEON_OUI_B2);
+	}
 #endif
 	eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
 
