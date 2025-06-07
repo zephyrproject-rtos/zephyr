@@ -153,3 +153,11 @@
 &sha256 {
 	status = "okay";
 };
+
+/* voltage comparator for test */
+&vcmp1 {
+	status = "okay";
+	comparison = <IT51XXX_VCMP_GREATER>;
+	threshold-mv = <2000>;
+	io-channels = <&adc0 3>;
+};
