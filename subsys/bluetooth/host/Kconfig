@@ -356,6 +356,11 @@ config BT_CONN_CHECK_NULL_BEFORE_CREATE
 	  dereferencing, the connection object stays alive which can lead to an
 	  unpredictable behavior.
 
+config BT_CONN_PRIORITIZE_ISO_READY
+	bool "Prioritize processing ISO connections in tx processor"
+	depends on BT_ISO
+	default y if BT_ISO
+
 config BT_USER_PHY_UPDATE
 	bool "User control of PHY Update Procedure"
 	depends on BT_PHY_UPDATE
