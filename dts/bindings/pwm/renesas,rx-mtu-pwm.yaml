@@ -1,0 +1,57 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description:
+  Renesas PWM RX Controller. There are two PWM modes in RX, PWM mode 1 and PWM mode 2.
+  In this version, we only support PWM mode 1.
+  The PWM waveform is output from the MTIOCnA and MTIOCnC pins by coupling the TGRA
+  register to the TGRB register and the TGRC register to the TGRD register.
+  // +----------------+----------------+----------------+--------------------+
+  // | Channel        | Register       | PWM Mode 1     | PWM Mode 2         |
+  // +----------------+----------------+----------------+--------------------+
+  // | MTU0           | MTU0.TGRA       | MTIOCOA        | MTIOCOA           |
+  // |                | MTU0.TGRB       |                | MTIOCOB           |
+  // |                | MTU0.TGRC       | MTIOCOC        | MTIOCOC           |
+  // |                | MTU0.TGRD       |                | MTIOCOD           |
+  // +----------------+----------------+----------------+--------------------+
+  // | MTU1           | MTU1.TGRA       | MTIOC1A        | MTIOC1A           |
+  // |                | MTU1.TGRB       |                | MTIOC1B           |
+  // +----------------+----------------+----------------+--------------------+
+  // | MTU2           | MTU2.TGRA       | MTIOC2A        | MTIOC2A           |
+  // |                | MTU2.TGRB       |                | MTIOC2B           |
+  // +----------------+----------------+----------------+--------------------+
+  // | MTU3           | MTU3.TGRA       | MTIOC3A        | Setting prohibited|
+  // |                | MTU3.TGRB       |                |                   |
+  // |                | MTU3.TGRC       | MTIOC3C        |                   |
+  // |                | MTU3.TGRD       |                |                   |
+  // +----------------+----------------+----------------+                    +
+  // | MTU4           | MTU4.TGRA       | MTIOC4A        |                   |
+  // |                | MTU4.TGRB       |                |                   |
+  // |                | MTU4.TGRC       | MTIOC4C        |                   |
+  // |                | MTU4.TGRD       |                |                   |
+  // +----------------+----------------+----------------+--------------------+
+
+compatible: "renesas,rx-mtu-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  prescaler:
+    type: int
+    default: 0
+    description: Valid values are in the range 0-7 but
+      specifically depend on the device (see RX user's manual). Common settings are 0-3 for
+      dividers PCKL/1, PCLK/4, PCLK/16 and PCLK/64.
+
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+        - channel of the timer used for PWM
+        - period to set in ns
+        - flags : combination of standard flags like PWM_POLARITY_NORMAL
+
+pwm-cells:
+  - channel
+  - period
+  - flags
