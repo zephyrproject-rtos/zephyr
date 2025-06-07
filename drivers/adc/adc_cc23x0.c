@@ -11,12 +11,15 @@ LOG_MODULE_REGISTER(adc_cc23x0, CONFIG_ADC_LOG_LEVEL);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 
 #include <driverlib/adc.h>
 #include <driverlib/clkctl.h>
+
+#include <inc/hw_memmap.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -31,10 +34,15 @@ LOG_MODULE_REGISTER(adc_cc23x0, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_CC23X0_MAX_CYCLES	1023
 
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+#define ADC_CC23X0_REG_GET(offset) (ADC_BASE + (offset))
+#define ADC_CC23X0_INT_MASK	ADC_INT_DMADONE
+#else
 #define ADC_CC23X0_INT_MASK	(ADC_INT_MEMRES_00 | \
 				 ADC_INT_MEMRES_01 | \
 				 ADC_INT_MEMRES_02 | \
 				 ADC_INT_MEMRES_03)
+#endif
 
 #define ADC_CC23X0_INT_MEMRES(i)	(ADC_INT_MEMRES_00 << (i))
 
@@ -46,6 +54,11 @@ struct adc_cc23x0_config {
 	const struct pinctrl_dev_config *pincfg;
 	void (*irq_cfg_func)(void);
 	uint32_t base;
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+	const struct device *dma_dev;
+	uint8_t dma_channel;
+	uint8_t dma_trigsrc;
+#endif
 };
 
 struct adc_cc23x0_data {
@@ -64,8 +77,43 @@ struct adc_cc23x0_data {
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_cc23x0_data *data = CONTAINER_OF(ctx, struct adc_cc23x0_data, ctx);
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+	const struct adc_cc23x0_config *cfg = data->dev->config;
 
+	struct dma_block_config block_cfg = {
+		.source_address = ADC_CC23X0_REG_GET(ADC_O_MEMRES0),
+		.dest_address = (uint32_t)(data->buffer),
+		.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+		.block_size = data->ch_count * sizeof(*data->buffer),
+	};
+
+	struct dma_config dma_cfg = {
+		.dma_slot = cfg->dma_trigsrc,
+		.channel_direction = PERIPHERAL_TO_MEMORY,
+		.block_count = 1,
+		.head_block = &block_cfg,
+		.source_data_size = sizeof(uint32_t),
+		.dest_data_size = sizeof(*data->buffer),
+		.source_burst_length = block_cfg.block_size,
+		.dma_callback = NULL,
+		.user_data = NULL,
+	};
+
+	int ret;
+
+	ret = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
+	if (ret) {
+		LOG_ERR("Failed to configure DMA (%d)", ret);
+		return;
+	}
+
+	ADCEnableDMATrigger();
+
+	dma_start(cfg->dma_dev, cfg->dma_channel);
+#else
 	data->mem_index = 0;
+#endif
 
 	ADCManualTrigger();
 }
@@ -82,9 +130,22 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 static void adc_cc23x0_isr(const struct device *dev)
 {
 	struct adc_cc23x0_data *data = dev->data;
+#ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
 	uint32_t adc_val;
 	uint8_t ch;
+#endif
 
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+	/*
+	 * In DMA mode, do not compensate for the ADC internal gain with
+	 * ADCAdjustValueForGain() function. To perform this compensation,
+	 * reading the data from the buffer and overwriting them would be
+	 * necessary, which would mitigate the advantage of using DMA.
+	 */
+	ADCClearInterrupt(ADC_INT_DMADONE);
+	LOG_DBG("DMA done");
+	adc_context_on_sampling_done(&data->ctx, dev);
+#else
 	/*
 	 * Even when there are multiple channels, only 1 flag can be set because
 	 * of the trigger policy (next conversion requires a trigger)
@@ -115,6 +176,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 	} else {
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
+#endif
 }
 
 static int adc_cc23x0_read_common(const struct device *dev,
@@ -122,7 +184,9 @@ static int adc_cc23x0_read_common(const struct device *dev,
 				  bool asynchronous,
 				  struct k_poll_signal *sig)
 {
+#ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
 	const struct adc_cc23x0_config *cfg = dev->config;
+#endif
 	struct adc_cc23x0_data *data = dev->data;
 	uint32_t bitmask;
 	uint8_t ch_start = ADC_CC23X0_CH_UNDEF;
@@ -165,6 +229,10 @@ static int adc_cc23x0_read_common(const struct device *dev,
 
 		/* Set adjustment offset for this channel */
 		ADCSetAdjustmentOffset(data->ref_volt[ch_start]);
+
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+		ADCEnableDMAInterrupt(ADC_CC23X0_INT_MEMRES(0));
+#endif
 	} else if (data->ch_count <= ADC_CC23X0_MEM_COUNT) {
 		for (i = 0; i < ADC_CC23X0_CH_COUNT; i++) {
 			if (!(bitmask & BIT(i))) {
@@ -180,8 +248,10 @@ static int adc_cc23x0_read_common(const struct device *dev,
 			/* Set input channel */
 			ADCSetInput(data->ref_volt[i], i, mem_index);
 
+#ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
 			/* Set trigger policy so next conversion requires a trigger */
 			ADC_CC23X0_MEMCTL(cfg->base, mem_index) |= ADC_MEMCTL0_TRG;
+#endif
 
 			mem_index++;
 		}
@@ -192,6 +262,14 @@ static int adc_cc23x0_read_common(const struct device *dev,
 
 		/* Set adjustment offset for the first channel */
 		ADCSetAdjustmentOffset(data->ref_volt[ch_start]);
+
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+		/*
+		 * DMA transfer will be triggered when the last storage register
+		 * of the sequence is loaded with a new conversion result
+		 */
+		ADCEnableDMAInterrupt(ADC_CC23X0_INT_MEMRES(mem_index - 1));
+#endif
 	} else {
 		LOG_ERR("Too many channels in the sequence, max %u", ADC_CC23X0_MEM_COUNT);
 		return -EINVAL;
@@ -408,6 +486,12 @@ static int adc_cc23x0_init(const struct device *dev)
 	/* Enable interrupts */
 	ADCEnableInterrupt(ADC_CC23X0_INT_MASK);
 
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+	if (!device_is_ready(cfg->dma_dev)) {
+		return -ENODEV;
+	}
+#endif
+
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -421,6 +505,15 @@ static const struct adc_driver_api adc_cc23x0_driver_api = {
 #endif
 	.ref_internal = 1400,
 };
+
+#ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+#define ADC_CC23X0_DMA_INIT(n)						\
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),	\
+	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),		\
+	.dma_trigsrc = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, dma),
+#else
+#define ADC_CC23X0_DMA_INIT(n)
+#endif
 
 #define CC23X0_ADC_INIT(n)							\
 	PINCTRL_DT_INST_DEFINE(n);						\
@@ -438,6 +531,7 @@ static const struct adc_driver_api adc_cc23x0_driver_api = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.irq_cfg_func = adc_cc23x0_cfg_func_##n,			\
 		.base = DT_INST_REG_ADDR(n),					\
+		ADC_CC23X0_DMA_INIT(n)						\
 	};									\
 										\
 	static struct adc_cc23x0_data adc_cc23x0_data_##n = {			\
