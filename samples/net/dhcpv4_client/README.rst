@@ -11,6 +11,9 @@ This application starts a DHCPv4 client, gets an IPv4 address from the
 DHCPv4 server, and prints address, lease time, netmask and router
 information to a serial console.
 
+If no address can be obtained, it uses an AutoIP address as fallback to allow
+communication with the board using a link-local address.
+
 Requirements
 ************
 
