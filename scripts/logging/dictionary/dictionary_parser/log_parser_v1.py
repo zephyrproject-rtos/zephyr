@@ -14,12 +14,12 @@ version 1 databases.
 import logging
 import math
 import struct
+
 import colorama
 from colorama import Fore
 
-from .log_parser import (LogParser, get_log_level_str_color, formalize_fmt_string)
 from .data_types import DataTypes
-
+from .log_parser import LogParser, formalize_fmt_string, get_log_level_str_color
 
 HEX_BYTES_IN_LINE = 16
 
@@ -96,10 +96,7 @@ class LogParserV1(LogParser):
             str_idx = arg_offset + self.data_types.get_sizeof(DataTypes.PTR) * 2
             str_idx /= self.data_types.get_sizeof(DataTypes.INT)
 
-            if int(str_idx) not in string_tbl:
-                ret = "<string@0x{0:x}>".format(arg)
-            else:
-                ret = string_tbl[int(str_idx)]
+            ret = string_tbl.get(int(str_idx), f"<string@0x{arg:x}>")
 
         return ret
 
@@ -238,7 +235,7 @@ class LogParserV1(LogParser):
         chr_done = 0
 
         for one_hex in hex_data:
-            hex_vals += "%x " % one_hex
+            hex_vals += f"{one_hex:x} "
             chr_vals += chr(one_hex)
             chr_done += 1
 
