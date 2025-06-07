@@ -921,6 +921,25 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	 */
 	struct net_buf *pdu = k_fifo_peek_head(&lechan->tx_queue);
 
+	if (pdu && (conn->state != BT_CONN_CONNECTED) && (amount == SIZE_MAX)) {
+		/* We're being called by conn to flush the
+		 * tx_queue. Just remove the buf from the tx_queue
+		 * and return immediately.
+		 * Otherwise, the logic below may wind up returning
+		 * a pointer to a pdu that is not the last fragment
+		 * so it is still on the tx_queue, and needlessly
+		 * do other things like take credits and lower/raise
+		 * data ready on a connection that is already
+		 * disconnected.
+		 */
+		__maybe_unused struct net_buf *b = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
+
+		LOG_DBG("Removing buf %p for disconnection", (void *)pdu);
+		__ASSERT_NO_MSG(b == pdu);
+		*length = pdu->len;
+		return pdu;
+	}
+
 	/* We don't have anything to send for the current channel. We could
 	 * however have something to send on another channel that is attached to
 	 * the same ACL connection. Re-trigger the TX processor: it will call us
