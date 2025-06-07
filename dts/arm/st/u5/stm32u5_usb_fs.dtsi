@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Harris Tomy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u5.dtsi>
+
+/ {
+	soc {
+		usb: usb@40016000 {
+			compatible = "st,stm32-usb";
+			reg = <0x40016000 0x400>;
+			interrupts = <73 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <2048>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+				<&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
+			phys = <&usb_fs_phy>;
+			status = "disabled";
+		};
+	};
+
+	usb_fs_phy: usb_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+};

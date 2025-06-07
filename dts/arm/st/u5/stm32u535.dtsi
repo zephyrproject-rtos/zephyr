@@ -4,35 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/u5/stm32u5.dtsi>
+#include <st/u5/stm32u5_usb_fs.dtsi>
 
 / {
-	soc {
-		/* USB-C PD is not available on this part. */
-		/delete-node/ ucpd@4000dc00;
-
-		/* Advanced Encryption Standard HW accelerator is not available on this part. */
-		/delete-node/ aes@420c0000;
-
-		compatible = "st,stm32u535", "st,stm32u5", "simple-bus";
-
-		usb: usb@40016000 {
-			compatible = "st,stm32-usb";
-			reg = <0x40016000 0x400>;
-			interrupts = <73 0>;
-			interrupt-names = "usb";
-			num-bidir-endpoints = <8>;
-			ram-size = <2048>;
-			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
-				<&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
-			phys = <&usb_fs_phy>;
-			status = "disabled";
-		};
+	sram0: memory@20000000 {
+		/* SRAM1 + SRAM2 */
+		reg = <0x20000000 DT_SIZE_K(256)>;
 	};
 
-	usb_fs_phy: usb_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
+	sram1: memory@28000000 {
+		/* SRAM4, low-power background autonomous mode */
+		reg = <0x28000000 DT_SIZE_K(16)>;
+	};
+
+	soc {
+		compatible = "st,stm32u535", "st,stm32u5", "simple-bus";
 	};
 };
