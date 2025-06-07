@@ -26,6 +26,23 @@ config LED_SHELL
 	help
 	  Enable LED shell for testing.
 
+config LED_BLINK_FALLBACK
+	bool "LED Blink fallback"
+	help
+	  Provides a software implementation of LED blink API.
+	  This could be used when the LED controller doesn't support blinking.
+
+if LED_BLINK_FALLBACK
+
+config LED_BLINK_FALLBACK_COUNT
+	int "Maximum of LED using blink fallback"
+	default 3
+	help
+	  This set the maximum number of LED that could blink
+	  in the same time using blink fallback.
+
+endif # LED_BLINK_FALLBACK
+
 # zephyr-keep-sorted-start
 source "drivers/led/Kconfig.axp192"
 source "drivers/led/Kconfig.dac"
