@@ -696,6 +696,29 @@ end:
 	return err;
 }
 
+static int stm32_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uint32_t count)
+{
+	const struct device *dev = disk->dev;
+	struct stm32_sdmmc_priv *priv = dev->data;
+	int err;
+
+	k_sem_take(&priv->thread_lock, K_FOREVER);
+
+	err = HAL_SD_Erase(&priv->hsd, sector, sector + count);
+	if (err != HAL_OK) {
+		LOG_ERR("sd erase block failed %d", err);
+		err = -EIO;
+		goto end;
+	}
+
+	while (!stm32_sdmmc_is_card_in_transfer(&priv->hsd)) {
+	}
+
+end:
+	k_sem_give(&priv->thread_lock);
+	return err;
+}
+
 static int stm32_sdmmc_get_card_info(HandleTypeDef *hsd, CardInfoTypeDef *info)
 {
 #ifdef CONFIG_SDMMC_STM32_EMMC
@@ -749,6 +772,7 @@ static const struct disk_operations stm32_sdmmc_ops = {
 	.status = stm32_sdmmc_access_status,
 	.read = stm32_sdmmc_access_read,
 	.write = stm32_sdmmc_access_write,
+	.erase = stm32_sdmmc_access_erase,
 	.ioctl = stm32_sdmmc_access_ioctl,
 };
 
