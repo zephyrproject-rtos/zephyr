@@ -215,6 +215,18 @@ __weak void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_LpspiDiv, 0); /* Set SPI divider to 1 */
 #endif
 
+#ifdef CONFIG_MCUX_FLEXIO
+	/* Configure input clock to be able to reach the datasheet specified baud rate.
+	 * FLEXIO can reach to 120MHz. Select USB pll(480M) as source and divide by 2.
+	 * pre divider by default is 1 which means divide by 2.
+	 */
+	CLOCK_SetMux(kCLOCK_Flexio1Mux, 3);
+	CLOCK_SetDiv(kCLOCK_Flexio1Div, 1);
+
+	CLOCK_SetMux(kCLOCK_Flexio2Mux, 3);
+	CLOCK_SetDiv(kCLOCK_Flexio2Div, 1);
+#endif
+
 #ifdef CONFIG_DISPLAY_MCUX_ELCDIF
 	/* MUX selects video PLL, which is initialized to 93MHz */
 	CLOCK_SetMux(kCLOCK_LcdifPreMux, 2);
