@@ -326,6 +326,55 @@ config SHELL_CUSTOM_HEADER
 	  extension of the shell APIs at the macro level. Please use cautiously!
 	  The internal shell API may change in future releases.
 
+config SHELL_BYPASS_RX_BUFF_SIZE
+	int "Size of bypass receive buffer"
+	default 16
+	help
+	  Maximum size of each individual read in bypass mode.
+
+config SHELL_BYPASS_USER
+	bool "Bypass from user thread"
+	help
+	  Allow user threads to have access to bypass mode. When enabled, this
+	  feature gives a user thread exclusive access to the shell's underlying
+	  transport through a special API. While in bypass mode, the shell's
+	  functionality is temporarily disabled. When the user thread wants to
+	  return to the shell, it disables bypass mode through another special
+	  API method. In support of this feature, two pipes are created whose
+	  buffer sizes are controlled by configuration variables
+	  SHELL_BYPASS_USER_RX_PIPE_ALIGN, SHELL_BYPASS_USER_RX_PIPE_SIZE,
+	  SHELL_BYPASS_USER_TX_PIPE_ALIGN, and SHELL_BYPASS_USER_TX_PIPE_SIZE.
+
+if SHELL_BYPASS_USER
+config SHELL_BYPASS_USER_RX_PIPE_ALIGN
+	int "Alignment in bytes of user thread bypass receive pipe"
+	default 1
+	help
+	  The alignment in bytes of the pipe used for the user thread bypass
+	  receive function.
+
+config SHELL_BYPASS_USER_RX_PIPE_SIZE
+	int "Size in bytes of user thread bypass receive pipe"
+	default SHELL_BYPASS_RX_BUFF_SIZE
+	help
+	  The size in bytes of the pipe used for the user thread bypass receive
+	  function. Must be at least as large as SHELL_BYPASS_RX_BUFF_SIZE.
+
+config SHELL_BYPASS_USER_TX_PIPE_ALIGN
+	int "Alignment in bytes of user thread bypass transmit pipe"
+	default 1
+	help
+	  The alignment in bytes of the pipe used for the user thread bypass
+	  transmit function.
+
+config SHELL_BYPASS_USER_TX_PIPE_SIZE
+	int "Size in bytes of user thread bypass transmit pipe"
+	default 16
+	help
+	  The size in bytes of the pipe used for the user thread bypass transmit
+	  function.
+endif # SHELL_BYPASS_USER
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL
