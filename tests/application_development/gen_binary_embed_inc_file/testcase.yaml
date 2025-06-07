@@ -1,0 +1,24 @@
+tests:
+  buildsystem.binary_embed_include_file:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+      - qemu_cortex_a9
+      - qemu_cortex_a53
+      - qemu_cortex_m3
+      - qemu_cortex_r5
+      - qemu_riscv32
+      - qemu_riscv64
+      - qemu_xtensa/dc233c
+      - qemu_arc/qemu_arc_hs
+    tags:
+      - gen_binary_embed_inc_file
+
+  buildsystem.binary_embed_include_file.linker_generator:
+    platform_allow:
+      - qemu_cortex_m3
+    tags:
+      - gen_binary_embed_inc_file
+      - linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
