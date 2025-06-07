@@ -48,11 +48,11 @@ struct bt_sco_chan_ops {
 };
 
 struct bt_sco_chan {
-	struct bt_conn *sco;
+	struct bt_conn               *sco;
 	/** Channel operations reference */
-	struct bt_sco_chan_ops		*ops;
+	const struct bt_sco_chan_ops *ops;
 
-	enum bt_sco_state		state;
+	enum bt_sco_state            state;
 };
 
 /** @brief Initiate an SCO connection to a remote device.
@@ -150,3 +150,74 @@ void bt_sco_chan_set_state_debug(struct bt_sco_chan *chan,
 #else
 void bt_sco_chan_set_state(struct bt_sco_chan *chan, enum bt_sco_state state);
 #endif /* CONFIG_BT_CONN_LOG_LEVEL_DBG */
+
+/** @brief SCO connection callback structure.
+ *
+ *  This structure is used for tracking the state of a SCO connection.
+ *  It is registered with the help of the bt_sco_conn_cb_register() API.
+ *  It's permissible to register multiple instances of this @ref bt_sco_conn_cb
+ *  type, in case different modules of an application are interested in
+ *  tracking the connection state. If a callback is not of interest for
+ *  an instance, it may be set to NULL and will as a consequence not be
+ *  used for that instance.
+ */
+struct bt_sco_conn_cb {
+	/** @brief A new SCO connection has been established.
+	 *
+	 *  This callback notifies the application of a new connection.
+	 *  In case the err parameter is non-zero it means that the
+	 *  connection establishment failed.
+	 *
+	 *  @param conn New SCO connection object.
+	 *  @param err HCI error. Zero for success, non-zero otherwise.
+	 */
+	void (*connected)(struct bt_conn *conn, uint8_t err);
+
+	/** @brief A SCO connection has been disconnected.
+	 *
+	 *  This callback notifies the application that a SCO connection
+	 *  has been disconnected.
+	 *  When this callback is called the stack still has one reference to
+	 *  the connection object.
+	 *
+	 *  @param conn SCO connection object.
+	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
+	 */
+	void (*disconnected)(struct bt_conn *conn, uint8_t reason);
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
+};
+
+/** @brief Register SCO connection callbacks.
+ *
+ *  Register callbacks to monitor the state of SCO connections.
+ *
+ *  @param cb Callback struct. Must point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -EEXIST if @p cb was already registered.
+ */
+int bt_sco_conn_cb_register(struct bt_sco_conn_cb *cb);
+
+/**
+ * @brief Unregister SCO connection callbacks.
+ *
+ * Unregister the state of SCO connections callbacks.
+ *
+ * @param cb Callback struct point to memory that remains valid.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL If @p cb is NULL.
+ * @retval -ENOENT if @p cb was not registered.
+ */
+int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb);
+
+/**
+ *  @brief Register a callback structure for connection events.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_SCO_CONN_CB_DEFINE(_name)								\
+	static const STRUCT_SECTION_ITERABLE(bt_sco_conn_cb, _CONCAT(bt_sco_conn_cb_, _name))
