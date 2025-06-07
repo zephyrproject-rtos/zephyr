@@ -1,6 +1,11 @@
 platforms:
   override_default_platforms: false
   increased_platform_scope: true
+qa:
+  max_platform_allow: 10
+  max_integration_platforms: 5
+  max_scenarios: 10
+  max_platform_exclude: 5
 levels:
   - name: smoke
     description: >

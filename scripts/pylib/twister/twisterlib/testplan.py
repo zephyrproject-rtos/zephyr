@@ -28,7 +28,10 @@ except ImportError:
     print("Install the anytree module to use the --test-tree option")
 
 import scl
+from colorama import Fore, Style
+from tabulate import tabulate
 from twisterlib.config_parser import TwisterConfigParser
+from twisterlib.constants import SUPPORTED_HARNESS
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
@@ -78,6 +81,92 @@ class TestLevel:
     levels = []
     scenarios = []
 
+class Checker:
+    ALLOW = (
+        'allow_platform',
+        'warning',
+        'Too many entries in allow_platform'
+    )
+    INTEGRATION = (
+        'integration_platform',
+        'warning',
+        'Too many integration platforms'
+    )
+    EXCLUDE = (
+        'exclude_platform',
+        'warning',
+        'Too many excluded platforms'
+    )
+    ALLOW_NO_INTEGRATION = (
+        'allow_no_integration',
+        'error',
+        'allow_platform without integration_platforms'
+    )
+    BUILD_ONLY = (
+        'build_only',
+        'warning',
+        'build_only set'
+    )
+    SKIP = (
+        'skip',
+        'warning',
+        'skip set'
+    )
+    FILTER_NO_INTEGRATION = (
+        'filter_no_integration',
+        'error',
+        'filter with no integration platforms'
+    )
+    NO_DEFAULT_INTEGRATION = (
+        'no_default_integration',
+        'error',
+        'No default platforms in integration_platform'
+    )
+    UNSUPPORTED_DEPENDS_ON = (
+        'unsupported_depends_on',
+        'error',
+        'Unsupported depends_on'
+    )
+    SCENARIO_COUNT = (
+        'scenario_count',
+        'warning',
+        'Too many scenarios'
+    )
+    HARNESS = (
+        'harness',
+        'warning',
+        'Unsupported harness'
+    )
+
+    def __init__(self):
+        self.checks = []
+        self.errors = 0
+
+    def add(self, check, msg):
+        self.checks.append((check, msg))
+        self.errors += 1
+
+    def report(self):
+        sorted_checks = sorted(self.checks, key=lambda x: x[0])
+        for check, msg in sorted_checks:
+            short = check[0]
+            if check[1] == 'error':
+                logger.error(f"{Fore.RED}{short}{Style.RESET_ALL}: {msg}")
+            else:
+                logger.warning(f"{Fore.YELLOW}{short}{Style.RESET_ALL}: {msg}")
+
+        summary = collections.Counter(check for check, _ in self.checks)
+        logger.info("Summary of checks:")
+        table_data = [
+            ["Check", "Severity", "Occurrences", "Description"]
+        ]
+        for check, count in sorted(summary.items(), key=lambda item: item[1], reverse=True):
+            short, severity, description = check
+            table_data.append([short, severity, count, description])
+
+        table = tabulate(table_data, headers="firstrow", tablefmt="grid")
+        logger.info("\n" + table)
+        return self.errors
 
 class TestPlan:
     __test__ = False  # for pytest to skip this class when collects tests
@@ -131,6 +220,7 @@ class TestPlan:
         self.test_config =  {}
 
         self.name = "unnamed"
+        self.checker = Checker()
 
     def get_level(self, name):
         level = next((lvl for lvl in self.levels if lvl.name == name), None)
@@ -443,10 +533,12 @@ class TestPlan:
         arch_roots = self.env.arch_roots
 
         platform_config = self.test_config.get('platforms', {})
-
+        # to be used in quality checks, verifying usage in testsuites
+        self.supported_features = []
         for platform in generate_platforms(board_roots, soc_roots, arch_roots):
             if not platform.twister:
                 continue
+            self.supported_features.extend(platform.supported)
             self.platforms.append(platform)
 
             if not platform_config.get('override_default_platforms', False):
@@ -526,8 +618,14 @@ class TestPlan:
                     parsed_data.load()
                     subcases = None
                     ztest_suite_names = None
-
+                    scenario_count = 0
+                    qa_config = self.test_config.get('qa', {})
+                    MAX_PLATFORM_ALLOW = qa_config.get('max_platform_allow', 10)
+                    MAX_INTEGRATION_PLATFORMS = qa_config.get('max_integration_platforms', 5)
+                    MAX_PLATFORM_EXCLUDE = qa_config.get('max_platform_exclude', 5)
+                    MAX_SCENARIOS = qa_config.get('max_scenarios', 10)
                     for name in parsed_data.scenarios:
+                        scenario_count += 1
                         suite_dict = parsed_data.get_scenario(name)
                         suite = TestSuite(
                             root,
@@ -547,6 +645,72 @@ class TestPlan:
                         suite.platform_allow =  self.verify_platforms_existence(
                                 suite.platform_allow,
                                 f"platform_allow in {suite.name}")
+
+                        if self.options.check:
+                            checker = self.checker
+                            if len(suite.platform_allow) > MAX_PLATFORM_ALLOW:
+                                checker.add(
+                                    checker.ALLOW,
+                                    f"Too many entries in allow_platform in {suite.name}: "
+                                    f"{len(suite.platform_allow)}"
+                                )
+
+                            if len(suite.integration_platforms) > MAX_INTEGRATION_PLATFORMS:
+                                checker.add(
+                                    checker.INTEGRATION,
+                                    f"Too many integration platforms in {suite.name}: "
+                                    f"{len(suite.integration_platforms)}"
+                                )
+
+                            if len(suite.platform_exclude) > MAX_PLATFORM_EXCLUDE:
+                                checker.add(
+                                    checker.EXCLUDE,
+                                    f"Too many excluded platforms in {suite.name}: "
+                                    f"{len(suite.platform_exclude)}"
+                                )
+
+                            if len(suite.platform_allow) > 1 and not suite.integration_platforms:
+                                checker.add(
+                                    checker.ALLOW_NO_INTEGRATION,
+                                    f"platform_allow in {suite.name} without integration_platforms"
+                                )
+
+                            if suite.build_only and "build" not in suite.id:
+                                checker.add(checker.BUILD_ONLY,f"build_only set in {suite.name}")
+
+                            if suite.skip:
+                                checker.add(checker.SKIP,f"skip set in {suite.name}")
+
+                            if suite.harness not in SUPPORTED_HARNESS:
+                                checker.add(
+                                    checker.HARNESS,
+                                    f"Unsupported harness {suite.harness} in {suite.name}"
+                                )
+
+                            if (suite.filter and not suite.integration_platforms and
+                                not suite.platform_allow and not suite.platform_key):
+                                checker.add(
+                                    checker.FILTER_NO_INTEGRATION,
+                                    f"filter with no integration platforms in {suite.name}"
+                                )
+
+                            if suite.platform_allow and suite.integration_platforms:
+                                _default_p = set(self.default_platforms)
+                                _platform_allow = set(suite.platform_allow)
+                                _integration_p = set(suite.integration_platforms)
+                                _intersection1 = _default_p.intersection(_platform_allow)
+                                _intersection2 = _default_p.intersection(_integration_p)
+
+                                if  _intersection1 and not _intersection2:
+                                    checker.add(checker.NO_DEFAULT_INTEGRATION,
+                                                f"No default platforms in integration_platform "
+                                                f"for {suite.name}")
+
+                            _do = set(suite.depends_on).intersection(self.supported_features)
+                            if len(_do) != len(suite.depends_on):
+                                checker.add(checker.UNSUPPORTED_DEPENDS_ON,
+                                            f"Unsupported depends_on {suite.depends_on} "
+                                            f"in {suite.name}")
 
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
@@ -576,6 +740,12 @@ class TestPlan:
                                 raise TwisterRuntimeError(msg)
                         else:
                             self.testsuites[suite.name] = suite
+
+                    if scenario_count > MAX_SCENARIOS and self.options.check:
+                        self.checker.add(self.checker.SCENARIO_COUNT,
+                                    f"Too many scenarios in "
+                                    f"{os.path.relpath(suite_path, ZEPHYR_BASE)}: "
+                                    f"{scenario_count}")
 
                 except Exception as e:
                     logger.error(f"{suite_path}: can't load (skipping): {e!r}")
