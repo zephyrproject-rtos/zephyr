@@ -690,7 +690,7 @@
  *         refer to the same node, and evaluates to 0 otherwise
  */
 #define DT_SAME_NODE(node_id1, node_id2) \
-	(DT_DEP_ORD(node_id1) == (DT_DEP_ORD(node_id2)))
+	IS_EQ(DT_DEP_ORD(node_id1), DT_DEP_ORD(node_id2))
 
 /**
  * @brief Get a devicetree node's node labels as an array of strings
