@@ -26,6 +26,7 @@ struct phy_mii_dev_config {
 	bool no_reset;
 	bool fixed;
 	int fixed_speed;
+	enum phy_link_speed default_speeds;
 	const struct device * const mdio;
 };
 
@@ -558,13 +559,8 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 
 	data->gigabit_supported = is_gigabit_supported(dev);
 
-	/* Advertise all speeds */
-	phy_mii_cfg_link(dev, LINK_HALF_10BASE |
-			      LINK_FULL_10BASE |
-			      LINK_HALF_100BASE |
-			      LINK_FULL_100BASE |
-			      LINK_HALF_1000BASE |
-			      LINK_FULL_1000BASE);
+	/* Advertise default speeds */
+	phy_mii_cfg_link(dev, cfg->default_speeds);
 
 	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 	k_work_init_delayable(&data->autoneg_work, autoneg_work_handler);
@@ -587,12 +583,24 @@ static DEVICE_API(ethphy, phy_mii_driver_api) = {
 #endif
 };
 
+#define PHY_MII_GENERATE_DEFAULT_SPEEDS(n)							\
+((DT_INST_ENUM_HAS_VALUE(n, default_speeds, 10base_half_duplex) ? LINK_HALF_10BASE : 0) |	\
+(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 10base_full_duplex) ? LINK_FULL_10BASE : 0) |	\
+(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 100base_half_duplex) ? LINK_HALF_100BASE : 0) |	\
+(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 100base_full_duplex) ? LINK_FULL_100BASE : 0) |	\
+(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 1000base_half_duplex) ? LINK_HALF_1000BASE : 0) |	\
+(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 1000base_full_duplex) ? LINK_FULL_1000BASE : 0))
+
 #define PHY_MII_CONFIG(n)						 \
+BUILD_ASSERT(PHY_MII_GENERATE_DEFAULT_SPEEDS(n) != 0,			 \
+	"At least one valid speed must be configured for this driver");	 \
+									 \
 static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 	.phy_addr = DT_INST_REG_ADDR(n),				 \
 	.no_reset = DT_INST_PROP(n, no_reset),				 \
 	.fixed = IS_FIXED_LINK(n),					 \
 	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
+	.default_speeds = PHY_MII_GENERATE_DEFAULT_SPEEDS(n),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
 			 DEVICE_DT_GET(DT_INST_BUS(n)))			 \
 };
