@@ -311,6 +311,7 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				cross-domain-default-port = <0x1>;
 			};
 
 			uart20: uart@c6000 {
@@ -320,6 +321,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				cross-domain-default-port = <0x1>;
 			};
 
 			i2c21: i2c@c7000 {
@@ -350,6 +352,7 @@
 				rx-delay-supported;
 				rx-delay = <1>;
 				status = "disabled";
+				cross-domain-default-port = <0x1>;
 			};
 
 			uart21: uart@c7000 {
@@ -359,6 +362,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				cross-domain-default-port = <0x1>;
 			};
 
 			i2c22: i2c@c8000 {

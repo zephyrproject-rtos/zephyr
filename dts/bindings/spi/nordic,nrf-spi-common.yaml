@@ -61,3 +61,9 @@ properties:
         and SPI master again keeps the line in the low state
       Please note that the line must be configured and properly handled on
       both sides for the mechanism to work correctly.
+
+  cross-domain-default-port:
+    type: int
+    description: |
+      SPI default GPIO port for instances that allow cross domain pins.
+      Used to determine whether constant latency mode is required.
