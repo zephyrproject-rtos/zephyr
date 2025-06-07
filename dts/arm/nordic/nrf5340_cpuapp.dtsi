@@ -114,6 +114,11 @@
 	};
 };
 
+&rng_hci {
+	/* Application core has no accessible RNG peripheral */
+	status = "okay";
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
