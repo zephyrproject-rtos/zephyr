@@ -202,6 +202,8 @@ enum sensor_channel {
 	/** Gyroscope bias (X/Y/Z components in radians/s) */
 	SENSOR_CHAN_GBIAS_XYZ,
 
+	/** Weight in grams */
+	SENSOR_CHAN_MASS,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
