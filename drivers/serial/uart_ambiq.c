@@ -267,6 +267,7 @@ static void uart_ambiq_poll_out(const struct device *dev, unsigned char c)
 		 * transmission has completed
 		 */
 		uart_ambiq_pm_policy_state_lock_get(dev);
+		am_hal_uart_interrupt_enable(data->uart_handler, AM_HAL_UART_INT_TXCMP);
 	}
 
 	/* Send a character */
@@ -526,24 +527,42 @@ end:
 #ifdef CONFIG_PM_DEVICE
 static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct uart_ambiq_config *config = dev->config;
 	struct uart_ambiq_data *data = dev->data;
-	uint32_t ret;
 	am_hal_sysctrl_power_state_e status;
+	int err;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_WAKE;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to sleep,
+			 * "(LP)UART pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_DEEPSLEEP;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	ret = am_hal_uart_power_control(data->uart_handler, status, true);
+	err = am_hal_uart_power_control(data->uart_handler, status, true);
 
-	if (ret != AM_HAL_STATUS_SUCCESS) {
+	if (err != AM_HAL_STATUS_SUCCESS) {
 		return -EPERM;
 	} else {
 		return 0;

@@ -428,15 +428,30 @@ static DEVICE_API(i2c, i2c_ambiq_driver_api) = {
 #ifdef CONFIG_PM_DEVICE
 static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct i2c_ambiq_config *config = dev->config;
 	struct i2c_ambiq_data *data = dev->data;
-	uint32_t ret;
+	int ret;
 	am_hal_sysctrl_power_state_e status;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Move pins to active/default state */
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("I2C pinctrl setup failed (%d)", ret);
+			return ret;
+		}
 		status = AM_HAL_SYSCTRL_WAKE;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret == -ENOENT) {
+			/* Warn but don't block suspend */
+			LOG_WRN("I2C pinctrl sleep state not available ");
+		} else if (ret < 0) {
+			return ret;
+		}
 		status = AM_HAL_SYSCTRL_DEEPSLEEP;
 		break;
 	default:
