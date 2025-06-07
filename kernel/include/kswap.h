@@ -121,10 +121,13 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	new_thread = z_swap_next_thread();
 
 	if (new_thread != old_thread) {
+
 		z_sched_usage_switch(new_thread);
 
 #ifdef CONFIG_SMP
-		new_thread->base.cpu = arch_curr_cpu()->id;
+		unsigned int cpu = arch_curr_cpu()->id;
+
+		new_thread->base.cpu = cpu;
 
 		if (!is_spinlock) {
 			z_smp_release_global_lock(new_thread);
@@ -134,9 +137,10 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_sched_switch_spin(new_thread);
 		z_current_thread_set(new_thread);
 
-#ifdef CONFIG_TIMESLICING
-		z_reset_time_slice(new_thread);
-#endif /* CONFIG_TIMESLICING */
+#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SMP)
+		/* In a UP system, this was already done in update_cache() */
+		z_reset_time_slice(cpu, new_thread);
+#endif /* CONFIG_TIMESLICING && CONFIG_SMP */
 
 #ifdef CONFIG_SPIN_VALIDATE
 		z_spin_lock_set_owner(&_sched_spinlock);
