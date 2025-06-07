@@ -39,7 +39,7 @@
 #include "getopt_common.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(getopt);
+LOG_MODULE_REGISTER(getopt, CONFIG_GETOPT_LOG_LEVEL);
 
 #define	BADCH	((int)'?')
 #define	BADARG	((int)':')
