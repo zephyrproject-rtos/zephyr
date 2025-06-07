@@ -10,8 +10,8 @@
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
 		/* first index must be a 32-Bit timer */
-		pwms = <&pwm7 0 0 PWM_POLARITY_NORMAL>,
-			<&pwm9 0 0 PWM_POLARITY_NORMAL>;
+		pwms = <&pwm7 1 0 PWM_POLARITY_NORMAL>,
+			<&pwm9 1 0 PWM_POLARITY_NORMAL>;
 	};
 };
 
@@ -31,7 +31,7 @@
 &pwm9 {
 	pinctrl-0 = <&pwm9_default>;
 	pinctrl-names = "default";
-	interrupts = <50 1>, <51 1>;
-	interrupt-names = "gtioca", "overflow";
+	interrupts = <50 1>, <51 1>, <52 1>;
+	interrupt-names = "gtioca", "gtiocb", "overflow";
 	status = "okay";
 };
