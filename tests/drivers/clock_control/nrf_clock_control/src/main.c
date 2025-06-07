@@ -9,6 +9,9 @@
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_AUXPLL)
+#include <zephyr/dt-bindings/clock/nrf-auxpll.h>
+#endif
 
 struct test_clk_context {
 	const struct device *clk_dev;
@@ -16,6 +19,7 @@ struct test_clk_context {
 	size_t clk_specs_size;
 };
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF2)
 const struct nrf_clock_spec test_clk_specs_hsfll[] = {
 	{
 		.frequency = MHZ(128),
@@ -147,6 +151,43 @@ static const struct test_clk_context lfclk_test_clk_contexts[] = {
 		.clk_specs_size = ARRAY_SIZE(test_clk_specs_lfclk),
 	},
 };
+#endif /* CONFIG_CLOCK_CONTROL_NRF2 */
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_AUXPLL)
+
+#define AUXPLL_COMPAT nordic_nrf_auxpll
+#define AUXPLL_NODE DT_INST(0, AUXPLL_COMPAT)
+#define AUXPLL_FREQ DT_PROP(AUXPLL_NODE, nordic_frequency)
+
+/* Gets selected AUXPLL DIV and selects the expected frequency */
+#if AUXPLL_FREQ == NRF_AUXPLL_FREQUENCY_DIV_MIN
+#define AUXPLL_FREQ_OUT 80000000
+#elif AUXPLL_FREQ == NRF_AUXPLL_FREQ_DIV_AUDIO_44K1
+#define AUXPLL_FREQ_OUT 11289591
+#elif AUXPLL_FREQ == NRF_AUXPLL_FREQ_DIV_USB_24M
+#define AUXPLL_FREQ_OUT 24000000
+#elif AUXPLL_FREQ == NRF_AUXPLL_FREQ_DIV_AUDIO_48K
+#define AUXPLL_FREQ_OUT 12287963
+#elif AUXPLL_FREQ == NRF_AUXPLL_FREQ_DIV_MAX
+#define AUXPLL_FREQ_OUT 0 /*No use case for this selection yet*/
+#endif
+
+const struct nrf_clock_spec test_clk_specs_auxpll[] = {
+	{
+		.frequency = AUXPLL_FREQ_OUT,
+		.accuracy = 0,
+		.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,
+	},
+};
+
+static const struct test_clk_context auxpll_test_clk_contexts[] = {
+	{
+		.clk_dev = DEVICE_DT_GET(AUXPLL_NODE),
+		.clk_specs = test_clk_specs_auxpll,
+		.clk_specs_size = ARRAY_SIZE(test_clk_specs_auxpll),
+	},
+};
+#endif
 
 static void test_request_release_clock_spec(const struct device *clk_dev,
 					    const struct nrf_clock_spec *clk_spec)
@@ -206,6 +247,7 @@ static void test_clock_control_request(const struct test_clk_context *clk_contex
 	}
 }
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF2)
 #if CONFIG_BOARD_NRF54H20DK_NRF54H20_CPUAPP
 ZTEST(nrf2_clock_control, test_cpuapp_hsfll_control)
 {
@@ -303,6 +345,16 @@ ZTEST(nrf2_clock_control, test_safe_request_cancellation)
 	TC_PRINT("Clock control safe cancellation return value: %d\n", ret);
 	zassert_between_inclusive(ret, ONOFF_STATE_ON, ONOFF_STATE_TO_ON);
 }
+#endif /* CONFIG_CLOCK_CONTROL_NRF2 */
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_AUXPLL)
+ZTEST(nrf2_clock_control, test_auxpll_control)
+{
+	TC_PRINT("AUXPLL control test\n");
+	test_clock_control_request(auxpll_test_clk_contexts,
+				   ARRAY_SIZE(auxpll_test_clk_contexts));
+}
+#endif
 
 static void *setup(void)
 {
