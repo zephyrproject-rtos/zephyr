@@ -6,4 +6,12 @@ if BOARD_RPI_PICO2
 config USB_SELF_POWERED
 	default n
 
+if WIFI_AIROC
+
+choice AIROC_PART
+	default CYW43439
+endchoice
+
+endif # WIFI_AIROC
+
 endif # BOARD_RPI_PICO2
