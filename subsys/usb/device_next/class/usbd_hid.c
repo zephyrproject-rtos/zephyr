@@ -65,6 +65,7 @@ struct hid_device_config {
 	struct usbd_class_data *c_data;
 	struct net_buf_pool *pool_out;
 	struct net_buf_pool *pool_in;
+	struct usbd_desc_node *const if_desc_data;
 	const struct usb_desc_header **fs_desc;
 	const struct usb_desc_header **hs_desc;
 };
@@ -488,7 +489,20 @@ static void *usbd_hid_get_desc(struct usbd_class_data *const c_data,
 
 static int usbd_hid_init(struct usbd_class_data *const c_data)
 {
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	const struct device *dev = usbd_class_get_private(c_data);
+	const struct hid_device_config *dcfg = dev->config;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
+
 	LOG_DBG("HID class %s init", c_data->name);
+
+	if (dcfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
+		if (usbd_add_descriptor(uds_ctx, dcfg->if_desc_data)) {
+			LOG_ERR("Failed to add interface string descriptor");
+		} else {
+			desc->if0.iInterface = usbd_str_desc_get_idx(dcfg->if_desc_data);
+		}
+	}
 
 	return 0;
 }
@@ -750,6 +764,12 @@ static const struct hid_device_driver_api hid_device_api = {
 	HID_OUT_POOL_DEFINE(n);							\
 	USBD_HID_INTERFACE_DEFINE(n);						\
 										\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (				\
+	USBD_DESC_STRING_DEFINE(hid_if_desc_data_##n,				\
+				DT_INST_PROP(n, label),				\
+				USBD_DUT_STRING_INTERFACE);			\
+	))									\
+										\
 	USBD_DEFINE_CLASS(hid_##n,						\
 			  &usbd_hid_api,					\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
@@ -761,6 +781,9 @@ static const struct hid_device_driver_api hid_device_api = {
 		.pool_out = HID_OUT_POOL_ADDR(n),				\
 		.fs_desc = hid_fs_desc_##n,					\
 		.hs_desc = hid_hs_desc_##n,					\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (			\
+		.if_desc_data = &hid_if_desc_data_##n,				\
+		))								\
 	};									\
 										\
 	static struct hid_device_data hid_data_##n;				\
