@@ -38,6 +38,9 @@
 #include <stm32_ll_lpuart.h>
 #if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
 #include <stm32_ll_exti.h>
+#if defined(CONFIG_SOC_SERIES_STM32U5X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart)
+#include <stm32_ll_bus.h>
+#endif
 #endif /* CONFIG_PM */
 
 #include <zephyr/linker/linker-defs.h>
@@ -2157,6 +2160,10 @@ static int uart_stm32_registers_configure(const struct device *dev)
 			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
 		}
 	}
+#if defined(CONFIG_SOC_SERIES_STM32U5X) && HAS_LPUART
+	/* Allow LPUART to operate in STOP modes. */
+	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPUART1AMEN);
+#endif
 #endif /* CONFIG_PM */
 
 	LL_USART_Enable(usart);
