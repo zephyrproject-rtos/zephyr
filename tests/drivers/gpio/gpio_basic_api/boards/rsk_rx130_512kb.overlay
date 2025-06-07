@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect DIO21 to DIO22 to run this test */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&ioportd 1 0>; /* PD1 JA2-M1WP P17 */
+		in-gpios = <&ioportd 2 0>; /* PD2 JA2-M1WN P18 */
+	};
+};
+
+&port_irq2 {
+	status = "okay";
+	renesas,digital-filtering;
+};
+
+&ioportd {
+	status = "okay";
+};
