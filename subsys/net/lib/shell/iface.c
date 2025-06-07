@@ -817,6 +817,83 @@ static int cmd_net_default_iface(const struct shell *sh, size_t argc, char *argv
 	return 0;
 }
 
+#if defined(CONFIG_ETH_PHY_DRIVER)
+static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
+{
+	int idx = get_iface_idx(sh, argv[1]);
+	const struct device *phy_dev;
+	bool half_duplex = false;
+	uint16_t user_input_spd;
+	struct net_if *iface;
+	uint16_t speed = 0U;
+	int ret;
+
+	if (argc < 3) {
+		PR_WARNING("Usage: net iface set_link <index> "
+			   "<Speed:10/100/1000/2500/5000> [Duplex]:h/f>\n");
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		PR_WARNING("Interface %d is not Ethernet type\n", idx);
+		return -EINVAL;
+	}
+
+	phy_dev = net_eth_get_phy(iface);
+	if (!phy_dev) {
+		PR_WARNING("No PHY device found for interface %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	for (int k = 2; k < argc; k++) {
+		if ((k + 1 < argc) && (argv[k+1][0] == 'h')) {
+			half_duplex = true;
+		} else {
+			half_duplex = false;
+		}
+
+		user_input_spd = shell_strtoul(argv[k], 10, &ret);
+		switch (user_input_spd) {
+		case 0:
+			break;
+		case 10:
+			speed |= half_duplex ? LINK_HALF_10BASE : LINK_FULL_10BASE;
+			break;
+		case 100:
+			speed |= half_duplex ? LINK_HALF_100BASE : LINK_FULL_100BASE;
+			break;
+		case 1000:
+			speed |= half_duplex ? LINK_HALF_1000BASE :  LINK_FULL_1000BASE;
+			break;
+		case 2500:
+			if (half_duplex) {
+				PR_WARNING("2500BASE half-duplex not supported\n");
+				return -ENOTSUP;
+			}
+			speed |= LINK_FULL_2500BASE;
+			break;
+		case 5000:
+			if (half_duplex) {
+				PR_WARNING("5000BASE half-duplex not supported\n");
+				return -ENOTSUP;
+			}
+			speed |= LINK_FULL_5000BASE;
+			break;
+		default:
+			PR_WARNING("Unsupported speed %d\n", user_input_spd);
+			return -ENOTSUP;
+		}
+	}
+
+	if (speed != 0U) {
+		return phy_configure_link(phy_dev, speed);
+	}
+	PR_WARNING("No speed specified\n");
+	return -ENOEXEC;
+}
+#endif /* CONFIG_ETH_PHY_DRIVER */
+
 #if defined(CONFIG_NET_SHELL_DYN_CMD_COMPLETION)
 
 #include "iface_dynamic.h"
@@ -841,6 +918,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_iface,
 	SHELL_CMD(default, IFACE_DYN_CMD,
 		  "'net iface default [<index>]' displays or sets the default network interface.",
 		  cmd_net_default_iface),
+#if defined(CONFIG_ETH_PHY_DRIVER)
+	SHELL_CMD(set_link, IFACE_DYN_CMD,
+		  "'net iface set_link <index> <Speed 10/100/1000/2500/5000> "
+		  "<Duplex[optional]:h/f>'"
+		  " sets link speed for the network interface.",
+		  cmd_net_link_speed),
+#endif /* CONFIG_ETH_PHY_DRIVER */
 	SHELL_SUBCMD_SET_END
 );
 
