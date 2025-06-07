@@ -203,13 +203,13 @@ int ext2_init_storage(struct ext2_data **fsp, const void *storage_dev, int flags
 
 	dev_size = fs->backend_ops->get_device_size(fs);
 	if (dev_size < 0) {
-		ret = dev_size;
+		ret = (int)dev_size;
 		goto err;
 	}
 
 	write_size = fs->backend_ops->get_write_size(fs);
 	if (write_size < 0) {
-		ret = write_size;
+		ret = (int)write_size;
 		goto err;
 	}
 
