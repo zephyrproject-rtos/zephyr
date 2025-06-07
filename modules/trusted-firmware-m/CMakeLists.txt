@@ -26,6 +26,9 @@ if (CONFIG_BUILD_WITH_TFM)
     endif()
   endif()
 
+  # Treat any warning as error
+  list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_WARNINGS_ARE_ERRORS:BOOL=ON)
+
   if (CONFIG_TFM_SFN)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
   else() # CONFIG_TFM_IPC
