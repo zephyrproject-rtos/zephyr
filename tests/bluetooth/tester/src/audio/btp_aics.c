@@ -31,14 +31,14 @@
 #define LOG_MODULE_NAME bttester_aics
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
-#define BT_AICS_MAX_INPUT_DESCRIPTION_SIZE 16
+#define BT_AICS_MAX_INPUT_DESCRIPTION_SIZE  16
 #define BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE 16
 
 struct btp_aics_instance aics_client_instance;
 struct btp_aics_instance aics_server_instance;
 
-static struct net_buf_simple *rx_ev_buf = NET_BUF_SIMPLE(BT_AICS_MAX_INPUT_DESCRIPTION_SIZE +
-							 sizeof(struct btp_aics_description_ev));
+static struct net_buf_simple *rx_ev_buf =
+	NET_BUF_SIMPLE(BT_AICS_MAX_INPUT_DESCRIPTION_SIZE + sizeof(struct btp_aics_description_ev));
 
 static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,
 				       uint16_t *rsp_len)
@@ -66,7 +66,7 @@ void btp_send_aics_state_ev(struct bt_conn *conn, uint8_t att_status, int8_t gai
 	tester_event(BTP_SERVICE_ID_AICS, BTP_AICS_STATE_EV, &ev, sizeof(ev));
 }
 
-void btp_send_gain_setting_properties_ev(struct bt_conn *conn,  uint8_t att_status, uint8_t units,
+void btp_send_gain_setting_properties_ev(struct bt_conn *conn, uint8_t att_status, uint8_t units,
 					 int8_t minimum, int8_t maximum)
 {
 	struct btp_gain_setting_properties_ev ev;
@@ -526,12 +526,12 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units, i
 	LOG_DBG("AICS gain setting callback (%d)", err);
 }
 
-static void aics_input_type_cb(struct bt_aics *inst, int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err, enum bt_aics_input_type input_type)
 {
 	struct bt_conn *conn;
 
 	bt_aics_client_conn_get(inst, &conn);
-	btp_send_aics_input_type_event(conn, err, input_type);
+	btp_send_aics_input_type_event(conn, err, (uint8_t)input_type);
 
 	LOG_DBG("AICS input type callback (%d)", err);
 }
@@ -612,18 +612,17 @@ static void aics_set_auto_gain_cb(struct bt_aics *inst, int err)
 	LOG_DBG("AICS set automatic gain cb (%d)", err);
 }
 
-struct bt_aics_cb aics_client_cb = {
-	.state = aics_state_cb,
-	.gain_setting = aics_gain_setting_cb,
-	.type = aics_input_type_cb,
-	.status = aics_status_cb,
-	.description = aics_description_cb,
+struct bt_aics_cb aics_client_cb = {.state = aics_state_cb,
+				    .gain_setting = aics_gain_setting_cb,
+				    .type = aics_input_type_cb,
+				    .status = aics_status_cb,
+				    .description = aics_description_cb,
 #if defined(CONFIG_BT_AICS_CLIENT)
-	.set_gain = aics_set_gain_cb,
-	.unmute = aics_unmute_cb,
-	.mute = aics_mute_cb,
-	.set_manual_mode = aics_set_man_gain_cb,
-	.set_auto_mode = aics_set_auto_gain_cb
+				    .set_gain = aics_set_gain_cb,
+				    .unmute = aics_unmute_cb,
+				    .mute = aics_mute_cb,
+				    .set_manual_mode = aics_set_man_gain_cb,
+				    .set_auto_mode = aics_set_auto_gain_cb
 #endif /* CONFIG_BT_AICS_CLIENT */
 };
 
