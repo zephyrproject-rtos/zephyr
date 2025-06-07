@@ -4,6 +4,10 @@
 	aliases {
 		i2s-node0 = &i2s0;
 	};
+
+	zephyr,user {
+		test-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &pinctrl {
