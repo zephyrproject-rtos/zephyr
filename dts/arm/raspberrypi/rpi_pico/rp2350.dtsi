@@ -21,6 +21,10 @@
 		die-temp0 = &die_temp;
 	};
 
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -445,6 +449,12 @@
 			reg = <0x50400000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO2>;
+			status = "disabled";
+		};
+
+		rng: rng@400f0000 {
+			compatible = "raspberrypi,pico-rng";
+			reg = <0x400f0000 DT_SIZE_K(4)>;
 			status = "disabled";
 		};
 	};
