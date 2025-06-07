@@ -238,6 +238,7 @@ EL1_Reset_Handler:
 
     /* suggest current core then release */
 1:  str r1, [r0, #BOOT_PARAM_MPID_OFFSET]
+    mov r7, #0
     strb r7, [r4, r2]
     dmb
 
