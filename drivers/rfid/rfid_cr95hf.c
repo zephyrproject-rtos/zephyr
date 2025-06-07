@@ -107,7 +107,7 @@ static inline void rfid_cr95hf_IRQ_IN_pulse(const struct gpio_dt_spec *irq_in)
  * the lengths of the send and receive buffers.
  * It also manages the chip select (CS) pin.
  */
-int rfid_cr95hf_transceive(const struct device *dev, bool release_cs)
+static int rfid_cr95hf_transceive(const struct device *dev, bool release_cs)
 {
 	const struct rfid_cr95hf_spi_config *config = dev->config;
 	struct rfid_cr95hf_data *data = dev->data;
@@ -154,7 +154,7 @@ int rfid_cr95hf_transceive(const struct device *dev, bool release_cs)
  * This function checks if the SPI bus is ready and prepares the
  * RFID CR95HF device for communication.
  */
-int rfid_cr95hf_init_spi(const struct device *dev)
+static int rfid_cr95hf_init_spi(const struct device *dev)
 {
 	struct rfid_cr95hf_data *data = dev->data;
 	const struct rfid_cr95hf_spi_config *config = dev->config;
@@ -304,7 +304,7 @@ int rfid_cr95hf_init_spi(const struct device *dev)
  * for readiness to send data.
  * @return 0 on success or a negative error code on failure.
  */
-int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool ready_send)
+static int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool ready_send)
 {
 	struct rfid_cr95hf_data *data = dev->data;
 	int err;
@@ -353,7 +353,7 @@ int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool ready_se
  *
  * @param dev The device structure representing the CR95HF device.
  */
-void rfid_cr95hf_wait(const struct device *dev)
+static void rfid_cr95hf_wait(const struct device *dev)
 {
 	const struct rfid_cr95hf_spi_config *config = dev->config;
 	struct rfid_cr95hf_data *data = dev->data;
@@ -381,7 +381,7 @@ void rfid_cr95hf_wait(const struct device *dev)
  * @param dev The device structure representing the CR95HF device.
  * @return 0 on success or a negative error code on failure.
  */
-int rfid_cr95hf_response(const struct device *dev)
+static int rfid_cr95hf_response(const struct device *dev)
 {
 	struct rfid_cr95hf_data *data = dev->data;
 	size_t data_len;
