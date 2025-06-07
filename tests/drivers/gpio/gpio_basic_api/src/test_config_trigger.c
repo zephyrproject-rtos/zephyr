@@ -30,6 +30,11 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_twice_trigger)
 	cb_cnt = 0;
 
 	ret = gpio_pin_configure(dev_out, PIN_OUT, GPIO_DISCONNECTED);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
+		ret = gpio_pin_configure(dev_out, PIN_OUT, GPIO_INPUT | GPIO_PULL_UP);
+	}
+	zassert_ok(ret, "config PIN_OUT failed");
 
 	/* 1. Configure PIN_IN callback */
 	ret = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT);
@@ -81,6 +86,11 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_trigger)
 	cb_cnt = 0;
 
 	ret = gpio_pin_configure(dev_out, PIN_OUT, GPIO_DISCONNECTED);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
+		ret = gpio_pin_configure(dev_out, PIN_OUT, GPIO_INPUT | GPIO_PULL_UP);
+	}
+	zassert_ok(ret, "config PIN_OUT failed");
 
 	/* 1. Configure PIN_IN callback */
 	ret = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT);
