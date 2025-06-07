@@ -43,6 +43,7 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -107,5 +108,13 @@
 };
 
 &rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&wwdg {
 	status = "okay";
 };
