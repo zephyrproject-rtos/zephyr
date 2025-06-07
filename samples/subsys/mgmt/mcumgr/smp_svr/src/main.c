@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/stats/stats.h>
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/dfu/mcuboot.h>
 
 #ifdef CONFIG_MCUMGR_GRP_FS
 #include <zephyr/device.h>
@@ -18,8 +19,14 @@
 #include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 #endif
 
+#include <zephyr/sys/reboot.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+
 LOG_MODULE_REGISTER(smp_sample);
 
 #include "common.h"
@@ -49,6 +56,42 @@ static struct fs_mount_t littlefs_mnt = {
 	.mnt_point = "/lfs1"
 };
 #endif
+
+int latch_ota_if_required()
+{
+	// boot_request_upgrade(false);
+
+	// LOG_PANIC();
+	// k_sleep(K_SECONDS(2));
+	// sys_reboot(SYS_REBOOT_COLD);
+
+	LOG_INF("latch_ota_if_required");
+
+	if (boot_is_img_confirmed()) {
+		LOG_INF("No update is currently being tested");
+		return 0;
+	}
+
+	LOG_INF("latch_ota_if_required 2");
+
+	int ret = boot_write_img_confirmed();
+	if (ret) {
+		LOG_ERR("Current image is being tested, but failed to confirm! Rollback imminent!"
+			"(err %d)",
+			ret);
+		return ret;
+	}
+
+	LOG_INF("boot_write_img_confirmed() appears to have been successful");
+
+	if (boot_is_img_confirmed()) {
+		LOG_INF("boot_write_img_confirmed worked");
+	} else {
+		LOG_ERR("boot_write_img_confirmed did not work -- this shouldn't happen");
+	}
+
+	return 0;
+}
 
 int main(void)
 {
@@ -84,6 +127,8 @@ int main(void)
 	 * compile which is convenient when testing firmware upgrade.
 	 */
 	LOG_INF("build time: " __DATE__ " " __TIME__);
+
+	latch_ota_if_required();
 
 	/* The system work queue handles all incoming mcumgr requests.  Let the
 	 * main thread idle while the mcumgr server runs.
