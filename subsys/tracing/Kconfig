@@ -170,6 +170,14 @@ config TRACING_BACKEND_ADSP_MEMORY_WINDOW
 
 endchoice
 
+config TRACING_BACKEND_NAME
+	string
+	default "tracing_backend_uart" if TRACING_BACKEND_UART
+	default "tracing_backend_usb" if TRACING_BACKEND_USB
+	default "tracing_backend_posix" if TRACING_BACKEND_POSIX
+	default "tracing_backend_ram" if TRACING_BACKEND_RAM
+	default "tracing_backend_adsp_memory_window" if TRACING_BACKEND_ADSP_MEMORY_WINDOW
+
 config RAM_TRACING_BUFFER_SIZE
 	int "Ram Tracing buffer size"
 	default 4096
