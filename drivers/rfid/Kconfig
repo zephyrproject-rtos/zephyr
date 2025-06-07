@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Conny Marco Menebröcker
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RFID
+	bool "RFID Drivers"
+	help
+		Enable RFID driver configuration.
+
+if RFID
+
+module = RFID
+module-str = rfid
+source "subsys/logging/Kconfig.template.log_config"
+
+config RFID_CR95HF
+	bool "Support for CR95HF RFID driver"
+	depends on SPI || UART
+	help
+		Enable support for the CR95HF RFID driver.
+
+config RFID_USE_SPI
+	bool "Use SPI for communication"
+	depends on SPI
+	help
+		Enable to use SPI communication with the CR95HF RFID driver.
+
+config RFID_USE_UART
+	bool "Use UART for communication"
+	depends on UART
+	help
+		Enable to use UART communication with the CR95HF RFID driver.
+
+config RFID_INIT_PRIORITY
+	int "Init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+		Device driver initialization priority.
+
+endif # RFID

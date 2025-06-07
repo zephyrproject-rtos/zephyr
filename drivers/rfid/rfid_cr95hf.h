@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2025 Conny Marco Menebröcker
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef RFID_CR95HF_H
+#define RFID_CR95HF_H
+
+#define CR95HF_SND_BUF_SIZE 50
+#define CR95HF_RCV_BUF_SIZE 258
+
+#define CR95HF_CREATE_IDLE_ARRAY(wu_source,           \
+				enter_control_h,      \
+				enter_control_l,      \
+				wu_control_h,         \
+				wu_control_l,         \
+				leave_control_h,      \
+				leave_control_l,      \
+				wu_period,            \
+				osc_start, dac_start, \
+				dac_data_h,           \
+				dac_data_l,           \
+				swing_count,          \
+				max_sleep)            \
+	{ 0, 7, 0xE, wu_source, enter_control_h, enter_control_l, wu_control_h, wu_control_l, \
+		leave_control_h, leave_control_l, wu_period, osc_start, dac_start, dac_data_h,    \
+		dac_data_l, swing_count, max_sleep }
+
+#define CR95HF_CMD_IDNREQUEST              0x01   /* Requests short information about the CR95HF
+						   * and its revision
+						   */
+#define CR95HF_CMD_PROTOCOLSELECT          0x02   /* Selects the RF communication protocol and
+						   * specifies certain protocol-related parameters
+						   */
+#define CR95HF_CMD_SENDRECV                0x04   /* Sends data using the previously selected
+						   * protocol and receives the tag response
+						   */
+#define CR95HF_CMD_IDLE                    0x07   /* Switches the CR95HF into a low consumption
+						   * Wait for Event (WFE) mode
+						   */
+#define CR95HF_CMD_RDREG                   0x08   /* Reads Wake-up event register or the Analog
+						   * Register Configuration (ARC_B) register
+						   */
+#define CR95HF_CMD_WRREG                   0x09   /* Writes Analog Register Configuration (ARC_B)
+						   * register or writes index of ARC_B register
+						   * address
+						   */
+#define CR95HF_CMD_BAUDRATE                0x0A   /* Sets the UART baud rate */
+#define CR95HF_CMD_ECHO                    0x55   /* CR95HF returns an ECHO response (0x55) */
+
+#define CR95HF_WU_SOURCE_TIMEOUT           0x01
+#define CR95HF_WU_SOURCE_TAG_DETECTION     0x02
+#define CR95HF_WU_SOURCE_LOW_PULSE_IRQ_IN  0x08
+#define CR95HF_WU_SOURCE_LOW_PULSE_SPI_SS  0x10
+
+#define CR95HF_ENTER_CTRL_SLEEP_H          0x01
+#define CR95HF_ENTER_CTRL_SLEEP_L          0x00
+#define CR95HF_ENTER_CTRL_HIBERNATE_H      0x04
+#define CR95HF_ENTER_CTRL_HIBERNATE_L      0x00
+#define CR95HF_ENTER_CTRL_CALIBRATION_H    0xA1
+#define CR95HF_ENTER_CTRL_CALIBRATION_L    0x00
+#define CR95HF_ENTER_CTRL_DETECTION_H      0x21
+#define CR95HF_ENTER_CTRL_DETECTION_L      0x00
+
+#define CR95HF_WU_CTRL_HIBERNATE_H         0x04
+#define CR95HF_WU_CTRL_HIBERNATE_L         0x00
+#define CR95HF_WU_CTRL_SLEEP_H             0x38
+#define CR95HF_WU_CTRL_SLEEP_L             0x00
+#define CR95HF_WU_CTRL_CALIBRATION_H       0xF8
+#define CR95HF_WU_CTRL_CALIBRATION_L       0x01
+#define CR95HF_WU_CTRL_DETECTION_H         0x79
+#define CR95HF_WU_CTRL_DETECTION_L         0x01
+
+#define CR95HF_LEAVE_CTRL_HIBERNATE_H      0x18
+#define CR95HF_LEAVE_CTRL_HIBERNATE_L      0x00
+#define CR95HF_LEAVE_CTRL_SLEEP_H          0x18
+#define CR95HF_LEAVE_CTRL_SLEEP_L          0x00
+#define CR95HF_LEAVE_CTRL_CALIBRATION_H    0x18
+#define CR95HF_LEAVE_CTRL_CALIBRATION_L    0x00
+#define CR95HF_LEAVE_CTRL_DETECTION_H      0x18
+#define CR95HF_LEAVE_CTRL_DETECTION_L      0x00
+
+#define CR95HF_DEFAULT_WU_PERIOD           0x20
+#define CR95HF_DEFAULT_OSC_START           0x60
+#define CR95HF_DEFAULT_DAC_START           0x60
+#define CR95HF_DEFAULT_DAC_DATA_H          0x64
+#define CR95HF_DEFAULT_DAC_DATA_L          0x74
+#define CR95HF_DEFAULT_SWING_COUNT         0x3F
+#define CR95HF_DEFAULT_MAX_SLEEP           0x28
+
+#define CR95HF_FIELD_OFF                   0x00   /* Field OFF */
+#define CR95HF_PROTOCOL_ISO_15693          0x01   /* ISO/IEC 15693 */
+#define CR95HF_PROTOCOL_ISO_14443_A        0x02   /* ISO/IEC 14443-A */
+#define CR95HF_PROTOCOL_ISO_14443_B        0x03   /* ISO/IEC 14443-B */
+#define CR95HF_PROTOCOL_ISO_18092_NFC      0x04   /* ISO/IEC 18092 /NFC */
+
+#define CR95HF_ISO_14443_106_KBPS       0x00   /* 106 Kbps */
+#define CR95HF_ISO_14443_212_KBPS       0x01   /* 212 Kbps (2) */
+#define CR95HF_ISO_14443_424_KBPS       0x02   /* 424 Kbps */
+
+#define CR95HF_CREATE_SELECT_14443_A_ARRAY(transmission_rate, reception_rate) \
+	{ 0, 2, 4, 2, ((transmission_rate & 0x03) << 6) | ((reception_rate & 0x03) << 4), 1, 0x80 }
+
+
+#endif  /* RFID_CR95HF_H */
