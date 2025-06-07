@@ -47,7 +47,7 @@ struct dma_mcux_edma_config {
 };
 
 
-#ifdef CONFIG_HAS_MCUX_CACHE
+#if defined(CONFIG_HAS_MCUX_CACHE) || defined(CONFIG_HAS_MCUX_XCACHE)
 
 #ifdef CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
 
