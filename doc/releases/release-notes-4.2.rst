@@ -239,6 +239,7 @@ New APIs and options
 
   * :c:func:`util_eq`
   * :c:func:`util_memeq`
+  * :c:func:`zephyr_count_bits`
 
 * LoRaWAN
    * :c:func:`lorawan_request_link_check`
