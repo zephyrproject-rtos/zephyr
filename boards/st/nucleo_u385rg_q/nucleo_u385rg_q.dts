@@ -127,3 +127,10 @@
 &rng {
 	status = "okay";
 };
+
+&spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
+		     &spi3_miso_pb4 &spi3_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
