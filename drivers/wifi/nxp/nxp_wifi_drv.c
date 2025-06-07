@@ -1772,14 +1772,23 @@ static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *p
 {
 	wlan_btwt_config_t btwt_config;
 
-	btwt_config.action = 1;
-	btwt_config.sub_id = params->btwt.sub_id;
-	btwt_config.nominal_wake = params->btwt.nominal_wake;
-	btwt_config.max_sta_support = params->btwt.max_sta_support;
-	btwt_config.twt_mantissa = params->btwt.twt_mantissa;
-	btwt_config.twt_offset = params->btwt.twt_offset;
-	btwt_config.twt_exponent = params->btwt.twt_exponent;
-	btwt_config.sp_gap = params->btwt.sp_gap;
+	memset(&btwt_config, 0, sizeof(wlan_btwt_config_t));
+
+	btwt_config.bcast_bet_sta_wait = params->btwt.btwt_sta_wait;
+	btwt_config.bcast_offset = params->btwt.btwt_offset;
+	btwt_config.bcast_twtli = params->btwt.btwt_li;
+	btwt_config.count = params->btwt.btwt_count;
+
+	for (int i = 0; i < btwt_config.count; i++) {
+		btwt_config.btwt_sets[i].btwt_id
+			= params->btwt.btwt_set_cfg[i].btwt_id;
+		btwt_config.btwt_sets[i].bcast_mantissa
+			= params->btwt.btwt_set_cfg[i].btwt_mantissa;
+		btwt_config.btwt_sets[i].bcast_exponent
+			= params->btwt.btwt_set_cfg[i].btwt_exponent;
+		btwt_config.btwt_sets[i].nominal_wake
+			= params->btwt.btwt_set_cfg[i].btwt_nominal_wake;
+	}
 
 	return wlan_set_btwt_cfg(&btwt_config);
 }
