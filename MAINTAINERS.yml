@@ -4382,7 +4382,8 @@ Infineon Platforms:
   maintainers:
     - ifyall
   collaborators:
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
     - talih0
   files:
     - boards/cypress/
@@ -5013,7 +5014,8 @@ West:
     - ifyall
   collaborators:
     - nashif
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
   files:
     - modules/Kconfig.cypress
   labels:
@@ -5062,7 +5064,8 @@ West:
   collaborators:
     - parthitce
     - talih0
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
