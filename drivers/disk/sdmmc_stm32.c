@@ -805,6 +805,8 @@ static int stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv)
 		return 0;
 	}
 
+	/* PINCTRL sleep mode when powered down */
+	pinctrl_apply_state(priv->pcfg, PINCTRL_STATE_SLEEP);
 	gpio_pin_configure_dt(&priv->pe, GPIO_OUTPUT_INACTIVE);
 	return 0;
 }
