@@ -257,6 +257,9 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 				temp[eir[0] - 1] = '\0'; /* Set end flag */
 				printk(", name %s", temp);
 				break;
+			default:
+				/* Skip the EIR */
+				break;
 			}
 			len = len - eir[0] - 1;
 			eir = eir + eir[0] + 1;
