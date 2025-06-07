@@ -1444,7 +1444,7 @@ int bt_le_adv_stop(void)
 	int err;
 
 	if (!adv) {
-		LOG_ERR("No valid legacy adv");
+		LOG_ERR("%s: No valid legacy adv", __func__);
 		return 0;
 	}
 
@@ -1529,7 +1529,7 @@ void bt_le_adv_resume(void)
 	int err;
 
 	if (!adv) {
-		LOG_DBG("No valid legacy adv");
+		LOG_DBG("%s: No valid legacy adv", __func__);
 		return;
 	}
 
@@ -1754,9 +1754,16 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 
 	atomic_clear_bit(adv->flags, BT_ADV_PERSIST);
 
-	if (!atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
-		return 0;
-	}
+	/* Don't return early if BT_ADV_ENABLED is not set, because this bit
+	 * could have been cleared by the BT_HCI_EVT_LE_ADV_SET_TERMINATED
+	 * HCI event. Some BT Controllers will return errors to subsequent HCI
+	 * command modifying advertising parameters if BT_HCI_OP_LE_SET_EXT_ADV_ENABLE
+	 * is not sent to disable advertising after BT_HCI_EVT_LE_ADV_SET_TERMINATED
+	 * is received. Per the BT spec, "Disabling an advertising set that is already
+	 * disabled has no effect", so it should be okay to send the HCI command twice
+	 * in the event that bt_le_ext_adv_stop() is called twice before advertising is
+	 * enabled again.
+	 */
 
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_LIMITED)) {
 		bt_id_adv_limited_stopped(adv);
