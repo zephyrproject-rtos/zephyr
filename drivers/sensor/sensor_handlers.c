@@ -75,7 +75,7 @@ static inline int z_vrfy_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 {
 	K_OOPS(K_SYSCALL_OBJ(iodev, K_OBJ_RTIO_IODEV));
 	K_OOPS(K_SYSCALL_OBJ(sensor, K_OBJ_DRIVER_SENSOR));
-	K_OOPS(K_SYSCALL_MEMORY_READ(channels, sizeof(enum sensor_channel) * num_channels));
+	K_OOPS(K_SYSCALL_MEMORY_READ(channels, sizeof(struct sensor_chan_spec) * num_channels));
 	return z_impl_sensor_reconfigure_read_iodev(iodev, sensor, channels, num_channels);
 }
 #include <zephyr/syscalls/sensor_reconfigure_read_iodev_mrsh.c>
