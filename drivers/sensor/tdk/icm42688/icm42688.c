@@ -45,32 +45,44 @@ int icm42688_channel_parse_readings(enum sensor_channel chan, int16_t readings[7
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		icm42688_convert_accel(&val[0], readings[1], cfg);
-		icm42688_convert_accel(&val[1], readings[2], cfg);
-		icm42688_convert_accel(&val[2], readings[3], cfg);
+		icm42688_convert_accel(&val[0],
+			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 1], cfg);
+		icm42688_convert_accel(&val[1],
+			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 1], cfg);
+		icm42688_convert_accel(&val[2],
+			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 1], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_X:
-		icm42688_convert_accel(val, readings[1], cfg);
+		icm42688_convert_accel(val,
+			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 1], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		icm42688_convert_accel(val, readings[2], cfg);
+		icm42688_convert_accel(val,
+			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 1], cfg);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		icm42688_convert_accel(val, readings[3], cfg);
+		icm42688_convert_accel(val,
+			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 1], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		icm42688_convert_gyro(&val[0], readings[4], cfg);
-		icm42688_convert_gyro(&val[1], readings[5], cfg);
-		icm42688_convert_gyro(&val[2], readings[6], cfg);
+		icm42688_convert_gyro(&val[0],
+			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 4], cfg);
+		icm42688_convert_gyro(&val[1],
+			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 4], cfg);
+		icm42688_convert_gyro(&val[2],
+			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 4], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_X:
-		icm42688_convert_gyro(val, readings[4], cfg);
+		icm42688_convert_gyro(val,
+			cfg->axis_align[0].sign*readings[cfg->axis_align[0].index + 4], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_Y:
-		icm42688_convert_gyro(val, readings[5], cfg);
+		icm42688_convert_gyro(val,
+			cfg->axis_align[1].sign*readings[cfg->axis_align[1].index + 4], cfg);
 		break;
 	case SENSOR_CHAN_GYRO_Z:
-		icm42688_convert_gyro(val, readings[6], cfg);
+		icm42688_convert_gyro(val,
+			cfg->axis_align[2].sign*readings[cfg->axis_align[2].index + 4], cfg);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		icm42688_convert_temp(val, readings[0]);
@@ -102,7 +114,7 @@ static int icm42688_sample_fetch(const struct device *dev, enum sensor_channel c
 		return res;
 	}
 
-	if (!FIELD_GET(BIT_INT_STATUS_DATA_RDY, status)) {
+	if (!FIELD_GET(BIT_DATA_RDY_INT, status)) {
 		return -EBUSY;
 	}
 
@@ -327,23 +339,29 @@ void icm42688_unlock(const struct device *dev)
 	SPI_DT_IODEV_DEFINE(icm42688_spi_iodev_##inst, DT_DRV_INST(inst), ICM42688_SPI_CFG, 0U);   \
 	RTIO_DEFINE(icm42688_rtio_##inst, 8, 4);
 
-#define ICM42688_DT_CONFIG_INIT(inst)					\
-	{								\
-		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),	\
-		.accel_fs = DT_INST_PROP(inst, accel_fs),		\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),		\
-		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),	\
-		.gyro_fs = DT_INST_PROP(inst, gyro_fs),			\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),		\
-		.temp_dis = false,					\
-		.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM),		\
-		.batch_ticks = 0,					\
-		.fifo_hires = false,					\
-		.interrupt1_drdy = false,				\
-		.interrupt1_fifo_ths = false,				\
-		.interrupt1_fifo_full = false,				\
-		.pin9_function = ICM42688_PIN9_FUNCTION_INT2,		\
-		.rtc_freq = 32000					\
+#define ICM42688_DT_CONFIG_INIT(inst)						\
+	{									\
+		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),		\
+		.accel_fs = DT_INST_PROP(inst, accel_fs),			\
+		.accel_odr = DT_INST_PROP(inst, accel_odr),			\
+		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),		\
+		.gyro_fs = DT_INST_PROP(inst, gyro_fs),				\
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
+		.temp_dis = false,						\
+		.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM),			\
+		.batch_ticks = 0,						\
+		.fifo_hires = DT_INST_PROP(inst, fifo_hires),			\
+		.interrupt1_drdy = false,					\
+		.interrupt1_fifo_ths = false,					\
+		.interrupt1_fifo_full = false,					\
+		.pin9_function = ICM42688_PIN9_FUNCTION_INT2,			\
+		.rtc_freq = 32000,						\
+		.axis_align[0].index = DT_INST_PROP(inst, axis_align_x),	\
+		.axis_align[1].index = DT_INST_PROP(inst, axis_align_y),	\
+		.axis_align[2].index = DT_INST_PROP(inst, axis_align_z),	\
+		.axis_align[0].sign = DT_INST_PROP(inst, axis_align_x_sign)-1,	\
+		.axis_align[1].sign = DT_INST_PROP(inst, axis_align_y_sign)-1,	\
+		.axis_align[2].sign = DT_INST_PROP(inst, axis_align_z_sign)-1	\
 	}
 
 #define ICM42688_DEFINE_DATA(inst)                                                                 \
