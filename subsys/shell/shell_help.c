@@ -38,6 +38,7 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 
 	while (true) {
 		size_t idx = 0;
+		bool newline_found = false;
 
 		length = z_shell_strlen(str) - offset;
 
@@ -51,8 +52,14 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 					z_cursor_next_line_move(sh);
 					z_shell_op_cursor_horiz_move(sh,
 							terminal_offset);
+					newline_found = true;
 					break;
 				}
+			}
+
+			/* If we found a newline, continue processing the remaining text */
+			if (newline_found) {
+				continue;
 			}
 
 			/* String will fit in one line. */
@@ -106,6 +113,22 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 	z_cursor_next_line_move(sh);
 }
 
+static void formatted_structured_help_print(const struct shell *sh, const char *item_name,
+					    const char *item_help, size_t terminal_offset)
+{
+	const struct shell_cmd_help *structured = (const struct shell_cmd_help *)item_help;
+
+	if (structured->description) {
+		formatted_text_print(sh, structured->description, terminal_offset, false);
+	}
+
+	if (structured->usage) {
+		z_shell_op_cursor_horiz_move(sh, terminal_offset);
+		z_shell_fprintf(sh, SHELL_NORMAL, "Usage: %s ", item_name);
+		formatted_text_print(sh, structured->usage, terminal_offset + 7, false);
+	}
+}
+
 static void help_item_print(const struct shell *sh, const char *item_name,
 			    uint16_t item_name_width, const char *item_help)
 {
@@ -143,7 +166,11 @@ static void help_item_print(const struct shell *sh, const char *item_name,
 		z_shell_fprintf(sh, SHELL_NORMAL, "%s: ", tabulator);
 	}
 	/* print option help */
-	formatted_text_print(sh, item_help, offset, false);
+	if (shell_help_is_structured(item_help)) {
+		formatted_structured_help_print(sh, item_name, item_help, offset);
+	} else {
+		formatted_text_print(sh, item_help, offset, false);
+	}
 }
 
 /* Function prints all subcommands of the parent command together with their
@@ -190,7 +217,11 @@ void z_shell_help_cmd_print(const struct shell *sh,
 
 	z_shell_fprintf(sh, SHELL_NORMAL, "%s%s", cmd->syntax, cmd_sep);
 
-	formatted_text_print(sh, cmd->help, field_width, false);
+	if (shell_help_is_structured(cmd->help)) {
+		formatted_structured_help_print(sh, cmd->syntax, cmd->help, field_width);
+	} else {
+		formatted_text_print(sh, cmd->help, field_width, false);
+	}
 }
 
 bool z_shell_help_request(const char *str)
