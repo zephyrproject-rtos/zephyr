@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(soc);
 #define SY1XX_ARCHI_ITC_ACK_SET_OFFSET    0x1c
 #define SY1XX_ARCHI_ITC_ACK_CLR_OFFSET    0x20
 #define SY1XX_ARCHI_ITC_FIFO_OFFSET       0x24
+#define SY1XX_ARCHI_ITC_IRQ_MASK          0x1f
 
 void sys_arch_reboot(int type)
 {
@@ -51,17 +52,13 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags)
 
 void soc_enable_irq(uint32_t idx)
 {
-	uint32_t current = sys_read32(SY1XX_ARCHI_FC_ITC_ADDR + SY1XX_ARCHI_ITC_MASK_SET_OFFSET);
-
-	sys_write32(current | (1 << (idx & 0x1f)),
+	sys_write32(BIT(idx & SY1XX_ARCHI_ITC_IRQ_MASK),
 		    SY1XX_ARCHI_FC_ITC_ADDR + SY1XX_ARCHI_ITC_MASK_SET_OFFSET);
 }
 
 void soc_disable_irq(uint32_t idx)
 {
-	uint32_t current = sys_read32(SY1XX_ARCHI_FC_ITC_ADDR + SY1XX_ARCHI_ITC_MASK_CLR_OFFSET);
-
-	sys_write32(current & (~(1 << (idx & 0x1f))),
+	sys_write32(BIT(idx & SY1XX_ARCHI_ITC_IRQ_MASK),
 		    SY1XX_ARCHI_FC_ITC_ADDR + SY1XX_ARCHI_ITC_MASK_CLR_OFFSET);
 }
 
