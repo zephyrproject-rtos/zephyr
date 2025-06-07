@@ -608,6 +608,9 @@ Video
   ``video_stream_start``
   ``video_stream_stop``
 
+* Samples and projects using the :ref:`native simulator <native_sim>` now require specifying the
+  ``--snippet`` :ref:`video-sw-generator <snippet-video-sw-generator>` to build correctly.
+
 Audio
 =====
 

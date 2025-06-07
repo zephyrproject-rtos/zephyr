@@ -14,6 +14,14 @@
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
+#if !DT_HAS_CHOSEN(zephyr_camera)
+#error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
+#endif
+
+#if !DT_HAS_CHOSEN(zephyr_display)
+#error No display chosen in devicetree. Missing "--shield" flag?
+#endif
+
 int main(void)
 {
 	struct video_buffer *buffers[2];
