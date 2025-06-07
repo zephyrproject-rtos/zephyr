@@ -6,11 +6,11 @@ import os
 import uuid
 
 from west.commands import WestCommand
-
 from zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery
+from zspdx.version import SPDX_VERSION_2_3, SUPPORTED_SPDX_VERSIONS, parse
 
 SPDX_DESCRIPTION = """\
-This command creates an SPDX 2.2 tag-value bill of materials
+This command creates an SPDX 2.2 or 2.3 tag-value bill of materials
 following the completion of a Zephyr build.
 
 Prior to the build, an empty file must be created at
@@ -41,6 +41,9 @@ class ZephyrSpdx(WestCommand):
                 help="namespace prefix")
         parser.add_argument('-s', '--spdx-dir',
                 help="SPDX output directory")
+        parser.add_argument('--spdx-version', choices=[str(v) for v in SUPPORTED_SPDX_VERSIONS],
+                default=str(SPDX_VERSION_2_3),
+                help="SPDX specification version to use (default: 2.3)")
         parser.add_argument('--analyze-includes', action="store_true",
                 help="also analyze included header files")
         parser.add_argument('--include-sdk', action="store_true",
@@ -49,14 +52,15 @@ class ZephyrSpdx(WestCommand):
         return parser
 
     def do_run(self, args, unknown_args):
-        self.dbg(f"running zephyr SPDX generator")
+        self.dbg("running zephyr SPDX generator")
 
-        self.dbg(f"  --init is", args.init)
-        self.dbg(f"  --build-dir is", args.build_dir)
-        self.dbg(f"  --namespace-prefix is", args.namespace_prefix)
-        self.dbg(f"  --spdx-dir is", args.spdx_dir)
-        self.dbg(f"  --analyze-includes is", args.analyze_includes)
-        self.dbg(f"  --include-sdk is", args.include_sdk)
+        self.dbg("  --init is", args.init)
+        self.dbg("  --build-dir is", args.build_dir)
+        self.dbg("  --namespace-prefix is", args.namespace_prefix)
+        self.dbg("  --spdx-dir is", args.spdx_dir)
+        self.dbg("  --spdx-version is", args.spdx_version)
+        self.dbg("  --analyze-includes is", args.analyze_includes)
+        self.dbg("  --include-sdk is", args.include_sdk)
 
         if args.init:
             self.do_run_init(args)
@@ -85,6 +89,11 @@ class ZephyrSpdx(WestCommand):
         # create the SPDX files
         cfg = SBOMConfig()
         cfg.buildDir = args.build_dir
+        try:
+            version_obj = parse(args.spdx_version)
+        except Exception:
+            self.die(f"Invalid SPDX version: {args.spdx_version}")
+        cfg.spdxVersion = version_obj
         if args.namespace_prefix:
             cfg.namespacePrefix = args.namespace_prefix
         else:
