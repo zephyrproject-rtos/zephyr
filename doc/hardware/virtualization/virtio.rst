@@ -123,6 +123,18 @@ virtqueue has to be acquired using :c:func:`virtio_get_virtqueue`. To send data 
 will be invoked once the device returns the given descriptor chain. After that, the virtqueue has to be notified using
 :c:func:`virtio_notify_virtqueue` from the Virtio API.
 
+Guest-side Virtio drivers
+*************************
+Currently Zephyr provides a driver only for Virtio over PCI and a driver for one device using virtio - virtio-fs, used
+to access the filesystem of the host.
+
+Virtio samples
+**************
+A sample showcasing the use of a driver relying on Virtio is provided in :zephyr:code-sample:`virtiofs`. If you wish
+to check code interfacing directly with the Virtio driver, you can check the virtiofs driver, especially :c:func:`virtiofs_init`
+for initialization and :c:func:`virtiofs_send_receive` with the :c:func:`virtiofs_recv_cb` for data transfer to/from
+the Virtio device.
+
 API Reference
 *************
 
