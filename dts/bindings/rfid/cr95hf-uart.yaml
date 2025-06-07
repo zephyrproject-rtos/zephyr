@@ -1,0 +1,7 @@
+# Copyright 2025 Conny Marco Menebröcker
+# SPDX-License-Identifier: Apache-2.0
+description: ST CR95HF RFID driver
+
+compatible: "st,cr95hf"
+
+on-bus: uart

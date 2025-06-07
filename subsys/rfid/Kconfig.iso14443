@@ -1,0 +1,135 @@
+# RFID ISO14443 configuration options
+
+# Copyright (c) 2023 Basalte bv
+# Copyright (c) 2025 Conny Marco Menebröcker
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RFID_ISO14443
+	bool "RFID ISO/IEC 14443"
+	select EXPERIMENTAL
+	help
+	  Configuration options for ISO/IEC 14443.
+
+if RFID_ISO14443
+
+module = RFID_ISO14443
+module-str = RFID_ISO14443
+source "subsys/logging/Kconfig.template.log_config"
+
+config RFID_ISO14443A
+	bool "RFID ISO/IEC 14443 Type A"
+	default y
+	help
+	  Enable ISO/IEC 14443 Type A support for RFID.
+
+choice RFID_ISO14443_FSC
+	prompt "Type 4A Tag Maximum Frame Size in Listen Mode"
+	default RFID_ISO14443_FSC_32
+	help
+	  The FSC defines the maximum size of a frame accepted
+	  by the RFID Forum Device in Listen Mode. FSC is expressed
+	  in number of data bytes included in the frame.
+
+config RFID_ISO14443_FSC_16
+	bool "FSC 16"
+config RFID_ISO14443_FSC_24
+	bool "FSC 24"
+config RFID_ISO14443_FSC_32
+	bool "FSC 32"
+config RFID_ISO14443_FSC_40
+	bool "FSC 40"
+config RFID_ISO14443_FSC_48
+	bool "FSC 48"
+config RFID_ISO14443_FSC_64
+	bool "FSC 64"
+config RFID_ISO14443_FSC_96
+	bool "FSC 96"
+config RFID_ISO14443_FSC_128
+	bool "FSC 128"
+config RFID_ISO14443_FSC_256
+	bool "FSC 256"
+
+endchoice # RFID_ISO14443_FSC
+
+config RFID_ISO14443_FSC_MAX
+	int
+	default 16 if RFID_ISO14443_FSC_16
+	default 24 if RFID_ISO14443_FSC_24
+	default 32 if RFID_ISO14443_FSC_32
+	default 40 if RFID_ISO14443_FSC_40
+	default 48 if RFID_ISO14443_FSC_48
+	default 64 if RFID_ISO14443_FSC_64
+	default 96 if RFID_ISO14443_FSC_96
+	default 128 if RFID_ISO14443_FSC_128
+	default 256 if RFID_ISO14443_FSC_256
+
+config RFID_ISO14443_FSCI
+	hex
+	default 0x00 if RFID_ISO14443_FSC_16
+	default 0x01 if RFID_ISO14443_FSC_24
+	default 0x02 if RFID_ISO14443_FSC_32
+	default 0x03 if RFID_ISO14443_FSC_40
+	default 0x04 if RFID_ISO14443_FSC_48
+	default 0x05 if RFID_ISO14443_FSC_64
+	default 0x06 if RFID_ISO14443_FSC_96
+	default 0x07 if RFID_ISO14443_FSC_128
+	default 0x08 if RFID_ISO14443_FSC_256
+	help
+	  Frame Size for proximity Card Integer in Listen Mode
+
+choice RFID_ISO14443_FSD
+	prompt "Type 4A Tag Maximum Frame Size in Poll Mode"
+	default RFID_ISO14443_FSD_24
+	help
+	  The FSD defines the maximum size of a frame that the RFID Forum Device
+	  in Poll Mode is able to receive. FSD is expressed in number of data bytes
+	  included in the frame.
+
+config RFID_ISO14443_FSD_16
+	bool "FSC 16"
+config RFID_ISO14443_FSD_24
+	bool "FSC 24"
+config RFID_ISO14443_FSD_32
+	bool "FSC 32"
+config RFID_ISO14443_FSD_40
+	bool "FSC 40"
+config RFID_ISO14443_FSD_48
+	bool "FSC 48"
+config RFID_ISO14443_FSD_64
+	bool "FSC 64"
+config RFID_ISO14443_FSD_96
+	bool "FSC 96"
+config RFID_ISO14443_FSD_128
+	bool "FSC 128"
+config RFID_ISO14443_FSD_256
+	bool "FSC 256"
+
+endchoice # RFID_ISO14443_FSD
+
+config RFID_ISO14443_FSD_MAX
+	int
+	default 16 if RFID_ISO14443_FSD_16
+	default 24 if RFID_ISO14443_FSD_24
+	default 32 if RFID_ISO14443_FSD_32
+	default 40 if RFID_ISO14443_FSD_40
+	default 48 if RFID_ISO14443_FSD_48
+	default 64 if RFID_ISO14443_FSD_64
+	default 96 if RFID_ISO14443_FSD_96
+	default 128 if RFID_ISO14443_FSD_128
+	default 256 if RFID_ISO14443_FSD_256
+
+config RFID_ISO14443_FSDI
+	hex
+	default 0x00 if RFID_ISO14443_FSD_16
+	default 0x10 if RFID_ISO14443_FSD_24
+	default 0x20 if RFID_ISO14443_FSD_32
+	default 0x30 if RFID_ISO14443_FSD_40
+	default 0x40 if RFID_ISO14443_FSD_48
+	default 0x50 if RFID_ISO14443_FSD_64
+	default 0x60 if RFID_ISO14443_FSD_96
+	default 0x70 if RFID_ISO14443_FSD_128
+	default 0x80 if RFID_ISO14443_FSD_256
+	help
+	  Frame Size for proximity Card Integer in Poll Mode
+
+endif # RFID_ISO14443
