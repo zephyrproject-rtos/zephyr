@@ -1,0 +1,10 @@
+# Copyright 2025 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_BQ2562X
+	bool "BQ2562X Battery Charger"
+	default y
+	depends on DT_HAS_TI_BQ2562X_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for the TI BQ2562X Battery Charger.
