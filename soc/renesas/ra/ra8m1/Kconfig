@@ -16,5 +16,6 @@ config SOC_SERIES_RA8M1
 	select SOC_EARLY_INIT_HOOK
 	select GPIO_RA_HAS_VBTICTLR
 	select HAS_PM
+	select ETH_RENESAS_RA_SUPPORT_SECURE if ETH_RENESAS_RA
 	help
 	  Enable support for Renesas RA8M1 MCU series
