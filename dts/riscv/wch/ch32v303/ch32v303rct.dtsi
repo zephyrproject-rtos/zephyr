@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Bootlin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v303/ch32v303rbt.dtsi>
