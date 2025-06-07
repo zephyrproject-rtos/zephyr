@@ -8,7 +8,11 @@ check_set_linker_property(TARGET linker PROPERTY base
 )
 
 if(NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
-  set_property(TARGET linker PROPERTY cpp_base -lstdc++)
+  if (CONFIG_XTENSA_LIBC)
+    set_property(TARGET linker PROPERTY cpp_base -lstdc++11)
+  else()
+    set_property(TARGET linker PROPERTY cpp_base -lstdc++)
+  endif()
 endif()
 
 check_set_linker_property(TARGET linker PROPERTY baremetal
