@@ -110,6 +110,7 @@ endchoice
 
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
+	depends on BT_DRV_RX_SUPPORT || BT_RECV_WORKQ_BT
 	default 768 if BT_HCI_RAW
 	default 3092 if BT_MESH_GATT_CLIENT
 	default 2600 if BT_MESH
@@ -126,11 +127,13 @@ config BT_RX_STACK_SIZE
 config BT_RX_PRIO
 	# Hidden option for Co-Operative Rx thread priority
 	int
+	depends on BT_DRV_RX_SUPPORT || BT_RECV_WORKQ_BT
 	default 8
 
-config BT_DRIVER_RX_HIGH_PRIO
-	# Hidden option for Co-Operative HCI driver RX thread priority
+config BT_RX_HIGH_PRIO
+	# Hidden option for Co-Operative HCI driver High Priority Rx thread priority
 	int
+	depends on BT_DRV_RX_HIGH_PRIO_SUPPORT
 	default 6
 
 config BT_CONN_TX_NOTIFY_WQ

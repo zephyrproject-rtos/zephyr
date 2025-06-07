@@ -13,6 +13,7 @@ config BT_UART
 config BT_H4
 	bool "H:4 UART"
 	select BT_UART
+	select BT_DRV_RX_SUPPORT
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_UART_ENABLED
 	help
@@ -22,6 +23,7 @@ config BT_H4
 config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
 	select BT_UART
+	select BT_DRV_RX_SUPPORT
 	select EXPERIMENTAL
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_3WIRE_UART_ENABLED
@@ -69,6 +71,7 @@ config BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS
 config BT_SPI
 	bool
 	select SPI
+	select BT_DRV_RX_SUPPORT
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers,
@@ -121,6 +124,7 @@ config BT_STM32_IPM
 	bool
 	default y
 	depends on DT_HAS_ST_STM32WB_RF_ENABLED
+	select BT_DRV_RX_SUPPORT
 	select USE_STM32_HAL_CORTEX
 	select HAS_STM32LIB
 	select BT_HCI_SETUP
@@ -266,6 +270,7 @@ config BT_AMBIQ_HCI
 	default y
 	depends on DT_HAS_AMBIQ_BT_HCI_SPI_ENABLED
 	select SPI
+	select BT_DRV_RX_SUPPORT
 	select GPIO if SOC_SERIES_APOLLO4X
 	select CLOCK_CONTROL if SOC_SERIES_APOLLO4X
 	select BT_HCI_SETUP
@@ -345,12 +350,20 @@ config BT_HCI_SETUP
 
 config BT_DRV_TX_STACK_SIZE
 	int
+	depends on BT_H5
 	default 256
 	help
 	  Stack size for the HCI driver's TX thread.
 
+config BT_DRV_RX_SUPPORT
+	bool
+
+config BT_DRV_RX_HIGH_PRIO_SUPPORT
+	bool
+
 config BT_DRV_RX_STACK_SIZE
 	int
+	depends on BT_DRV_RX_SUPPORT
 	default 640 if (BT_SPI || BT_AMBIQ_HCI)
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
