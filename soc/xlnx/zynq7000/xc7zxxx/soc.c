@@ -39,6 +39,12 @@ static const struct arm_mmu_region mmu_regions[] = {
 	/* ARM Arch timer, GIC are covered by the MPCore mapping */
 
 /* GEMs */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem1))
+	MMU_REGION_FLAT_ENTRY("slcr",
+			      0xF8000000,
+			      0x1000,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem0))
 	MMU_REGION_FLAT_ENTRY("gem0",
 			      DT_REG_ADDR(DT_NODELABEL(gem0)),
