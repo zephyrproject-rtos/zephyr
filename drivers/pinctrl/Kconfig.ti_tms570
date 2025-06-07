@@ -1,0 +1,9 @@
+# Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_TI_TMS570
+	bool "TI TMS570 pinctrl driver"
+	default y
+	depends on DT_HAS_TI_TMS570_PINMUX_ENABLED
+	help
+	  Enable the TI TMS570 pinmux driver

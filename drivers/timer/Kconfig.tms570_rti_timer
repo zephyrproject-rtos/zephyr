@@ -1,0 +1,11 @@
+# Copyright (C) 2025 ispace, inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TMS570_RTI_TIMER
+	bool "TI TMS570 RTI Timer"
+	default y
+	depends on SOC_TI_TMS570LC43X
+	help
+	  This module implements a kernel device driver for the TI TMS570 RTI
+	  timer.

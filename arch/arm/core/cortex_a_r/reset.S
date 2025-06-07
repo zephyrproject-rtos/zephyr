@@ -331,4 +331,5 @@ _primary_core:
 
     bl z_arm_relocate_vector_table
 
+    ldr r4, =z_prep_c
     bx r4
