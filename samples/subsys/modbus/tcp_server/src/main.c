@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
  * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Petr Vilím
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -264,6 +265,7 @@ static int modbus_tcp_connection(int client)
 int main(void)
 {
 	int serv;
+	int enable;
 	struct sockaddr_in bind_addr;
 	static int counter;
 
@@ -283,6 +285,10 @@ int main(void)
 		LOG_ERR("error: socket: %d", errno);
 		return 0;
 	}
+
+	enable = 1;
+
+	setsockopt(serv, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
