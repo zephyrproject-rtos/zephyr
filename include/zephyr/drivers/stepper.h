@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
- * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -71,21 +71,9 @@ enum stepper_micro_step_resolution {
  */
 enum stepper_direction {
 	/** Negative direction */
-	STEPPER_DIRECTION_NEGATIVE = 0,
+	STEPPER_DIRECTION_NEGATIVE = -1,
 	/** Positive direction */
 	STEPPER_DIRECTION_POSITIVE = 1,
-};
-
-/**
- * @brief Stepper Motor run mode options
- */
-enum stepper_run_mode {
-	/** Hold Mode */
-	STEPPER_RUN_MODE_HOLD = 0,
-	/** Position Mode*/
-	STEPPER_RUN_MODE_POSITION = 1,
-	/** Velocity Mode */
-	STEPPER_RUN_MODE_VELOCITY = 2,
 };
 
 /**
@@ -104,6 +92,42 @@ enum stepper_event {
 	STEPPER_EVENT_STOPPED = 4,
 	/** Fault with the stepper controller detected */
 	STEPPER_EVENT_FAULT_DETECTED = 5,
+};
+
+enum stepper_ramp_type {
+	STEPPER_RAMP_TYPE_SQUARE,
+	STEPPER_RAMP_TYPE_TRAPEZOIDAL,
+};
+
+struct stepper_ramp_square_profile {
+	uint64_t interval_ns;
+};
+
+struct stepper_ramp_trapezoidal_profile {
+
+	/**
+	 * Interval in nanoseconds which should be reached after acceleration
+	 * and used in the constant speed phase (target speed).
+	 */
+	uint64_t interval_ns;
+
+	/**
+	 * Acceleration rate in steps/s/s to be used during the acceleration phase.
+	 */
+	uint32_t acceleration_rate;
+
+	/**
+	 * Deceleration rate in steps/s/s to be used during the deceleration phase.
+	 */
+	uint32_t deceleration_rate;
+};
+
+struct stepper_ramp_profile {
+	enum stepper_ramp_type type;
+	union {
+		struct stepper_ramp_square_profile square;
+		struct stepper_ramp_trapezoidal_profile trapezoidal;
+	};
 };
 
 /**
@@ -169,13 +193,14 @@ typedef void (*stepper_event_callback_t)(const struct device *dev, const enum st
  */
 typedef int (*stepper_set_event_callback_t)(const struct device *dev,
 					    stepper_event_callback_t callback, void *user_data);
+
 /**
- * @brief Set the time interval between steps in nanoseconds.
+ * @brief Set the ramp to be used for the stepper
  *
- * @see stepper_set_microstep_interval() for details.
+ * @see stepper_set_ramp() for details.
  */
-typedef int (*stepper_set_microstep_interval_t)(const struct device *dev,
-						const uint64_t microstep_interval_ns);
+typedef int (*stepper_set_ramp_t)(const struct device *dev, const struct stepper_ramp_profile *ramp);
+
 /**
  * @brief Move the stepper relatively by a given number of micro-steps.
  *
@@ -222,7 +247,7 @@ __subsystem struct stepper_driver_api {
 	stepper_set_reference_position_t set_reference_position;
 	stepper_get_actual_position_t get_actual_position;
 	stepper_set_event_callback_t set_event_callback;
-	stepper_set_microstep_interval_t set_microstep_interval;
+	stepper_set_ramp_t set_ramp;
 	stepper_move_by_t move_by;
 	stepper_move_to_t move_to;
 	stepper_run_t run;
@@ -393,31 +418,27 @@ static inline int z_impl_stepper_set_event_callback(const struct device *dev,
 }
 
 /**
- * @brief Set the time interval between steps in nanoseconds with immediate effect.
+ * @brief Set the motion ramp for the stepper
  *
- * @note Setting step interval does not set the stepper into motion, a combination of
- * set_microstep_interval and move is required to set the stepper into motion.
+ * @details Configures the acceleration and deceleration profile used when moving the stepper motor.
+ * The ramp defines how the stepper speeds up and decelerates, allowing for smooth motion control.
  *
- * @param dev pointer to the stepper driver instance
- * @param microstep_interval_ns time interval between steps in nanoseconds
+ * @param dev Pointer to the stepper driver instance
+ * @param ramp Pointer to ramp configuration structure
  *
- * @retval -EIO General input / output error
- * @retval -EINVAL If the requested step interval is not supported
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
+ * @retval -errno Other negative errno codes depending on implementation
  */
-__syscall int stepper_set_microstep_interval(const struct device *dev,
-					     uint64_t microstep_interval_ns);
+__syscall int stepper_set_ramp(const struct device *dev, struct stepper_ramp_profile *ramp);
 
-static inline int z_impl_stepper_set_microstep_interval(const struct device *dev,
-							const uint64_t microstep_interval_ns)
+static inline int z_impl_stepper_set_ramp(const struct device *dev, struct stepper_ramp_profile *ramp)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
-
-	if (api->set_microstep_interval == NULL) {
+	if (api->set_ramp == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_microstep_interval(dev, microstep_interval_ns);
+	return api->set_ramp(dev, ramp);
 }
 
 /**
