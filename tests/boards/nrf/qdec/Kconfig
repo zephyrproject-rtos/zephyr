@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SECOND_QDEC_INSTANCE
+	bool "Enable second !DEC instance"
+
+source "Kconfig.zephyr"
