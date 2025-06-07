@@ -14,9 +14,14 @@
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
-		zephyr,sram = &sram0;
+		zephyr,sram = &nsram;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
+	};
+
+	/* Zephyr RAM is set to SRAM3 region */
+	nsram: memory@20040000 {
+		reg = <0x20040000 DT_SIZE_K(512)>;
 	};
 
 	aliases {
