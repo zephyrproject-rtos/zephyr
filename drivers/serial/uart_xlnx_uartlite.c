@@ -375,14 +375,16 @@ static DEVICE_API(uart, xlnx_uartlite_driver_api) = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define XLNX_UARTLITE_IRQ_INIT(n, i)					\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, i),			\
-			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
-			    xlnx_uartlite_isr,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-									\
-		irq_enable(DT_INST_IRQN_BY_IDX(n, i));			\
+#define XLNX_UARTLITE_IRQ_INIT(n, i)						\
+	do {									\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, i),				\
+			DT_INST_IRQ_BY_IDX(n, i, priority),			\
+			xlnx_uartlite_isr, DEVICE_DT_INST_GET(n),		\
+			COND_CODE_1(DT_INST_IRQ_HAS_CELL_AT_IDX(n, i, flags),	\
+				(DT_INST_IRQ_BY_IDX(n, i, flags)),		\
+				(0)));						\
+										\
+		irq_enable(DT_INST_IRQN_BY_IDX(n, i));				\
 	} while (false)
 #define XLNX_UARTLITE_CONFIG_FUNC(n)					\
 	static void xlnx_uartlite_config_func_##n(const struct device *dev) \
