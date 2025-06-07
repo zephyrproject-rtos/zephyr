@@ -26,7 +26,6 @@
 struct clock_control_nrf_auxpll_config {
 	NRF_AUXPLL_Type *auxpll;
 	uint32_t ref_clk_hz;
-	uint32_t ficr_ctune;
 	nrf_auxpll_config_t cfg;
 	uint16_t frequency;
 	nrf_auxpll_ctrl_outsel_t out_div;
@@ -113,7 +112,6 @@ static int clock_control_nrf_auxpll_init(const struct device *dev)
 	nrf_auxpll_ctrl_frequency_set(config->auxpll, config->frequency);
 
 	nrf_auxpll_lock(config->auxpll);
-	nrf_auxpll_trim_ctune_set(config->auxpll, sys_read8(config->ficr_ctune));
 	nrf_auxpll_config_set(config->auxpll, &config->cfg);
 	nrf_auxpll_ctrl_outsel_set(config->auxpll, config->out_div);
 	nrf_auxpll_unlock(config->auxpll);
@@ -127,8 +125,6 @@ static int clock_control_nrf_auxpll_init(const struct device *dev)
 	static const struct clock_control_nrf_auxpll_config config##n = {                          \
 		.auxpll = (NRF_AUXPLL_Type *)DT_INST_REG_ADDR(n),                                  \
 		.ref_clk_hz = DT_PROP(DT_INST_CLOCKS_CTLR(n), clock_frequency),                    \
-		.ficr_ctune = DT_REG_ADDR(DT_INST_PHANDLE(n, nordic_ficrs)) +                      \
-			      DT_INST_PHA(n, nordic_ficrs, offset),                                \
 		.cfg =                                                                             \
 			{                                                                          \
 				.outdrive = DT_INST_PROP(n, nordic_out_drive),                     \

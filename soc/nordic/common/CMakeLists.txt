@@ -38,3 +38,7 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_NRF_SYS_EVENT nrf_sys_event.c)
 zephyr_library_sources_ifdef(CONFIG_MRAM_LATENCY mram_latency.c)
+
+if((CONFIG_SOC_SERIES_NRF54HX OR CONFIG_SOC_SERIES_NRF92X) AND CONFIG_ARM)
+  zephyr_library_sources(nrf54hx_nrf92x_trim.c)
+endif()

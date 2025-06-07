@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic MEMCONF (Memory Configuration Registers)
+
+compatible: "nordic,nrf-memconf"
+
+include:
+  - base.yaml
+  - nordic-nrf-ficr-client.yaml
+
+properties:
+  reg:
+    required: true
+
+  nordic,ficrs:
+    required: true
