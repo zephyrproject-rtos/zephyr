@@ -122,4 +122,12 @@ config PHY_VERIFY_DEVICE_IDENTIFICATION
 	  Verify the organizationally unique identifier that is reported
 	  by the phy chip.
 
+config PHY_INTEL_IGC
+	bool "Intel IGC PHY driver"
+	default y
+	depends on DT_HAS_INTEL_IGC_PHY_ENABLED
+	depends on MDIO_INTEL_IGC
+	help
+	  Enable Intel IGC PHY driver.
+
 endif # "Ethernet PHY Drivers"
