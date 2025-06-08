@@ -181,11 +181,15 @@ int main(void)
 
 	/* Get supported controls */
 	LOG_INF("- Supported controls:");
+	const struct device *last_dev = NULL;
+	struct video_ctrl_query cq = {.dev = video_dev, .id = VIDEO_CTRL_FLAG_NEXT_CTRL};
 
-	struct video_ctrl_query cq = {.id = VIDEO_CTRL_FLAG_NEXT_CTRL};
-
-	while (!video_query_ctrl(video_dev, &cq)) {
-		video_print_ctrl(video_dev, &cq);
+	while (!video_query_ctrl(&cq)) {
+		if (cq.dev != last_dev) {
+			last_dev = cq.dev;
+			LOG_INF("\t\tdevice: %s", cq.dev->name);
+		}
+		video_print_ctrl(&cq);
 		cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
 	}
 
