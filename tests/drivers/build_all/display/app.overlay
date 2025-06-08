@@ -526,6 +526,18 @@
 				reset-delay = <280>;
 			};
 
+			test_st7565r: st7565r@2 {
+				compatible = "sitronix,st7565r";
+				reg = <2>;
+				spi-max-frequency = <1000000>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-cmd-gpios = <&test_gpio 0 0>;
+				width = <128>;
+				height = <64>;
+				lcd-bias = <9>;
+				com-invdir;
+			};
+
 			test_ls0xx: ls0xx@7 {
 				compatible = "sharp,ls0xx";
 				spi-max-frequency = <2000000>;
