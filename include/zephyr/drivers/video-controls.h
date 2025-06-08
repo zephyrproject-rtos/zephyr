@@ -448,6 +448,8 @@ struct video_ctrl_range {
 	};
 };
 
+struct video_device;
+
 /**
  * @struct video_control_query
  * @brief Video control query structure
@@ -470,6 +472,8 @@ struct video_ctrl_query {
 		const char *const *menu;
 		const int64_t *int_menu;
 	};
+	/** current video device of the query */
+	struct video_device *vdev;
 };
 
 /**
