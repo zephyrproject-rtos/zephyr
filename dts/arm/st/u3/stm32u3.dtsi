@@ -12,6 +12,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -237,6 +238,14 @@
 			reg = <0x42028400 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 11)>;
 			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		rng: rng@420c0800 {
+			compatible = "st,stm32-rng";
+			reg = <0x420c0800 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
+			interrupts = <94 0>;
 			status = "disabled";
 		};
 	};
