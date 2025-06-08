@@ -46,6 +46,7 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -94,5 +95,9 @@
 };
 
 &clk_lsi {
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
