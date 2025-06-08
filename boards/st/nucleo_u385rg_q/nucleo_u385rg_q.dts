@@ -105,3 +105,7 @@
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
 };
+
+&rng {
+	status = "okay";
+};
