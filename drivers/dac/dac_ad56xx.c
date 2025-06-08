@@ -295,6 +295,8 @@ static const uint8_t ad5686_channels[] = {
 	2,
 	4,
 	8,
+	3,
+	15,
 };
 #define DAC_AD5686_RESOLUTION    16
 #define DAC_AD5686_CHANNELS      ad5686_channels
