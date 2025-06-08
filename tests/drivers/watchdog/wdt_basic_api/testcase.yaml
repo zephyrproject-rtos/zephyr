@@ -91,6 +91,7 @@ tests:
       - nucleo_h753zi
       - nucleo_h7s3l8
       - stm32h7s78_dk
+      - nucleo_u385rg_q
       - nucleo_wba55cg
     integration_platforms:
       - nucleo_f091rc
