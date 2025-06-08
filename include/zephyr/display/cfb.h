@@ -137,6 +137,17 @@ int cfb_draw_rect(const struct device *dev, const struct cfb_position *start,
 		  const struct cfb_position *end);
 
 /**
+ * @brief Draw a circle.
+ *
+ * @param dev Pointer to device structure for driver instance
+ * @param start Center position of the circle
+ * @param radius Radius of the circle
+ *
+ * @return 0 on success, negative value otherwise
+ */
+int cfb_draw_circle(const struct device *dev, const struct cfb_position *start, uint16_t radius);
+
+/**
  * @brief Clear framebuffer.
  *
  * @param dev Pointer to device structure for driver instance
