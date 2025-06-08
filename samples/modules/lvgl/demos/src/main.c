@@ -37,8 +37,6 @@ int main(void)
 	lv_demo_stress();
 #elif defined(CONFIG_LV_Z_DEMO_WIDGETS)
 	lv_demo_widgets();
-#elif defined(CONFIG_LV_Z_DEMO_FLEX_LAYOUT)
-	lv_demo_flex_layout();
 #elif defined(CONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER)
 	lv_demo_keypad_encoder();
 #elif defined(CONFIG_LV_Z_DEMO_RENDER)
@@ -51,10 +49,6 @@ int main(void)
 	lv_demo_render(CONFIG_LV_Z_DEMO_RENDER_SCENE_INDEX, 255);
 #endif /* CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC */
 
-#elif defined(CONFIG_LV_Z_DEMO_SCROLL)
-	lv_demo_scroll();
-#elif defined(CONFIG_LV_Z_DEMO_MULTILANG)
-	lv_demo_multilang();
 #else
 #error Enable one of the demos CONFIG_LV_Z_DEMO_*
 #endif
@@ -72,7 +66,7 @@ int main(void)
 		k_msleep(MIN(sleep_ms, INT32_MAX));
 #ifdef CONFIG_LV_Z_DEMO_RENDER_SCENE_DYNAMIC
 		if (sys_timepoint_expired(next_scene_switch)) {
-			cur_scene = (cur_scene + 1) % _LV_DEMO_RENDER_SCENE_NUM;
+			cur_scene = (cur_scene + 1) % LV_DEMO_RENDER_SCENE_NUM;
 			lv_demo_render(cur_scene, 255);
 			next_scene_switch = sys_timepoint_calc(
 				K_SECONDS(CONFIG_LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT));
