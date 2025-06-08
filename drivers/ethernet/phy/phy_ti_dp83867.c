@@ -39,9 +39,35 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define PHY_TI_DP83867_CFG3                    0x001e
 #define PHY_TI_DP83867_INT_EN                  BIT(7)
 
+#define DP83867_RGMIICTL1			0x32
+#define DP83867_RGMIIDCTL			0x86
+
+#define DP83867_RGMII_TX_CLK_DELAY_EN		BIT(1)
+#define DP83867_RGMII_RX_CLK_DELAY_EN		BIT(0)
+
+#define DP83867_RGMII_TX_CLK_DELAY_MAX		0xf
+#define DP83867_RGMII_TX_CLK_DELAY_SHIFT	4
+#define DP83867_RGMII_TX_CLK_DELAY_INV		(DP83867_RGMII_TX_CLK_DELAY_MAX + 1)
+
+#define DP83867_RGMII_RX_CLK_DELAY_MAX		0xf
+#define DP83867_RGMII_RX_CLK_DELAY_SHIFT	0
+#define DP83867_RGMII_RX_CLK_DELAY_INV		(DP83867_RGMII_RX_CLK_DELAY_MAX + 1)
+
+#define DP83867_RGMIIDCTL_DELAY_MASK		GENMASK(7, 0)
+
+enum dp83826_interface {
+	DP83826_RGMII,
+	DP83826_RGMII_ID,
+	DP83826_RGMII_RX_ID,
+	DP83826_RGMII_TX_ID
+};
+
 struct ti_dp83867_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
+	uint32_t ti_rx_internal_delay;
+	uint32_t ti_tx_internal_delay;
+	enum dp83826_interface phy_iface;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -466,6 +492,7 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	const struct ti_dp83867_config *config = dev->config;
 	struct ti_dp83867_data *data = dev->data;
 	int ret;
+	uint32_t rgmii_ctl_val = 0, rgmii_dctl_val = 0;
 
 	data->dev = dev;
 
@@ -489,6 +516,71 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	ret = phy_ti_dp83867_reset(dev);
 	if (ret) {
 		LOG_ERR("Failed to reset phy (%d)", config->addr);
+		return ret;
+	}
+
+	/* Read the RGMIICTL1 register to configure internal delay enable bits*/
+	ret = phy_ti_dp83867_read(dev, DP83867_RGMIICTL1, &rgmii_ctl_val);
+	if (ret) {
+		LOG_ERR("Error reading DP83867_RGMIICTL1");
+		return ret;
+	}
+
+	/* Clear any existing delay enable bits*/
+	rgmii_ctl_val &= ~(DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
+
+	/* Set delay enable bits based on PHY interface mode from devicetree*/
+	switch (config->phy_iface) {
+	case DP83826_RGMII_ID:
+		rgmii_ctl_val |= (DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
+		break;
+
+	case DP83826_RGMII_RX_ID:
+		rgmii_ctl_val |= DP83867_RGMII_RX_CLK_DELAY_EN;
+		break;
+
+	case DP83826_RGMII_TX_ID:
+		rgmii_ctl_val |= DP83867_RGMII_TX_CLK_DELAY_EN;
+		break;
+
+	case DP83826_RGMII:
+	default:
+		break;
+	}
+
+	/* write updated delay enable configuration to PHY(DP83867_RGMIICTL1)*/
+	ret = phy_ti_dp83867_write(dev, DP83867_RGMIICTL1, rgmii_ctl_val);
+	if (ret) {
+		LOG_ERR("Failed to write DP83867_RGMIICTL1");
+		return ret;
+	}
+
+	/* Read RGMIIDCTL the delay value control register*/
+	ret = phy_ti_dp83867_read(dev, DP83867_RGMIIDCTL, &rgmii_dctl_val);
+	if (ret) {
+		LOG_ERR("Error reading DP83867_RGMIIDCTL");
+		return ret;
+	}
+
+	/* Clear existing delay values*/
+	rgmii_dctl_val &= ~DP83867_RGMIIDCTL_DELAY_MASK;
+
+	/* Set TX delay if specified*/
+	if (config->ti_tx_internal_delay != DP83867_RGMII_TX_CLK_DELAY_INV) {
+		rgmii_dctl_val |= ((config->ti_tx_internal_delay & 0xF) <<
+					DP83867_RGMII_TX_CLK_DELAY_SHIFT);
+	}
+
+	/* Set RX delay if specified */
+	if (config->ti_rx_internal_delay != DP83867_RGMII_RX_CLK_DELAY_INV) {
+		rgmii_dctl_val |= ((config->ti_rx_internal_delay & 0xF) <<
+					DP83867_RGMII_RX_CLK_DELAY_SHIFT);
+	}
+
+	/* Write final delay values to PHY(DP83867_RGMIIDCTL) */
+	ret = phy_ti_dp83867_write(dev, DP83867_RGMIIDCTL, rgmii_dctl_val);
+	if (ret) {
+		LOG_ERR("Error writing DP83867_RGMIIDCTL");
 		return ret;
 	}
 
@@ -547,6 +639,11 @@ static DEVICE_API(ethphy, ti_dp83867_phy_api) = {
 	static const struct ti_dp83867_config ti_dp83867_##n##_config = {                          \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		.ti_rx_internal_delay = DT_INST_PROP_OR(n, ti_rx_internal_delay,                   \
+							 DP83867_RGMII_TX_CLK_DELAY_INV),          \
+		.ti_tx_internal_delay = DT_INST_PROP_OR(n, ti_tx_internal_delay,                   \
+							 DP83867_RGMII_RX_CLK_DELAY_INV),          \
+		.phy_iface = DT_INST_ENUM_IDX(n, ti_interface_type),                               \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct ti_dp83867_data ti_dp83867_##n##_data;                                       \
