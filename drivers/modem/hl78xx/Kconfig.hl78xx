@@ -1,0 +1,822 @@
+# Sierra Wireless HL78XX driver driver options
+
+# Copyright (c) 2025 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_HL78XX
+	bool "HL78XX modem driver"
+	select MODEM_MODULES
+	select MODEM_CHAT
+	select MODEM_PIPE
+	select MODEM_PIPELINK
+	select MODEM_BACKEND_UART
+	select RING_BUFFER
+	select MODEM_SOCKET
+	select NET_OFFLOAD
+	select MODEM_CONTEXT
+	select EXPERIMENTAL
+	depends on !MODEM_CELLULAR
+	imply GPIO
+	help
+	  Choose this setting to enable Sierra Wireless HL78XX driver LTE-CatM1/NB-IoT modem
+	  driver.
+
+if MODEM_HL78XX
+
+choice MODEM_HL78XX_VARIANT
+	bool "Sierra Wireless hl78xx variant selection"
+	default MODEM_HL78XX_12 if DT_HAS_SWIR_HL7812_ENABLED
+	default MODEM_HL78XX_00 if DT_HAS_SWIR_HL7800_ENABLED
+	default MODEM_HL78XX_AUTODETECT_VARIANT
+
+config MODEM_HL78XX_12
+	bool "Sierra Wireless hl7812"
+	help
+	  Support for hl7812 modem
+
+config MODEM_HL78XX_00
+	bool "Sierra Wireless hl7800"
+	help
+	  Support for hl7800 modem
+
+config MODEM_HL78XX_AUTODETECT_VARIANT
+	bool "detect automatically"
+	help
+	  Automatic detection of modem variant (HL7812 or HL7800)
+
+endchoice
+
+if MODEM_HL78XX_12
+
+config MODEM_HL78XX_12_FW_R6
+	bool "Modem firmware R6"
+	help
+	  Only for HL7812, enable this setting to use NBNTN rat.
+	  This is required for NBNTN mode.
+	  NBNTN mode is supported with R6 firmware.
+
+endif # MODEM_HL78XX_12
+
+config MODEM_HL78XX_UART_BUFFER_SIZES
+	int "The UART receive and transmit buffer sizes in bytes."
+	default 512
+
+config MODEM_HL78XX_CHAT_BUFFER_SIZES
+	int "The size of the buffers used for the chat scripts in bytes."
+	default 512
+
+config MODEM_HL78XX_USER_PIPE_BUFFER_SIZES
+	int "The size of the buffers used for each user pipe in bytes."
+	default 512
+
+config MODEM_HL78XX_RECV_BUF_CNT
+	int "The number of allocated network buffers"
+	default 30
+
+config MODEM_HL78XX_RECV_BUF_SIZE
+	int "The size of the network buffers in bytes"
+	default 128
+
+config MODEM_HL78XX_RX_WORKQ_STACK_SIZE
+	int "Stack size for the Sierra Wireless HL78XX driver modem driver work queue"
+	default 2048
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+choice MODEM_HL78XX_ADDRESS_FAMILY
+	prompt "IP Address family"
+	default MODEM_HL78XX_ADDRESS_FAMILY_IPV4V6
+	help
+	  The address family for IP connections.
+
+config MODEM_HL78XX_ADDRESS_FAMILY_IPV4
+	bool "IPv4"
+
+config MODEM_HL78XX_ADDRESS_FAMILY_IPV6
+	bool "IPv6"
+
+config MODEM_HL78XX_ADDRESS_FAMILY_IPV4V6
+	bool "IPv4v6"
+
+endchoice
+
+choice MODEM_HL78XX_BOOT_MODE
+	prompt "Modem Boot Type"
+	default MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
+	help
+	  Set Modem Functionality see, AT+CFUN
+	  Consider reset conditions after settings, second parameter of cfun
+	  0 — Do not reset the MT before setting it to <fun> power level.
+	  1 — Reset the MT before setting it to <fun> power level.
+
+config MODEM_HL78XX_BOOT_IN_MINIMUM_FUNCTIONAL_MODE
+	bool "MINIMUM FUNCTIONAL MODE"
+	help
+	  - AT+CFUN = 0,0
+	  — Minimum functionality, SIM powered off
+	  - Consider reset conditions second parameter of cfun
+
+config MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
+	bool "FULL FUNCTIONAL MODE"
+	help
+	  - AT+CFUN = 1,0
+	  - Full functionality, starts cellular searching
+	  - Consider reset conditions after settings, second parameter of cfun
+
+config MODEM_HL78XX_BOOT_IN_AIRPLANE_MODE
+	bool "AIRPLANE MODE"
+	help
+	  - AT+CFUN = 4,0
+	  - Disable radio transmit and receive; SIM powered on. (i.e. "Airplane
+	  Mode")
+	  - Consider reset conditions after settings, second parameter of cfun
+endchoice
+
+if MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
+
+config MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
+	bool "WAIT FOR ROAMING"
+	help
+	  Keep the device in boot mode until have +CREG/+CEREG: 1(normal) or 5(roaming)
+endif # MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
+
+config MODEM_HL78XX_PERIODIC_SCRIPT_MS
+	int "Periodic script interval in milliseconds"
+	default 2000
+
+choice MODEM_HL78XX_APN_SOURCE
+	prompt "APN SOURCE"
+	default MODEM_HL78XX_APN_SOURCE_NETWORK
+	help
+	  Select the source for automatically detecting the APN.
+	  You can choose between IMSI (International Mobile Subscriber Identity)
+	  or ICCID (Integrated Circuit Card Identifier) as the reference for APN association.
+
+config MODEM_HL78XX_APN_SOURCE_ICCID
+	bool "CCID Associated APN"
+	help
+	  - AT+CCID
+	  - Multiple ICCID and APN combinations can be stored in APN PROFILE configuration
+	  see MODEM_HL78XX_APN_PROFILES
+
+config MODEM_HL78XX_APN_SOURCE_IMSI
+	bool "CIMI Associated APN"
+	help
+	  - AT+CIMI
+	  - Multiple CIMI and APN combinations can be stored in APN PROFILE configuration
+	  see MODEM_HL78XX_APN_PROFILES
+
+config MODEM_HL78XX_APN_SOURCE_KCONFIG
+	bool "User defined Single APN"
+	help
+	  - Use the APN defined in MODEM_HL78XX_APN
+	  - Supports only one APN
+
+config MODEM_HL78XX_APN_SOURCE_NETWORK
+	bool "Network Provided APN"
+	help
+	  - AT+CGCONTRDP=1
+	  - Use the APN provided by the network
+endchoice
+
+if MODEM_HL78XX_APN_SOURCE_KCONFIG
+
+config MODEM_HL78XX_APN
+	string "APN for establishing network connection"
+	default "xxxxxxxx"
+	help
+	  This setting is used in the AT+CGDCONT command to set the APN name
+	  for the network connection context.  This value is specific to
+	  the network provider and has to be changed.
+
+endif # MODEM_HL78XX_APN_SOURCE_KCONFIG
+
+if MODEM_HL78XX_APN_SOURCE_ICCID || MODEM_HL78XX_APN_SOURCE_IMSI
+
+config MODEM_HL78XX_APN_PROFILES
+	string "list of profiles to search when autodetecting APN"
+	default "hologram=23450, wm=20601, int=29505"
+	help
+	  Set a comma separated list of profiles, each containing of:
+	  <apn>=<IMSI_1> ... <IMSI_n>
+	  <apn>=<ICCID_1> ... <ICCID_n>
+
+endif # MODEM_HL78XX_APN_SOURCE_ICCID || MODEM_HL78XX_APN_SOURCE_IMSI
+
+config MODEM_HL78XX_RSSI_WORK
+	bool "RSSI polling work"
+	default y
+	help
+	  Sierra Wireless HL78XX driver device is configured to poll for RSSI
+
+config MODEM_HL78XX_RSSI_WORK_PERIOD
+	int "Configure RSSI WORK polling frequency"
+	depends on MODEM_HL78XX_RSSI_WORK
+	default 30
+	help
+	  This settings is used to configure the period of RSSI polling
+
+config MODEM_HL78XX_AUTORAT
+	bool "automatic RAT switching and set the PRL profiles"
+	default y
+	help
+	  AT+KSRAT is provided for backwards compatibility only. AT+KSELACQ is recommended for RAT switching.
+	  (See RAT Switching Application Note (Doc# 2174296) for details.)
+
+if MODEM_HL78XX_AUTORAT
+
+config MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL
+	bool "Overwrite PRL profiles always at boot"
+	help
+	  If you enable this option, the PRL profiles on the modem will be overwritten by the app
+	  with the PRL profile values at boot everytime.
+
+config MODEM_HL78XX_AUTORAT_PRL_PROFILES
+	string "Configure Preferred Radio Access Technology List"
+	default "1,2,3" if MODEM_HL78XX_12
+	default "1,2,1" if MODEM_HL78XX_00
+	help
+	  AT+KSELACQ=0,1,2,3 , MODEM HL7812,CAT-M1, NB-IoT, GSM
+	  AT+KSELACQ=0,1,2,1 , MODEM HL7800,CAT-M1, NB-IoT, CAT-M1
+
+config MODEM_HL78XX_AUTORAT_NB_BAND_CFG
+	string "NB-IoT band configuration (comma-separated list)"
+	default "1,2,3,4,5,8,12,13,20,28"
+	help
+	  Specify which LTE bands (e.g., 8,20,28) to use for NB-IoT when using Auto RAT.
+	  This string is parsed at runtime or build-time.
+
+config MODEM_HL78XX_AUTORAT_M1_BAND_CFG
+	string "Cat-M1 band configuration (comma-separated list)"
+	default "1,2,3,4,5,8,12,13,20,28"
+	help
+	  Specify which LTE bands (e.g., 3,5,12) to use for Cat-M1 when using Auto RAT.
+
+endif # MODEM_HL78XX_AUTORAT
+
+choice MODEM_HL78XX_RAT
+	bool "Radio Access Technology Mode"
+	default MODEM_HL78XX_RAT_M1
+	depends on !MODEM_HL78XX_AUTORAT
+
+config MODEM_HL78XX_RAT_M1
+	bool "LTE-M1"
+	help
+	  Enable LTE Cat-M1 mode during modem init.
+	  In the Read response, '0' indicates CAT-M1.
+
+config MODEM_HL78XX_RAT_NB1
+	bool "NB-IoT"
+	help
+	  Enable LTE Cat-NB1 mode during modem init.
+	  1 — NB-IoT (HL78XX/HL7802/HL7810/HL7845/HL7812 only)
+
+config MODEM_HL78XX_RAT_GSM
+	bool "GSM"
+	depends on MODEM_HL78XX_12
+	help
+	  Enable GSM mode during modem init.
+	  2 — GSM (for HL7802/HL7812 only)
+
+config MODEM_HL78XX_RAT_NBNTN
+	bool "NB-NTN"
+	depends on MODEM_HL78XX_12_FW_R6
+	help
+	  Enable NBNTN mode during modem init.
+	  3 — NBNTN (for HL7810/HL7812 only), It does not support <reboot> = 1
+
+endchoice
+
+menuconfig MODEM_HL78XX_CONFIGURE_BANDS
+	bool "Configure modem bands"
+	depends on !MODEM_HL78XX_AUTORAT
+	default y if !MODEM_HL78XX_AUTORAT
+	help
+	  Choose this setting to configure which LTE bands the
+	  HL78XX modem should use at boot time.
+
+if MODEM_HL78XX_CONFIGURE_BANDS
+if !MODEM_HL78XX_RAT_NBNTN
+config MODEM_HL78XX_BAND_1
+	bool "Band 1  (2000MHz)"
+	default y
+	help
+	  Enable Band 1 (2000MHz)
+
+config MODEM_HL78XX_BAND_2
+	bool "Band 2  (1900MHz)"
+	default y
+	help
+	  Enable Band 2 (1900MHz)
+
+config MODEM_HL78XX_BAND_3
+	bool "Band 3  (1800MHz)"
+	default y
+	help
+	  Enable Band 3 (1800MHz)
+
+config MODEM_HL78XX_BAND_4
+	bool "Band 4  (1700MHz)"
+	default y
+	help
+	  Enable Band 4 (1700MHz)
+
+config MODEM_HL78XX_BAND_5
+	bool "Band 5  (850MHz)"
+	default y
+	help
+	  Enable Band 5 (850MHz)
+
+config MODEM_HL78XX_BAND_8
+	bool "Band 8  (900MHz)"
+	default y
+	help
+	  Enable Band 8 (900MHz)
+
+config MODEM_HL78XX_BAND_9
+	bool "Band 9  (1900MHz)"
+	help
+	  Enable Band 9 (1900MHz)
+
+config MODEM_HL78XX_BAND_10
+	bool "Band 10 (2100MHz)"
+	help
+	  Enable Band 10 (2100MHz)
+
+config MODEM_HL78XX_BAND_12
+	bool "Band 12 (700MHz)"
+	default y
+	help
+	  Enable Band 12 (700MHz)
+
+config MODEM_HL78XX_BAND_13
+	bool "Band 13 (700MHz)"
+	default y
+	help
+	  Enable Band 13 (700MHz)
+
+config MODEM_HL78XX_BAND_17
+	bool "Band 17 (700MHz)"
+	help
+	  Enable Band 17 (700MHz)
+
+config MODEM_HL78XX_BAND_18
+	bool "Band 18 (800MHz)"
+	help
+	  Enable Band 18 (800MHz)
+
+config MODEM_HL78XX_BAND_19
+	bool "Band 19 (800MHz)"
+	help
+	  Enable Band 19 (800MHz)
+
+config MODEM_HL78XX_BAND_20
+	bool "Band 20 (800MHz)"
+	default y
+	help
+	  Enable Band 20 (800MHz)
+endif # !MODEM_HL78XX_RAT_NBNTN
+config MODEM_HL78XX_BAND_23
+	bool "Band 23 (2000MHz)"
+	default y if MODEM_HL78XX_RAT_NBNTN
+	help
+	  Enable Band 23 (2000MHz)
+if !MODEM_HL78XX_RAT_NBNTN
+config MODEM_HL78XX_BAND_25
+	bool "Band 25 (1900MHz)"
+	help
+	  Enable Band 25 (1900MHz)
+
+config MODEM_HL78XX_BAND_26
+	bool "Band 26 (800MHz)"
+	help
+	  Enable Band 26 (800MHz)
+
+config MODEM_HL78XX_BAND_27
+	bool "Band 27 (800MHz)"
+	help
+	  Enable Band 27 (800MHz)
+
+config MODEM_HL78XX_BAND_28
+	bool "Band 28 (700MHz)"
+	default y
+	help
+	  Enable Band 28 (700MHz)
+
+config MODEM_HL78XX_BAND_31
+	bool "Band 31 (450MHz)"
+	help
+	  Enable Band 31 (450MHz)
+
+config MODEM_HL78XX_BAND_66
+	bool "Band 66 (1800MHz)"
+	help
+	  Enable Band 66 (1800MHz)
+
+config MODEM_HL78XX_BAND_72
+	bool "Band 72 (450MHz)"
+	help
+	  Enable Band 72 (450MHz)
+
+config MODEM_HL78XX_BAND_73
+	bool "Band 73 (450MHz)"
+	help
+	  Enable Band 73 (450MHz)
+
+config MODEM_HL78XX_BAND_85
+	bool "Band 85 (700MHz)"
+	help
+	  Enable Band 85 (700MHz)
+
+config MODEM_HL78XX_BAND_87
+	bool "Band 87 (410MHz)"
+	help
+	  Enable Band 87 (410MHz)
+
+config MODEM_HL78XX_BAND_88
+	bool "Band 88 (410MHz)"
+	help
+	  Enable Band 88 (410MHz)
+
+config MODEM_HL78XX_BAND_106
+	bool "Band 106 (900MHz)"
+	help
+	  Enable Band 106 (900MHz)
+
+config MODEM_HL78XX_BAND_107
+	bool "Band 107 (1800MHz)"
+	help
+	  Enable Band 107 (1800MHz)
+endif # !MODEM_HL78XX_RAT_NBNTN
+config MODEM_HL78XX_BAND_255
+	bool "Band 255 (1500MHz)"
+	default y if MODEM_HL78XX_RAT_NBNTN
+	help
+	  Enable Band 255 (1500MHz)
+
+config MODEM_HL78XX_BAND_256
+	bool "Band 256 (2000MHz)"
+	default y if MODEM_HL78XX_RAT_NBNTN
+	help
+	  Enable Band 256 (2000MHz)
+
+endif # MODEM_HL78XX_CONFIGURE_BAND
+
+# NB-IoT NTN Position Configuration
+if MODEM_HL78XX_RAT_NBNTN
+menuconfig MODEM_HL78XX_NBNTN_POSITIONING
+	bool "NB-IoT NTN Position Configuration"
+	depends on !MODEM_HL78XX_AUTORAT
+	default y if !MODEM_HL78XX_AUTORAT
+	help
+	  Choose this setting to configure NB-IoT NTN Positioning parameters.
+	  Only applicable if NB-NTN mode is selected (MODEM_HL78XX_RAT_NBNTN).
+
+if MODEM_HL78XX_NBNTN_POSITIONING
+
+choice
+	prompt "Position Source"
+	default NTN_POSITION_SOURCE_IGNSS
+	help
+	  Select the source of UE (User Equipment) position for NTN TA calculation.
+	  IGNSS: Use HL781x internal GNSS to acquire position automatically.
+	  MANUAL: Manually enter UE position using +KNTNCMD AT command.
+
+config NTN_POSITION_SOURCE_IGNSS
+	bool "IGNSS (internal GNSS)"
+	help
+	  Use HL781x internal GNSS to acquire position automatically.
+
+config NTN_POSITION_SOURCE_MANUAL
+	bool "MANUAL (manual entry)"
+	help
+	  Manually enter UE position using +KNTNCMD AT command.
+
+endchoice
+
+choice
+	prompt "Mobility Type"
+	default NTN_MOBILITY_TYPE_STATIC
+	help
+	  Specify the UE's mobility type.
+	  STATIC: Position remains fixed (within 600 meters of initial fix).
+	  DYNAMIC: Position may change, requires update for each network operation.
+
+config NTN_MOBILITY_TYPE_STATIC
+	bool "STATIC (fixed position)"
+	help
+	  Position remains fixed (within 600 meters of initial fix).
+
+config NTN_MOBILITY_TYPE_DYNAMIC
+	bool "DYNAMIC (moving position)"
+	help
+	  Position may change, requires update for each network operation.
+
+endchoice
+
+config NTN_STATIC_THRESHOLD
+	int "Static Mode Threshold (meters)"
+	default 600
+	help
+	  Distance between current position and initial fix that determines static/dynamic mode.
+	  If position variation exceeds this threshold, dynamic mode is recommended.
+	  For documentation/reference only.
+
+config NTN_DYNAMIC_POSREQ_UPDATE
+	bool "Require position update on POSREQ in Dynamic Mode"
+	default y
+	help
+	  If enabled, the UE position must be updated after receiving unsolicited +KNTNEV:
+	  'POSREQ' indication, before any outgoing network operation in dynamic mode.
+endif # MODEM_HL78XX_NBNTN_POSITIONING
+endif # MODEM_HL78XX_RAT_NBNTN
+
+config MODEM_HL78XX_LOW_POWER_MODE
+	bool "Low power modes"
+	help
+	  Choose this setting to enable a low power mode for the HL78XX modem
+
+if MODEM_HL78XX_LOW_POWER_MODE
+
+config MODEM_HL78XX_EDRX
+	bool "eDRX"
+	help
+	  Enable LTE eDRX
+
+config MODEM_HL78XX_PSM
+	bool "PSM"
+	default y
+	help
+	  Enable Power Save Mode (PSM)
+
+if MODEM_HL78XX_EDRX
+
+config MODEM_HL78XX_EDRX_VALUE
+	string "Requested eDRX timer"
+	default "0101"
+	help
+	  Half a byte in a 4-bit format. The eDRX value refers to bit 4 to 1
+	  of octet 3 of the Extended DRX parameters information element.
+	  Default value is 81.92 seconds.
+
+endif # MODEM_HL78XX_EDRX
+
+if MODEM_HL78XX_PSM
+
+config MODEM_HL78XX_PSM_PERIODIC_TAU
+	string "Requested extended periodic TAU timer"
+	default "10000010"
+	help
+	  Requested extended periodic TAU (tracking area update) value (T3412)
+	  to be allocated to the UE in E-UTRAN. One byte in an 8-bit format.
+	  Default value is 1 minute.
+
+config MODEM_HL78XX_PSM_ACTIVE_TIME
+	string "Requested active time"
+	default "00001111"
+	help
+	  Requested Active Time value (T3324) to be allocated to the UE.
+	  One byte in an 8-bit format. Default value is 30 seconds.
+
+endif # MODEM_HL78XX_PSM
+
+choice MODEM_DEFAULT_SLEEP_LEVEL
+	prompt "Default Sleep Level"
+	default MODEM_HL78XX_SLEEP_LEVEL_HIBERNATE
+	help
+	  The application can override this setting
+
+config MODEM_HL78XX_SLEEP_LEVEL_HIBERNATE
+	bool "Hibernate"
+	help
+	  Lowest power consumption
+	  IO state not retained
+	  Application subsystem OFF
+
+config MODEM_HL78XX_SLEEP_LEVEL_LITE_HIBERNATE
+	bool "Lite Hibernate"
+	help
+	  IO state retained
+	  Application subsystem OFF
+
+config MODEM_HL78XX_SLEEP_LEVEL_SLEEP
+	bool "Sleep"
+	help
+	  Highest power consumption of modem sleep states
+	  IO state retained
+	  Application subsystem ON
+	  Allows sockets to remain open
+
+endchoice
+
+config MODEM_HL78XX_SLEEP_DELAY_AFTER_REBOOT
+	int "Delay in seconds before sleep after reboot"
+	default 10
+
+endif # MODEM_HL78XX_LOW_POWER_MODE
+
+choice MODEM_HL78XX_NETWORK_REG_STATUS_REPORT_CFG
+	prompt "Network Registration Status Report Configuration"
+	default MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM_AND_CAUSE
+	help
+	  · 0 — Disable network registration unsolicited result code.
+	  · 1 — Enable network registration unsolicited result code +CEREG: <stat>
+	  · 2 — Enable network registration and location information unsolicited result
+	  code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+	  · 3 — Enable network registration, location information and EMM cause value
+	  information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>, <reject_cause>]]
+	  · 4 — For a UE that wants to apply PSM, enable network registration and
+	  location information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active- Time>],[<PeriodicTAU>]]]]
+	  · 5 — For a UE that wants to apply PSM, enable network registration, location
+	  information and EMM cause value information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_-
+	  cause>][,[<Active-Time>] [<Periodic-TAU>]]]]
+
+config MODEM_HL78XX_DISABLE_NETWORK_STATUS_URC_REPORT
+	bool "Disable network status URC report"
+	help
+	  Disable network registration unsolicited result code.
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT
+	bool "Network status URC report"
+	help
+	  Enable network registration unsolicited result code +CEREG: <stat>
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION
+	bool "Network status URC report with location"
+	help
+	  Enable network registration and location information unsolicited result
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION_AND_CAUSE
+	bool "Network status URC report with location and cause"
+	help
+	  Enable network registration, location information and EMM cause value
+	  information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>, <reject_cause>]]
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM
+	bool "Network status URC report with PSM"
+	help
+	  For a UE that wants to apply PSM, enable network registration and
+	  location information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active- Time>],[<PeriodicTAU>]]]]
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM_AND_CAUSE
+	bool "Network status URC report with PSM and cause"
+	help
+	  For a UE that wants to apply PSM, enable network registration, location
+	  information and EMM cause value information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_-
+	  cause>][,[<Active-Time>] [<Periodic-TAU>]]]]
+
+endchoice
+
+config MODEM_HL78XX_NETWORK_REG_STATUS_REPORT_CFG_CODE
+	string
+	default "5" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM_AND_CAUSE
+	default "4" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM
+	default "3" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION_AND_CAUSE
+	default "2" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION
+	default "1" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT
+	default "0" if MODEM_HL78XX_DISABLE_NETWORK_STATUS_URC_REPORT
+	help
+	  This setting is used to configure the network registration status report
+	  configuration code. It is used in the AT+CREG/CEREG command to set the network
+	  registration status report configuration.
+
+config MODEM_MIN_ALLOWED_SIGNAL_STRENGTH
+	int "Minimum allowed RSRP signal strength (dBm)"
+	default -140
+	range -140 0
+	help
+	  The average power received from a single Reference signal,
+	  and Its typical range is around -44dbm (good) to -140dbm(bad).
+	  Note: (Anything < - 115 dBm unusable/unreliable)
+	  EXCELLENT_SIGNAL_STRENGTH
+	  bool ">= -80(dBm)"
+	    default -80
+	    range - 80 0
+	  GOOD_SIGNAL_STRENGTH
+	  bool ">= -90(dBm)"
+	    default -90
+	    range - 90 0
+	  MID_CELL_SIGNAL_STRENGTH
+	  bool ">= -100(dBm)"
+	    default -100
+	    range - 100 0
+	  CELL_EDGE_SIGNAL_STRENGTH
+	  bool "<= -100(dBm)"
+	    default -110
+	    range - 110 0
+	  POOR_SIGNAL_STRENGTH
+	  bool ">= -140(dBm)"
+	    default -140
+	    range - 140 0
+
+config MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+	bool "Advanced socket configuration"
+	help
+	  Enable advanced socket configuration options
+
+if MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+
+config MODEM_HL78XX_SOCKET_UDP_DISPLAY_DATA_URC
+	int "display data in URC"
+	default 0
+	help
+	  0 — Do not display data in URC
+	  1 — Display data in URC automatically
+	  2 — Do not display data in URC and KUDPRCV command is required to dump
+	  data. If there is no KUDPRCV command after rcv_timeout, the original data is
+	  dropped and URC re-enabled.
+
+config MODEM_HL78XX_SOCKET_RESTORE_ON_BOOT
+	bool "Restore sockets on boot"
+	help
+	  only the first session is restored
+	  For HL780x, restore_on_boot is required to restore the first session across
+	  eDRX/PSM hibernate cycles or reset.
+	  • For HL781x/45, all sessions are maintained across eDRX/PSM hibernate cycles
+	  independent of this configuration. It is only required for reset cases.
+	  • For a restored client session (e.g. after a reset or exiting hibernation), +KTCPCNX
+	  must be used to establish a connection before sending/receiving any data.
+	  0 — Do not restore sockets on boot
+	  1 — Restore sockets on boot
+
+endif # MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+
+config MODEM_HL78XX_NUM_SOCKETS
+	int "Maximum number of sockets"
+	default 6
+	range 6 6 if !MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+	range 1 6 if MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
+	help
+	  Maximum number of sockets that can be opened at the same time
+
+config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
+	bool "TLS for sockets"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This option enables TLS (Transport Layer Security) for sockets
+	  on the HL78xx modem.
+
+config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	bool "Verbose debug output in the HL78xx"
+	depends on MODEM_MODULES_LOG_LEVEL_DBG
+	help
+	  Enabling this setting will turn on VERY heavy debugging from the
+	  modem.  Do NOT leave on for production.
+	  This setting is depends on global log level debug.
+
+config MODEM_HL78XX_DEV_POWER_PULSE_DURATION
+	int "Duration of the power-on pulse in milliseconds."
+	default 1500
+	help
+	  Trigger a power-on sequence by setting a power on GPIO pin high
+	  for a specific amount of time.
+
+config MODEM_HL78XX_DEV_RESET_PULSE_DURATION
+	int "Duration of the power-reset pulse in milliseconds."
+	default 100
+	help
+	  Trigger a power-reset sequence by setting a reset GPIO pin high
+	  for a specific amount of time.
+
+config MODEM_HL78XX_DEV_STARTUP_TIME
+	int "Wait before assuming the device is ready."
+	default 1000
+	help
+	  The expected time (in milliseconds) the modem needs to fully power on
+	  and become operational.
+
+config MODEM_HL78XX_DEV_SHUTDOWN_TIME
+	int "Wait before assuming the device is completely off."
+	default 1000
+	help
+	  The amount of time (in milliseconds) the system should wait for the modem
+	  to fully shut down
+
+config MODEM_HL78XX_DEV_INIT_PRIORITY
+	int "Sierra Wireless HL78XX device driver init priority"
+	default 80
+	help
+	  Sierra Wireless HL78XX device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+
+config MODEM_HL78XX_OFFLOAD_INIT_PRIORITY
+	int "Sierra Wireless HL78XX offload driver init priority"
+	default 81
+	help
+	  Sierra Wireless HL78XX driver device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Make sure offload init priority higher than dev init priority
+
+rsource "hl78xx_evt_monitor/Kconfig.hl78xx_evt_monitor"
+
+endif # MODEM_HL78XX
