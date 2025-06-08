@@ -33,6 +33,8 @@ endif()
 
 add_subdirectory(simcom)
 
+add_subdirectory_ifdef(CONFIG_MODEM_HL78XX hl78xx)
+
 zephyr_library_sources_ifdef(CONFIG_MODEM_CELLULAR modem_cellular.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_AT_USER_PIPE modem_at_user_pipe.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_AT_SHELL modem_at_shell.c)
