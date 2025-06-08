@@ -1,0 +1,111 @@
+# Copyright (c) 2025, Giyora Haroon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Sitronix ST7565R dot matrix LCD.
+    This controller supports 8-bit parallel and 4-line SPI interfaces.
+    This binding covers the SPI interface.
+
+compatible: "sitronix,st7565r"
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset pin. The driver requires this for hardware reset.
+      The pin is active low.
+
+  data-cmd-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/Command pin (D/C). Controls whether SPI data is interpreted
+      as data (high) or command (low).
+
+  width:
+    type: int
+    required: true
+    description: Display width in pixels.
+
+  height:
+    type: int
+    required: true
+    description: Display height in pixels.
+
+  segment-offset:
+    type: int
+    default: 0
+    description: |
+      Offset for the first segment (column) line.
+
+  segment-remap:
+    type: boolean
+    description: |
+      Reverse the segment (column) mapping direction.
+      Maps SEG131..SEG0 instead of SEG0..SEG131.
+      Corresponds to ADC command (0xA0/0xA1).
+      Set based on display module wiring.
+
+  com-invdir:
+    type: boolean
+    description: |
+      Reverse the COM scan direction.
+      Scans COM63..COM0 instead of COM0..COM63.
+      Corresponds to COM output scan direction command (0xC0/0xC8).
+      Set based on display module wiring.
+
+  lcd-bias:
+    type: int
+    required: true
+    description: |
+      LCD bias setting.
+    enum:
+      - 7 # 1/7 Bias (0xA3)
+      - 9 # 1/9 Bias (0xA2)
+
+  power-control-val:
+     type: int
+     default: 7 # (VB | VR | VF) = (0x4 | 0x2 | 0x1)
+     description: |
+       Controls which internal power circuits (Voltage Booster, Regulator,
+       Follower) are enabled. Corresponds to the lower 3 bits of the
+       Power Control Set command (0x28 | value).
+       Bit 0: Voltage Follower (VF)
+       Bit 1: Voltage Regulator (VR)
+       Bit 2: Voltage Booster (VB)
+       Example: To enable VB and VR only, set to 6 (0x6).
+
+  resistor-ratio:
+     type: int
+     default: 4
+     description: |
+       Selects the internal resistor ratio for Vo regulation.
+       Corresponds to the lower 3 bits of the Resistor Ratio Set command
+       (0x20 | value). Valid values are 0-7.
+
+  booster-ratio:
+     type: int
+     default: 0
+     description: |
+       Selects the voltage booster step-up ratio. Corresponds to the second
+       byte of the Booster Ratio Set command (0xF8 + value).
+     enum:
+       - 0 # 2x, 3x, 4x
+       - 1 # 5x
+       - 3 # 6x
+
+  inversion-on:
+     type: boolean
+     description: |
+       Sets the display mode to inverted (pixel on when RAM=0).
+       Corresponds to Display Normal/Reverse command (0xA6/0xA7).
+
+  ready-time-ms:
+    type: int
+    default: 10
+    description: |
+      Time in milliseconds to wait before initializing the controller
+      after power-on. Defaults to 10ms (found by trial and error) if not
+      provided.

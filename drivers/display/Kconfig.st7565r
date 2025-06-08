@@ -1,0 +1,11 @@
+# Copyright (c) Giyora Haroon
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ST7565R
+	bool "ST7565R display driver"
+	default y
+	depends on DT_HAS_SITRONIX_ST7565R_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Enable driver for the ST7565R display controller.
