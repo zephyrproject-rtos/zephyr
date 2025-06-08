@@ -15,6 +15,7 @@
 
 #include <fsl_mipi_csi2rx.h>
 
+#include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
@@ -34,6 +35,7 @@ struct mipi_csi2rx_data {
 	clock_control_subsys_t clock_root;
 	clock_control_subsys_t clock_ui;
 	clock_control_subsys_t clock_esc;
+	struct video_ctrl test_pattern;
 };
 
 struct mipi_csi2rx_tHsSettleEscClk_config {
@@ -285,6 +287,10 @@ static DEVICE_API(video, mipi_csi2rx_driver_api) = {
 	.enum_frmival = mipi_csi2rx_enum_frmival,
 };
 
+static const char *const test_pattern_menu[] = {"Disabled",
+						"8-bars",
+						NULL};
+
 static int mipi_csi2rx_init(const struct device *dev)
 {
 	const struct mipi_csi2rx_config *config = dev->config;
@@ -302,6 +308,12 @@ static int mipi_csi2rx_init(const struct device *dev)
 	 */
 	ret = clock_control_set_rate(drv_data->clock_dev, drv_data->clock_esc,
 				     (clock_control_subsys_rate_t)MHZ(60));
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_init_menu_ctrl(&drv_data->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
+				   test_pattern_menu);
 	if (ret) {
 		return ret;
 	}
