@@ -4,11 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "lvgl_zephyr_osal.h"
+#include <zephyr/debug/cpu_load.h>
 #include <lvgl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
+
+#ifdef CONFIG_LV_Z_USE_OSAL
+
+#include "lvgl_zephyr_osal.h"
 
 typedef void (*lv_thread_entry)(void *);
 static void thread_entry(void *thread, void *cb, void *user_data);
@@ -150,4 +154,23 @@ void thread_entry(void *thread, void *cb, void *user_data)
 
 	entry_cb(user_data);
 	lv_thread_delete((lv_thread_t *)thread);
+}
+
+#endif /* CONFIG_LV_Z_USE_OSAL */
+
+uint32_t lv_os_get_idle_percent(void)
+{
+#ifdef CONFIG_CPU_LOAD
+	int load = cpu_load_get();
+
+	if (load < 0) {
+		LOG_ERR("Failed to get CPU load, returning UINT32_MAX");
+		return UINT32_MAX;
+	}
+
+	return 100 - (load / 10);
+#else
+	LOG_WRN_ONCE("CONFIG_CPU_LOAD is not enabled, idle percent will always be 0");
+	return 0;
+#endif
 }
