@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_syscall_header(
+  ${ZEPHYR_BASE}/include/zephyr/sys/clock.h
   ${ZEPHYR_BASE}/include/zephyr/sys/mutex.h
 )
 
 zephyr_sources(
   cbprintf_packaged.c
+  clock.c
   printk.c
   sem.c
   thread_entry.c

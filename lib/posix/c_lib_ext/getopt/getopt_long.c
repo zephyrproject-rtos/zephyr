@@ -54,7 +54,7 @@
 #include "getopt_common.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(getopt);
+LOG_MODULE_DECLARE(getopt, CONFIG_GETOPT_LOG_LEVEL);
 
 #define GNU_COMPATIBLE		/* Be more compatible, configure's use us! */
 

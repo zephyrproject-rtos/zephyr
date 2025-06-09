@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config POSIX_API
-	bool "POSIX APIs"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	bool "POSIX API (legacy)"
+	select POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
 	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
 	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
@@ -21,7 +20,7 @@ config POSIX_API
 
 choice POSIX_AEP_CHOICE
 	prompt "POSIX Subprofile"
-	default POSIX_AEP_CHOICE_NONE
+	default POSIX_AEP_CHOICE_ZEPHYR
 	help
 	  This choice is intended to help users select the correct POSIX profile for their
 	  application. Choices are based on IEEE 1003.13-2003 (now inactive / reserved) and
@@ -32,14 +31,35 @@ choice POSIX_AEP_CHOICE
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
 config POSIX_AEP_CHOICE_NONE
-	bool "No pre-defined POSIX subprofile"
+	bool "No POSIX subprofile"
 	help
-	  No pre-defined POSIX profile is selected.
+	  No POSIX subprofile is selected.
+
+config POSIX_AEP_CHOICE_ZEPHYR
+	bool "Minimal Zephyr System Profile"
+	select POSIX_C_LIB_EXT
+	select POSIX_C_LANG_SUPPORT_R
+	help
+	  Zephyr expects certain POSIX functions to be available throughout the build environment,
+	  such as gmtime_r(), strnlen(), strtok_r(), and possibly others.
+
+	  These functions are divided into two standalone Option Groups that may be enabled
+	  independently of the remainder of the POSIX API implementation; namely POSIX_C_LIB_EXT and
+	  POSIX_C_LANG_SUPPORT_R. If not referenced by the Zephyr kernel or application, there are no
+	  resource implications for enabling these option groups.
+
+	  Unlike pre-defined, standard POSIX subprofiles, this subprofile is custom to Zephyr and
+	  therefore does not need to include the base definitions or system interfaces that would
+	  otherwise be required for a conformant POSIX system or subprofile. This system profile
+	  does not itself meet the requirements for POSIX implementation conformance.
+
+	  For more information, see
+	  https://docs.zephyrproject.org/latest/contribute/coding_guidelines/index.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
 config POSIX_AEP_CHOICE_BASE
-	bool "Base definitions (system interfaces)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	bool "Minimal POSIX System Profile"
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	help
 	  Only enable the base definitions required for all POSIX systems.
@@ -49,8 +69,7 @@ config POSIX_AEP_CHOICE_BASE
 
 config POSIX_AEP_CHOICE_PSE51
 	bool "Minimal Realtime System Profile (PSE51)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	help
@@ -63,8 +82,7 @@ config POSIX_AEP_CHOICE_PSE51
 
 config POSIX_AEP_CHOICE_PSE52
 	bool "Realtime Controller System Profile (PSE52)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_AEP_REALTIME_CONTROLLER
@@ -78,8 +96,7 @@ config POSIX_AEP_CHOICE_PSE52
 
 config POSIX_AEP_CHOICE_PSE53
 	bool "Dedicated Realtime System Profile (PSE53)"
-	depends on !NATIVE_APPLICATION
-	select NATIVE_LIBC_INCOMPATIBLE
+	depends on POSIX_SYSTEM_INTERFACES
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_AEP_REALTIME_CONTROLLER
@@ -96,7 +113,9 @@ config POSIX_AEP_CHOICE_PSE53
 
 endchoice # POSIX_AEP_CHOICE
 
-# Base Definitions (System Interfaces)
+if POSIX_SYSTEM_INTERFACES
+
+# Mandatory POSIX System Interfaces (base profile)
 config POSIX_BASE_DEFINITIONS
 	bool
 	select POSIX_ASYNCHRONOUS_IO
@@ -184,3 +203,5 @@ config POSIX_AEP_REALTIME_DEDICATED
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+endif # POSIX_SYSTEM_INTERFACE

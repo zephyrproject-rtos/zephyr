@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/sched.h>
+#include <zephyr/sys/clock.h>
 
 struct thrd_trampoline_arg {
 	thrd_start_t func;
@@ -44,7 +45,11 @@ thrd_t thrd_current(void)
 
 int thrd_sleep(const struct timespec *duration, struct timespec *remaining)
 {
-	return nanosleep(duration, remaining);
+	if (sys_clock_nanosleep(SYS_CLOCK_REALTIME, 0, duration, remaining) != 0) {
+		return thrd_error;
+	}
+
+	return thrd_success;
 }
 
 void thrd_yield(void)
