@@ -103,7 +103,7 @@ static int pinctrl_eos_s3_configure_pin(const pinctrl_soc_pin_t *pin)
 	WRITE_BIT(reg_value, PAD_PULL_DOWN_BIT, 0);
 	if (pin->high_impedance) {
 		WRITE_BIT(reg_value, PAD_PULL_UP_BIT, 0);
-	} else if (pin->pull_up | pin->pull_down) {
+	} else if (pin->pull_up || pin->pull_down) {
 		WRITE_BIT(reg_value, PAD_PULL_UP_BIT, pin->pull_up);
 		WRITE_BIT(reg_value, PAD_PULL_DOWN_BIT, pin->pull_down);
 	}
