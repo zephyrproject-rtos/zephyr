@@ -1,5 +1,6 @@
-# RF Config
-# Copyright (c) 2024 Tron Future Tech., Inc.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020 Xilinx, Inc.
+# Copyright (c) 2025 YWL, Tron Future Tech.
 
 menuconfig RF
     bool "RF driver"

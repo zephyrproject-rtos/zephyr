@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: MIT */
+/*
+ * Copyright (c) 2020 Xilinx, Inc.
+ * Copyright (c) 2025 YWL, Tron Future Tech.
+ */
 #define DT_DRV_COMPAT xlnx_rfdc
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>

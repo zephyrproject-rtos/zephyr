@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2020 Xilinx, Inc.
+# Copyright (c) 2025 YWL, Tron Future Tech.
+ 
+
 config XLNX_RFDC
     bool "Xilinx RF Data Converter driver enable"
 

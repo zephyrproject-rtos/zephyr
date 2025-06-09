@@ -1,4 +1,4 @@
-# Tron Future Tech., Inc.
+# SPDX-License-Identifier: MIT
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/rf.h)
 
 zephyr_library()

@@ -1,9 +1,8 @@
+/* SPDX-License-Identifier: MIT */
 /*
- * Copyright (c) 2021 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2020 Xilinx, Inc.
+ * Copyright (c) 2025 YWL, Tron Future Tech.
  */
-
 #ifndef ZEPHYR_DRIVERS_RF_XLNX_RFDC_H_
 #define ZEPHYR_DRIVERS_RF_XLNX_RFDC_H_
 #include <zephyr/kernel.h>

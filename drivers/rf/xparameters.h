@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: MIT */
+/*
+ * Copyright (c) 2020 Xilinx, Inc.
+ * Copyright (c) 2025 YWL, Tron Future Tech.
+ */
+
 #ifndef XPARAMETERS_H   /* prevent circular inclusions */
 #define XPARAMETERS_H   /* by using protection macros */
 
