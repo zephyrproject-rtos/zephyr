@@ -90,28 +90,30 @@ static int uart_bflb_err_check(const struct device *dev)
 {
 	const struct bflb_config *const cfg = dev->config;
 	uint32_t status = BL_RD_REG(cfg->reg, UART_INT_STS);
-	uint32_t tmp = BL_RD_REG(cfg->reg, UART_INT_CLEAR);
+	uint32_t clear_mask = 0;
 	int errors = 0;
 
 	if (status & BIT(UART_INT_RX_FER)) {
-		tmp |= BIT(UART_INT_RX_FER);
+		clear_mask |= BIT(UART_INT_RX_FER);
 
 		errors |= UART_ERROR_OVERRUN;
 	}
 
 	if (status & BIT(UART_INT_TX_FER)) {
-		tmp |= BIT(UART_INT_TX_FER);
+		clear_mask |= BIT(UART_INT_TX_FER);
 
 		errors |= UART_ERROR_OVERRUN;
 	}
 
 	if (status & BIT(UART_INT_PCE)) {
-		tmp |= BIT(UART_INT_PCE);
+		clear_mask |= BIT(UART_INT_PCE);
 
 		errors |= UART_ERROR_PARITY;
 	}
 
-	BL_WR_REG(cfg->reg, UART_INT_CLEAR, tmp);
+	if (clear_mask != 0) {
+		BL_WR_REG(cfg->reg, UART_INT_CLEAR, clear_mask);
+	}
 
 	return errors;
 }
