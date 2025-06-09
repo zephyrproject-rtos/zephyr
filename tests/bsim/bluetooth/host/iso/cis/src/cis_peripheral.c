@@ -35,6 +35,9 @@ static const struct bt_data ad[] = {
 };
 static struct bt_iso_chan iso_chan;
 
+static size_t disconnect_after_recv_cnt;
+static size_t iso_recv_cnt;
+
 /** Print data as d_0 d_1 d_2 ... d_(n-2) d_(n-1) d_(n) to show the 3 first and 3 last octets
  *
  * Examples:
@@ -72,13 +75,25 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 	printk("\t %s\n", data_str);
 }
 
+static void disconnect_device(struct bt_conn *conn, void *data)
+{
+	int err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+}
+
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		     struct net_buf *buf)
 {
+	iso_recv_cnt++;
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		printk("Incoming data channel %p len %u\n", chan, buf->len);
 		iso_print_data(buf->data, buf->len);
 		SET_FLAG(flag_data_received);
+	}
+	if (disconnect_after_recv_cnt && (iso_recv_cnt >= disconnect_after_recv_cnt)) {
+		printk("Disconnecting\n");
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconnect_device, NULL);
 	}
 }
 
@@ -189,11 +204,32 @@ static void test_main(void)
 	}
 }
 
+static void test_main_early_disconnect(void)
+{
+	init();
+
+	disconnect_after_recv_cnt = 10;
+
+	while (true) {
+		adv_connect();
+		bt_testlib_conn_wait_free();
+
+		if (IS_FLAG_SET(flag_data_received)) {
+			TEST_PASS("Test passed");
+		}
+	}
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral",
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "peripheral_early_disconnect",
+		.test_descr = "Peripheral that tests early disconnect",
+		.test_main_f = test_main_early_disconnect,
 	},
 	BSTEST_END_MARKER,
 };
