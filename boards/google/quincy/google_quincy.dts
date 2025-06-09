@@ -61,3 +61,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+/* DRBG: Deterministic Random Bit Generator */
+&drbg0 {
+	status = "okay";
+};
