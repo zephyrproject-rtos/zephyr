@@ -823,6 +823,7 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 	 * transfer beforehand. In Buffer DMA the SETUP can be copied to any EP0
 	 * OUT buffer. If there is any buffer queued, it is obsolete now.
 	 */
+	udc_dwc2_ep_disable(dev, cfg_in, false);
 	atomic_and(&priv->xfer_finished, ~(BIT(0) | BIT(16)));
 
 	buf = udc_buf_get_all(cfg_out);
@@ -832,7 +833,6 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 
 	buf = udc_buf_get_all(cfg_in);
 	if (buf) {
-		udc_dwc2_ep_disable(dev, cfg_in, false);
 		net_buf_unref(buf);
 	}
 
