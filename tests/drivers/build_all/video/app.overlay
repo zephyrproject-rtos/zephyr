@@ -17,6 +17,12 @@
 		#clock-cells = <0>;
 	};
 
+	imx219_input_clock: imx219-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -171,6 +177,12 @@
 				reg = <0xd>;
 				reset-gpios = <&test_gpio 0 1>;
 				pwdn-gpios = <&test_gpio 1 1>;
+			};
+
+			test_i2c_imx219: imx219@e {
+				compatible = "sony,imx219";
+				reg = <0xe>;
+				clocks = <&imx219_input_clock>;
 			};
 		};
 
