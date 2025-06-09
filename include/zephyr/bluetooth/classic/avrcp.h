@@ -287,6 +287,11 @@ struct bt_avrcp_passthrough_rsp {
 	uint8_t data[];
 } __packed;
 
+struct bt_avrcp_passthrough_opvu_data {
+	uint8_t company_id[BT_AVRCP_COMPANY_ID_SIZE];
+	uint16_t opid_vu;
+} __packed;
+
 struct bt_avrcp_get_cap_rsp {
 	uint8_t cap_id;  /**< bt_avrcp_cap_t */
 	uint8_t cap_cnt; /**< number of items contained in *cap */
@@ -609,6 +614,19 @@ struct bt_avrcp_tg_cb {
 	 *  @param player_id The player ID to be set as browsed player.
 	 */
 	void (*set_browsed_player_req)(struct bt_avrcp_tg *tg, uint8_t tid, uint16_t player_id);
+
+	/** @brief Pass Through command request callback.
+	 *
+	 *  This callback is called whenever an AVRCP Pass Through command is request.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param buf The buffer containing the PASS THROUGH command payload.
+	 *             The application can parse this payload according to the format defined
+	 *             in @ref bt_avrcp_passthrough_rsp. Note that the data is encoded
+	 *             in big-endian format.
+	 */
+	void (*passthrough_cmd_req)(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf);
 };
 
 /** @brief Register callback.
@@ -657,6 +675,24 @@ int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid);
  */
 int bt_avrcp_tg_send_set_browsed_player_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 					    struct net_buf *buf);
+
+/** @brief Send AVRCP Pass Through response.
+ *
+ *  This function is called by the application to send the Pass Through response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param result The response code, see @ref bt_avrcp_rsp_t, can support
+ *                0x8(NOT_IMPLEMENTED), 0x9 (ACCEPTED), 0xA (REJECTED)
+ *  @param buf The buffer containing the PASS THROUGH command payload.
+ *             The application can construct this payload according to the format defined
+ *             in @ref bt_avrcp_passthrough_rsp. Note that the data is encoded
+ *             in big-endian format.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_rsp_t result,
+				     struct net_buf *buf);
 #ifdef __cplusplus
 }
 #endif
