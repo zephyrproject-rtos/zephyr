@@ -568,47 +568,6 @@
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
     "UP038",    # https://docs.astral.sh/ruff/rules/non-pep604-isinstance
 ]
-"./scripts/logging/dictionary/database_gen.py" = [
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-    "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
-"./scripts/logging/dictionary/dictionary_parser/data_types.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
-"./scripts/logging/dictionary/dictionary_parser/log_database.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
-"./scripts/logging/dictionary/dictionary_parser/log_parser.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/logging/dictionary/dictionary_parser/log_parser_v1.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/logging/dictionary/dictionary_parser/log_parser_v3.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/logging/dictionary/dictionary_parser/mipi_syst.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/logging/dictionary/dictionary_parser/utils.py" = [
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./scripts/logging/dictionary/log_parser.py" = [
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./scripts/make_bugs_pickle.py" = [
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
