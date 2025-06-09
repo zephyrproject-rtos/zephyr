@@ -132,8 +132,8 @@ static int gpio_rpi_configure(const struct device *dev,
 		/* This is almost the opposite of the Pico SDK's gpio_set_function. */
 		hw_write_masked(&pads_bank0_hw->io[pin], PADS_BANK0_GPIO0_OD_BITS,
 				PADS_BANK0_GPIO0_IE_BITS | PADS_BANK0_GPIO0_OD_BITS);
-#ifdef SOC_SERIES_RP2350
-		hw_set_bits(&pads_bank0_hw->io[gpio], PADS_BANK0_GPIO0_ISO_BITS);
+#ifdef CONFIG_SOC_SERIES_RP2350
+		hw_set_bits(&pads_bank0_hw->io[pin], PADS_BANK0_GPIO0_ISO_BITS);
 #endif
 		return 0;
 	}
