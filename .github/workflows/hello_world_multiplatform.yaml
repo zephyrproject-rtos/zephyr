@@ -59,7 +59,7 @@ jobs:
           python-version: 3.11
 
       - name: Setup Zephyr project
-        uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
+        uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
         with:
           app-path: zephyr
           toolchains: aarch64-zephyr-elf:arc-zephyr-elf:arc64-zephyr-elf:arm-zephyr-eabi:mips-zephyr-elf:riscv64-zephyr-elf:sparc-zephyr-elf:x86_64-zephyr-elf:xtensa-dc233c_zephyr-elf:xtensa-sample_controller32_zephyr-elf

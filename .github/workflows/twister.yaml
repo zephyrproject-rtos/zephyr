@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup Zephyr project
         if: github.event_name == 'pull_request'
-        uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
+        uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
         with:
           app-path: zephyr
           toolchains: all
@@ -356,7 +356,7 @@ jobs:
             junit.xml
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@afb2984f4d89672b2f9d9c13ae23d53779671984 # v2.19.0
+        uses: EnricoMi/publish-unit-test-result-action@3a74b2957438d0b6e2e61d67b05318aa25c9e6c6 # v2.20.0
         with:
           check_name: Unit Test Results
           files: "**/twister.xml"
