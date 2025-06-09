@@ -34,6 +34,8 @@ menuconfig HTTP_SERVER
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
 	select EXPERIMENTAL
+	select NET_SOCKETS
+	select EVENTFD
 	imply NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  HTTP1 and HTTP2 server support.
