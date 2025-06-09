@@ -31,9 +31,6 @@
 #ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
 extern enum bst_result_t bst_result;
 
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP              5
-
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_pa_terminated);
 CREATE_FLAG(flag_broadcast_code_received);
