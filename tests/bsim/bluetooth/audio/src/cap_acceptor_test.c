@@ -1235,7 +1235,7 @@ static void pa_sync_to_broadcaster(void)
 	int err;
 
 	LOG_INF("Scanning for broadcast sources");
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE_CONTINUOUS, NULL);
 	if (err != 0) {
 		FAIL("Unable to start scan for broadcast sources: %d", err);
 		return;

@@ -1119,10 +1119,7 @@ static void delete_unicast_group(struct bt_bap_unicast_group *unicast_group)
 
 static void test_main(void)
 {
-	/* TODO: Temporarily reduce to 1 due to bug in controller. Set to > 1 value again when
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/57904 has been resolved.
-	 */
-	const unsigned int iterations = 1;
+	const unsigned int iterations = 2;
 
 	init();
 
