@@ -515,6 +515,14 @@ New Boards
 
    * :zephyr:board:`ophelia4ev` (``ophelia4ev``)
 
+.. _shields_added_in_zephyr_4_2:
+
+New shields
+============
+
+ * :ref:`MikroElektronika Stepper 18 Click <mikroe_stepper_18_click_shield>`
+ * :ref:`MikroElektronika Stepper 19 Click <mikroe_stepper_19_click_shield>`
+
 New Drivers
 ***********
 
@@ -903,6 +911,7 @@ New Drivers
 
 * Stepper
 
+   * :dtcompatible:`allegro,a4979`
    * :dtcompatible:`adi,tmc51xx`
 
 * System controller
