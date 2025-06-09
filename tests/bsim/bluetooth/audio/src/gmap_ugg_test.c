@@ -188,7 +188,9 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	test_stream->valid_rx_cnt = 0U;
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
+	test_stream->err_rx_cnt = 0U;
 	UNSET_FLAG(test_stream->flag_audio_received);
+	test_stream->last_rx_failed = false;
 
 	printk("Started stream %p\n", stream);
 
@@ -560,7 +562,7 @@ static void scan_and_connect(void)
 
 	UNSET_FLAG(flag_connected);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_CONTINUOUS, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
