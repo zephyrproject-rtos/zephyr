@@ -24,6 +24,7 @@
 		pwm-0 = &sc_timer;
 		i2s-codec-tx = &sai0;
 		i2s-tx = &sai0;
+		sdhc0 = &usdhc0;
 	};
 
 	chosen {
@@ -182,6 +183,10 @@ zephyr_lcdif: &lcdif {};
 	status = "okay";
 };
 
+&gpio7 {
+	status = "okay";
+};
+
 &green_led {
 	status = "okay";
 };
@@ -238,6 +243,20 @@ zephyr_udc0: &usb0 {
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+};
+
+&usdhc0 {
+	status = "okay";
+	pwr-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
+		status = "okay";
+	};
+	pinctrl-0 = <&pinmux_usdhc>;
+	pinctrl-names = "default";
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
 };
 
 &wwdt0 {
