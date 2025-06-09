@@ -161,11 +161,13 @@ static int gpio_rpi_configure(const struct device *dev,
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				data->open_drain_mask |= BIT(pin);
 				gpio_put(pin + offset, 0);
-				gpio_set_dir(pin + offset, flags & GPIO_OUTPUT_INIT_LOW);
+				gpio_set_dir(pin + offset,
+					     (flags & GPIO_OUTPUT_INIT_LOW) ? GPIO_OUT : GPIO_IN);
 			} else {
 				data->open_drain_mask &= ~(BIT(pin));
 				gpio_put(pin + offset, 1);
-				gpio_set_dir(pin + offset, flags & GPIO_OUTPUT_INIT_HIGH);
+				gpio_set_dir(pin + offset,
+					     (flags & GPIO_OUTPUT_INIT_HIGH) ? GPIO_OUT : GPIO_IN);
 			}
 		} else {
 			data->single_ended_mask &= ~(BIT(pin));
