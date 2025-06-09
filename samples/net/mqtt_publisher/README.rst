@@ -221,6 +221,27 @@ broker or uses a different port number, modify the following values:
 	#define SOCKS5_PROXY_ADDR    SERVER_ADDR
 	#define SOCKS5_PROXY_PORT    1080
 
+MQTT logging backend
+====================
+
+The sample can be configured to use an MQTT logging backend, which allows log
+messages from the application to be published to an MQTT broker. This feature
+uses the same MQTT client instance as the main sample application.
+
+The MQTT logging backend uses the :c:func:`log_backend_mqtt_client_set` API to
+register an MQTT client for publishing log messages. The backend only uses the
+client's :c:func:`mqtt_publish` function and does not manage the client's
+connection lifecycle - this remains the application's responsibility.
+
+To enable the MQTT logging backend in the sample, build it with
+``-DEXTRA_CONF_FILE=overlay-log-backend-mqtt.conf`` parameter.
+
+Key configuration options available:
+
+- :kconfig:option:`CONFIG_LOG_BACKEND_MQTT_TOPIC_DEFAULT`: Topic for publishing logs (default: "zephyr/logs")
+- :kconfig:option:`CONFIG_LOG_BACKEND_MQTT_QOS`: QoS level for log messages (default: 0)
+- :kconfig:option:`CONFIG_LOG_BACKEND_MQTT_RETAIN`: Whether to retain log messages (default: disabled)
+- :kconfig:option:`CONFIG_LOG_BACKEND_MQTT_MAX_MSG_SIZE`: Maximum log message size (default: 256 bytes)
 
 Running on cc3220sf_launchxl
 ============================

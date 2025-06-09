@@ -11,6 +11,9 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/random/random.h>
+#if defined(CONFIG_LOG_BACKEND_MQTT)
+#include <zephyr/logging/log_backend_mqtt.h>
+#endif
 
 #include <string.h>
 #include <errno.h>
@@ -172,6 +175,10 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 		}
 #endif
 
+#if defined(CONFIG_LOG_BACKEND_MQTT)
+		log_backend_mqtt_client_set(client);
+#endif
+
 		break;
 
 	case MQTT_EVT_DISCONNECT:
@@ -179,6 +186,10 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 
 		connected = false;
 		clear_fds();
+
+#if defined(CONFIG_LOG_BACKEND_MQTT)
+		log_backend_mqtt_client_set(NULL);
+#endif
 
 		break;
 
