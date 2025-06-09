@@ -138,13 +138,18 @@ void net_ipv4_autoconf_start(struct net_if *iface)
 void net_ipv4_autoconf_reset(struct net_if *iface)
 {
 	struct net_if_config *cfg;
+	struct net_if_addr *ifaddr;
+	struct net_if *ret;
 
 	cfg = net_if_get_config(iface);
 	if (!cfg) {
 		return;
 	}
 
-	net_if_ipv4_addr_rm(iface, &cfg->ipv4auto.requested_ip);
+	ifaddr = net_if_ipv4_addr_lookup(&cfg->ipv4auto.requested_ip, &ret);
+	if (ifaddr != NULL && ret == iface) {
+		net_if_ipv4_addr_rm(iface, &cfg->ipv4auto.requested_ip);
+	}
 
 	NET_DBG("Autoconf reset for %p", iface);
 }
