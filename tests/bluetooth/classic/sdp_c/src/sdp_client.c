@@ -280,10 +280,40 @@ static int cmd_sa_discovery(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static uint8_t sdp_discover_fail_func(struct bt_conn *conn, struct bt_sdp_client_result *result,
+				      const struct bt_sdp_discover_params *params)
+{
+	if ((result == NULL) || (result->resp_buf == NULL) || (result->resp_buf->len == 0)) {
+		printk("test pass\n");
+	} else {
+		printk("test fail\n");
+	}
+
+	return BT_SDP_DISCOVER_UUID_STOP;
+}
+
+static int cmd_ssa_discovery_fail(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	sdp_discover.uuid = BT_UUID_DECLARE_16(BT_SDP_HANDSFREE_SVCLASS),
+	sdp_discover.func = sdp_discover_fail_func;
+	sdp_discover.pool = &sdp_client_pool;
+	sdp_discover.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR;
+
+	err = bt_sdp_discover(default_conn, &sdp_discover);
+	if (err) {
+		shell_error(sh, "Fail to start SDP Discovery (err %d)", err);
+		return err;
+	}
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sdp_client_cmds,
 	SHELL_CMD_ARG(ss_discovery, NULL, "<UUID>", cmd_ss_discovery, 2, 0),
 	SHELL_CMD_ARG(sa_discovery, NULL, "<Service Record Handle>", cmd_sa_discovery, 2, 0),
 	SHELL_CMD_ARG(ssa_discovery, NULL, "<UUID>", cmd_ssa_discovery, 2, 0),
+	SHELL_CMD_ARG(ssa_discovery_fail, NULL, "", cmd_ssa_discovery_fail, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
