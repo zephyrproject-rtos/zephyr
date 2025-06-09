@@ -145,6 +145,11 @@
 	pinctrl-names = "default";
 };
 
+&lpcmp0 {
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
 &lpi2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;

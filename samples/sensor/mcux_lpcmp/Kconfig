@@ -1,0 +1,19 @@
+#
+# Copyright NXP 2025
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LPCMP_POSITIVE_PORT
+	int "The LPCMP positive input port"
+	default 0
+	help
+	  Specifies positive input port.
+
+config LPCMP_NEGATIVE_PORT
+	int "The LPCMP negative input port"
+	default 7
+	help
+	  Specifies negative input port.
+
+source "Kconfig.zephyr"

@@ -8,9 +8,13 @@ common:
     - frdm_mcxn236
     - frdm_mcxa156
     - frdm_mcxa153
+    - frdm_mcxa166
+    - frdm_mcxa276
   integration_platforms:
     - frdm_mcxn947/mcxn947/cpu0
     - frdm_mcxn236
+    - frdm_mcxa166
+    - frdm_mcxa276
   tags:
     - drivers
     - sensor
