@@ -392,7 +392,8 @@ static void gpio_rpi_isr(const struct device *dev)
 	uint32_t events;
 	uint32_t pin;
 
-	irq_ctrl_base = &iobank0_hw->proc0_irq_ctrl;
+	irq_ctrl_base = get_core_num() ? &io_bank0_hw->proc1_irq_ctrl
+				       : &io_bank0_hw->proc0_irq_ctrl;
 	for (pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
 		status_reg = &irq_ctrl_base->ints[pin / 8];
 		events = (*status_reg >> 4 * (pin % 8)) & ALL_EVENTS;
