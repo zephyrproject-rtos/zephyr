@@ -16,6 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/socket_offload.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
 
@@ -388,6 +389,82 @@ ZTEST(net_offloaded_netdev, test_addr_add_net_off_impl)
 	struct net_if *test_iface = NET_IF_GET(net_offload_test_impl, 0);
 
 	test_addr_add_common(test_iface, "net");
+}
+
+static bool offload_getaddrinfo_called;
+
+static int test_offload_getaddrinfo(const char *node,
+				    const char *service,
+				    const struct zsock_addrinfo *hints,
+				    struct zsock_addrinfo **res)
+{
+	ARG_UNUSED(node);
+	ARG_UNUSED(service);
+	ARG_UNUSED(hints);
+	ARG_UNUSED(res);
+
+	offload_getaddrinfo_called = true;
+
+	return 0;
+}
+
+static void test_offload_freeaddrinfo(struct zsock_addrinfo *res)
+{
+	ARG_UNUSED(res);
+}
+
+static const struct socket_dns_offload test_dns_offload_ops = {
+	.getaddrinfo = test_offload_getaddrinfo,
+	.freeaddrinfo = test_offload_freeaddrinfo,
+};
+
+ZTEST(net_offloaded_netdev, test_dns_offload)
+{
+	struct zsock_addrinfo *ai;
+
+	/* Register offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_register(&test_dns_offload_ops);
+	zassert_true(socket_offload_dns_is_enabled(),
+		     "DNS offloading should be enabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_true(offload_getaddrinfo_called,
+		     "Offloaded implementation should be called");
+	zsock_freeaddrinfo(ai);
+
+	/* Disable offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_enable(false);
+	zassert_false(socket_offload_dns_is_enabled(),
+		     "DNS offloading should be disabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_false(offload_getaddrinfo_called,
+		     "Offloaded implementation shouldn't be called");
+	zsock_freeaddrinfo(ai);
+
+	/* Reenable offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_enable(true);
+	zassert_true(socket_offload_dns_is_enabled(),
+		     "DNS offloading should be enabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_true(offload_getaddrinfo_called,
+		     "Offloaded implementation should be called");
+	zsock_freeaddrinfo(ai);
+
+	/* Deregister offloaded DNS */
+	offload_getaddrinfo_called = false;
+	socket_offload_dns_deregister(&test_dns_offload_ops);
+	zassert_false(socket_offload_dns_is_enabled(),
+		      "DNS offloading should be disabled");
+	zassert_ok(zsock_getaddrinfo("127.0.0.1", NULL, NULL, &ai),
+		   "getaddrinfo() failed");
+	zassert_false(offload_getaddrinfo_called,
+		     "Offloaded implementation shouldn't be called");
+	zsock_freeaddrinfo(ai);
 }
 
 ZTEST_SUITE(net_offloaded_netdev, NULL, NULL, net_offloaded_netdev_before, NULL, NULL);
