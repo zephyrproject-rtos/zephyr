@@ -1121,6 +1121,7 @@ static uint32_t xlnx_rfdc_startup(const struct device *dev, uint32_t type, uint3
     struct xlnx_rfdc_dev_data *data = dev->data;
     uint32_t status;
     status = xlnx_rfdc_restart_ipsm(dev, type, tile_id,  XRFDC_SM_STATE1, XRFDC_SM_STATE15);
+	return status;
 }
 
 static uint32_t xlnx_rfdc_startup_dist(const struct device *dev)
@@ -2670,8 +2671,7 @@ static int xlnx_rfdc_dac_power_on(const struct device *dev) {
 	data->sample_rates[1][1] = 7776.00;
 	data->sample_rates[1][2] = 7776.00;
     data->sample_rates[1][3] = 7776.00;
-    xlnx_rfdc_set_clock_dist(dev);
-   
+    return xlnx_rfdc_set_clock_dist(dev);
 }
 
 static int xlnx_rfdc_adc_power_on(const struct device *dev) {
@@ -2692,7 +2692,7 @@ static int xlnx_rfdc_adc_power_on(const struct device *dev) {
 	data->sample_rates[0][1] = 3888.00;
 	data->sample_rates[0][2] = 3888.00;
     data->sample_rates[0][3] = 3888.00;
-    xlnx_rfdc_set_clock_dist(dev);
+    return xlnx_rfdc_set_clock_dist(dev);
 }
 
 static void xlnx_rfdc_init(const struct device *dev) {
