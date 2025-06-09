@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <st/h7/stm32h753Xi.dtsi>
 #include <st/h7/stm32h753bitx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/clock/stm32h7_clock.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -138,20 +139,10 @@
 	d3ppre = <2>;
 };
 
-/* See reference manual (RM0433):
- *   0b10: : HSE clock selected
- */
-#define MCO1_SEL_HSE 2
-
-/* See reference manual (RM0433):
- *   0b0001: division by 1
- */
-#define MCO1_PRE_DIV_1 1
-
 &mco1 {
 	status = "okay";
-	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(MCO1_SEL_HSE)>;
-	prescaler = <MCO1_PRE(MCO1_PRE_DIV_1)>;
+	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(STM32_SRC_HSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
 	pinctrl-0 = <&rcc_mco_1_pa8>;
 	pinctrl-names = "default";
 };
@@ -221,7 +212,7 @@
 };
 
 &rtc{
-	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,<&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
