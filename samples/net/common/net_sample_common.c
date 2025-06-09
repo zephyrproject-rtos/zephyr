@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_samples_common, LOG_LEVEL_DBG);
 static struct net_mgmt_event_callback l4_cb;
 static K_SEM_DEFINE(network_connected, 0, 1);
 
-static void l4_event_handler(struct net_mgmt_event_callback *cb, uint32_t event,
+static void l4_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 			     struct net_if *iface)
 {
 	switch (event) {
