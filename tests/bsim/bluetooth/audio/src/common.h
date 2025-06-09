@@ -50,7 +50,8 @@ static const uint8_t mock_iso_data[] = {
 		      0x86U, 0xDDU, 0x72U, 0xCCU, 0xCDU)}
 
 #define MIN_SEND_COUNT 100U
-#define WAIT_SECONDS   100U                          /* seconds */
+#define MAX_FAIL_COUNT 0U
+#define WAIT_SECONDS   100U                     /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
 #define WAIT_FOR_COND(cond)                                                                        \
@@ -144,6 +145,7 @@ struct audio_test_stream {
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
 	size_t valid_rx_cnt;
+	size_t err_rx_cnt;
 	atomic_t flag_audio_received;
 	bool last_rx_failed;
 };
