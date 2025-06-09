@@ -307,6 +307,12 @@ xtensa_switch:
 
 #if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 	call0 _xtensa_hifi_save
+#elif defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
+	/* Disable HiFi sharing */
+	rsr a6, CPENABLE
+	movi a7, ~(1 << XCHAL_CP_ID_AUDIOENGINELX)
+	and a6, a6, a7
+	wsr a6, CPENABLE
 #endif
 
 	/* Now the high registers */
