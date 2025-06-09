@@ -39,7 +39,7 @@ static int dac_esp32_channel_setup(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-	if (channel_cfg->channel_id > SOC_DAC_CHAN_NUM) {
+	if (channel_cfg->channel_id >= SOC_DAC_CHAN_NUM) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
