@@ -14,6 +14,7 @@ extern "C" {
 
 /**
  * @defgroup coresight_apis Coresight APIs
+ * @ingroup debug
  * @{
  * @}
  * @defgroup cs_trace_defmt Coresight Trace Deformatter

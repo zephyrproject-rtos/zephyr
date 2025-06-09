@@ -48,7 +48,7 @@ ZTEST(mpsc, test_push_pop)
 
 	zassert_equal(head, &push_pop_nodes[0], "Queue head should point at push_pop_node");
 	next = mpsc_ptr_get(push_pop_nodes[0].next);
-	zassert_is_null(next, NULL, "push_pop_node next should point at null");
+	zassert_is_null(next, "push_pop_node next should point at null");
 	next = mpsc_ptr_get(push_pop_q.stub.next);
 	zassert_equal(next, &push_pop_nodes[0], "Queue stub should point at push_pop_node");
 	tail = push_pop_q.tail;

@@ -72,7 +72,7 @@ struct pcf8563_config {
 
 #ifdef PCF8563_INT1_GPIOS_IN_USE
 /* This work will run the user callback function */
-void callback_work_handler(struct k_work *work);
+static void callback_work_handler(struct k_work *work);
 K_WORK_DEFINE(callback_work, callback_work_handler);
 #endif
 
@@ -335,22 +335,22 @@ static int pcf8563_alarm_get_time(const struct device *dev, uint16_t id, uint16_
 	*mask = 0U;
 
 	/* The first bit is the enabled flag */
-	if (regs[0] & BIT(7)) {
+	if (!(regs[0] & BIT(7))) {
 		timeptr->tm_min = bcd2bin(regs[0] & GENMASK(6, 0));
 		*mask |= RTC_ALARM_TIME_MASK_MINUTE;
 	}
 
-	if (regs[1] & BIT(7)) {
+	if (!(regs[1] & BIT(7))) {
 		timeptr->tm_hour = bcd2bin(regs[1] & GENMASK(5, 0));
 		*mask |= RTC_ALARM_TIME_MASK_HOUR;
 	}
 
-	if (regs[2] & BIT(7)) {
+	if (!(regs[2] & BIT(7))) {
 		timeptr->tm_mday = bcd2bin(regs[2] & GENMASK(5, 0));
 		*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
 	}
 
-	if (regs[3] & BIT(7)) {
+	if (!(regs[3] & BIT(7))) {
 		timeptr->tm_wday = bcd2bin(regs[3] & GENMASK(2, 0));
 		*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
 	}
@@ -423,7 +423,7 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 	data->dev = dev;
 
 	/* The PCF8563 int pin requires a pull up to work */
-	ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT | GPIO_PULL_UP);
+	ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_ERR("Error %d: failed to configure %s pin %d",
 		       ret, config->int1.port->name, config->int1.pin);

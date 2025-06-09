@@ -14,29 +14,29 @@ struct sensor_data_msg {
 	int b;
 };
 
-ZBUS_CHAN_DEFINE(chan1,			 /* Name */
+ZBUS_CHAN_DEFINE(chan1,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(chan2,			 /* Name */
+ZBUS_CHAN_DEFINE(chan2,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS(lis2), /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(chan3,			 /* Name */
+ZBUS_CHAN_DEFINE(chan3,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
@@ -69,19 +69,18 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 {
 	count_callback1 = 0;
 	struct sensor_data_msg sd = {.a = 10, .b = 100};
-	static struct zbus_observer_node n1, n2, n3, n4, n5, n6;
 
 	/* Tyring to add same static observer as one dynamic */
-	zassert_equal(-EEXIST, zbus_chan_add_obs(&chan2, &lis2, &n2, K_MSEC(200)), NULL);
+	zassert_equal(-EEXIST, zbus_chan_add_obs(&chan2, &lis2, K_MSEC(200)));
 
-	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)), NULL);
+	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)));
 	zassert_equal(count_callback1, 0, "The counter could not be more than zero, no obs");
 
-	zassert_equal(0, zbus_chan_add_obs(&chan1, &lis1, &n1, K_MSEC(200)), NULL);
-	zassert_equal(-EALREADY, zbus_chan_add_obs(&chan1, &lis1, &n1, K_MSEC(200)),
+	zassert_equal(0, zbus_chan_add_obs(&chan1, &lis1, K_MSEC(200)));
+	zassert_equal(-EALREADY, zbus_chan_add_obs(&chan1, &lis1, K_MSEC(200)),
 		      "It cannot be added twice");
 
-	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)), NULL);
+	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)));
 	zassert_equal(count_callback1, 1, "The counter could not be more than zero, no obs, %d",
 		      count_callback1);
 
@@ -90,40 +89,51 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	zassert_equal(-ENODATA, zbus_chan_rm_obs(&chan1, &lis1, K_MSEC(200)),
 		      "It cannot be removed twice");
 
-	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)), NULL);
+	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)));
 	zassert_equal(count_callback1, 1, "The counter could not be more than zero, no obs, %d",
 		      count_callback1);
 
 	count_callback2 = 0;
 
-	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
+	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)));
 	zassert_equal(count_callback2, 1, "The counter could not be more than zero, no obs");
 
-	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis3, &n3, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis3, K_MSEC(200)));
 
-	zassert_equal(-EALREADY, zbus_chan_add_obs(&chan2, &lis3, &n3, K_MSEC(200)),
+	zassert_equal(-EALREADY, zbus_chan_add_obs(&chan2, &lis3, K_MSEC(200)),
 		      "It cannot be added twice");
 
-	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
+	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)));
 	zassert_equal(count_callback2, 3, "The counter could not be more than zero, no obs, %d",
 		      count_callback2);
 	count_callback2 = 0;
-	zassert_equal(0, zbus_chan_add_obs(&chan2, &sub1, &n1, K_MSEC(200)), NULL);
-	zassert_equal(0, zbus_chan_add_obs(&chan2, &sub2, &n2, K_MSEC(200)), NULL);
-	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis4, &n4, K_MSEC(200)), "It must add the obs");
-	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis5, &n5, K_MSEC(200)), "It must add the obs");
-	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis6, &n6, K_MSEC(200)), "It must add the obs");
+	zassert_equal(0, zbus_chan_add_obs(&chan2, &sub1, K_MSEC(200)));
+	zassert_equal(0, zbus_chan_add_obs(&chan2, &sub2, K_MSEC(200)));
+	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis4, K_MSEC(200)), "It must add the obs");
+	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis5, K_MSEC(200)), "It must add the obs");
+	zassert_equal(0, zbus_chan_add_obs(&chan2, &lis6, K_MSEC(200)), "It must add the obs");
 
-	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
-	zassert_equal(count_callback2, 5, NULL);
+#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC)
+	/* Make the heap full */
+	void *mem;
+
+	do {
+		mem = k_malloc(1);
+	} while (mem != NULL);
+
+	/* With the heap full it will not be possible to add another obs */
+#endif
+	zassert_equal(-EFAULT, zbus_chan_add_obs(&chan2, &lis7, K_MSEC(200)));
+	zassert_equal(0, zbus_chan_pub(&chan2, &sd, K_MSEC(500)));
+	zassert_equal(count_callback2, 5);
 
 	/* To cause an error to sub1 and sub2. They have the queue full in this point */
 	/* ENOMSG must be the result */
-	zassert_equal(-ENOMSG, zbus_chan_pub(&chan2, &sd, K_MSEC(500)), NULL);
-	zassert_equal(count_callback2, 10, NULL);
+	zassert_equal(-ENOMSG, zbus_chan_pub(&chan2, &sd, K_MSEC(500)));
+	zassert_equal(count_callback2, 10);
 
-	zassert_equal(0, zbus_chan_rm_obs(&chan2, &sub1, K_MSEC(200)), NULL);
-	zassert_equal(0, zbus_chan_rm_obs(&chan2, &sub2, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_rm_obs(&chan2, &sub1, K_MSEC(200)));
+	zassert_equal(0, zbus_chan_rm_obs(&chan2, &sub2, K_MSEC(200)));
 }
 
 struct aux2_wq_data {
@@ -134,21 +144,19 @@ static struct aux2_wq_data wq_handler;
 
 static void wq_dh_cb(struct k_work *item)
 {
-	static struct zbus_observer_node node;
-
-	zassert_equal(-EAGAIN, zbus_chan_add_obs(&chan2, &sub1, &node, K_MSEC(200)), NULL);
-	zassert_equal(-EAGAIN, zbus_chan_rm_obs(&chan2, &sub2, K_MSEC(200)), NULL);
+	zassert_equal(-EAGAIN, zbus_chan_add_obs(&chan2, &sub1, K_MSEC(200)));
+	zassert_equal(-EAGAIN, zbus_chan_rm_obs(&chan2, &sub2, K_MSEC(200)));
 }
 
 ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs_busy)
 {
-	zassert_equal(0, zbus_chan_claim(&chan2, K_NO_WAIT), NULL);
+	zassert_equal(0, zbus_chan_claim(&chan2, K_NO_WAIT));
 
 	k_work_init(&wq_handler.work, wq_dh_cb);
 	k_work_submit(&wq_handler.work);
 	k_msleep(1000);
 
-	zassert_equal(0, zbus_chan_finish(&chan2), NULL);
+	zassert_equal(0, zbus_chan_finish(&chan2));
 }
 
 ZBUS_CHAN_DEFINE(chan4,                  /* Name */
@@ -186,21 +194,20 @@ ZBUS_CHAN_ADD_OBS(chan4, prio_lis4, 2);
 ZTEST(basic, test_specification_based__zbus_obs_priority)
 {
 	struct sensor_data_msg sd = {.a = 70, .b = 116};
-	static struct zbus_observer_node n1, n2;
 
 	execution_sequence_idx = 0;
 
-	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis2, &n1, K_MSEC(200)), NULL);
-	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis1, &n2, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis2, K_MSEC(200)));
+	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis1, K_MSEC(200)));
 
-	zassert_equal(0, zbus_chan_pub(&chan4, &sd, K_MSEC(500)), NULL);
+	zassert_equal(0, zbus_chan_pub(&chan4, &sd, K_MSEC(500)));
 
-	zassert_equal(execution_sequence[0], 6, NULL);
-	zassert_equal(execution_sequence[1], 5, NULL);
-	zassert_equal(execution_sequence[2], 4, NULL);
-	zassert_equal(execution_sequence[3], 3, NULL);
-	zassert_equal(execution_sequence[4], 2, NULL);
-	zassert_equal(execution_sequence[5], 1, NULL);
+	zassert_equal(execution_sequence[0], 6);
+	zassert_equal(execution_sequence[1], 5);
+	zassert_equal(execution_sequence[2], 4);
+	zassert_equal(execution_sequence[3], 3);
+	zassert_equal(execution_sequence[4], 2);
+	zassert_equal(execution_sequence[5], 1);
 }
 
 ZTEST_SUITE(basic, NULL, NULL, NULL, NULL, NULL);

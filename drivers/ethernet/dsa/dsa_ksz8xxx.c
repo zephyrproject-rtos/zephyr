@@ -1019,7 +1019,7 @@ static struct net_if *dsa_ksz8xxx_get_iface(struct net_if *iface,
 	uint8_t pnum;
 
 	if (!(net_eth_get_hw_capabilities(iface) &
-	      (ETHERNET_DSA_SLAVE_PORT | ETHERNET_DSA_MASTER_PORT))) {
+	      (ETHERNET_DSA_USER_PORT | ETHERNET_DSA_CONDUIT_PORT))) {
 		return iface;
 	}
 
@@ -1114,8 +1114,8 @@ static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_DSA_SLAVE_PORT | ETHERNET_LINK_10BASE_T |
-		ETHERNET_LINK_100BASE_T;
+	return ETHERNET_DSA_USER_PORT | ETHERNET_LINK_10BASE |
+		ETHERNET_LINK_100BASE;
 }
 
 const struct ethernet_api dsa_eth_api_funcs = {

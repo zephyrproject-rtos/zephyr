@@ -431,10 +431,10 @@ static int ssd1306_init_device(const struct device *dev)
 
 	/* Reset if pin connected */
 	if (config->reset.port) {
-		k_sleep(K_MSEC(SSD1306_RESET_DELAY));
 		gpio_pin_set_dt(&config->reset, 1);
 		k_sleep(K_MSEC(SSD1306_RESET_DELAY));
 		gpio_pin_set_dt(&config->reset, 0);
+		k_sleep(K_MSEC(SSD1306_RESET_DELAY));
 	}
 
 	/* Turn display off */

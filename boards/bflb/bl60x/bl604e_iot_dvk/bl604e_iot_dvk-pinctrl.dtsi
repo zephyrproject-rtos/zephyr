@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021-2025 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/bl604x-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <GPIO7_UART0_RX>,
+				 <GPIO16_UART0_TX>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <GPIO7_UART0_RX>,
+				 <GPIO16_UART0_TX>;
+			bias-high-impedance;
+		};
+	};
+};

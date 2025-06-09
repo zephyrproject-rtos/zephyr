@@ -104,20 +104,26 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
         logger.error(f"{e}")
         return 1
 
-    if options.verbose > 1:
-        # if we are using command line platform filter, no need to list every
-        # other platform as excluded, we know that already.
-        # Show only the discards that apply to the selected platforms on the
-        # command line
+    # if we are using command line platform filter, no need to list every
+    # other platform as excluded, we know that already.
+    # Show only the discards that apply to the selected platforms on the
+    # command line
 
+    if options.verbose > 0:
         for i in tplan.instances.values():
-            if i.status == TwisterStatus.FILTER:
+            if i.status in [TwisterStatus.SKIP,TwisterStatus.FILTER]:
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
-                logger.debug(
+                # Filtered tests should be visable only when verbosity > 1
+                if options.verbose < 2 and i.status == TwisterStatus.FILTER:
+                    continue
+                res = i.reason
+                if "Quarantine" in i.reason:
+                    res = "Quarantined"
+                logger.info(
                     f"{i.platform.name:<25} {i.testsuite.name:<50}"
-                    f" {Fore.YELLOW}FILTERED{Fore.RESET}: {i.reason}"
-                )
+                    f" {Fore.YELLOW}{i.status.upper()}{Fore.RESET}: {res}"
+                    )
 
     report = Reporting(tplan, env)
     plan_file = os.path.join(options.outdir, "testplan.json")
@@ -135,6 +141,16 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
         report.synopsis()
         return 0
 
+    # FIXME: This is a workaround for the fact that the hardware map can be usng
+    # the short name of the platform, while the testplan is using the full name.
+    #
+    # convert platform names coming from the hardware map to the full target
+    # name.
+    # this is needed to match the platform names in the testplan.
+    for d in hwm.duts:
+        if d.platform in tplan.platform_names:
+            d.platform = tplan.get_platform(d.platform).name
+
     if options.device_testing and not options.build_only:
         print("\nDevice testing on:")
         hwm.dump(filtered=tplan.selected_platforms)
@@ -149,15 +165,6 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace):
         tplan.create_build_dir_links()
 
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
-    # FIXME: This is a workaround for the fact that the hardware map can be usng
-    # the short name of the platform, while the testplan is using the full name.
-    #
-    # convert platform names coming from the hardware map to the full target
-    # name.
-    # this is needed to match the platform names in the testplan.
-    for d in hwm.duts:
-        if d.platform in tplan.platform_names:
-            d.platform = tplan.get_platform(d.platform).name
     runner.duts = hwm.duts
     runner.run()
 

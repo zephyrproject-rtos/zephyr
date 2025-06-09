@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Note: 1 MHz is too low for fast SPI instance on some nRF platforms.
+ * In such case, use slow instance instead.
+ * This overlay is for negative test.
+ */
+
+&dut_fast {
+	spi-max-frequency = <DT_FREQ_M(1)>;
+};

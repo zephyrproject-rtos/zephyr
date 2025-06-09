@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RZG2LC_SMARC
+	select SOC_R9A07G044C22GBG

@@ -8,19 +8,23 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <zephyr/sys/byteorder.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/vocs.h>
-#include <zephyr/sys/util.h>
-#include "btp/btp.h"
-
-#include <../../subsys/bluetooth/audio/micp_internal.h>
-#include <../../subsys/bluetooth/audio/aics_internal.h>
-#include <../../subsys/bluetooth/audio/vcp_internal.h>
-#include <../../subsys/bluetooth/audio/vocs_internal.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include "../../subsys/bluetooth/audio/aics_internal.h"
+#include "../../subsys/bluetooth/audio/vcp_internal.h"
+#include "../../subsys/bluetooth/audio/vocs_internal.h"
+#include "btp/btp.h"
 
 #define LOG_MODULE_NAME bttester_vcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

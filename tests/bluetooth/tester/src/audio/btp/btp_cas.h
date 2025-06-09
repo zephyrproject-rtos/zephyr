@@ -6,6 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/csip.h>
+
 /* CAS commands */
 #define BTP_CAS_READ_SUPPORTED_COMMANDS	0x01
 struct btp_cas_read_supported_commands_rp {

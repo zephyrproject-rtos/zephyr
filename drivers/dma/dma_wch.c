@@ -8,7 +8,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 #define DMA_WCH_MAX_CHAN      11
 #define DMA_WCH_MAX_CHAN_BASE 8
@@ -492,7 +492,7 @@ LISTIFY(DMA_WCH_MAX_CHAN, GENERATE_ISR, ())
 		.channels = dma_wch##idx##_channels,                                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, &dma_wch_init, NULL, &dma_wch##idx##_data,                      \
+	DEVICE_DT_INST_DEFINE(idx, dma_wch_init, NULL, &dma_wch##idx##_data,                       \
 			      &dma_wch##idx##_config, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,      \
 			      &dma_wch_driver_api);
 

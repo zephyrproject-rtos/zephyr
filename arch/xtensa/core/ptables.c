@@ -157,17 +157,6 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 	},
 };
 
-static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
-{
-#ifdef CONFIG_USERSPACE
-	if ((thread->base.user_options & K_USER) != 0U) {
-		return thread->arch.ptables;
-	}
-#endif
-
-	return xtensa_kernel_ptables;
-}
-
 /**
  * @brief Check if the page table entry is illegal.
  *
@@ -320,7 +309,7 @@ void xtensa_mmu_init(void)
 {
 	xtensa_init_page_tables();
 
-	xtensa_init_paging(xtensa_kernel_ptables);
+	xtensa_mmu_init_paging();
 
 	/*
 	 * This is used to determine whether we are faulting inside double
@@ -335,7 +324,7 @@ void xtensa_mmu_init(void)
 void xtensa_mmu_reinit(void)
 {
 	/* First initialize the hardware */
-	xtensa_init_paging(xtensa_kernel_ptables);
+	xtensa_mmu_init_paging();
 
 #ifdef CONFIG_USERSPACE
 	struct k_thread *thread = _current_cpu->current;
@@ -344,7 +333,7 @@ void xtensa_mmu_reinit(void)
 
 
 	/* Set the page table for current context */
-	xtensa_set_paging(domain->asid, domain->ptables);
+	xtensa_mmu_set_paging(domain);
 #endif /* CONFIG_USERSPACE */
 
 	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
@@ -713,7 +702,7 @@ void xtensa_mmu_tlb_shootdown(void)
 			 */
 			struct arch_mem_domain *domain =
 				&(thread->mem_domain_info.mem_domain->arch);
-			xtensa_set_paging(domain->asid, (uint32_t *)thread_ptables);
+			xtensa_mmu_set_paging(domain);
 		}
 
 	}
@@ -731,6 +720,15 @@ void xtensa_mmu_tlb_shootdown(void)
 }
 
 #ifdef CONFIG_USERSPACE
+
+static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
+{
+	if ((thread->base.user_options & K_USER) != 0U) {
+		return thread->arch.ptables;
+	}
+
+	return xtensa_kernel_ptables;
+}
 
 static inline uint32_t *alloc_l1_table(void)
 {
@@ -840,6 +838,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
 end:
+	xtensa_mmu_compute_domain_regs(&domain->arch);
 	ret = 0;
 
 err:
@@ -1002,7 +1001,9 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * the current thread running.
 	 */
 	if (thread == _current_cpu->current) {
-		xtensa_set_paging(domain->arch.asid, thread->arch.ptables);
+		struct arch_mem_domain *arch_domain = &(domain->arch);
+
+		xtensa_mmu_set_paging(arch_domain);
 	}
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -1121,26 +1122,20 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	return mem_buffer_validate(addr, size, write, XTENSA_MMU_USER_RING);
 }
 
+#ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
+/* This is only used when swapping page tables and auto-refill DTLBs
+ * needing to be invalidated. Otherwise, SWAP_PAGE_TABLE assembly
+ * is used to avoid a function call.
+ */
 void xtensa_swap_update_page_tables(struct k_thread *incoming)
 {
-	uint32_t *ptables = incoming->arch.ptables;
 	struct arch_mem_domain *domain =
 		&(incoming->mem_domain_info.mem_domain->arch);
 
-	xtensa_set_paging(domain->asid, ptables);
+	xtensa_mmu_set_paging(domain);
 
-#ifdef CONFIG_XTENSA_INVALIDATE_MEM_DOMAIN_TLB_ON_SWAP
-	struct k_mem_domain *mem_domain = incoming->mem_domain_info.mem_domain;
-
-	for (int idx = 0; idx < mem_domain->num_partitions; idx++) {
-		struct k_mem_partition *part = &mem_domain->partitions[idx];
-		uintptr_t end = part->start + part->size;
-
-		for (uintptr_t addr = part->start; addr < end; addr += CONFIG_MMU_PAGE_SIZE) {
-			xtensa_dtlb_vaddr_invalidate((void *)addr);
-		}
-	}
-#endif
+	xtensa_dtlb_autorefill_invalidate();
 }
+#endif
 
 #endif /* CONFIG_USERSPACE */

@@ -13,9 +13,7 @@ import copy
 import json
 
 from .mipi_syst import gen_syst_xml_file
-from .utils import extract_one_string_in_section
-from .utils import find_string_in_mappings
-
+from .utils import extract_one_string_in_section, find_string_in_mappings
 
 ARCHS = {
     "arc" : {
@@ -36,16 +34,6 @@ ARCHS = {
     "x86" : {
         "kconfig": "CONFIG_X86",
     },
-    "nios2" : {
-        "kconfig": "CONFIG_NIOS2",
-
-        # Small static strings are put into section "datas"
-        # so we need to include them also.
-        #
-        # See include/arch/nios2/linker.ld on .sdata.*
-        # for explanation.
-        "extra_string_section": ['datas'],
-    },
     "posix" : {
         "kconfig": "CONFIG_ARCH_POSIX",
     },
@@ -61,7 +49,7 @@ ARCHS = {
 }
 
 
-class LogDatabase():
+class LogDatabase:
     """Class of log database"""
     # Update this if database format of dictionary based logging
     # has changed
@@ -178,10 +166,7 @@ class LogDatabase():
 
     def has_string_mappings(self):
         """Return True if there are string mappings in database"""
-        if 'string_mappings' in self.database:
-            return True
-
-        return False
+        return 'string_mappings' in self.database
 
 
     def has_string_sections(self):
@@ -263,7 +248,7 @@ class LogDatabase():
     def read_json_database(db_file_name):
         """Read database from file and return a LogDatabase object"""
         try:
-            with open(db_file_name, "r", encoding="iso-8859-1") as db_fd:
+            with open(db_file_name, encoding="iso-8859-1") as db_fd:
                 json_db = json.load(db_fd)
         except (OSError, json.JSONDecodeError):
             return None

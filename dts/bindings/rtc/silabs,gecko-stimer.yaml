@@ -1,7 +1,17 @@
 # Copyright (c) 2021, Sateesh Kotapati
 # SPDX-License-Identifier: Apache-2.0
 
-description: Silabs Gecko Sleep Timer (Real-Time Counter)
+title: Silicon Labs Series 2 Sleeptimer
+
+description: |
+        The Silabs Gecko stimer is primarily used as a low-power
+        real-time counter that allows for precise timekeeping.
+        The sleeptimer utilizes hardware timer(SYSRTC) to manage ticks
+        and timeouts. gecko stimer uses sleeptimer service from Silicon
+        Labs SDK which can run mulitple sw timers using a single counter.
+        The sleeptimer service itself manages the IRQ handling, and the
+        gecko stimer driver seamlessly connects to the IRQ utilized by
+        the sleeptimer service.
 
 compatible: "silabs,gecko-stimer"
 

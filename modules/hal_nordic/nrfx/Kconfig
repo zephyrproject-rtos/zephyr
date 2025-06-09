@@ -17,9 +17,33 @@ config NRFX_CLOCK
 	bool "CLOCK driver"
 	depends on $(dt_nodelabel_exists,clock)
 
+if NRFX_CLOCK
+
 config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
 	bool "Two stage start sequence of the low frequency clock"
-	depends on NRFX_CLOCK
+
+config NRFX_CLOCK_LF_CAL_ENABLED
+	bool "LFRC Calibration enabled"
+
+config NRFX_CLOCK_LF_SRC_RC
+	bool "RC Oscillator"
+
+config NRFX_CLOCK_LF_SRC_XTAL
+	bool "Crystal Oscillator"
+
+config NRFX_CLOCK_LF_SRC_SYNTH
+	depends on !SOC_SERIES_NRF91X
+	bool "Synthesized from HFCLK"
+
+config NRFX_CLOCK_LF_SRC_LOW_SWING
+	depends on SOC_SERIES_NRF52X
+	bool "External low swing"
+
+config NRFX_CLOCK_LF_SRC_FULL_SWING
+	depends on SOC_SERIES_NRF52X
+	bool "External full swing"
+
+endif # NRFX_CLOCK
 
 config NRFX_COMP
 	bool "COMP driver"

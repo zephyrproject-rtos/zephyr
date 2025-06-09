@@ -1,0 +1,8 @@
+# # Copyright  2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP KHCI USB host controller
+
+compatible: "nxp,uhc-khci"
+
+include: [usb-controller.yaml]

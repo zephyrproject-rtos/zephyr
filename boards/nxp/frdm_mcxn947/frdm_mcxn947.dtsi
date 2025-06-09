@@ -7,6 +7,7 @@
 #include "frdm_mcxn947-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 
 / {
 	aliases{
@@ -95,24 +96,19 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-0 = <&pinmux_flexcomm7_lpi2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	ov7670: ov7670@21 {
-		compatible = "ovti,ov7670";
-		reset-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
-		pwdn-gpios = <&gpio1 18 GPIO_ACTIVE_HIGH>;
-		reg = <0x21>;
-	};
 };
 
 /* SmartDMA is used for video driver on this board */
 &smartdma {
+	/* Shields do not enable video-sdma parent node so enable it by default */
 	status = "okay";
 	program-mem = <0x4000000>;
+
 	video_sdma: video-sdma {
-		status = "okay";
+		status = "disabled";
 		compatible = "nxp,video-smartdma";
 		pinctrl-0 = <&pinmux_smartdma_camera>;
 		pinctrl-names = "default";
-		sensor = <&ov7670>;
 		vsync-pin = <4>;
 		hsync-pin = <11>;
 		pclk-pin = <5>;
@@ -289,3 +285,22 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-0 = <&pinmux_sctimer>;
 	pinctrl-names = "default";
 };
+
+/*
+ * Connection with camera modules such as the dvp_20pin_ov7670 shield
+ */
+
+/ {
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map =	<DVP_20PIN_PEN 0 &gpio1 19 0>,
+				<DVP_20PIN_PDN 0 &gpio1 18 0>;
+	};
+};
+
+dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
+
+dvp_20pin_interface: &video_sdma {};

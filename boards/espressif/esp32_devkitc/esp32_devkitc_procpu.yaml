@@ -1,0 +1,22 @@
+identifier: esp32_devkitc/esp32/procpu
+name: ESP32-DevkitC PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - dac
+  - gpio
+  - i2c
+  - i2s
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+  - dac
+  - spi
+  - counter
+  - entropy
+  - input
+vendor: espressif

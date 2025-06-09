@@ -33,6 +33,7 @@ tests:
     extra_args: EXTRA_CONF_FILE="overlay-udp.conf"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_k64f
     integration_platforms:
       - frdm_k64f
@@ -42,6 +43,7 @@ tests:
       - DTC_OVERLAY_FILE="usb.overlay"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - nrf52833dk/nrf52820
       - nrf52833dk/nrf52833
       - nrf52840dk/nrf52840
@@ -64,6 +66,7 @@ tests:
       - twr_ke18f
       - twr_kv58f220m
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - lpcxpresso55s06
       - lpcxpresso55s16
       - lpcxpresso55s28
@@ -85,6 +88,7 @@ tests:
       - mimxrt685_evk/mimxrt685s/cm33
       - rd_rw612_bga
       - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp/iron
       - pinnacle_100_dvk
       - mg100
     integration_platforms:
@@ -122,6 +126,7 @@ tests:
       - twr_ke18f
       - twr_kv58f220m
       - frdm_mcxn947/mcxn947/cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
       - lpcxpresso55s06
       - lpcxpresso55s16
       - lpcxpresso55s28

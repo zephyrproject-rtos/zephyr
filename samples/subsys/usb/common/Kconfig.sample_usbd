@@ -47,6 +47,7 @@ config SAMPLE_USBD_MAX_POWER
 
 config SAMPLE_USBD_20_EXTENSION_DESC
 	bool "Use default USB 2.0 Extension Descriptor"
+	depends on USBD_BOS_SUPPORT
 	help
 	  Set bcdUSB value to 0201 and use default USB 2.0 Extension Descriptor.
 

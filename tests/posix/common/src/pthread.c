@@ -12,16 +12,16 @@
 
 #define DETACH_THR_ID 2
 
-#define N_THR_E 3
-#define N_THR_T 4
-#define BOUNCES 64
+#define N_THR_E    3
+#define N_THR_T    4
+#define BOUNCES    64
 #define ONE_SECOND 1
 
 /* Macros to test invalid states */
 #define PTHREAD_CANCEL_INVALID -1
-#define SCHED_INVALID -1
-#define PRIO_INVALID -1
-#define PTHREAD_INVALID -1
+#define SCHED_INVALID          -1
+#define PRIO_INVALID           -1
+#define PTHREAD_INVALID        -1
 
 static void *thread_top_exec(void *p1);
 static void *thread_top_term(void *p1);
@@ -57,13 +57,13 @@ static int barrier_return[N_THR_E];
 
 static void *thread_top_exec(void *p1)
 {
-	int i, j, id = (int) POINTER_TO_INT(p1);
+	int i, j, id = (int)POINTER_TO_INT(p1);
 	int policy;
 	struct sched_param schedparam;
 
 	pthread_getschedparam(pthread_self(), &policy, &schedparam);
-	printk("Thread %d starting with scheduling policy %d & priority %d\n",
-		 id, policy, schedparam.sched_priority);
+	printk("Thread %d starting with scheduling policy %d & priority %d\n", id, policy,
+	       schedparam.sched_priority);
 	/* Try a double-lock here to exercise the failing case of
 	 * trylock.  We don't support RECURSIVE locks, so this is
 	 * guaranteed to fail.
@@ -201,11 +201,9 @@ static void *thread_top_term(void *p1)
 		      "Unable to set thread priority!");
 
 	zassert_false(pthread_getschedparam(self, &policy, &getschedparam),
-			"Unable to get thread priority!");
+		      "Unable to get thread priority!");
 
-	printk("Thread %d starting with a priority of %d\n",
-			id,
-			getschedparam.sched_priority);
+	printk("Thread %d starting with a priority of %d\n", id, getschedparam.sched_priority);
 
 	if (id % 2) {
 		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -304,8 +302,7 @@ ZTEST(pthread, test_pthread_execution)
 	zassert_false(ret, "Set thread name failed!");
 
 	/* TESTPOINT: Try getting thread name */
-	ret = pthread_getname_np(newthread[0], thr_name_buf,
-				 sizeof(thr_name_buf));
+	ret = pthread_getname_np(newthread[0], thr_name_buf, sizeof(thr_name_buf));
 	zassert_false(ret, "Get thread name failed!");
 
 	/* TESTPOINT: Thread names match */
@@ -407,9 +404,8 @@ ZTEST(pthread, test_pthread_timedjoin)
 	struct timespec not_done;
 	struct timespec done;
 	struct timespec invalid[] = {
-		[0] = {.tv_sec = -1},
-		[1] = {.tv_nsec = -1},
-		[2] = {.tv_nsec = NSEC_PER_SEC},
+		{.tv_nsec = -1},
+		{.tv_nsec = NSEC_PER_SEC},
 	};
 
 	/* setup timespecs when the thread is still running and when it is done */
@@ -429,7 +425,7 @@ ZTEST(pthread, test_pthread_timedjoin)
 	/* Creating a thread that exits after 200ms*/
 	zassert_ok(pthread_create(&th, NULL, timedjoin_thread, INT_TO_POINTER(sleep_duration_ms)));
 
-	/* pthread_timedjoin-np must return -EINVAL for invalid struct timespecs */
+	/* pthread_timedjoin-np must return EINVAL for invalid struct timespecs */
 	zassert_equal(pthread_timedjoin_np(th, &ret, NULL), EINVAL);
 	for (size_t i = 0; i < ARRAY_SIZE(invalid); ++i) {
 		zassert_equal(pthread_timedjoin_np(th, &ret, &invalid[i]), EINVAL);
@@ -458,57 +454,6 @@ ZTEST(pthread, test_pthread_descriptor_leak)
 			   "unable to create thread %zu", i);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
-}
-
-ZTEST(pthread, test_sched_getparam)
-{
-	struct sched_param param;
-	int rc = sched_getparam(0, &param);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-
-ZTEST(pthread, test_sched_getscheduler)
-{
-	int rc = sched_getscheduler(0);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-ZTEST(pthread, test_sched_setparam)
-{
-	struct sched_param param = {
-		.sched_priority = 2,
-	};
-	int rc = sched_setparam(0, &param);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-
-ZTEST(pthread, test_sched_setscheduler)
-{
-	struct sched_param param = {
-		.sched_priority = 2,
-	};
-	int policy = 0;
-	int rc = sched_setscheduler(0, policy, &param);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
-}
-
-ZTEST(pthread, test_sched_rr_get_interval)
-{
-	struct timespec interval = {
-		.tv_sec = 0,
-		.tv_nsec = 0,
-	};
-	int rc = sched_rr_get_interval(0, &interval);
-	int err = errno;
-
-	zassert_true((rc == -1 && err == ENOSYS));
 }
 
 ZTEST(pthread, test_pthread_equal)

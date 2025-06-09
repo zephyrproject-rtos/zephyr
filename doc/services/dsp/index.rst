@@ -18,7 +18,6 @@ ARC          Optimized
 ARM          Optimized
 ARM64        Optimized
 MIPS         Unoptimized
-NIOS2        Unoptimized
 POSIX        Unoptimized
 RISCV        Unoptimized
 RISCV64      Unoptimized

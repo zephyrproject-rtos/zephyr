@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT nxp_lpspi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_lpspi_dma, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include <zephyr/drivers/dma.h>
 #include "spi_nxp_lpspi_priv.h"

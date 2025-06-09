@@ -90,7 +90,7 @@ config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2
 
 config SDL_DISPLAY_THREAD_PRIORITY
 	int "SDL display thread priority"
-	default NUM_PREEMPT_PRIORITIES
+	default MAIN_THREAD_PRIORITY
 	help
 	  Drawing thread priority.
 

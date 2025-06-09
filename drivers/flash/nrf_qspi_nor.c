@@ -1359,6 +1359,18 @@ void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 #endif
 	if (enable) {
 		(void)nrfx_qspi_activate(false);
+	} else {
+		/* It turns out that when the QSPI peripheral is deactivated
+		 * after a XIP transaction, it cannot be later successfully
+		 * reactivated and an attempt to perform another XIP transaction
+		 * results in the CPU being hung; even a debug session cannot be
+		 * started then and the SoC has to be recovered.
+		 * As a workaround, at least until the cause of such behavior
+		 * is fully clarified, perform a simple non-XIP transaction
+		 * (a read of the status register) before deactivating the QSPI.
+		 * This prevents the issue from occurring.
+		 */
+		(void)qspi_rdsr(dev, 1);
 	}
 	dev_data->xip_enabled = enable;
 

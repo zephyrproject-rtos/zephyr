@@ -302,31 +302,13 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
 	uint16_t event_length;
-	uint8_t pkt_indicator;
 	uint8_t tx_buffer[BLE_CTRLR_STACK_BUFFER_SIZE];
 
 	ARG_UNUSED(dev);
 
 	k_sem_take(&hci_sem, K_FOREVER);
 
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_OUT:
-		pkt_indicator = BT_HCI_H4_ACL;
-		break;
-	case BT_BUF_CMD:
-		pkt_indicator = BT_HCI_H4_CMD;
-		break;
-	case BT_BUF_ISO_OUT:
-		pkt_indicator = BT_HCI_H4_ISO;
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		k_sem_give(&hci_sem);
-		return -EIO;
-	}
-	net_buf_push_u8(buf, pkt_indicator);
+	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	memcpy(&tx_buffer, buf->data, buf->len);
 

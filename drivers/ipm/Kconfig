@@ -8,6 +8,14 @@ menuconfig IPM
 
 if IPM
 
+config IPM_MAX_DATA_SIZE
+	int "Max data size supported"
+	default 0 if IPM_STM32_IPCC || IPM_STM32_HSEM
+	default 1024
+	help
+	  Define the max size (in bytes) of data that can be transmitted or
+	  received by the IPM device.
+
 config IPM_MHU
 	bool "IPM MHU driver"
 	default y

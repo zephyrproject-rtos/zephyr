@@ -554,7 +554,7 @@ def write_pinctrls(node: edtlib.Node) -> None:
 def write_fixed_partitions(node: edtlib.Node) -> None:
     # Macros for child nodes of each fixed-partitions node.
 
-    if not (node.parent and "fixed-partitions" in node.parent.compats):
+    if not (node.parent and ("fixed-partitions" in node.parent.compats or "fixed-subpartitions" in node.parent.compats)):
         return
 
     global flash_area_num
@@ -679,6 +679,9 @@ def enum_macros(prop: edtlib.Property, macro: str):
     val = prop.val_as_tokens if spec.enum_tokenizable else (prop.val if isinstance(prop.val, list) else [prop.val])
 
     for i, subval in enumerate(val):
+        # make sure the subval is a formated right.
+        if isinstance(subval, str):
+            subval = str2ident(subval)
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
         ret[f"{macro}_IDX_{i}_EXISTS"] = 1
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1

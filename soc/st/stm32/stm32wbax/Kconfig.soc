@@ -18,6 +18,11 @@ config SOC_STM32WBA55XX
 	bool
 	select SOC_SERIES_STM32WBAX
 
+config SOC_STM32WBA65XX
+	bool
+	select SOC_SERIES_STM32WBAX
+
 config SOC
 	default "stm32wba52xx" if SOC_STM32WBA52XX
 	default "stm32wba55xx" if SOC_STM32WBA55XX
+	default "stm32wba65xx" if SOC_STM32WBA65XX

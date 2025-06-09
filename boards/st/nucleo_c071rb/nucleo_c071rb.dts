@@ -23,6 +23,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
@@ -44,6 +45,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "user button";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -163,5 +165,11 @@
 };
 
 &dmamux1 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };

@@ -6,17 +6,16 @@
 
 '''west "flash" command'''
 
-from west.commands import WestCommand
+from pathlib import Path
 
 from run_common import add_parser_common, do_run_common, get_build_dir
-
-from pathlib import Path
+from west.commands import WestCommand
 
 
 class Flash(WestCommand):
 
     def __init__(self):
-        super(Flash, self).__init__(
+        super().__init__(
             'flash',
             # Keep this in sync with the string in west-commands.yml.
             'flash and run a binary on a board',

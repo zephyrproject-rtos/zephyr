@@ -414,6 +414,7 @@ int coap_service_start(const struct coap_service *service)
 	} addr_ptrs = {
 		.addr = (struct sockaddr *)&addr_storage,
 	};
+	int proto = IPPROTO_UDP;
 
 	if (!coap_service_in_section(service)) {
 		__ASSERT_NO_MSG(false);
@@ -463,11 +464,37 @@ int coap_service_start(const struct coap_service *service)
 		goto end;
 	}
 
-	service->data->sock_fd = zsock_socket(af, SOCK_DGRAM, IPPROTO_UDP);
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (service->sec_tag_list != NULL) {
+		proto = IPPROTO_DTLS_1_2;
+	}
+#endif
+
+	service->data->sock_fd = zsock_socket(af, SOCK_DGRAM, proto);
 	if (service->data->sock_fd < 0) {
 		ret = -errno;
 		goto end;
 	}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (service->sec_tag_list != NULL) {
+		int role = TLS_DTLS_ROLE_SERVER;
+
+		ret = zsock_setsockopt(service->data->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST,
+				       service->sec_tag_list, service->sec_tag_list_size);
+		if (ret < 0) {
+			ret = -errno;
+			goto close;
+		}
+
+		ret = zsock_setsockopt(service->data->sock_fd, SOL_TLS, TLS_DTLS_ROLE,
+				       &role, sizeof(role));
+		if (ret < 0) {
+			ret = -errno;
+			goto close;
+		}
+	}
+#endif
 
 	ret = zsock_fcntl(service->data->sock_fd, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
 	if (ret < 0) {
@@ -698,6 +725,12 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 		ret = coap_service_remove_observer(service, resource, addr, token, tkl);
 		if (ret < 0) {
 			LOG_WRN("Failed to remove observer (%d)", ret);
+			goto unlock;
+		}
+
+		if (ret == 0) {
+			/* Observer not found */
+			ret = -ENOENT;
 		}
 	}
 
@@ -834,7 +867,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 				LOG_ERR("Poll error on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLHUP) {
-				LOG_ERR("Poll hup on %d", sock_fds[i].fd);
+				LOG_DBG("Poll hup on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLNVAL) {
 				LOG_ERR("Poll invalid on %d", sock_fds[i].fd);

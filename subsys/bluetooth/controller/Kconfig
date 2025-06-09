@@ -887,7 +887,7 @@ endif # BT_CTLR_SYNC_PERIODIC
 config BT_CTLR_SYNC_TRANSFER_SENDER
 	bool "Periodic Advertising Sync Transfer sender"
 	depends on BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
-	select BT_TICKER_LAZY_GET
+	select BT_TICKER_LAZY_GET if BT_LL_SW_SPLIT
 	default BT_PER_ADV_SYNC_TRANSFER_SENDER
 	help
 	  Enable support for the Periodic Advertising Sync Transfer control procedure

@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2024 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <intel/raptor_lake_s.dtsi>
+
+&smbus0 {
+	device-id = <0x7a23>;
+};
+
+&i2c0 {
+	device-id = <0x7a4c>;
+};
+
+&i2c1 {
+	device-id = <0x7a4c>;
+};
+
+&i2c2 {
+	device-id = <0x7a4d>;
+};
+
+&i2c3 {
+	device-id = <0x7a4e>;
+};
+
+&i2c4 {
+	device-id = <0x7a7c>;
+};
+
+&i2c5 {
+	device-id = <0x7a7d>;
+};
+
+&spi0 {
+	device-id = <0x7a2a>;
+};
+
+&spi1 {
+	device-id = <0x7a2b>;
+};
+
+&spi2 {
+	device-id = <0x7a7b>;
+};
+
+&uart0 {
+	device-id = <0x7a28>;
+};
+
+&uart1 {
+	device-id = <0x7a29>;
+};
+
+&uart2 {
+	device-id = <0x7a7e>;
+};

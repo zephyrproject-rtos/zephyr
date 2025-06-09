@@ -27,6 +27,8 @@ static void can_tx_default_cb(const struct device *dev, int error, void *user_da
 {
 	struct can_tx_default_cb_ctx *ctx = user_data;
 
+	ARG_UNUSED(dev);
+
 	ctx->status = error;
 	k_sem_give(&ctx->done);
 }
@@ -158,7 +160,8 @@ static int update_sample_pnt(uint32_t total_tq, uint32_t sample_pnt, struct can_
 	uint16_t tseg1_max = max->phase_seg1 + max->prop_seg;
 	uint16_t tseg1_min = min->phase_seg1 + min->prop_seg;
 	uint32_t sample_pnt_res;
-	uint16_t tseg1, tseg2;
+	uint16_t tseg1;
+	uint16_t tseg2;
 
 	/* Calculate number of time quanta in tseg2 for given sample point */
 	tseg2 = total_tq - (total_tq * sample_pnt) / 1000;
@@ -182,6 +185,8 @@ static int update_sample_pnt(uint32_t total_tq, uint32_t sample_pnt, struct can_
 		if (tseg2 < min->phase_seg2) {
 			return -ENOTSUP;
 		}
+	} else {
+		/* Sample point location within range */
 	}
 
 	res->phase_seg2 = tseg2;
@@ -198,6 +203,8 @@ static int update_sample_pnt(uint32_t total_tq, uint32_t sample_pnt, struct can_
 		/* Even tseg1 distribution not possible, increase phase_seg1 */
 		res->phase_seg1 = min->phase_seg1;
 		res->prop_seg = tseg1 - res->phase_seg1;
+	} else {
+		/* No redistribution necessary */
 	}
 
 	/* Calculate the resulting sample point */
@@ -256,7 +263,6 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 	struct can_timing tmp_res = { 0 };
 	int err_min = INT_MAX;
 	uint32_t core_clock;
-	int prescaler;
 	int err;
 
 	if (bitrate == 0 || sample_pnt >= 1000) {
@@ -272,7 +278,7 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 		sample_pnt = sample_point_for_bitrate(bitrate);
 	}
 
-	for (prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
+	for (int prescaler = MAX(core_clock / (total_tq * bitrate), min->prescaler);
 	     prescaler <= max->prescaler;
 	     prescaler++) {
 

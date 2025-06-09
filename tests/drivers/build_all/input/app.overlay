@@ -215,6 +215,10 @@
 				reg = <0x3>;
 				int-gpios = <&test_gpio 0 0>;
 				input-codes = <0 1 2>;
+				sensor-gain = <1>;
+				sensitivity-delta-sense = <32>;
+				signal-guard = <0 0 0>;
+				calib-sensitivity = <1 1 1>;
 			};
 
 			stmpe811@4 {

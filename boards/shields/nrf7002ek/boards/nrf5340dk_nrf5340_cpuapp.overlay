@@ -13,3 +13,24 @@
 &gpio_fwd {
 	status = "disabled";
 };
+
+/*
+ * Override the default pinctrl settings for SPI4 when used with the nRF7002 EK
+ * to pull down the SPIM lines. This is needed to avoid floating inputs when
+ * the SPI4 is not used. The default pinctrl settings are defined in the
+ * nrf5340_cpuapp_common_pinctrl.dtsi file.
+ */
+&pinctrl {
+	spi4_default: spi4_default {
+		group1 {
+			bias-pull-down;
+		};
+	};
+
+	spi4_sleep: spi4_sleep {
+		group1 {
+			bias-pull-down;
+			low-power-enable;
+		};
+	};
+};

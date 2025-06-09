@@ -105,8 +105,7 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 	}
 
 	zassert_true((k_sem_take(&sem[0], K_NO_WAIT) || k_sem_take(&sem[1], K_NO_WAIT) ||
-		      k_sem_take(&sem[2], K_NO_WAIT)),
-		     NULL);
+		      k_sem_take(&sem[2], K_NO_WAIT)));
 
 	for (int ii = 0; ii < 3; ii++) {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_SOC_TI_LM3S6965_QEMU)
@@ -129,8 +128,7 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 	__ISB(); /* Ensure that IRQ is executed */
 
 	zassert_false((k_sem_take(&sem[0], K_NO_WAIT) || k_sem_take(&sem[1], K_NO_WAIT) ||
-		       k_sem_take(&sem[2], K_NO_WAIT)),
-		      NULL);
+		       k_sem_take(&sem[2], K_NO_WAIT)));
 }
 
 typedef void (*vth)(void); /* Vector Table Handler */
@@ -163,7 +161,7 @@ void timer0_nrf_isr(void);
 	defined(CONFIG_SOC_SERIES_NRF92X)
 void nrfx_grtc_irq_handler(void);
 #define TIMER_IRQ_HANDLER nrfx_grtc_irq_handler
-#define TIMER_IRQ_NUM     GRTC_0_IRQn
+#define TIMER_IRQ_NUM     DT_IRQN(DT_NODELABEL(grtc))
 #else
 void rtc_nrf_isr(void);
 #define TIMER_IRQ_HANDLER rtc_nrf_isr

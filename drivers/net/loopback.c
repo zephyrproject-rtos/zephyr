@@ -72,6 +72,15 @@ static void loopback_init(struct net_if *iface)
 			LOG_ERR("Failed to register IPv6 loopback address");
 		}
 	}
+
+	if (IS_ENABLED(CONFIG_NET_INTERFACE_NAME)) {
+		int ret;
+
+		ret = net_if_set_name(iface, "lo");
+		if (ret < 0) {
+			LOG_ERR("Failed to set loopback interface name (%d)", ret);
+		}
+	}
 }
 
 #ifdef CONFIG_NET_LOOPBACK_SIMULATE_PACKET_DROP

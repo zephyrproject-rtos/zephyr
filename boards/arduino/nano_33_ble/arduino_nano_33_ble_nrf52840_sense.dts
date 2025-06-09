@@ -7,7 +7,7 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 #include "arduino_nano_33_ble-common.dtsi"
 #include "arduino_nano_33_ble-pinctrl.dtsi"
-#include "arduino_nano_r3_connector.dtsi"
+#include "arduino_nano_connector.dtsi"
 
 / {
 	model = "Arduino Nano 33 BLE Sense";

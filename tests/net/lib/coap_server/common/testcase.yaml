@@ -1,5 +1,7 @@
 common:
-  min_ram: 16
+  min_ram: 40
+  min_flash: 180
+  depends_on: netif
   tags:
     - net
     - coap
@@ -9,3 +11,9 @@ common:
 
 tests:
   net.coap.server.common: {}
+  net.coap.server.secure:
+    tags:
+      - tls
+    extra_configs:
+      - CONFIG_NET_SOCKETS_SOCKOPT_TLS=y
+      - CONFIG_NET_SOCKETS_ENABLE_DTLS=y

@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <silabs/xg29/xg29.dtsi>
+#include <silabs/xg29/efr32bg29.dtsi>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {

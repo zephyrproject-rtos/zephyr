@@ -1,0 +1,11 @@
+identifier: rza2m_evk
+name: RZ/A2M Evaluation Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+vendor: renesas

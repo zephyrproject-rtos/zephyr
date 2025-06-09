@@ -227,6 +227,80 @@ static int get_iface_count(struct supplicant_context *ctx)
 	return count;
 }
 
+static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
+{
+	struct wpa_supplicant *wpa_s = (struct wpa_supplicant *)ctx;
+
+	if (!ctx || !txt) {
+		return;
+	}
+
+	/* Only interested in CTRL-EVENTs */
+	if (strncmp(txt, "CTRL-EVENT", 10) == 0) {
+		if (strncmp(txt, "CTRL-EVENT-SIGNAL-CHANGE", 24) == 0) {
+			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+						NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,
+						(void *)txt, len);
+		} else {
+			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+						NET_EVENT_WIFI_CMD_SUPPLICANT,
+						(void *)txt, len);
+		}
+	} else if (strncmp(txt, "RRM-NEIGHBOR-REP-RECEIVED", 25) == 0) {
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+						NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED,
+						(void *)txt, len);
+	}
+}
+
+static const char *zephyr_hostap_msg_ifname_cb(void *ctx)
+{
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if ((((struct wpa_supplicant *)ctx))->is_hostapd == 0) {
+		struct wpa_supplicant *wpa_s = ctx;
+
+		return wpa_s->ifname;
+	}
+
+	struct hostapd_data *hapd = ctx;
+
+	if (hapd && hapd->conf) {
+		return hapd->conf->iface;
+	}
+
+	return NULL;
+#else
+	struct wpa_supplicant *wpa_s = ctx;
+
+	return wpa_s->ifname;
+#endif
+}
+
+static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_type type,
+					    const char *txt, size_t len)
+{
+	ARG_UNUSED(level);
+	ARG_UNUSED(type);
+
+	if (ctx == NULL) {
+		return;
+	}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if ((((struct wpa_supplicant *)ctx))->is_hostapd == 0) {
+		zephyr_wpa_supplicant_msg(ctx, txt, len);
+	} else {
+		zephyr_hostapd_msg(ctx, txt, len);
+	}
+#else
+	zephyr_wpa_supplicant_msg(ctx, txt, len);
+#endif
+}
+
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
@@ -288,9 +362,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_READY, 0);
 	}
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	wpa_msg_register_cb(zephyr_hostap_ctrl_iface_msg_cb);
-#endif
 	ret = 0;
 
 out:
@@ -628,8 +700,8 @@ static void handler(void)
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	zephyr_hostapd_init(&ctx->hostapd);
-	wpa_msg_register_ifname_cb(zephyr_hostap_msg_ifname_cb);
 #endif
+	wpa_msg_register_ifname_cb(zephyr_hostap_msg_ifname_cb);
 
 	(void)wpa_supplicant_run(ctx->supplicant);
 

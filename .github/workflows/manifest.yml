@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   contribs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write # to create/update pull request comments
     name: Manifest
@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: 3.12
           cache: pip
@@ -42,7 +42,7 @@ jobs:
           west init -l . || true
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@cb8f6fba6f20b5f8649bd573e80a7583a239894c # v1.7.0
+        uses: zephyrproject-rtos/action-manifest@1729cded3fc798cf0de4a789c596dcb9c40eb14c # v1.9.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           manifest-path: 'west.yml'
@@ -53,3 +53,5 @@ jobs:
           verbosity-level: '1'
           labels: 'manifest'
           dnm-labels: 'DNM (manifest)'
+          blobs-added-labels: 'Binary Blobs Added'
+          blobs-modified-labels: 'Binary Blobs Modified'

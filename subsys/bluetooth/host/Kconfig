@@ -12,15 +12,18 @@ config BT_LONG_WQ
 
 if BT_LONG_WQ
 config BT_LONG_WQ_STACK_SIZE
-	# Hidden: Long workqueue stack size. Should be derived from system
-	# requirements.
-	int
+	int "Long workqueue stack size."
+	default 4096 if NO_OPTIMIZATIONS
 	default 1400 if BT_ECC
 	default 1300 if BT_GATT_CACHING
 	default 1024
+	help
+	  The stack size used for the long workqueue. In most cases it's best to use the default
+	  values, however since the actual requirement depends on the underlying crypto backend
+	  this option can be used to finetune the stack size.
 
 config BT_LONG_WQ_PRIO
-	int "Long workqueue priority. Should be pre-emptible."
+	int "Long workqueue priority. Should be preemptible."
 	default 10
 	range 0 NUM_PREEMPT_PRIORITIES
 
@@ -86,8 +89,7 @@ config BT_RECV_WORKQ_SYS
 	bool "Process low priority HCI packets in the system work queue"
 	help
 	  When this option is selected, the host will process incoming low priority HCI packets
-	  in the system work queue. The HCI driver shall not call bt_recv_prio().
-	  High priority HCI packets will processed in the context of the caller of bt_recv().
+	  in the system work queue.
 	  The application needs to ensure the system workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE)
 	  is large enough, refer to BT_RX_STACK_SIZE for the recommended minimum.
 	  Warning: Enabling this option will cause the latency of incoming Bluetooth events to be
@@ -101,8 +103,7 @@ config BT_RECV_WORKQ_BT
 	bool "Process low priority HCI packets in the bluetooth-specific work queue"
 	help
 	  When this option is selected, the host will process incoming low priority HCI packets
-	  in the bluetooth-specific work queue. The HCI driver shall not call bt_recv_prio().
-	  High priority HCI packets will processed in the context of the caller of bt_recv().
+	  in the Bluetooth-specific work queue.
 	  The application needs to ensure the bluetooth-specific work queue size is large enough,
 	  refer to BT_RX_STACK_SIZE for the recommended minimum.
 endchoice
@@ -113,7 +114,6 @@ config BT_RX_STACK_SIZE
 	default 3092 if BT_MESH_GATT_CLIENT
 	default 2600 if BT_MESH
 	default 2048 if BT_AUDIO
-	default 2200 if BT_SETTINGS
 	default 1200
 	help
 	  Size of the receiving thread stack. This is the context from
@@ -183,9 +183,6 @@ config BT_HOST_CRYPTO
 config BT_HOST_CRYPTO_PRNG
 	bool "Use PSA crypto API library for random number generation"
 	default y
-	select PSA_WANT_ALG_SHA_256
-	select PSA_WANT_KEY_TYPE_HMAC
-	select PSA_WANT_ALG_HMAC
 	depends on BT_HOST_CRYPTO
 	help
 	  When selected, will use PSA Crypto API library for random number generation.
@@ -328,7 +325,7 @@ config BT_CONN_FRAG_COUNT
 if BT_CONN
 
 config BT_CONN_TX_MAX
-	int "Maximum number of pending TX buffers with a callback"
+	int "Maximum number of pending TX buffers with a callback [DEPRECATED]"
 	default BT_BUF_ACL_TX_COUNT
 	range BT_BUF_ACL_TX_COUNT $(UINT8_MAX)
 	help
@@ -978,7 +975,7 @@ config BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connectionless IQ reports"
 	depends on BT_DF_CONNECTIONLESS_CTE_RX && BT_HCI_VS
 	help
-	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
+	  Direction Finding connectionless IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific Host
 	  extension to handle connectionless IQ reports with samples that are in 16 bit signed
@@ -988,7 +985,7 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connection IQ reports"
 	depends on BT_DF_CONNECTION_CTE_RX && BT_HCI_VS
 	help
-	  Direction Finging connection IQ reports provide a set of IQ samples collected during
+	  Direction Finding connection IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E sections 7.7.65.22. This option enables a vendor specific Host
 	  extension to handle connection IQ report with samples that are in 16 bit signed integer

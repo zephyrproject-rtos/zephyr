@@ -352,21 +352,23 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	return pkt;
 }
 
-struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
-				struct in_addr *request_ip,
-				struct in_addr *current_ip)
+int net_arp_prepare(struct net_pkt *pkt,
+		    struct in_addr *request_ip,
+		    struct in_addr *current_ip,
+		    struct net_pkt **arp_pkt)
 {
 	bool is_ipv4_ll_used = false;
 	struct arp_entry *entry;
 	struct in_addr *addr;
 
 	if (!pkt || !pkt->buffer) {
-		return NULL;
+		return -EINVAL;
 	}
 
 	if (net_pkt_ipv4_acd(pkt)) {
-		return arp_prepare(net_pkt_iface(pkt), request_ip, NULL,
-				   pkt, current_ip);
+		*arp_pkt = arp_prepare(net_pkt_iface(pkt), request_ip, NULL,
+				       pkt, current_ip);
+		return *arp_pkt ? NET_ARP_PKT_REPLACED : -ENOMEM;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_AUTO)) {
@@ -391,7 +393,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 					net_if_get_by_iface(net_pkt_iface(pkt)),
 					net_sprint_ipv4_addr(request_ip));
 
-				return NULL;
+				return -EINVAL;
 			}
 		} else {
 			addr = request_ip;
@@ -421,15 +423,19 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 			/* There is a pending ARP request already, check if this packet is already
 			 * in the pending list and if so, resend the request, otherwise just
 			 * append the packet to the request fifo list.
+			 * Ensure the packet reference is incremented to account for the queue
+			 * holding the reference.
 			 */
-			if (k_queue_unique_append(&entry->pending_queue._queue,
-						  net_pkt_ref(pkt))) {
+			pkt = net_pkt_ref(pkt);
+			if (k_queue_unique_append(&entry->pending_queue._queue, pkt)) {
 				NET_DBG("Pending ARP request for %s, queuing pkt %p",
 					net_sprint_ipv4_addr(addr), pkt);
 				k_mutex_unlock(&arp_mutex);
-				return NULL;
+				return NET_ARP_PKT_QUEUED;
 			}
 
+			/* Queueing the packet failed, undo the net_pkt_ref */
+			net_pkt_unref(pkt);
 			entry = NULL;
 		}
 
@@ -452,7 +458,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		}
 
 		k_mutex_unlock(&arp_mutex);
-		return req;
+		*arp_pkt = req;
+		return req ? NET_ARP_PKT_REPLACED : -ENOMEM;
 	}
 
 	k_mutex_unlock(&arp_mutex);
@@ -469,7 +476,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				   sizeof(struct net_eth_addr)),
 		net_sprint_ipv4_addr(NET_IPV4_HDR(pkt)->dst));
 
-	return pkt;
+	return NET_ARP_COMPLETE;
 }
 
 static void arp_gratuitous(struct net_if *iface,

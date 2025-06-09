@@ -114,6 +114,7 @@ volatile struct pl011_regs *get_uart(const struct device *dev)
 #define PL011_CR_AMBIQ_CLKSEL_6MHZ	3
 #define PL011_CR_AMBIQ_CLKSEL_3MHZ	4
 #define PL011_CR_AMBIQ_CLKSEL_48MHZ	5
+#define PL011_CR_AMBIQ_CLKSEL_PLL	6
 
 /* PL011 Interrupt Fifo Level Select Register */
 #define PL011_IFLS_RXIFLSEL_M	GENMASK(5, 3)

@@ -41,7 +41,7 @@ manifest:
       groups:
         - optional
     - name: tf-m-tests
-      revision: 502ea90105ee18f20c78f710e2ba2ded0fc0756e
+      revision: c712761dd5391bf3f38033643d28a736cae89a19
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:
@@ -60,14 +60,14 @@ manifest:
       groups:
         - optional
     - name: zephyr-lang-rust
-      revision: d4f9036a88e53080bf2b186afa5289f9c77a0f73
+      revision: dd73abc242e995784da62352fe8c70d9a6c7ac2e
       path: modules/lang/rust
       remote: upstream
       groups:
         - optional
     - name: zscilib
       path: modules/lib/zscilib
-      revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
+      revision: ee3c0c405087e331aad16d167b6e4ec1c3452ba9
       remote: upstream
       groups:
         - optional

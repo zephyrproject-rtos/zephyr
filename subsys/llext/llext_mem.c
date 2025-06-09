@@ -20,12 +20,19 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 #ifdef CONFIG_MMU_PAGE_SIZE
 #define LLEXT_PAGE_SIZE CONFIG_MMU_PAGE_SIZE
+#elif CONFIG_ARC_MPU_VER == 2
+#define LLEXT_PAGE_SIZE 2048
 #else
-/* Arm's MPU wants a 32 byte minimum mpu region */
+/* Arm and non-v2 ARC MPUs want a 32 byte minimum MPU region */
 #define LLEXT_PAGE_SIZE 32
 #endif
 
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+struct k_heap llext_heap;
+bool llext_heap_inited;
+#else
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
+#endif
 
 /*
  * Initialize the memory partition associated with the specified memory region
@@ -77,7 +84,7 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	 * program-accessible data (not to string tables, for example).
 	 */
 	if (region->sh_flags & SHF_ALLOC) {
-		if (IS_ENABLED(CONFIG_ARM_MPU)) {
+		if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
 			/* On ARM with an MPU, regions must be sized and
 			 * aligned to the same power of two (larger than 32).
 			 */
@@ -313,6 +320,43 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 	}
 
 	return ret;
+#else
+	return -ENOSYS;
+#endif
+}
+
+int llext_heap_init(void *mem, size_t bytes)
+{
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+	if (llext_heap_inited) {
+		return -EEXIST;
+	}
+	k_heap_init(&llext_heap, mem, bytes);
+	llext_heap_inited = true;
+	return 0;
+#else
+	return -ENOSYS;
+#endif
+}
+
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+static int llext_loaded(struct llext *ext, void *arg)
+{
+	return 1;
+}
+#endif
+
+int llext_heap_uninit(void)
+{
+#ifdef CONFIG_LLEXT_HEAP_DYNAMIC
+	if (!llext_heap_inited) {
+		return -EEXIST;
+	}
+	if (llext_iterate(llext_loaded, NULL)) {
+		return -EBUSY;
+	}
+	llext_heap_inited = false;
+	return 0;
 #else
 	return -ENOSYS;
 #endif

@@ -18,8 +18,7 @@
 
 #define DHT20_STATUS_MASK (BIT(0) | BIT(1))
 
-#define DHT20_STATUS_MASK_CHECK      0x18
-#define DHT20_STATUS_MASK_POLL_STATE 0x80
+#define DHT20_STATUS_MASK_CHECK 0x18
 
 #define DHT20_MASK_RESET_REGISTER 0xB0
 
@@ -38,16 +37,24 @@
 #define DHT20_RESET_REGISTER_1 0x1C
 #define DHT20_RESET_REGISTER_2 0x1E
 
-/** Length of the buffer used for data measurement */
-#define DHT20_MEASUREMENT_BUFFER_LENGTH 7
+/** Measurement frame data indexes */
+#define DHT20_MEAS_STATUS_IDX      0
+#define DHT20_MEAS_HUMIDITY_IDX    1
+#define DHT20_MEAS_HUM_TEMP_IDX    3
+#define DHT20_MEAS_TEMPERATURE_IDX 4
+#define DHT20_MEAS_CRC_IDX         6
+#define DHT20_MEAS_FRAME_LENGTH    7
 
-/** Wait some time after reset sequence (in ms) */
-#define DHT20_RESET_SEQUENCE_WAIT_MS 10
+#define DHT20_STATUS_BUSY_BIT        BIT(7)
+#define DHT20_IS_STATUS_BUSY(status) ((status) & DHT20_STATUS_BUSY_BIT)
 
-/** Wait after power on (in ms) */
-#define DHT20_POWER_ON_WAIT_MS         75
-/** Wait during polling after power on (in ms) */
-#define DHT20_INIT_POLL_STATUS_WAIT_MS 5
+/** Wait some time after status reset sequence (in ms) */
+#define DHT20_STATUS_RESET_SEQUENCE_WAIT_MS 10
+
+/* According to datasheet 7.4: Wait time after power-on should be at least 100ms */
+#define DHT20_POWER_ON_WAIT_TIME_MS 100
+/** Wait for the measurement to be completed (in ms) */
+#define DHT20_MEASUREMENT_TIME_MS   80
 
 LOG_MODULE_REGISTER(DHT20, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -75,15 +82,9 @@ static inline int read_status(const struct device *dev, uint8_t *status)
 	uint8_t rx_buf[1];
 
 	/* Write DHT20_STATUS_REGISTER then read to get status */
-	rc = i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
+	rc = i2c_write_read_dt(&cfg->bus, tx_buf, sizeof(tx_buf), &rx_buf, sizeof(rx_buf));
 	if (rc < 0) {
-		LOG_ERR("Failed to start measurement.");
-		return rc;
-	}
-
-	rc = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
-	if (rc < 0) {
-		LOG_ERR("Failed to read data from device.");
+		LOG_ERR("Failed to read status register.");
 		return rc;
 	}
 
@@ -119,7 +120,7 @@ static inline int reset_register(const struct device *dev, uint8_t reg)
 	return rc;
 }
 
-static inline int reset_sensor(const struct device *dev)
+static inline int initialize_status_register(const struct device *dev)
 {
 	int rc;
 	uint8_t status;
@@ -147,16 +148,15 @@ static inline int reset_sensor(const struct device *dev)
 		if (rc < 0) {
 			return rc;
 		}
-		/* Wait 10ms after reset sequence */
-		k_msleep(DHT20_RESET_SEQUENCE_WAIT_MS);
+		/* Wait 10ms after status reset sequence */
+		k_msleep(DHT20_STATUS_RESET_SEQUENCE_WAIT_MS);
 	}
 
 	return 0;
 }
 
-static int dht20_read_sample(const struct device *dev, uint32_t *t_sample, uint32_t *rh_sample)
+static int dht20_read_sample(const struct dht20_config *cfg, struct dht20_data *data)
 {
-	const struct dht20_config *cfg = dev->config;
 	/*
 	 * Datasheet shows content of the measurement data as follow
 	 *
@@ -172,32 +172,36 @@ static int dht20_read_sample(const struct device *dev, uint32_t *t_sample, uint3
 	 * | 6    | CRC                                    |
 	 * +------+----------------------------------------+
 	 */
-	uint8_t rx_buf[DHT20_MEASUREMENT_BUFFER_LENGTH];
+
+	uint8_t rx_buf[DHT20_MEAS_FRAME_LENGTH];
 	int rc;
-	uint8_t status;
 
 	rc = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
 	if (rc < 0) {
-		LOG_ERR("Failed to read data from device.");
+		LOG_ERR("Failed to read measurement frame.");
 		return rc;
 	}
 
-	status = rx_buf[0];
+	if (DHT20_IS_STATUS_BUSY(rx_buf[DHT20_MEAS_STATUS_IDX])) {
+		LOG_WRN("Sensor measurement is not ready");
+		return -EBUSY;
+	}
+
 	/* Extract 20 bits for humidity data */
-	*rh_sample = sys_get_be24(&rx_buf[1]) >> 4;
+	data->rh_sample = sys_get_be24(&rx_buf[DHT20_MEAS_HUMIDITY_IDX]) >> 4;
 	/* Extract 20 bits for temperature data */
-	*t_sample = sys_get_be24(&rx_buf[3]) & 0x0FFFFF;
+	data->t_sample = sys_get_be24(&rx_buf[DHT20_MEAS_HUM_TEMP_IDX]) & 0x0FFFFF;
 
 #if defined(CONFIG_DHT20_CRC)
 	/* Compute and check CRC with last byte of measurement data */
 	uint8_t crc = crc8(rx_buf, 6, DHT20_CRC_POLYNOM, 0xFF, false);
 
-	if (crc != rx_buf[6]) {
-		rc = -EIO;
+	if (crc != rx_buf[DHT20_MEAS_CRC_IDX]) {
+		return -EIO;
 	}
 #endif
 
-	return rc;
+	return 0;
 }
 
 static int dht20_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -207,15 +211,11 @@ static int dht20_sample_fetch(const struct device *dev, enum sensor_channel chan
 	int rc;
 	uint8_t tx_buf[DHT20_TRIGGER_MEASUREMENT_BUFFER_LENGTH] = {
 		DHT20_TRIGGER_MEASUREMENT_COMMAND};
-	uint8_t status;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP &&
 	    chan != SENSOR_CHAN_HUMIDITY) {
 		return -ENOTSUP;
 	}
-
-	/* Reset sensor if needed */
-	reset_sensor(dev);
 
 	/* Send trigger measurement command */
 	rc = i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
@@ -228,19 +228,9 @@ static int dht20_sample_fetch(const struct device *dev, enum sensor_channel chan
 	 * According to datasheet maximum time to make temperature and humidity
 	 * measurements is 80ms
 	 */
-	k_msleep(DHT20_POWER_ON_WAIT_MS);
+	k_msleep(DHT20_MEASUREMENT_TIME_MS);
 
-	do {
-		k_msleep(DHT20_INIT_POLL_STATUS_WAIT_MS);
-
-		rc = read_status(dev, &status);
-		if (rc < 0) {
-			LOG_ERR("Failed to read status.");
-			return rc;
-		}
-	} while ((status & DHT20_STATUS_MASK_POLL_STATE) != 0);
-
-	rc = dht20_read_sample(dev, &data->t_sample, &data->rh_sample);
+	rc = dht20_read_sample(cfg, data);
 	if (rc < 0) {
 		LOG_ERR("Failed to fetch data.");
 		return rc;
@@ -298,10 +288,19 @@ static int dht20_channel_get(const struct device *dev, enum sensor_channel chan,
 static int dht20_init(const struct device *dev)
 {
 	const struct dht20_config *cfg = dev->config;
+	int rc;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
 		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
 		return -ENODEV;
+	}
+
+	k_msleep(DHT20_POWER_ON_WAIT_TIME_MS);
+
+	rc = initialize_status_register(dev);
+	if (rc < 0) {
+		LOG_ERR("Failed to initialize status register.");
+		return rc;
 	}
 
 	return 0;

@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc: soc {
+		ocm: memory@bbf00000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xbbf00000 DT_SIZE_M(1)>;
+			status = "disabled";
+			zephyr,memory-region = "OCM";
+		};
+
+		uart0: uart@f1920000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0xf1920000 0x4c>;
+			status = "disabled";
+			interrupt-names = "irq_0";
+			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		uart1: uart@f1930000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0xf1930000 0x1000>;
+			status = "disabled";
+			interrupt-names = "irq_1";
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		sdhci0: mmc@f1040000 {
+			compatible = "xlnx,versal-8.9a";
+			status = "disabled";
+			interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xf1040000 0x10000>;
+			sdmmc {
+				compatible = "zephyr,sdmmc-disk";
+				disk-name = "sd0";
+			};
+		};
+
+		sdhci1: mmc@f1050000 {
+			compatible = "xlnx,versal-8.9a";
+			status = "disabled";
+			reg = <0xf1050000 0x10000>;
+			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			mmc {
+				compatible = "zephyr,mmc-disk";
+				bus-width = <8>;
+				disk-name = "mmc0";
+			};
+		};
+	};
+};

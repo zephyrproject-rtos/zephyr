@@ -52,3 +52,15 @@ set(neorv32_DEPRECATED
 set(xiao_esp32c6_DEPRECATED
     xiao_esp32c6/esp32c6/hpcore
 )
+set(esp32_devkitc_wroom/esp32/procpu_DEPRECATED
+    esp32_devkitc/esp32/procpu
+)
+set(esp32_devkitc_wrover/esp32/procpu_DEPRECATED
+    esp32_devkitc/esp32/procpu
+)
+set(esp32_devkitc_wroom/esp32/appcpu_DEPRECATED
+    esp32_devkitc/esp32/appcpu
+)
+set(esp32_devkitc_wrover/esp32/appcpu_DEPRECATED
+    esp32_devkitc/esp32/appcpu
+)

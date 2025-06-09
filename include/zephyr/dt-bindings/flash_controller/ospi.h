@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_OSPI_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_OSPI_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_FLASH_CONTROLLER_OSPI_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_FLASH_CONTROLLER_OSPI_H_
 
 /**
  * @name OSPI definition for the OctoSPI peripherals
@@ -30,4 +30,4 @@
 /* Double Transfer Rate */
 #define OSPI_DTR_TRANSFER                 2
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_OSPI_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_FLASH_CONTROLLER_OSPI_H_ */

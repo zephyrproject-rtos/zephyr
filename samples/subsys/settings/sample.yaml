@@ -7,6 +7,15 @@ tests:
     timeout: 20
     filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
+      - nucleo_h723zg
+      - stm32h735g_disco
+      - nucleo_h743zi
+      - stm32h745i_disco/stm32h745xx/m7
+      - nucleo_h745zi_q/stm32h745xx/m7
+      - stm32h747i_disco/stm32h747xx/m7
+      - stm32h750b_dk
+      - nucleo_h753zi
+      - nucleo_h755zi_q/stm32h755xx/m7
       - qemu_cortex_m0/nrf51822
     integration_platforms:
       - native_sim

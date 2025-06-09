@@ -1,0 +1,6 @@
+# Copyright (c) 2022-2025 ATL Electronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BL604E_IOT_DVK
+	select SOC_BL604E20Q2I

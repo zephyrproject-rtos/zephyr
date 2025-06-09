@@ -20,7 +20,7 @@ if(${MCUX_DEVICE} MATCHES "RW61")
   endif()
 endif()
 
-if(CONFIG_USB_DEVICE_DRIVER OR CONFIG_UDC_DRIVER OR CONFIG_BT)
+if(CONFIG_USB_DEVICE_DRIVER OR CONFIG_UDC_DRIVER OR CONFIG_UHC_DRIVER OR CONFIG_BT)
   set(CONFIG_USE_component_osa_zephyr ON)
 endif()
 
@@ -37,18 +37,22 @@ if(CONFIG_NXP_RF_IMU)
   endif()
 endif()
 
-if(CONFIG_SOC_SERIES_MCXW)
-  if(CONFIG_NET_L2_IEEE802154 OR CONFIG_NET_L2_OPENTHREAD)
-    set(CONFIG_MCUX_COMPONENT_component.lists ON)
-    set(CONFIG_USE_component_osa_zephyr ON)
-    zephyr_compile_definitions(OSA_USED=1U)
-  endif()
+if(CONFIG_SOC_SERIES_MCXW AND CONFIG_IEEE802154)
+  set(CONFIG_MCUX_COMPONENT_driver.spc ON)
+  set(CONFIG_MCUX_COMPONENT_component.lists ON)
+  set(CONFIG_USE_component_osa_zephyr ON)
+  zephyr_compile_definitions(OSA_USED=1U)
 endif()
 
 if(CONFIG_USE_component_osa_zephyr)
   set(CONFIG_MCUX_COMPONENT_component.osa_template_config ON)
   set(CONFIG_MCUX_COMPONENT_component.osa_zephyr ON)
   set(CONFIG_MCUX_COMPONENT_component.osa_interface ON)
+endif()
+
+# Component definitions
+if(CONFIG_NXP_RF_IMU AND CONFIG_SOC_SERIES_MCXW)
+  zephyr_compile_definitions(HAL_RPMSG_SELECT_ROLE=0U)
 endif()
 
 add_subdirectory(${MCUX_SDK_NG_DIR}/components/osa

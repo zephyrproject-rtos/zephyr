@@ -6,7 +6,6 @@
 #define ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_ADDR_H_
 
 #include <stdint.h>
-
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/byteorder.h>
 

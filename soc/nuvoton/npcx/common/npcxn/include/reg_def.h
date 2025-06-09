@@ -93,18 +93,9 @@ struct pmc_reg {
 	volatile uint8_t PWDWN_CTL7[1];
 };
 
-/* PMC internal inline functions for multi-registers */
-static inline uint32_t npcx_pwdwn_ctl_offset(uint32_t ctl_no)
-{
-	if (ctl_no < 6) {
-		return 0x008 + ctl_no;
-	} else {
-		return 0x024 + ctl_no - 6;
-	}
-}
-
 /* Macro functions for PMC multi-registers */
-#define NPCX_PWDWN_CTL(base, n) (*(volatile uint8_t *)(base + npcx_pwdwn_ctl_offset(n)))
+#define NPCX_PWDWN_CTL(base, n) \
+	(*(volatile uint8_t *)(base + NPCX_PWDWN_CTL_OFFSET(n)))
 
 /* PMC register fields */
 #define NPCX_PMCSR_DI_INSTW        0
@@ -206,6 +197,13 @@ struct scfg_reg {
 #define NPCX_JEN_CTL1_JEN_HEN     FIELD(4, 4)
 #define NPCX_JEN_CTL1_JEN_ENABLE  0x9
 #define NPCX_JEN_CTL1_JEN_DISABLE 0x6
+
+#define NPCX_JEN_CTL2_OFFSET 0x121
+#define NPCX_JEN_CTL2(base)  (*(volatile uint8_t *)(base + (NPCX_JEN_CTL2_OFFSET)))
+
+#define NPCX_JEN_CTL2_CCDEV_SEL_EN     FIELD(0, 4)
+#define NPCX_JEN_CTL2_CCDEV_SEL_ENABLE  0x9
+#define NPCX_JEN_CTL2_CCDEV_SEL_DISABLE 0x6
 
 /* SCFG register fields */
 #define NPCX_DEVCNT_F_SPI_TRIS         6
@@ -727,6 +725,7 @@ struct espi_reg {
 #define NPCX_VWEVSM_INDEX                FIELD(8, 7)
 #define NPCX_VWEVSM_INDEX_EN             15
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
+#define NPCX_VWEVSM_DIRTY                16
 #define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
 #define NPCX_VWGPSM_INDEX_EN             15
 #define NPCX_OOBCTL_OOB_FREE             0

@@ -396,6 +396,10 @@ void nrf_wifi_wpa_supp_event_proc_deauth(void *if_priv,
 		event.deauth_info.ie_len = (frame + frame_len - mgmt->u.deauth.variable);
 	}
 
+	if (!(deauth->valid_fields & NRF_WIFI_EVENT_MLME_RXDEAUTH_FROM_AP)) {
+		event.deauth_info.locally_generated = 1;
+	}
+
 	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.deauth) {
 		vif_ctx_zep->supp_callbk_fns.deauth(vif_ctx_zep->supp_drv_if_ctx,
 			&event, mgmt);

@@ -247,11 +247,16 @@ void z_bss_zero(void)
 	z_early_memset(&__gcov_bss_start, 0,
 		       ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
 #endif /* CONFIG_COVERAGE_GCOV */
+#ifdef CONFIG_NOCACHE_MEMORY
+z_early_memset(&_nocache_ram_start, 0,
+		   (uintptr_t) &_nocache_ram_end
+		   - (uintptr_t) &_nocache_ram_start);
+#endif
 }
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 /**
- * @brief Clear BSS within the bot region
+ * @brief Clear BSS within the boot region
  *
  * This routine clears the BSS within the boot region.
  * This is separate from z_bss_zero() as boot region may
@@ -483,6 +488,27 @@ static char **prepare_main_args(int *argc)
 		(*argc)++;
 	}
 }
+
+#endif
+
+#ifdef CONFIG_STATIC_INIT_GNU
+
+extern void (*__zephyr_init_array_start[])();
+extern void (*__zephyr_init_array_end[])();
+
+static void z_static_init_gnu(void)
+{
+	void	(**fn)();
+
+	for (fn = __zephyr_init_array_start; fn != __zephyr_init_array_end; fn++) {
+		/* MWDT toolchain sticks a NULL at the end of the array */
+		if (*fn == NULL) {
+			break;
+		}
+		(**fn)();
+	}
+}
+
 #endif
 
 /**
@@ -524,8 +550,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 	boot_banner();
 
-	void z_init_static(void);
-	z_init_static();
+#ifdef CONFIG_STATIC_INIT_GNU
+	z_static_init_gnu();
+#endif /* CONFIG_STATIC_INIT_GNU */
 
 	/* Final init level before app starts */
 	z_sys_init_run_level(INIT_LEVEL_APPLICATION);

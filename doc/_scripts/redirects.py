@@ -299,6 +299,7 @@ REDIRECTS = [
     ('samples/drivers/led_ws2812/README', 'samples/drivers/led_strip/README'),
     ('samples/drivers/led_xec/README', 'samples/drivers/led/xec/README'),
     ('samples/net/cloud/google_iot_mqtt/README', 'samples/net/net'),
+    ('samples/sensor/max44009/README', 'samples/sensor/light_polling/README'),
     ('samples/sensor/wsen_hids/README', 'samples/sensor/sensor'),
     ('samples/sensor/wsen_itds/README', 'samples/sensor/sensor'),
     ('samples/subsys/video/capture/README', 'samples/drivers/video/capture/README'),

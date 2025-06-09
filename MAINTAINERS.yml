@@ -126,6 +126,19 @@ ACPI:
   tests:
     - acpi
 
+Aesc Platform:
+  status: maintained
+  maintainers:
+    - dnltz
+  files:
+    - soc/aesc/
+    - dts/riscv/aesc/
+    - boards/aesc/
+  files-regex:
+    - ^drivers/.*aesc(\.c)?$
+  labels:
+    - "area: Aesc Silicon Platform"
+
 Antmicro platforms:
   status: maintained
   maintainers:
@@ -170,6 +183,7 @@ Arduino Platforms:
     - facchinm
   files:
     - boards/arduino/
+    - drivers/*/*modulino*
 
 ARM arch:
   status: maintained
@@ -290,6 +304,21 @@ Ambiq Platforms:
     - drivers/*/*/*apollo*
   labels:
     - "platform: Ambiq"
+
+AndesTech Platforms:
+  status: maintained
+  maintainers:
+    - jimmyzhe
+  collaborators:
+    - kevinwang821020
+  files:
+    - boards/andestech/
+    - drivers/*/*andes*
+    - dts/bindings/*/*andestech*
+    - dts/riscv/andes/
+    - soc/andestech/
+  labels:
+    - "platform: Andes Technology"
 
 BeagleBoard Platforms:
   status: maintained
@@ -507,6 +536,7 @@ Bluetooth Audio:
     - tests/bsim/bluetooth/audio_samples/
     - tests/bluetooth/shell/audio.conf
     - tests/bluetooth/tester/overlay-le-audio.conf
+    - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
     - tests/bluetooth/tester/src/audio/
     - doc/connectivity/bluetooth/api/audio/
     - doc/connectivity/bluetooth/shell/audio/
@@ -838,22 +868,15 @@ Debug:
     - scripts/coredump/
     - samples/subsys/debug/
     - doc/services/debugging/
-  labels:
-    - "area: Debugging"
-  tests:
-    - debug
-
-"Debug: Profiling: Perf":
-  status: odd fixes
-  files:
     - doc/services/profiling/perf.rst
     - samples/subsys/profiling/perf/
     - scripts/profiling/stackcollapse.py
     - subsys/profiling/perf/
   labels:
-    - "area: Profiling / Perf"
+    - "area: Debugging"
   tests:
-    - debug.profiling.perf
+    - debug
+
 
 "Debug: Symtab":
   status: maintained
@@ -940,8 +963,6 @@ Devicetree:
     - include/zephyr/dt-bindings/dt-util.h
     - dts/binding-template.yaml
     - dts/bindings/base/
-  files-exclude:
-    - dts/common/nordic/
   labels:
     - "area: Devicetree"
   tests:
@@ -978,6 +999,7 @@ Display drivers:
     - jfischer-no
     - danieldegrasse
     - VynDragon
+    - jarmouniA
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -1050,8 +1072,8 @@ Documentation Infrastructure:
 Release Notes:
   status: maintained
   maintainers:
-    - fabiobaltieri
-    - kartben
+    - danieldegrasse
+    - dkalowsk
   collaborators:
     - kartben
   files:
@@ -1427,6 +1449,7 @@ Release Notes:
     - decsny
     - lmajewski
     - pdgendt
+    - clamattia
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1684,10 +1707,11 @@ Release Notes:
     - drivers.memc
 
 "Drivers: MDIO":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - maass-hamburg
   collaborators:
     - decsny
-    - maass-hamburg
   files:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
@@ -1747,6 +1771,10 @@ Release Notes:
 
 "Interrupt Handling":
   status: odd fixes
+  collaborators:
+    - ycsin
+    - dcpleung
+    - nashif
   files:
     - drivers/interrupt_controller/
     - dts/bindings/interrupt-controller/
@@ -1822,6 +1850,8 @@ Release Notes:
   status: odd fixes
   collaborators:
     - aasinclair
+    - nordic-auko
+    - seov-nordic
   files:
     - drivers/mfd/
     - include/zephyr/drivers/mfd/
@@ -1849,7 +1879,8 @@ Release Notes:
 "Drivers: Regulators":
   status: maintained
   maintainers:
-    - gmarull
+    - nordic-auko
+    - seov-nordic
   collaborators:
     - danieldegrasse
     - aasinclair
@@ -1963,7 +1994,7 @@ Release Notes:
 "Drivers: PTP Clock":
   status: maintained
   maintainers:
-    - tbursztyka
+    - yangbolu1991
   files:
     - drivers/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
@@ -2116,6 +2147,7 @@ Release Notes:
     - jbehrensnx
   files:
     - drivers/stepper/
+    - include/zephyr/drivers/stepper/
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper.rst
@@ -2142,11 +2174,13 @@ Release Notes:
     - "area: Timer"
 
 "Drivers: Video":
-  status: odd fixes
-  collaborators:
-    - loicpoulain
+  status: maintained
+  maintainers:
     - josuah
     - ngphibang
+  collaborators:
+    - loicpoulain
+    - avolmat-st
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
@@ -2159,6 +2193,20 @@ Release Notes:
     - "area: Video"
   tests:
     - drivers.video
+
+"Drivers: VIRTIO":
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - drivers/virtio/
+    - dts/bindings/virtio/
+    - include/zephyr/virtio/
+  labels:
+    - "area: VIRTIO"
 
 "Drivers: W1":
   status: maintained
@@ -2276,9 +2324,7 @@ Release Notes:
     - "area: Display Controller"
 
 "Drivers: Virtualization":
-  status: maintained
-  maintainers:
-    - tbursztyka
+  status: odd fixes
   files:
     - drivers/virtualization/
     - tests/drivers/virtualization/
@@ -2841,7 +2887,6 @@ Networking:
     - jukkar
   collaborators:
     - pdgendt
-    - tbursztyka
     - ssharks
   files:
     - scripts/net/
@@ -2910,7 +2955,6 @@ Networking:
     - jhedberg
   collaborators:
     - rlubos
-    - tbursztyka
     - jukkar
   files:
     - doc/services/net_buf/
@@ -3122,25 +3166,6 @@ Networking:
   tests:
     - net.http
 
-NIOS-2 arch:
-  status: maintained
-  maintainers:
-    - nashif
-  files:
-    - arch/nios2/
-    - dts/nios2/intel/
-    - boards/common/nios2.board.cmake
-    - soc/altr/*nios2*/
-    - include/zephyr/arch/nios2/
-    - tests/boards/altera_max10/
-    - boards/qemu/nios2/
-    - boards/altr/max10/
-    - scripts/support/quartus-flash.py
-  labels:
-    - "area: NIOS2"
-  tests:
-    - boards.altera_max10
-
 nRF BSIM:
   status: maintained
   maintainers:
@@ -3187,6 +3212,20 @@ PHYTEC Platforms:
     - boards/phytec/
   labels:
     - "platform: PHYTEC"
+
+PMCI:
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+    - kehintel
+  files:
+    - subsys/pmci/
+    - samples/modules/pmci/
+  labels:
+    - "area: PMCI"
 
 POSIX API layer:
   status: maintained
@@ -3475,10 +3514,24 @@ ADI Platforms:
   labels:
     - "platform: ADI"
 
+Bouffalolab Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+    - VynDragon
+  files:
+    - boards/bflb/
+    - drivers/*/*bflb*
+    - dts/riscv/bflb/
+    - dts/bindings/*/bflb,*
+    - soc/bflb/
+  labels:
+    - "platform: bouffalolab"
+
 Broadcom Platforms:
   status: odd fixes
   files:
-    - dts/arm/broadcom/
+    - dts/*/broadcom/
     - soc/brcm/
     - boards/brcm/
 
@@ -3743,7 +3796,7 @@ Intel Platforms (Agilex):
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
-NXP Drivers:
+NXP Platform Drivers:
   status: maintained
   maintainers:
     - dleach02
@@ -3784,21 +3837,23 @@ NXP Drivers:
     - "platform: NXP Drivers"
   description: NXP Drivers
 
-NXP Wireless:
+NXP Platform Wireless:
   status: maintained
   maintainers:
     - dleach02
   collaborators:
     - MaochenWang1
     - axelnxp
+    - George-Stefan
   files:
     - drivers/wifi/nxp/
     - drivers/bluetooth/hci/*nxp*
     - drivers/ieee802154/ieee802154_kw41z.c
+    - drivers/*/*mcxw*.c
   labels:
     - "platform: NXP Drivers"
 
-NXP MCUX USB:
+NXP Platform MCUX USB:
   status: maintained
   maintainers:
     - mmahadevan108
@@ -3851,6 +3906,7 @@ NXP Platforms (S32):
     - manuargue
   collaborators:
     - Dat-NguyenDuy
+    - congnguyenhuu
   files:
     - boards/nxp/*s32*/
     - boards/common/*nxp_s32*
@@ -3863,6 +3919,8 @@ NXP Platforms (S32):
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*
     - include/zephyr/drivers/*/*nxp_s32*
+  files-exclude:
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP S32"
   description: NXP S32 platforms and S32-specific drivers
@@ -3875,6 +3933,8 @@ NXP Platforms (MPU):
     - dleach02
     - dbaluta
     - iuliana-prodan
+    - yangbolu1991
+    - Zhiqiang-Hou
   files:
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
@@ -3905,10 +3965,13 @@ NXP Platforms (Robotics Products):
   maintainers:
     - bperseghetti
     - PetervdPerk-NXP
+  collaborators:
+    - manuargue
   files:
     - boards/nxp/vmu*/
     - boards/nxp/rddrone_fmuk66/
     - boards/nxp/mr_canhubk3/
+    - boards/nxp/ucans32k1sic/
   labels:
     - "platform: NXP Robotics"
   description: NXP Robotics Module Platform Products
@@ -3977,13 +4040,19 @@ nRF Platforms:
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
+    - drivers/*/*nrf*/
     - drivers/*/*nordic*/
     - soc/nordic/
     - samples/boards/nordic/
     - dts/*/nordic/
     - dts/bindings/*/nordic,*
+    - include/zephyr/drivers/*/*nrf*.h
+    - include/zephyr/drivers/*/*nrf*/
+    - include/zephyr/dt-bindings/*/nordic*.h
+    - include/zephyr/dt-bindings/*/nrf*.h
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
+    - tests/boards/nrf/
   labels:
     - "platform: nRF"
 
@@ -4129,6 +4198,7 @@ STM32 Platforms:
     - marwaiehm-st
     - mathieuchopstm
     - djiatsaf-st
+    - etienne-lms
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -4196,8 +4266,7 @@ Espressif Platforms:
     - drivers/*/*esp32*.c
     - boards/espressif/
     - soc/espressif/
-    - dts/xtensa/espressif/
-    - dts/riscv/espressif/
+    - dts/*/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
     - tests/boards/espressif/
@@ -4211,14 +4280,17 @@ ITE Platforms:
     - Dino-Li
     - GTLin08
     - RuibinChang
+    - Chenhongren
   collaborators:
     - jackrosenthal
     - keith-zephyr
-    - brockus-zephyr
-    - sjg20
+    - fabiobaltieri
   files:
     - boards/ite/
     - drivers/sensor/ite/
+    - drivers/usb/udc/*it82xx2*.c
+    - drivers/usb/device/*it82xx2*.c
+    - drivers/*/*it51xxx*.c
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
     - dts/bindings/*/ite*
@@ -4226,6 +4298,20 @@ ITE Platforms:
     - soc/ite/
   labels:
     - "platform: ITE"
+
+TI MSPM0 Platforms:
+  status: maintained
+  maintainers:
+    - ssekar15
+  files:
+    - soc/ti/mspm0/
+    - boards/ti/lp_mspm0g3507/
+    - dts/arm/ti/mspm0/
+    - dts/bindings/*/*mspm0*
+    - drivers/*/*_mspm0*
+    - modules/Kconfig.mspm0
+  labels:
+    - "platform: Texas Instruments MSPM0"
 
 TI SimpleLink Platforms:
   status: maintained
@@ -4240,7 +4326,7 @@ TI SimpleLink Platforms:
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
-    - dts/arm/ti/
+    - dts/arm/ti/cc*
     - dts/bindings/*/ti,*
     - soc/ti/simplelink/
     - dts/bindings/*/ti,*
@@ -4261,6 +4347,8 @@ TI K3 Platforms:
     - drivers/*/*davinci*
     - drivers/*/*omap*
     - drivers/*/*ti_k3*
+    - dts/arm/ti/am6*
+    - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
     - soc/ti/k3/
   labels:
@@ -4529,6 +4617,9 @@ TDK Sensors:
   status: maintained
   maintainers:
     - RobinKastberg
+  collaborators:
+    - bjorniuppsala
+    - LoveKarlsson
   files:
     - cmake/*/iar/
     - include/zephyr/toolchain/iar.h
@@ -4875,14 +4966,17 @@ West:
   labels:
     - "platform: ADI"
 
-"West project: hal_altera":
-  status: odd fixes
+"West project: hal_afbr":
+  status: maintained
+  maintainers:
+    - ubieda
+    - bperseghetti
   collaborators:
-    - nashif
-  files:
-    - modules/Kconfig.altera
+    - PetervdPerk-NXP
+    - jgoppert
+  files: []
   labels:
-    - "platform: Altera"
+    - "platform: Broadcom"
 
 "West project: hal_ambiq":
   status: odd fixes
@@ -4905,6 +4999,16 @@ West:
     - modules/Kconfig.atmel
   labels:
     - "platform: Microchip SAM"
+
+"West project: hal_bouffalolab":
+  status: maintained
+  maintainers:
+    - nandojve
+    - VynDragon
+  files:
+    - modules/hal_bouffalolab/
+  labels:
+    - "platform: Bouffalo Lab"
 
 "West project: hal_cypress":
   status: maintained
@@ -5189,8 +5293,7 @@ West:
   collaborators:
     - nashif
     - inteljiangwe1
-  files:
-    - samples/modules/mctp/
+  files: []
   labels:
     - "area: MCTP"
 
@@ -5602,6 +5705,7 @@ Continuous Integration:
     - kartben
   files:
     - .github/
+    - scripts/requirements-actions.*
     - scripts/ci/
     - scripts/make_bugs_pickle.py
     - .checkpatch.conf
@@ -5741,3 +5845,19 @@ zbus:
     - "area: llext"
   tests:
     - llext
+
+RX arch:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  files:
+    - arch/rx/
+    - include/zephyr/arch/rx/
+    - dts/rx/
+    - boards/qemu/rx/
+    - soc/renesas/rx/
+    - tests/arch/rx/
+  labels:
+    - "area: RX"
+  tests:
+    - arch.rx

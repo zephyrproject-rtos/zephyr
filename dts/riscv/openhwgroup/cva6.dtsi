@@ -93,6 +93,14 @@
 			status = "disabled";
 		};
 
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic 7>;
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			status = "disabled";
+		};
+
 		/*
 		 * Xilinx AXI DMA.
 		 * Part of the Xilinx AXI Ethernet Subsystem.

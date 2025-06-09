@@ -49,12 +49,12 @@ static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uin
 	uint8_t val;
 	int ret;
 
-	if (led >= LP5569_NUM_LEDS || brightness > 100) {
+	if (led >= LP5569_NUM_LEDS) {
 		return -EINVAL;
 	}
 
 	/* Map 0-100 % to 0-255 pwm register value */
-	val = brightness * 255 / 100;
+	val = brightness * 255 / LED_BRIGTHNESS_MAX;
 
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_LED0_PWM + led, val);
 	if (ret < 0) {
@@ -63,18 +63,6 @@ static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uin
 	}
 
 	return 0;
-}
-
-static inline int lp5569_led_on(const struct device *dev, uint32_t led)
-{
-	/* Set LED brightness to 100 % */
-	return lp5569_led_set_brightness(dev, led, 100);
-}
-
-static inline int lp5569_led_off(const struct device *dev, uint32_t led)
-{
-	/* Set LED brightness to 0 % */
-	return lp5569_led_set_brightness(dev, led, 0);
 }
 
 static int lp5569_write_channels(const struct device *dev, uint32_t start_channel,
@@ -185,8 +173,6 @@ static int lp5569_pm_action(const struct device *dev, enum pm_device_action acti
 
 static DEVICE_API(led, lp5569_led_api) = {
 	.set_brightness = lp5569_led_set_brightness,
-	.on = lp5569_led_on,
-	.off = lp5569_led_off,
 	.write_channels = lp5569_write_channels,
 };
 

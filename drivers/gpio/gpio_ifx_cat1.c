@@ -13,7 +13,7 @@
  *   is not supported in current version of GPIO CAT1 driver.
  */
 
-#define DT_DRV_COMPAT  infineon_cat1_gpio
+#define DT_DRV_COMPAT infineon_cat1_gpio
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -28,9 +28,11 @@ LOG_MODULE_REGISTER(gpio_cat1, CONFIG_GPIO_LOG_LEVEL);
 struct gpio_cat1_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	GPIO_PRT_Type              *regs;
+	GPIO_PRT_Type *regs;
 	uint8_t ngpios;
+#if (!CONFIG_SOC_FAMILY_INFINEON_CAT1C)
 	uint8_t intr_priority;
+#endif
 };
 
 /* Data structure */
@@ -96,8 +98,7 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 	return 0;
 }
 
-static int gpio_cat1_port_get_raw(const struct device *dev,
-				  uint32_t *value)
+static int gpio_cat1_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -107,8 +108,7 @@ static int gpio_cat1_port_get_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_set_masked_raw(const struct device *dev,
-					 uint32_t mask, uint32_t value)
+static int gpio_cat1_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -118,8 +118,7 @@ static int gpio_cat1_port_set_masked_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_set_bits_raw(const struct device *dev,
-				       uint32_t mask)
+static int gpio_cat1_port_set_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -129,8 +128,7 @@ static int gpio_cat1_port_set_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_clear_bits_raw(const struct device *dev,
-					 uint32_t mask)
+static int gpio_cat1_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -140,8 +138,7 @@ static int gpio_cat1_port_clear_bits_raw(const struct device *dev,
 	return 0;
 }
 
-static int gpio_cat1_port_toggle_bits(const struct device *dev,
-				      uint32_t mask)
+static int gpio_cat1_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
@@ -159,6 +156,7 @@ static uint32_t gpio_cat1_get_pending_int(const struct device *dev)
 	return GPIO_PRT_INTR_MASKED(base);
 }
 
+#if (!(CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_CPU_CORTEX_M0PLUS))
 static void gpio_isr_handler(const struct device *dev)
 {
 	const struct gpio_cat1_config *const cfg = dev->config;
@@ -173,9 +171,8 @@ static void gpio_isr_handler(const struct device *dev)
 		gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev,
 				    pins);
 	}
-
-
 }
+#endif
 
 static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					     enum gpio_int_mode mode, enum gpio_int_trig trig)
@@ -203,7 +200,7 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 		break;
 
 	default:
-		return -ENOTSUP;
+		break;
 	}
 
 	Cy_GPIO_SetInterruptEdge(base, pin, trig_pdl);
@@ -213,8 +210,7 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	return 0;
 }
 
-static int gpio_cat1_manage_callback(const struct device *port,
-				     struct gpio_callback *callback,
+static int gpio_cat1_manage_callback(const struct device *port, struct gpio_callback *callback,
 				     bool set)
 {
 	return gpio_manage_callback(&((struct gpio_cat1_data *const)(port)->data)->callbacks,
@@ -233,13 +229,29 @@ static DEVICE_API(gpio, gpio_cat1_api) = {
 	.get_pending_int = gpio_cat1_get_pending_int,
 };
 
+/* Interrupts are not currently supported on the Cat1C CM0+ */
+#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+#define INTR_PRIORITY(n)
+
+#if (CONFIG_CPU_CORTEX_M0PLUS)
+#define ENABLE_INT(n)
+#else
+#define ENABLE_INT(n) ENABLE_SYS_INT(n, gpio_isr_handler);
+#endif
+
+#else
+#define INTR_PRIORITY(n) .intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),
+
+#define ENABLE_INT(n)                                                                              \
+	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr_handler,                   \
+		    DEVICE_DT_INST_GET(n), 0);                                                     \
+	irq_enable(DT_INST_IRQN(n));
+#endif
+
 #define GPIO_CAT1_INIT_FUNC(n)                                                                     \
 	static int gpio_cat1##n##_init(const struct device *dev)                                   \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr_handler,           \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-                                                                                                   \
+		ENABLE_INT(n)                                                                      \
 		return 0;                                                                          \
 	}
 
@@ -250,7 +262,7 @@ static DEVICE_API(gpio, gpio_cat1_api) = {
 			{                                                                          \
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
 			},                                                                         \
-		.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),                               \
+		INTR_PRIORITY(n)                                                                   \
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
 		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                      \
 	};                                                                                         \

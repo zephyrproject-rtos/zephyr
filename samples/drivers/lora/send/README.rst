@@ -32,6 +32,6 @@ Sample Output
 
 .. code-block:: console
 
-    [00:00:00.531,000] <inf> lora_send: Data sent!
-    [00:00:01.828,000] <inf> lora_send: Data sent!
-    [00:00:03.125,000] <inf> lora_send: Data sent!
+    [00:00:00.531,000] <inf> lora_send: Data sent 0!
+    [00:00:01.828,000] <inf> lora_send: Data sent 1!
+    [00:00:03.125,000] <inf> lora_send: Data sent 2!

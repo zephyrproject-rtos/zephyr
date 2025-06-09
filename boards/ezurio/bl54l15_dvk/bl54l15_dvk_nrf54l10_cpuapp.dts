@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l10_cpuapp.dtsi>
+#include "nrf54l_10_15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "ezurio,bl54l15_dvk_nrf54l10-cpuapp";
+	model = "Ezurio BL54L15 DVK nRF54L10 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+/* FLPR not supported yet, give all SRAM and RRAM to the APP core */
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(192)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(192)>;
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(1022)>;
+};
+
+/* These partition sizes assume no FLPR area in RRAM */
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(224)>;
+		};
+
+		slot0_ns_partition: partition@48000 {
+			label = "image-0-nonsecure";
+			reg = <0x48000 DT_SIZE_K(224)>;
+		};
+
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x80000 DT_SIZE_K(224)>;
+		};
+
+		slot1_ns_partition: partition@b8000 {
+			label = "image-1-nonsecure";
+			reg = <0xb8000 DT_SIZE_K(224)>;
+		};
+
+		/* 32K from 0xf0000 to 0xf7fff reserved for TF-M partitions */
+
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0xf8000 DT_SIZE_K(28)>;
+		};
+
+		/* 2K from 0xff000 to 0xff7ff unused */
+	};
+};

@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 /* OTS commands */
 #define BTP_OTS_READ_SUPPORTED_COMMANDS	0x01
 struct btp_ots_read_supported_commands_rp {

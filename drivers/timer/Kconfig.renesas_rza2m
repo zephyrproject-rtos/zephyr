@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RZA2M_OS_TIMER
+	bool "Renesas RZ/A2M OS timer"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_OSTM_ENABLED
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the Renesas RZ/A2M
+	  platform provides the standard "system clock driver" interfaces.

@@ -64,7 +64,7 @@ int main(void)
 			printf("Could not setup channel #%d (%d)\n", i, err);
 			return 0;
 		}
-		if (channel_cfgs[i].reference == ADC_REF_INTERNAL) {
+		if ((vrefs_mv[i] == 0) && (channel_cfgs[i].reference == ADC_REF_INTERNAL)) {
 			vrefs_mv[i] = adc_ref_internal(adc);
 		}
 	}

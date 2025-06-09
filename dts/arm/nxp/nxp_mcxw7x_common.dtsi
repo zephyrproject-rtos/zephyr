@@ -343,6 +343,14 @@
 		clock-frequency = <32768>;
 		prescaler = <32768>;
 	};
+
+	ewm0: ewm@13000 {
+		compatible = "nxp,ewm";
+		reg = <0x13000 0x6>;
+		status = "disabled";
+		interrupts = <18 0>;
+		clk-divider = <0x0>;
+	};
 };
 
 &fast_peripheral0 {

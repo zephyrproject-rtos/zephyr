@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2025 Navimatix GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		stepper = &drv8424_mikroe_stepper_19_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	tca9538a_mikroe_stepper_19_click: tca9538a@70 {
+		status = "okay";
+		compatible = "ti,tca9538";
+
+		reg = <0x70>;
+
+		gpio-controller;
+		ngpios = <8>;
+		#gpio-cells = <2>;
+
+		gpio-reserved-ranges = <7 1>;
+
+		gpio-line-names =
+			"M0",
+			"M1",
+			"DEC0",
+			"DEC1",
+			"TOFF",
+			"STP",
+			"DIR";
+	};
+};
+
+/ {
+	drv8424_mikroe_stepper_19_click: drv8424 {
+		status = "okay";
+		compatible = "ti,drv84xx";
+
+		dir-gpios = <&mikrobus_header 0 0>;
+		step-gpios = <&mikrobus_header 6 0>;
+		sleep-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
+		en-gpios  = <&mikrobus_header 2 0>;
+		fault-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		m0-gpios = <&tca9538a_mikroe_stepper_19_click 0 0>;
+		m1-gpios = <&tca9538a_mikroe_stepper_19_click 1 0>;
+	};
+};

@@ -1,0 +1,34 @@
+shields:
+  - name: atmel_rf2xx
+    full_name: Atmel AT86RF2XX Transceiver
+    vendor: atmel
+
+  - name: atmel_rf2xx_arduino
+    full_name: Atmel AT86RF2XX Transceiver for Arduino
+    vendor: atmel
+    supported_features:
+      - ieee802154
+
+  - name: atmel_rf2xx_legacy
+    full_name: Atmel AT86RF2XX Transceiver for Atmel Xplained (legacy)
+    vendor: atmel
+    supported_features:
+      - ieee802154
+
+  - name: atmel_rf2xx_mikrobus
+    full_name: Atmel AT86RF2XX Transceiver for MikroBUS
+    vendor: atmel
+    supported_features:
+      - ieee802154
+
+  - name: atmel_rf2xx_xplained
+    full_name: Atmel AT86RF2XX Transceiver for Atmel Xplained
+    vendor: atmel
+    supported_features:
+      - ieee802154
+
+  - name: atmel_rf2xx_xpro
+    full_name: Atmel AT86RF2XX Transceiver for Atmel Xplained Pro
+    vendor: atmel
+    supported_features:
+      - ieee802154

@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT wch_20x_30x_afio
+
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/ch32v20x_30x-pinctrl.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 static GPIO_TypeDef *const wch_afio_pinctrl_regs[] = {
 	(GPIO_TypeDef *)DT_REG_ADDR(DT_NODELABEL(gpioa)),
@@ -30,7 +33,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint8_t pcfr_id = FIELD_GET(CH32V20X_V30X_PINCTRL_PCFR_ID_MASK, pins->config);
 		uint8_t remap = FIELD_GET(CH32V20X_V30X_PINCTRL_RM_MASK, pins->config);
 		GPIO_TypeDef *regs = wch_afio_pinctrl_regs[port];
-		uint32_t pcfr = pcfr_id == 0 ? AFIO->PCFR1 : AFIO->PCFR2;
 		uint8_t cfg = 0;
 
 		if (pins->output_high || pins->output_low) {
@@ -69,21 +71,33 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 		}
 
-		pcfr |= remap << bit0;
+		if (remap != 0) {
+			RCC->APB2PCENR |= RCC_AFIOEN;
 
-		if (pcfr_id == 0) {
-			AFIO->PCFR1 = pcfr;
-		} else {
-			AFIO->PCFR2 = pcfr;
-		}
-
-		if (bit0 == CH32V20X_V30X_PINMUX_USART1_RM) {
-			pcfr = AFIO->PCFR2;
-			pcfr |= ((uint32_t)((remap >> 1) & 1)
-				 << (CH32V20X_V30X_PINMUX_USART1_RM1 & 0x1F));
-			AFIO->PCFR2 = pcfr;
+			if (pcfr_id == 0 && bit0 == CH32V20X_V30X_PINMUX_USART1_RM) {
+				AFIO->PCFR1 |= ((uint32_t)((remap >> 0) & 1)
+					<< (CH32V20X_V30X_PINMUX_USART1_RM & 0x1F));
+				AFIO->PCFR2 |= ((uint32_t)((remap >> 1) & 1)
+					<< (CH32V20X_V30X_PINMUX_USART1_RM1 & 0x1F));
+			} else {
+				if (pcfr_id == 0) {
+					AFIO->PCFR1 |= (uint32_t)remap << bit0;
+				} else {
+					AFIO->PCFR2 |= (uint32_t)remap << bit0;
+				}
+			}
 		}
 	}
 
 	return 0;
 }
+
+static int pinctrl_clock_init(void)
+{
+	const struct device *clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
+	uint8_t clock_id = DT_INST_CLOCKS_CELL(0, id);
+
+	return clock_control_on(clock_dev, (clock_control_subsys_t *)(uintptr_t)clock_id);
+}
+
+SYS_INIT(pinctrl_clock_init, PRE_KERNEL_1, 0);

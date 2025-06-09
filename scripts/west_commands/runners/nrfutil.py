@@ -17,11 +17,13 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
-                 erase_pages=False, reset=True, tool_opt=None, force=False,
-                 recover=False, suit_starter=False, ext_mem_config_file=None):
+                 erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
+                 force=False, recover=False, suit_starter=False,
+                 ext_mem_config_file=None):
 
         super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
-                         erase_pages, reset, tool_opt, force, recover)
+                         erase_mode, ext_erase_mode, reset, tool_opt, force,
+                         recover)
 
         self.suit_starter = suit_starter
         self.ext_mem_config_file = ext_mem_config_file
@@ -50,9 +52,10 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
     def do_create(cls, cfg, args):
         return NrfUtilBinaryRunner(cfg, args.nrf_family, args.softreset,
                                    args.pinreset, args.dev_id, erase=args.erase,
-                                   erase_pages=args.erase_pages, reset=args.reset,
-                                   tool_opt=args.tool_opt, force=args.force,
-                                   recover=args.recover,
+                                   erase_mode=args.erase_mode,
+                                   ext_erase_mode=args.ext_erase_mode,
+                                   reset=args.reset, tool_opt=args.tool_opt,
+                                   force=args.force, recover=args.recover,
                                    suit_starter=args.suit_manifest_starter,
                                    ext_mem_config_file=args.ext_mem_config_file)
 
@@ -93,6 +96,8 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                         raise subprocess.CalledProcessError(
                             jout['data']['error']['code'], cmd
                         )
+        if p.returncode != 0:
+            raise subprocess.CalledProcessError(p.returncode, cmd)
 
         return jout_all
 

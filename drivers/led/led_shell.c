@@ -164,7 +164,7 @@ static int cmd_set_brightness(const struct shell *sh,
 			     argv[arg_idx_value]);
 		return -EINVAL;
 	}
-	if (value > 100) {
+	if (value > LED_BRIGTHNESS_MAX) {
 		shell_error(sh, "Invalid LED brightness value %lu (max 100)",
 			    value);
 		return -EINVAL;

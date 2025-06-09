@@ -261,7 +261,7 @@ class CheckPatch(ComplianceTest):
             cmd = [checkpatch]
 
         cmd.extend(['--mailback', '--no-tree', '-'])
-        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', '--', ':!*.diff', ':!*.patch', COMMIT_RANGE),
+        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
                                 cwd=GIT_TOP)
         try:
@@ -971,7 +971,8 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                 sym_name = sym_name[len(self.CONFIG_):]  # Strip CONFIG_
                 if sym_name not in defined_syms and \
                    sym_name not in self.UNDEF_KCONFIG_ALLOWLIST and \
-                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms):
+                   not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms) \
+                   and not sym_name.startswith("BOARD_REVISION_"):
 
                     undef_to_locs[sym_name].append(f"{path}:{lineno}")
 
@@ -1024,6 +1025,7 @@ flagged.
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
+        "BOOT_FIRMWARE_LOADER_BOOT_MODE", # Used in sysbuild for MCUboot configuration
         "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
@@ -1070,8 +1072,10 @@ flagged.
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",
+        "IAR_DATA_INIT",
         "IAR_LIBCPP",
         "IAR_SEMIHOSTING",
+        "IAR_ZEPHYR_INIT",
         "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS", # Used in ICMsg tests for intercompatibility
                                                       # with older versions of the ICMsg.
         "LIBGCC_RTLIB",
@@ -1093,6 +1097,8 @@ flagged.
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
         "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
+        "MCUX_HW_DEVICE_CORE", # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
+                               # It is a variable used by MCUX SDK CMake.
         "MISSING",
         "MODULES",
         "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
@@ -1112,6 +1118,7 @@ flagged.
         "SHIFT",
         "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
         "SINGLE_APPLICATION_SLOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
+        "SOC_SDKNG_UNSUPPORTED", # Used in modules/hal_nxp/mcux/CMakeLists.txt
         "SOC_SERIES_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
         "SOME_BOOL",
@@ -1453,16 +1460,24 @@ class Identity(ComplianceTest):
 
     def run(self):
         for shaidx in get_shas(COMMIT_RANGE):
-            auth_name, auth_email, body = git(
-                'show', '-s', '--format=%an%n%ae%n%b', shaidx
-            ).split('\n', 2)
+            commit_info = git('show', '-s', '--format=%an%n%ae%n%b', shaidx).split('\n', 2)
+
+            failures = []
+
+            if len(commit_info) == 2:
+                failures.append(f'{shaidx}: Empty commit message body')
+                auth_name, auth_email = commit_info
+                body = ''
+            elif len(commit_info) == 3:
+                auth_name, auth_email, body = commit_info
+            else:
+                self.failure(f'Unable to parse commit message for {shaidx}')
 
             match_signoff = re.search(r"signed-off-by:\s(.*)", body,
                                       re.IGNORECASE)
-            detailed_match = re.search(r"signed-off-by:\s(.*) <(.*)>", body,
+            detailed_match = re.search(rf"signed-off-by:\s({re.escape(auth_name)}) <({re.escape(auth_email)})>",
+                                       body,
                                        re.IGNORECASE)
-
-            failures = []
 
             if auth_email.endswith("@users.noreply.github.com"):
                 failures.append(f"{shaidx}: author email ({auth_email}) must "
@@ -1799,6 +1814,66 @@ class Ruff(ComplianceTest):
             except subprocess.CalledProcessError:
                 desc = f"Run 'ruff format {file}'"
                 self.fmtd_failure("error", "Python format error", file, desc=desc)
+
+class PythonCompatCheck(ComplianceTest):
+    """
+    Python Compatibility Check
+    """
+    name = "PythonCompat"
+    doc = "Check that Python files are compatible with Zephyr minimum supported Python version."
+
+    MAX_VERSION = (3, 10)
+    MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
+
+    def run(self):
+        py_files = [f for f in get_files(filter="d") if f.endswith(".py")]
+        if not py_files:
+            return
+        cmd = ["vermin", "-f", "parsable", "--violations",
+               f"-t={self.MAX_VERSION_STR}", "--no-make-paths-absolute"] + py_files
+        try:
+            result = subprocess.run(cmd,
+                                    check=False,
+                                    capture_output=True,
+                                    cwd=GIT_TOP)
+        except Exception as ex:
+            self.error(f"Failed to run vermin: {ex}")
+        output = result.stdout.decode("utf-8")
+        failed = False
+        for line in output.splitlines():
+            parts = line.split(":")
+            if len(parts) < 6:
+                continue
+            filename, line_number, column, _, py3ver, feature = parts[:6]
+            if not line_number:
+                # Ignore all file-level messages
+                continue
+
+            desc = None
+            if py3ver.startswith('!'):
+                desc = f"{feature} is known to be incompatible with Python 3."
+            elif py3ver.startswith('~'):
+                # "no known reason it won't work", just skip
+                continue
+            else:
+                major, minor = map(int, py3ver.split(".")[:2])
+                if (major, minor) > self.MAX_VERSION:
+                    desc = f"{feature} requires Python {major}.{minor}, which is higher than " \
+                           f"Zephyr's minimum supported Python version ({self.MAX_VERSION_STR})."
+
+            if desc is not None:
+                self.fmtd_failure(
+                    "error",
+                    "PythonCompat",
+                    filename,
+                    line=int(line_number),
+                    col=int(column) if column else None,
+                    desc=desc,
+                )
+                failed = True
+        if failed:
+            self.failure("Some Python files use features that are not compatible with Python " \
+                         f"{self.MAX_VERSION_STR}.")
 
 
 class TextEncoding(ComplianceTest):

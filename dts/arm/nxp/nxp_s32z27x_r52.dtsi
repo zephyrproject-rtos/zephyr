@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,6 +125,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40170000 0x1000>;
 			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN0_CLK>;
 			status = "disabled";
 		};
 
@@ -132,6 +133,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40180000 0x1000>;
 			interrupts = <GIC_SPI 213 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN1_CLK>;
 			status = "disabled";
 		};
 
@@ -139,6 +141,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40190000 0x1000>;
 			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN2_CLK>;
 			status = "disabled";
 		};
 
@@ -146,6 +149,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40970000 0x1000>;
 			interrupts = <GIC_SPI 215 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN3_CLK>;
 			status = "disabled";
 		};
 
@@ -153,6 +157,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40980000 0x1000>;
 			interrupts = <GIC_SPI 216 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN4_CLK>;
 			status = "disabled";
 		};
 
@@ -160,6 +165,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40990000 0x1000>;
 			interrupts = <GIC_SPI 217 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN5_CLK>;
 			status = "disabled";
 		};
 
@@ -167,6 +173,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x42170000 0x1000>;
 			interrupts = <GIC_SPI 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN6_CLK>;
 			status = "disabled";
 		};
 
@@ -174,6 +181,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x42180000 0x1000>;
 			interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN7_CLK>;
 			status = "disabled";
 		};
 
@@ -181,6 +189,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x42190000 0x1000>;
 			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN8_CLK>;
 			status = "disabled";
 		};
 
@@ -188,6 +197,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x42980000 0x1000>;
 			interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN9_CLK>;
 			status = "disabled";
 		};
 
@@ -195,6 +205,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x42990000 0x1000>;
 			interrupts = <GIC_SPI 222 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN10_CLK>;
 			status = "disabled";
 		};
 
@@ -202,6 +213,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x429a0000 0x1000>;
 			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN11_CLK>;
 			status = "disabled";
 		};
 
@@ -209,6 +221,7 @@
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40330000 0x1000>;
 			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_MSCLIN_CLK>;
 			status = "disabled";
 		};
 

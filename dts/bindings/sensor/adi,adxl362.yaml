@@ -1,7 +1,20 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: ADXL362 3-axis SPI accelerometer
+description: |
+  ADXL362 3-axis SPI accelerometer
+  When setting the accelerometer DTS properties and want to use
+  streaming functionality, make sure to include adxl362.h and
+  use the macros defined there for fifo-mode and fifo-watermark properties.
+
+  Example:
+  #include <zephyr/dt-bindings/sensor/adxl362.h>
+
+  adxl362: adxl362@0 {
+    ...
+    fifo-mode = <ADXL362_FIFO_MODE_STREAM>;
+    fifo-watermark = <0x80>;
+  };
 
 compatible: "adi,adxl362"
 
@@ -27,3 +40,23 @@ properties:
       Enter Wake-Up mode when inactivity is detected,
       reenter Measurement mode when activity is detected.
       Only applies for Linked and Loop mode, ignored otherwise.
+
+  fifo-mode:
+    type: int
+    description: |
+          Accelerometer FIFO Mode.
+          0 # ADXL362_FIFO_MODE_DISABLED
+          1 # ADXL362_FIFO_MODE_OLDEST_SAVED
+          2 # ADXL362_FIFO_MODE_STREAM
+          3 # ADXL362_FIFO_MODE_TRIGGERED
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  fifo-watermark:
+    type: int
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Valid range: 0 - 511

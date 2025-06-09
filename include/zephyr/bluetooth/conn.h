@@ -21,12 +21,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/direction.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1559,7 +1563,7 @@ enum bt_conn_le_cs_procedure_enable_state {
 	BT_CONN_LE_CS_PROCEDURES_ENABLED = BT_HCI_OP_LE_CS_PROCEDURES_ENABLED,
 };
 
-/** CS Test Tone Antennna Config Selection.
+/** CS Test Tone Antenna Config Selection.
  *
  *  These enum values are indices in the following table, where N_AP is the maximum
  *  number of antenna paths (in the range [1, 4]).
@@ -2259,10 +2263,11 @@ struct bt_conn_auth_cb {
 	 *  as if the Kconfig flag was not set.
 	 *
 	 *  For BR/EDR Secure Simple Pairing (SSP), this callback is called
-	 *  when receiving the BT_HCI_EVT_IO_CAPA_REQ hci event.
+	 *  when receiving the BT_HCI_EVT_IO_CAPA_REQ hci event. The feat is
+	 *  NULL here.
 	 *
 	 *  @param conn Connection where pairing is initiated.
-	 *  @param feat Pairing req/resp info.
+	 *  @param feat Pairing req/resp info. It is NULL in BR/EDR SSP.
 	 */
 	enum bt_security_err (*pairing_accept)(struct bt_conn *conn,
 			      const struct bt_conn_pairing_feat *const feat);

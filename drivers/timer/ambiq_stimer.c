@@ -20,20 +20,27 @@
 #include <zephyr/spinlock.h>
 
 /* ambiq-sdk includes */
-#include <am_mcu_apollo.h>
+#include <soc.h>
 
 #define COUNTER_MAX UINT32_MAX
 
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS    ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES   (MAX_TICKS * CYC_PER_TICK)
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
 #define MIN_DELAY 1
-#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
+#else
 #define MIN_DELAY 4
 #endif
 
+#if defined(CONFIG_SOC_SERIES_APOLLO5X)
+#define COMPARE_INTERRUPT AM_HAL_STIMER_INT_COMPAREA
+#else
+/* A Possible clock glitch could rarely cause the Stimer interrupt to be lost.
+ * Set up a backup comparator to handle this case
+ */
 #define COMPARE_INTERRUPT (AM_HAL_STIMER_INT_COMPAREA | AM_HAL_STIMER_INT_COMPAREB)
+#endif
 
 #define COMPAREA_IRQ (DT_INST_IRQN(0))
 #define COMPAREB_IRQ (COMPAREA_IRQ + 1)
@@ -82,7 +89,9 @@ static void update_tick_counter(void)
 static void ambiq_stimer_delta_set(uint32_t ui32Delta)
 {
 	am_hal_stimer_compare_delta_set(0, ui32Delta);
+#if !defined(CONFIG_SOC_SERIES_APOLLO5X)
 	am_hal_stimer_compare_delta_set(1, ui32Delta + 1);
+#endif
 }
 
 static void stimer_isr(const void *arg)
@@ -201,10 +210,14 @@ static int stimer_init(void)
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | CTIMER_STCFG_CLKSEL_Msk)) |
 			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE |
 			     AM_HAL_STIMER_CFG_COMPARE_B_ENABLE);
-#else
+#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk)) |
 			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE |
 			     AM_HAL_STIMER_CFG_COMPARE_B_ENABLE);
+#elif defined(CONFIG_SOC_SERIES_APOLLO5X)
+	/* No need for backup comparator any more */
+	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk)) |
+			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
 #endif
 	g_last_time_stamp = am_hal_stimer_counter_get();
 
@@ -212,12 +225,13 @@ static int stimer_init(void)
 	 * Set up a backup comparator to handle this case
 	 */
 	NVIC_ClearPendingIRQ(COMPAREA_IRQ);
-	NVIC_ClearPendingIRQ(COMPAREB_IRQ);
 	IRQ_CONNECT(COMPAREA_IRQ, 0, stimer_isr, 0, 0);
-	IRQ_CONNECT(COMPAREB_IRQ, 0, stimer_isr, 0, 0);
 	irq_enable(COMPAREA_IRQ);
+#if !defined(CONFIG_SOC_SERIES_APOLLO5X)
+	NVIC_ClearPendingIRQ(COMPAREB_IRQ);
+	IRQ_CONNECT(COMPAREB_IRQ, 0, stimer_isr, 0, 0);
 	irq_enable(COMPAREB_IRQ);
-
+#endif
 	am_hal_stimer_int_enable(COMPARE_INTERRUPT);
 	/* Start timer with period CYC_PER_TICK if tickless is not enabled */
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {

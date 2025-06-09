@@ -103,6 +103,7 @@
 		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	cd-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
 	status = "okay";
 };
 

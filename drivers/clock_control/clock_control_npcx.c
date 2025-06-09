@@ -13,6 +13,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_npcx, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCXN)
+#define NPCX_PWDWN_CTL_START_OFFSET NPCX_PWDWN_CTL1
+#elif defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
+#define NPCX_PWDWN_CTL_START_OFFSET NPCX_PWDWN_CTL0
+#endif
+
 /* Driver config */
 struct npcx_pcc_config {
 	/* cdcg device base address */
@@ -202,9 +208,11 @@ static int npcx_clock_control_init(const struct device *dev)
 	struct cdcg_reg *const inst_cdcg = HAL_CDCG_INST(dev);
 	const uint32_t pmc_base = ((const struct npcx_pcc_config *)dev->config)->base_pmc;
 
+#if defined(CONFIG_NPCX_SOC_VARIANT_NPCXN)
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NPCX_EXTERNAL_SRC)) {
 		inst_cdcg->LFCGCTL2 |= BIT(NPCX_LFCGCTL2_XT_OSC_SL_EN);
 	}
+#endif
 
 	/*
 	 * Resetting the OFMCLK (even to the same value) will make the clock
@@ -243,7 +251,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	 * power consumption.
 	 */
 	for (int i = 0; i < ARRAY_SIZE(pddwn_ctl_val); i++) {
-		NPCX_PWDWN_CTL(pmc_base, i) = pddwn_ctl_val[i];
+		NPCX_PWDWN_CTL(pmc_base, i + NPCX_PWDWN_CTL_START_OFFSET) = pddwn_ctl_val[i];
 	}
 
 	/* Turn off the clock of the eSPI module only if eSPI isn't required */

@@ -1,4 +1,7 @@
-description: SiLabs Gecko GPIO
+title: Silicon Labs Series 0-2 GPIO (General Purpose Input/Output) Peripheral
+
+description: |
+  GPIO peripheral for Silicon Labs EFM32 and EFR32 Series 0, 1 and 2.
 
 compatible: "silabs,gecko-gpio"
 

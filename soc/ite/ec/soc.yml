@@ -20,3 +20,4 @@ family:
       - name: it51xxx
         socs:
           - name: it51526aw
+          - name: it51526bw

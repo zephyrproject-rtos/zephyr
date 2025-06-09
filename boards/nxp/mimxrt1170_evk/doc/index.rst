@@ -73,6 +73,7 @@ these references:
 - `i.MX RT1170 Datasheet`_
 - `i.MX RT1170 Reference Manual`_
 - `MIMXRT1170-EVK Website`_
+- `MIMXRT1170-EVKB Board Hardware User's Guide`_
 - `MIMXRT1170-EVK Board Hardware User's Guide`_
 
 External Memory
@@ -295,17 +296,6 @@ reprogrammed with JLink firmware.
 - MIMXRT1170-EVKB: :ref:`mcu-link-cmsis-onboard-debug-probe`
 - MIMXRT1170-EVK:  :ref:`opensda-daplink-onboard-debug-probe`
 
-Using J-Link
-------------
-
-JLink is the default runner for this board.  Install the
-:ref:`jlink-debug-host-tools` and make sure they are in your search path.
-
-There are two options: the onboard debug circuit can be updated with Segger
-J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
-EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
-`Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
-
 Using LinkServer
 ----------------
 
@@ -313,11 +303,21 @@ Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
 search path.  LinkServer works with the default CMSIS-DAP firmware included in
 the on-board debugger.
 
-Use the ``-r linkserver`` option with West to use the LinkServer runner.
+Using J-Link
+------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
+
+There are two options: the onboard debug circuit can be updated with Segger
+J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
+EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
+`Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK`_ for more details.
+
+Use the ``-r jlink`` option with West to use the jlink runner.
 
 .. code-block:: console
 
-   west flash -r linkserver
+   west flash -r jlink
 
 Alternatively, pyOCD can be used to flash and debug the board by using the
 ``-r pyocd`` option with West. pyOCD is installed when you complete the
@@ -403,6 +403,9 @@ the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
 
 .. _MIMXRT1170-EVK Board Hardware User's Guide:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1170EVKHUG
+
+.. _MIMXRT1170-EVKB Board Hardware User's Guide:
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT1170EVKBHUG
 
 .. _i.MX RT1170 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt1170-crossover-mcu-family-first-ghz-mcu-with-arm-cortex-m7-and-cortex-m4-cores:i.MX-RT1170
