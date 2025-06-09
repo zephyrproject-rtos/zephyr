@@ -17,6 +17,7 @@ config SOC_RP2350A_M33
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
 
 config SOC_RP2350B_M33
 	select ARM
@@ -26,6 +27,7 @@ config SOC_RP2350B_M33
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
 
 config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	bool
