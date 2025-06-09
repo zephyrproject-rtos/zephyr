@@ -254,7 +254,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 		uint16_t touch_value = touch_hal_read_raw_data(channel_cfg->channel_num);
 
 		touch_hal_set_threshold(channel_cfg->channel_num,
-					touch_value * (100 - channel_cfg->channel_num) / 100);
+					touch_value * (100 - channel_cfg->channel_sens) / 100);
 	}
 
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
