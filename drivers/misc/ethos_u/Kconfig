@@ -1,0 +1,13 @@
+# Copyright (c) 2025
+# SPDX-License-Identifier: Apache-2.0
+
+if ARM_ETHOS_U
+
+config ETHOS_U_NUMAKER
+	bool "Nuvoton NuMaker Ethos-U NPU driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_NPU_ENABLED
+	help
+	  Enables Nuvoton NuMaker frontend of Arm Ethos-U NPU driver
+
+endif
