@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network Management
  * @defgroup net_mgmt Network Management
  * @since 1.7
- * @version 1.0.0
+ * @version 2.0.0
  * @ingroup networking
  * @{
  */
