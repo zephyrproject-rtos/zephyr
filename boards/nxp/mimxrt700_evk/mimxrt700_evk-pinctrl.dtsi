@@ -128,4 +128,43 @@
 			input-enable;
 		};
 	};
+
+	pinmux_usdhc: pinmux_usdhc {
+		group0 {
+			pinmux = <SDHC0_CMD_PIO7_1>,
+				 <USDHC0_USDHC_DATA0_PIO7_6>,
+				 <USDHC0_USDHC_DATA1_PIO7_7>,
+				 <USDHC0_USDHC_DATA2_PIO7_8>,
+				 <USDHC0_USDHC_DATA3_PIO7_9>,
+				 <USDHC0_USDHC_DATA4_PIO7_2>,
+				 <USDHC0_USDHC_DATA5_PIO7_3>,
+				 <USDHC0_USDHC_DATA6_PIO7_4>,
+				 <USDHC0_USDHC_DATA7_PIO7_5>,
+				 <SDHC0_CARD_DET_N_PIO7_11>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group1 {
+			pinmux = <SDHC0_CLK_PIO7_0>;
+			bias-pull-down;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group2 {
+			pinmux = <GPIO7_GPIO12_PIO7_12>;
+			bias-pull-down;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+		group3 {
+			pinmux = <SDHC0_DS_PIO7_10>;
+			bias-pull-down;
+			input-enable;
+			slew-rate = "slow";
+			drive-strength = "normal";
+		};
+	};
 };
