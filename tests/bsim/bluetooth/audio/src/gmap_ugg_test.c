@@ -187,7 +187,9 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	test_stream->valid_rx_cnt = 0U;
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
+	test_stream->err_rx_cnt = 0U;
 	UNSET_FLAG(test_stream->flag_audio_received);
+	test_stream->last_rx_failed = false;
 
 	printk("Started stream %p\n", stream);
 
