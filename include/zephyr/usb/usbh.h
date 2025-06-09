@@ -27,6 +27,16 @@ extern "C" {
 #endif
 
 /**
+ * @brief Match flags for USB device identification
+ */
+#define USBH_MATCH_DEVICE   (1U << 0)	/* Match device class code */
+#define USBH_MATCH_INTFACE  (1U << 1)	/* Match interface code */
+
+/* device signal value definitions */
+#define USBH_DEVICE_CONNECTED			1
+#define USBH_DEVICE_DISCONNECTED		2 
+
+/**
  * @brief USB HOST Core Layer API
  * @defgroup usb_host_core_api USB Host Core API
  * @ingroup usb
@@ -49,6 +59,8 @@ struct usbh_contex {
 	struct usb_device *root;
 	/** Allocated device addresses bit array */
 	struct sys_bitarray *addr_ba;
+	/** Registered classes */
+	sys_slist_t registered_classes;
 };
 
 #define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)			\
@@ -73,21 +85,60 @@ struct usbh_code_triple {
 };
 
 /**
+ * @brief USB device code table for device matching
+ */
+struct usbh_device_code_table {
+	/** Match type for device identification */
+	uint32_t match_type;
+	/** Vendor ID */
+	uint16_t vid;
+	/** Product ID */
+	uint16_t pid;
+	/** device's class code, subclass code,  protocol code. */
+	struct usbh_code_triple device_code;
+	/** USB interface class code */
+	uint8_t interface_class_code;
+	/** USB interface subclass code */
+	uint8_t interface_subclass_code;
+	/** USB interface protocol code */
+	uint8_t interface_protocol_code;
+};
+
+/**
+ * @brief USB host speed
+ */
+enum usbh_speed {
+	/** Host supports or is connected to a full speed bus */
+	USBH_SPEED_FS,
+	/** Host supports or is connected to a high speed bus  */
+	USBH_SPEED_HS,
+	/** Host supports or is connected to a super speed bus */
+	USBH_SPEED_SS,
+};
+
+/**
+ * @brief USB HOST Core Layer API
+ * @defgroup usb_host_core_api USB Host Core API
+ * @ingroup usb
+ * @{
+ */
+
+/**
  * @brief USB host class data and class instance API
  */
-struct usbh_class_data {
-	/** Class code supported by this instance */
-	struct usbh_code_triple code;
-
+struct usbh_class_api {
 	/** Initialization of the class implementation */
-	/* int (*init)(struct usbh_contex *const uhs_ctx); */
+	int (*init)(struct usbh_contex *const uhs_ctx,
+			 struct usbh_class_data *cdata);	
 	/** Request completion event handler */
 	int (*request)(struct usbh_contex *const uhs_ctx,
 			struct uhc_transfer *const xfer, int err);
 	/** Device connected handler  */
-	int (*connected)(struct usbh_contex *const uhs_ctx);
+	int (*connected)(struct usb_device *udev, 
+			  void *desc_start_addr, void *desc_end_addr, struct usbh_class_data *cdata);
 	/** Device removed handler  */
-	int (*removed)(struct usbh_contex *const uhs_ctx);
+	int (*removed)(struct usbh_contex *const uhs_ctx,
+		       struct usbh_class_data *cdata);
 	/** Bus remote wakeup handler  */
 	int (*rwup)(struct usbh_contex *const uhs_ctx);
 	/** Bus suspended handler  */
@@ -97,10 +148,45 @@ struct usbh_class_data {
 };
 
 /**
+ * @brief USB host class data and class instance API
  */
-#define USBH_DEFINE_CLASS(name) \
-	static STRUCT_SECTION_ITERABLE(usbh_class_data, name)
+struct usbh_class_data {
+	/** System linked list node for registered classes */
+	sys_snode_t node;
+	/** Name of the USB host class instance */
+	const char *name;
+	/** Pointer to host support class API */
+	const struct usbh_class_api *api;
+	/** Pointer to private data */
+	void *priv;
+	/** Pointer to device code table for class matching */
+	const struct usbh_device_code_table *device_code_table;
+	/** Number of items in device code table */
+	uint8_t table_items_count;
+	/** Flag indicating if class has been matched to a device */
+	uint8_t class_matched;
+};
 
+
+/**
+ * @brief Define USB host support class data
+ *
+ * Macro defines class (function) data, as well as corresponding node
+ * structures used internally by the stack.
+ *
+ * @param class_name   Class name
+ * @param class_api    Pointer to struct usbd_class_api
+ * @param class_priv   Class private data
+ */
+#define USBH_DEFINE_CLASS(class_name, class_api, class_priv, code_table, items_count)	\
+	static STRUCT_SECTION_ITERABLE(usbh_class_data, class_name) = {	\
+		.name = STRINGIFY(class_name),					\
+		.api = class_api,						\
+		.priv = class_priv,						\
+		.device_code_table = code_table,        \
+		.table_items_count = items_count,		\
+		.class_matched = 0,						\
+	};
 
 /**
  * @brief Initialize the USB host support;

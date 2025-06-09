@@ -1,0 +1,31 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config USBH_VIDEO_CLASS
+	bool "USB Host Video Class implementation"
+	depends on DT_HAS_ZEPHYR_UVC_HOST_ENABLED
+	help
+	  USB Host Video Class (UVC) implementation.
+	  This allows the system to act as a USB host and communicate
+	  with USB video devices such as webcams and other UVC-compliant
+	  video capture devices.
+
+if USBH_VIDEO_CLASS
+
+config USBH_VIDEO_NUM_BUFS
+	int "Max number of buffers the UVC class can allocate"
+	default 16
+	help
+	  Control the number of buffer UVC can allocate in parallel.
+	  The default is a compromise to allow enough concurrent buffers 
+	  but not too much memory usage.
+
+module = USBH_VIDEO
+module-str = usbh uvc
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_VIDEO_CLASS
