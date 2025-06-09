@@ -193,7 +193,7 @@ static int gpio_adp5585_port_read(const struct device *dev, gpio_port_value_t *v
 
 	/** Read Input Register */
 
-	uint8_t gpi_status_reg;
+	uint8_t gpi_status_reg = ADP5585_GPI_STATUS_A;
 	uint8_t gpi_status_buf[2];
 
 	ret = i2c_write_read_dt(&parent_cfg->i2c_bus, &gpi_status_reg, 1U,
