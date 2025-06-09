@@ -342,6 +342,30 @@
 			clocks = <&syscon MCUX_LPADC2_CLK>;
 		};
 
+		lpcmp0: lpcmp@400b1000 {
+			compatible = "nxp,lpcmp";
+			reg = <0x400b1000 0x1000>;
+			interrupts = <64 0>;
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		lpcmp1: lpcmp@400b2000 {
+			compatible = "nxp,lpcmp";
+			reg = <0x400b2000 0x1000>;
+			interrupts = <65 0>;
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		lpcmp2: lpcmp@400b3000 {
+			compatible = "nxp,lpcmp";
+			reg = <0x400b3000 0x1000>;
+			interrupts = <66 0>;
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
 		lpi2c0: i2c@4009a000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
