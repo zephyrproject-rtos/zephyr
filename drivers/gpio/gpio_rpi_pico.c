@@ -83,7 +83,7 @@ static inline void gpio_set_dir_masked_n(uint n, uint32_t mask, uint32_t value)
 #if PICO_USE_GPIO_COPROCESSOR
 		gpioc_hi_oe_xor((gpioc_hi_oe_get() ^ value) & mask);
 #else
-		sio_hw->gpio_oe_togl = (sio_hw->gpio_hi_oe ^ value) & mask;
+		sio_hw->gpio_hi_oe_togl = (sio_hw->gpio_hi_oe ^ value) & mask;
 #endif
 	}
 }
