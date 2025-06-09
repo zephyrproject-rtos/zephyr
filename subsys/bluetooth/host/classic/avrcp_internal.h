@@ -22,6 +22,7 @@
 #define BT_AVRCP_UNIT_INFO_CMD_SIZE     (5)
 #define BT_AVRCP_UNIT_INFO_RSP_SIZE     (5)
 #define BT_AVRCP_SUBUNIT_INFO_RSP_SIZE  (5)
+#define BT_AVRCP_SUBUNIT_INFO_CMD_SIZE  (5)
 
 typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
