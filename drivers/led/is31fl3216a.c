@@ -62,7 +62,7 @@ static int is31fl3216a_update_pwm(const struct i2c_dt_spec *i2c)
 
 static uint8_t is31fl3216a_brightness_to_pwm(uint8_t brightness)
 {
-	return (0xFFU * brightness) / LED_BRIGTHNESS_MAX;
+	return (0xFFU * brightness) / LED_BRIGHTNESS_MAX;
 }
 
 static int is31fl3216a_led_write_channels(const struct device *dev,
@@ -87,7 +87,7 @@ static int is31fl3216a_led_write_channels(const struct device *dev,
 	i2c_buffer[0] = IS31FL3216A_REG_PWM_LAST - start_channel -
 			(num_channels - 1);
 	for (i = 0; i < num_channels; i++) {
-		if (buf[num_channels - i - 1] > LED_BRIGTHNESS_MAX) {
+		if (buf[num_channels - i - 1] > LED_BRIGHTNESS_MAX) {
 			return -EINVAL;
 		}
 		i2c_buffer[i + 1] = is31fl3216a_brightness_to_pwm(

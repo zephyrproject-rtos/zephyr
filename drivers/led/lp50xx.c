@@ -125,7 +125,7 @@ static int lp50xx_set_brightness(const struct device *dev,
 	}
 
 	buf[0] = LP50XX_LED0_BRIGHTNESS(config->num_modules) + led_info->index;
-	buf[1] = (value * 0xff) / LED_BRIGTHNESS_MAX;
+	buf[1] = (value * 0xff) / LED_BRIGHTNESS_MAX;
 
 	return i2c_write_dt(&config->bus, buf, sizeof(buf));
 }

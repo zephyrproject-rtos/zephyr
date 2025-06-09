@@ -105,7 +105,7 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 	}
 
 	/* Rescale 0..100 to 0..31 */
-	value = value * NCP5623_MAX_BRIGHTNESS / LED_BRIGTHNESS_MAX;
+	value = value * NCP5623_MAX_BRIGHTNESS / LED_BRIGHTNESS_MAX;
 
 	ret = i2c_reg_write_byte_dt(&config->bus, led_channels[led] | value, 0x70);
 

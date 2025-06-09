@@ -130,7 +130,7 @@ static int ht16k33_led_set_brightness(const struct device *dev, uint32_t led,
 	uint8_t dim;
 	uint8_t cmd;
 
-	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / LED_BRIGTHNESS_MAX;
+	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / LED_BRIGHTNESS_MAX;
 	cmd = HT16K33_CMD_DIMMING_SET | dim;
 
 	if (i2c_write_dt(&config->i2c, &cmd, sizeof(cmd))) {
