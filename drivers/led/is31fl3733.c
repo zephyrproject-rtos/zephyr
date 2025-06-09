@@ -96,7 +96,7 @@ static int is31fl3733_led_set_brightness(const struct device *dev, uint32_t led,
 {
 	const struct is31fl3733_config *config = dev->config;
 	int ret;
-	uint8_t led_brightness = (uint8_t)(((uint32_t)value * 255) / LED_BRIGTHNESS_MAX);
+	uint8_t led_brightness = (uint8_t)(((uint32_t)value * 255) / LED_BRIGHTNESS_MAX);
 
 	if (led >= IS31FL3733_MAX_LED) {
 		return -EINVAL;
