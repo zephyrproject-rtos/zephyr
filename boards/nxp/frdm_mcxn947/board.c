@@ -300,6 +300,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_SetClkDiv(kCLOCK_DivAdc1Clk, 1U);
+	CLOCK_AttachClk(kFRO_HF_to_ADC1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
 	SPC0->ACTIVE_VDELAY = 0x0500;
 	/* Change the power DCDC to 1.8v (By default, DCDC is 1.8V), CORELDO to 1.1v (By default,

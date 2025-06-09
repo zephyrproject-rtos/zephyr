@@ -10,3 +10,4 @@ vendor: beagle
 supported:
   - uart
   - i2c
+  - gpio

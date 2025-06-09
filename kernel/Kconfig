@@ -844,6 +844,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	default 0 if TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	depends on SYS_CLOCK_EXISTS
 	help
 	  This option specifies the frequency of the hardware timer used for the
 	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file

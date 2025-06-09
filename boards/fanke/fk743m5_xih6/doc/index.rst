@@ -122,7 +122,19 @@ Then, press the RESET button, you should see the following message:
 Debugging
 =========
 
-This current Zephyr port does not support debugging.
+You can debug an application using the SWD interface with a J-Link or ST-Link. For more
+details, please refer to the `Flashing`_ section and run the ``west debug`` command
+instead of ``west flash``.
+
+Here is an example for the :zephyr:code-sample:`hello_world`
+application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: fk743m5_xih6
+   :goals: debug
+   :flash-args: -r pyocd
+   :compact:
 
 References
 **********

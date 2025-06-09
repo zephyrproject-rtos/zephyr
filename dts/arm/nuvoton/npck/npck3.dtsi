@@ -53,7 +53,7 @@
 		};
 
 		uart1: serial@400c4000 {
-			compatible = "nuvoton,npcx-uart";
+			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npckn";
 			reg = <0x400C4000 0x2000>;
 			interrupts = <23 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;

@@ -1,0 +1,56 @@
+#
+# Copyright (c) 2025 STMicroelectronics.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    STM32 Digital Camera Memory Interface Pixel Processor (DCMIPP).
+
+    Example of node configuration at board level:
+
+    &dcmipp {
+      status = "okay";
+
+      ports {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        port@0 {
+          reg = <0>;
+          dcmipp_ep_in: endpoint {
+            remote-endpoint-label = "imx335_ep_out";
+            data-lanes = <1 2>;
+          };
+        };
+      };
+    };
+
+compatible: "st,stm32-dcmipp"
+
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+child-binding:
+  child-binding:
+    child-binding:
+      include: video-interfaces.yaml
+
+      properties:
+        bus-type:
+          required: true

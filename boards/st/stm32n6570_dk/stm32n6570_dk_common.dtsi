@@ -8,6 +8,7 @@
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
 #include "zephyr/dt-bindings/display/panel.h"
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-22pins-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include "arduino_r3_connector.dtsi"
@@ -53,6 +54,15 @@
 			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
+	};
+
+	csi_22pins_connector: connector_csi_22pins {
+		compatible = "raspberrypi,csi-22pins-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_22PINS_IO0  0 &gpioc 8  0>,
+			   <CSI_22PINS_IO1  0 &gpiod 2  0>;
 	};
 };
 
@@ -160,6 +170,18 @@
 	status = "okay";
 };
 
+&ic17 {
+	pll-src = <1>;
+	ic-div = <4>;
+	status = "okay";
+};
+
+&ic18 {
+	pll-src = <1>;
+	ic-div = <60>;
+	status = "okay";
+};
+
 &perck {
 	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
 	status = "okay";
@@ -196,7 +218,7 @@
 	status = "okay";
 };
 
-&i2c1 {
+csi_22pins_i2c: &i2c1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 21)>,
 		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
 	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
@@ -392,4 +414,16 @@ zephyr_udc0: &usbotg_hs1 {
 	def-back-color-red = <0xFF>;
 	def-back-color-green = <0xFF>;
 	def-back-color-blue = <0xFF>;
+};
+
+csi_22pins_interface: &dcmipp {
+	ports {
+		port@0 {
+			csi_22pins_ep_in: endpoint { };
+		};
+
+		port@1 {
+			csi_22pins_capture_port: endpoint@1 { };
+		};
+	};
 };
