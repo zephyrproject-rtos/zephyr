@@ -717,7 +717,60 @@ err_rsp:
 static void avrcp_pass_through_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 					   struct net_buf *buf)
 {
-/* ToDo */
+	struct bt_avrcp_header *avrcp_hdr;
+	bt_avrcp_opid_t opid;
+	bt_avrcp_button_state_t state;
+	uint8_t data_len;
+	uint8_t tmp;
+	uint8_t *data;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->passthrough_cmd_req == NULL)) {
+		goto err_rsp;
+	}
+
+	if (buf->len < (sizeof(*avrcp_hdr) + BT_AVRCP_PASSTHROUGH_CMD_SIZE)) {
+		LOG_ERR("Invalid passthrough command length: %d", buf->len);
+		goto err_rsp;
+	}
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+
+	if (BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr) != BT_AVRCP_SUBUNIT_TYPE_PANEL ||
+	    BT_AVRCP_HDR_GET_SUBUNIT_ID(avrcp_hdr) != BT_AVRCP_SUBUNIT_ID_ZERO ||
+	    BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr) != BT_AVRCP_CTYPE_CONTROL) {
+		LOG_ERR("Invalid  passthrough command ");
+		goto err_rsp;
+	}
+
+	tmp = net_buf_pull_u8(buf);
+	state = FIELD_GET(BIT(7), tmp);
+	opid = FIELD_GET(GENMASK(6, 0), tmp);
+
+	data_len = net_buf_pull_u8(buf);
+	if (data_len > 0U) {
+		if (buf->len < data_len) {
+			LOG_ERR("Invalid passthrough data length: %d, buf length = %d", data_len,
+				buf->len);
+			goto err_rsp;
+		}
+		data = buf->data;
+	} else {
+		data = NULL;
+	}
+
+	if ((opid < BT_AVRCP_OPID_SELECT) || (opid > BT_AVRCP_OPID_VENDOR_UNIQUE)) {
+		LOG_ERR("Invalid passthrough operation ID: 0x%02X", opid);
+		goto err_rsp;
+	}
+	return avrcp_tg_cb->passthrough_cmd_req(get_avrcp_tg(avrcp), tid, opid, state, data,
+							     data_len);
+
+err_rsp:
+	err = bt_avrcp_tg_send_passthrough_rsp(get_avrcp_tg(avrcp), tid, BT_AVRCP_RSP_REJECTED, 0U,
+					       0U, NULL, 0U);
+	if (err) {
+		LOG_ERR("Failed to send passthrough error response");
+	}
 }
 
 static const struct avrcp_handler cmd_handlers[] = {
@@ -1089,6 +1142,48 @@ int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 	}
 
 	net_buf_add_mem(buf, param, sizeof(param));
+
+	return avrcp_send(tg->avrcp, buf);
+}
+
+int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_rsp_t result,
+				     bt_avrcp_opid_t opid, bt_avrcp_button_state_t state,
+				     const uint8_t *payload, uint8_t len)
+{
+	struct net_buf *buf;
+	uint8_t total_len = BT_AVRCP_PASSTHROUGH_RSP_SIZE + len;
+
+	if ((tg == NULL) || (tg->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_TG_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	buf = avrcp_create_passthrough_pdu(tg->avrcp, tid, BT_AVCTP_RESPONSE, result);
+	if (!buf) {
+		LOG_WRN("Insufficient buffer");
+		return -ENOMEM;
+	}
+
+	if (total_len > net_buf_tailroom(buf)) {
+		LOG_WRN("Not enough tailroom in buffer");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	/* Add operation ID and state */
+	net_buf_add_u8(buf, FIELD_PREP(BIT(7), state) | FIELD_PREP(GENMASK(6, 0), opid));
+
+	net_buf_add_u8(buf, len);
+	if (len > 0U) {
+		if (payload == NULL) {
+			net_buf_unref(buf);
+			return -EINVAL;
+		}
+		net_buf_add_mem(buf, payload, len);
+	}
 
 	return avrcp_send(tg->avrcp, buf);
 }

@@ -169,6 +169,12 @@ struct bt_avrcp_passthrough_rsp {
 	uint8_t data[];
 };
 
+struct bt_avrcp_passthrough_opvu_data {
+	uint8_t company_id[3];
+	uint8_t op_len;
+	uint16_t opid_vu;
+};
+
 struct bt_avrcp_get_cap_rsp {
 	uint8_t cap_id;  /**< bt_avrcp_cap_t */
 	uint8_t cap_cnt; /**< number of items contained in *cap */
@@ -363,6 +369,21 @@ struct bt_avrcp_tg_cb {
 	 *  @param tg AVRCP TG connection object.
 	 */
 	void (*subunit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+
+	/** @brief Pass Through command request callback.
+	 *
+	 *  This callback is called whenever an AVRCP Pass Through command is request.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param opid The user operation id, see @ref bt_avrcp_opid_t.
+	 *  @param state The button state, see @ref bt_avrcp_button_state_t.
+	 *  @param payload The payload of the pass through command.
+	 *  @param len The length of the payload.
+	 */
+	void (*passthrough_cmd_req)(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_opid_t opid,
+				    bt_avrcp_button_state_t state, const uint8_t *data,
+				    uint8_t len);
 };
 
 /** @brief Register callback.
@@ -400,6 +421,24 @@ int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
  */
 int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 				      struct bt_avrcp_subunit_info_rsp *rsp);
+
+/** @brief Send AVRCP Pass Through response.
+ *
+ *  This function is called by the application to send the Pass Through response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param result The response code, see @ref bt_avrcp_rsp_t.
+ *  @param opid The user pass through operation id, see @ref bt_avrcp_opid_t.
+ *  @param state The button state, see @ref bt_avrcp_button_state_t.
+ *  @param payload The payload of the pass through response. Should not be NULL if len is not zero.
+ *  @param len The length of the payload.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_rsp_t result,
+				     bt_avrcp_opid_t opid, bt_avrcp_button_state_t state,
+				     const uint8_t *payload, uint8_t len);
 #ifdef __cplusplus
 }
 #endif
