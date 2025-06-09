@@ -154,6 +154,11 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 	TEST_ASSERT(err == 0, "Failed to remove ISO data path: %d", err);
+
+	if (seq_num < 100) {
+		printk("Channel disconnected early, bumping seq_num to 1000 to end test\n");
+		seq_num = 1000;
+	}
 }
 
 static void sdu_sent_cb(struct bt_iso_chan *chan)
@@ -462,9 +467,16 @@ static void test_main(void)
 		k_sleep(K_USEC(interval_us));
 	}
 
-	disconnect_cis();
-	disconnect_acl();
-	terminate_cig();
+	if (seq_num == 100) {
+		disconnect_cis();
+		disconnect_acl();
+		terminate_cig();
+	}
+
+	/* check that all buffers returned to pool */
+	TEST_ASSERT(atomic_get(&tx_pool.avail_count) == ENQUEUE_COUNT,
+		    "tx_pool has non returned buffers, should be %u but is %u",
+		    ENQUEUE_COUNT, atomic_get(&tx_pool.avail_count));
 
 	TEST_PASS("Test passed");
 }
