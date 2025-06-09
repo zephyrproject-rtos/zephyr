@@ -422,6 +422,14 @@ static struct net_buf *avrcp_create_subunit_pdu(struct bt_avrcp *avrcp,  uint8_t
 	return buf;
 }
 
+static void avrcp_set_passthrough_header(struct bt_avrcp_header *hdr, uint8_t ctype_or_rsp)
+{
+	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(hdr, ctype_or_rsp);
+	BT_AVRCP_HDR_SET_SUBUNIT_ID(hdr, BT_AVRCP_SUBUNIT_ID_ZERO);
+	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(hdr, BT_AVRCP_SUBUNIT_TYPE_PANEL);
+	hdr->opcode = BT_AVRCP_OPC_PASS_THROUGH;
+}
+
 static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, uint8_t ctype_or_rsp)
 {
 	struct net_buf *buf;
@@ -434,10 +442,7 @@ static struct net_buf *avrcp_create_passthrough_pdu(struct bt_avrcp *avrcp, uint
 
 	cmd = net_buf_add(buf, sizeof(*cmd));
 	memset(cmd, 0, sizeof(*cmd));
-	BT_AVRCP_HDR_SET_CTYPE_OR_RSP(&cmd->hdr, ctype_or_rsp);
-	BT_AVRCP_HDR_SET_SUBUNIT_ID(&cmd->hdr, BT_AVRCP_SUBUNIT_ID_ZERO);
-	BT_AVRCP_HDR_SET_SUBUNIT_TYPE(&cmd->hdr, BT_AVRCP_SUBUNIT_TYPE_PANEL);
-	cmd->hdr.opcode = BT_AVRCP_OPC_PASS_THROUGH;
+	avrcp_set_passthrough_header(&cmd->hdr, ctype_or_rsp);
 
 	return buf;
 }
@@ -827,7 +832,42 @@ err_rsp:
 static void avrcp_pass_through_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 					   struct net_buf *buf)
 {
-/* ToDo */
+	struct bt_avrcp_header *avrcp_hdr;
+	struct net_buf *rsp_buf;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->passthrough_req == NULL)) {
+		goto err_rsp;
+	}
+
+	if (buf->len < (sizeof(*avrcp_hdr) + sizeof(struct bt_avrcp_passthrough_cmd))) {
+		LOG_ERR("Invalid passthrough command length: %d", buf->len);
+		goto err_rsp;
+	}
+	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
+
+	if (BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr) != BT_AVRCP_SUBUNIT_TYPE_PANEL ||
+	    BT_AVRCP_HDR_GET_SUBUNIT_ID(avrcp_hdr) != BT_AVRCP_SUBUNIT_ID_ZERO ||
+	    BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr) != BT_AVRCP_CTYPE_CONTROL) {
+		LOG_ERR("Invalid passthrough command ");
+		goto err_rsp;
+	}
+
+	return avrcp_tg_cb->passthrough_req(get_avrcp_tg(avrcp), tid, buf);
+
+err_rsp:
+	rsp_buf = bt_avrcp_create_pdu(NULL);
+	if (rsp_buf == NULL) {
+		LOG_ERR("Failed to allocate response buffer");
+		return;
+	}
+
+	err = bt_avrcp_tg_send_passthrough_rsp(get_avrcp_tg(avrcp), tid, BT_AVRCP_RSP_REJECTED,
+					       rsp_buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send passthrough error response");
+		net_buf_unref(rsp_buf);
+	}
 }
 
 static const struct avrcp_handler cmd_handlers[] = {
@@ -1570,3 +1610,33 @@ int bt_avrcp_tg_send_set_browsed_player_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 	return err;
 }
 #endif /* CONFIG_BT_AVRCP_BROWSING */
+
+int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_rsp_t result,
+				     struct net_buf *buf)
+{
+	struct bt_avrcp_header *avrcp_hdr;
+	int err;
+
+	if ((tg == NULL) || (tg->avrcp == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_TG_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	if (net_buf_headroom(buf) < sizeof(struct bt_avrcp_header)) {
+		LOG_ERR("Not enough headroom in buffer for bt_avrcp_header");
+		return -ENOMEM;
+	}
+	avrcp_hdr = net_buf_push(buf, sizeof(struct bt_avrcp_header));
+	memset(avrcp_hdr, 0, sizeof(struct bt_avrcp_header));
+
+	avrcp_set_passthrough_header(avrcp_hdr, result);
+
+	err = avrcp_send(tg->avrcp, buf, BT_AVCTP_RESPONSE, tid);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+	}
+	return err;
+}
