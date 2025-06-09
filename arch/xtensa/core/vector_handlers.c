@@ -388,6 +388,36 @@ void *xtensa_excint1_c(void *esf)
 		bsa->pc += 3;
 		break;
 #endif /* !CONFIG_USERSPACE */
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
+		/* Identify the interrupted thread and the old HiFi owner */
+		struct k_thread *thread = _current;
+		struct k_thread *owner;
+		unsigned int cp;
+
+		extern void xtensa_lazy_hifi_save(uint8_t *regs);
+		extern void xtensa_lazy_hifi_load(uint8_t *regs);
+
+		owner = atomic_ptr_get(&arch_curr_cpu()->arch.hifi_owner);
+
+		/* Enable the HiFi coprocessor */
+		__asm__ volatile("rsr.cpenable %0" : "=r"(cp));
+		cp |= BIT(XCHAL_CP_ID_AUDIOENGINELX);
+		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
+
+		if (owner != thread) {
+			if (owner != NULL) {
+				xtensa_lazy_hifi_save(owner->arch.hifi_regs);
+			}
+
+			/* Load the HiFi registers from the new owner */
+			xtensa_lazy_hifi_load(thread->arch.hifi_regs);
+
+			/* Update the new owner */
+			atomic_ptr_set(&arch_curr_cpu()->arch.hifi_owner, thread);
+		}
+		break;
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
