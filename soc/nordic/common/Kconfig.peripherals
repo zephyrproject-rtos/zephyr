@@ -118,7 +118,8 @@ config HAS_HW_NRF_MWU
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MWU))
 
 config HAS_HW_NRF_NFCT
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_NFCT))
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_NFCT)) || \
+		 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_NFCT_V2))
 
 config HAS_HW_NRF_NVMC_PE
 	def_bool $(dt_nodelabel_bool_prop,flash_controller,partial-erase)
