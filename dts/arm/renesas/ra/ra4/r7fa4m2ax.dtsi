@@ -144,6 +144,14 @@
 			compatible = "renesas,ra-sce9-rng";
 			status = "disabled";
 		};
+
+		ctsu: ctsua@40081000 {
+			compatible = "renesas,ra-ctsu";
+			reg = <0x40081000 0x24>;
+			clocks = <&pclkb MSTPC 3>;
+			variant = "ctsua";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
