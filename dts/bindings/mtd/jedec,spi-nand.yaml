@@ -1,0 +1,45 @@
+# Copyright (c) 2022-2025 Macronix International Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Representation of a serial nand flash on a spi bus:
+
+    mx31lf1ge4bc: spi_nand_flash@0 {
+      compatible = "jedec,spi-nand";
+      reg = <0>;
+      spi-max-frequency = <500000>;
+      id = [c2 1E];
+      cs-wait-delay = <0>;
+      page-size = <2048>;
+      status = "okay";
+    };
+
+compatible: "jedec,spi-nand"
+
+include: "spi-device.yaml"
+
+on-bus: spi
+
+properties:
+  reg:
+    required: true
+  id:
+    required: true
+    type: uint8-array
+    description: |
+      JEDEC ID as manufacturer ID, memory type, memory density.
+  cs-wait-delay:
+    type: int
+    description: |
+      Delay (in microseconds) after Chip Select (CS) signal toggling.
+  page-size:
+    required: true
+    type: int
+    description: |
+      Size (in bytes) of the smallest programmable unit in the storage device.
+      Write operations must align to this size.
+  flash-size:
+    required: true
+    type: int
+    description: |
+      Size (in bytes) of the Flash memory.
