@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
+#include "bsim_args_runner.h"
 
 #define LOG_MODULE_NAME main
 #include <zephyr/logging/log.h>
@@ -30,6 +31,18 @@ DEFINE_FLAG_STATIC(flag_l2cap_connected);
 #define SDU_NUM         20
 #define SDU_LEN         3000
 #define RESCHEDULE_DELAY K_MSEC(100)
+
+/* The early_disconnect test has the peripheral disconnect at various
+ * times:
+ *
+ * Peripheral 1: disconnects after all 20 SDUs as before
+ * Peripheral 2: disconnects immediately before receiving anything
+ * Peripheral 3: disconnects after receiving first SDU
+ * Peripheral 4: disconnects after receiving first PDU in second SDU
+ * Peripheral 5: disconnects after receiving third PDU in third SDU
+ * Peripheral 6: disconnects atfer receiving tenth PDU in tenth SDU
+ */
+static unsigned int device_nbr;
 
 static void sdu_destroy(struct net_buf *buf)
 {
@@ -56,7 +69,7 @@ NET_BUF_POOL_DEFINE(sdu_rx_pool,
 		    8, rx_destroy);
 
 static uint8_t tx_data[SDU_LEN];
-static uint16_t rx_cnt;
+static uint16_t sdu_rx_cnt;
 static uint8_t disconnect_counter;
 
 struct test_ctx {
@@ -138,10 +151,66 @@ void sent_cb(struct bt_l2cap_chan *chan)
 	continue_sending(ctx);
 }
 
+#ifdef CONFIG_BT_L2CAP_SEG_RECV
+static void disconnect_device_no_wait(struct bt_conn *conn, void *data)
+{
+	int err;
+
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+
+	UNSET_FLAG(is_connected);
+}
+
+static void seg_recv_cb(struct bt_l2cap_chan *chan, size_t sdu_len, off_t seg_offset,
+			struct net_buf_simple *seg)
+{
+	static size_t pdu_rx_cnt;
+
+	if ((seg_offset + seg->len) == sdu_len) {
+		/* last segment/PDU of a SDU */
+		LOG_DBG("len %d", seg->len);
+		sdu_rx_cnt++;
+		pdu_rx_cnt = 0;
+	} else {
+		LOG_DBG("SDU %u, pdu %u at seg_offset %u, len %u",
+			sdu_rx_cnt, pdu_rx_cnt, seg_offset, seg->len);
+		pdu_rx_cnt++;
+	}
+
+	/* Verify SDU data matches TX'd data. */
+	int pos = memcmp(seg->data, &tx_data[seg_offset], seg->len);
+
+	if (pos != 0) {
+		LOG_ERR("RX data doesn't match TX: pos %d", seg_offset);
+		LOG_HEXDUMP_ERR(seg->data, seg->len, "RX data");
+		LOG_HEXDUMP_INF(tx_data, seg->len, "TX data");
+
+		for (uint16_t p = 0; p < seg->len; p++) {
+			__ASSERT(seg->data[p] == tx_data[p + seg_offset],
+				 "Failed rx[%d]=%x != expect[%d]=%x",
+				 p, seg->data[p], p, tx_data[p + seg_offset]);
+		}
+	}
+
+	if (((device_nbr == 4) && (sdu_rx_cnt >= 1) && (pdu_rx_cnt == 1)) ||
+	    ((device_nbr == 5) && (sdu_rx_cnt >= 2) && (pdu_rx_cnt == 3)) ||
+	    ((device_nbr == 6) && (sdu_rx_cnt >= 9) && (pdu_rx_cnt == 10))) {
+		LOG_INF("disconnecting after receiving PDU %u of SDU %u",
+			pdu_rx_cnt - 1, sdu_rx_cnt);
+		bt_conn_foreach(BT_CONN_TYPE_LE, disconnect_device_no_wait, NULL);
+		return;
+	}
+
+	if (is_connected) {
+		bt_l2cap_chan_give_credits(chan, 1);
+	}
+}
+#else /* CONFIG_BT_L2CAP_SEG_RECV */
 int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	LOG_DBG("len %d", buf->len);
-	rx_cnt++;
+	sdu_rx_cnt++;
 
 	/* Verify SDU data matches TX'd data. */
 	int pos = memcmp(buf->data, tx_data, buf->len);
@@ -160,6 +229,7 @@ int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	return 0;
 }
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
 
 void l2cap_chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
@@ -167,25 +237,41 @@ void l2cap_chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
 		CONTAINER_OF(l2cap_chan, struct bt_l2cap_le_chan, chan);
 
 	SET_FLAG(flag_l2cap_connected);
-	LOG_DBG("%x (tx mtu %d mps %d) (tx mtu %d mps %d)",
+	LOG_DBG("%x (tx mtu %d mps %d cr %ld) (tx mtu %d mps %d cr %ld)",
 		l2cap_chan,
 		chan->tx.mtu,
 		chan->tx.mps,
+		atomic_get(&chan->tx.credits),
 		chan->rx.mtu,
-		chan->rx.mps);
+		chan->rx.mps,
+		atomic_get(&chan->rx.credits));
 }
 
-void l2cap_chan_disconnected_cb(struct bt_l2cap_chan *chan)
+void l2cap_chan_disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 {
 	UNSET_FLAG(flag_l2cap_connected);
-	LOG_DBG("%p", chan);
+	LOG_DBG("%p", l2cap_chan);
+	for (int i = 0; i < L2CAP_CHANS; i++) {
+		if (&contexts[i].le_chan == CONTAINER_OF(l2cap_chan,
+							 struct bt_l2cap_le_chan, chan)) {
+			if (contexts[i].tx_left > 0) {
+				LOG_INF("setting tx_left to 0 because of disconnect");
+				contexts[i].tx_left = 0;
+			}
+			break;
+		}
+	}
 }
 
 static struct bt_l2cap_chan_ops ops = {
 	.connected = l2cap_chan_connected_cb,
 	.disconnected = l2cap_chan_disconnected_cb,
 	.alloc_buf = alloc_buf_cb,
+#ifdef CONFIG_BT_L2CAP_SEG_RECV
+	.seg_recv = seg_recv_cb,
+#else
 	.recv = recv_cb,
+#endif
 	.sent = sent_cb,
 };
 
@@ -234,6 +320,10 @@ int server_accept_cb(struct bt_conn *conn, struct bt_l2cap_server *server,
 	memset(le_chan, 0, sizeof(*le_chan));
 	le_chan->chan.ops = &ops;
 	le_chan->rx.mtu = SDU_LEN;
+#ifdef CONFIG_BT_L2CAP_SEG_RECV
+	le_chan->rx.mps = BT_L2CAP_RX_MTU;
+	le_chan->rx.credits = CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA;
+#endif
 	*chan = &le_chan->chan;
 
 	return 0;
@@ -335,15 +425,93 @@ static void test_peripheral_main(void)
 	LOG_DBG("Registered server PSM %x", psm);
 
 	LOG_DBG("Peripheral waiting for transfer completion");
-	while (rx_cnt < SDU_NUM) {
+	while (sdu_rx_cnt < SDU_NUM) {
 		k_msleep(100);
 	}
 
 	bt_conn_foreach(BT_CONN_TYPE_LE, disconnect_device, NULL);
-	WAIT_FOR_FLAG_UNSET(is_connected);
-	LOG_INF("Total received: %d", rx_cnt);
 
-	TEST_ASSERT(rx_cnt == SDU_NUM, "Did not receive expected no of SDUs");
+	WAIT_FOR_FLAG_UNSET(is_connected);
+	LOG_INF("Total received: %d", sdu_rx_cnt);
+
+	/* check that all buffers returned to pool */
+	TEST_ASSERT(atomic_get(&sdu_tx_pool.avail_count) == CONFIG_BT_MAX_CONN,
+		    "sdu_tx_pool has non returned buffers, should be %u but is %u",
+		    CONFIG_BT_MAX_CONN, atomic_get(&sdu_tx_pool.avail_count));
+	TEST_ASSERT(atomic_get(&sdu_rx_pool.avail_count) == CONFIG_BT_MAX_CONN,
+		    "sdu_rx_pool has non returned buffers, should be %u but is %u",
+		    CONFIG_BT_MAX_CONN, atomic_get(&sdu_rx_pool.avail_count));
+
+	TEST_PASS("L2CAP STRESS Peripheral passed");
+}
+
+static void test_peripheral_early_disconnect_main(void)
+{
+	device_nbr = bsim_args_get_global_device_nbr();
+	LOG_DBG("*L2CAP STRESS EARLY DISCONNECT Peripheral started*");
+	int err;
+
+	/* Prepare tx_data */
+	for (size_t i = 0; i < sizeof(tx_data); i++) {
+		tx_data[i] = (uint8_t)i;
+	}
+
+	err = bt_enable(NULL);
+	if (err) {
+		TEST_FAIL("Can't enable Bluetooth (err %d)", err);
+		return;
+	}
+
+	LOG_DBG("Peripheral Bluetooth initialized.");
+	LOG_DBG("Connectable advertising...");
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0);
+	if (err) {
+		TEST_FAIL("Advertising failed to start (err %d)", err);
+		return;
+	}
+
+	LOG_DBG("Advertising started.");
+	LOG_DBG("Peripheral waiting for connection...");
+	WAIT_FOR_FLAG(is_connected);
+	LOG_DBG("Peripheral Connected.");
+
+	int psm = l2cap_server_register(BT_SECURITY_L1);
+
+	LOG_DBG("Registered server PSM %x", psm);
+
+	if (device_nbr == 2) {
+		LOG_INF("disconnecting before receiving any SDU");
+		k_msleep(1000);
+		goto disconnect;
+	}
+
+	LOG_DBG("Peripheral waiting for transfer completion");
+	while (sdu_rx_cnt < SDU_NUM) {
+		if ((device_nbr == 3) && (sdu_rx_cnt >= 1)) {
+			LOG_INF("disconnecting after receiving SDU %u", sdu_rx_cnt);
+			break;
+		}
+
+		k_msleep(100);
+		if (!is_connected) {
+			goto done;
+		}
+	}
+
+disconnect:
+	bt_conn_foreach(BT_CONN_TYPE_LE, disconnect_device, NULL);
+done:
+
+	WAIT_FOR_FLAG_UNSET(is_connected);
+	LOG_INF("Total received: %d", sdu_rx_cnt);
+
+	/* check that all buffers returned to pool */
+	TEST_ASSERT(atomic_get(&sdu_tx_pool.avail_count) == CONFIG_BT_MAX_CONN,
+		    "sdu_tx_pool has non returned buffers, should be %u but is %u",
+		    CONFIG_BT_MAX_CONN, atomic_get(&sdu_tx_pool.avail_count));
+	TEST_ASSERT(atomic_get(&sdu_rx_pool.avail_count) == CONFIG_BT_MAX_CONN,
+		    "sdu_rx_pool has non returned buffers, should be %u but is %u",
+		    CONFIG_BT_MAX_CONN, atomic_get(&sdu_rx_pool.avail_count));
 
 	TEST_PASS("L2CAP STRESS Peripheral passed");
 }
@@ -405,6 +573,10 @@ static void connect_l2cap_channel(struct bt_conn *conn, void *data)
 
 	le_chan->chan.ops = &ops;
 	le_chan->rx.mtu = SDU_LEN;
+#ifdef CONFIG_BT_L2CAP_SEG_RECV
+	le_chan->rx.mps = BT_L2CAP_RX_MTU;
+	le_chan->rx.credits = CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA;
+#endif
 
 	UNSET_FLAG(flag_l2cap_connected);
 
@@ -461,6 +633,14 @@ static void test_central_main(void)
 	}
 	LOG_DBG("All peripherals disconnected.");
 
+	/* check that all buffers returned to pool */
+	TEST_ASSERT(atomic_get(&sdu_tx_pool.avail_count) == CONFIG_BT_MAX_CONN,
+		    "sdu_tx_pool has non returned buffers, should be %u but is %u",
+		    CONFIG_BT_MAX_CONN, atomic_get(&sdu_tx_pool.avail_count));
+	TEST_ASSERT(atomic_get(&sdu_rx_pool.avail_count) == CONFIG_BT_MAX_CONN,
+		    "sdu_rx_pool has non returned buffers, should be %u but is %u",
+		    CONFIG_BT_MAX_CONN, atomic_get(&sdu_rx_pool.avail_count));
+
 	TEST_PASS("L2CAP STRESS Central passed");
 }
 
@@ -469,6 +649,11 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "peripheral",
 		.test_descr = "Peripheral L2CAP STRESS",
 		.test_main_f = test_peripheral_main
+	},
+	{
+		.test_id = "peripheral_early_disconnect",
+		.test_descr = "Peripheral L2CAP STRESS EARLY DISCONNECT",
+		.test_main_f = test_peripheral_early_disconnect_main,
 	},
 	{
 		.test_id = "central",
