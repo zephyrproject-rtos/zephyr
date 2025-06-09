@@ -710,6 +710,23 @@ ZTEST(mqtt_client, test_mqtt_connect)
 	zassert_false(test_ctx.connected, "MQTT client should be disconnected");
 }
 
+ZTEST(mqtt_client, test_mqtt_connect_with_binding)
+{
+	char name_buf[IFNAMSIZ] = { 0 };
+	int ret = net_if_get_name(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
+				  name_buf, sizeof(name_buf));
+
+
+	zassert_true(ret > 0, "Failed to get loopback interface name");
+
+	client_ctx.transport.if_name = name_buf;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+	test_disconnect();
+	zassert_false(test_ctx.connected, "MQTT client should be disconnected");
+}
+
 ZTEST(mqtt_client, test_mqtt_ping)
 {
 	test_connect();
