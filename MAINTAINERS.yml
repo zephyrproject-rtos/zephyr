@@ -4508,6 +4508,19 @@ Realtek EC Platforms:
   labels:
     - "platform: Realtek EC"
 
+Realtek Fingerprint Platforms:
+  status: maintained
+  maintainers:
+    - RtkFP
+  files:
+    - boards/realtek/rts5817_maa_evb/
+    - drivers/*/*rts5817*
+    - dts/bindings/*/*rts5817*
+    - dts/arm/realtek/fingerprint/
+    - soc/realtek/fingerprint/
+  labels:
+    - "platform: Realtek Fingerprint"
+
 Release:
   status: maintained
   maintainers:
