@@ -572,6 +572,15 @@ struct bt_avrcp_tg_cb {
 	 */
 	void (*unit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
 
+	/** @brief Subunit Info Request callback.
+	 *
+	 *  This callback is called whenever an AVRCP subunit info is requested.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 */
+	void (*subunit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+
 	/** @brief An AVRCP TG browsing connection has been established.
 	 *
 	 *  This callback notifies the application of an avrcp browsing connection,
@@ -624,6 +633,17 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb);
  */
 int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 				   struct bt_avrcp_unit_info_rsp *rsp);
+
+/** @brief Send the subunit info response.
+ *
+ *  This function is called by the application to send the subunit info response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid);
 
 /** @brief Send the set browsed player response.
  *
