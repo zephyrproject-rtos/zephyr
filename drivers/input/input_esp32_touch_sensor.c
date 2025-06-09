@@ -186,7 +186,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_ESP32)
 	touch_hal_volt_t volt = {
 		.refh = dev_cfg->href_microvolt_enum_idx,
-		.refh = dev_cfg->href_microvolt_enum_idx,
+		.refl = dev_cfg->lref_microvolt_enum_idx,
 		.atten = dev_cfg->href_atten_microvolt_enum_idx
 	};
 
