@@ -142,10 +142,17 @@ static void avrcp_unit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
 	tg_tid = tid;
 }
 
+static void avrcp_subunit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
+{
+	bt_shell_print("AVRCP subunit info request received");
+	tg_tid = tid;
+}
+
 static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.connected = avrcp_tg_connected,
 	.disconnected = avrcp_tg_disconnected,
 	.unit_info_req = avrcp_unit_info_req,
+	.subunit_info_req = avrcp_subunit_info_req,
 };
 
 static int register_ct_cb(const struct shell *sh)
@@ -297,6 +304,33 @@ static int cmd_send_unit_info_rsp(const struct shell *sh, int32_t argc, char *ar
 	return 0;
 }
 
+static int cmd_send_subunit_info_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_avrcp_subunit_info_rsp rsp;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	/* Setup subunit info response with panel subunit */
+	rsp.subunit_type = BT_AVRCP_SUBUNIT_TYPE_PANEL;
+	rsp.max_subunit_id = 0U;
+
+	if (default_tg != NULL) {
+		err = bt_avrcp_tg_send_subunit_info_rsp(default_tg, tg_tid, &rsp);
+		if (!err) {
+			shell_print(sh, "AVRCP send subunit info response");
+		} else {
+			shell_error(sh, "Failed to send subunit info response");
+		}
+	} else {
+		shell_error(sh, "AVRCP is not connected");
+	}
+
+	return 0;
+}
+
 static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv[])
 {
 	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
@@ -379,6 +413,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	tg_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp tg callbacks", cmd_register_tg_cb, 1, 0),
 	SHELL_CMD_ARG(send_unit_rsp, NULL, "send unit info response", cmd_send_unit_info_rsp, 1, 0),
+	SHELL_CMD_ARG(send_subunit_rsp, NULL, "send subunit info response",
+		      cmd_send_subunit_info_rsp, 1, 0),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
