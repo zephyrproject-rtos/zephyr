@@ -312,7 +312,6 @@ static void iso_connected(struct bt_iso_chan *chan)
 		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
 	};
 	struct iso_chan_work *chan_work;
-	struct bt_iso_info iso_info;
 	int err;
 
 	LOG_INF("ISO Channel %p connected", chan);
@@ -328,17 +327,16 @@ static void iso_connected(struct bt_iso_chan *chan)
 	 */
 	iso_conn_start_time = k_uptime_get();
 
-	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
 	chan_work->seq_num = 0U;
 
-	if (iso_info.can_recv) {
+	if (chan_work->info.can_recv) {
 		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
 		if (err != 0) {
 			LOG_ERR("Failed to setup ISO RX data path: %d", err);
 		}
 	}
 
-	if (iso_info.can_send) {
+	if (chan_work->info.can_send) {
 		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
 		if (err != 0) {
 			LOG_ERR("Failed to setup ISO TX data path: %d", err);
@@ -1331,6 +1329,7 @@ static int run_peripheral(void)
 {
 	int err;
 	static bool initialized;
+	static struct bt_le_ext_adv *adv;
 
 	/* Reset */
 	cig_create_param.num_cis = 0;
@@ -1346,11 +1345,24 @@ static int run_peripheral(void)
 			LOG_ERR("ISO server register failed: %d", err);
 			return err;
 		}
+
+		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
+		if (err) {
+			LOG_ERR("Failed to create advertising set: %d", err);
+			return err;
+		}
+
+		err = bt_le_ext_adv_set_data(adv, sd, ARRAY_SIZE(sd), NULL, 0);
+		if (err) {
+			LOG_ERR("Failed to set advertising data: %d", err);
+			return err;
+		}
+
 		initialized = true;
 	}
 
 	LOG_INF("Starting advertising");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, sd, ARRAY_SIZE(sd));
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
 		LOG_ERR("Advertising failed to start: %d", err);
 		return err;
@@ -1363,7 +1375,7 @@ static int run_peripheral(void)
 		return err;
 	}
 
-	err = bt_le_adv_stop();
+	err = bt_le_ext_adv_stop(adv);
 	if (err != 0) {
 		LOG_ERR("Advertising failed to stop: %d", err);
 		return err;
