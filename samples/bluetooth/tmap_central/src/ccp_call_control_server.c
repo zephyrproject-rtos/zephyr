@@ -47,8 +47,40 @@ static struct bt_tbs_cb tbs_cbs = {
 int ccp_call_control_server_init(void)
 {
 	int err;
+	const struct bt_tbs_register_param gtbs_param = {
+		.provider_name = "Generic TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel,skype",
+		.gtbs = true,
+		.authorization_required = false,
+		.technology = BT_TBS_TECHNOLOGY_3G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
+
+	const struct bt_tbs_register_param tbs_param = {
+		.provider_name = "TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel,skype",
+		.gtbs = false,
+		.authorization_required = false,
+		/* Set different technologies per bearer */
+		.technology = BT_TBS_TECHNOLOGY_4G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
 
 	bt_tbs_register_cb(&tbs_cbs);
+
+	err = bt_tbs_register_bearer(&gtbs_param);
+	if (err < 0) {
+		printk("Failed to register GTBS: %d\n", err);
+		return -ENOEXEC;
+	}
+
+	err = bt_tbs_register_bearer(&tbs_param);
+	if (err < 0) {
+		printk("Failed to register TBS: %d\n", err);
+		return -ENOEXEC;
+	}
 
 	err = bt_tbs_set_uri_scheme_list(0, (const char **)&uri_list, URI_LIST_LEN);
 
