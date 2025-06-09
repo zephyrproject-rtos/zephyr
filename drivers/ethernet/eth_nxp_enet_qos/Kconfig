@@ -36,17 +36,21 @@ config ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS
 
 config ETH_NXP_ENET_QOS_TX_BUFFER_DESCRIPTORS
 	int "Number of tx buffer descriptors"
-	default 4
+	default 16
 	range 4 1024
 	help
 	  Number of TX buffer descriptors.
 
 config ETH_NXP_ENET_QOS_RX_BUFFER_DESCRIPTORS
 	int "Number of rx buffer descriptors"
-	default 4
+	default 16
 	range 4 1024
 	help
 	  Number of RX buffer descriptors.
+	  Each descriptor references a buffer of a size of CONFIG_NET_BUF_DATA_SIZE
+	  (with the two least significant bits ignored), so set this to a value
+	  large enough so that at least one frame of a maximum size can be
+	  received into all buffers combined.
 
 config ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME
 	int "Time in microseconds to wait for software reset"
