@@ -601,7 +601,7 @@ static int lp5562_program_set_brightness(const struct device *dev,
 {
 	uint8_t val;
 
-	val = (brightness * 0xFF) / LED_BRIGTHNESS_MAX;
+	val = (brightness * 0xFF) / LED_BRIGHTNESS_MAX;
 
 	return lp5562_program_command(dev, engine, command_index,
 			LP5562_PROG_COMMAND_SET_PWM, val);
@@ -781,7 +781,7 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	}
 
 	ret = lp5562_program_set_brightness(dev, engine, command_index,
-			LED_BRIGTHNESS_MAX);
+			LED_BRIGHTNESS_MAX);
 	if (ret) {
 		return ret;
 	}
@@ -792,7 +792,7 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	}
 
 	ret = lp5562_program_set_brightness(dev, engine, ++command_index,
-			LED_BRIGTHNESS_MAX);
+			LED_BRIGHTNESS_MAX);
 	if (ret) {
 		return ret;
 	}
@@ -845,7 +845,7 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 		}
 	}
 
-	val = (value * 0xFF) / LED_BRIGTHNESS_MAX;
+	val = (value * 0xFF) / LED_BRIGHTNESS_MAX;
 
 	ret = lp5562_get_pwm_reg(led, &reg);
 	if (ret) {
@@ -862,7 +862,7 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 
 static inline int lp5562_led_on(const struct device *dev, uint32_t led)
 {
-	return lp5562_led_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
+	return lp5562_led_set_brightness(dev, led, LED_BRIGHTNESS_MAX);
 }
 
 static inline int lp5562_led_off(const struct device *dev, uint32_t led)
@@ -882,7 +882,7 @@ static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 		}
 	}
 
-	return lp5562_led_set_brightness(dev, led, LED_BRIGTHNESS_MAX);
+	return lp5562_led_set_brightness(dev, led, LED_BRIGHTNESS_MAX);
 }
 
 static int lp5562_led_update_current(const struct device *dev)
