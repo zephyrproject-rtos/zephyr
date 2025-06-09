@@ -8,7 +8,9 @@ properties:
   pin-location:
     type: array
     required: true
-    description: pwm pin configuration defined as <location port pin>
+    description: |
+      pwm pin configuration defined as <location port pin>
+      For Series 2 devices, location is the timer instance number (0, 1, 2, ...)
 
   prescaler:
     type: int

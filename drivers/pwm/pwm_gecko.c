@@ -18,6 +18,7 @@ struct pwm_gecko_config {
 	uint16_t prescaler;
 	TIMER_Prescale_TypeDef prescale_enum;
 	uint8_t channel;
+	/* Location, or the timer# (0, 1, ...) if _GPIO_TIMER_CCxROUTE_MASK defined. */
 	uint8_t location;
 	uint8_t port;
 	uint8_t pin;
@@ -29,21 +30,75 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 {
 	TIMER_InitCC_TypeDef compare_config = TIMER_INITCC_DEFAULT;
 	const struct pwm_gecko_config *cfg = dev->config;
+	uint32_t mode;
 
-	if (BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL,
-		_TIMER_CC_CTRL_MODE_MASK) != timerCCModePWM) {
+#if defined(_TIMER_CC_CTRL_MODE_MASK)
+	mode = BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL, _TIMER_CC_CTRL_MODE_MASK);
+#elif defined(_TIMER_CC_CFG_MODE_MASK)
+	mode = BUS_RegMaskedRead(&cfg->timer->CC[channel].CFG, _TIMER_CC_CFG_MODE_MASK);
+#else
+#error "Unsupported device"
+#endif
+
+	if (mode != timerCCModePWM) {
 
 #ifdef _TIMER_ROUTE_MASK
+		/* Older devices such as EFM32G, EFM32LG, EFM32GG, EFM32HG, and EFM32PG. */
 		BUS_RegMaskedWrite(&cfg->timer->ROUTE,
 			_TIMER_ROUTE_LOCATION_MASK,
 			cfg->location << _TIMER_ROUTE_LOCATION_SHIFT);
 		BUS_RegMaskedSet(&cfg->timer->ROUTE, 1 << channel);
 #elif defined(_TIMER_ROUTELOC0_MASK)
+		/* series 1 devices, such as EFM32PG1, EFM32GG11, EFM32WG, and EFM32TG. */
 		BUS_RegMaskedWrite(&cfg->timer->ROUTELOC0,
 			_TIMER_ROUTELOC0_CC0LOC_MASK <<
 			(channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
 			cfg->location << (channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT));
 		BUS_RegMaskedSet(&cfg->timer->ROUTEPEN, 1 << channel);
+#elif defined(_GPIO_TIMER_CC0ROUTE_MASK)
+		/*  Series 2, such as EFR32xG21, EFR32xG22, EFR32xG23, and EFR32xG24. */
+		switch (channel) {
+		case 0:
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].ROUTEEN,
+					   _GPIO_TIMER_ROUTEEN_CC0PEN_MASK,
+					   GPIO_TIMER_ROUTEEN_CC0PEN);
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].CC0ROUTE,
+					   _GPIO_TIMER_CC0ROUTE_MASK,
+					   ((cfg->port << _GPIO_TIMER_CC0ROUTE_PORT_SHIFT)
+					    | (cfg->pin << _GPIO_TIMER_CC0ROUTE_PIN_SHIFT)));
+			break;
+		case 1:
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].ROUTEEN,
+					   _GPIO_TIMER_ROUTEEN_CC1PEN_MASK,
+					   GPIO_TIMER_ROUTEEN_CC1PEN);
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].CC1ROUTE,
+					   _GPIO_TIMER_CC1ROUTE_MASK,
+					   ((cfg->port << _GPIO_TIMER_CC1ROUTE_PORT_SHIFT)
+					    | (cfg->pin << _GPIO_TIMER_CC1ROUTE_PIN_SHIFT)));
+			break;
+		case 2:
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].ROUTEEN,
+					   _GPIO_TIMER_ROUTEEN_CC2PEN_MASK,
+					   GPIO_TIMER_ROUTEEN_CC2PEN);
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].CC2ROUTE,
+					   _GPIO_TIMER_CC2ROUTE_MASK,
+					   ((cfg->port << _GPIO_TIMER_CC2ROUTE_PORT_SHIFT)
+					    | (cfg->pin << _GPIO_TIMER_CC2ROUTE_PIN_SHIFT)));
+			break;
+#ifdef _GPIO_TIMER_ROUTEEN_CC3PEN_MASK
+		case 3:
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].ROUTEEN,
+					   _GPIO_TIMER_ROUTEEN_CC3PEN_MASK,
+					   GPIO_TIMER_ROUTEEN_CC3PEN);
+			BUS_RegMaskedWrite(&GPIO->TIMERROUTE[cfg->location].CC3ROUTE,
+					   _GPIO_TIMER_CC3ROUTE_MASK,
+					   ((cfg->port << _GPIO_TIMER_CC3ROUTE_PORT_SHIFT)
+					    | (cfg->pin << _GPIO_TIMER_CC3ROUTE_PIN_SHIFT)));
+			break;
+#endif /* _GPIO_TIMER_ROUTEEN_CC3PEN_MASK */
+		default:
+			return -EINVAL;
+		}
 #else
 #error Unsupported device
 #endif
