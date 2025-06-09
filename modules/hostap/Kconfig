@@ -358,6 +358,11 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_X509_CSR_WRITE_C
 	select MBEDTLS_X509_CSR_PARSE_C
 
+config WIFI_NM_WPA_SUPPLICANT_11AC
+	bool "IEEE 802.11ac VHT support"
+	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
+	default y
+
 config WIFI_NM_WPA_SUPPLICANT_11AX
 	bool "IEEE 802.11ax HE support"
 	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
@@ -595,5 +600,10 @@ config WIFI_NM_WPA_CTRL_RESP_TIMEOUT_S
 	help
 	  Timeout for the control interface commands to get a response from the
 	  supplicant.
+
+config WIFI_NM_HOSTAPD_REGULATORY_REGION
+	string "Select Wi-Fi Regulatory Domain"
+	default "WW "
+	depends on WIFI_NM_HOSTAPD_AP
 
 endif # WIFI_NM_WPA_SUPPLICANT
