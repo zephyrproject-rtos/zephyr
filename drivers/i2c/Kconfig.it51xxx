@@ -1,0 +1,51 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_ITE_IT51XXX
+	bool "ITE IT51XXX I2C driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_I2C_ENABLED
+	select PINCTRL
+	select I2C_BITBANG
+	help
+	  Enable I2C support on IT51XXX series.
+	  Supports nine hosts and three targets and each one able to located
+	  at I2C interface0~8.
+	  Three I2C targets on design A, B and C. Support 16 bytes dedicated
+	  FIFO mode for read/write.
+	  Supported Speeds: 50kHz, 100kHz, 400kHz and 1MHz.
+	  This driver supports repeated start.
+
+if I2C_ITE_IT51XXX
+
+config I2C_IT51XXX_FIFO_MODE
+	bool "IT51XXX I2C FIFO mode"
+	default y
+	help
+	  This is an option to enable FIFO mode which can reduce the time
+	  between each byte to improve the I2C bus clock stretching during
+	  I2C transaction.
+	  The I2C controller supports two 32-bytes FIFOs,
+	  FIFO1 supports I2C 0, and FIFO2 supports other ports.
+	  I2C FIFO mode of IT51XXX can support I2C APIs including:
+	  i2c_write(), i2c_read(), i2c_burst_read.
+
+endif # I2C_ITE_IT51XXX
+
+if I2C_TARGET
+
+config I2C_TARGET_IT51XXX_MAX_BUF_SIZE
+	int "It is allowed to configure the dedicated FIFO size up to 256 bytes."
+	default 256
+
+config I2C_IT51XXX_MAX_SHARE_FIFO_SIZE
+	int "It is allowed to configure the shared FIFO size up to 256 bytes."
+	range 16 256
+	default 256
+
+config SOC_IT51XXX_CPU_IDLE_GATING
+	default y
+	help
+	  This option is used when the I2C target shared FIFO property is enabled.
+
+endif # I2C_TARGET

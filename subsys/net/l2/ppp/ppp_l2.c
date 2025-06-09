@@ -238,6 +238,19 @@ static int ppp_up(struct net_if *iface)
 	return 0;
 }
 
+static void ppp_lcp_close_async(struct ppp_context *ctx)
+{
+	if (ppp_lcp == NULL) {
+		ppp_change_phase(ctx, PPP_DEAD);
+	}
+
+	if (ctx->phase == PPP_DEAD) {
+		return;
+	}
+
+	ppp_lcp->close(ctx, "L2 Disabled");
+}
+
 static int ppp_lcp_close(struct ppp_context *ctx)
 {
 	if (ppp_lcp == NULL) {
@@ -485,6 +498,10 @@ static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint32_
 
 	if ((mgmt_event == NET_EVENT_IF_DOWN) && (!net_if_is_carrier_ok(iface))) {
 		ppp_lcp_lower_down_async(ctx);
+	}
+	if ((mgmt_event == NET_EVENT_IF_DOWN && net_if_is_carrier_ok(iface) &&
+	     net_if_is_dormant(iface))) {
+		ppp_lcp_close_async(ctx);
 	}
 }
 

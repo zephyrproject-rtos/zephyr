@@ -1,18 +1,29 @@
-# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Ambiq UART controller (PL011 compatible)
+description: Ambiq UART controller
 
 compatible: "ambiq,uart"
 
-include: ["arm,pl011.yaml", pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
   pinctrl-0:
     required: true
 
   pinctrl-names:
     required: true
 
-  ambiq,pwrcfg:
-    required: true
+  clk-src:
+    type: int
+    default: 0
+    description: |
+      Set the UART clock source, apollo510 only
+      0x0 - HFRC
+      0x1 - SYSPLL

@@ -71,10 +71,8 @@ struct flash_stm32_priv {
 #define FLASH_STM32_SR		SR
 #endif
 
-
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
-
 
 /* Redefinitions of flags and masks to harmonize stm32 series: */
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
@@ -131,7 +129,12 @@ struct flash_stm32_priv {
 #define FLASH_STM32_NSPNB_POS FLASH_NSCR1_PNB_Pos
 #define FLASH_STM32_NSPNB FLASH_NSCR1_PNB
 #define FLASH_STM32_NSSTRT FLASH_NSCR1_STRT
+/* STM32WBA6x has DUAL bank flash */
+#if defined(FLASH_OPTR_DUAL_BANK)
+#define FLASH_STM32_DBANK FLASH_OPTR_DUAL_BANK
+#endif /* FLASH_OPTR_DUAL_BANK */
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
+
 #if defined(FLASH_OPTR_DBANK)
 #define FLASH_STM32_DBANK FLASH_OPTR_DBANK
 #endif /* FLASH_OPTR_DBANK */
@@ -324,12 +327,12 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 int flash_stm32_wait_flash_idle(const struct device *dev);
 
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
-
 uint32_t flash_stm32_option_bytes_read(const struct device *dev);
 
 int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
 				   uint32_t value);
+
+int flash_stm32_cr_lock(const struct device *dev, bool enable);
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 int flash_stm32_check_status(const struct device *dev);

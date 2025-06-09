@@ -221,9 +221,19 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
-		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
 			ret = true;
 			break;
+#if defined(CONFIG_BT_EXT_ADV)
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
+		{
+			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
+				(void *)&evt_data[3];
+
+			return (ext_adv->num_reports == 1) &&
+				   ((ext_adv->adv_info[0].evt_type &
+					 BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
+		}
+#endif
 		default:
 			break;
 		}
@@ -403,23 +413,8 @@ static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 
 static int bt_nxp_send(const struct device *dev, struct net_buf *buf)
 {
-	uint8_t packetType;
-
 	ARG_UNUSED(dev);
 
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_CMD:
-		packetType = BT_HCI_H4_CMD;
-		break;
-	case BT_BUF_ACL_OUT:
-		packetType = BT_HCI_H4_ACL;
-		break;
-	default:
-		LOG_ERR("Not supported type");
-		return -1;
-	}
-
-	net_buf_push_u8(buf, packetType);
 #if defined(HCI_NXP_LOCK_STANDBY_BEFORE_SEND)
 	/* Sending an HCI message requires to wake up the controller core if it's asleep.
 	 * Platform controllers may send reponses using non wakeable interrupts which can

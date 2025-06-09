@@ -143,7 +143,7 @@ const char *wifi_band_txt(enum wifi_frequency_bands band)
 	}
 }
 
-const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth)
+const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth)
 {
 	switch (bandwidth) {
 	case WIFI_FREQ_BANDWIDTH_20MHZ:
@@ -356,7 +356,7 @@ static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api;
 
-	if (dev == NULL) {
+	if (dev == NULL || !net_if_is_wifi(iface)) {
 		return NULL;
 	}
 

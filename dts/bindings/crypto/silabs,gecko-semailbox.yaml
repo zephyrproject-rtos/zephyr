@@ -1,7 +1,11 @@
 # Copyright (c) 2021 Safran Passenger Innovations Germany GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-description: Silicon Labs Secure Element mailbox node
+title: Silicon Labs Series 2 SE (Secure Engine) Mailbox
+
+description: |
+  Mailbox interface for the Secure Engine on Silicon Labs Series 2 devices
+  with Hardware Secure Element.
 
 compatible: "silabs,gecko-semailbox"
 

@@ -1,6 +1,5 @@
 tests:
   kernel.common.profiling:
-    arch_exclude: nios2
     platform_exclude:
       - em_starterkit/emsk_em7d
       - em_starterkit/emsk_em9d

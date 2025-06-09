@@ -17,4 +17,3 @@ supported:
   - counter
   - gpio
   - uart
-vendor: nxp

@@ -1,0 +1,8 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD1320 160x160 dot-matrix display controller on MIPI_DBI or SPI bus
+
+include: ["solomon,ssd1320-common.yaml", "mipi-dbi-spi-device.yaml"]
+
+compatible: "solomon,ssd1320"

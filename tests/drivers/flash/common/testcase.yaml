@@ -117,6 +117,14 @@ tests:
     extra_configs:
       - CONFIG_DMA=y
       - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
+  drivers.flash.common.stm32:
+    filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
+      and CONFIG_SOC_FAMILY_STM32
+      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+    integration_platforms:
+      - nucleo_g474re
+    platform_exclude:
+      - nucleo_wb55rg
   drivers.flash.common.non_quad_mode:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25r64_non_quad.overlay
@@ -126,3 +134,14 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+  drivers.flash.common.disable_spi_nor:
+    filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+    extra_args:
+      - CONFIG_SPI_NOR=n
+  drivers.flash.common.ra_ospi_b_nor:
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/${BOARD}_ospi_b_nor.overlay"
+      - CONF_FILE="./prj.conf ./boards/${BOARD}_ospi_b_nor.conf"

@@ -631,8 +631,8 @@ static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev
 {
 	ARG_UNUSED(dev);
 
-	return (ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
-			ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET);
+	return (ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE |
+			ETHERNET_LINK_100BASE | ETHERNET_DUPLEX_SET);
 }
 
 static const struct ethernet_api eth_api = {

@@ -7,6 +7,9 @@
 
 #include <mem.h>
 
+#define BOOTSTRAP_SIZE    DT_SIZE_K(12)
+#define SRAM0_SIZE       (DT_SIZE_K(256) - BOOTSTRAP_SIZE)
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -35,14 +38,46 @@
 	};
 
 	sram0: memory@20000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
 		compatible = "mmio-sram";
-		reg = <0x20000000 DT_SIZE_K(244)>;
+		reg = <0x20000000 SRAM0_SIZE>;
+
+		/* SRAM aliased address path */
+		sram_sahb: sram_bus_alias@20000000 {
+			reg = <0x20000000 SRAM0_SIZE>;  /* SAHB address */
+		};
+
+		sram_cbus: sram_bus_alias@4000000 {
+			reg = <0x04000000 SRAM0_SIZE>;  /* CBUS address */
+		};
 	};
 
+	/* sram_bootstrap address calculation:
+	 * sram_sahb + sram_size (256k) - bootstrap size
+	 * (e.g. 0x20000000 + 0x40000 - 12K (0x3000) = 0x2003D000)
+	 */
 	sram_bootstrap: memory@2003D000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "BOOTSTRAP_RAM";
-		reg = <0x2003D000 DT_SIZE_K(12)>;
+		reg = <0x2003D000 BOOTSTRAP_SIZE>;
+	};
+
+	qspi_flash: qspi_flash@40890000 {
+		compatible = "infineon,cat1-qspi-flash";
+		reg = <0x40890000 0x30000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	/* Flash aliased address path */
+	flash_sahb: flash_bus_alias@60000000 {
+		reg = <0x60000000 0x80000>;  /* SAHB address */
+	};
+
+	flash_cbus: flash_bus_alias@8000000 {
+		reg = <0x08000000 0x80000>;  /* CBUS address */
 	};
 
 	soc {

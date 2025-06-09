@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <st/wba/stm32wba65.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(448)>;
+	};
+
+	sram1: memory@20070000 {
+		compatible = "mmio-sram";
+		reg = <0x20070000 DT_SIZE_K(64)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_M(2)>;
+			};
+		};
+	};
+};

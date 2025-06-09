@@ -73,7 +73,6 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 								nrf_wifi_rpu_recovery_work);
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	int ret;
-	bool recovery_fail = false;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -144,11 +143,27 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	ret = net_if_down(vif_ctx_zep->zep_net_if_ctx);
 	if (ret) {
 		rpu_ctx_zep->rpu_recovery_failure++;
-		recovery_fail = true;
 		LOG_ERR("%s: net_if_down failed: %d", __func__, ret);
 		/* Continue with the recovery */
+	} else {
+		rpu_ctx_zep->rpu_recovery_success++;
 	}
-	k_msleep(CONFIG_NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS);
+	/* Continue recovery process after delay without blocking system workqueue.
+	 * Mutex is released in the next phase.
+	 */
+	k_work_reschedule(&vif_ctx_zep->nrf_wifi_rpu_recovery_bringup_work,
+			  K_MSEC(CONFIG_NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS));
+}
+
+static void nrf_wifi_rpu_recovery_bringup_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = CONTAINER_OF(dwork,
+							struct nrf_wifi_vif_ctx_zep,
+							nrf_wifi_rpu_recovery_bringup_work);
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	int ret;
+
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: Bringing the interface up", __func__);
 #else
@@ -160,9 +175,6 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	}
 	rpu_ctx_zep->rpu_recovery_in_progress = false;
 	rpu_ctx_zep->last_rpu_recovery_time_ms = k_uptime_get();
-	if (!recovery_fail) {
-		rpu_ctx_zep->rpu_recovery_success++;
-	}
 	k_mutex_unlock(&rpu_ctx_zep->rpu_lock);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: RPU recovery done", __func__);
@@ -331,8 +343,8 @@ static bool is_eapol(struct net_pkt *pkt)
 
 enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 {
-	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE_T |
-			ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T);
+	enum ethernet_hw_caps caps = (ETHERNET_LINK_10BASE |
+			ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE);
 
 #ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD |
@@ -358,6 +370,7 @@ int nrf_wifi_if_send(const struct device *dev,
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
 	struct rpu_host_stats *host_stats = NULL;
 	void *nbuf = NULL;
+	bool locked = false;
 
 	if (!dev || !pkt) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -371,24 +384,27 @@ int nrf_wifi_if_send(const struct device *dev,
 		goto out;
 	}
 
+	/* Allocate packet before locking mutex (blocks until allocation success) */
+	nbuf = net_pkt_to_nbuf(pkt);
+
 	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		goto out;
+		goto drop;
 	}
+	locked = true;
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
-		goto unlock;
+		goto drop;
 	}
 
 	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
 	host_stats = &sys_dev_ctx->host_stats;
-	nbuf = net_pkt_to_nbuf(pkt);
-	if (!nbuf) {
-		LOG_DBG("Failed to allocate net_pkt");
-		host_stats->total_tx_drop_pkts++;
-		goto out;
+
+	if (nbuf == NULL) {
+		LOG_ERR("%s: allocation failed", __func__);
+		goto drop;
 	}
 
 #ifdef CONFIG_NRF70_RAW_DATA_TX
@@ -415,10 +431,16 @@ int nrf_wifi_if_send(const struct device *dev,
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 	goto unlock;
 drop:
-	host_stats->total_tx_drop_pkts++;
-	nrf_wifi_osal_nbuf_free(nbuf);
+	if (host_stats != NULL) {
+		host_stats->total_tx_drop_pkts++;
+	}
+	if (nbuf != NULL) {
+		nrf_wifi_osal_nbuf_free(nbuf);
+	}
 unlock:
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	if (locked) {
+		k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	}
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
@@ -565,6 +587,7 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 		random_mac_addr,
 		WIFI_MAC_ADDR_LEN);
 #elif CONFIG_WIFI_OTP_MAC_ADDRESS
+#ifndef CONFIG_NRF71_ON_IPC
 	status = nrf_wifi_fmac_otp_mac_addr_get(fmac_dev_ctx,
 				vif_ctx_zep->vif_idx,
 				vif_ctx_zep->mac_addr.addr);
@@ -573,6 +596,15 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 			__func__);
 		goto unlock;
 	}
+#else
+	/* Set dummy MAC address */
+	vif_ctx_zep->mac_addr.addr[0] = 0x00;
+	vif_ctx_zep->mac_addr.addr[1] = 0x00;
+	vif_ctx_zep->mac_addr.addr[2] = 0x5E;
+	vif_ctx_zep->mac_addr.addr[3] = 0x00;
+	vif_ctx_zep->mac_addr.addr[4] = 0x10;
+	vif_ctx_zep->mac_addr.addr[5] = 0x00;
+#endif /* !CONFIG_NRF71_ON_IPC */
 #endif
 
 	if (!nrf_wifi_utils_is_mac_addr_valid(vif_ctx_zep->mac_addr.addr)) {
@@ -649,6 +681,8 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	k_work_init(&vif_ctx_zep->nrf_wifi_rpu_recovery_work,
 		    nrf_wifi_rpu_recovery_work_handler);
+	k_work_init_delayable(&vif_ctx_zep->nrf_wifi_rpu_recovery_bringup_work,
+			      nrf_wifi_rpu_recovery_bringup_work_handler);
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 
 #if !defined(CONFIG_NRF_WIFI_IF_AUTO_START)
@@ -1174,9 +1208,7 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-#ifdef CONFIG_NRF70_RAW_DATA_TX
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
-#endif /* CONFIG_NRF70_RAW_DATA_TX */
 	struct rpu_sys_op_stats stats;
 	int ret = -1;
 
@@ -1207,19 +1239,38 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 			__func__);
 		goto unlock;
 	}
-
-	memset(&stats, 0, sizeof(struct rpu_sys_op_stats));
-	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
-	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_stats_get failed", __func__);
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	if (!sys_dev_ctx) {
+		LOG_ERR("%s: sys_dev_ctx is NULL", __func__);
 		goto unlock;
 	}
 
+	memset(&stats, 0, sizeof(struct rpu_sys_op_stats));
+	/* Host statistics */
+	nrf_wifi_osal_mem_cpy(&stats.host,
+			      &sys_dev_ctx->host_stats,
+			      sizeof(sys_dev_ctx->host_stats));
 	zstats->pkts.tx = stats.host.total_tx_pkts;
 	zstats->pkts.rx = stats.host.total_rx_pkts;
 	zstats->errors.tx = stats.host.total_tx_drop_pkts;
 	zstats->errors.rx = stats.host.total_rx_drop_pkts +
 			stats.fw.umac.interface_data_stats.rx_checksum_error_count;
+	zstats->overrun_count = stats.host.total_tx_drop_pkts + stats.host.total_rx_drop_pkts;
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	zstats->errors.tx += sys_dev_ctx->raw_pkt_stats.raw_pkt_send_failure;
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+
+	/* FMAC statistics */
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_WRN("%s: nrf_wifi_fmac_stats_get failed", __func__);
+		/* Special value to indicate that
+		 * statistics are not available.
+		 */
+		memset(&stats.fw.umac.interface_data_stats, 0xAA,
+		       sizeof(stats.fw.umac.interface_data_stats));
+	}
+
 	zstats->bytes.received = stats.fw.umac.interface_data_stats.rx_bytes;
 	zstats->bytes.sent = stats.fw.umac.interface_data_stats.tx_bytes;
 	zstats->sta_mgmt.beacons_rx = stats.fw.umac.interface_data_stats.rx_beacon_success_count;
@@ -1230,12 +1281,7 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	zstats->multicast.tx = stats.fw.umac.interface_data_stats.tx_multicast_pkt_count;
 	zstats->unicast.rx   = stats.fw.umac.interface_data_stats.rx_unicast_pkt_count;
 	zstats->unicast.tx   = stats.fw.umac.interface_data_stats.tx_unicast_pkt_count;
-	zstats->overrun_count = stats.host.total_tx_drop_pkts + stats.host.total_rx_drop_pkts;
 
-#ifdef CONFIG_NRF70_RAW_DATA_TX
-	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
-	zstats->errors.tx += sys_dev_ctx->raw_pkt_stats.raw_pkt_send_failure;
-#endif /* CONFIG_NRF70_RAW_DATA_TX */
 	ret = 0;
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);

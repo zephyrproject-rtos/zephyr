@@ -93,7 +93,8 @@ struct usbd_desc_node *usbd_get_descriptor(struct usbd_context *const uds_ctx,
 				}
 			}
 
-			if (desc_nd->bDescriptorType == USB_DESC_BOS) {
+			if (IS_ENABLED(CONFIG_USBD_BOS_SUPPORT) &&
+			    desc_nd->bDescriptorType == USB_DESC_BOS) {
 				return desc_nd;
 			}
 		}
@@ -125,8 +126,13 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	hs_desc = uds_ctx->hs_desc;
+	if (USBD_SUPPORTS_HIGH_SPEED && hs_desc == NULL) {
+		ret = -EPERM;
+		goto add_descriptor_error;
+	}
+
 	fs_desc = uds_ctx->fs_desc;
-	if (!fs_desc || !hs_desc || usbd_is_initialized(uds_ctx)) {
+	if (!fs_desc || usbd_is_initialized(uds_ctx)) {
 		ret = -EPERM;
 		goto add_descriptor_error;
 	}
@@ -142,8 +148,10 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 		goto add_descriptor_error;
 	}
 
-	if (desc_nd->bDescriptorType == USB_DESC_BOS) {
-		if (desc_nd->bos.utype == USBD_DUT_BOS_VREQ) {
+	if (IS_ENABLED(CONFIG_USBD_BOS_SUPPORT) &&
+	    desc_nd->bDescriptorType == USB_DESC_BOS) {
+		if (IS_ENABLED(CONFIG_USBD_VREQ_SUPPORT) &&
+		    desc_nd->bos.utype == USBD_DUT_BOS_VREQ) {
 			ret =  usbd_device_register_vreq(uds_ctx, desc_nd->bos.vreq_nd);
 			if (ret) {
 				goto add_descriptor_error;
@@ -164,15 +172,24 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 		case USBD_DUT_STRING_LANG:
 			break;
 		case USBD_DUT_STRING_MANUFACTURER:
-			hs_desc->iManufacturer = desc_nd->str.idx;
+			if (USBD_SUPPORTS_HIGH_SPEED) {
+				hs_desc->iManufacturer = desc_nd->str.idx;
+			}
+
 			fs_desc->iManufacturer = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_PRODUCT:
-			hs_desc->iProduct = desc_nd->str.idx;
+			if (USBD_SUPPORTS_HIGH_SPEED) {
+				hs_desc->iProduct = desc_nd->str.idx;
+			}
+
 			fs_desc->iProduct = desc_nd->str.idx;
 			break;
 		case USBD_DUT_STRING_SERIAL_NUMBER:
-			hs_desc->iSerialNumber = desc_nd->str.idx;
+			if (USBD_SUPPORTS_HIGH_SPEED) {
+				hs_desc->iSerialNumber = desc_nd->str.idx;
+			}
+
 			fs_desc->iSerialNumber = desc_nd->str.idx;
 			break;
 		default:

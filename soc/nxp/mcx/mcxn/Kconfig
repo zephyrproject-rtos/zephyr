@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MCXN
@@ -9,6 +9,7 @@ config SOC_SERIES_MCXN
 	select HAS_MCUX_FLEXCOMM
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
+	select HAS_MCUX_MCX_CMC
 
 config SOC_MCXN947_CPU0
 	select CPU_CORTEX_M33
@@ -23,6 +24,19 @@ config SOC_MCXN947_CPU0
 config SOC_MCXN947_CPU1
 	select CPU_CORTEX_M33
 
+config SOC_MCXN547
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select SOC_RESET_HOOK
+	select ARM_TRUSTZONE_M
+	select HAS_MCUX_CACHE
+
+config SOC_MCXN547_CPU1
+	select CPU_CORTEX_M33
+
 config SOC_MCXN236
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
@@ -34,9 +48,10 @@ config SOC_MCXN236
 
 if SOC_SERIES_MCXN
 
-if SOC_MCXN947
+if SOC_MCXN947 || SOC_MCXN547
+
 config SECOND_CORE_MCUX
-	bool "MCXN94X's second core"
+	bool "MCXNX4X's second core"
 	depends on HAS_MCUX
 	help
 	  Indicates the second core will be enabled, and the part will run
@@ -48,9 +63,40 @@ config FLASH_DISABLE_CACHE64
 	  Disable cache64 cache.
 
 config MCUX_CORE_SUFFIX
-	default "_cm33_core0" if SOC_MCXN947_CPU0
-	default "_cm33_core1" if SOC_MCXN947_CPU1
+	default "_cm33_core0" if SOC_MCXN947_CPU0 || SOC_MCXN547_CPU0
+	default "_cm33_core1" if SOC_MCXN947_CPU1 || SOC_MCXN547_CPU1
 endif
+
+if SECOND_CORE_MCUX
+
+config SECOND_CORE_MCUX_ACCESS_LEVEL
+	int "default TrustZone access level for secondary core"
+	default 3
+	help
+	  Configures AHBSC MASTER_SEC_LEVEL register for the cpu1 before cpu1 is
+	  enabled.
+endif
+
+config NXP_FLEXSPI_BOOT_HEADER
+	bool "Boot header"
+	default y if FLASH_MCUX_FLEXSPI_XIP && !BOOTLOADER_MCUBOOT
+
+	help
+	  Enable data structures required by the boot ROM to boot the
+	  application from an external flash device.
+
+if NXP_FLEXSPI_BOOT_HEADER
+
+config FLEXSPI_CONFIG_BLOCK_OFFSET
+	hex "FlexSPI config block offset"
+	default 0x400
+	help
+	  FlexSPI configuration block consists of parameters regarding specific
+	  flash devices including read command sequence, quad mode enablement
+	  sequence (optional), etc. The boot ROM expects FlexSPI configuration
+	  parameter to be presented in serial nor flash.
+
+endif # NXP_FLEXSPI_BOOT_HEADER
 
 rsource "../../common/Kconfig.flexspi_xip"
 

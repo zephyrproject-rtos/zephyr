@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(xt_wdt_sample, CONFIG_WDT_LOG_LEVEL);
 
 K_SEM_DEFINE(wdt_sem, 0, 1);
 
-static const struct device *const clk_dev = DEVICE_DT_GET_ONE(espressif_esp32_rtc);
+static const struct device *const clk_dev = DEVICE_DT_GET_ONE(espressif_esp32_clock);
 const struct device *const wdt = DEVICE_DT_GET_ONE(espressif_esp32_xt_wdt);
 
 static void wdt_callback(const struct device *wdt_dev, int channel_id)

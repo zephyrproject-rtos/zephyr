@@ -60,14 +60,12 @@ config MBEDTLS_GENPRIME_ENABLED
 
 endif # MBEDTLS_RSA_C
 
-config MBEDTLS_RSA_FULL
-	bool
+config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
+	bool "All available ciphersuite modes"
+	select MBEDTLS_MD
 	select MBEDTLS_RSA_C
 	select MBEDTLS_PKCS1_V15
 	select MBEDTLS_PKCS1_V21
-
-config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
-	bool "All available ciphersuite modes"
 	select MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
@@ -92,7 +90,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
-	select MBEDTLS_RSA_FULL
+	depends on MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
 
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
@@ -103,9 +101,8 @@ config MBEDTLS_PSK_MAX_LEN
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
-	default y if UOSCORE || UEDHOC
-	select MBEDTLS_MD
-	select MBEDTLS_RSA_FULL
+	depends on MBEDTLS_MD
+	depends on PSA_CRYPTO_CLIENT || MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
@@ -113,16 +110,16 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
-	select MBEDTLS_RSA_FULL
+	depends on MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	bool "ECDHE-RSA based ciphersuite modes"
-	select MBEDTLS_RSA_FULL
+	depends on MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
 	depends on MBEDTLS_ECDH_C
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	bool "ECDHE-ECDSA based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
+	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "ECDH-ECDSA based ciphersuite modes"
@@ -172,7 +169,6 @@ config MBEDTLS_ECJPAKE_C
 
 config MBEDTLS_ECP_C
 	bool "Elliptic curve over GF(p) library"
-	default y if UOSCORE || UEDHOC
 
 if MBEDTLS_ECP_C
 
@@ -204,7 +200,6 @@ config MBEDTLS_ECP_DP_SECP224R1_ENABLED
 
 config MBEDTLS_ECP_DP_SECP256R1_ENABLED
 	bool "SECP256R1 elliptic curve"
-	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_ECP_DP_SECP384R1_ENABLED
 	bool "SECP384R1 elliptic curve"
@@ -308,7 +303,6 @@ if MBEDTLS_SOME_AEAD_CIPHER_ENABLED
 
 config MBEDTLS_CIPHER_CCM_ENABLED
 	bool "Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
-	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_CIPHER_GCM_ENABLED
 	bool "Galois/Counter Mode (GCM) for symmetric ciphers"
@@ -592,7 +586,6 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
 	depends on !BUILD_WITH_TFM
-	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_USE_PSA_CRYPTO
 	bool "Use PSA APIs instead of legacy MbedTLS when possible"

@@ -47,6 +47,7 @@ struct sdl_display_task {
 struct sdl_display_config {
 	uint16_t height;
 	uint16_t width;
+	const char *title;
 };
 
 struct sdl_display_data {
@@ -116,14 +117,15 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 		sdl_display_zoom_pct = CONFIG_SDL_DISPLAY_ZOOM_PCT;
 	}
 
-	int rc = sdl_display_init_bottom(config->height, config->width, sdl_display_zoom_pct,
-					 use_accelerator, &disp_data->window, dev,
-					 &disp_data->renderer, &disp_data->mutex,
-					 &disp_data->texture, &disp_data->read_texture,
-					 &disp_data->background_texture,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
-					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+	int rc = sdl_display_init_bottom(
+		config->height, config->width, sdl_display_zoom_pct, use_accelerator,
+		&disp_data->window, dev, config->title, &disp_data->renderer, &disp_data->mutex,
+		&disp_data->texture, &disp_data->read_texture, &disp_data->background_texture,
+		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
+		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
+		CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
+
+	k_sem_give(&disp_data->task_sem);
 
 	if (rc != 0) {
 		nsi_print_error_and_exit("Failed to create SDL display");
@@ -169,6 +171,8 @@ static int sdl_display_init(const struct device *dev)
 			K_KERNEL_STACK_SIZEOF(disp_data->sdl_thread_stack),
 			sdl_task_thread, (void *)dev, NULL, NULL,
 			CONFIG_SDL_DISPLAY_THREAD_PRIORITY, 0, K_NO_WAIT);
+	/* Ensure task thread has performed the init */
+	k_sem_take(&disp_data->task_sem, K_FOREVER);
 
 	return 0;
 }
@@ -730,35 +734,30 @@ static DEVICE_API(display, sdl_display_api) = {
 	.set_pixel_format = sdl_display_set_pixel_format,
 };
 
-#define DISPLAY_SDL_DEFINE(n)						\
-	static const struct sdl_display_config sdl_config_##n = {	\
-		.height = DT_INST_PROP(n, height),			\
-		.width = DT_INST_PROP(n, width),			\
-	};								\
-									\
-	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height)		\
-				   * DT_INST_PROP(n, width)];		\
-	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height)	\
-					* DT_INST_PROP(n, width)];	\
-	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4); \
-	static struct sdl_display_data sdl_data_##n = {			\
-		.buf = sdl_buf_##n,					\
-		.read_buf = sdl_read_buf_##n,				\
-		.task_msgq = &sdl_task_msgq_##n,			\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL,		\
-			      &sdl_data_##n,				\
-			      &sdl_config_##n,				\
-			      POST_KERNEL,				\
-			      CONFIG_DISPLAY_INIT_PRIORITY,		\
-			      &sdl_display_api);			\
-									\
-	static void sdl_display_cleanup_##n(void)			\
-	{								\
-		sdl_display_cleanup(&sdl_data_##n);			\
-	}								\
-									\
+#define DISPLAY_SDL_DEFINE(n)                                                                      \
+	static const struct sdl_display_config sdl_config_##n = {                                  \
+		.height = DT_INST_PROP(n, height),                                                 \
+		.width = DT_INST_PROP(n, width),                                                   \
+		.title = DT_INST_PROP_OR(n, title, "Zephyr Display"),                              \
+	};                                                                                         \
+                                                                                                   \
+	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];          \
+	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];     \
+	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4);                   \
+	static struct sdl_display_data sdl_data_##n = {                                            \
+		.buf = sdl_buf_##n,                                                                \
+		.read_buf = sdl_read_buf_##n,                                                      \
+		.task_msgq = &sdl_task_msgq_##n,                                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL, &sdl_data_##n, &sdl_config_##n,          \
+			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &sdl_display_api);        \
+                                                                                                   \
+	static void sdl_display_cleanup_##n(void)                                                  \
+	{                                                                                          \
+		sdl_display_cleanup(&sdl_data_##n);                                                \
+	}                                                                                          \
+                                                                                                   \
 	NATIVE_TASK(sdl_display_cleanup_##n, ON_EXIT, 1);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_SDL_DEFINE)

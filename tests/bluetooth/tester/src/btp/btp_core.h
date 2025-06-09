@@ -7,8 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
-#include <zephyr/bluetooth/addr.h>
+#include <stdint.h>
 
 /* Core Service */
 #define BTP_CORE_READ_SUPPORTED_COMMANDS	0x01

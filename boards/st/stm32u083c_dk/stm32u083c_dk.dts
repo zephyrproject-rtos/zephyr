@@ -27,6 +27,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_3 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
@@ -38,15 +39,15 @@
 	};
 };
 
-&usart1 {
-	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
-&usart2 {
-	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc4 &usart3_rx_pc5>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
@@ -104,6 +105,13 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pc10
+		     &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &timers1 {
 	st,prescaler = <10000>;
 	status = "okay";
@@ -150,6 +158,7 @@
 		group = <6>;
 		channel-ios = <TSC_IO2>;
 		sampling-io = <TSC_IO1>;
+
 		ts1 {
 			compatible = "tsc-keys";
 			sampling-interval-ms = <10>;

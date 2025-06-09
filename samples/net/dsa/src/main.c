@@ -24,31 +24,64 @@ static void dsa_iface_find_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_MASTER_PORT) {
-		if (ifaces->master == NULL) {
-			ifaces->master = iface;
+	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_CONDUIT_PORT) {
+		if (ifaces->conduit == NULL) {
+			ifaces->conduit = iface;
 
-			/* Get slave interfaces */
+			/* Get user interfaces */
 			for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
-				struct net_if *slave = dsa_get_slave_port(iface, i);
+#if defined(CONFIG_NET_DSA_DEPRECATED)
+				struct net_if *user = dsa_get_slave_port(iface, i);
+#else
+				struct net_if *user = dsa_user_get_iface(iface, i);
+#endif
 
-				if (slave == NULL) {
+				if (user == NULL) {
 					continue;
 				}
-				LOG_INF("Slave interface %d found.", i);
+				LOG_INF("[%d] User interface %d found.", i,
+					net_if_get_by_iface(user));
 
-				ifaces->lan[i] = slave;
+				ifaces->lan[i] = user;
 			}
 			return;
 		}
 	}
 }
 
+#if defined(CONFIG_NET_MGMT_EVENT)
+#define EVENT_MASK (NET_EVENT_IF_UP)
+static struct net_mgmt_event_callback mgmt_cb;
+
+static void event_handler(struct net_mgmt_event_callback *cb,
+			  uint32_t mgmt_event, struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(cb);
+
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		LOG_INF("Port %d is up", net_if_get_by_iface(iface));
+
+#if defined(CONFIG_NET_DHCPV4)
+		net_dhcpv4_start(iface);
+#endif
+
+		return;
+	}
+}
+#endif /* CONFIG_NET_MGMT_EVENT */
+
 int main(void)
 {
 	/* Initialize interfaces - read them to user_data */
 	(void)memset(&user_data, 0, sizeof(user_data));
 	net_if_foreach(dsa_iface_find_cb, &user_data);
+
+#if defined(CONFIG_NET_MGMT_EVENT)
+	net_mgmt_init_event_callback(&mgmt_cb,
+				     event_handler, EVENT_MASK);
+	net_mgmt_add_event_callback(&mgmt_cb);
+#endif /* CONFIG_NET_MGMT_EVENT */
 
 #if defined(CONFIG_NET_SAMPLE_DSA_LLDP)
 	dsa_lldp(&user_data);

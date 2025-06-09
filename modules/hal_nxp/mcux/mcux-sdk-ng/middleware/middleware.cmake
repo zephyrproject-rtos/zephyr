@@ -36,8 +36,22 @@ if(CONFIG_UDC_DRIVER)
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/include)
 endif()
 
+if (CONFIG_UHC_DRIVER)
+  zephyr_include_directories(middleware)
+
+  set(CONFIG_MCUX_COMPONENT_middleware.usb.common_header ON)
+
+  set_variable_ifdef(CONFIG_DT_HAS_NXP_USBPHY_ENABLED CONFIG_MCUX_COMPONENT_middleware.usb.phy)
+  set_variable_ifdef(CONFIG_UHC_NXP_EHCI CONFIG_MCUX_COMPONENT_middleware.usb.host.ehci)
+  set_variable_ifdef(CONFIG_UHC_NXP_KHCI CONFIG_MCUX_COMPONENT_middleware.usb.host.khci)
+  set_variable_ifdef(CONFIG_UHC_NXP_OHCI CONFIG_MCUX_COMPONENT_middleware.usb.host.ohci)
+  set_variable_ifdef(CONFIG_UHC_NXP_IP3516HS CONFIG_MCUX_COMPONENT_middleware.usb.host.ip3516hs)
+  # For soc.c build pass
+  zephyr_include_directories(.)
+  zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/phy)
+  zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/include)
+endif()
+
 add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/usb
   ${CMAKE_CURRENT_BINARY_DIR}/usb
 )
-
-add_subdirectory_ifdef(CONFIG_BT_H4_NXP_CTLR ${CMAKE_CURRENT_LIST_DIR}/bt_controller)

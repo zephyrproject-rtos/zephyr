@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+description: Peacefair PZEM004T energy meter sensor
+
+compatible: "peacefair,pzem004t"
+
+include: [sensor-device.yaml]

@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
@@ -255,6 +256,17 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 33>,
 				 <&pmc PMC_TYPE_PERIPHERAL 34>,
 				 <&pmc PMC_TYPE_PERIPHERAL 35>;
+			status = "disabled";
+		};
+
+		adc0: adc@400c0000 {
+			compatible = "atmel,sam-adc";
+			reg = <0x400c0000 0x4000>;
+			interrupts = <37 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 

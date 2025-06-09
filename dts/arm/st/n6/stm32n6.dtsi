@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
 
 / {
@@ -643,6 +644,55 @@
 			status = "disabled";
 		};
 
+		dcmipp: dcmipp@58002000 {
+			compatible = "st,stm32n6-dcmipp", "st,stm32-dcmipp";
+			reg = <0x58002000 0x1000>;
+			clock-names = "dcmipp", "dcmipp-ker", "csi";
+			clocks = <&rcc STM32_CLOCK(APB5, 2)>,
+				 <&rcc STM32_SRC_IC17 DCMIPP_SEL(2)>,
+				 <&rcc STM32_CLOCK(APB5, 6)>;
+			interrupts = <48 0>;
+			resets = <&rctl STM32_RESET(APB5, 2)>,
+				 <&rctl STM32_RESET(APB5, 6)>;
+			status = "disabled";
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+
+					endpoint {
+						remote-endpoint-label = "";
+						bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+					};
+				};
+
+				port@1 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					reg = <1>;
+
+					dcmipp_pipe_dump: endpoint@0 {
+						compatible = "st,stm32-dcmipp-pipe";
+						reg = <0>;
+					};
+
+					dcmipp_pipe_main: endpoint@1 {
+						compatible = "st,stm32-dcmipp-pipe";
+						reg = <1>;
+					};
+
+					dcmipp_pipe_aux: endpoint@2 {
+						compatible = "st,stm32-dcmipp-pipe";
+						reg = <2>;
+					};
+				};
+			};
+		};
+
 		ethernet@58036000 {
 			reg = <0x58036000 0x8000>;
 			compatible = "st,stm32-ethernet-controller";
@@ -687,11 +737,11 @@
 
 		xspi1: xspi@58025000 {
 			compatible = "st,stm32-xspi";
-			reg = <0x58025000 0x1000>;
+			reg = <0x58025000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
 			interrupts = <170 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
-				 <&rcc STM32_SRC_CKPER XSPI1_SEL(1)>,
+				 <&rcc STM32_SRC_HCLK5 XSPI1_SEL(0)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -700,11 +750,11 @@
 
 		xspi2: spi@5802a000 {
 			compatible = "st,stm32-xspi";
-			reg = <0x5802A000 0x1000>;
+			reg = <0x5802A000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <171 0>;
 			clock-names = "xspix", "xspi-ker", "xspi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
-				 <&rcc STM32_SRC_CKPER XSPI2_SEL(1)>,
+				 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>,
 				 <&rcc STM32_CLOCK(AHB5, 13)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -730,6 +780,17 @@
 			reg = <0x5803FC00 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB5, 27)>;
 			#phy-cells = <0>;
+		};
+
+		ltdc: ltdc@58001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x58001000 0x1000>;
+			interrupts = <193 0>, <194 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB5, 1)>,
+				 <&rcc STM32_SRC_PCLK5 LTDC_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB5, 1)>;
+			status = "disabled";
 		};
 	};
 };

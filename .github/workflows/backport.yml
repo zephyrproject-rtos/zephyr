@@ -13,7 +13,7 @@ permissions:
 jobs:
   backport:
     name: Backport
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: write       # to create/push backport branches
       pull-requests: write  # to create backport PRs

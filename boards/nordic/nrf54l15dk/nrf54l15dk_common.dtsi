@@ -9,18 +9,22 @@
 / {
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 3";
@@ -29,6 +33,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		/*
 		 * PWM signal can be exposed on GPIO pin only within same domain.
 		 * There is only one domain which contains both PWM and GPIO:
@@ -42,21 +47,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: button_1 {
 			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 2";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		button3: button_3 {
 			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button 3";

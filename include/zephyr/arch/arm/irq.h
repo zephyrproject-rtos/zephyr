@@ -171,10 +171,12 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 
 #define ARCH_ISR_DIAG_OFF \
 	TOOLCHAIN_DISABLE_CLANG_WARNING(TOOLCHAIN_WARNING_EXTRA) \
-	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES) \
+	TOOLCHAIN_DISABLE_IAR_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
 #define ARCH_ISR_DIAG_ON \
 	TOOLCHAIN_ENABLE_CLANG_WARNING(TOOLCHAIN_WARNING_EXTRA) \
-	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES) \
+	TOOLCHAIN_ENABLE_IAR_WARNING(TOOLCHAIN_WARNING_ATTRIBUTES)
 
 #define ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
@@ -229,12 +231,18 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
  *   direct interrupts, the decisions must be made at build time.
  *   They are controlled by @param resch to this macro.
  *
+ * @warning
+ * Just like with regular direct ISRs, any ISRs that serve IRQs configured with
+ * the IRQ_ZERO_LATENCY flag must not use the ISR_DIRECT_PM() macro and must
+ * return 0 (i.e. resch must be no_reschedule).
+ *
  * @param irq_p IRQ line number.
  * @param priority_p Interrupt priority.
  * @param flags_p Architecture-specific IRQ configuration flags.
  * @param resch Set flag to 'reschedule' to request thread
  *              re-scheduling upon ISR function. Set flag
  *              'no_reschedule' to skip thread re-scheduling
+ *              Must be 'no_reschedule' for zero-latency interrupts
  *
  * Note: the function is an ARM Cortex-M only API.
  *

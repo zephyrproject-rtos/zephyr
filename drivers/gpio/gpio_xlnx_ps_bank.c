@@ -441,9 +441,6 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 
 	sys_write32(~0x0, GPIO_XLNX_PS_BANK_INT_DIS_REG);  /* Disable all interrupts */
 	sys_write32(~0x0, GPIO_XLNX_PS_BANK_INT_STAT_REG); /* Clear all interrupts */
-	sys_write32(0x0, GPIO_XLNX_PS_BANK_OEN_REG);       /* All outputs disabled */
-	sys_write32(0x0, GPIO_XLNX_PS_BANK_DIRM_REG);      /* All pins input */
-	sys_write32(0x0, GPIO_XLNX_PS_BANK_DATA_REG);      /* Zero data register */
 
 	return 0;
 }

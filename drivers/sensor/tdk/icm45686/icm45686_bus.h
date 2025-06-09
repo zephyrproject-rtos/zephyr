@@ -31,11 +31,16 @@ static inline int icm45686_bus_read(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	reg = reg | REG_SPI_READ_BIT;
+	reg = reg | REG_READ_BIT;
 
 	rtio_sqe_prep_write(write_sqe, iodev, RTIO_PRIO_HIGH, &reg, 1, NULL);
 	write_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_sqe, iodev, RTIO_PRIO_HIGH, buf, len, NULL);
+	if (data->rtio.type == ICM45686_BUS_I2C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
+	}
 
 	err = rtio_submit(ctx, 2);
 	if (err) {
@@ -73,6 +78,11 @@ static inline int icm45686_bus_write(const struct device *dev,
 	rtio_sqe_prep_write(write_reg_sqe, iodev, RTIO_PRIO_HIGH, &reg, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_write(write_buf_sqe, iodev, RTIO_PRIO_HIGH, buf, len, NULL);
+	if (data->rtio.type == ICM45686_BUS_I2C) {
+		write_buf_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+	} else if (data->rtio.type == ICM45686_BUS_I3C) {
+		write_buf_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
+	}
 
 	err = rtio_submit(ctx, 2);
 	if (err) {

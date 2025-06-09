@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _INCLUDE_ZEPHYR_DT_BINDINGS_DAI_ESAI_H_
-#define _INCLUDE_ZEPHYR_DT_BINDINGS_DAI_ESAI_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_DAI_ESAI_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_DAI_ESAI_H_
 
 /* ESAI pin IDs
  * the values of these macros are meant to match
@@ -51,4 +51,4 @@
 #define ESAI_CLOCK_INPUT 0
 #define ESAI_CLOCK_OUTPUT 1
 
-#endif /* _INCLUDE_ZEPHYR_DT_BINDINGS_DAI_ESAI_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DAI_ESAI_H_ */

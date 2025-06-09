@@ -23,14 +23,27 @@ tests:
       - disco_l475_iot1
       - stm32l562e_dk
       - stm32wb5mm_dk
+  sample.sensor.accel_trig.adxl345-trigger:
+    extra_args:
+      - SHIELD=pmod_acl
+      - EXTRA_CONF_FILE=adxl345-trigger.conf
+      - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
+    platform_allow:
+      - apard32690/max32690/m4
   sample.sensor.accel_trig.adxl362-trigger:
     extra_args:
       - SHIELD=eval_adxl362_ardz
       - EXTRA_CONF_FILE=adxl362-trigger.conf
       - SNIPPET=rtt-tracing;rtt-console
+    extra_configs:
+      - CONFIG_UART_CONSOLE=n
     platform_allow:
       - apard32690/max32690/m4
   sample.sensor.accel_trig.shield-tap:
+    harness_config:
+      fixture: fixture_x_nucleo_iks01a3
     extra_args:
       - SHIELD=x_nucleo_iks01a3
       - EXTRA_DTC_OVERLAY_FILE=x_nucleo_iks01a3.overlay

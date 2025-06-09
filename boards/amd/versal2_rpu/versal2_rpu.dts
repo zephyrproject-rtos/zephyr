@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/xilinx/versal2_r52.dtsi>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ocm = &ocm;
+	};
+};
+
+&cpu0 {
+	 clock-frequency = <100000000>;
+};
+
+&soc {
+	sram0: memory@30000 {
+		compatible = "mmio-sram";
+		reg = <0x30000 0x7ffd0000>;
+	};
+};
+
+&ocm {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+};

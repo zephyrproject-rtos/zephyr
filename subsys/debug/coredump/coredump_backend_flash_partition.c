@@ -468,9 +468,11 @@ static void coredump_flash_backend_end(void)
 	}
 
 	/* Flush buffer */
-	backend_ctx.error = stream_flash_buffered_write(
-				&backend_ctx.stream_ctx,
-				stream_flash_buf, 0, true);
+	ret = stream_flash_buffered_write(&backend_ctx.stream_ctx, stream_flash_buf, 0, true);
+	if (ret != 0) {
+		LOG_ERR("Cannot flush coredump stream (%d)", ret);
+		backend_ctx.error = ret;
+	}
 
 	/* Write header */
 	hdr.size = stream_flash_bytes_written(&backend_ctx.stream_ctx);
@@ -528,16 +530,16 @@ static void coredump_flash_backend_buffer_output(uint8_t *buf, size_t buflen)
 
 		(void)memmove(tmp_buf, ptr, copy_sz);
 
-		for (i = 0; i < copy_sz; i++) {
-			backend_ctx.checksum += tmp_buf[i];
-		}
-
 		backend_ctx.error = stream_flash_buffered_write(
 					&backend_ctx.stream_ctx,
 					tmp_buf, copy_sz, false);
 		if (backend_ctx.error != 0) {
 			LOG_ERR("Flash write error: %d", backend_ctx.error);
 			break;
+		}
+
+		for (i = 0; i < copy_sz; i++) {
+			backend_ctx.checksum += tmp_buf[i];
 		}
 
 		ptr += copy_sz;

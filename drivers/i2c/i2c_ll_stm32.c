@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "i2c_ll_stm32.h"
+#include <zephyr/irq.h>
 
 #ifdef CONFIG_I2C_STM32_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -28,9 +28,9 @@
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
-#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32);
 
+#include "i2c_ll_stm32.h"
 #include "i2c-priv.h"
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
@@ -42,9 +42,9 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 /* This symbol takes the value 1 if one of the device instances */
 /* is configured in dts with a domain clock */
 #if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
-#define STM32_I2C_DOMAIN_CLOCK_SUPPORT 1
+#define I2C_STM32_DOMAIN_CLOCK_SUPPORT 1
 #else
-#define STM32_I2C_DOMAIN_CLOCK_SUPPORT 0
+#define I2C_STM32_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
 int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
@@ -90,7 +90,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	uint32_t i2c_clock = 0U;
 	int ret;
 
-	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
 					   &i2c_clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
@@ -120,7 +120,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
 	i2c_stm32_set_smbus_mode(dev, data->mode);
 #endif
-	ret = stm32_i2c_configure_timing(dev, i2c_clock);
+	ret = i2c_stm32_configure_timing(dev, i2c_clock);
 
 	if (data->smbalert_active) {
 		LL_I2C_Enable(i2c);
@@ -210,7 +210,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			next = current + 1;
 			next_msg_flags = &(next->flags);
 		}
-		ret = stm32_i2c_transaction(dev, *current, next_msg_flags, slave);
+		ret = i2c_stm32_transaction(dev, *current, next_msg_flags, slave);
 		if (ret < 0) {
 			break;
 		}
@@ -329,59 +329,6 @@ static DEVICE_API(i2c, api_funcs) = {
 #endif
 };
 
-#ifdef CONFIG_PM_DEVICE
-
-static int i2c_stm32_suspend(const struct device *dev)
-{
-	int ret;
-	const struct i2c_stm32_config *cfg = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	/* Disable device clock. */
-	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("failure disabling I2C clock");
-		return ret;
-	}
-
-	/* Move pins to sleep state */
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
-	if (ret == -ENOENT) {
-		/* Warn but don't block suspend */
-		LOG_WRN("I2C pinctrl sleep state not available ");
-	} else if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
-}
-
-#endif
-
-static int i2c_stm32_activate(const struct device *dev)
-{
-	int ret;
-	const struct i2c_stm32_config *cfg = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	/* Move pins to active/default state */
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("I2C pinctrl setup failed (%d)", ret);
-		return ret;
-	}
-
-	/* Enable device clock. */
-	if (clock_control_on(clk,
-			     (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("i2c: failure enabling clock");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-
 static int i2c_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
@@ -411,7 +358,7 @@ static int i2c_stm32_init(const struct device *dev)
 
 	i2c_stm32_activate(dev);
 
-	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		/* Enable I2C clock source */
 		ret = clock_control_configure(clk,
 					(clock_control_subsys_t) &cfg->pclken[1],
@@ -449,28 +396,6 @@ static int i2c_stm32_init(const struct device *dev)
 
 	return 0;
 }
-
-#ifdef CONFIG_PM_DEVICE
-
-static int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	int err;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		err = i2c_stm32_activate(dev);
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		err = i2c_stm32_suspend(dev);
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return err;
-}
-
-#endif
 
 #ifdef CONFIG_SMBUS_STM32_SMBALERT
 void i2c_stm32_smbalert_set_callback(const struct device *dev, i2c_stm32_smbalert_cb_func_t func,
@@ -540,105 +465,111 @@ void i2c_stm32_smbalert_disable(const struct device *dev)
 
 /* Macros for I2C instance declaration */
 
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-#define STM32_I2C_IRQ_CONNECT_AND_ENABLE(index)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQN(index),			\
-			    DT_INST_IRQ(index, priority),		\
-			    stm32_i2c_combined_isr,			\
-			    DEVICE_DT_INST_GET(index), 0);		\
-		irq_enable(DT_INST_IRQN(index));			\
-	} while (false)
-#else
-#define STM32_I2C_IRQ_CONNECT_AND_ENABLE(index)				\
-	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),	\
-			    DT_INST_IRQ_BY_NAME(index, event, priority),\
-			    stm32_i2c_event_isr,			\
-			    DEVICE_DT_INST_GET(index), 0);		\
-		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));	\
-									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, error, irq),	\
-			    DT_INST_IRQ_BY_NAME(index, error, priority),\
-			    stm32_i2c_error_isr,			\
-			    DEVICE_DT_INST_GET(index), 0);		\
-		irq_enable(DT_INST_IRQ_BY_NAME(index, error, irq));	\
-	} while (false)
-#endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
-
-#define STM32_I2C_IRQ_HANDLER_DECL(index)				\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)
-#define STM32_I2C_IRQ_HANDLER_FUNCTION(index)				\
-	.irq_config_func = i2c_stm32_irq_config_func_##index,
-#define STM32_I2C_IRQ_HANDLER(index)					\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
-{									\
-	STM32_I2C_IRQ_CONNECT_AND_ENABLE(index);			\
-}
-#else
-
-#define STM32_I2C_IRQ_HANDLER_DECL(index)
-#define STM32_I2C_IRQ_HANDLER_FUNCTION(index)
-#define STM32_I2C_IRQ_HANDLER(index)
-
-#endif /* CONFIG_I2C_STM32_INTERRUPT */
-
 #ifdef CONFIG_I2C_STM32_V2_DMA
 
-#define I2C_DMA_INIT(index, dir)                                                                   \
-	.dir##_dma = {.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                    \
-				(DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),              \
-			       .dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),       \
-					(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1))},
+#define I2C_DMA_INIT(index, dir)								\
+	.dir##_dma = {										\
+		.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
+				(DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),		\
+		.dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
+				(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1)),	\
+		},
+
+void i2c_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
+			 uint32_t channel, int status)
+{
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(user_data);
+	ARG_UNUSED(channel);
+
+	/* log DMA TX error */
+	if (status != 0) {
+		LOG_ERR("DMA error %d", status);
+	}
+}
+
+void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
+			 uint32_t channel, int status)
+{
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(user_data);
+	ARG_UNUSED(channel);
+
+	/* log DMA RX error */
+	if (status != 0) {
+		LOG_ERR("DMA error %d", status);
+	}
+}
+
+#define I2C_DMA_DATA_INIT(index, dir, src, dest)						\
+	.dma_##dir##_cfg = {									\
+		.dma_slot = STM32_DMA_SLOT(index, dir, slot),					\
+		.channel_direction = STM32_DMA_CONFIG_DIRECTION(				\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),			\
+		.cyclic =  STM32_DMA_CONFIG_CYCLIC(						\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+		.channel_priority = STM32_DMA_CONFIG_PRIORITY(					\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+		.source_data_size = STM32_DMA_CONFIG_##src##_DATA_SIZE(				\
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),			\
+		.dest_data_size = STM32_DMA_CONFIG_##dest##_DATA_SIZE(				\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+		.source_burst_length = 1,							\
+		.dest_burst_length = 1,								\
+		.dma_callback = i2c_stm32_dma_##dir##_cb,					\
+	},											\
 
 #else
 
 #define I2C_DMA_INIT(index, dir)
+#define I2C_DMA_DATA_INIT(index, dir, src, dest)
 
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
-#define STM32_I2C_INIT(index)						\
-STM32_I2C_IRQ_HANDLER_DECL(index);					\
-									\
-IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),			\
-	(static const uint32_t i2c_timings_##index[] =			\
-		DT_INST_PROP_OR(index, timings, {});))			\
-									\
-PINCTRL_DT_INST_DEFINE(index);						\
-									\
-static const struct stm32_pclken pclken_##index[] =			\
-				 STM32_DT_INST_CLOCKS(index);		\
-									\
-static const struct i2c_stm32_config i2c_stm32_cfg_##index = {		\
-	.i2c = (I2C_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.pclken = pclken_##index,					\
-	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
-	STM32_I2C_IRQ_HANDLER_FUNCTION(index)				\
-	.bitrate = DT_INST_PROP(index, clock_frequency),		\
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	IF_ENABLED(CONFIG_I2C_STM32_BUS_RECOVERY,			\
-		(.scl =	GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),\
-		 .sda = GPIO_DT_SPEC_INST_GET_OR(index, sda_gpios, {0}),))\
-	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),		\
-		(.timings = (const struct i2c_config_timing *) i2c_timings_##index,\
-		 .n_timings = ARRAY_SIZE(i2c_timings_##index),))	\
-	I2C_DMA_INIT(index, tx) \
-	I2C_DMA_INIT(index, rx) \
-};									\
-									\
-static struct i2c_stm32_data i2c_stm32_dev_data_##index;		\
-									\
-PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);			\
-									\
-I2C_DEVICE_DT_INST_DEFINE(index, i2c_stm32_init,			\
-			 PM_DEVICE_DT_INST_GET(index),			\
-			 &i2c_stm32_dev_data_##index,			\
-			 &i2c_stm32_cfg_##index,			\
-			 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,		\
-			 &api_funcs);					\
-									\
-STM32_I2C_IRQ_HANDLER(index)
+#define I2C_STM32_INIT(index)									\
+I2C_STM32_IRQ_HANDLER_DECL(index);								\
+												\
+IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),						\
+	(static const uint32_t i2c_timings_##index[] =						\
+		DT_INST_PROP_OR(index, timings, {});))						\
+												\
+PINCTRL_DT_INST_DEFINE(index);									\
+												\
+static const struct stm32_pclken pclken_##index[] =						\
+				 STM32_DT_INST_CLOCKS(index);					\
+												\
+static const struct i2c_stm32_config i2c_stm32_cfg_##index = {					\
+	.i2c = (I2C_TypeDef *)DT_INST_REG_ADDR(index),						\
+	.pclken = pclken_##index,								\
+	.pclk_len = DT_INST_NUM_CLOCKS(index),							\
+	I2C_STM32_IRQ_HANDLER_FUNCTION(index)							\
+	.bitrate = DT_INST_PROP(index, clock_frequency),					\
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),						\
+	IF_ENABLED(CONFIG_I2C_STM32_BUS_RECOVERY,						\
+		(.scl =	GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),			\
+		 .sda = GPIO_DT_SPEC_INST_GET_OR(index, sda_gpios, {0}),))			\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),					\
+		(.timings = (const struct i2c_config_timing *) i2c_timings_##index,		\
+		 .n_timings =									\
+			sizeof(i2c_timings_##index) / (sizeof(struct i2c_config_timing)),))	\
+	I2C_DMA_INIT(index, tx)									\
+	I2C_DMA_INIT(index, rx)									\
+};												\
+												\
+static struct i2c_stm32_data i2c_stm32_dev_data_##index = {					\
+	I2C_DMA_DATA_INIT(index, tx, MEMORY, PERIPHERAL)					\
+	I2C_DMA_DATA_INIT(index, rx, PERIPHERAL, MEMORY)					\
+};												\
+												\
+PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);						\
+												\
+I2C_DEVICE_DT_INST_DEFINE(index, i2c_stm32_init,						\
+			 PM_DEVICE_DT_INST_GET(index),						\
+			 &i2c_stm32_dev_data_##index,						\
+			 &i2c_stm32_cfg_##index,						\
+			 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,					\
+			 &api_funcs);								\
+												\
+I2C_STM32_IRQ_HANDLER(index)
 
-DT_INST_FOREACH_STATUS_OKAY(STM32_I2C_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_STM32_INIT)

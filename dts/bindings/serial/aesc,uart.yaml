@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2025 Aesc Silicon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Aesc Silicon UART (Universal Synchronous/Asynchronous Receiver/Transmitter)
+
+description: |
+  The UART (Universal Asynchronous Receiver-Transmitter) IP Core is a configurable serial
+  communication interface designed to handle data transmission and reception. The core includes
+  an internal clock divider and supports flexible frame configurations, allowing for variable data
+  length, parity, and stop bit settings.
+
+compatible: "aesc,uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true

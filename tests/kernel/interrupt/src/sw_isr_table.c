@@ -41,7 +41,7 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_idx)
 				l2_isr_offset + local_irq + (i * CONFIG_MAX_IRQ_PER_AGGREGATOR);
 
 			zassert_equal(isr_offset, test_isr_offset,
-				      "%d: expected offset: %d, got: %d", i,
+				      "%zu: expected offset: %d, got: %d", i,
 				      isr_offset, test_isr_offset);
 		}
 	}
@@ -78,12 +78,12 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_dev)
 		     local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR; local_irq++) {
 			test_irq = irq_to_level_2(local_irq) | parent_irq[i];
 			test_dev = z_get_sw_isr_device_from_irq(test_irq);
-			zassert_equal_ptr(parent_dev[i], test_dev, "%d: expected dev: %p, got: %p",
+			zassert_equal_ptr(parent_dev[i], test_dev, "%zu: expected dev: %p, got: %p",
 					  i, parent_dev[i], test_dev);
 		}
 
 		test_irq = z_get_sw_isr_irq_from_device(parent_dev[i]);
-		zassert_equal(parent_irq[i], test_irq, "%d: expected offset: %d, got: %d", i,
+		zassert_equal(parent_irq[i], test_irq, "%zu: expected offset: %d, got: %d", i,
 			      parent_irq[i], test_irq);
 	}
 }

@@ -194,7 +194,7 @@ extern const struct bt_mesh_comp comp;
  * with a 100ms interval.
  */
 static struct bt_mesh_test_gatt gatt_param = {
-#if defined(CONFIG_BT_EXT_ADV)
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
 	/* (total transmit duration) / (transmit interval) */
 	.transmits = 1500 / 100,
 	.interval = 100,
@@ -449,6 +449,11 @@ static void test_tester_gatt(void)
 	gatt_param.service = MESH_SERVICE_PROXY;
 	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
 
+	/* Delay for low latency feature */
+	#if defined(CONFIG_BT_CTLR_LOW_LAT)
+	k_sleep(K_MSEC(100));
+	#endif
+
 	/* Allow DUT to suspend before scanning for gatt proxy beacons */
 	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
 	ASSERT_EQUAL(dut_status, DUT_SUSPENDED);
@@ -460,6 +465,34 @@ static void test_tester_gatt(void)
 	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
 	ASSERT_EQUAL(dut_status, DUT_RUNNING);
 	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
+
+	PASS();
+}
+
+static void test_dut_suspend_resume_unref(void)
+{
+	const struct bt_mesh_test_cfg tx_cfg = {
+		.addr = 0x0001,
+		.dev_key = {0x01},
+	};
+
+	bt_mesh_test_cfg_set(&tx_cfg, 2 * WAIT_TIME);
+	bt_mesh_test_setup();
+
+	for (uint16_t count = 0; count < 2 * CONFIG_BT_MESH_ADV_BUF_COUNT; count++) {
+		LOG_DBG("Step %d", count);
+
+		ASSERT_OK_MSG(bt_mesh_test_send_data(BT_MESH_ADDR_ALL_NODES, NULL,
+						     (uint8_t *)&count, sizeof(count), NULL, NULL),
+			      "Cannot send data");
+		ASSERT_OK_MSG(bt_mesh_test_send_data(BT_MESH_ADDR_ALL_NODES, NULL,
+						     (uint8_t *)&count, sizeof(count), NULL, NULL),
+			      "Cannot send data");
+
+		ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
+		k_sleep(K_MSEC(500));
+		ASSERT_OK_MSG(bt_mesh_resume(), "Failed to resume Mesh.");
+	}
 
 	PASS();
 }
@@ -479,6 +512,8 @@ static const struct bst_test_instance test_suspend[] = {
 			 "Suspend and resume Mesh with GATT proxy advs"),
 	TEST_CASE(dut, gatt_suspend_disable_resume,
 			 "Suspend and resume Mesh (and disable/enable BT) with GATT proxy advs"),
+	TEST_CASE(dut, suspend_resume_unref,
+			 "Suspend and resume Mesh twice adv more than advertiser pool size times"),
 
 	TEST_CASE(tester, pub, "Scan and verify behavior of periodic publishing adv"),
 	TEST_CASE(tester, gatt, "Scan and verify behavior of GATT proxy adv"),

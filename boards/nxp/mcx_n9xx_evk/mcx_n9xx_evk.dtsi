@@ -1,0 +1,265 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mcx_n9xx_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+		sdhc0 = &usdhc0;
+		mcuboot-button0 = &user_button_2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+			status = "disabled";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio3 3 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+			status = "disabled";
+		};
+		red_led: led_3 {
+			gpios = <&gpio3 4 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+			status = "disabled";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpio1 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "disabled";
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
+			status = "disabled";
+		};
+	};
+
+	/*
+	 * This node describes the GPIO pins of the LCD-PAR-S035 panel 8080 interface.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<9  0 &gpio4 6 0>,	/* Pin 9, LCD touch INT */
+				<10  0 &gpio1 11 0>,	/* Pin 10, LCD backlight control */
+				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
+	};
+};
+
+&flexcomm1_lpspi1 {
+	pinctrl-0 = <&pinmux_flexcomm1_lpspi>;
+	pinctrl-names = "default";
+};
+
+nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
+	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&flexcomm2_lpuart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm2_lpuart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm4_lpuart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm4_lpuart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm3_lpi2c3 {
+	pinctrl-0 = <&pinmux_flexcomm3_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+/*
+ * MCXN947 board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "disabled";
+};
+
+&systick {
+	status = "okay";
+};
+
+&sram {
+	sramg: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 DT_SIZE_K(64)>;
+	};
+	sramh: memory@20060000 {
+		compatible = "mmio-sram";
+		reg = <0x20060000 DT_SIZE_K(32)>;
+	};
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+		};
+		/* For the MCUBoot "upgrade only" method,
+		 * the slot sizes must be equal.
+		 */
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(984)>;
+		};
+		slot1_partition: partition@10A000 {
+			label = "image-1";
+			reg = <0x0010A000 DT_SIZE_K(984)>;
+		};
+		/* storage_partition is placed in WINBOND flash memory*/
+	};
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-bufferable;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	combination-mode;
+	rx-clock-source = <1>;
+
+	/* WINBOND flash memory*/
+	w25q64jwtbjq: w25q64jwtbjq@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		status = "disabled";
+		size = <67108864>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		jedec-id = [ef 40 17];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <2>;
+		column-space = <0>;
+	};
+};
+
+&dac0 {
+	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+};
+
+&enet_mac {
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
+};
+
+&usdhc0 {
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0>;
+	pinctrl-2 = <&pinmux_usdhc0>;
+	cd-gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+	pwr-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default", "slow", "med";
+	no-1-8-v;
+};
+
+&lpadc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
+	/* DMA channels 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 61>;
+	dma-names = "tx";
+	shifters-count = <8>;
+	timers-count = <1>;
+	enwr-pin = <1>;
+	rd-pin = <0>;
+	data-pin-start = <16>;
+	reset-gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
+	pinctrl-names = "default";
+};
+
+&lpcmp2 {
+	pinctrl-0 = <&pinmux_lpcmp2>;
+	pinctrl-names = "default";
+};
+
+&i3c1 {
+	pinctrl-0 = <&pinmux_i3c1>;
+	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+};
+
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
+};

@@ -937,8 +937,8 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 }
 
 /* Mesh Proxy Service Declaration */
-static struct _bt_gatt_ccc proxy_ccc =
-	BT_GATT_CCC_INITIALIZER(proxy_ccc_changed, proxy_ccc_write, NULL);
+static struct bt_gatt_ccc_managed_user_data proxy_ccc =
+	BT_GATT_CCC_MANAGED_USER_DATA_INIT(proxy_ccc_changed, proxy_ccc_write, NULL);
 
 static struct bt_gatt_attr proxy_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MESH_PROXY),

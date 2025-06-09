@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
 #include <zephyr/device.h>
-
+#include <zephyr/drivers/video.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
 
-#include <zephyr/drivers/video.h>
+LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main);
-
-#define VIDEO_DEV_SW     "VIDEO_SW_GENERATOR"
 #define MY_PORT          5000
 #define MAX_CLIENT_QUEUE 1
 
@@ -38,25 +34,20 @@ int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
-	struct video_buffer *buffers[2], *vbuf;
+	struct video_buffer *buffers[2];
+	struct video_buffer *vbuf = &(struct video_buffer){};
 	int i, ret, sock, client;
 	struct video_format fmt;
 	struct video_caps caps;
-#if DT_HAS_CHOSEN(zephyr_camera)
-	const struct device *const video = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
+	const struct device *video_dev;
 
-	if (!device_is_ready(video)) {
-		LOG_ERR("%s: video device not ready.", video->name);
+	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+	if (!device_is_ready(video_dev)) {
+		LOG_ERR("%s: video device not ready.", video_dev->name);
 		return 0;
 	}
-#else
-	const struct device *const video = device_get_binding(VIDEO_DEV_SW);
 
-	if (video == NULL) {
-		LOG_ERR("%s: video device not found or failed to initialized.", VIDEO_DEV_SW);
-		return 0;
-	}
-#endif
 	/* Prepare Network */
 	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -83,13 +74,15 @@ int main(void)
 	}
 
 	/* Get capabilities */
-	if (video_get_caps(video, VIDEO_EP_OUT, &caps)) {
+	caps.type = type;
+	if (video_get_caps(video_dev, &caps)) {
 		LOG_ERR("Unable to retrieve video capabilities");
 		return 0;
 	}
 
 	/* Get default/native format */
-	if (video_get_format(video, VIDEO_EP_OUT, &fmt)) {
+	fmt.type = type;
+	if (video_get_format(video_dev, &fmt)) {
 		LOG_ERR("Unable to retrieve video format");
 		return 0;
 	}
@@ -109,6 +102,7 @@ int main(void)
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
 		}
+		buffers[i]->type = type;
 	}
 
 	/* Connection loop */
@@ -125,11 +119,11 @@ int main(void)
 
 		/* Enqueue Buffers */
 		for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-			video_enqueue(video, VIDEO_EP_OUT, buffers[i]);
+			video_enqueue(video_dev, buffers[i]);
 		}
 
 		/* Start video capture */
-		if (video_stream_start(video)) {
+		if (video_stream_start(video_dev, type)) {
 			LOG_ERR("Unable to start video");
 			return 0;
 		}
@@ -138,8 +132,9 @@ int main(void)
 
 		/* Capture loop */
 		i = 0;
+		vbuf->type = type;
 		do {
-			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf, K_FOREVER);
+			ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
 			if (ret) {
 				LOG_ERR("Unable to dequeue video buf");
 				return 0;
@@ -155,18 +150,18 @@ int main(void)
 				close(client);
 			}
 
-			(void)video_enqueue(video, VIDEO_EP_OUT, vbuf);
+			(void)video_enqueue(video_dev, vbuf);
 		} while (!ret);
 
 		/* stop capture */
-		if (video_stream_stop(video)) {
+		if (video_stream_stop(video_dev, type)) {
 			LOG_ERR("Unable to stop video");
 			return 0;
 		}
 
 		/* Flush remaining buffers */
 		do {
-			ret = video_dequeue(video, VIDEO_EP_OUT, &vbuf, K_NO_WAIT);
+			ret = video_dequeue(video_dev, &vbuf, K_NO_WAIT);
 		} while (!ret);
 
 	} while (1);

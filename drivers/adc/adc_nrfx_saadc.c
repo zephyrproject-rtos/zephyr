@@ -40,7 +40,7 @@ static const uint32_t saadc_psels[NRF_SAADC_AIN13 + 1] = {
 	[NRF_SAADC_AIN12] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 9),
 	[NRF_SAADC_AIN13] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 9),
 };
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#elif defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || defined(CONFIG_SOC_NRF54L15)
 static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
@@ -52,6 +52,22 @@ static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
 	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
 	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
+	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
+};
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
+	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
+	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(31U, 1),
+	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(30U, 1),
+	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(29U, 1),
+	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
+	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
+	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
+	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
+	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
+#if defined(NRF_SAADC_INPUT_AVDD)
+	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
+#endif
 	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
 };
 #endif
@@ -206,7 +222,9 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		.resistor_p     = NRF_SAADC_RESISTOR_DISABLED,
 		.resistor_n     = NRF_SAADC_RESISTOR_DISABLED,
 #endif
+#if NRF_SAADC_HAS_CH_BURST
 		.burst          = NRF_SAADC_BURST_DISABLED,
+#endif
 	};
 	uint8_t channel_id = channel_cfg->channel_id;
 	uint32_t input_negative = channel_cfg->input_negative;
@@ -215,6 +233,7 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+#if NRF_SAADC_HAS_CH_GAIN
 	switch (channel_cfg->gain) {
 #if defined(SAADC_CH_CONFIG_GAIN_Gain1_6)
 	case ADC_GAIN_1_6:
@@ -268,6 +287,9 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		break;
 #endif
 	default:
+#else
+	if (channel_cfg->gain != ADC_GAIN_1) {
+#endif /* defined(NRF_SAADC_HAS_CH_GAIN) */
 		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
@@ -318,8 +340,13 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	}
 
 	if (config.mode == NRF_SAADC_MODE_DIFFERENTIAL) {
+#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
+		if ((input_negative > NRF_SAADC_AIN7) !=
+		    (channel_cfg->input_positive > NRF_SAADC_AIN7)) {
+#else
 		if (input_negative > NRF_SAADC_AIN7 ||
 		    input_negative < NRF_SAADC_AIN0) {
+#endif
 			return -EINVAL;
 		}
 
@@ -511,6 +538,7 @@ static int start_read(const struct device *dev,
 	uint8_t resolution = sequence->resolution;
 	uint8_t active_channels;
 	uint8_t channel_id;
+	nrf_saadc_burst_t burst;
 
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -562,10 +590,13 @@ static int start_read(const struct device *dev,
 			 * is not used (hence, the multiple channel sampling is
 			 * possible), the burst mode have to be deactivated.
 			 */
-			nrf_saadc_burst_set(NRF_SAADC, channel_id,
-				(sequence->oversampling != 0U ?
-					NRF_SAADC_BURST_ENABLED :
-					NRF_SAADC_BURST_DISABLED));
+			burst = (sequence->oversampling != 0U ?
+				 NRF_SAADC_BURST_ENABLED : NRF_SAADC_BURST_DISABLED);
+#if NRF_SAADC_HAS_CH_BURST
+			nrf_saadc_channel_burst_set(NRF_SAADC, channel_id, burst);
+#else
+			nrf_saadc_burst_set(NRF_SAADC, burst);
+#endif
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
@@ -577,10 +608,12 @@ static int start_read(const struct device *dev,
 				);
 			++active_channels;
 		} else {
-			nrf_saadc_burst_set(
-				NRF_SAADC,
-				channel_id,
-				NRF_SAADC_BURST_DISABLED);
+			burst = NRF_SAADC_BURST_DISABLED;
+#if NRF_SAADC_HAS_CH_BURST
+			nrf_saadc_channel_burst_set(NRF_SAADC, channel_id, burst);
+#else
+			nrf_saadc_burst_set(NRF_SAADC, burst);
+#endif
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
@@ -719,6 +752,27 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #endif
 };
 
+#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
+/* AIN8-AIN14 inputs are on 3v3 GPIO port and they cannot be mixed with other
+ * analog inputs (from 1v8 ports) in differential mode.
+ */
+#define CH_IS_3V3(val) (val >= NRF_SAADC_AIN8)
+
+#define MIXED_3V3_1V8_INPUTS(node)					\
+	(DT_NODE_HAS_PROP(node, zephyr_input_negative) &&		\
+	 (CH_IS_3V3(DT_PROP_OR(node, zephyr_input_negative, 0)) !=	\
+	  CH_IS_3V3(DT_PROP_OR(node, zephyr_input_positive, 0))))
+#else
+#define MIXED_3V3_1V8_INPUTS(node) false
+#endif
+
+#define VALIDATE_CHANNEL_CONFIG(node)					\
+	BUILD_ASSERT(MIXED_3V3_1V8_INPUTS(node) == false,		\
+		     "1v8 inputs cannot be mixed with 3v3 inputs");
+
+/* Validate configuration of all channels. */
+#define VALIDATE_CHANNELS_CONFIG(inst) DT_FOREACH_CHILD(DT_DRV_INST(inst), VALIDATE_CHANNEL_CONFIG)
+
 /*
  * There is only one instance on supported SoCs, so inst is guaranteed
  * to be 0 if any instance is okay. (We use adc_0 above, so the driver
@@ -731,6 +785,7 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #define SAADC_INIT(inst)						\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
+	VALIDATE_CHANNELS_CONFIG(inst)					\
 	PM_DEVICE_DT_INST_DEFINE(0, saadc_pm_hook, 1);			\
 	DEVICE_DT_INST_DEFINE(0,					\
 			    init_saadc,					\

@@ -1,0 +1,44 @@
+description: |
+  Silicon Labs QSPI (Quad Serial Protocol Interface) memory controller.
+
+  This driver expects a children node compatible with "zephyr,memory-region".
+  The size of the PSRAM is taken from this node. It also used by Zephyr to
+  declare the area in the linker script.
+
+  Note after the chip reset, the bootloader may automatically configure the
+  Memory Controller. So, the user may be able to properly use the PSRAM without
+  this driver (in this case, only the "zephyr,memory-region" node is required).
+
+  This driver allows for non default configurations. In this case, if the users
+  want to take advantage of the automatic data relocation of Zephyr, they have
+  to tune the MEMC_INIT_PRIORITY value to initialize this driver before the
+  initialization of the kernel resources. Then, they will probably want to also
+  initialize the clock driver before this driver.
+
+  Otherwise, it is also possible to start this driver later in the boot
+  sequence, but the user will have to manage the memory region manually.
+
+include: [base.yaml, pinctrl-device.yaml]
+
+compatible: "silabs,siwx91x-qspi-memory"
+
+properties:
+  reg:
+    required: true
+
+  device-id:
+    type: uint8-array
+    required: true
+    description: |
+      Value returned by the chip on READ_ID command. An array of 8 bytes is
+      expected. However only the two first bytes (should be "Manufacturer ID"
+      and "Known Good Die") are used. The driver won't continue if the value
+      returned by the chip does not match this field.
+
+  normal-freq:
+    type: int
+    required: true
+
+  fast-freq:
+    type: int
+    required: true

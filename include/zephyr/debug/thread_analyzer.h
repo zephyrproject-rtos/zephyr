@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 /** @defgroup thread_analyzer Thread analyzer
- *  @ingroup os_services
+ *  @ingroup debug
  *  @brief Module for analyzing threads
  *
  *  This module implements functions and the configuration that simplifies

@@ -460,27 +460,31 @@ static void http_report_complete(struct http_request *req)
 {
 	if (req->internal.response.cb) {
 		NET_DBG("Calling callback for %zd len data", req->internal.response.data_len);
-		req->internal.response.cb(&req->internal.response, HTTP_DATA_FINAL,
-					  req->internal.user_data);
+		(void)req->internal.response.cb(&req->internal.response,
+						HTTP_DATA_FINAL,
+						req->internal.user_data);
 	}
 }
 
 /* Report that some data has been received, but the HTTP transaction is still ongoing. */
-static void http_report_progress(struct http_request *req)
+static int http_report_progress(struct http_request *req)
 {
 	if (req->internal.response.cb) {
 		NET_DBG("Calling callback for partitioned %zd len data",
 			req->internal.response.data_len);
 
-		req->internal.response.cb(&req->internal.response, HTTP_DATA_MORE,
-					  req->internal.user_data);
+		return req->internal.response.cb(&req->internal.response,
+						 HTTP_DATA_MORE,
+						 req->internal.user_data);
 	}
+
+	return 0;
 }
 
 static int http_wait_data(int sock, struct http_request *req, const k_timepoint_t req_end_timepoint)
 {
 	int total_received = 0;
-	size_t offset = 0;
+	size_t offset = 0, processed = 0;
 	int received, ret;
 	struct zsock_pollfd fds[1];
 	int nfds = 1;
@@ -525,35 +529,78 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 			} else if (received < 0) {
 				ret = -errno;
 				goto error;
-			} else {
-				req->internal.response.data_len += received;
-
-				(void)http_parser_execute(
-					&req->internal.parser, &req->internal.parser_settings,
-					req->internal.response.recv_buf + offset, received);
 			}
 
 			total_received += received;
 			offset += received;
 
+			/* Initialize the data length with the received data length. */
+			req->internal.response.data_len = offset;
+
+			processed = http_parser_execute(
+				&req->internal.parser, &req->internal.parser_settings,
+				req->internal.response.recv_buf, offset);
+
+			if (processed > offset) {
+				LOG_ERR("HTTP parser error, too much data consumed");
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			if (req->internal.parser.http_errno != HPE_OK) {
+				LOG_ERR("HTTP parsing error, %d",
+					req->internal.parser.http_errno);
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			/* Update the response data length with the actually
+			 * processed bytes.
+			 */
+			req->internal.response.data_len = processed;
+			offset -= processed;
+
 			if (offset >= req->internal.response.recv_buf_len) {
-				offset = 0;
+				/* This means the parser did not consume any data
+				 * and we can't fit any more in the buffer.
+				 */
+				LOG_ERR("HTTP RX buffer full, cannot proceed");
+				ret = -ENOMEM;
+				goto error;
 			}
 
 			if (req->internal.response.message_complete) {
 				http_report_complete(req);
-				break;
-			} else if (offset == 0) {
-				http_report_progress(req);
+			} else {
+				ret = http_report_progress(req);
+				if (ret < 0) {
+					LOG_DBG("Connection aborted by the application (%d)",
+						ret);
+					return -ECONNABORTED;
+				}
 
 				/* Re-use the result buffer and start to fill it again */
 				req->internal.response.data_len = 0;
 				req->internal.response.body_frag_start = NULL;
 				req->internal.response.body_frag_len = 0;
 			}
+
+			if (offset > 0) {
+				/* In case there are any unprocessed data left,
+				 * move them to the front of the buffer.
+				 */
+				memmove(req->internal.response.recv_buf,
+					req->internal.response.recv_buf + processed,
+					offset);
+			}
 		}
 
-	} while (true);
+	} while (!req->internal.response.message_complete);
+
+	/* If there's still some data left in the buffer after HTTP processing,
+	 * reflect this in data_len variable.
+	 */
+	req->data_len = offset;
 
 	return total_received;
 

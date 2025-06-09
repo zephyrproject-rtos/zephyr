@@ -121,6 +121,61 @@ config PM_DEVICE_RUNTIME
 	  enabled, devices can be suspended or resumed based on the device
 	  usage even while the CPU or system is running.
 
+if PM_DEVICE_RUNTIME
+
+config PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
+	bool
+
+config PM_DEVICE_RUNTIME_ASYNC
+	bool "Asynchronous device runtime power management"
+	default y
+	help
+	  Use this option to enable support for asynchronous operation
+	  in the power management device runtime.
+
+if PM_DEVICE_RUNTIME_ASYNC
+
+choice PM_DEVICE_RUNTIME_WQ
+	prompt "Work queue to be used by pm device runtime async"
+	default PM_DEVICE_RUNTIME_USE_DEDICATED_WQ if PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
+	default PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
+
+config PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
+	bool "Use the system workqueue"
+	help
+	  When this option is enabled the power management subsystem will
+	  use the system worqueue instead of defining its own queue.
+
+config PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+	bool "Use a dedicated workqueue"
+	help
+	  When this option is enabled the power management subsystem will
+	  use a dedicated worqueue instead of the system work queue.
+
+if PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+config PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE
+	int "Stack size for pm runtime async workqueue"
+	default 1024
+	help
+	  Defines the size of the stack on the workqueue used for
+	  async operations.
+
+config PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO
+	int "PM device runtime workqueue priority. Should be pre-emptible."
+	default SYSTEM_WORKQUEUE_PRIORITY if PM_DEVICE_RUNTIME_USE_SYSTEM_WQ
+	default 0
+
+config PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO
+	int "PM device runtime workqueue init priority"
+	default 50
+	help
+	  Init priority level to setup the device runtime workqueue.
+endif #PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
+endchoice
+
+endif # PM_DEVICE_RUNTIME_ASYNC
+endif # PM_DEVICE_RUNTIME
+
 config PM_DEVICE_SHELL
 	bool "Device Power Management shell"
 	depends on SHELL

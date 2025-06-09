@@ -23,8 +23,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 
-#define LP50XX_MAX_BRIGHTNESS		100U
-
 /*
  * Number of supported RGB led modules per chipset.
  *
@@ -126,26 +124,10 @@ static int lp50xx_set_brightness(const struct device *dev,
 		return -ENODEV;
 	}
 
-	if (value > LP50XX_MAX_BRIGHTNESS) {
-		LOG_ERR("%s: brightness value out of bounds: val=%d, max=%d",
-			dev->name, value, LP50XX_MAX_BRIGHTNESS);
-		return -EINVAL;
-	}
-
 	buf[0] = LP50XX_LED0_BRIGHTNESS(config->num_modules) + led_info->index;
-	buf[1] = (value * 0xff) / 100;
+	buf[1] = (value * 0xff) / LED_BRIGTHNESS_MAX;
 
 	return i2c_write_dt(&config->bus, buf, sizeof(buf));
-}
-
-static int lp50xx_on(const struct device *dev, uint32_t led)
-{
-	return lp50xx_set_brightness(dev, led, 100);
-}
-
-static int lp50xx_off(const struct device *dev, uint32_t led)
-{
-	return lp50xx_set_brightness(dev, led, 0);
 }
 
 static int lp50xx_set_color(const struct device *dev, uint32_t led,
@@ -352,8 +334,6 @@ static int lp50xx_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(led, lp50xx_led_api) = {
-	.on		= lp50xx_on,
-	.off		= lp50xx_off,
 	.get_info	= lp50xx_get_info,
 	.set_brightness	= lp50xx_set_brightness,
 	.set_color	= lp50xx_set_color,

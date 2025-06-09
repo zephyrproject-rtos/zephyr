@@ -32,25 +32,30 @@ choice CLOCK_CONTROL_NRF_SOURCE
 
 config CLOCK_CONTROL_NRF_K32SRC_RC
 	bool "RC Oscillator"
+	select NRFX_CLOCK_LF_SRC_RC if !CLOCK_CONTROL_NRF_FORCE_ALT
 
 config CLOCK_CONTROL_NRF_K32SRC_XTAL
+	bool "Crystal Oscillator"
+	select NRFX_CLOCK_LF_SRC_XTAL if !CLOCK_CONTROL_NRF_FORCE_ALT
 	select NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED if (!SOC_SERIES_BSIM_NRFXX && \
 						   !CLOCK_CONTROL_NRF_FORCE_ALT)
-	bool "Crystal Oscillator"
 
 config CLOCK_CONTROL_NRF_K32SRC_SYNTH
-	depends on !SOC_SERIES_NRF91X
 	bool "Synthesized from HFCLK"
+	depends on !SOC_SERIES_NRF91X
+	select NRFX_CLOCK_LF_SRC_SYNTH if !CLOCK_CONTROL_NRF_FORCE_ALT
 
 config CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING
+	bool "External low swing"
 	depends on SOC_SERIES_NRF52X
 	select NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED if !CLOCK_CONTROL_NRF_FORCE_ALT
-	bool "External low swing"
+	select NRFX_CLOCK_LF_SRC_LOW_SWING if !CLOCK_CONTROL_NRF_FORCE_ALT
 
 config CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
+	bool "External full swing"
 	depends on SOC_SERIES_NRF52X
 	select NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED if !CLOCK_CONTROL_NRF_FORCE_ALT
-	bool "External full swing"
+	select NRFX_CLOCK_LF_SRC_FULL_SWING if !CLOCK_CONTROL_NRF_FORCE_ALT
 
 endchoice
 
@@ -58,6 +63,7 @@ config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 	bool "LF clock calibration"
 	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
 	default y if !SOC_NRF53_CPUNET_ENABLE
+	select NRFX_CLOCK_LF_CAL_ENABLED if !CLOCK_CONTROL_NRF_FORCE_ALT
 	help
 	  If calibration is disabled when RC is used for low frequency clock then
 	  accuracy of the low frequency clock will degrade. Disable on your own
@@ -75,9 +81,9 @@ config CLOCK_CONTROL_NRF_DRIVER_CALIBRATION
 
 config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
 	bool "LF clock is always on"
-	default y if NRF_RTC_TIMER
+	default y if NRF_RTC_TIMER || NRF_GRTC_TIMER
 	help
-	  If RTC is used as system timer then LF clock is always on and handling
+	  If RTC or GRTC is used as system timer then LF clock is always on and handling
 	  can be simplified.
 
 config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
@@ -130,8 +136,7 @@ endif # CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
 config CLOCK_CONTROL_NRF_HFINT_CALIBRATION
 	bool "HFINT clock calibration"
-	depends on SOC_NRF54L05 || SOC_NRF54L10 || SOC_NRF54L15
-	depends on DT_HAS_NORDIC_NRF_HFXO_ENABLED
+	depends on DT_HAS_NORDIC_NRF54L_HFXO_ENABLED
 	depends on !TRUSTED_EXECUTION_NONSECURE
 	select EXPERIMENTAL
 	help

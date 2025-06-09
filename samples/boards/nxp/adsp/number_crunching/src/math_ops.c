@@ -89,8 +89,9 @@ void test_fft_op(void)
 	int32_t fft_in[FFT_LENGTH];
 
 	/* Create input */
-	for (i = 0; i < FFT_LENGTH; i++)
+	for (i = 0; i < FFT_LENGTH; i++) {
 		fft_in[i] = FFT_LENGTH * (1 + i % 2); /* only real part */
+	}
 
 	printk("[Library Test] == Fast Fourier Transform on Real Data test  ==\r\n");
 	start = k_cycle_get_32();
@@ -124,12 +125,15 @@ void test_fir_blms_op(void)
 	int32_t fir_in[FIR_LENGTH];
 	int32_t fir_ref[FIR_LENGTH + FIR_M];
 
-	for (i = 0; i < FIR_M; i++)
+	for (i = 0; i < FIR_M; i++) {
 		fir_coef[i] = fir_coef_ref[i];
-	for (i = 0; i < FIR_LENGTH; i++)
+	}
+	for (i = 0; i < FIR_LENGTH; i++) {
 		fir_in[i] = fir_in_ref[i];
-	for (i = 0; i < FIR_LENGTH + FIR_M; i++)
+	}
+	for (i = 0; i < FIR_LENGTH + FIR_M; i++) {
 		fir_ref[i] = fir_ref_ref[i];
+	}
 
 	printk("[Library Test] == Least Mean Square (LMS) Filter for Real Data test  ==\r\n");
 	start = k_cycle_get_32();

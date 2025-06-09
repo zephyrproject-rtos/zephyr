@@ -1,11 +1,12 @@
 # Copyright (c) 2021 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
+title: GD32 Pin Controller (AFIO Model)
+
 description: |
-    The GD32 pin controller (AFIO model) is a singleton node responsible for
-    controlling pin function selection and pin properties. For example, you can
-    use this node to route USART0 RX to pin PA10 and enable the pull-up resistor
-    on the pin. Remapping is also supported.
+    Singleton node responsible for controlling pin function selection and pin
+    properties. For example, you can use this node to route USART0 RX to pin
+    PA10 and enable the pull-up resistor on the pin. Remapping is also supported.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:

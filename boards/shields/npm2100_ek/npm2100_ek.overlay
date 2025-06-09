@@ -1,0 +1,60 @@
+/*
+ * Copyright (C) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/regulator/npm2100.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+&arduino_i2c {
+	npm2100_pmic: pmic@74 {
+		compatible = "nordic,npm2100";
+		reg = <0x74>;
+
+		npm2100_gpio: gpio-controller {
+			compatible = "nordic,npm2100-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <2>;
+		};
+
+		npm2100_regulators: regulators {
+			compatible = "nordic,npm2100-regulator";
+
+			/* limits are set to min/max allowed values */
+			npm2100_boost: BOOST {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+			};
+
+			npm2100_ldosw: LDOSW {
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <3000000>;
+			};
+		};
+
+		npm2100_wdt: watchdog {
+			compatible = "nordic,npm2100-wdt";
+		};
+
+		npm2100_vbat: vbat {
+			compatible = "nordic,npm2100-vbat";
+		};
+
+		npm2100_buttons: buttons {
+			compatible = "gpio-keys";
+
+			pmic_button0: pmic_button_0 {
+				gpios = <&npm2100_gpio 0 GPIO_ACTIVE_LOW>;
+				label = "Pmic button switch 0";
+				zephyr,code = <INPUT_KEY_0>;
+			};
+
+			pmic_button1: pmic_button_1 {
+				gpios = <&npm2100_gpio 1 GPIO_ACTIVE_LOW>;
+				label = "Pmic button switch 1";
+				zephyr,code = <INPUT_KEY_1>;
+			};
+		};
+	};
+};

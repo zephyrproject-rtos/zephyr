@@ -620,7 +620,7 @@ found:
 	/* The bit we are looking for must be in the current bundle idx.
 	 * Find out the exact index of the bit.
 	 */
-	for (int j = 0; j <= bundle_bitness(bitarray) - 1; j++) {
+	for (size_t j = 0; j <= bundle_bitness(bitarray) - 1; j++) {
 		if (bitarray->bundles[idx] & mask & BIT(j)) {
 			if (--n <= 0) {
 				*found_at = idx * bundle_bitness(bitarray) + j;

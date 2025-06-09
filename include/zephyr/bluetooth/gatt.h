@@ -22,15 +22,21 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #include <sys/types.h>
 
-#include <zephyr/sys/slist.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -229,7 +235,7 @@ struct bt_gatt_attr {
 	 *  GATT Characteristic Presentation Format descriptor as
 	 *  specified in Core Specification 3.G.3.3.3.5.
 	 *
-	 *  You can define a new Attirubute Type for your application specific
+	 *  You can define a new Attribute Type for your application specific
 	 *  use by generating a new UUID for it.
 	 */
 	const struct bt_uuid *uuid;
@@ -706,8 +712,8 @@ typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
  *
  *  Iterate attributes in the given range matching given UUID and/or data.
  *
- *  @param start_handle Start handle.
- *  @param end_handle End handle. Often set to start_handle + attr_count or
+ *  @param start_handle Start attribute handle.
+ *  @param end_handle End attribute handle. Often set to start_handle + attr_count or
  *  BT_ATT_LAST_ATTRIBUTE_HANDLE.
  *  @param uuid UUID to match, passing NULL skips UUID matching.
  *  @param attr_data Attribute data to match, passing NULL skips data matching.
@@ -725,8 +731,8 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
  *
  *  Iterate attributes in the given range.
  *
- *  @param start_handle Start handle.
- *  @param end_handle End handle.
+ *  @param start_handle Starting attribute handle.
+ *  @param end_handle Ending attribute handle.
  *  @param func Callback function.
  *  @param user_data Data to pass to the callback.
  */
@@ -956,7 +962,7 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset);
 
-/** @brief Gatt Characterisitc Initialization Macro.
+/** @brief Gatt Characteristic Initialization Macro.
  *
  *  Helper macro used within the @ref BT_GATT_CHARACTERISTIC macro in the GATT attribute declaration
  *  to set the attribute user data.
@@ -1035,8 +1041,14 @@ struct bt_gatt_ccc_cfg {
 	uint16_t value;
 };
 
-/** Internal representation of CCC value */
-struct _bt_gatt_ccc {
+/** Macro to keep old name for deprecation period. */
+#define _bt_gatt_ccc bt_gatt_ccc_managed_user_data __DEPRECATED_MACRO
+
+/** @brief Internal representation of CCC value.
+ *
+ * @note Only use this as an argument for @ref BT_GATT_CCC_MANAGED
+ */
+struct bt_gatt_ccc_managed_user_data {
 	/** Configuration for each connection */
 	struct bt_gatt_ccc_cfg cfg[BT_GATT_CCC_MAX];
 
@@ -1092,8 +1104,8 @@ struct _bt_gatt_ccc {
  *          case of error.
  */
 /** @cond INTERNAL_HIDDEN
- *  @note Only use this with attributes which user_data is a _bt_gatt_ccc.
- *  _bt_gatt_ccc being the internal representation of CCC value.
+ *  @note Only use this with attributes which user_data is a bt_gatt_ccc_managed_user_data.
+ *        @ref bt_gatt_ccc_managed_user_data being the internal representation of CCC value.
  */
  /** @endcond */
 ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
@@ -1115,13 +1127,16 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
  *          case of error.
  */
 /** @cond INTERNAL_HIDDEN
- *  @note Only use this with attributes which user_data is a _bt_gatt_ccc.
- *  _bt_gatt_ccc being the internal representation of CCC value.
+ *  @note Only use this with attributes which user_data is a bt_gatt_ccc_managed_user_data.
+ *        @ref bt_gatt_ccc_managed_user_data being the internal representation of CCC value.
  */
 /** @endcond */
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags);
+
+/** Macro to keep old name for deprecation period. */
+#define BT_GATT_CCC_INITIALIZER BT_GATT_CCC_MANAGED_USER_DATA_INIT __DEPRECATED_MACRO
 
 /**
  *  @brief Initialize Client Characteristic Configuration Declaration Macro.
@@ -1132,12 +1147,12 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _write Configuration write callback.
  *  @param _match Configuration match callback.
  */
-#define BT_GATT_CCC_INITIALIZER(_changed, _write, _match) \
-	{                                            \
-		.cfg = {},                           \
-		.cfg_changed = _changed,             \
-		.cfg_write = _write,                 \
-		.cfg_match = _match,                 \
+#define BT_GATT_CCC_MANAGED_USER_DATA_INIT(_changed, _write, _match)                               \
+	{                                                                                          \
+		.cfg = {},                                                                         \
+		.cfg_changed = _changed,                                                           \
+		.cfg_write = _write,                                                               \
+		.cfg_match = _match,                                                               \
 	}
 
 /**
@@ -1145,7 +1160,10 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *
  *  Helper macro to declare a Managed CCC attribute.
  *
- *  @param _ccc CCC attribute user data, shall point to a _bt_gatt_ccc.
+ *  @param _ccc A new @ref bt_gatt_ccc_managed_user_data object with the same lifetime
+ *              as the results of the call to BT_GATT_CCC_MANAGED.
+ *              See the documentation of @ref bt_gatt_ccc_managed_user_data on how
+ *              to initialize it.
  *  @param _perm CCC access permissions,
  *               a bitmap of @ref bt_gatt_perm values.
  */
@@ -1163,9 +1181,10 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _perm CCC access permissions,
  *               a bitmap of @ref bt_gatt_perm values.
  */
-#define BT_GATT_CCC(_changed, _perm)				\
-	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
-		{BT_GATT_CCC_INITIALIZER(_changed, NULL, NULL)}), _perm)
+#define BT_GATT_CCC(_changed, _perm)                                                               \
+	BT_GATT_CCC_MANAGED(((struct bt_gatt_ccc_managed_user_data[]){                             \
+				    BT_GATT_CCC_MANAGED_USER_DATA_INIT(_changed, NULL, NULL)}),    \
+			    _perm)
 
 /**
  *  @brief Client Characteristic Configuration Declaration Macro with write callback.
@@ -1177,9 +1196,10 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _perm CCC access permissions,
  *               a bitmap of @ref bt_gatt_perm values.
  */
-#define BT_GATT_CCC_WITH_WRITE_CB(_changed, _write, _perm)		\
-	BT_GATT_CCC_MANAGED(((struct _bt_gatt_ccc[])			\
-		{BT_GATT_CCC_INITIALIZER(_changed, _write, NULL) }), _perm)
+#define BT_GATT_CCC_WITH_WRITE_CB(_changed, _write, _perm)                                         \
+	BT_GATT_CCC_MANAGED(((struct bt_gatt_ccc_managed_user_data[]){                             \
+				    BT_GATT_CCC_MANAGED_USER_DATA_INIT(_changed, _write, NULL)}),  \
+			    _perm)
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
@@ -1363,8 +1383,6 @@ struct bt_gatt_notify_params {
  *  The callback is run from System Workqueue context.
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
- *  The number of pending callbacks can be increased with the
- *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
  *  parameters, when using this method the attribute if provided is used as the
@@ -1807,15 +1825,20 @@ struct bt_gatt_discover_params {
 		struct {
 			/** Include service attribute declaration handle */
 			uint16_t attr_handle;
-			/** Included service start handle */
+			/** Starting attribute handle for included service */
 			uint16_t start_handle;
-			/** Included service end handle */
+			/** Ending attribute handle for included service */
 			uint16_t end_handle;
 		} _included;
-		/** Discover start handle */
+		/** Starting attribute handle to begin discovery */
 		uint16_t start_handle;
 	};
-	/** Discover end handle */
+	/** @brief Ending attribute handle to stop discovery at
+	 *
+	 * @note When discovery begins this can be set to
+	 * @ref BT_ATT_LAST_ATTRIBUTE_HANDLE to discover all attributes
+	 * in the service.
+	 */
 	uint16_t end_handle;
 	/** Discover type */
 	uint8_t type;
@@ -1920,9 +1943,27 @@ struct bt_gatt_read_params {
 			bool variable;
 		} multiple;
 		struct {
-			/** Attribute handle to start reading from. */
+			/** @brief Requested start attribute handle number.
+			 *
+			 * @details The starting handle is set to the starting point of the range
+			 * over which this read should be performed. For example, this could be
+			 * set to @ref BT_ATT_FIRST_ATTRIBUTE_HANDLE to set the starting point of
+			 * the range at the beginning of the GATT database, or to the starting
+			 * handle of a service after discovery.
+			 *
+			 * This value is automatically incremented by the stack after
+			 * processing each matching handle-value pair returned by the server.
+			 */
 			uint16_t start_handle;
-			/** Attribute handle to stop reading at. */
+			/** @brief Requested end attribute handle number.
+			 *
+			 * @details The end handle is set to the ending point of the range over
+			 * which this read should be performed. For example, this could be set to
+			 * @ref BT_ATT_LAST_ATTRIBUTE_HANDLE to set the ending point of the range
+			 * at the end of the GATT database, or to the end handle for service after
+			 * discovery, where the end_handle is available in the
+			 * @ref bt_gatt_service_val.
+			 */
 			uint16_t end_handle;
 			/** 2 or 16 octet UUID. */
 			const struct bt_uuid *uuid;
@@ -2035,8 +2076,6 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  The callback is run from System Workqueue context.
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
- *  The number of pending callbacks can be increased with the
- *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  @param conn Connection object.
  *  @param handle Attribute handle.

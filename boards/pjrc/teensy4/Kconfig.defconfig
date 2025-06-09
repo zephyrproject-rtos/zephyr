@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BOARD_TEENSY40 || BOARD_TEENSY41
+if BOARD_TEENSY40 || BOARD_TEENSY41 || BOARD_TEENSYMM
 
 config BUILD_OUTPUT_HEX
 	bool

@@ -140,6 +140,9 @@ struct udc_dwc2_data {
 	uint8_t setup[8];
 };
 
+static void udc_dwc2_ep_disable(const struct device *dev,
+				struct udc_ep_config *const cfg, bool stall);
+
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 
@@ -829,6 +832,7 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 
 	buf = udc_buf_get_all(cfg_in);
 	if (buf) {
+		udc_dwc2_ep_disable(dev, cfg_in, false);
 		net_buf_unref(buf);
 	}
 
@@ -1557,7 +1561,8 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		return;
 	}
 
-	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS)) {
+	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS) &&
+	    !(dxepctl & USB_DWC2_DEPCTL_EPENA)) {
 		/* Endpoint already sends forced NAKs. STALL if necessary. */
 		if (stall) {
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
@@ -2184,12 +2189,6 @@ static int udc_dwc2_enable(const struct device *dev)
 		return err;
 	}
 
-	err = dwc2_quirk_post_enable(dev);
-	if (err) {
-		LOG_ERR("Quirk post enable failed %d", err);
-		return err;
-	}
-
 	/* Enable global interrupt */
 	sys_set_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
 	config->irq_enable_func(dev);
@@ -2197,6 +2196,12 @@ static int udc_dwc2_enable(const struct device *dev)
 	/* Disable soft disconnect */
 	sys_clear_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_SFTDISCON);
 	LOG_DBG("Enable device %p", base);
+
+	err = dwc2_quirk_post_enable(dev);
+	if (err) {
+		LOG_ERR("Quirk post enable failed %d", err);
+		return err;
+	}
 
 	return 0;
 }
@@ -2565,32 +2570,31 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 static inline void dwc2_handle_iepint(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	const uint8_t n_max = 16;
 	uint32_t diepmsk;
-	uint32_t daint;
+	uint32_t epint;
 
 	diepmsk = sys_read32((mem_addr_t)&base->diepmsk);
-	daint = sys_read32((mem_addr_t)&base->daint);
+	epint = usb_dwc2_get_daint_inepint(sys_read32((mem_addr_t)&base->daint));
 
-	for (uint8_t n = 0U; n < n_max; n++) {
+	while (epint) {
+		uint8_t n = find_lsb_set(epint) - 1;
 		mem_addr_t diepint_reg = (mem_addr_t)&base->in_ep[n].diepint;
 		uint32_t diepint;
 		uint32_t status;
 
-		if (daint & USB_DWC2_DAINT_INEPINT(n)) {
-			/* Read and clear interrupt status */
-			diepint = sys_read32(diepint_reg);
-			status = diepint & diepmsk;
-			sys_write32(status, diepint_reg);
+		/* Read and clear interrupt status */
+		diepint = sys_read32(diepint_reg);
+		status = diepint & diepmsk;
+		sys_write32(status, diepint_reg);
 
-			LOG_DBG("ep 0x%02x interrupt status: 0x%x",
-				n | USB_EP_DIR_IN, status);
+		LOG_DBG("ep 0x%02x interrupt status: 0x%x",
+			n | USB_EP_DIR_IN, status);
 
-			if (status & USB_DWC2_DIEPINT_XFERCOMPL) {
-				dwc2_handle_in_xfercompl(dev, n);
-			}
-
+		if (status & USB_DWC2_DIEPINT_XFERCOMPL) {
+			dwc2_handle_in_xfercompl(dev, n);
 		}
+
+		epint &= ~BIT(n);
 	}
 
 	/* Clear IEPINT interrupt */
@@ -2673,21 +2677,17 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
-	const uint8_t n_max = 16;
 	uint32_t doepmsk;
-	uint32_t daint;
+	uint32_t epint;
 
 	doepmsk = sys_read32((mem_addr_t)&base->doepmsk);
-	daint = sys_read32((mem_addr_t)&base->daint);
+	epint = usb_dwc2_get_daint_outepint(sys_read32((mem_addr_t)&base->daint));
 
-	for (uint8_t n = 0U; n < n_max; n++) {
+	while (epint) {
+		uint8_t n = find_lsb_set(epint) - 1;
 		mem_addr_t doepint_reg = (mem_addr_t)&base->out_ep[n].doepint;
 		uint32_t doepint;
 		uint32_t status;
-
-		if (!(daint & USB_DWC2_DAINT_OUTEPINT(n))) {
-			continue;
-		}
 
 		/* Read and clear interrupt status */
 		doepint = sys_read32(doepint_reg);
@@ -2734,6 +2734,8 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		if (status & USB_DWC2_DOEPINT_XFERCOMPL) {
 			dwc2_handle_out_xfercompl(dev, n);
 		}
+
+		epint &= ~BIT(n);
 	}
 
 	/* Clear OEPINT interrupt */

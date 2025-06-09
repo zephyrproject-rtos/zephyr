@@ -1,0 +1,78 @@
+# Copyright (c) 2024, Savoir-faire Linux
+# SPDX-License-Identifier: Apache-2.0
+
+include: display-controller.yaml
+
+properties:
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider (3:0) / oscillator frequency (7:4). It can be set to 0x0.
+      If you get weird scanlines, increase oscillator frequency and play with phase length values,
+      for example set this to 0x70. Note this increases power consumption.
+
+  display-offset:
+    type: int
+    required: true
+    description: Vertical offset by com from 0 ~ 127. Typically 128 - height.
+
+  start-line:
+    type: int
+    required: true
+    description: Start line of display RAM to be displayed by selecting a value from 0 to 127.
+      Typically 0.
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex ratio from 15MUX to 127MUX. Typically same value as height - 1.
+
+  prechargep:
+    type: int
+    required: true
+    description: Pre-charge period ranging from 0 to 15 DCLK's
+
+  remap-value:
+    type: int
+    required: true
+    description: Remap register
+
+      Has multiple configurations (see each bit setting in the datasheet)
+      - Column Address Remapping (A[0])
+      - Nibble Remapping (A[1])
+      - Address increment mode (A[2]), off is horizontal, on is vertical.
+      - COM Remapping (A[4])
+      - Undocumented related to a monochrome mode, not supported by all displays (A[5])
+      - Splitting of Odd / Even COM Signals (A[6])
+
+      A[0], A[1], and A[4], define flipping of the display.
+      A[6] is needed when display has striping.
+      A[2] and A[5] must be off for this driver.
+
+  phase-length:
+    type: int
+    required: true
+    description: Phase Length for segment charging (7:4) and discharging (3:0).
+      Good values to try first are 0x1f and 0xf1.
+
+  function-selection-b:
+    type: int
+    default: 0x62
+    description: Enables second precharge (A[1]), and external Voltage Segment Level (A[0])
+      The value can either be 0x61, 0x62, or 0x63. Most displays use 0x62.
+
+  precharge-voltage:
+    type: int
+    default: 0x8
+    description: Set precharge voltage (0:4) from 0.20 x VCC to 0.613 x VCC (0x7) and VCOMH (0x8+).
+      Most displays support 0x8.
+
+  vcomh-voltage:
+    type: int
+    default: 0x7
+    description: Set precharge voltage (0:3) from 0.72 x VCC to 0.86 x VCC
+      Most displays support 0x7.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting

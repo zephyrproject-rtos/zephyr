@@ -1,0 +1,13 @@
+shields:
+  - name: adafruit_neopixel_grid_bff
+    full_name: Adafruit NeoPixel Grid BFF
+    vendor: adafruit
+    supported_features:
+      - led_strip
+
+  - name: adafruit_neopixel_grid_bff_display
+    full_name: Adafruit NeoPixel Grid BFF (with display matrix)
+    vendor: adafruit
+    supported_features:
+      - led_strip
+      - display

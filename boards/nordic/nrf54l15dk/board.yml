@@ -24,6 +24,7 @@ runners:
         groups:
           - boards:
               - nrf54l15dk/nrf54l15/cpuapp
+              - nrf54l15dk/nrf54l15/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuflpr
               - nrf54l15dk/nrf54l15/cpuflpr/xip
     '--erase':
@@ -35,6 +36,7 @@ runners:
         groups:
           - boards:
               - nrf54l15dk/nrf54l15/cpuapp
+              - nrf54l15dk/nrf54l15/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuflpr
               - nrf54l15dk/nrf54l15/cpuflpr/xip
     '--reset':
@@ -46,5 +48,6 @@ runners:
         groups:
           - boards:
               - nrf54l15dk/nrf54l15/cpuapp
+              - nrf54l15dk/nrf54l15/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuflpr
               - nrf54l15dk/nrf54l15/cpuflpr/xip

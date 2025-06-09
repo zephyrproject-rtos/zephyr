@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <freq.h>
+
+/{
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	ckm: clock-module {
+		compatible = "ti,mspm0-clk";
+		#clock-cells = <1>;
+	};
+
+	clocks: clocks {
+		hfclk: hfclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
+		lfclk: lfclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <32768>;
+			clocks = <&lfosc>;
+		};
+
+		hsclk: hsclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clocks = <&sysosc>;
+		};
+
+		ulpclk: ulpclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
+		mclk: mclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <DT_FREQ_M(32)>;
+			clocks = <&sysosc>;
+		};
+
+		mfpclk: mfpclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			clock-frequency = <DT_FREQ_M(4)>;
+			clocks = <&sysosc>;
+			status = "disabled";
+		};
+	};
+
+	oscillators: oscillators {
+		hfxt: hfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		lfxt: lfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		flash0: serial-flash@0 {
+			compatible = "serial-flash";
+		};
+
+		pinctrl: pin-controller@400a0000 {
+			compatible = "ti,mspm0-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x400a0000 0x4000>;
+
+			gpioa: gpio@400a0000 {
+				compatible = "ti,mspm0-gpio";
+				reg = <0x400a0000 0x2000>;
+				interrupts = <1 0>;
+				status = "disabled";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiob: gpio@400a2000 {
+				compatible = "ti,mspm0-gpio";
+				reg = <0x400a2000 0x2000>;
+				interrupts = <1 0>;
+				status = "disabled";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		uart0: uart@40108000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40108000 0x2000>;
+			current-speed = <115200>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

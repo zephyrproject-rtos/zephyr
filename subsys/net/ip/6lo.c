@@ -128,8 +128,8 @@ static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr *addr)
 
 static inline bool net_6lo_addr_16_bit_compressible(struct in6_addr *addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0xFF)) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[6]) == htons(0xFE00)));
+	return ((UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0xFFu)) &&
+		 (UNALIGNED_GET(&addr->s6_addr16[6]) == htons(0xFE00u)));
 }
 
 static inline bool net_6lo_maddr_8_bit_compressible(struct in6_addr *addr)

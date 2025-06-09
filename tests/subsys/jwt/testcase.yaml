@@ -8,6 +8,8 @@ common:
     - qemu_x86
   extra_configs:
     - CONFIG_TEST_RANDOM_GENERATOR=y
+  platform_exclude:
+    - max32657evkit/max32657/ns
 tests:
   libraries.encoding.jwt.ecdsa.psa:
     extra_configs:

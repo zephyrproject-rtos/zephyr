@@ -10,7 +10,8 @@
 
 /** Peripheral clock sources */
 
-/* RM0493, Figure 30, clock tree */
+/* RM0493, Figure 34, clock tree */
+/* RM0515, Figure 36, clock tree */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
@@ -56,7 +57,11 @@
 /** CCIPR1 devices */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR1_REG)
 #define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 2, CCIPR1_REG)
+#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 4, CCIPR1_REG)
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 10, CCIPR1_REG)
+#define I2C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR1_REG)
+#define I2C4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 14, CCIPR1_REG)
+#define SPI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CCIPR1_REG)
 #define LPTIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 18, CCIPR1_REG)
 #define SPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 20, CCIPR1_REG)
 #define SYSTICK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 22, CCIPR1_REG)

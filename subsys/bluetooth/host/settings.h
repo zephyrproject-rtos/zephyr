@@ -8,9 +8,8 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
-
 #include <zephyr/settings/settings.h>
-#include <common/bt_settings_commit.h>
+#include "common/bt_settings_commit.h"
 
 /* Max settings key length (with all components) */
 #define BT_SETTINGS_KEY_MAX 36

@@ -44,6 +44,20 @@
 			status = "disabled";
 		};
 
+		usb: usb@40005c00 {
+			compatible = "st,stm32-usb";
+			reg = <0x40005c00 0x400>;
+			interrupts = <8 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <2048>;
+			maximum-speed = "full-speed";
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK(APB1, 13)>,
+				 <&rcc STM32_SRC_HSE USB_SEL(1)>;
+			status = "disabled";
+		};
+
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
@@ -63,5 +77,10 @@
 		dmamux1: dmamux@40020800 {
 			dma-channels = <5>;
 		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };

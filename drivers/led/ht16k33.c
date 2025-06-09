@@ -21,8 +21,6 @@
 
 LOG_MODULE_REGISTER(ht16k33, CONFIG_LED_LOG_LEVEL);
 
-#include "led_context.h"
-
 /* HT16K33 commands and options */
 #define HT16K33_CMD_DISP_DATA_ADDR 0x00
 
@@ -61,6 +59,8 @@ LOG_MODULE_REGISTER(ht16k33, CONFIG_LED_LOG_LEVEL);
 #define HT16K33_KEYSCAN_COLS       13
 #define HT16K33_KEYSCAN_DATA_SIZE  6
 
+#define HT16K33_MAX_PERIOD 2000U
+
 struct ht16k33_cfg {
 	struct i2c_dt_spec i2c;
 	bool irq_enabled;
@@ -71,7 +71,6 @@ struct ht16k33_cfg {
 
 struct ht16k33_data {
 	const struct device *dev;
-	struct led_data dev_data;
 	 /* Shadow buffer for the display data RAM */
 	uint8_t buffer[HT16K33_DISP_DATA_SIZE];
 #ifdef CONFIG_HT16K33_KEYSCAN
@@ -95,13 +94,11 @@ static int ht16k33_led_blink(const struct device *dev, uint32_t led,
 	ARG_UNUSED(led);
 
 	const struct ht16k33_cfg *config = dev->config;
-	struct ht16k33_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint32_t period;
 	uint8_t cmd;
 
 	period = delay_on + delay_off;
-	if (period < dev_data->min_period || period > dev_data->max_period) {
+	if (period > HT16K33_MAX_PERIOD) {
 		return -EINVAL;
 	}
 
@@ -130,17 +127,10 @@ static int ht16k33_led_set_brightness(const struct device *dev, uint32_t led,
 	ARG_UNUSED(led);
 
 	const struct ht16k33_cfg *config = dev->config;
-	struct ht16k33_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t dim;
 	uint8_t cmd;
 
-	if (value < dev_data->min_brightness ||
-	    value > dev_data->max_brightness) {
-		return -EINVAL;
-	}
-
-	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / dev_data->max_brightness;
+	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / LED_BRIGTHNESS_MAX;
 	cmd = HT16K33_CMD_DIMMING_SET | dim;
 
 	if (i2c_write_dt(&config->i2c, &cmd, sizeof(cmd))) {
@@ -288,7 +278,6 @@ static int ht16k33_init(const struct device *dev)
 {
 	const struct ht16k33_cfg *config = dev->config;
 	struct ht16k33_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t cmd[1 + HT16K33_DISP_DATA_SIZE]; /* 1 byte command + data */
 	int err;
 
@@ -300,12 +289,6 @@ static int ht16k33_init(const struct device *dev)
 	}
 
 	memset(&data->buffer, 0, sizeof(data->buffer));
-
-	/* Hardware specific limits */
-	dev_data->min_period = 0U;
-	dev_data->max_period = 2000U;
-	dev_data->min_brightness = 0U;
-	dev_data->max_brightness = 100U;
 
 	/* System oscillator on */
 	cmd[0] = HT16K33_CMD_SYSTEM_SETUP | HT16K33_OPT_S;

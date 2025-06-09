@@ -38,10 +38,24 @@ endif()
 
 set(CONFIG_MCUX_COMPONENT_device.system ON)
 set(CONFIG_MCUX_COMPONENT_device.CMSIS ON)
-set(CONFIG_MCUX_COMPONENT_driver.clock ON)
-set(CONFIG_MCUX_COMPONENT_driver.power ON)
-set(CONFIG_MCUX_COMPONENT_driver.reset ON)
-set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+if(NOT CONFIG_CLOCK_CONTROL_ARM_SCMI)
+  set(CONFIG_MCUX_COMPONENT_driver.clock ON)
+endif()
+
+# Exclude fsl_power.c for DSP domains
+if((CONFIG_ARM) AND (NOT CONFIG_CLOCK_CONTROL_ARM_SCMI))
+  set(CONFIG_MCUX_COMPONENT_driver.power ON)
+endif()
+
+if(NOT CONFIG_CPU_CORTEX_A)
+  set(CONFIG_MCUX_COMPONENT_driver.reset ON)
+  set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+endif()
+
+# Include fsl_dsp.c for ARM domains (applicable to i.MX RTxxx devices)
+if(CONFIG_ARM)
+  set(CONFIG_MCUX_COMPONENT_driver.dsp ON)
+endif()
 
 # load device variables
 include(${mcux_device_folder}/variable.cmake)

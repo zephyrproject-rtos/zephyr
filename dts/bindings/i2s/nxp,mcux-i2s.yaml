@@ -1,4 +1,4 @@
-# Copyright 2021,2023-2024 NXP
+# Copyright 2021,2023-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP mcux SAI-I2S controller
@@ -64,6 +64,11 @@ properties:
   clock-mux:
     type: int
     description: Clock mux source for SAI root clock
+
+  mclk-output:
+    type: boolean
+    description: |
+      Set if MCLK signal is an output.  Hardware default sets MCLK signal as input.
 
 pinmux-cells:
   - offset

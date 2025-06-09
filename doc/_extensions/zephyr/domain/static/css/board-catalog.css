@@ -125,6 +125,58 @@
   background-color: transparent;
 }
 
+.visibility-toggles {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-group input {
+  display: none;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.toggle-switch {
+  width: 36px;
+  height: 18px;
+  background: #ccc;
+  border-radius: 18px;
+  position: relative;
+  transition: 0.3s;
+}
+
+.toggle-switch::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
+}
+
+.toggle-text {
+  font-size: 14px;
+  text-transform: none;
+}
+
+input:checked + .toggle-label .toggle-switch {
+  background: var(--admonition-note-title-background-color);
+}
+
+input:checked + .toggle-label .toggle-switch::before {
+  left: 20px;
+}
+
 #catalog {
   display: flex;
   flex-wrap: wrap;
@@ -146,6 +198,7 @@
   flex-direction: column;
   align-items: center;
   transition: transform 0.3s ease;
+  position: relative;
 }
 
 .board-card:hover,
@@ -153,6 +206,34 @@
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(-5px);
   text-decoration: none;
+}
+
+.board-card.shield::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-style: solid;
+  border-width: 0 48px 48px 0;
+  border-color: transparent var(--admonition-note-title-background-color) transparent transparent;
+  border-radius: 0 8px 0 0;
+}
+
+.board-card.shield::after {
+  rotate: 45deg;
+  content: "SHIELD";
+  position: absolute;
+  top: 7px;
+  right: 6px;
+  color: var(--admonition-note-title-color);
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .board-card .picture {
@@ -176,10 +257,8 @@
 
 .board-card .vendor {
   font-size: 12px;
-  color: var(--admonition-note-color);
-  font-weight: 900;
+  color: var(--body-color);
   margin-bottom: 18px;
-  opacity: 0.5;
 }
 
 .board-card img {
@@ -247,6 +326,23 @@
   box-shadow: none;
   list-style-position: outside;
   max-width: none;
+}
+
+#catalog.compact .board-card.shield::before {
+  display: none; /* Remove the S prefix */
+}
+
+#catalog.compact .board-card.shield::after {
+  content: "Shield";
+  color: var(--admonition-note-color);
+  background-color: var(--admonition-note-background-color);
+  padding: 2px 10px 2px 10px;
+  border-radius: 30px;
+  font-size: 0.8em;
+}
+
+#catalog.compact .board-card.shield {
+  padding: 4px 0;
 }
 
 #catalog.compact .board-card .vendor,

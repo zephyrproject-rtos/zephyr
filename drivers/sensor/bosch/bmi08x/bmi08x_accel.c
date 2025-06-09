@@ -341,15 +341,6 @@ static int bmi08x_acc_config(const struct device *dev, enum sensor_channel chan,
 static int bmi08x_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, const struct sensor_value *val)
 {
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
@@ -372,15 +363,6 @@ static int bmi08x_sample_fetch(const struct device *dev, enum sensor_channel cha
 		LOG_DBG("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
 
 	pm_device_busy_set(dev);
 
@@ -498,15 +480,6 @@ static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value
 static int bmi08x_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return -EBUSY;
-	}
-#endif
-
 	switch ((int16_t)chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:

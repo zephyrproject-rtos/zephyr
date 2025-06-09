@@ -75,10 +75,14 @@ static inline uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t c)
 }
 
 static inline uint8_t get_glyph_byte(uint8_t *glyph_ptr, const struct cfb_font *fptr,
-				     uint8_t x, uint8_t y)
+				     uint8_t x, uint8_t y, bool vtiled)
 {
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
-		return glyph_ptr[(x * fptr->height + y) / 8];
+		if (vtiled) {
+			return glyph_ptr[x * (fptr->height / 8U) + y];
+		} else {
+			return glyph_ptr[(x * fptr->height + y) / 8];
+		}
 	} else if (fptr->caps & CFB_FONT_MONO_HPACKED) {
 		return glyph_ptr[y * (fptr->width) + x];
 	}
@@ -140,10 +144,11 @@ static uint8_t draw_char_vtmono(const struct char_framebuffer *fb,
 				 * So, we process assume that nothing is drawn above.
 				 */
 				byte = 0;
-				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
+				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
 			} else {
-				byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8);
-				next_byte = get_glyph_byte(glyph_ptr, fptr, g_x, (g_y + 8) / 8);
+				byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y / 8, true);
+				next_byte =
+					get_glyph_byte(glyph_ptr, fptr, g_x, (g_y + 8) / 8, true);
 			}
 
 			if (font_is_msbfirst) {
@@ -246,7 +251,7 @@ static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
 				continue;
 			}
 
-			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y);
+			byte = get_glyph_byte(glyph_ptr, fptr, g_x, g_y, false);
 			if (font_is_msbfirst) {
 				byte = byte_reverse(byte);
 			}
@@ -268,8 +273,16 @@ static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
 static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 {
 	const bool need_reverse = ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0);
-	const size_t index = ((y / 8) * fb->x_res);
-	uint8_t m = BIT(y % 8);
+	size_t index;
+	uint8_t m;
+
+	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) != 0) {
+		index = (x + (y / 8) * fb->x_res);
+		m = BIT(y % 8);
+	} else {
+		index = ((x / 8) + y * (fb->x_res / 8));
+		m = BIT(x % 8);
+	}
 
 	if (x < 0 || x >= fb->x_res) {
 		return;
@@ -283,7 +296,7 @@ static inline void draw_point(struct char_framebuffer *fb, int16_t x, int16_t y)
 		m = byte_reverse(m);
 	}
 
-	fb->buf[index + x] |= m;
+	fb->buf[index] |= m;
 }
 
 static void draw_line(struct char_framebuffer *fb, int16_t x0, int16_t y0, int16_t x1, int16_t y1)

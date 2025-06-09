@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Arduino Modulino buttons
+
+compatible: "arduino,modulino-buttons"
+
+properties:
+  zephyr,codes:
+    type: array
+    required: true
+    description: |
+      Key codes to emit, the module has three buttons so this must specify
+      three key codes.
+
+  poll-period-ms:
+    type: int
+    default: 50
+    description: |
+      How often to poll the buttons over the i2c bus, defaults to 50ms.

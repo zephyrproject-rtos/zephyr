@@ -1,5 +1,6 @@
 board:
   name: up_squared_pro_7000
   full_name: UP Squared Pro 7000
+  vendor: up-bridge-the-gap
   socs:
     - name: alder_lake

@@ -10,24 +10,29 @@
  */
 
 #include <errno.h>
-#include <zephyr/types.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <zephyr/shell/shell_string_conv.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/kernel.h>
 
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/sys/util.h>
+#include <sys/types.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 #if defined(CONFIG_BT_GATT_CLIENT) || defined(CONFIG_BT_GATT_DYNAMIC_DB)
 extern uint8_t selected_id;
@@ -57,14 +62,14 @@ static void update_write_stats(uint16_t len)
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
 	 */
-	if (delta > 1000000000) {
+	if (delta > NSEC_PER_SEC) {
 		write_stats.len = 0U;
 		write_stats.rate = 0U;
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		write_stats.len += len;
 		write_stats.rate = ((uint64_t)write_stats.len << 3) *
-			1000000000U / delta;
+			NSEC_PER_SEC / delta;
 	}
 }
 
@@ -740,7 +745,7 @@ static int cmd_show_db(const struct shell *sh, size_t argc, char *argv[])
 	total_len = stats.svc_count * sizeof(struct bt_gatt_service);
 	total_len += stats.chrc_count * sizeof(struct bt_gatt_chrc);
 	total_len += stats.attr_count * sizeof(struct bt_gatt_attr);
-	total_len += stats.ccc_count * sizeof(struct _bt_gatt_ccc);
+	total_len += stats.ccc_count * sizeof(struct bt_gatt_ccc_managed_user_data);
 
 	shell_print(sh, "=================================================");
 	shell_print(sh, "Total: %u services %u attributes (%zu bytes)",
@@ -1013,7 +1018,7 @@ static void notify_cb(struct bt_conn *conn, void *user_data)
 {
 	const struct shell *sh = user_data;
 
-	shell_print(sh, "Nofication sent to conn %p", conn);
+	shell_print(sh, "Notification sent to conn %p", conn);
 }
 static int cmd_notify_mult(const struct shell *sh, size_t argc, char *argv[])
 {

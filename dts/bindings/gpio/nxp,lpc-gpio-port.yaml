@@ -5,7 +5,7 @@ description: LPC GPIO port device.
 
 compatible: "nxp,lpc-gpio-port"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

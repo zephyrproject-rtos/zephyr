@@ -11,7 +11,6 @@
 #include <stdlib.h>
 
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_MOCK_OUTPUT_DEFAULT;
-union log_msg_generic *test_msg;
 
 static uint8_t mock_output_buf[1];
 uint8_t test_output_buf[256];
@@ -47,8 +46,6 @@ static void process(const struct log_backend *const backend,
 {
 	uint32_t flags = log_backend_std_get_flags();
 
-	test_msg = msg;
-
 	log_format_func_t log_output_func = log_format_func_t_get(log_format_current);
 
 	log_output_func(&log_output_mock, &msg->log, flags);
@@ -66,7 +63,8 @@ void validate_msg(const char *type, const char *optional_flags,
 	const char *raw_data_str = "SYS-T RAW DATA: ";
 	const char *output_str = test_output_buf;
 	const char *syst_format_headers[4] = {type, optional_flags, module_id, sub_type};
-	const char *syst_headers_name[4] = {"type", "optional_flags", "module_id", "sub_type"};
+	const char *syst_headers_name[4] __maybe_unused = {"type", "optional_flags", "module_id",
+							   "sub_type"};
 
 	/* Validate "SYS-T RAW DATA: " prefix in the output_str */
 	zassert_mem_equal(raw_data_str, output_str, strlen(raw_data_str),

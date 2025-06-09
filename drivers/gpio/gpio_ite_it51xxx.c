@@ -22,6 +22,7 @@
 LOG_MODULE_REGISTER(gpio_ite_it51xxx, LOG_LEVEL_ERR);
 
 #define IT515XX_GPIO_MAX_PINS 8
+#define IT515XX_GPxyVS        BIT(3)
 
 struct it51xxx_gpio_wuc_map_cfg {
 	/* WUC control device structure */
@@ -46,7 +47,7 @@ struct gpio_ite_cfg {
 	/* GPIO port output type register (bit mapping to pin) */
 	uintptr_t reg_gpotr;
 	/* GPIO port 1.8V select register (bit mapping to pin) */
-	uintptr_t reg_p18scr;
+	uintptr_t reg_gpxycr1;
 	/* GPIO port control register (byte mapping to pin) */
 	uintptr_t reg_gpcr;
 	/* GPIO/KBS function selection register (bit mapping to pin) */
@@ -123,14 +124,15 @@ static int gpio_ite_configure(const struct device *dev, gpio_pin_t pin, gpio_fla
 	/* 1.8V or 3.3V */
 	if (config->has_volt_sel[pin]) {
 		gpio_flags_t volt = flags & IT8XXX2_GPIO_VOLTAGE_MASK;
+		mm_reg_t reg_gpxycr1_pin = config->reg_gpxycr1 + (pin * 2);
 
 		if (volt == IT8XXX2_GPIO_VOLTAGE_1P8) {
 			__ASSERT(!(flags & GPIO_PULL_UP),
 				 "Don't enable internal pullup if 1.8V voltage is used");
-			sys_write8(sys_read8(config->reg_p18scr) | mask, config->reg_p18scr);
+			sys_write8(sys_read8(reg_gpxycr1_pin) | IT515XX_GPxyVS, reg_gpxycr1_pin);
 			data->volt_default_set &= ~mask;
 		} else if (volt == IT8XXX2_GPIO_VOLTAGE_3P3) {
-			sys_write8(sys_read8(config->reg_p18scr) & ~mask, config->reg_p18scr);
+			sys_write8(sys_read8(reg_gpxycr1_pin) & ~IT515XX_GPxyVS, reg_gpxycr1_pin);
 			/*
 			 * A variable is needed to store the difference between
 			 * 3.3V and default so that the flag can be distinguished
@@ -138,7 +140,7 @@ static int gpio_ite_configure(const struct device *dev, gpio_pin_t pin, gpio_fla
 			 */
 			data->volt_default_set &= ~mask;
 		} else if (volt == IT8XXX2_GPIO_VOLTAGE_DEFAULT) {
-			sys_write8(sys_read8(config->reg_p18scr) & ~mask, config->reg_p18scr);
+			sys_write8(sys_read8(reg_gpxycr1_pin) & ~IT515XX_GPxyVS, reg_gpxycr1_pin);
 			data->volt_default_set |= mask;
 		} else {
 			rc = -EINVAL;
@@ -191,6 +193,7 @@ static int gpio_ite_get_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 {
 	const struct gpio_ite_cfg *config = dev->config;
 	struct gpio_ite_data *data = dev->data;
+	mm_reg_t reg_gpxycr1_pin = config->reg_gpxycr1 + (pin * 2);
 	uint8_t mask = BIT(pin);
 	gpio_flags_t flags = 0;
 
@@ -205,7 +208,7 @@ static int gpio_ite_get_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 		if (data->volt_default_set & mask) {
 			flags |= IT8XXX2_GPIO_VOLTAGE_DEFAULT;
 		} else {
-			if (sys_read8(config->reg_p18scr) & mask) {
+			if (sys_read8(reg_gpxycr1_pin) & IT515XX_GPxyVS) {
 				flags |= IT8XXX2_GPIO_VOLTAGE_1P8;
 			} else {
 				flags |= IT8XXX2_GPIO_VOLTAGE_3P3;
@@ -452,7 +455,7 @@ static DEVICE_API(gpio, gpio_ite_driver_api) = {
 		.reg_gpdr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                      \
 		.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                     \
 		.reg_gpotr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                     \
-		.reg_p18scr = DT_INST_REG_ADDR_BY_IDX(inst, 3),                                    \
+		.reg_gpxycr1 = DT_INST_REG_ADDR_BY_IDX(inst, 3),                                   \
 		.reg_gpcr = DT_INST_REG_ADDR_BY_IDX(inst, 4),                                      \
 		.reg_ksfselr = DT_INST_REG_ADDR_BY_IDX(inst, 5),                                   \
 		.gpio_irq = IT8XXX2_DT_GPIO_IRQ_LIST(inst),                                        \

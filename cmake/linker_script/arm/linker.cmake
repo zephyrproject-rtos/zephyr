@@ -155,7 +155,7 @@ if(CONFIG_USERSPACE)
 	zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
 
 
-  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
 
@@ -175,7 +175,7 @@ include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
 include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-data.cmake)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss VMA RAM LMA FLASH TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
   # As memory is cleared in words only, it is simpler to ensure the BSS
@@ -190,7 +190,7 @@ endif()
 
 include(${COMMON_ZEPHYR_LINKER_DIR}/ram-end.cmake)
 
-zephyr_linker_symbol(SYMBOL __ramfunc_region_start EXPR "ADDR(.ramfunc)")
+zephyr_linker_symbol(SYMBOL __ramfunc_region_start EXPR "(@__ramfunc_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
 zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(@__kernel_ram_end@ - @__bss_start@)")
@@ -256,3 +256,12 @@ dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
 foreach(path IN LISTS paths)
   zephyr_linker_dts_section(PATH ${path})
 endforeach()
+
+
+# .last_section must be last in romable region
+# .last_section contains a fixed word to ensure location counter and actual
+# rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y.
+zephyr_linker_section(NAME .last_section VMA FLASH LMA FLASH
+                      NOINPUT TYPE LINKER_SCRIPT_FOOTER)
+# KEEP can not be passed to zephyr_linker_section, so:
+zephyr_linker_section_configure(SECTION .last_section INPUT ".last_section" KEEP)

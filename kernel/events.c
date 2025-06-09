@@ -51,6 +51,8 @@ static struct k_obj_type obj_type_event;
 
 void z_impl_k_event_init(struct k_event *event)
 {
+	__ASSERT_NO_MSG(!arch_is_in_isr());
+
 	event->events = 0;
 	event->lock = (struct k_spinlock) {};
 

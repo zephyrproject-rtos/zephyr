@@ -186,13 +186,13 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	uint32_t mutual_capabilities = anar & anlpar;
 
 	if (mutual_capabilities & MII_ADVERTISE_100_FULL) {
-		state->speed = LINK_FULL_100BASE_T;
+		state->speed = LINK_FULL_100BASE;
 	} else if (mutual_capabilities & MII_ADVERTISE_100_HALF) {
-		state->speed = LINK_HALF_100BASE_T;
+		state->speed = LINK_HALF_100BASE;
 	} else if (mutual_capabilities & MII_ADVERTISE_10_FULL) {
-		state->speed = LINK_FULL_10BASE_T;
+		state->speed = LINK_FULL_10BASE;
 	} else if (mutual_capabilities & MII_ADVERTISE_10_HALF) {
-		state->speed = LINK_HALF_10BASE_T;
+		state->speed = LINK_HALF_10BASE;
 	} else {
 		ret = -EIO;
 	}
@@ -365,22 +365,22 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev,
 	}
 
 	/* Setup advertising register */
-	if (speeds & LINK_FULL_100BASE_T) {
+	if (speeds & LINK_FULL_100BASE) {
 		anar |= MII_ADVERTISE_100_FULL;
 	} else {
 		anar &= ~MII_ADVERTISE_100_FULL;
 	}
-	if (speeds & LINK_HALF_100BASE_T) {
+	if (speeds & LINK_HALF_100BASE) {
 		anar |= MII_ADVERTISE_100_HALF;
 	} else {
 		anar &= ~MII_ADVERTISE_100_HALF;
 	}
-	if (speeds & LINK_FULL_10BASE_T) {
+	if (speeds & LINK_FULL_10BASE) {
 		anar |= MII_ADVERTISE_10_FULL;
 	} else {
 		anar &= ~MII_ADVERTISE_10_FULL;
 	}
-	if (speeds & LINK_HALF_10BASE_T) {
+	if (speeds & LINK_HALF_10BASE) {
 		anar |= MII_ADVERTISE_10_HALF;
 	} else {
 		anar &= ~MII_ADVERTISE_10_HALF;

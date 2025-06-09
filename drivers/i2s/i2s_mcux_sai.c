@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2023-2024 NXP Semiconductor INC.
+ * Copyright 2021,2023-2025 NXP Semiconductor INC.
  * All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -97,6 +97,7 @@ struct i2s_mcux_config {
 	uint32_t mclk_control_base;
 	uint32_t mclk_pin_mask;
 	uint32_t mclk_pin_offset;
+	bool mclk_output;
 	uint32_t tx_channel;
 	clock_control_subsys_t clk_sub_sys;
 	const struct device *ccm_dev;
@@ -487,9 +488,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 	memset(&config, 0, sizeof(config));
 
-	const bool is_mclk_slave = i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE;
-
-	enable_mclk_direction(dev, !is_mclk_slave);
+	enable_mclk_direction(dev, dev_cfg->mclk_output);
 
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
@@ -1125,6 +1124,8 @@ static int i2s_mcux_initialize(const struct device *dev)
 	/*clock configuration*/
 	audio_clock_settings(dev);
 
+	enable_mclk_direction(dev, dev_cfg->mclk_output);
+
 	SAI_Init(base);
 
 	dev_data->tx.state = I2S_STATE_NOT_READY;
@@ -1185,6 +1186,7 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.mclk_control_base = DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(i2s_id), pinmuxes)),       \
 		.mclk_pin_mask = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, mask),            \
 		.mclk_pin_offset = DT_PHA_BY_IDX(DT_DRV_INST(i2s_id), pinmuxes, 0, offset),        \
+		.mclk_output = DT_INST_PROP_OR(i2s_id, mclk_output, 0),                            \
 		.clk_sub_sys =                                                                     \
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),       \
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),                             \

@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/adi_max32_clock.h>
+
+/ {
+	soc {
+		sram: sram@30000000 {
+			ranges = <0x0 0x30000000 0x40000>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+
+			pinctrl: pin-controller@8000 {
+				ranges = <0x8000 0x50008000 0x1000>;
+			};
+
+			flc0: flash_controller@29000 {
+				compatible = "adi,max32-flash-controller";
+				reg = <0x29000 0x400>;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "okay";
+
+				flash0: flash@1000000 {
+					compatible = "soc-nv-flash";
+					reg = <0x01000000 DT_SIZE_K(1024)>;
+					write-block-size = <16>;
+					erase-block-size = <8192>;
+				};
+			};
+		};
+	};
+};
+
+#include "max32657_common.dtsi"

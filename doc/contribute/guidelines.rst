@@ -588,7 +588,7 @@ for example:
 
 .. code-block:: bash
 
-   west twister -p native_sim -s tests/drivers/build_all/sensor/sensors.generic_test
+   west twister -p native_sim -s tests/drivers/build_all/sensor/drivers.sensor.generic_test
 
 .. _static_analysis:
 

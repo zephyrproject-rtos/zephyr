@@ -29,7 +29,7 @@
  * @file
  *
  * @defgroup coredump_apis Coredump APIs
- * @ingroup os_services
+ * @ingroup debug
  * @brief Coredump APIs
  * @{
  */

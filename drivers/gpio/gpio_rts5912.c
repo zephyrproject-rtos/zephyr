@@ -95,7 +95,15 @@ static int gpio_rts5912_configuration(const struct device *port, gpio_pin_t pin,
 	if (flags & GPIO_INPUT) {
 		cfg_val &= ~GPIO_GCR_DIR_Msk;
 		cfg_val &= ~GPIO_GCR_OUTCTRL_Msk;
+		/* enable input detect */
 		cfg_val |= GPIO_GCR_INDETEN_Msk;
+	}
+
+	if (flags & GPIO_DISCONNECTED) {
+		cfg_val &= ~GPIO_GCR_DIR_Msk;
+		cfg_val &= ~GPIO_GCR_OUTCTRL_Msk;
+		/* disable input detect */
+		cfg_val &= ~GPIO_GCR_INDETEN_Msk;
 	}
 
 	if (flags & GPIO_OPEN_DRAIN) {
@@ -131,12 +139,48 @@ static int gpio_rts5912_configuration(const struct device *port, gpio_pin_t pin,
 		break;
 	}
 
+	if (flags & RTS5912_GPIO_OUTDRV) {
+		cfg_val |= GPIO_GCR_OUTDRV_Msk;
+	} else {
+		cfg_val &= ~GPIO_GCR_OUTDRV_Msk;
+	}
+
+	if (flags & RTS5912_GPIO_SLEWRATE) {
+		cfg_val |= GPIO_GCR_SLEWRATE_Msk;
+	} else {
+		cfg_val &= ~GPIO_GCR_SLEWRATE_Msk;
+	}
+
+	if (flags & RTS5912_GPIO_SCHEN) {
+		cfg_val |= GPIO_GCR_SCHEN_Msk;
+	} else {
+		cfg_val &= ~GPIO_GCR_SCHEN_Msk;
+	}
+
+	cfg_val &= ~GPIO_GCR_MFCTRL_Msk;
+	switch (flags & RTS5912_GPIO_MFCTRL_MASK) {
+	case RTS5912_GPIO_MFCTRL_0:
+		cfg_val |= (0U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	case RTS5912_GPIO_MFCTRL_1:
+		cfg_val |= (1U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	case RTS5912_GPIO_MFCTRL_2:
+		cfg_val |= (2U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	case RTS5912_GPIO_MFCTRL_3:
+		cfg_val |= (3U << GPIO_GCR_MFCTRL_Pos);
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	*gcr = cfg_val;
 
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			pin_output_high(port, pin);
-		} else {
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			pin_output_low(port, pin);
 		}
 	}
@@ -181,6 +225,73 @@ static int gpio_rts5912_get_configuration(const struct device *port, gpio_pin_t 
 		cfg_flag |= GPIO_PULL_UP;
 	} else if (*gcr & GPIO_GCR_PULLDWEN_Msk) {
 		cfg_flag |= GPIO_PULL_DOWN;
+	}
+
+	if (*gcr & GPIO_GCR_INDETEN_Msk) {
+		cfg_flag |= RTS5912_GPIO_INDETEN;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_INDETEN;
+	}
+
+	if (*gcr & GPIO_GCR_OUTDRV_Msk) {
+		cfg_flag |= RTS5912_GPIO_OUTDRV;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_OUTDRV;
+	}
+
+	if (*gcr & GPIO_GCR_SLEWRATE_Msk) {
+		cfg_flag |= RTS5912_GPIO_SLEWRATE;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_SLEWRATE;
+	}
+
+	if (*gcr & GPIO_GCR_SCHEN_Msk) {
+		cfg_flag |= RTS5912_GPIO_SCHEN;
+	} else {
+		cfg_flag &= ~RTS5912_GPIO_SCHEN;
+	}
+
+	switch ((*gcr & GPIO_GCR_MFCTRL_Msk) >> GPIO_GCR_MFCTRL_Pos) {
+	case 0:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_0;
+		break;
+	case 1:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_1;
+		break;
+	case 2:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_2;
+		break;
+	case 3:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_3;
+		break;
+	default:
+		cfg_flag |= RTS5912_GPIO_MFCTRL_0;
+		break;
+	}
+
+	if (*gcr & GPIO_GCR_INTEN_Msk) {
+		switch (*gcr & GPIO_GCR_INTCTRL_Msk) {
+		case GPIO_GCR_INTCTRL_TRIG_EDGE_HIGH:
+			cfg_flag |= GPIO_INT_EDGE_RISING;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_EDGE_LOW:
+			cfg_flag |= GPIO_INT_EDGE_FALLING;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_EDGE_BOTH:
+			cfg_flag |= GPIO_INT_EDGE_BOTH;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_LEVEL_LOW:
+			cfg_flag |= GPIO_INT_LEVEL_LOW;
+			break;
+		case GPIO_GCR_INTCTRL_TRIG_LEVEL_HIGH:
+			cfg_flag |= GPIO_INT_LEVEL_HIGH;
+			break;
+		default:
+			cfg_flag |= GPIO_INT_LEVEL_LOW;
+			break;
+		}
+	} else {
+		cfg_flag |= GPIO_INT_DISABLE;
 	}
 
 	*flags = cfg_flag;
@@ -357,11 +468,11 @@ static int gpio_rts5912_intr_config(const struct device *port, gpio_pin_t pin,
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x03UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_LEVEL_LOW;
 			break;
 		case GPIO_INT_TRIG_HIGH:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x04UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_LEVEL_HIGH;
 			break;
 		default:
 			return -EINVAL;
@@ -371,15 +482,15 @@ static int gpio_rts5912_intr_config(const struct device *port, gpio_pin_t pin,
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x01UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_EDGE_LOW;
 			break;
 		case GPIO_INT_TRIG_HIGH:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x00UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_EDGE_HIGH;
 			break;
 		case GPIO_INT_TRIG_BOTH:
 			cfg_val &= ~GPIO_GCR_INTCTRL_Msk;
-			cfg_val |= 0x2UL << GPIO_GCR_INTCTRL_Pos;
+			cfg_val |= GPIO_GCR_INTCTRL_TRIG_EDGE_BOTH;
 			break;
 		default:
 			return -EINVAL;
@@ -389,7 +500,9 @@ static int gpio_rts5912_intr_config(const struct device *port, gpio_pin_t pin,
 		return -EINVAL;
 	}
 
+	/* enable interrupt */
 	cfg_val |= GPIO_GCR_INTEN_Msk;
+	/* set value to GPIO register */
 	*gcr = cfg_val;
 
 	irq_enable(pin_index);

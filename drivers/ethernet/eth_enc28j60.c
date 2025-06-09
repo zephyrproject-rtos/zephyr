@@ -750,11 +750,44 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T
+	return ETHERNET_LINK_10BASE
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
 		;
+}
+
+static int eth_enc28j60_set_config(const struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config)
+{
+	struct eth_enc28j60_runtime *context = dev->data;
+
+	/* Compile time check that the memcpy below won't overflow */
+	BUILD_ASSERT(sizeof(context->mac_address) <= sizeof(config->mac_address.addr),
+		     "ENC28j60 Runtime MAC address buffer too small");
+
+	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
+		memcpy(context->mac_address, config->mac_address.addr,
+		       sizeof(config->mac_address.addr));
+		eth_enc28j60_init_mac(dev);
+
+		if (context->iface != NULL) {
+			net_if_set_link_addr(context->iface, context->mac_address,
+					     sizeof(context->mac_address),
+					     NET_LINK_ETHERNET);
+		}
+
+		LOG_INF("Set cfg - MAC %02x:%02x:%02x:%02x:%02x:%02x",
+			context->mac_address[0], context->mac_address[1],
+			context->mac_address[2], context->mac_address[3],
+			context->mac_address[4], context->mac_address[5]);
+
+		return 0;
+	}
+
+	/* Only mac address config supported */
+	return -ENOTSUP;
 }
 
 static void eth_enc28j60_iface_init(struct net_if *iface)
@@ -783,7 +816,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_enc28j60_iface_init,
-
+	.set_config		= eth_enc28j60_set_config,
 	.get_capabilities	= eth_enc28j60_get_capabilities,
 	.send			= eth_enc28j60_tx,
 };

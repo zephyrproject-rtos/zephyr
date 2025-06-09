@@ -132,33 +132,17 @@ void z_irq_spurious(const void *unused)
 #ifdef CONFIG_PM
 void _arch_isr_direct_pm(void)
 {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	unsigned int key;
 
-	/* irq_lock() does what we want for this CPU */
-	key = irq_lock();
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	/* Lock all interrupts. irq_lock() will on this CPU only disable those
-	 * lower than BASEPRI, which is not what we want. See comments in
-	 * arch/arm/core/cortex_m/isr_wrapper.c
-	 */
-	__asm__ volatile("cpsid i" : : : "memory");
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+	/* Disable all interrupts except ZLIs. */
+	key = arch_irq_lock();
 
 	if (_kernel.idle) {
 		_kernel.idle = 0;
 		pm_system_resume();
 	}
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	irq_unlock(key);
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__asm__ volatile("cpsie i" : : : "memory");
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+	arch_irq_unlock(key);
 }
 #endif
 

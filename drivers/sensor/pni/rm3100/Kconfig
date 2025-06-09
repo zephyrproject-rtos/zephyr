@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Croxel, Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config RM3100
+	bool "RM3100 3-Axis Magnetometer"
+	default y
+	depends on DT_HAS_PNI_RM3100_ENABLED
+	select I2C
+	select I2C_RTIO
+	select SENSOR_ASYNC_API
+	help
+	  Enable driver for PNI RM3100 high-accuracy 3-axis magnetometer.
+
+config RM3100_STREAM
+	bool "RM3100 Streaming Mode"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_PNI_RM3100),int-gpios)
+	help
+	  Enable streaming mode for the RM3100 sensor.
+	  This mode allows for continuous data output at a specified rate.

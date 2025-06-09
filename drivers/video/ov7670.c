@@ -12,6 +12,9 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
+#include "video_ctrls.h"
+#include "video_device.h"
+
 LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
 
 /* Initialization register structure */
@@ -30,7 +33,13 @@ struct ov7670_config {
 #endif
 };
 
+struct ov7670_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+};
+
 struct ov7670_data {
+	struct ov7670_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -344,15 +353,13 @@ static const struct ov7670_reg ov7670_init_regtbl[] = {
 	{0xb8, 0x0a},
 };
 
-static int ov7670_get_caps(const struct device *dev, enum video_endpoint_id ep,
-			   struct video_caps *caps)
+static int ov7670_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
 	return 0;
 }
 
-static int ov7670_set_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	const struct ov7670_config *config = dev->config;
 	struct ov7670_data *data = dev->data;
@@ -437,16 +444,28 @@ static int ov7670_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 	return -ENOTSUP;
 }
 
-static int ov7670_get_fmt(const struct device *dev, enum video_endpoint_id ep,
-			  struct video_format *fmt)
+static int ov7670_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov7670_data *data = dev->data;
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
 	memcpy(fmt, &data->fmt, sizeof(data->fmt));
 	return 0;
+}
+
+static int ov7670_init_controls(const struct device *dev)
+{
+	int ret;
+	struct ov7670_data *drv_data = dev->data;
+	struct ov7670_ctrls *ctrls = &drv_data->ctrls;
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 }
 
 static int ov7670_init(const struct device *dev)
@@ -529,11 +548,10 @@ static int ov7670_init(const struct device *dev)
 	k_msleep(5);
 
 	/* Set default camera format (QVGA, YUYV) */
-	fmt.pixelformat = VIDEO_PIX_FMT_YUYV;
-	fmt.width = 640;
-	fmt.height = 480;
-	fmt.pitch = fmt.width * 2;
-	ret = ov7670_set_fmt(dev, VIDEO_EP_OUT, &fmt);
+	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
+	fmt.width = 320;
+	fmt.height = 240;
+	ret = ov7670_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -547,25 +565,28 @@ static int ov7670_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	/* Initialize controls */
+	return ov7670_init_controls(dev);
 }
 
-static int ov7670_set_stream(const struct device *dev, bool enable)
+static int ov7670_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return 0;
 }
 
-static int ov7670_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int ov7670_set_ctrl(const struct device *dev, uint32_t id)
 {
 	const struct ov7670_config *config = dev->config;
+	struct ov7670_data *drv_data = dev->data;
+	struct ov7670_ctrls *ctrls = &drv_data->ctrls;
 
-	switch (cid) {
+	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
-			OV7670_MVFP_HFLIP, ((int)value) ? OV7670_MVFP_HFLIP : 0);
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_HFLIP,
+					      ctrls->hflip.val ? OV7670_MVFP_HFLIP : 0);
 	case VIDEO_CID_VFLIP:
-		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP,
-			OV7670_MVFP_VFLIP, ((int)value) ? OV7670_MVFP_VFLIP : 0);
+		return i2c_reg_update_byte_dt(&config->bus, OV7670_MVFP, OV7670_MVFP_VFLIP,
+					      ctrls->vflip.val ? OV7670_MVFP_VFLIP : 0);
 	default:
 		return -ENOTSUP;
 	}
@@ -598,6 +619,8 @@ static DEVICE_API(video, ov7670_api) = {
 	struct ov7670_data ov7670_data_##inst;                                                     \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov7670_init, NULL, &ov7670_data_##inst, &ov7670_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov7670_api);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov7670_api);               \
+                                                                                                   \
+	VIDEO_DEVICE_DEFINE(ov7670_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(OV7670_INIT)

@@ -37,4 +37,4 @@
 
 arduino_i2c: &i2c1 {};
 
-arduino_serial: &uart8 {};
+arduino_serial: &lpuart1 {};

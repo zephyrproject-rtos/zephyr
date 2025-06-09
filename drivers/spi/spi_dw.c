@@ -226,7 +226,7 @@ static int spi_dw_configure(const struct device *dev,
 	}
 
 	/* Word size */
-	if (info->max_xfer_size == 32) {
+	if (!IS_ENABLED(CONFIG_SPI_DW_HSSI) && (info->max_xfer_size == 32)) {
 		ctrlr0 |= DW_SPI_CTRLR0_DFS_32(SPI_WORD_SIZE_GET(config->operation));
 	} else {
 		ctrlr0 |= DW_SPI_CTRLR0_DFS_16(SPI_WORD_SIZE_GET(config->operation));
@@ -323,6 +323,18 @@ static void spi_dw_update_txftlr(const struct device *dev,
 		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
 			reg_data = spi->ctx.tx_len - 1;
 		}
+	} else {
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+		/*
+		 * TXFTLR field in the TXFTLR register is valid only for
+		 * Controller mode operation
+		 */
+		if (!spi->ctx.tx_len) {
+			reg_data = 0U;
+		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
+			reg_data = (spi->ctx.tx_len - 1) << DW_SPI_TXFTLR_TXFTLR_SHIFT;
+		}
+#endif
 	}
 
 	LOG_DBG("TxFTLR: %u", reg_data);
@@ -553,6 +565,12 @@ int spi_dw_init(const struct device *dev)
 	/* Masking interrupt and making sure controller is disabled */
 	write_imr(dev, DW_SPI_IMR_MASK);
 	clear_bit_ssienr(dev);
+
+	/* SSI component version */
+	spi->version = read_ssi_comp_version(dev);
+	LOG_DBG("Version: %c.%c%c%c", (spi->version >> 24) & 0xff,
+		(spi->version >> 16) & 0xff, (spi->version >> 8) & 0xff,
+		spi->version & 0xff);
 
 	LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 

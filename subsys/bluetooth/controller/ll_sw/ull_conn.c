@@ -180,6 +180,10 @@ uint16_t ll_conn_handle_get(struct ll_conn *conn)
 
 struct ll_conn *ll_conn_get(uint16_t handle)
 {
+	if (handle >= CONFIG_BT_MAX_CONN) {
+		return NULL;
+	}
+
 	return mem_get(conn_pool, sizeof(struct ll_conn), handle);
 }
 
@@ -187,12 +191,8 @@ struct ll_conn *ll_connected_get(uint16_t handle)
 {
 	struct ll_conn *conn;
 
-	if (handle >= CONFIG_BT_MAX_CONN) {
-		return NULL;
-	}
-
 	conn = ll_conn_get(handle);
-	if (conn->lll.handle != handle) {
+	if ((conn == NULL) || (conn->lll.handle != handle)) {
 		return NULL;
 	}
 
@@ -429,6 +429,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 		}
 		return 0;
 	}
+
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	if (IS_CIS_HANDLE(handle)) {
 		cis = ll_iso_stream_connected_get(handle);
@@ -445,6 +446,7 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 
 				} else if (cis->group->state == CIG_STATE_INITIATING) {
 					conn = ll_connected_get(cis->lll.acl_handle);
+					LL_ASSERT(conn != NULL);
 
 					/* CIS is not yet established - try to cancel procedure */
 					if (ull_cp_cc_cancel(conn)) {
@@ -622,9 +624,9 @@ void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 #else /* CONFIG_BT_CTLR_PHY && CONFIG_BT_CTLR_PHY_CODED */
 #define PHY (PHY_1M)
 #endif /* CONFIG_BT_CTLR_PHY && CONFIG_BT_CTLR_PHY_CODED */
-	*max_tx_octets = LL_LENGTH_OCTETS_RX_MAX;
+	*max_tx_octets = LL_LENGTH_OCTETS_TX_MAX;
 	*max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
-	*max_tx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY);
+	*max_tx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, PHY);
 	*max_rx_time = PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, PHY);
 #undef PHY
 }
@@ -781,6 +783,7 @@ int ull_conn_reset(void)
 	(void)ull_central_reset();
 #endif /* CONFIG_BT_CENTRAL */
 
+	/* Stop any active ticker related to connection roles */
 	for (handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
 		disable(handle);
 	}
@@ -804,6 +807,9 @@ struct lll_conn *ull_conn_lll_get(uint16_t handle)
 	struct ll_conn *conn;
 
 	conn = ll_conn_get(handle);
+	if (conn == NULL) {
+		return NULL;
+	}
 
 	return &conn->lll;
 }
@@ -1552,22 +1558,32 @@ void ull_conn_tx_ack(uint16_t handle, memq_link_t *link, struct node_tx *tx)
 		if (handle != LLL_HANDLE_INVALID) {
 			struct ll_conn *conn = ll_conn_get(handle);
 
+			LL_ASSERT(conn != NULL);
+
 			ull_cp_tx_ack(conn, tx);
 		}
 
 		/* release ctrl mem if points to itself */
 		if (link->next == (void *)tx) {
+			struct ll_conn *conn;
+
+			/* Tx Node not re-used, ensure link->next is non-NULL */
 			LL_ASSERT(link->next);
 
-			struct ll_conn *conn = ll_connected_get(handle);
+			/* Pass conn as-is to ull_cp_release_tx(), NULL check is done there */
+			conn = ll_connected_get(handle);
 
 			ull_cp_release_tx(conn, tx);
+
 			return;
+
 		} else if (!tx) {
 			/* Tx Node re-used to enqueue new ctrl PDU */
 			return;
 		}
+
 		LL_ASSERT(!link->next);
+
 	} else if (handle == LLL_HANDLE_INVALID) {
 		pdu_tx->ll_id = PDU_DATA_LLID_RESV;
 	} else {
@@ -1666,6 +1682,15 @@ static int init_reset(void)
 	/* Initialize conn pool. */
 	mem_init(conn_pool, sizeof(struct ll_conn),
 		 sizeof(conn_pool) / sizeof(struct ll_conn), &conn_free);
+
+	/* Invalidate connection handles, refer to ll_connected_get() */
+	for (uint16_t handle = 0U; handle < CONFIG_BT_MAX_CONN; handle++) {
+		struct ll_conn *conn;
+
+		/* handle in valid range, conn will be non-NULL */
+		conn = ll_conn_get(handle);
+		conn->lll.handle = LLL_HANDLE_INVALID;
+	}
 
 	/* Initialize tx pool. */
 	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONN_DATA_BUFFERS,
@@ -1831,12 +1856,12 @@ static inline void disable(uint16_t handle)
 	int err;
 
 	conn = ll_conn_get(handle);
+	LL_ASSERT(conn != NULL);
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_CONN_BASE + handle,
 					conn, &conn->lll);
 	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, handle, err);
 
-	conn->lll.handle = LLL_HANDLE_INVALID;
 	conn->lll.link_tx_free = NULL;
 }
 
@@ -2107,9 +2132,9 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 	mic_size = 0U;
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
-	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
+	time_incoming = (LL_LENGTH_OCTETS_TX_MAX << 3) *
 			1000000UL / tx_rate;
-	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy,
+	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_TX_MAX, mic_size, phy,
 				  phy_flags) +
 			PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) +
 			(EVENT_IFS_US << 1);
@@ -2362,6 +2387,14 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	switch (lll->role) {
 #if defined(CONFIG_BT_PERIPHERAL)
 	case BT_HCI_ROLE_PERIPHERAL:
+		/* Since LLL prepare doesn't get to run, accumulate window widening here */
+		lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+							  (conn->llcp.prep.lazy + 1);
+		if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+			lll->periph.window_widening_prepare_us =
+				lll->periph.window_widening_max_us;
+		}
+
 		lll->periph.window_widening_prepare_us -=
 			lll->periph.window_widening_periodic_us * instant_latency;
 
@@ -2498,7 +2531,7 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	tx_time = MIN(conn->lll.dle.default_tx_time,
-		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_RX_MAX, phy_select));
+		      PDU_DC_MAX_US(LL_LENGTH_OCTETS_TX_MAX, phy_select));
 #else /* !CONFIG_BT_CTLR_PHY */
 	tx_time = PDU_DC_MAX_US(conn->lll.dle.default_tx_octets, phy_select);
 #endif /* !CONFIG_BT_CTLR_PHY */

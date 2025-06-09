@@ -9,7 +9,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,         /* Disconnected, conn is completely down */
@@ -137,6 +150,7 @@ struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;
 	uint8_t			remote_auth;
+	uint8_t			local_auth;
 	uint8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
 	uint8_t			features[LMP_MAX_PAGES][8];
@@ -196,16 +210,8 @@ struct bt_conn_tx {
 };
 
 struct acl_data {
-	/* Extend the bt_buf user data */
-	struct bt_buf_data buf_data;
-
 	/* Index into the bt_conn storage array */
-	uint8_t index;
-
-	/** Host has already sent a Host Number of Completed Packets
-	 *  for this buffer.
-	 */
-	bool host_ncp_sent;
+	uint8_t  index;
 
 	/** ACL connection handle */
 	uint16_t handle;

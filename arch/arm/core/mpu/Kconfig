@@ -71,6 +71,7 @@ config CUSTOM_SECTION_MIN_ALIGN_SIZE
 
 config ARM_MPU_PXN
 	bool
+	default y
 	depends on ARMV8_1_M_MAINLINE
 	help
 	  Enable support for Armv8.1-m MPU's Privileged Execute Never (PXN) attr.

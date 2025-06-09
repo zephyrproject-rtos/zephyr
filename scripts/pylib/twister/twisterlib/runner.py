@@ -1553,6 +1553,15 @@ class ProjectBuilder(FilterBuilder):
             f'{TwisterStatus.get_color(instance.status)}{str.upper(instance.status)}{Fore.RESET}'
         )
 
+        def name_columns(instance, plat_width, ts_width):
+            # try to compensate for a platform name longer than plat_width
+            # by reclaiming extra spaces after the testsuite name, if any
+            plat_name = instance.platform.name
+            ts_name = instance.testsuite.name
+            plat_extra = max(0, len(plat_name) - plat_width)
+            ts_width = max(0, ts_width - plat_extra)
+            return f"{plat_name:<{plat_width}} {ts_name:<{ts_width}}"
+
         if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
             if instance.status == TwisterStatus.ERROR:
                 results.error_increment()
@@ -1562,7 +1571,7 @@ class ProjectBuilder(FilterBuilder):
                 status += " " + instance.reason
             else:
                 logger.error(
-                    f"{instance.platform.name:<25} {instance.testsuite.name:<50}"
+                    f"{name_columns(instance, 25, 50)}"
                     f" {status}: {instance.reason}"
                 )
             if not self.options.verbose:
@@ -1603,7 +1612,7 @@ class ProjectBuilder(FilterBuilder):
                     more_info += f" <{instance.toolchain}>"
             logger.info(
                 f"{results.done - results.filtered_static:>{total_tests_width}}/{total_to_do}"
-                f" {instance.platform.name:<25} {instance.testsuite.name:<50}"
+                f" {name_columns(instance, 25, 50)}"
                 f" {status} ({more_info})"
             )
 
@@ -1876,7 +1885,7 @@ class TwisterRunner:
                     self.results.done -= self.results.error
                     self.results.error = 0
             else:
-                self.results.done = self.results.filtered_static
+                self.results.done = self.results.filtered_static + self.results.skipped
 
             self.execute(pipeline, done_queue)
 
@@ -1913,6 +1922,10 @@ class TwisterRunner:
                 self.results.filtered_static_increment()
                 self.results.filtered_configs_increment()
                 self.results.filtered_cases_increment(len(instance.testsuite.testcases))
+                self.results.cases_increment(len(instance.testsuite.testcases))
+            elif instance.status == TwisterStatus.SKIP and "overflow" not in instance.reason:
+                self.results.skipped_increment()
+                self.results.skipped_cases_increment(len(instance.testsuite.testcases))
                 self.results.cases_increment(len(instance.testsuite.testcases))
             elif instance.status == TwisterStatus.ERROR:
                 self.results.error_increment()
@@ -1994,9 +2007,11 @@ class TwisterRunner:
                             pb.process(pipeline, done_queue, task, lock, results)
                             if self.env.options.quit_on_failure and \
                                 pb.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
-                                with pipeline.mutex:
-                                    pipeline.queue.clear()
-                                break
+                                try:
+                                    while True:
+                                        pipeline.get_nowait()
+                                except queue.Empty:
+                                    pass
 
                     return True
             else:
@@ -2012,9 +2027,11 @@ class TwisterRunner:
                         pb.process(pipeline, done_queue, task, lock, results)
                         if self.env.options.quit_on_failure and \
                             pb.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
-                            with pipeline.mutex:
-                                pipeline.queue.clear()
-                            break
+                            try:
+                                while True:
+                                    pipeline.get_nowait()
+                            except queue.Empty:
+                                pass
                 return True
         except Exception as e:
             logger.error(f"General exception: {e}\n{traceback.format_exc()}")

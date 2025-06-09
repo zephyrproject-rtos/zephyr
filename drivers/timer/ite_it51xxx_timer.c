@@ -118,7 +118,7 @@ static volatile uint32_t last_elapsed;
 static volatile uint32_t last_ticks;
 
 #if defined(CONFIG_TEST)
-const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 4, irq);
+const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 3, irq);
 #endif
 
 static uint32_t read_timer_obser(enum ext_timer_idx timer_idx)
@@ -126,10 +126,15 @@ static uint32_t read_timer_obser(enum ext_timer_idx timer_idx)
 	uint32_t obser;
 	__unused uint8_t etnpsr;
 
+	/* Critical section */
+	unsigned int key = irq_lock();
+
 	/* Workaround for observation register latch issue */
 	obser = sys_read32(timer_base + TIMER_ETNCNTOLR(timer_idx));
 	etnpsr = sys_read8(timer_base + TIMER_ETNPSR(timer_idx));
 	obser = sys_read32(timer_base + TIMER_ETNCNTOLR(timer_idx));
+
+	irq_unlock(key);
 
 	return obser;
 }
@@ -334,16 +339,24 @@ static int timer_init(enum ext_timer_idx ext_timer, enum ext_clk_src_sel clock_s
 void arch_busy_wait(uint32_t usec_to_wait)
 {
 	uint32_t start = read_timer_obser(BUSY_WAIT_H_TIMER);
+	uint32_t compensated_us;
 
 	if (!usec_to_wait) {
 		return;
 	}
 
-	/* Decrease 1us here to calibrate our access registers latency */
-	usec_to_wait--;
-
+	/*
+	 * The EC runs at 9.2MHz, meaning each tick is approximately 108.6ns.
+	 * The number of ticks per microsecond is calculated as:
+	 * COUNT_1US = EC_CLOCK / USEC_PER_SEC = 9200000 / 1000000 = 9.2
+	 * Since the timer counts down from a preset value to 0, using a preload value of
+	 * 9 actually results in 10 ticks per cycle.
+	 * This overestimates 1us and introduces a small cumulative timing error over time.
+	 * To compensate for this, we scale the requested delay using (1000 / 1086).
+	 */
+	compensated_us = usec_to_wait * 1000 / 1086;
 	for (;;) {
-		if ((read_timer_obser(BUSY_WAIT_H_TIMER) - start) >= usec_to_wait) {
+		if ((read_timer_obser(BUSY_WAIT_H_TIMER) - start) >= compensated_us) {
 			break;
 		}
 	}

@@ -11,7 +11,8 @@ dictionary logging.
 
 import struct
 
-class DataTypes():
+
+class DataTypes:
     """Class regarding data types, their alignments and sizes"""
     INT = 0
     UINT = 1
@@ -94,10 +95,6 @@ class DataTypes():
                 stack_min_align = 8
             else:
                 stack_min_align = 1
-
-        elif arch == "nios2":
-            need_further_align = False
-            stack_min_align = 1
 
         else:
             need_further_align = True

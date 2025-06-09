@@ -1,0 +1,30 @@
+# # Copyright (c) 2025 Croxel Inc.
+# # SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ICM45686 High-precision 6-axis motion tracking device
+    When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
+    gyro-odr properties in a .dts or .dtsi file you may include icm45686.h
+    and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/icm45686.h>
+
+    &i3c1 {
+      ...
+
+      icm42688: icm45686@680000046a00000011 {
+        ...
+
+        accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;
+        accel-fs = <ICM45686_DT_ACCEL_FS_32>;
+        accel-odr = <ICM45686_DT_ACCEL_ODR_800>;
+        gyro-pwr-mode= <ICM45686_DT_GYRO_LN>;
+        gyro-fs = <ICM45686_DT_GYRO_FS_4000>;
+        gyro-odr = <ICM45686_DT_GYRO_ODR_800>;
+      };
+    };
+
+compatible: "invensense,icm45686"
+
+include: ["i3c-device.yaml", "invensense,icm45686-common.yaml"]
