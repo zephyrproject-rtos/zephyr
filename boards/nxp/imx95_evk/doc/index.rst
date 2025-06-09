@@ -161,13 +161,13 @@ of https://spsdk.readthedocs.io)
 
    # load and run without programming. for next flashing, execute 'reset' in the
    # fourth serail port
-   $ west flash
+   $ west flash -r spsdk
 
    # program to SD card, then set SW7[1:4]=0b1011 to reboot
-   $ west flash --bootdevice sd
+   $ west flash -r spsdk --bootdevice sd
 
    # program to emmc card, then set SW7[1:4]=0b1010 to reboot
-   $ west flash --bootdevice=emmc
+   $ west flash -r spsdk --bootdevice=emmc
 
 
 Option 2. Boot Zephyr by Using U-Boot Command
@@ -247,6 +247,73 @@ When running Linux on the A55 core, it can use the remoteproc framework to load 
 refer to Real-Time Edge user guide for more details. Pre-build images and user guide can be found
 at `Real-Time Edge Software`_.
 
+Option 4. Boot Zephyr by Using JLink Runner
+===========================================
+
+The board support using JLink runner to flash and debug Zephyr, connect the EVK board's JTAG connector
+to the host computer using a J-Link debugger.
+
+If run and debug Zephyr on the Core0, just power up the board and stop the board at U-Boot command line.
+
+Then use "west flash -r jlink" command to load the zephyr.bin image from the host computer and start
+Zephyr, or use "west debug -r jlink" to debug Zephyr.
+
+Flash and Run
+-------------
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx95_evk/mimx9596/a55
+   :goals: flash
+   :flash-args: -r jlink
+
+Debug
+-----
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx95_evk/mimx9596/a55
+   :goals: debug
+   :debug-args: -r jlink
+
+Notes
+-----
+
+If run and debug Zephyr on the other Cortex-A Core except Core0, for example Core2, need to execute the
+following command under U-Boot command line to release specific CPU Core to a dead loop state (U-Boot
+needs to support "cpu" command, refer to "Option 2. Boot Zephyr by Using U-Boot Command" to get specific
+U-Boot version).
+
+.. code-block:: console
+
+    mw.l 0xD0000000 14000000; dcache flush; icache flush; cpu 2 release 0xD0000000
+
+And also need to modify jlink device by using the following update, change device ID MIMX9556_A55_0 to
+specified ID, for example MIMX9556_A55_2 for CPU Core2:
+
+.. code-block:: console
+
+    diff --git a/boards/nxp/imx95_evk/board.cmake b/boards/nxp/imx95_evk/board.cmake
+    index daca6ade79f..c58de8c2431 100644
+    --- a/boards/nxp/imx95_evk/board.cmake
+    +++ b/boards/nxp/imx95_evk/board.cmake
+    @@ -21,6 +21,6 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
+    endif()
+
+    if(CONFIG_SOC_MIMX9596_A55)
+    -  board_runner_args(jlink "--device=MIMX9556_A55_0" "--no-reset" "--flash-sram")
+    +  board_runner_args(jlink "--device=MIMX9556_A55_2" "--no-reset" "--flash-sram")
+    include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+    endif()
+
+Then use "west flash -r jlink" command to load the zephyr.bin image from the host computer and start
+Zephyr, or use "west debug -r jlink" to debug Zephyr.
 
 Programming and Debugging (M7)
 ******************************
