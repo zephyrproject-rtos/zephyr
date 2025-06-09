@@ -370,6 +370,11 @@ manifest:
     - name: zcbor
       revision: 9b07780aca6fb21f82a241ba386ad9b379809337
       path: modules/lib/zcbor
+    - name: zephyr-isp
+      url: git@github.st.com:AIS/mg-zephyr-isp.git
+      revision: master
+      path: Lib/zephyr-isp
+      submodules: true
   # zephyr-keep-sorted-stop
 
   self:
