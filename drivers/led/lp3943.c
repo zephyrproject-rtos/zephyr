@@ -178,7 +178,7 @@ static int lp3943_led_set_brightness(const struct device *dev, uint32_t led,
 		reg = LP3943_PWM1;
 	}
 
-	val = (value * 255U) / LED_BRIGTHNESS_MAX;
+	val = (value * 255U) / LED_BRIGHTNESS_MAX;
 	if (i2c_reg_write_byte_dt(&config->bus, reg, val)) {
 		LOG_ERR("LED write failed");
 		return -EIO;
