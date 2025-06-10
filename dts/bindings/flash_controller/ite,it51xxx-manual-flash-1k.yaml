@@ -1,0 +1,29 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT51XXX manual flash 1k(M1k)
+
+compatible: "ite,it51xxx-manual-flash-1k"
+
+include: [flash-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    description: |
+      Access internal flash does not need to configure pinctrl,
+      so require is not true.
+
+  pinctrl-names:
+    description: |
+      As above.
+
+  m1k-sel-access-flash:
+    type: string
+    default: "internal"
+    enum:
+      - "internal"
+      - "external-fspi-cs0"
+      - "external-fspi-cs1"
+    description: |
+      This option enables access to the internal e-Flash or
+      external SPI flash via FSCE# or FSCE1#.
