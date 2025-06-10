@@ -191,16 +191,7 @@ static bool is_valid_gap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 			return false;
 		}
 	case BTP_GAP_EV_PERIODIC_TRANSFER_RECEIVED:
-		if (hdr->len >= sizeof(struct btp_gap_ev_periodic_transfer_received_ev)) {
-			const struct btp_gap_ev_periodic_transfer_received_ev *ev =
-				net_buf_simple_pull_mem(
-					buf_simple,
-					sizeof(struct btp_gap_ev_periodic_transfer_received_ev));
-
-			return ev->data_len == buf_simple->len;
-		} else {
-			return false;
-		}
+		return buf_simple->len == sizeof(struct btp_gap_ev_periodic_transfer_received_ev);
 	default:
 		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
