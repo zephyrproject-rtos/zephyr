@@ -1007,7 +1007,7 @@ ZTEST(optee_test_suite, test_suspend)
 	t_call.smc_cb = fast_call;
 
 	ret = tee_close_session(dev, session_id);
-	zassert_ok(ret, "close_session failed with code %d", ret);
+	zassert_ok(ret, "xclose_session failed with code %d", ret);
 	t_call.pending = 0;
 }
 
