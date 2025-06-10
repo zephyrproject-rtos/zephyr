@@ -191,20 +191,61 @@ static int update_link_state(const struct device *dev)
 		}
 	}
 
-	/**
-	 * Perform auto-negotiation sequence.
-	 */
-	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence",
-		cfg->phy_addr);
-
-	/* Configure and start auto-negotiation process */
 	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
 
-	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
+	if (!(bmcr_reg & MII_BMCR_AUTONEG_ENABLE)) {
+		enum phy_link_speed new_speed;
+
+		switch (bmcr_reg & (MII_BMCR_DUPLEX_MODE |
+				    MII_BMCR_SPEED_MASK)) {
+		case MII_BMCR_DUPLEX_MODE | MII_BMCR_SPEED_1000:
+			new_speed = LINK_FULL_1000BASE;
+			break;
+		case MII_BMCR_DUPLEX_MODE | MII_BMCR_SPEED_100:
+			new_speed = LINK_FULL_100BASE;
+			break;
+		case MII_BMCR_DUPLEX_MODE | MII_BMCR_SPEED_10:
+			new_speed = LINK_FULL_10BASE;
+			break;
+		case MII_BMCR_SPEED_1000:
+			new_speed = LINK_HALF_1000BASE;
+			break;
+		case MII_BMCR_SPEED_100:
+			new_speed = LINK_HALF_100BASE;
+			break;
+		case MII_BMCR_SPEED_10:
+		default:
+			new_speed = LINK_HALF_10BASE;
+			break;
+		}
+
+		data->restart_autoneg = false;
+
+		if ((data->state.speed != new_speed) && data->state.is_up) {
+			data->state.speed = new_speed;
+
+			LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
+				cfg->phy_addr,
+				PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "1000" :
+				(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
+				PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
+
+			return 0;
+		}
+		return -EAGAIN;
+	}
+
+	/**
+	 * Perform auto-negotiation sequence.
+	 */
+	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
+
+	bmcr_reg |= MII_BMCR_AUTONEG_RESTART;
 	bmcr_reg &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
 
+	/* Configure and start auto-negotiation process */
 	if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
 		return -EIO;
 	}
@@ -388,9 +429,10 @@ static int phy_mii_cfg_link(const struct device *dev,
 	struct phy_mii_dev_data *const data = dev->data;
 	const struct phy_mii_dev_config *const cfg = dev->config;
 	uint16_t anar_reg;
-	uint16_t anar_reg_old;
 	uint16_t bmcr_reg;
 	uint16_t c1kt_reg;
+	uint16_t anar_reg_old;
+	uint16_t bmcr_reg_old;
 	uint16_t c1kt_reg_old;
 	int ret = 0;
 
@@ -405,87 +447,119 @@ static int phy_mii_cfg_link(const struct device *dev,
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
-		ret = -EIO;
-		goto cfg_link_end;
-	}
-	anar_reg_old = anar_reg;
-
 	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		ret = -EIO;
 		goto cfg_link_end;
 	}
+	bmcr_reg_old = bmcr_reg;
 
-	if (data->gigabit_supported) {
-		if (phy_mii_reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+	if ((adv_speeds & LINK_AUTO_NEGOTIATION_DISABLED) != 0U) {
+		/* Check if only one speed is selected */
+		if (!IS_POWER_OF_TWO((adv_speeds & ~LINK_AUTO_NEGOTIATION_DISABLED))) {
+			LOG_ERR("More than one speed selected for PHY (%d)", cfg->phy_addr);
+			ret = -EINVAL;
+			goto cfg_link_end;
+		}
+
+		/* Disable auto-negotiation */
+		bmcr_reg &= ~(MII_BMCR_AUTONEG_ENABLE | MII_BMCR_SPEED_LSB | MII_BMCR_SPEED_MSB);
+
+		if (data->gigabit_supported && PHY_LINK_IS_SPEED_1000M(adv_speeds)) {
+			bmcr_reg |= MII_BMCR_SPEED_1000;
+		} else if (PHY_LINK_IS_SPEED_100M(adv_speeds)) {
+			bmcr_reg |= MII_BMCR_SPEED_100;
+		} else if (PHY_LINK_IS_SPEED_10M(adv_speeds)) {
+			bmcr_reg |= MII_BMCR_SPEED_10;
+		} else {
+			LOG_ERR("Invalid speed %d for PHY (%d)", adv_speeds, cfg->phy_addr);
+			ret = -EINVAL;
+			goto cfg_link_end;
+		}
+
+		if (PHY_LINK_IS_FULL_DUPLEX(adv_speeds)) {
+			bmcr_reg |= MII_BMCR_DUPLEX_MODE;
+		} else {
+			bmcr_reg &= ~MII_BMCR_DUPLEX_MODE;
+		}
+	} else {
+		if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
 			ret = -EIO;
 			goto cfg_link_end;
 		}
-	}
+		anar_reg_old = anar_reg;
 
-	if (adv_speeds & LINK_FULL_10BASE) {
-		anar_reg |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_10BASE) {
-		anar_reg |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	if (adv_speeds & LINK_FULL_100BASE) {
-		anar_reg |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_100BASE) {
-		anar_reg |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_HALF;
-	}
-
-	if (data->gigabit_supported) {
-		c1kt_reg_old = c1kt_reg;
-
-		if (adv_speeds & LINK_FULL_1000BASE) {
-			c1kt_reg |= MII_ADVERTISE_1000_FULL;
+		if (adv_speeds & LINK_FULL_10BASE) {
+			anar_reg |= MII_ADVERTISE_10_FULL;
 		} else {
-			c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
+			anar_reg &= ~MII_ADVERTISE_10_FULL;
 		}
 
-		if (adv_speeds & LINK_HALF_1000BASE) {
-			c1kt_reg |= MII_ADVERTISE_1000_HALF;
+		if (adv_speeds & LINK_HALF_10BASE) {
+			anar_reg |= MII_ADVERTISE_10_HALF;
 		} else {
-			c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
+			anar_reg &= ~MII_ADVERTISE_10_HALF;
 		}
 
-		if (c1kt_reg != c1kt_reg_old) {
-			if (phy_mii_reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
+		if (adv_speeds & LINK_FULL_100BASE) {
+			anar_reg |= MII_ADVERTISE_100_FULL;
+		} else {
+			anar_reg &= ~MII_ADVERTISE_100_FULL;
+		}
+
+		if (adv_speeds & LINK_HALF_100BASE) {
+			anar_reg |= MII_ADVERTISE_100_HALF;
+		} else {
+			anar_reg &= ~MII_ADVERTISE_100_HALF;
+		}
+
+		if (data->gigabit_supported) {
+			if (phy_mii_reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+				ret = -EIO;
+				goto cfg_link_end;
+			}
+			c1kt_reg_old = c1kt_reg;
+
+			if (adv_speeds & LINK_FULL_1000BASE) {
+				c1kt_reg |= MII_ADVERTISE_1000_FULL;
+			} else {
+				c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
+			}
+
+			if (adv_speeds & LINK_HALF_1000BASE) {
+				c1kt_reg |= MII_ADVERTISE_1000_HALF;
+			} else {
+				c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
+			}
+
+			if (c1kt_reg != c1kt_reg_old) {
+				if (phy_mii_reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
+					ret = -EIO;
+					goto cfg_link_end;
+				}
+
+				data->restart_autoneg = true;
+			}
+		}
+
+		if (anar_reg != anar_reg_old) {
+			if (phy_mii_reg_write(dev, MII_ANAR, anar_reg) < 0) {
 				ret = -EIO;
 				goto cfg_link_end;
 			}
 
 			data->restart_autoneg = true;
 		}
+
+		bmcr_reg |= MII_BMCR_AUTONEG_ENABLE;
 	}
 
-	if (anar_reg != anar_reg_old) {
-		if (phy_mii_reg_write(dev, MII_ANAR, anar_reg) < 0) {
+	if (bmcr_reg != bmcr_reg_old) {
+		if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
 			ret = -EIO;
 			goto cfg_link_end;
 		}
 
 		data->restart_autoneg = true;
-	}
-
-	if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
-		if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg | MII_BMCR_AUTONEG_ENABLE) < 0) {
-			ret = -EIO;
-			goto cfg_link_end;
-		}
 	}
 
 	if (data->restart_autoneg && data->state.is_up) {
