@@ -683,12 +683,6 @@ static int sreq_get_dev_qualifier(struct usbd_context *const uds_ctx,
 	struct usb_device_qualifier_descriptor q_desc = {
 		.bLength = sizeof(struct usb_device_qualifier_descriptor),
 		.bDescriptorType = USB_DESC_DEVICE_QUALIFIER,
-		.bcdUSB = d_desc->bcdUSB,
-		.bDeviceClass = d_desc->bDeviceClass,
-		.bDeviceSubClass = d_desc->bDeviceSubClass,
-		.bDeviceProtocol = d_desc->bDeviceProtocol,
-		.bMaxPacketSize0 = d_desc->bMaxPacketSize0,
-		.bNumConfigurations = d_desc->bNumConfigurations,
 		.bReserved = 0U,
 	};
 	size_t len;
@@ -702,6 +696,17 @@ static int sreq_get_dev_qualifier(struct usbd_context *const uds_ctx,
 		errno = -ENOTSUP;
 		return 0;
 	}
+
+	if (d_desc == NULL) {
+		return -EINVAL;
+	}
+
+	q_desc.bcdUSB = d_desc->bcdUSB;
+	q_desc.bDeviceClass = d_desc->bDeviceClass;
+	q_desc.bDeviceSubClass = d_desc->bDeviceSubClass;
+	q_desc.bDeviceProtocol = d_desc->bDeviceProtocol;
+	q_desc.bMaxPacketSize0 = d_desc->bMaxPacketSize0;
+	q_desc.bNumConfigurations = d_desc->bNumConfigurations;
 
 	LOG_DBG("Get Device Qualifier");
 	len = MIN(setup->wLength, net_buf_tailroom(buf));
