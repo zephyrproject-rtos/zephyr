@@ -18,30 +18,30 @@ static const struct device *rtc = DEVICE_DT_GET(DT_ALIAS(rtc));
 static const uint16_t alarms_count = DT_PROP(DT_ALIAS(rtc), alarms_count);
 static const uint16_t test_alarm_time_mask_set = CONFIG_TEST_RTC_ALARM_TIME_MASK;
 
-/* Fri Jan 01 2021 13:29:50 GMT+0000 */
+/* Tue Dec 31 2024 23:59:55 GMT+0000 */
 static const struct rtc_time test_rtc_time_set = {
-	.tm_sec = 50,
-	.tm_min = 29,
-	.tm_hour = 13,
-	.tm_mday = 1,
-	.tm_mon = 0,
-	.tm_year = 121,
-	.tm_wday = 5,
-	.tm_yday = 1,
+	.tm_sec = 55,
+	.tm_min = 59,
+	.tm_hour = 23,
+	.tm_mday = 31,
+	.tm_mon = 11,
+	.tm_year = 124,
+	.tm_wday = 2,
+	.tm_yday = 365,
 	.tm_isdst = -1,
 	.tm_nsec = 0,
 };
 
-/* Fri Jan 01 2021 13:30:00 GMT+0000 */
+/* Wed Jan 01 2025 00:00:05 GMT+0000 */
 static const struct rtc_time test_alarm_time_set = {
-	.tm_sec = 0,
-	.tm_min = 30,
-	.tm_hour = 13,
+	.tm_sec = 5,
+	.tm_min = 0,
+	.tm_hour = 0,
 	.tm_mday = 1,
 	.tm_mon = 0,
-	.tm_year = 121,
-	.tm_wday = 5,
-	.tm_yday = 1,
+	.tm_year = 125,
+	.tm_wday = 3,
+	.tm_yday = 0,
 	.tm_isdst = -1,
 	.tm_nsec = 0,
 };
