@@ -10,7 +10,7 @@ on:
       - "tests/bsim/**"
       - "boards/nordic/nrf5*/*dt*"
       - "dts/*/nordic/**"
-      - "tests/bluetooth/common/testlib/**"
+      - "tests/bluetooth/**"
       - "samples/bluetooth/**"
       - "boards/native/**"
       - "soc/native/**"
@@ -123,7 +123,7 @@ jobs:
           files: |
             samples/bluetooth/
             subsys/bluetooth/
-            tests/bluetooth/common/testlib/
+            tests/bluetooth/
             tests/bsim/bluetooth/
 
       - name: Check if Networking files changed
