@@ -968,16 +968,13 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 				z_log_links_activate(links_active_mask, &domain_offset);
 		}
 
-
-		if (log_process() == false) {
-			if (processed_any) {
-				processed_any = false;
-				log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
+		if (z_log_msg_pending() == true) {
+			while (log_process() == true) {
 			}
-			(void)k_sem_take(&log_process_thread_sem, timeout);
-		} else {
-			processed_any = true;
+			log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 		}
+
+		(void)k_sem_take(&log_process_thread_sem, timeout);
 	}
 }
 
