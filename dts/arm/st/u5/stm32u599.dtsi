@@ -1,11 +1,16 @@
 /*
  * Copyright (c) 2023 PSICONTROL nv
  * Copyright (c) 2025 Harris Tomy
+ * Copyright (c) 2025 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <st/u5/stm32u595.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <mem.h>
 
 / {
 	soc {
@@ -18,6 +23,19 @@
 			interrupt-names = "ltdc", "ltdc_er";
 			clocks = <&rcc STM32_CLOCK(APB2, 26)>;
 			resets = <&rctl STM32_RESET(APB2, 26)>;
+			status = "disabled";
+		};
+
+		xspi1: spi@420d3400 {
+			compatible = "st,stm32-xspi";
+			reg = <0x420d3400 0x400>,
+				<0xa0000000 DT_SIZE_M(256)>;
+			interrupts = <131 0>;
+			clock-names = "xspix", "xspi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB2_2, 12)>,
+					 <&rcc STM32_SRC_SYSCLK HSPI_SEL(0)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};
