@@ -79,7 +79,7 @@ struct llext_loader;
  */
 struct llext {
 	/** @cond ignore */
-	sys_snode_t _llext_list;
+	sys_snode_t llext_list;
 
 #ifdef CONFIG_USERSPACE
 	struct k_mem_partition mem_parts[LLEXT_MEM_PARTITIONS];
