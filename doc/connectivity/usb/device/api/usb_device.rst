@@ -1,7 +1,7 @@
 .. _usb_device_stack_api:
 
-USB device stack API
-####################
+USB device stack API (deprecated)
+#################################
 
 API reference
 *************
