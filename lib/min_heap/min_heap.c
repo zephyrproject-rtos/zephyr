@@ -71,13 +71,14 @@ static void heapify_down(struct min_heap *heap, size_t index)
 {
 	size_t left, right, smallest;
 
-	while (true) {
-		left = 2 * index + 1;
-		right = 2 * index + 2;
+	left = 2 * index + 1;
+
+	/* Terminate loop when the left child is out of bounds */
+	for (; left < heap->size; left = 2 * index + 1) {
+		right = left + 1;
 		smallest = index;
 
-		if (left < heap->size &&
-			heap->cmp(min_heap_get_element(heap, left),
+		if (heap->cmp(min_heap_get_element(heap, left),
 			min_heap_get_element(heap, smallest)) < 0) {
 			smallest = left;
 		}
