@@ -458,7 +458,7 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 					msg->msgData.dataReq.startTime =
 						PhyTime_ReadClock() + TX_ENCRYPT_DELAY_SYM;
 
-					hdr_time_us = mcxw_get_time(NULL) +
+					hdr_time_us = (mcxw_get_time(NULL) / NSEC_PER_USEC) +
 						    (TX_ENCRYPT_DELAY_SYM +
 						     IEEE802154_PHY_SHR_LEN_SYM) *
 							    IEEE802154_SYMBOL_TIME_US;
@@ -748,12 +748,12 @@ static void set_csl_sample_time(void)
 
 	macToPlmeMessage_t msg;
 	uint32_t csl_period = mcxw_ctx.csl_period * 10 * IEEE802154_SYMBOL_TIME_US;
-	uint32_t dt = mcxw_ctx.csl_sample_time - (uint32_t)mcxw_get_time(NULL);
+	uint32_t dt = mcxw_ctx.csl_sample_time - (uint32_t)(mcxw_get_time(NULL) / NSEC_PER_USEC);
 
 	/* next channel sample should be in the future */
 	while ((dt <= CMP_OVHD) || (dt > (CMP_OVHD + 2 * csl_period))) {
 		mcxw_ctx.csl_sample_time += csl_period;
-		dt = mcxw_ctx.csl_sample_time - (uint32_t)mcxw_get_time(NULL);
+		dt = mcxw_ctx.csl_sample_time - (uint32_t)(mcxw_get_time(NULL) / NSEC_PER_USEC);
 	}
 
 	/* The CSL sample time is in microseconds and PHY function expects also microseconds */
@@ -920,7 +920,7 @@ static net_time_t mcxw_get_time(const struct device *dev)
 
 	irq_unlock(key);
 
-	return (net_time_t)sw_timestamp;
+	return (net_time_t)sw_timestamp * NSEC_PER_USEC;
 }
 
 static void rf_set_tx_power(int8_t tx_power)
@@ -945,7 +945,7 @@ static uint64_t rf_adjust_tstamp_from_phy(uint64_t ts)
 	delta = (now >= ts) ? (now - ts) : ((PHY_TMR_MAX_VALUE + now) - ts);
 	delta *= IEEE802154_SYMBOL_TIME_US;
 
-	return mcxw_get_time(NULL) - delta;
+	return (mcxw_get_time(NULL) / NSEC_PER_USEC) - delta;
 }
 
 #if CONFIG_IEEE802154_CSL_ENDPOINT || CONFIG_NET_PKT_TXTIME
@@ -953,7 +953,7 @@ static uint32_t rf_adjust_tstamp_from_app(uint32_t time)
 {
 	/* The phy timestamp is in symbols so we need to convert it to microseconds */
 	uint64_t ts = PhyTime_ReadClock() * IEEE802154_SYMBOL_TIME_US;
-	uint32_t delta = time - (uint32_t)mcxw_get_time(NULL);
+	uint32_t delta = time - (uint32_t)(mcxw_get_time(NULL) / NSEC_PER_USEC);
 
 	return (uint32_t)(ts + delta);
 }
