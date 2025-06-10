@@ -120,6 +120,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 {
 	thread->switch_handle = init_stack(thread, (int *)stack_ptr, entry,
 					   p1, p2, p3);
+#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
+	memset(thread->arch.hifi_regs, 0, sizeof(thread->arch.hifi_regs));
+#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0, "");
 	__ASSERT((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0, "");
