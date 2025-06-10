@@ -60,3 +60,26 @@ void bt_id_pending_keys_update(void);
 void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag);
 
 void bt_id_adv_limited_stopped(struct bt_le_ext_adv *adv);
+
+/**
+ * @brief Check and update the resolving list for a given identity.
+ *
+ * This function checks if the resolving list contains the keys for the given
+ * identity and peer address. If the keys are not present, it adds them to the
+ * resolving list. If the keys are present, it checks for conflicts with
+ * existing keys in the resolving list. If a conflict is found, it replaces
+ * the conflicting key with the new key.
+ *
+ * If the peer address is NULL, it updates the resolving list for all keys that belong to the given
+ * identity.
+ *
+ * If for any of the keys belonging to the given identity a conflict is found and the advertiser for
+ * that key is enabled, the function returns an error.
+ *
+ * @param id The identity ID to check and update.
+ * @param peer The peer address to check against the resolving list.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ * @return -EPERM if a conflict is found and the advertiser for the conflicting key is enabled.
+ */
+int bt_id_resolving_list_check_and_update(uint8_t id, const bt_addr_le_t *peer);

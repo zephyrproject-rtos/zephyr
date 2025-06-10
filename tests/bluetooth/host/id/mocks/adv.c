@@ -15,3 +15,4 @@ DEFINE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable_legacy, struct bt_le_ext_adv *,
 DEFINE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable_ext, struct bt_le_ext_adv *, bool,
 		       const struct bt_le_ext_adv_start_param *);
 DEFINE_FAKE_VOID_FUNC(bt_le_ext_adv_foreach, bt_le_ext_adv_foreach_cb, void *);
+DEFINE_FAKE_VALUE_FUNC(struct bt_le_ext_adv *, bt_adv_lookup_by_id, uint8_t);
