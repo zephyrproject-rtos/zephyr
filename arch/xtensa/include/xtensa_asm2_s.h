@@ -17,7 +17,7 @@
  * only by the assembler.
  */
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 .extern _xtensa_hifi_save
 #endif
 
@@ -437,7 +437,7 @@ _xstack_returned_\@:
 	FPU_REG_SAVE
 #endif
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 	call0 _xtensa_hifi_save    /* Save HiFi registers */
 #endif
 
