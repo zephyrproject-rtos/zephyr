@@ -28,6 +28,7 @@ on:
       - "drivers/serial/*nrfx*"
       - "tests/drivers/uart/**"
       - '!**.rst'
+      - "tests/bluetooth/tester**"
 
 permissions:
   contents: read
