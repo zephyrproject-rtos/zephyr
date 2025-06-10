@@ -50,8 +50,8 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data,
 	PR("Statistics for Ethernet interface %p [%d]\n", iface,
 	       net_if_get_by_iface(iface));
 
-	PR("Bytes received   : %u\n", data->bytes.received);
-	PR("Bytes sent       : %u\n", data->bytes.sent);
+	PR("Bytes received   : %llu\n", data->bytes.received);
+	PR("Bytes sent       : %llu\n", data->bytes.sent);
 	PR("Packets received : %u\n", data->pkts.rx);
 	PR("Packets sent     : %u\n", data->pkts.tx);
 	PR("Bcast received   : %u\n", data->broadcast.rx);
@@ -315,13 +315,13 @@ static void print_tc_tx_stats(const struct shell *sh, struct net_if *iface)
 		net_stats_t count = GET_STAT(iface,
 					     tc.sent[i].tx_time.count);
 		if (count == 0) {
-			PR("[%d] %s (%u)\t%u\t\t%u\t-\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%llu\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes));
 		} else {
-			PR("[%d] %s (%u)\t%u\t\t%u\t%u us%s\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%llu\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
@@ -336,7 +336,7 @@ static void print_tc_tx_stats(const struct shell *sh, struct net_if *iface)
 	PR("TC  Priority\tSent pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
-		PR("[%d] %s (%u)\t%u\t\t%u\n", i,
+		PR("[%d] %s (%u)\t%u\t\t%llu\n", i,
 		   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 		   GET_STAT(iface, tc.sent[i].priority),
 		   GET_STAT(iface, tc.sent[i].pkts),
@@ -374,14 +374,14 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 		net_stats_t count = GET_STAT(iface,
 					     tc.recv[i].rx_time.count);
 		if (count == 0) {
-			PR("[%d] %s (%u)\t%u\t%u\t\t%u\t-\n", i,
+			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].dropped),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%u)\t%u\t%u\t\t%u\t%u us%s\n", i,
+			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
@@ -397,7 +397,7 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 	PR("TC  Priority\tRecv pkts\tDrop pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		PR("[%d] %s (%u)\t%u\t%u\t\t%u\n", i,
+		PR("[%d] %s (%u)\t%u\t%u\t\t%llu\n", i,
 		   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 		   GET_STAT(iface, tc.recv[i].priority),
 		   GET_STAT(iface, tc.recv[i].pkts),
@@ -533,7 +533,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
-	PR("TCP bytes recv %u\tsent\t%u\tresent\t%u\n",
+	PR("TCP bytes recv %llu\tsent\t%llu\tresent\t%u\n",
 	   GET_STAT(iface, tcp.bytes.received),
 	   GET_STAT(iface, tcp.bytes.sent),
 	   GET_STAT(iface, tcp.resent));
@@ -575,8 +575,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, pkt_filter.tx.drop));
 #endif /* CONFIG_NET_STATISTICS_DNS */
 
-	PR("Bytes received %u\n", GET_STAT(iface, bytes.received));
-	PR("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
+	PR("Bytes received %llu\n", GET_STAT(iface, bytes.received));
+	PR("Bytes sent     %llu\n", GET_STAT(iface, bytes.sent));
 	PR("Processing err %u\n", GET_STAT(iface, processing_error));
 
 	print_tc_tx_stats(sh, iface);
