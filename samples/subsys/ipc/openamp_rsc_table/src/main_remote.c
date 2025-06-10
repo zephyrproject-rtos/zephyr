@@ -75,7 +75,7 @@ static struct metal_io_region *shm_io = &shm_io_data;
 static struct metal_io_region *rsc_io = &rsc_io_data;
 static struct rpmsg_virtio_device rvdev;
 
-static struct fw_resource_table *rsc_table;
+static void *rsc_table;
 static struct rpmsg_device *rpdev;
 
 static char rx_sc_msg[20];  /* should receive "Hello world!" */
