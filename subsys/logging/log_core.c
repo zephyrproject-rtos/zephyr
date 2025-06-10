@@ -945,7 +945,6 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	 * If all backends are ready periodic wake up is not needed.
 	 */
 	k_timeout_t timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
-	bool processed_any = false;
 	thread_set(k_current_get());
 
 	/* Logging thread is periodically waken up until all backends that
