@@ -111,6 +111,8 @@ struct usbd_dfu_image {
  * @brief USB DFU device update API
  * @defgroup usbd_dfu USB DFU device update API
  * @ingroup usb
+ * @since 4.1
+ * @version 0.1.0
  * @{
  */
 
