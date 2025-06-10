@@ -16,3 +16,7 @@
 		spi-max-frequency = <16000000>;
 	};
 };
+
+&flexcomm1 {
+	interrupts = <36 1>;
+};
