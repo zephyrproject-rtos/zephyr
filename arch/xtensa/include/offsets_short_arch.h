@@ -41,4 +41,11 @@
 
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_XTENSA_LIBC
+
+#define _thread_offset_to_reent \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_reent_OFFSET)
+
+#endif /* CONFIG_XTENSA_LIBC */
+
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

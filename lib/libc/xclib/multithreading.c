@@ -8,6 +8,17 @@
 #include <stdlib.h>
 #include <sys/reent.h>
 
+#if !defined(CONFIG_XTENSA_LIBC_DYNAMIC_REENT)
+void _init_reent_bss(void);
+#endif
+
+void xtensa_xclib_init(void)
+{
+#if !defined(CONFIG_XTENSA_LIBC_DYNAMIC_REENT)
+	_init_reent_bss();
+#endif
+}
+
 int32_t _xclib_use_mt = 1; /* Enables xclib multithread support */
 
 typedef struct k_mutex *_Rmtx;
@@ -59,11 +70,9 @@ void _Mtxunlock(_Rmtx *mtx)
 	}
 }
 
-#if defined(__DYNAMIC_REENT__)
+#if defined(CONFIG_XTENSA_LIBC_DYNAMIC_REENT)
 struct _reent *__getreent(void)
 {
 	return &k_current_get()->arch.reent;
 }
-#else
-#error __DYNAMIC_REENT__ support missing
 #endif
