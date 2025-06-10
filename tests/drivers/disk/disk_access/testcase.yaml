@@ -44,3 +44,27 @@ tests:
     platform_allow:
       - native_sim/native/64
       - native_sim
+  drivers.disk.sdhc_spi.renesas_sci_b_spi:
+    depends_on: spi
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf boards/${BOARD}_sci_b_spi.conf"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  drivers.disk.sdhc_spi.renesas_sci_b_spi_ra8x2:
+    depends_on: spi
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.conf"
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
