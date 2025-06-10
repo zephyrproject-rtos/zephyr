@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if XTENSA_LIBC
+
+config XTENSA_LIBC_DYNAMIC_REENT
+	bool "Xtensa C library dynamic reentrancy support"
+	help
+	  Enable dynamic reentrancy support for the Xtensa C library (xclib).
+
+endif # XTENSA_LIBC

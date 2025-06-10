@@ -172,6 +172,7 @@ rsource "common/Kconfig"
 rsource "minimal/Kconfig"
 rsource "newlib/Kconfig"
 rsource "picolibc/Kconfig"
+rsource "xclib/Kconfig"
 
 config STDOUT_CONSOLE
 	bool "Send stdout to console"

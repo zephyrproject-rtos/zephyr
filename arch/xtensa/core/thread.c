@@ -29,6 +29,9 @@ Z_THREAD_LOCAL uint32_t is_user_mode;
 
 #if defined(CONFIG_XTENSA_LIBC)
 #include <sys/reent.h>
+#if !defined(CONFIG_XTENSA_LIBC_DYNAMIC_REENT)
+extern struct _reent *_reent_ptr;
+#endif
 #endif
 
 /**
