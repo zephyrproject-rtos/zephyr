@@ -59,22 +59,9 @@ struct fw_resource_table {
 void rsc_table_get(void **table_ptr, int *length);
 
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
-
-inline struct fw_rsc_vdev *rsc_table_to_vdev(void *rsc_table)
-{
-	return &((struct fw_resource_table *)rsc_table)->vdev;
-}
-
-inline struct fw_rsc_vdev_vring *rsc_table_get_vring0(void *rsc_table)
-{
-	return &((struct fw_resource_table *)rsc_table)->vring0;
-}
-
-inline struct fw_rsc_vdev_vring *rsc_table_get_vring1(void *rsc_table)
-{
-	return &((struct fw_resource_table *)rsc_table)->vring1;
-}
-
+struct fw_rsc_vdev *rsc_table_to_vdev(void *rsc_table);
+struct fw_rsc_vdev_vring *rsc_table_get_vring0(void *rsc_table);
+struct fw_rsc_vdev_vring *rsc_table_get_vring1(void *rsc_table);
 #endif
 
 #ifdef __cplusplus
