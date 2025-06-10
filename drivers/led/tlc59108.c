@@ -139,7 +139,7 @@ static int tlc59108_led_set_brightness(const struct device *dev, uint32_t led,
 	}
 
 	/* Set the LED brightness value */
-	val = (value * 255U) / LED_BRIGTHNESS_MAX;
+	val = (value * 255U) / LED_BRIGHTNESS_MAX;
 	if (i2c_reg_write_byte_dt(&config->i2c, TLC59108_PWM_BASE + led, val)) {
 		LOG_ERR("LED 0x%x reg write failed", TLC59108_PWM_BASE + led);
 		return -EIO;

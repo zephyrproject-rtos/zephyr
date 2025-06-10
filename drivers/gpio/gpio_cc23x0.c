@@ -180,7 +180,7 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 						 enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		return ENOTSUP;
+		return -ENOTSUP;
 	}
 
 	uint32_t config = GPIOGetConfigDio(IOC_ADDR(pin)) & ~IOC_IOC0_EDGEDET_M;
@@ -205,7 +205,7 @@ static int gpio_cc23x0xx_pin_interrupt_configure(const struct device *port, gpio
 			config |= IOC_IOC1_EDGEDET_EDGE_BOTH;
 			break;
 		default:
-			return ENOTSUP;
+			return -ENOTSUP;
 		}
 
 		GPIOSetConfigDio(IOC_ADDR(pin), config);

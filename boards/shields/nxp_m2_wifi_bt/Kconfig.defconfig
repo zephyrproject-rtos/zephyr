@@ -55,7 +55,34 @@ endif # WIFI
 
 endif # SHIELD_NXP_M2_2EL_WIFI_BT
 
-if (BT_NXP_IW416) || (BT_NXP_NW612) || (NXP_IW416) || (NXP_IW61X)
+if SHIELD_NXP_M2_2LL_WIFI_BT
+
+if BT
+
+choice BT_NXP_MODULE
+	default BT_NXP_IW610
+endchoice
+
+endif # BT
+
+if WIFI
+
+config WIFI_NXP
+	default y
+
+choice NXP_WIFI_PART
+	default NXP_IW610
+endchoice
+
+choice NXP_IW610_MODULE
+	default NXP_IW610_MURATA_2LL_M2
+endchoice
+
+endif # WIFI
+
+endif # SHIELD_NXP_M2_2LL_WIFI_BT
+
+if (BT_NXP_IW416) || (BT_NXP_NW612) || (BT_NXP_IW610) || (NXP_IW416) || (NXP_IW61X) || (NXP_IW610)
 
 if BT
 
