@@ -273,10 +273,12 @@ static int mcux_rgpio_manage_callback(const struct device *dev,
 static void mcux_rgpio_port_isr(const struct device *dev)
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct mcux_rgpio_config *config = dev->config;
 	struct mcux_rgpio_data *data = dev->data;
 	uint32_t int_flags;
 
 	int_flags = base->ISFR[0]; /* Notice: only irq0 is used for now */
+	int_flags &= config->common.port_pin_mask; /* don't handle unusable pin */
 	base->ISFR[0] = int_flags;
 
 	gpio_fire_callbacks(&data->callbacks, dev, int_flags);
