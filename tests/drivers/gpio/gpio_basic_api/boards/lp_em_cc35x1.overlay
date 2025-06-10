@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpios 27 0>; /* Pin 7 (SPI0_CLK) (&gpio0_31 27) */
+		in-gpios = <&gpios 29 0>; /* Pin 15 (SPI0_PICO) (&gpio0_31 29) */
+	};
+};
