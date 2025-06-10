@@ -61,6 +61,17 @@ tests:
     tags: bluetooth
     harness: bluetooth
     sysbuild: true
+  bluetooth.general.tester_le_audio_bsim:
+    build_only: true
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpuapp
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-le-audio.conf"
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bluetooth_tester_le_audio_prj_conf
+    sysbuild: true
   bluetooth.general.tester_mesh:
     build_only: true
     platform_allow:
