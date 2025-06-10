@@ -15,4 +15,8 @@
 		reg = <0>;
 		spi-max-frequency = <16000000>;
 	};
+
+	transfer-delay = <100>;
+	sck-pcs-delay = <200>;
+	pcs-sck-delay = <200>;
 };
