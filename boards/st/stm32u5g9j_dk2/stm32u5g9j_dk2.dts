@@ -21,6 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ltdc;
+		zephyr,touch = &gt911;
 	};
 
 	leds {
@@ -175,10 +176,17 @@
 };
 
 &i2c2 {
-	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpioe 5 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpiod 2 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &spi1 {
