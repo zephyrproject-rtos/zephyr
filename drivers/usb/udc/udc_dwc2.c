@@ -101,6 +101,7 @@ struct dwc2_reg_backup {
 
 /* Driver private data per instance */
 struct udc_dwc2_data {
+	struct k_spinlock lock;
 	struct k_thread thread_data;
 	/* Main events the driver thread waits for */
 	struct k_event drv_evt;
@@ -461,7 +462,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	uint32_t max_xfersize, max_pktcnt, pktcnt;
 	const uint32_t addnl = USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
 	const size_t d = sizeof(uint32_t);
-	unsigned int key;
+	k_spinlock_key_t key;
 	uint32_t len;
 	const bool is_periodic = dwc2_ep_is_periodic(cfg);
 	const bool is_iso = dwc2_ep_is_iso(cfg);
@@ -536,7 +537,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	priv->tx_len[ep_idx] = len;
 
 	/* Lock and write to endpoint FIFO */
-	key = irq_lock();
+	key = k_spin_lock(&priv->lock);
 
 	/* Set number of packets and transfer size */
 	sys_write32((is_periodic ? usb_dwc2_set_dieptsizn_mc(1 + addnl) : 0) |
@@ -548,7 +549,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 			/* Cannot continue unless buffer is bounced. Device will
 			 * cease to function. Is fatal error appropriate here?
 			 */
-			irq_unlock(key);
+			k_spin_unlock(&priv->lock, key);
 			return -ENOTSUP;
 		}
 
@@ -564,7 +565,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		 * no fifo is assigned to inactive endpoint and therefore it is
 		 * possible that the write will corrupt other endpoint fifo.
 		 */
-		irq_unlock(key);
+		k_spin_unlock(&priv->lock, key);
 		return -ENOENT;
 	}
 
@@ -614,7 +615,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		}
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&priv->lock, key);
 
 	return 0;
 }
