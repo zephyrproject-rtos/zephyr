@@ -82,3 +82,18 @@ tests:
   sample.filesystem.fat_fs.stm32h747i_disco_m7_sdmmc:
     build_only: true
     platform_allow: stm32h747i_disco/stm32h747xx/m7
+  sample.filesystem.fat_fs.renesas_sci_b_spi_has_sdmmc_disk:
+    filter: dt_compat_enabled("zephyr,sdmmc-disk") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
