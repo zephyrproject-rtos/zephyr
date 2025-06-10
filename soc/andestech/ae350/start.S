@@ -8,6 +8,18 @@
 
 #include <zephyr/toolchain.h>
 
+#if defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#else
+#define FLASH_LOAD_OFFSET 0
+#endif
+
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
+#else
+#define ROM_END_OFFSET 0
+#endif
+
 /* exports */
 GTEXT(entry)
 
@@ -15,6 +27,22 @@ SECTION_FUNC(init, entry)
 	/* Disable linker relaxation before GP register initialization. */
 	.option push
 	.option norelax
+
+#ifdef CONFIG_SOC_EGIS_ET171
+#if CONFIG_FLASH_LOAD_SIZE < 1
+#error Define CONFIG_FLASH_LOAD_SIZE
+#endif
+	j header_end
+	j header_end /* @TODO: use to align. ".align" 2 doesn't work */
+	.word 0x53494745 /* "EGIS" */
+	.word 0xaaaaaaaa /* version */
+	.word CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET /* address */
+	.word CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET - 64 /* 64 bytes for signature */
+	.word 0 /* unused */
+	.word 0 /* unused */
+
+header_end:
+#endif
 
 #ifdef CONFIG_SOC_ANDES_V5_EXECIT
 	/* Initialize EXECIT table */
