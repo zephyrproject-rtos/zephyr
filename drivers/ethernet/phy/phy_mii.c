@@ -194,20 +194,38 @@ static int update_link_state(const struct device *dev)
 		}
 	}
 
-	/**
-	 * Perform auto-negotiation sequence.
-	 */
-	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence",
-		cfg->phy_addr);
-
-	/* Configure and start auto-negotiation process */
 	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
 
-	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
+	if (!(bmcr_reg & MII_BMCR_AUTONEG_ENABLE)) {
+		enum phy_link_speed new_speed = phy_mii_get_link_speed_bmcr_reg(dev, bmcr_reg);
+
+		data->restart_autoneg = false;
+
+		if ((data->state.speed != new_speed) && data->state.is_up) {
+			data->state.speed = new_speed;
+
+			LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
+				cfg->phy_addr,
+				PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "1000" :
+				(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
+				PHY_LINK_IS_FULL_DUPLEX(data->state.speed) ? "full" : "half");
+
+			return 0;
+		}
+		return -EAGAIN;
+	}
+
+	/**
+	 * Perform auto-negotiation sequence.
+	 */
+	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
+
+	bmcr_reg |= MII_BMCR_AUTONEG_RESTART;
 	bmcr_reg &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
 
+	/* Configure and start auto-negotiation process */
 	if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
 		return -EIO;
 	}
@@ -366,37 +384,59 @@ static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_sp
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
-		ret = -EIO;
-		goto cfg_link_end;
-	}
+	if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0U) {
+		/* If auto-negotiation is disabled, only one speed can be selected.
+		 * If gigabit is not supported, this speed must not be 1000M.
+		 */
+		if (!data->gigabit_supported && PHY_LINK_IS_SPEED_1000M(adv_speeds)) {
+			LOG_ERR("PHY (%d) Gigabit not supported, can't configure link",
+				cfg->phy_addr);
+			ret = -ENOTSUP;
+			goto cfg_link_end;
+		}
 
-	if (data->gigabit_supported) {
-		ret = phy_mii_set_c1kt_reg(dev, adv_speeds);
+		ret = phy_mii_set_bmcr_reg_autoneg_disabled(dev, adv_speeds);
 		if (ret == -EALREADY) {
-			/* If the C1KT register is already set, we don't need to do anything */
+			/* If the BMCR register is already set, we don't need to do anything */
 			ret = 0;
 		} else if (ret < 0) {
 			goto cfg_link_end;
 		} else {
 			data->restart_autoneg = true;
 		}
-	}
-
-	ret = phy_mii_set_anar_reg(dev, adv_speeds);
-	if (ret == -EALREADY) {
-		/* If the ANAR register is already set, we don't need to do anything */
-		ret = 0;
-	} else if (ret < 0) {
-		goto cfg_link_end;
 	} else {
-		data->restart_autoneg = true;
-	}
+		ret = phy_mii_set_anar_reg(dev, adv_speeds);
+		if (ret == -EALREADY) {
+			/* If the ANAR register is already set, we don't need to do anything */
+			ret = 0;
+		} else if (ret < 0) {
+			goto cfg_link_end;
+		} else {
+			data->restart_autoneg = true;
+		}
 
-	if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
-		if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg | MII_BMCR_AUTONEG_ENABLE) < 0) {
+		if (data->gigabit_supported) {
+			ret = phy_mii_set_c1kt_reg(dev, adv_speeds);
+			if (ret == -EALREADY) {
+				/* If the C1KT register is already set, we don't need to do anything */
+				ret = 0;
+			} else if (ret < 0) {
+				goto cfg_link_end;
+			} else {
+				data->restart_autoneg = true;
+			}
+		}
+
+		if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 			ret = -EIO;
 			goto cfg_link_end;
+		}
+
+		if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
+			if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg | MII_BMCR_AUTONEG_ENABLE) < 0) {
+				ret = -EIO;
+				goto cfg_link_end;
+			}
 		}
 	}
 
