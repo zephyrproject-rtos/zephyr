@@ -297,6 +297,11 @@ bool rec_is_valid(const struct dns_sd_rec *inst)
 	;
 }
 
+bool dns_sd_rec_is_valid(const struct dns_sd_rec *rec)
+{
+	return rec_is_valid(rec);
+}
+
 int add_a_record(const struct dns_sd_rec *inst, uint32_t ttl,
 		 uint16_t host_offset, uint32_t addr, uint8_t *buf,
 		 uint16_t buf_offset, uint16_t buf_size)
