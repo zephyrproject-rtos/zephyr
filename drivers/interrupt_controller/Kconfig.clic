@@ -55,6 +55,7 @@ config CLIC_PARAMETER_INTCTLBITS
 config CLIC_PARAMETER_MNLBITS
 	int "The number of bits in CLICINTCTLBITS to encode the interrupt level"
 	range 0 CLIC_PARAMETER_INTCTLBITS
+	default CLIC_PARAMETER_INTCTLBITS if CLIC_SUPPORT_INTERRUPT_PREEMPTION
 	default 0
 	help
 	  This option specifies the number of bits in CLICINTCTLBITS assigned to
@@ -72,5 +73,16 @@ config LEGACY_CLIC
 	help
 	  Enables legacy clic, where smclicshv extension is not supported and
 	  hardware vectoring is set via mode bits of mtvec.
+
+config CLIC_SUPPORT_INTERRUPT_PREEMPTION
+	bool "Support for nested interrupts in CLIC"
+	default y if NUCLEI_ECLIC
+	depends on CLIC
+	help
+	  Enables support for nested interrupts in the Core Local Interrupt Controller,
+	  allowing higher priority interrupts to preempt the execution of lower priority
+	  interrupt handlers. Note that preemption is on CLIC only supported for level-based
+	  interrupts. If CLIC_SUPPORT_INTERRUPT_PREEMPTION is enabled, zephyr irq priority are treated as CLIC
+	  irq levels.
 
 endif # CLIC
