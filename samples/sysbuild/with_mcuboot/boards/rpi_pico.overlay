@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Beechwoods Software Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &code_partition;
+
+#include <raspberrypi/partitions_2M_sysbuild.dtsi>
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
