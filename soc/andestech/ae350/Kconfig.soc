@@ -5,16 +5,24 @@ config SOC_SERIES_ANDES_AE350
 	bool
 	select SOC_FAMILY_ANDES_V5
 	help
-	  Andes V5 AE350 SoC Series Implementation"
+	  Andes V5 AE350 SoC Series Implementation
 
 config SOC_ANDES_AE350
 	bool
 	select SOC_SERIES_ANDES_AE350
 	help
-	  Andes AE350 SoC implementation"
+	  Andes AE350 SoC implementation
+
+config SOC_EGIS_ET171
+	bool
+	select SOC_SERIES_ANDES_AE350
+	select SOC_EARLY_INIT_HOOK
+	help
+	  Egis ET171 SoC implementation"
 
 config SOC_SERIES
 	default "ae350" if SOC_SERIES_ANDES_AE350
 
 config SOC
 	default "ae350" if SOC_ANDES_AE350
+	default "et171" if SOC_EGIS_ET171

@@ -1,0 +1,78 @@
+CONFIG_XIP=n
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+CONFIG_FLASH_BASE_ADDRESS=0x80000000
+
+# Serial driver options
+CONFIG_SERIAL=y
+
+# GPIO driver options
+CONFIG_GPIO=y
+
+# Syscon driver options
+CONFIG_SYSCON=y
+
+# hwinfo driver options
+CONFIG_HWINFO=y
+CONFIG_HWINFO_ANDES=y
+
+# RV64 options
+#CONFIG_RV64I_CPU=y
+
+# FPU (single precision) options
+#CONFIG_FPU=y
+#CONFIG_FPU_SHARING=y
+#CONFIG_FLOAT_HARD=y
+#CONFIG_SINGLE_PRECISION_FPU=y
+
+# FPU (double precision) options
+#CONFIG_FPU=y
+#CONFIG_FPU_SHARING=y
+#CONFIG_FLOAT_HARD=y
+#CONFIG_DOUBLE_PRECISION_FPU=y
+
+# SRAM size KB
+CONFIG_SRAM_SIZE=384
+
+# PMP options
+#CONFIG_PMP_GRANULARITY=8
+
+# SMP options
+#CONFIG_SMP=y
+#CONFIG_MP_MAX_NUM_CPUS=$(cores_num)
+
+# HW DSP options
+#CONFIG_SOC_ANDES_V5_HWDSP=y
+
+# EXEC.IT options
+#CONFIG_SOC_ANDES_V5_EXECIT=y
+
+# Hardware Stack Protect options
+#CONFIG_SOC_ANDES_V5_HSP=y
+
+# IRQ affinity options
+#CONFIG_IRQ_CPU_MASK=y
+
+# Cache options
+#CONFIG_CACHE_ENABLE=y
+
+# Cache operation API options
+#CONFIG_CACHE_MANAGEMENT=y
+
+# Nocache memory options
+#CONFIG_SOC_ANDES_V5_PMA=y
+#CONFIG_NOCACHE_MEMORY=y
+
+# PLMT clock cycle presecond
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=18000000
+
+# I/O Coherence Port options
+#CONFIG_SOC_ANDES_V5_IOCP=y
+
+# Thread Local Storage options
+#CONFIG_TOOLCHAIN_CROSS_COMPILE_SUPPORTS_THREAD_LOCAL_STORAGE=y
+
+# Andes Extra FLAGS options
+#CONFIG_ANDES_V5_EXTRA_CFLAGS="$(extra_cflag)"
+#CONFIG_ANDES_V5_EXTRA_LDFLAGS="$(extra_ldflag)"
