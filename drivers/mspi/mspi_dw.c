@@ -16,7 +16,6 @@
 #include <zephyr/sys/util.h>
 
 #include "mspi_dw.h"
-#include "mspi_dw_vendor_specific.h"
 
 LOG_MODULE_REGISTER(mspi_dw, CONFIG_MSPI_LOG_LEVEL);
 
@@ -115,6 +114,8 @@ DEFINE_MM_REG_WR(xip_write_incr_inst,	0x140)
 DEFINE_MM_REG_WR(xip_write_wrap_inst,	0x144)
 DEFINE_MM_REG_WR(xip_write_ctrl,	0x148)
 #endif
+
+#include "mspi_dw_vendor_specific.h"
 
 static void tx_data(const struct device *dev,
 		    const struct mspi_xfer_packet *packet)
