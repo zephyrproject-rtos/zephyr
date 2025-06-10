@@ -127,6 +127,56 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 	}
 
 	boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_SSL_HIGH_STREAMING)) {
+		boot_config->feature_bit_map |= SL_SI91X_FEAT_SSL_HIGH_STREAMING_BIT;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_SNTP_CLIENT)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_SNTP_CLIENT;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_HTTP_CLIENT)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_HTTP_CLIENT;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_PING)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MDNS_RESPONDER)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_MDNSD;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_DNS_CLIENT)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DNS_CLIENT;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENABLE_TLS)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_SSL;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENABLE_SINGLE_TLS_SOCKET)) {
+		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_SINGLE_SSL_SOCKET;
+	}
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_SOCKETS
+	boot_config->tcp_ip_feature_bit_map |=
+	    SL_SI91X_TCP_IP_TOTAL_SOCKETS(CONFIG_WIFI_SILABS_SIWX91X_TOTAL_SOCKETS);
+#endif
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MQTT_CLIENT)) {
+		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_EMB_MQTT_ENABLE;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENABLE_THREE_SSL_SOCKETS)) {
+		boot_config->ext_tcp_ip_feature_bit_map |=
+			SL_SI91X_EXT_TCP_IP_FEAT_SSL_THREE_SOCKETS;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENABLE_SSL_16K_RECORD)) {
+		boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_SSL_16K_RECORD;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_SSL_MEMORY_CLOUD)) {
+		boot_config->ext_tcp_ip_feature_bit_map |=
+			SL_SI91X_EXT_TCP_IP_FEAT_SSL_MEMORY_CLOUD;
+	}
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_SOCKET_SELECT
+	boot_config->ext_tcp_ip_feature_bit_map |=
+		SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(CONFIG_WIFI_SILABS_SIWX91X_SOCKET_SELECT_COUNT);
+#endif
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_SSL_VERSIONS_SUPPORT)) {
+		boot_config->ext_custom_feature_bit_map |=
+			SL_SI91X_EXT_FEAT_SSL_VERSIONS_SUPPORT;
+	}
 	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
 	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
 

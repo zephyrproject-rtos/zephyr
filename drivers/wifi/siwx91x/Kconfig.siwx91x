@@ -71,6 +71,157 @@ config WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA
 	  would be buffered when the STA is in Power Save (PS) mode.
 	  This helps manage buffer usage and ensures efficient packet handling.
 
+config WIFI_SILABS_SIWX91X_SNTP_CLIENT
+	bool "Offloaded implementation of SNTP client"
+	help
+	  Enable this option to allow to use the SNTP (Simple Network Time
+	  protocol) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_sntp.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_HTTP_CLIENT
+	bool "Offloaded implementation of HTTP client"
+	help
+	  Enable this option to allow to use the HTTP (hypertext transfer
+	  protocol) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_http_client.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_MQTT_CLIENT
+	bool "Offloaded implementation of MQTT client"
+	help
+	  Enable this option to allow to use the MQTT(Message Queuing Telemetry
+	  Transport) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_mqtt_client.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_PING
+	bool "Offloaded implementation of ICMP client"
+	help
+	  Enable this option to allow to use the MQTT(Internet Control Message
+	  Protocol) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_net_ping.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_WEBSOCKET_CLIENT
+	bool "Offloaded implementation of Websocket client"
+	help
+	  Enable this option to allow to use the Websocket client implementation
+	  provided by the Network Co-Processor present on SiWx91x series. This
+	  implementation usually require less resources than the Zephyr one.
+	  See also sl_websocket_client.h in Silabs HAL for more information
+	  about the API.
+
+config WIFI_SILABS_SIWX91X_MDNS_RESPONDER
+	bool "Offloaded implementation of MDNS responder"
+	help
+	  Enable this option to allow to use the MDNS(Multicast Domain Name
+	  System) implementation provided by the Network Co-Processor present
+	  on SiWx91x series. This implementation usually require less resources
+	  than the Zephyr one. See also sl_mdns.h in Silabs HAL for more
+	  information about the API.
+
+config WIFI_SILABS_SIWX91X_DNS_CLIENT
+	bool "Offloaded implementation of DNS client"
+	help
+	  Enable this option to allow to use the DNS(Domain Name System)
+	  implementation provided by the Network Co-Processor present on
+	  SiWx91x series. This implementation usually require less
+	  resources than the Zephyr one. See also sl_net_dns.h in Silabs
+	  HAL for more information about the API.
+
+config WIFI_SILABS_SIWX91X_ENABLE_TLS
+	bool "Offloaded implementation of TLS"
+	help
+	  Enable this option to allow to use the TLS(Transport layer Security)
+	  implementation over the network provided by the Network Co-Processor
+	  present on SiWx91x series. This implementation usually require less
+	  resources than the Zephyr one.
+
+config WIFI_SILABS_SIWX91X_ENABLE_SINGLE_TLS_SOCKET
+	bool "Offloaded implementation of single TLS socket"
+	depends on WIFI_SILABS_SIWX91X_ENABLE_TLS
+	help
+	  Enable this option to allow to use the single TLS socket
+	  implementation over the network provided by the Network
+	  Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_ENABLE_THREE_SSL_SOCKETS
+	bool "Offloaded implementation of 3 SSL/TLS sockets"
+	help
+	  Enable this option to support up to three SSL socket implementations
+	  over the network, utilizing the Network Co-Processor available in
+	  the SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_SSL_HIGH_STREAMING
+	bool "Offloaded implementation for SSL/TLS high speed"
+	help
+	  Enable this option to achieve high-throughput SSL/TLS streaming,
+	  This implementation is provided by the Network Co-Processor present
+	  on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_SSL_VERSIONS_SUPPORT
+	bool "Offloaded implementation of SSL/TLS multiple versions support"
+	help
+	  Enable this option to allow the device to support multiple versions
+	  of SSL/TLS over TCP, providing flexibility in handling different
+	  SSL/TLS versions.This implementation is provided by the Network
+	  Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_ENABLE_SSL_16K_RECORD
+	bool "Offloaded implementation to support SSL 16K record"
+	help
+	  Enable this option to support for 16K SSL record sizes, which improves
+	  performance for SSL connections that use larger record sizes. This
+	  implementation is provided by the Network Co-Processor present on
+	  SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_SSL_MEMORY_CLOUD
+	bool "Offloaded implementation for the SSL/TLS cloud connections"
+	help
+	  Enable this option to allocate additional memory for SSL/TLS
+	  connections, typically required for connections to cloud servers,
+	  to avoid handshake failure.This implementation is provided by the
+	  Network Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_SOCKET_SELECT
+	bool "Offloaded implementation for socket select"
+	help
+	  Enable this option for the configuration of socket select
+	  implementation over the network provided by the Network
+	  Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_SOCKET_SELECT_COUNT
+	int "Offloaded implementation of select"
+	default 10
+	range 1 10
+	depends on WIFI_SILABS_SIWX91X_SOCKET_SELECT
+	help
+	  Configure this option for the number of select operations the
+	  device can handle, with a maximum value of 10. This implementation
+	  is provided by the Network Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_SOCKETS
+	bool "Offloaded implementation to configure sockets"
+	help
+	  Enable this option to configure the number of sockets in SiWx91x.
+	  over the network .This implementation is provided by the Network
+	  Co-Processor present on SiWx91x series.
+
+config WIFI_SILABS_SIWX91X_TOTAL_SOCKETS
+	int "Offloaded implementation for maximum number of sockets"
+	default 10
+	range 1 10
+	depends on WIFI_SILABS_SIWX91X_SOCKETS
+	help
+	  Configure this option for total number of sockets to use. A maximum
+	  of 10 sockets are allowed to use. This implementation is provided
+	  by the Network Co-Processor present on SiWx91x series.
+
 config WIFI_SILABS_SIWX91X_ENABLE_ROAMING
 	bool "WiFi roaming support"
 	default y
