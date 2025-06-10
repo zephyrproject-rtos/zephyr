@@ -91,7 +91,7 @@
 # define _BSA_PADDING_FPU		(0)
 #endif
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 # define _BSA_PADDING_HIFI		(XCHAL_CP1_SA_SIZE + XCHAL_CP1_SA_ALIGN)
 #else
 # define _BSA_PADDING_HIFI		(0)
@@ -173,7 +173,7 @@ struct xtensa_irq_base_save_area {
 	uintptr_t fpu15;
 #endif
 
-#if defined(CONFIG_XTENSA_HIFI_SHARING)
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 
 	/*
 	 * Carve space for the registers used by the HiFi audio engine
