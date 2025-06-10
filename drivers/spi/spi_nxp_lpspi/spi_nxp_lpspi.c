@@ -112,17 +112,16 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev, const uint8_t *b
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	uint8_t word_size = lpspi_data->word_size_bytes;
-	size_t buf_remaining_bytes = buf_len * word_size;
 	size_t offset = 0;
 	uint32_t next_word;
 	uint32_t next_word_bytes;
 
 	for (int word_count = 0; word_count < fill_len; word_count++) {
-		next_word_bytes = MIN(word_size, buf_remaining_bytes);
+		next_word_bytes = MIN(word_size, buf_len);
 		next_word = lpspi_next_tx_word(dev, buf, offset, next_word_bytes);
 		base->TDR = next_word;
 		offset += word_size;
-		buf_remaining_bytes -= word_size;
+		buf_len -= word_size;
 	}
 
 	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", fill_len, offset);
