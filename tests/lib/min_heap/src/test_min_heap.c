@@ -76,7 +76,7 @@ static void validate_heap_order_gt(struct min_heap *h)
 
 	while (h->size > 0) {
 		ret = min_heap_pop(h, &temp);
-		zassert_true(ret == true, "pop failure");
+		zassert_true(ret, "pop failure");
 		memcpy(&result[idx++], &temp, sizeof(struct data));
 	}
 
@@ -97,7 +97,7 @@ static void validate_heap_order_ls(struct min_heap *h)
 
 	while (h->size > 0) {
 		ret = min_heap_pop(h, &temp);
-		zassert_true(ret == true, "pop failure");
+		zassert_true(ret, "pop failure");
 		memcpy(&result[idx++], &temp, sizeof(struct data));
 	}
 
@@ -149,8 +149,8 @@ ZTEST(min_heap_api, test_peek_and_pop)
 	peek_key = peek->key;
 	min_heap_pop(&runtime_heap, &pop);
 
-	zassert_true(peek_key == pop.key, "Peek/pop error");
-	zassert_true(pop.key == LOWEST_PRIORITY_LS, "heap error %d", pop.key);
+	zassert_equal(peek_key, pop.key, "Peek/pop error");
+	zassert_equal(pop.key, LOWEST_PRIORITY_LS, "heap error %d", pop.key);
 	validate_heap_order_ls(&runtime_heap);
 }
 
@@ -170,10 +170,10 @@ ZTEST(min_heap_api, test_find_and_remove)
 
 	found = min_heap_find(&my_heap, match_key, &target_key, &index);
 
-	zassert_true(found != NULL, "min_heap_find failure");
+	zassert_not_null(found, "min_heap_find failure");
 	min_heap_remove(&my_heap, index, &removed);
 	validate_heap_order_ls(&my_heap);
-	zassert_true(min_heap_is_empty(&my_heap) != false, "Empty check fail");
+	zassert_true(min_heap_is_empty(&my_heap), "Empty check fail");
 }
 
 ZTEST_SUITE(min_heap_api, NULL, NULL, NULL, NULL, NULL);
