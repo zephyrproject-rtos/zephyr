@@ -262,6 +262,15 @@
 				channel = <0>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci1: sci1@40358100 {
@@ -281,6 +290,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <1>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <1>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -304,6 +322,15 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci3: sci3@40358300 {
@@ -323,6 +350,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <3>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -346,6 +382,15 @@
 				channel = <4>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <4>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci5: sci5@40358500 {
@@ -365,6 +410,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <5>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <5>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -388,6 +442,15 @@
 				channel = <6>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <6>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci7: sci7@40358700 {
@@ -407,6 +470,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <7>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <7>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -430,6 +502,15 @@
 				channel = <8>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <8>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci9: sci9@40358900 {
@@ -449,6 +530,15 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				channel = <9>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci-b";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <9>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
