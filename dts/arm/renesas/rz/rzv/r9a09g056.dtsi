@@ -36,6 +36,130 @@
 			compatible = "renesas,rzv-pinctrl";
 			reg = <0x40410000 DT_SIZE_K(64)>;
 			reg-names = "pinctrl";
+
+			gpio: gpio-common {
+				compatible = "renesas,rz-gpio-int";
+				interrupts =
+					<353 10>, <354 10>, <355 10>, <356 10>,
+					<357 10>, <358 10>, <359 10>, <360 10>,
+					<361 10>, <362 10>, <363 10>, <364 10>,
+					<365 10>, <366 10>, <367 10>, <368 10>,
+					<369 10>, <370 10>, <371 10>, <372 10>,
+					<373 10>, <374 10>, <375 10>, <376 10>,
+					<377 10>, <378 10>, <379 10>, <380 10>,
+					<381 10>, <382 10>, <383 10>, <384 10>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				gpio0: gpio@0 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x0>;
+					status = "disabled";
+				};
+
+				gpio1: gpio@100 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <6>;
+					reg = <0x100>;
+					status = "disabled";
+				};
+
+				gpio2: gpio@200 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <2>;
+					reg = <0x200>;
+					status = "disabled";
+				};
+
+				gpio3: gpio@300 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x300>;
+					status = "disabled";
+				};
+
+				gpio4: gpio@400 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x400>;
+					status = "disabled";
+				};
+
+				gpio5: gpio@500 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x500>;
+					status = "disabled";
+				};
+
+				gpio6: gpio@600 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x600>;
+					status = "disabled";
+				};
+
+				gpio7: gpio@700 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x700>;
+					status = "disabled";
+				};
+
+				gpio8: gpio@800 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x800>;
+					status = "disabled";
+				};
+
+				gpio9: gpio@900 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0x900>;
+					status = "disabled";
+				};
+
+				gpio10: gpio@a00 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					reg = <0xa00>;
+					status = "disabled";
+				};
+
+				gpio11: gpio@b00 {
+					compatible = "renesas,rz-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <6>;
+					reg = <0xb00>;
+					status = "disabled";
+				};
+			};
 		};
 
 		sci0: sci0@42800c00 {
