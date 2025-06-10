@@ -12,3 +12,12 @@ tests:
     tags: sdhc
     integration_platforms:
       - mimxrt1064_evk
+  drivers.sdhc.sdhc_api.renesas_ra_sci_b_spi:
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
