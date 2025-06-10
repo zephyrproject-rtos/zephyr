@@ -67,6 +67,15 @@
 				<10  0 &gpio4 5 0>,	/* Pin 10, LCD backlight control */
 				<11  0 &gpio4 7 0>;	/* Pin 11, LCD and touch reset */
 	};
+
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map =	<DVP_20PIN_PEN 0 &gpio1 19 0>,
+				<DVP_20PIN_PDN 0 &gpio1 18 0>;
+	};
 };
 
 &flexcomm1_lpspi1 {
@@ -281,21 +290,6 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 &sc_timer {
 	pinctrl-0 = <&pinmux_sctimer>;
 	pinctrl-names = "default";
-};
-
-/*
- * Connection with camera modules such as the dvp_20pin_ov7670 shield
- */
-
-/ {
-	dvp_20pin_connector: dvp-20pin-connector {
-		compatible = "arducam,dvp-20pin-connector";
-		#gpio-cells = <2>;
-		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
-		gpio-map =	<DVP_20PIN_PEN 0 &gpio1 19 0>,
-				<DVP_20PIN_PDN 0 &gpio1 18 0>;
-	};
 };
 
 dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
