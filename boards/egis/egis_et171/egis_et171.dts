@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2025 Egis Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <egis/egis_et171.dtsi>
+
+/ {
+	model = "Egis ET171C";
+	compatible = "egis,egis_et171";
+
+	aliases {
+		watchdog0 = &wdt;
+		gpio-0 = &gpio0;
+		counter-0 = &pit0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram;
+		zephyr,flash = &flash0;
+	};
+
+	flash0:flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_K(1024)>;
+	};
+};
+
+&plic0 {
+	status = "okay";
+};
+
+&l2_cache {
+	status = "okay";
+};
+
+&syscon {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	clock-frequency = <18037518>;
+	current-speed = <38400>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt {
+	status = "okay";
+};
