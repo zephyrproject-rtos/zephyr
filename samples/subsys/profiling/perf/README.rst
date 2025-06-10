@@ -62,7 +62,7 @@ Usage example
 
   .. code-block:: shell
 
-     python scripts/perf/stackcollapse.py perf_buf build/zephyr/zephyr.elf | <flamegraph_dir_path>/flamegraph.pl > graph.svg
+     python scripts/profiling/stackcollapse.py perf_buf build/zephyr/zephyr.elf | <flamegraph_dir_path>/flamegraph.pl > graph.svg
 
 Graph example
 =============
