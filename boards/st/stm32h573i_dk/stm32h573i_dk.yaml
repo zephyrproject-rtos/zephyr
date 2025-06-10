@@ -8,6 +8,9 @@ ram: 640
 flash: 2048
 supported:
   - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - gpio
   - uart
   - watchdog
