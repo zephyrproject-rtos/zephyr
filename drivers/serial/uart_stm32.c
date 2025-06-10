@@ -1806,11 +1806,21 @@ static void uart_stm32_async_rx_timeout(struct k_work *work)
 
 	LOG_DBG("rx timeout");
 
+	/* The DMA is still active and could trigger an interrupt
+	 * while we are processing this timeout, which could cause
+	 * data corruption when the DMA ISR modifies shared data
+	 * as we are operating on it. Prevent data race with ISR by
+	 * masking all interrupts until we're done.
+	 */
+	unsigned int key = irq_lock();
+
 	if (data->dma_rx.counter == data->dma_rx.buffer_length) {
 		uart_stm32_async_rx_disable(dev);
 	} else {
 		uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
 	}
+
+	irq_unlock(key);
 }
 
 static void uart_stm32_async_tx_timeout(struct k_work *work)
