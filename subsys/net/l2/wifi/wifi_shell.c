@@ -1147,6 +1147,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'g':
 			params->ignore_broadcast_ssid = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
@@ -2101,6 +2104,10 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			params->setup.twt_mantissa = (uint16_t)value;
 			break;
 
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+
 		case 'h':
 			return -ENOEXEC;
 		}
@@ -2411,6 +2418,9 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			params->type |= WIFI_AP_CONFIG_PARAM_VHT_CAPAB;
 			break;
 #endif
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		case 'h':
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -2506,6 +2516,9 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			break;
 		case 'v':
 			verbose = true;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			return -ENOEXEC;
@@ -3217,6 +3230,9 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 		case 's':
 			strncpy(params->auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3254,6 +3270,9 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 		case 'f':
 			params->chirp.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3290,6 +3309,9 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'f':
 			params->listen.freq = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3336,6 +3358,9 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 		case 'a':
 			ret = net_bytes_from_str(params->bootstrap_gen.mac,
 						 WIFI_MAC_ADDR_LEN, state->optarg);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3395,6 +3420,9 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 			break;
 		case 's':
 			strncpy(params->configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3679,6 +3707,9 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 		switch (opt) {
 		case 'p':
 			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
