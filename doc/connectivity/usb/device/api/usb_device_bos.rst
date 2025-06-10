@@ -1,7 +1,7 @@
 .. _usb_bos_api:
 
-Binary Device Object Store (BOS) support API
-############################################
+Binary Device Object Store (BOS) support API (deprecated)
+#########################################################
 
 API reference
 *************

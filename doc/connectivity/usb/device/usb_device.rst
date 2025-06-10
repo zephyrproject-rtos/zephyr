@@ -1,7 +1,7 @@
 .. _usb_device_stack:
 
-USB device support
-##################
+USB device support (deprecated)
+###############################
 
 .. contents::
     :local:
@@ -26,10 +26,9 @@ over time. It provides the following functionalities:
   :zephyr_file:`include/zephyr/usb/usb_device.h`
 
 .. note::
-   It is planned to deprecate all APIs listed in :ref:`usb_api` and the
-   functions that depend on them between Zephyr v4.1.0 and v4.2.0, and remove
-   them in v4.4.0. The new USB device support, represented by the APIs in
-   :ref:`usb_device_next_api`, will become the default in Zephyr v4.2.0.
+   All APIs listed in :ref:`usb_api` and the functions that depend on them are
+   deprecated and will be remove in v4.4.0. Please use the new USB device
+   support represented by the APIs in :ref:`usb_device_next_api`.
 
 Supported USB classes
 *********************
