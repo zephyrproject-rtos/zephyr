@@ -1,0 +1,19 @@
+common:
+  harness: net
+  tags:
+    - net
+    - openthread
+  depends_on: openthread
+sample:
+  description: Test Wi-Fi and IEEE 802.15.4 using the OpenThread Border Router
+  name: OpenThread Border Router
+tests:
+  sample.net.openthread.border_router.rw612_openthread_rcp_host:
+    build_only: true
+    extra_args:
+      # Disabling monolithic since CI environment doesn't use blobs
+      - CONFIG_NXP_MONOLITHIC_NBU=n
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-wifi-nxp.conf"
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
