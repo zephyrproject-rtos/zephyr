@@ -822,13 +822,20 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	if (default_conn == conn) {
 		struct bt_conn_info info;
+		int err;
 		enum bt_conn_type conn_type = BT_CONN_TYPE_LE;
 
 		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 			conn_type |= BT_CONN_TYPE_BR;
 		}
 
-		bt_conn_get_info(conn, &info);
+		err = bt_conn_get_info(conn, &info);
+		if (err != 0) {
+			bt_shell_error("Failed to get connection info (err %d)", err);
+			__ASSERT_NO_MSG(false);
+			return;
+		}
+
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
