@@ -22,5 +22,11 @@ config SOC_R9A09G057H44GBG_CM33
 	help
 	  RZ/V2H CM33
 
+config SOC_R9A09G057H44GBG_CR8
+	bool
+	select SOC_R9A09G057H44GBG
+	help
+	  RZ/V2H CR8
+
 config SOC
 	default "r9a09g057h44gbg" if SOC_R9A09G057H44GBG
