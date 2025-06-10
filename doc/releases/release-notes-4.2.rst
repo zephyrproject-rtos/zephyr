@@ -189,6 +189,7 @@ New APIs and options
   * Wi-Fi
 
     * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
+    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
 
 * Power management
 
