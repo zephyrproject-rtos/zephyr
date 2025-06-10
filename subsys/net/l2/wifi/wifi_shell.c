@@ -3919,7 +3919,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[-h --channel <channel>]\n"
 		      "[-a --mac <mac_addr>]\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_btstrap_gen, 1, 2),
+		      cmd_wifi_dpp_btstrap_gen, 1, 10),
 	SHELL_CMD_ARG(btstrap_get_uri, NULL,
 		      " Get DPP bootstrap uri by id:\n"
 		      "<bootstrap_id>\n"
@@ -3955,7 +3955,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      " AP Input QR code:\n"
 		      "<qr_code_string>\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_ap_qr_code, 3, 2),
+		      cmd_wifi_dpp_ap_qr_code, 2, 2),
 	SHELL_CMD_ARG(ap_auth_init, NULL,
 		      "AP DPP start auth request as enrollee:\n"
 		      "-p --peer <peer_bootstrap_id>\n"
