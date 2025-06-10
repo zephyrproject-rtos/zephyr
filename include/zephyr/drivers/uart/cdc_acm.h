@@ -34,6 +34,8 @@ typedef void (*cdc_dte_rate_callback_t)(const struct device *dev,
 /**
  * @brief Set the callback for dwDTERate SetLineCoding requests.
  *
+ * @deprecated Use @ref usbd_api and @ref USBD_MSG_CDC_ACM_LINE_CODING instead.
+ *
  * The callback is invoked when the USB host changes the baud rate.
  *
  * @note This function is available only when
@@ -44,7 +46,7 @@ typedef void (*cdc_dte_rate_callback_t)(const struct device *dev,
  *
  * @return	    0 on success.
  */
-int cdc_acm_dte_rate_callback_set(const struct device *dev,
+__deprecated int cdc_acm_dte_rate_callback_set(const struct device *dev,
 				  cdc_dte_rate_callback_t callback);
 
 #ifdef __cplusplus
