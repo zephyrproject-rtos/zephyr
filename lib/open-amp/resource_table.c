@@ -80,11 +80,11 @@ static struct fw_resource_table __resource resource_table = {
 #endif
 };
 
-void rsc_table_get(struct fw_resource_table **table_ptr, int *length)
+void rsc_table_get(void **table_ptr, int *length)
 {
 	*length = sizeof(resource_table);
 #ifdef CONFIG_OPENAMP_COPY_RSC_TABLE
-	*table_ptr = (struct fw_resource_table *)RSC_TABLE_ADDR;
+	*table_ptr = (void *)RSC_TABLE_ADDR;
 	memcpy(*table_ptr, &resource_table, *length);
 #else
 	*table_ptr = &resource_table;
