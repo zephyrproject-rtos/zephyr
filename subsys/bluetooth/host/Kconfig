@@ -658,6 +658,24 @@ config BT_ID_UNPAIR_MATCHING_BONDS
 	  link-layer. The Host does not have control over this acknowledgment,
 	  and the order of distribution is fixed by the specification.
 
+config BT_ID_AUTO_SWAP_MATCHING_BONDS
+	bool "Automatically swap conflicting entries in the Resolving List"
+	depends on !BT_ID_UNPAIR_MATCHING_BONDS
+	depends on BT_PRIVACY && BT_PERIPHERAL && !BT_CENTRAL
+	help
+	  If this option is enabled, the Host will not add a new bond with
+	  the same peer address (or IRK) to the Resolving List if there is
+	  already a bond with the same peer address (or IRK) on another local
+	  identity.
+
+	  In case of Peripheral, the Host will swap the existing entry in the
+	  Resolving List with the new one, so that the new bond will be used for
+	  address resolution for the new local identity if the device starts
+	  advertising with the new local identity.
+
+	  Important: this option is supported exclusively in the Peripheral
+	  role. Excluding the Central role.
+
 config BT_ID_ALLOW_UNAUTH_OVERWRITE
 	bool "Allow unauthenticated pairing with same peer with other local identity"
 	depends on !BT_SMP_ALLOW_UNAUTH_OVERWRITE

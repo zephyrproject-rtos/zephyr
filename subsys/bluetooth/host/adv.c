@@ -235,6 +235,25 @@ struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle)
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
+struct bt_le_ext_adv *bt_adv_lookup_by_id(uint8_t id)
+{
+#if defined(CONFIG_BT_EXT_ADV)
+	for (size_t i = 0; i < ARRAY_SIZE(adv_pool); i++) {
+		if (atomic_test_bit(adv_pool[i].flags, BT_ADV_CREATED) &&
+		    adv_pool[i].id == id) {
+			return &adv_pool[i];
+		}
+	}
+#else
+	if (atomic_test_bit(bt_dev.adv.flags, BT_ADV_CREATED) && bt_dev.adv.id == id) {
+		return &bt_dev.adv;
+	}
+#endif
+
+	return NULL;
+}
+
+
 void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 			   void *data)
 {
@@ -928,6 +947,14 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 	adv->id = param->id;
 	bt_dev.adv_conn_id = adv->id;
 
+	if (IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS)) {
+		err = bt_id_resolving_list_check_and_update(adv->id, param->peer);
+		if (err) {
+			LOG_ERR("Failed to check and update resolving list: %d", err);
+			return err;
+		}
+	}
+
 	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
 				     &set_param.own_addr_type);
 	if (err) {
@@ -1223,6 +1250,15 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 	}
 
 	adv->id = param->id;
+
+	if (IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS)) {
+		err = bt_id_resolving_list_check_and_update(adv->id, param->peer);
+		if (err) {
+			LOG_ERR("Failed to check and update resolving list: %d", err);
+			return err;
+		}
+	}
+
 	err = le_ext_adv_param_set(adv, param, sd != NULL);
 	if (err) {
 		return err;
@@ -1611,6 +1647,22 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS)) {
+		const bt_addr_le_t *peer;
+
+		if (bt_addr_le_eq(&adv->target_addr, BT_ADDR_LE_ANY)) {
+			peer = NULL;
+		} else {
+			peer = &adv->target_addr;
+		}
+
+		err = bt_id_resolving_list_check_and_update(adv->id, peer);
+		if (err) {
+			LOG_ERR("Failed to check and update resolving list: %d", err);
+			return err;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&

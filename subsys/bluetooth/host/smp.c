@@ -910,7 +910,7 @@ static void smp_br_id_add_replace(struct bt_keys *keys)
 		bt_id_del(keys);
 	}
 
-	conflict = bt_id_find_conflict(keys);
+	conflict = bt_id_find_conflict(keys, false);
 	if (conflict != NULL) {
 		int err;
 
@@ -920,7 +920,7 @@ static void smp_br_id_add_replace(struct bt_keys *keys)
 		__ASSERT_NO_MSG(!err);
 	}
 
-	__ASSERT_NO_MSG(!bt_id_find_conflict(keys));
+	__ASSERT_NO_MSG(!bt_id_find_conflict(keys, false));
 	bt_id_add(keys);
 }
 
@@ -4096,14 +4096,22 @@ static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
 	 */
 	__ASSERT_NO_MSG(!(smp->remote_dist & BT_SMP_DIST_ID_KEY));
 
-	conflict = bt_id_find_conflict(new_bond);
+	conflict = bt_id_find_conflict(new_bond, IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS));
 	if (conflict) {
 		LOG_DBG("New bond conflicts with a bond on id %d.", conflict->id);
 	}
 
-	if (conflict && !IS_ENABLED(CONFIG_BT_ID_UNPAIR_MATCHING_BONDS)) {
+	if (conflict && !IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS) &&
+	    !IS_ENABLED(CONFIG_BT_ID_UNPAIR_MATCHING_BONDS)) {
 		LOG_WRN("Refusing new pairing. The old bond must be unpaired first.");
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
+	}
+
+	if (conflict && IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS)) {
+		LOG_WRN("Conflict detected with %p. Don't add key to Resolve List.", conflict);
+		new_bond->flags |= BT_KEYS_ID_CONFLICT;
+		conflict->flags |= BT_KEYS_ID_CONFLICT;
+		return 0;
 	}
 
 	if (conflict && IS_ENABLED(CONFIG_BT_ID_UNPAIR_MATCHING_BONDS)) {
@@ -4122,7 +4130,7 @@ static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
 		__ASSERT_NO_MSG(!unpair_err);
 	}
 
-	__ASSERT_NO_MSG(!bt_id_find_conflict(new_bond));
+	__ASSERT_NO_MSG(!bt_id_find_conflict(new_bond, false));
 	bt_id_add(new_bond);
 	return 0;
 }

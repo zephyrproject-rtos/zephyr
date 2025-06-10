@@ -310,14 +310,55 @@ void bt_keys_add_type(struct bt_keys *keys, enum bt_keys_type type)
 	keys->keys |= type;
 }
 
+static void add_id_cb(struct k_work *work)
+{
+	bt_id_pending_keys_update();
+}
+
+static K_WORK_DEFINE(add_id_work, add_id_cb);
+
 void bt_keys_clear(struct bt_keys *keys)
 {
+	struct bt_keys *conflict = NULL;
+
 	__ASSERT_NO_MSG(keys != NULL);
 
 	LOG_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
 
+	if (IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS) &&
+	    (keys->flags & BT_KEYS_ID_CONFLICT) != 0) {
+		/* We need to check how many conflicting keys left. If there is only one conflicting
+		 * key left, we can remove the BT_KEYS_ID_CONFLICT flag from it so that Host don't
+		 * need to check and update the Resolving List whenever this is needed. The key
+		 * should be re-added to the Resolving List.
+		 */
+		bool found_multiple;
+
+		found_multiple = bt_id_find_conflict_multiple(keys, &conflict);
+		if (conflict) {
+			if (found_multiple || (conflict->state & BT_KEYS_ID_ADDED) != 0) {
+				/* If we found multiple conflicting keys or the conflicting key
+				 * is already added to the ID list, we don't need to clear the
+				 * conflict flag for it and re-add it to the Resolving List.
+				 */
+				conflict = NULL;
+			} else {
+				/* Clear the conflict flag for the conflicting key */
+				conflict->flags &= ~BT_KEYS_ID_CONFLICT;
+			}
+		}
+	}
+
 	if (keys->state & BT_KEYS_ID_ADDED) {
 		bt_id_del(keys);
+	}
+
+	if (conflict) {
+		/* Re-add the conflicting key to the Resolving List if it was the last conflicting
+		 * key.
+		 */
+		bt_id_pending_keys_update_set(conflict, BT_KEYS_ID_PENDING_ADD);
+		k_work_submit(&add_id_work);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
@@ -345,6 +386,28 @@ int bt_keys_store(struct bt_keys *keys)
 	LOG_DBG("Stored keys for %s", bt_addr_le_str(&keys->addr));
 
 	return 0;
+}
+
+static void check_and_set_id_conflict_flag(struct bt_keys *keys)
+{
+	struct bt_keys *conflict;
+
+	if (!IS_ENABLED(CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS)) {
+		/* If auto-swap is not enabled, we don't need to check for conflicts */
+		return;
+	}
+
+	/* Use bt_id_find_conflict() to check if there are any conflicting keys for the given keys.
+	 * If there is at least one, set the BT_KEYS_ID_CONFLICT flag for both the keys and the
+	 * conflicting key.
+	 */
+	conflict = bt_id_find_conflict(keys, true);
+	if (conflict != NULL) {
+		LOG_DBG("Found conflicting key %p.", conflict);
+
+		keys->flags |= BT_KEYS_ID_CONFLICT;
+		conflict->flags |= BT_KEYS_ID_CONFLICT;
+	}
 }
 
 static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
@@ -427,6 +490,8 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		memcpy(keys->storage_start, val, len);
 	}
 
+	check_and_set_id_conflict_flag(keys);
+
 	LOG_DBG("Successfully restored keys for %s", bt_addr_le_str(&addr));
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (aging_counter_val < keys->aging_counter) {
@@ -436,16 +501,16 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
-static void add_id_cb(struct k_work *work)
-{
-	bt_id_pending_keys_update();
-}
-
-static K_WORK_DEFINE(add_id_work, add_id_cb);
-
 static void id_add(struct bt_keys *keys, void *user_data)
 {
 	__ASSERT_NO_MSG(keys != NULL);
+
+	if (keys->flags & BT_KEYS_ID_CONFLICT) {
+		/* If the keys have the conflict flag set, we don't want to add them to the ID list,
+		 * as this will cause issues with resolving list.
+		 */
+		return;
+	}
 
 	bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
 	k_work_submit(&add_id_work);

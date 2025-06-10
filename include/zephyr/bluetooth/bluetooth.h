@@ -1370,6 +1370,10 @@ struct bt_le_per_adv_param {
  *                       This error code is only guaranteed when using Zephyr
  *                       controller, for other controllers code returned in
  *                       this case may be -EIO.
+ * @return -EPERM When @kconfig{CONFIG_BT_PRIVACY} and
+ *                @kconfig{CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS} are enabled and connectable
+ *                advertising is requested, and the given local identity has a conflicting
+ *                key with another local identity for which advertising is already started.
  */
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
@@ -1497,6 +1501,12 @@ struct bt_le_ext_adv_start_param {
  *
  * @param adv    Advertising set object.
  * @param param  Advertise start parameters.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ * @return -EPERM When @kconfig{CONFIG_BT_PRIVACY} and
+ *                @kconfig{CONFIG_BT_ID_AUTO_SWAP_MATCHING_BONDS} are enabled and connectable
+ *                advertising is requested, and the given local identity has a conflicting
+ *                key with another local identity for which advertising is already started.
  */
 int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			const struct bt_le_ext_adv_start_param *param);
