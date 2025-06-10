@@ -66,22 +66,76 @@ enum pm_device_flag {
 
 /** @brief Device power states. */
 enum pm_device_state {
-	/** Device is in active or regular state. */
+	/**
+	 * @brief Device hardware is powered, and the device is needed by the system.
+	 *
+	 * @details The device should be enabled in this state. Any device driver API
+	 * may be called in this state.
+	 */
 	PM_DEVICE_STATE_ACTIVE,
 	/**
-	 * Device is suspended.
+	 * @brief Device hardware is powered, but the device is not needed by the
+	 * system.
 	 *
-	 * @note
-	 *     Device context may be lost.
+	 * @details The device should be put into its lowest internal power state,
+	 * commonly named "disabled" or "stopped".
+	 *
+	 * If a device has been specified as this device's power domain, and said
+	 * device is no longer needed by the system, this device will be
+	 * transitioned into the @ref PM_DEVICE_STATE_OFF state, followed by the
+	 * power domain device being transitioned to the
+	 * @ref PM_DEVICE_STATE_SUSPENDED state.
+	 *
+	 * A device driver may be deinitialized in this state. Once the device
+	 * driver has been deinitialized, we implicitly move to the
+	 * @ref PM_DEVICE_STATE_OFF state as the device hardware may lose power,
+	 * with no device driver to respond to the corresponding
+	 * @ref PM_DEVICE_ACTION_TURN_OFF action.
+	 *
+	 * @note This state is NOT a "low-power"/"partially operable" state,
+	 * those are configured using device driver specific APIs, and apply only
+	 * while the device is in the @ref PM_DEVICE_STATE_ACTIVE state.
 	 */
 	PM_DEVICE_STATE_SUSPENDED,
-	/** Device is being suspended. */
+	/**
+	 * @brief Device hardware is powered, but the device has been scheduled to
+	 * be suspended, as it is no longer needed by the system.
+	 *
+	 * @details This state is used when delegating suspension of a device to
+	 * the PM subsystem, optionally with residency to avoid unnecessary
+	 * suspend/resume cycles, resulting from a call to
+	 * @ref pm_device_runtime_put_async. The device will be unscheduled in case
+	 * the device becomes needed by the system.
+	 *
+	 * No device driver API calls must occur in this state.
+	 *
+	 * @note that this state is opaque to the device driver (no
+	 * @ref pm_device_action is called as this state is entered) and is used
+	 * solely by PM_DEVICE_RUNTIME.
+	 */
 	PM_DEVICE_STATE_SUSPENDING,
 	/**
-	 * Device is turned off (power removed).
+	 * @brief Device hardware is not powered. This is the initial state from
+	 * which a device driver is initialized.
 	 *
-	 * @note
-	 *     Device context is lost.
+	 * @details When a device driver is initialized, we do not know the state
+	 * of the device. As a result, the @ref PM_DEVICE_ACTION_TURN_ON action
+	 * should be able to transition the device from any internal state into
+	 * @ref PM_DEVICE_STATE_SUSPENDED, since no guarantees can be made across
+	 * resets. This is typically achieved through toggling a reset pin or
+	 * triggering a software reset through a register write before performing
+	 * any additional configuration needed to meet the requirements of
+	 * @ref PM_DEVICE_STATE_SUSPENDED. For devices where this is not possible,
+	 * the device driver must presume the device is in either the
+	 * @ref PM_DEVICE_STATE_OFF or @ref PM_DEVICE_STATE_SUSPENDED state at
+	 * time of initialization, as these are the states within which device
+	 * drivers may be deinitialized.
+	 *
+	 * If a device has been specified as this device's power domain, and said
+	 * device becomes needed by the system, the power domain device will be
+	 * transitioned into the @ref PM_DEVICE_STATE_ACTIVE state, followed by this
+	 * device being transitioned to the
+	 * @ref PM_DEVICE_STATE_SUSPENDED state.
 	 */
 	PM_DEVICE_STATE_OFF
 };
