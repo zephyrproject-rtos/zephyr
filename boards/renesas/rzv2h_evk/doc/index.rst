@@ -74,8 +74,8 @@ LED
 * LED5 (yelow) = P0_0
 * LED6 (yelow) = P0_1
 
-Programming and Debugging (M33)
-*******************************
+Programming and Debugging (M33/R8)
+**********************************
 
 .. zephyr:board-supported-runners::
 
@@ -85,21 +85,30 @@ documented in :ref:`build_an_application`.
 Console
 =======
 
-The UART port for Cortex-M33 System Core can be accessed by connecting `Pmod USBUART <https://store.digilentinc.com/pmod-usbuart-usb-to-uart-interface/>`_
+The UART port for Cortex-M33/Cortex-R8 System Core can be accessed by connecting `Pmod USBUART <https://store.digilentinc.com/pmod-usbuart-usb-to-uart-interface/>`_
 to the upper side of ``PMOD Type 3A``.
 
 Debugging
 =========
 
 It is possible to load and execute a Zephyr application binary on
-this board on the Cortex-M33 System Core from
+this board on the Cortex-M33/Cortex-R8 System Core from
 the internal SRAM, using ``JLink`` debugger (:ref:`jlink-debug-host-tools`).
 
 Here is an example for building and debugging with the :zephyr:code-sample:`hello_world` application.
 
+**CM33:**
+
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: rzv2h_evk/r9a09g057h44gbg/cm33
+   :goals: build debug
+
+**CR8:**
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rzv2h_evk/r9a09g057h44gbg/cr8_0
    :goals: build debug
 
 Flashing
@@ -107,7 +116,7 @@ Flashing
 
 RZ/V2H-EVK is designed to start different systems on different cores.
 It uses Yocto as the build system to build Linux system and boot loaders
-to run Zephyr on Cortex-M33 with u-boot. The minimal steps are described below.
+to run Zephyr on Cortex-M33/Cortex-R8 with u-boot. The minimal steps are described below.
 
 1. Download Multi-OS Package from the `RZ/V2H Easy Download Guide`_
 
@@ -172,7 +181,9 @@ The below necessary artifacts will be located in the build/tmp/deploy/image
 
 8. Hit any key within 3 sec to stop autoboot.
 
-9. Carry out the following setup of u-boot to kick CM33 Core.
+9. Carry out the following setup of u-boot to kick CM33/CR8 Core.
+
+**CM33:**
 
 .. code-block:: console
 
@@ -190,6 +201,27 @@ The below necessary artifacts will be located in the build/tmp/deploy/image
    => dcache on'
    => saveenv
    => run cm33start
+
+**CR8:**
+
+.. code-block:: console
+
+   => setenv cr8start 'dcache off
+   => mw.l 0x10420D24 0x04000000
+   => mw.l 0x10420600 0xE000E000
+   => mw.l 0x10420604 0x00030003
+   => mw.l 0x10420908 0x1FFF0000
+   => mw.l 0x10420C44 0x003F0000
+   => mw.l 0x10420C14 0x00000000
+   => mw.l 0x10420908 0x10001000
+   => mw.l 0x10420C48 0x00000020
+   => mw.l 0x10420908 0x1FFF1FFF
+   => mw.l 0x10420C48 0x00000000
+   => ext4load mmc 0:2 0x12040000 boot/zephyr.bin
+   => mw.l 0x10420C14 0x00000003
+   => dcache on'
+   => saveenv
+   => run cr8start
 
 References
 **********
