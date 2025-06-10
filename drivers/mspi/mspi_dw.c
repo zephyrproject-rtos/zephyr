@@ -101,6 +101,7 @@ DEFINE_MM_REG_RD(rxflr,		0x24)
 DEFINE_MM_REG_RD(sr,		0x28)
 DEFINE_MM_REG_WR(imr,		0x2c)
 DEFINE_MM_REG_RD(isr,		0x30)
+DEFINE_MM_REG_RD(risr,		0x34)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
 
@@ -275,6 +276,11 @@ static void mspi_dw_isr(const struct device *dev)
 		do {
 			if (int_status & ISR_RXFIS_BIT) {
 				if (read_rx_fifo(dev, packet)) {
+					finished = true;
+					break;
+				}
+
+				if (read_risr(dev) & RISR_RXOIR_BIT) {
 					finished = true;
 					break;
 				}
@@ -977,7 +983,11 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	write_imr(dev, imr);
 
 	rc = k_sem_take(&dev_data->finished, timeout);
-	if (rc < 0) {
+	if (read_risr(dev) & RISR_RXOIR_BIT) {
+		LOG_ERR("RX FIFO overflow occurred");
+		rc = -EIO;
+	} else if (rc < 0) {
+		LOG_ERR("Transfer timed out");
 		rc = -ETIMEDOUT;
 	}
 
