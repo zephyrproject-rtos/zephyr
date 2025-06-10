@@ -66,6 +66,11 @@ int usbd_device_set_bcd_usb(struct usbd_context *const uds_ctx,
 	}
 
 	desc = get_device_descriptor(uds_ctx, speed);
+	if (desc == NULL) {
+		ret = -EINVAL;
+		goto set_bcd_exit;
+	}
+
 	desc->bcdUSB = sys_cpu_to_le16(bcd);
 
 set_bcd_exit:
@@ -167,6 +172,11 @@ int usbd_device_set_code_triple(struct usbd_context *const uds_ctx,
 	}
 
 	desc = get_device_descriptor(uds_ctx, speed);
+	if (desc == NULL) {
+		ret = -EINVAL;
+		goto set_code_triple_exit;
+	}
+
 	desc->bDeviceClass = base_class;
 	desc->bDeviceSubClass = subclass;
 	desc->bDeviceProtocol = protocol;
