@@ -18,7 +18,8 @@ typedef void (*bt_le_ext_adv_foreach_cb)(struct bt_le_ext_adv *adv, void *data);
 	FAKE(bt_le_adv_lookup_legacy)                                                              \
 	FAKE(bt_le_ext_adv_get_index)                                                              \
 	FAKE(bt_le_adv_set_enable_ext)                                                             \
-	FAKE(bt_le_ext_adv_foreach)
+	FAKE(bt_le_ext_adv_foreach)                                                                \
+	FAKE(bt_adv_lookup_by_id)
 
 DECLARE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable, struct bt_le_ext_adv *, bool);
 DECLARE_FAKE_VALUE_FUNC(struct bt_le_ext_adv *, bt_le_adv_lookup_legacy);
@@ -27,3 +28,4 @@ DECLARE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable_legacy, struct bt_le_ext_adv *
 DECLARE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable_ext, struct bt_le_ext_adv *, bool,
 			const struct bt_le_ext_adv_start_param *);
 DECLARE_FAKE_VOID_FUNC(bt_le_ext_adv_foreach, bt_le_ext_adv_foreach_cb, void *);
+DECLARE_FAKE_VALUE_FUNC(struct bt_le_ext_adv *, bt_adv_lookup_by_id, uint8_t);
