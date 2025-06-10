@@ -91,5 +91,8 @@ GEN_OFFSET_SYM(_thread_arch_t, mpu_map);
 #endif
 #endif
 
+#ifdef CONFIG_XTENSA_LIBC
+GEN_OFFSET_SYM(_thread_arch_t, reent);
+#endif
 
 GEN_ABS_SYM_END
