@@ -1,7 +1,7 @@
 .. _usb_api:
 
-USB device support APIs
-#######################
+USB device support APIs (deprecated)
+####################################
 
 .. toctree::
    :maxdepth: 1
