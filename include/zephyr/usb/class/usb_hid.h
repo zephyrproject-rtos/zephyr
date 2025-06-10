@@ -62,18 +62,22 @@ struct hid_ops {
 /**
  * @brief Register HID device
  *
+ * @deprecated Use @ref usbd_hid_device instead.
+ *
  * @param[in]  dev          Pointer to USB HID device
  * @param[in]  desc         Pointer to HID report descriptor
  * @param[in]  size         Size of HID report descriptor
  * @param[in]  op           Pointer to USB HID device interrupt struct
  */
-void usb_hid_register_device(const struct device *dev,
+__deprecated void usb_hid_register_device(const struct device *dev,
 			     const uint8_t *desc,
 			     size_t size,
 			     const struct hid_ops *op);
 
 /**
  * @brief Write to USB HID interrupt endpoint buffer
+ *
+ * @deprecated Use @ref usbd_hid_device instead.
  *
  * @param[in]  dev          Pointer to USB HID device
  * @param[in]  data         Pointer to data buffer
@@ -82,13 +86,15 @@ void usb_hid_register_device(const struct device *dev,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int hid_int_ep_write(const struct device *dev,
+__deprecated int hid_int_ep_write(const struct device *dev,
 		     const uint8_t *data,
 		     uint32_t data_len,
 		     uint32_t *bytes_ret);
 
 /**
  * @brief Read from USB HID interrupt endpoint buffer
+ *
+ * @deprecated Use @ref usbd_hid_device instead.
  *
  * @param[in]  dev          Pointer to USB HID device
  * @param[in]  data         Pointer to data buffer
@@ -99,13 +105,15 @@ int hid_int_ep_write(const struct device *dev,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int hid_int_ep_read(const struct device *dev,
+__deprecated int hid_int_ep_read(const struct device *dev,
 		    uint8_t *data,
 		    uint32_t max_data_len,
 		    uint32_t *ret_bytes);
 
 /**
  * @brief Set USB HID class Protocol Code
+ *
+ * @deprecated Use @ref usbd_hid_device instead.
  *
  * @details Should be called before usb_hid_init().
  *
@@ -114,16 +122,18 @@ int hid_int_ep_read(const struct device *dev,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_hid_set_proto_code(const struct device *dev, uint8_t proto_code);
+__deprecated int usb_hid_set_proto_code(const struct device *dev, uint8_t proto_code);
 
 /**
  * @brief Initialize USB HID class support
+ *
+ * @deprecated Use @ref usbd_hid_device instead.
  *
  * @param[in]  dev          Pointer to USB HID device
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_hid_init(const struct device *dev);
+__deprecated int usb_hid_init(const struct device *dev);
 
 /**
  * @}
