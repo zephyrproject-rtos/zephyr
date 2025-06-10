@@ -65,6 +65,15 @@
 			};
 		};
 
+		manual_flash_1k: manual-flash-1k@f010a6 {
+			compatible = "ite,it51xxx-manual-flash-1k";
+			reg = <0x00f010a6 0x5a
+			       0x00f01000 0xa6>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
 		sram0: memory@800000 {
 			compatible = "mmio-sram";
 			reg = <0x800000 DT_SIZE_K(128)>;
