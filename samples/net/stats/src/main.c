@@ -99,7 +99,7 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
-	printk("TCP bytes recv %u\tsent\t%u\n",
+	printk("TCP bytes recv %llu\tsent\t%llu\n",
 	       GET_STAT(iface, tcp.bytes.received),
 	       GET_STAT(iface, tcp.bytes.sent));
 	printk("TCP seg recv   %u\tsent\t%u\tdrop\t%u\n",
@@ -119,8 +119,8 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 	       GET_STAT(iface, tcp.connrst));
 #endif
 
-	printk("Bytes received %u\n", GET_STAT(iface, bytes.received));
-	printk("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
+	printk("Bytes received %llu\n", GET_STAT(iface, bytes.received));
+	printk("Bytes sent     %llu\n", GET_STAT(iface, bytes.sent));
 	printk("Processing err %u\n", GET_STAT(iface, processing_error));
 }
 
@@ -141,8 +141,8 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data)
 	printk("Statistics for Ethernet interface %p [%d]\n", iface,
 	       net_if_get_by_iface(iface));
 
-	printk("Bytes received   : %u\n", data->bytes.received);
-	printk("Bytes sent       : %u\n", data->bytes.sent);
+	printk("Bytes received   : %llu\n", data->bytes.received);
+	printk("Bytes sent       : %llu\n", data->bytes.sent);
 	printk("Packets received : %u\n", data->pkts.rx);
 	printk("Packets sent     : %u\n", data->pkts.tx);
 	printk("Bcast received   : %u\n", data->broadcast.rx);
