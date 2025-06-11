@@ -272,20 +272,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_input_cmds,
 #ifdef CONFIG_INPUT_EVENT_DUMP
 	SHELL_CMD_ARG(dump, NULL,
-		      "Enable event dumping\n"
-		      "usage: dump <on|off>",
+		      SHELL_HELP("Enable event dumping", "<on|off>"),
 		      input_cmd_dump, 2, 0),
 #endif /* CONFIG_INPUT_EVENT_DUMP */
 #ifdef CONFIG_INPUT_SHELL_KBD_MATRIX_STATE
 	SHELL_CMD_ARG(kbd_matrix_state_dump, &dsub_device_name,
-		      "Print the state of a keyboard matrix device each time a "
-		      "key is pressed or released\n"
-		      "usage: kbd_matrix_state_dump <device>|off",
+		      SHELL_HELP("Print the state of a keyboard matrix device each time a "
+				 "key is pressed or released", "<device>|off"),
 		      input_cmd_kbd_matrix_state_dump, 2, 0),
 #endif /* CONFIG_INPUT_SHELL_KBD_MATRIX_STATE */
 	SHELL_CMD_ARG(report, NULL,
-		      "Trigger an input report event\n"
-		      "usage: report <type> <code> <value> [<sync>]",
+		      SHELL_HELP("Trigger an input report event", "<type> <code> <value> [sync]"),
 		      input_cmd_report, 4, 1),
 	SHELL_SUBCMD_SET_END);
 
