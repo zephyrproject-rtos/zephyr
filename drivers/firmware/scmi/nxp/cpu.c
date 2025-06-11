@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/firmware/scmi/nxp/cpu.h>
+#include <zephyr/kernel.h>
 
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL);
 
@@ -14,6 +15,7 @@ int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg)
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_CPU_DOMAIN);
 	struct scmi_message msg, reply;
 	int status, ret;
+	bool use_polling;
 
 	/* sanity checks */
 	if (!proto || !cfg) {
@@ -33,7 +35,12 @@ int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg)
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply);
+	/* Set the PM-related scmi api to use poll mode to ensure that
+	 * the CPU is not woken up by unnecessary scmi interrupts
+	 */
+	use_polling = true;
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
