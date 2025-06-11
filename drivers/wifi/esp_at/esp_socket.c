@@ -194,8 +194,29 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 	 * net_context and socket mutex claims matches the TX code path. Failure
 	 * to do so can lead to deadlocks.
 	 */
+	/* In the close path, we will meet deadlock in the scenario:
+	 * 1. on_cmd_ipd/esp_socket_rx invokes esp_socket_ref_from_link_id
+	 *    and increments refcount.
+	 * 2. zvfs_close/esp_put locks cond.lock.
+	 * 3. zvfs_close/esp_put waits on sem_free.
+	 * 4. on_cmd_ipd/esp_socket_rx waits on cond.lock before esp_socket_unref.
+	 * 5. sem_free waits on esp_socket_unref for refcount reaching zero.
+	 */
 	if (sock->context->cond.lock) {
-		k_mutex_lock(sock->context->cond.lock, K_FOREVER);
+		int ret = -EAGAIN;
+
+		/*
+		 * If the socket is closing, we can ignore the packet and won't
+		 * trap in deadlock.
+		 */
+		while (atomic_get(&sock->refcount) > 1 && ret == -EAGAIN) {
+			ret = k_mutex_lock(sock->context->cond.lock, K_SECONDS(1));
+		}
+		if (ret != 0) {
+			/* Discard */
+			net_pkt_unref(pkt);
+			return;
+		}
 	}
 #endif /* CONFIG_NET_SOCKETS */
 	k_mutex_lock(&sock->lock, K_FOREVER);
