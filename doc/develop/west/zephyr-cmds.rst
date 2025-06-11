@@ -136,6 +136,13 @@ Each file in the bill-of-materials is scanned, so that its hashes (SHA256 and
 SHA1) can be recorded, along with any detected licenses if an
 ``SPDX-License-Identifier`` comment appears in the file.
 
+Copyright notices are extracted using the third-party :command:`reuse` tool from the REUSE group.
+When found, these notices are added to SPDX documents as ``FileCopyrightText`` fields.
+
+.. note::
+   Copyright extraction uses heuristics that may not capture complete notice text, so
+   ``FileCopyrightText`` content is best-effort. This aligns with SPDX specification recommendations.
+
 SPDX Relationships are created to indicate dependencies between
 CMake build targets, build targets that are linked together, and
 source files that are compiled to generate the built library files.
