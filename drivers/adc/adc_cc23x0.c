@@ -26,29 +26,27 @@ LOG_MODULE_REGISTER(adc_cc23x0, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#define ADC_CC23X0_CH_UNDEF	0xff
-#define ADC_CC23X0_CH_COUNT	16
-#define ADC_CC23X0_CH_MAX	(ADC_CC23X0_CH_COUNT - 1)
+#define ADC_CC23X0_CH_UNDEF 0xff
+#define ADC_CC23X0_CH_COUNT 16
+#define ADC_CC23X0_CH_MAX   (ADC_CC23X0_CH_COUNT - 1)
 
 /* ADC provides four result storage registers */
-#define ADC_CC23X0_MEM_COUNT	4
-#define ADC_CC23X0_MEM_MAX	(ADC_CC23X0_MEM_COUNT - 1)
+#define ADC_CC23X0_MEM_COUNT 4
+#define ADC_CC23X0_MEM_MAX   (ADC_CC23X0_MEM_COUNT - 1)
 
-#define ADC_CC23X0_MAX_CYCLES	1023
+#define ADC_CC23X0_MAX_CYCLES 1023
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
 #define ADC_CC23X0_REG_GET(offset) (ADC_BASE + (offset))
-#define ADC_CC23X0_INT_MASK	ADC_INT_DMADONE
+#define ADC_CC23X0_INT_MASK        ADC_INT_DMADONE
 #else
-#define ADC_CC23X0_INT_MASK	(ADC_INT_MEMRES_00 | \
-				 ADC_INT_MEMRES_01 | \
-				 ADC_INT_MEMRES_02 | \
-				 ADC_INT_MEMRES_03)
+#define ADC_CC23X0_INT_MASK                                                                        \
+	(ADC_INT_MEMRES_00 | ADC_INT_MEMRES_01 | ADC_INT_MEMRES_02 | ADC_INT_MEMRES_03)
 #endif
 
-#define ADC_CC23X0_INT_MEMRES(i)	(ADC_INT_MEMRES_00 << (i))
+#define ADC_CC23X0_INT_MEMRES(i) (ADC_INT_MEMRES_00 << (i))
 
-#define ADC_CC23X0_MEMCTL(base, i)	HWREG((base) + ADC_O_MEMCTL0 + sizeof(uint32_t) * (i))
+#define ADC_CC23X0_MEMCTL(base, i) HWREG((base) + ADC_O_MEMCTL0 + sizeof(uint32_t) * (i))
 
 static const uint8_t clk_dividers[] = {1, 2, 4, 8, 16, 24, 32, 48};
 
@@ -84,11 +82,10 @@ struct adc_cc23x0_data {
 	uint8_t ch_count;
 	uint8_t mem_index;
 	uint16_t *buffer;
-	#ifdef CONFIG_PM_DEVICE
+#ifdef CONFIG_PM_DEVICE
 	struct adc_cc23x0_mem_cfg mem_cfg[ADC_CC23X0_MEM_COUNT];
-	#endif
+#endif
 };
-
 
 static inline void adc_cc23x0_pm_policy_state_lock_get(void)
 {
@@ -148,7 +145,18 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #endif
 	adc_cc23x0_pm_policy_state_lock_get();
 
-	ADCManualTrigger();
+	/* Set trigger source to software */
+	ADCSetTriggerSource(ADC_TRIGGER_SOURCE_SOFTWARE);
+
+	/* Set sampling mode to automatic, to use the sample duration configured
+	 *  with ADCSetSampleDuration()
+	 */
+	ADCSetSamplingMode(ADC_SAMPLE_MODE_AUTO);
+
+	/* Enable conversion. The ADC will wait for the software trigger */
+	ADCEnableConversion();
+
+	ADCStartConversion();
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
@@ -190,8 +198,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 	 * Both adjustment offset and adjustment gain depend on reference source.
 	 * Internal gain is used for measurement compensation.
 	 */
-	adc_val = ADCAdjustValueForGain(ADCReadResultNonBlocking(data->mem_index),
-					data->res,
+	adc_val = ADCAdjustValueForGain(ADCReadResultNonBlocking(data->mem_index), data->res,
 					ADCGetAdjustmentGain(data->ref_volt[ch]));
 	data->buffer[data->mem_index] = adc_val;
 
@@ -200,13 +207,21 @@ static void adc_cc23x0_isr(const struct device *dev)
 	LOG_DBG("Mem %u, Ch %u, Val %d", data->mem_index, ch, adc_val);
 
 	if (++data->mem_index < data->ch_count) {
+		/* Make sure conversion is disabled to allow configuration changes */
+		ADCDisableConversion();
+
 		/* Set adjustment offset for the next channel */
 		ch = data->ch_sel[data->mem_index];
 		ADCSetAdjustmentOffset(data->ref_volt[ch]);
 		LOG_DBG("Next Ch %u", ch);
 
-		/* Trigger next conversion */
-		ADCManualTrigger();
+		/* Enable conversion. ADC will wait for trigger. */
+		ADCEnableConversion();
+
+		/* Start conversion. No need to call ADCStopConversion() since that is
+		 * only needed in manual sampling mode.
+		 */
+		ADCStartConversion();
 	} else {
 		adc_cc23x0_pm_policy_state_lock_put();
 		adc_context_on_sampling_done(&data->ctx, dev);
@@ -214,10 +229,8 @@ static void adc_cc23x0_isr(const struct device *dev)
 #endif
 }
 
-static int adc_cc23x0_read_common(const struct device *dev,
-				  const struct adc_sequence *sequence,
-				  bool asynchronous,
-				  struct k_poll_signal *sig)
+static int adc_cc23x0_read_common(const struct device *dev, const struct adc_sequence *sequence,
+				  bool asynchronous, struct k_poll_signal *sig)
 {
 #ifndef CONFIG_ADC_CC23X0_DMA_DRIVEN
 	const struct adc_cc23x0_config *cfg = dev->config;
@@ -245,6 +258,9 @@ static int adc_cc23x0_read_common(const struct device *dev,
 		LOG_ERR("Resolution is not valid");
 		return -EINVAL;
 	}
+
+	/* Make sure conversion is disabled to allow configuration changes */
+	ADCDisableConversion();
 
 	ADCSetResolution(data->res);
 
@@ -331,15 +347,13 @@ static int adc_cc23x0_read_common(const struct device *dev,
 	return ret;
 }
 
-static int adc_cc23x0_read(const struct device *dev,
-			   const struct adc_sequence *sequence)
+static int adc_cc23x0_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	return adc_cc23x0_read_common(dev, sequence, false, NULL);
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_cc23x0_read_async(const struct device *dev,
-				 const struct adc_sequence *sequence,
+static int adc_cc23x0_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
 	return adc_cc23x0_read_common(dev, sequence, true, async);
@@ -402,8 +416,8 @@ static int adc_cc23x0_calc_clk_cfg(uint32_t acq_time_ns, uint8_t *clk_div, uint1
 			*clk_div = divider;
 			*clk_cycles = cycles;
 
-			LOG_DBG("Divider: %u, Cycles: %u, Actual sample duration: %u ns",
-				divider, cycles, samp_duration_ns);
+			LOG_DBG("Divider: %u, Cycles: %u, Actual sample duration: %u ns", divider,
+				cycles, samp_duration_ns);
 		}
 	}
 
@@ -583,48 +597,39 @@ static DEVICE_API(adc, adc_lpf3_driver_api) = {
 };
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-#define ADC_CC23X0_DMA_INIT(n)						\
-	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),	\
-	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),		\
+#define ADC_CC23X0_DMA_INIT(n)                                                                     \
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),                              \
+	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),                                      \
 	.dma_trigsrc = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, dma),
 #else
 #define ADC_CC23X0_DMA_INIT(n)
 #endif
 
-#define CC23X0_ADC_INIT(n)							\
-	PINCTRL_DT_INST_DEFINE(n);						\
-	PM_DEVICE_DT_INST_DEFINE(n, adc_cc23x0_pm_action);                      \
-
-										\
-	static void adc_cc23x0_cfg_func_##n(void)				\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    adc_cc23x0_isr,					\
-			    DEVICE_DT_INST_GET(n), 0);				\
-		irq_enable(DT_INST_IRQN(n));					\
-	}									\
-										\
-	static const struct adc_cc23x0_config adc_cc23x0_config_##n = {		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
-		.irq_cfg_func = adc_cc23x0_cfg_func_##n,			\
-		.base = DT_INST_REG_ADDR(n),					\
-		ADC_CC23X0_DMA_INIT(n)						\
-	};									\
-										\
-	static struct adc_cc23x0_data adc_cc23x0_data_##n = {			\
-		ADC_CONTEXT_INIT_TIMER(adc_cc23x0_data_##n, ctx),		\
-		ADC_CONTEXT_INIT_LOCK(adc_cc23x0_data_##n, ctx),		\
-		ADC_CONTEXT_INIT_SYNC(adc_cc23x0_data_##n, ctx),		\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n,						\
-			      &adc_cc23x0_init,					\
-			      PM_DEVICE_DT_INST_GET(n);                         \
-			      &adc_cc23x0_data_##n,				\
-			      &adc_cc23x0_config_##n,				\
-			      POST_KERNEL,					\
-			      CONFIG_ADC_INIT_PRIORITY,				\
+#define CC23X0_ADC_INIT(n)                                                                         \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(n, adc_cc23x0_pm_action);                                         \
+                                                                                                   \
+	static void adc_cc23x0_cfg_func_##n(void)                                                  \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_cc23x0_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static const struct adc_cc23x0_config adc_cc23x0_config_##n = {                            \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.irq_cfg_func = adc_cc23x0_cfg_func_##n,                                           \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		ADC_CC23X0_DMA_INIT(n)};                                                           \
+                                                                                                   \
+	static struct adc_cc23x0_data adc_cc23x0_data_##n = {                                      \
+		ADC_CONTEXT_INIT_TIMER(adc_cc23x0_data_##n, ctx),                                  \
+		ADC_CONTEXT_INIT_LOCK(adc_cc23x0_data_##n, ctx),                                   \
+		ADC_CONTEXT_INIT_SYNC(adc_cc23x0_data_##n, ctx),                                   \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &adc_cc23x0_init, PM_DEVICE_DT_INST_GET(n), &adc_cc23x0_data_##n, \
+			      &adc_cc23x0_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
 			      &adc_cc23x0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CC23X0_ADC_INIT)
