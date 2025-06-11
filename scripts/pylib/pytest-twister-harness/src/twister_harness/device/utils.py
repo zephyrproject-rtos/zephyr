@@ -11,7 +11,6 @@ import platform
 import shlex
 import signal
 import subprocess
-import time
 
 import psutil
 
@@ -38,7 +37,7 @@ def log_command(logger: logging.Logger, msg: str, args: list, level: int = loggi
         logger.log(level, msg, shlex.join(args))
 
 
-def terminate_process(proc: subprocess.Popen) -> None:
+def terminate_process(proc: subprocess.Popen, timeout: float = 0.5) -> None:
     """
     Try to terminate provided process and all its subprocesses recursively.
     """
@@ -47,6 +46,7 @@ def terminate_process(proc: subprocess.Popen) -> None:
             with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
                 os.kill(child.pid, signal.SIGTERM)
     proc.terminate()
-    # sleep for a while before attempting to kill
-    time.sleep(0.5)
-    proc.kill()
+    try:
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
