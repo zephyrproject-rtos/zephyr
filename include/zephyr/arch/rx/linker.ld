@@ -175,7 +175,6 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	PLACE_SYMBOL_HERE(__rodata_region_end);
-	_mdata = .;
 	GROUP_END(ROMABLE_REGION)
 
 	GROUP_START(RAMABLE_REGION)
@@ -212,7 +211,8 @@ SECTIONS
 
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
-		_data = .;
+		__data_region_start = .;
+		__data_start = .;
 		*(.data)
 		*(.data.*)
 		*(D)
@@ -234,17 +234,22 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-	_edata = .;
+	__data_region_end = .;
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME,,)
 	{
 		_bss = .;
+		__bss_start = .;
 		*(.bss)
 		*(.bss.**)
 		*(COMMON)
 		*(B)
 		*(B_1)
 		*(B_2)
+		_ebss = .;
+		__bss_end = .;
+		. = ALIGN(128);
+		_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 	_ebss = . ;
