@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 1f1d6937f8bdd884f907ef455ea1508822a7d75e
+      revision: 82c93ea7f5e90f7e028dc59bfa351d774eb66f37
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: e0b43431640a565b4500c58fc5e1aaebec2f463d
+      revision: 0575edec4c4d2a9c31e50974024e0ace9514f7a3
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 9b3c0cef9b590b41e0319168c0c4c4205849eed6
+      revision: 9b99067e29a1b44b53192c2c797db330f5703462
       groups:
         - hal
     - name: hal_rpi_pico
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: a0095a7ac356a04e12188bb563e6207594f8e6b2
+      revision: 411072b67f564eb6ebceadbf9ffb1bb1ccdc7e73
       path: modules/hal/silabs
       groups:
         - hal
@@ -302,7 +302,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 1ed1ddd881c3784049a92bb9fe37c38c6c74d998
+      revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 5f889934359deccf421554c7045a8381ef75298f
@@ -325,10 +325,10 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: c6296f600a6851bd652f207ab4908d339e1ce705
+      revision: 9eb489fdcde23d4f69ded78bca872bfc31b5ee79
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 0cd7f28d34a5279cd839940c199658a294165722
+      revision: 1c1a7003ce90e492590c4a8a604eb9881bc8c5c1
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: f7f4d083c7909a39d86e217376c69b416ec4faf3

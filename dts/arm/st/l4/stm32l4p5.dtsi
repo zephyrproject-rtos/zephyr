@@ -354,6 +354,7 @@
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 22U)>;
 			interrupts = <49 0>;
+			idma;
 			status = "disabled";
 		};
 
@@ -364,6 +365,7 @@
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 23U)>;
 			interrupts = <47 0>;
+			idma;
 			status = "disabled";
 		};
 

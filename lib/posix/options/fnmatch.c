@@ -84,12 +84,15 @@ static const char *rangematch(const char *pattern, int test, int flags)
 	for (need = true, ok = false, c = FOLDCASE(*pattern++, flags); c != ']' || need;
 	     c = FOLDCASE(*pattern++, flags)) {
 		need = false;
-		if (c == '/') {
+
+		if (c == '/' && (flags & FNM_PATHNAME)) {
 			return (void *)-1;
 		}
 
 		if (c == '\\' && !(flags & FNM_NOESCAPE)) {
-			c = FOLDCASE(*pattern++, flags);
+			if (*pattern != ']' && *pattern != EOS) {
+				c = FOLDCASE(*pattern++, flags);
+			}
 		}
 
 		if (c == EOS) {
@@ -221,9 +224,20 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 				return FNM_NOMATCH;
 			}
 
-			r = rangematch(pattern, FOLDCASE(*string, flags), flags);
-			if (r == NULL) {
+			if (*string == '.' && (flags & FNM_PERIOD) &&
+			    (string == stringstart ||
+			     ((flags & FNM_PATHNAME) && *(string - 1) == '/'))) {
 				return FNM_NOMATCH;
+			}
+
+			r = rangematch(pattern, FOLDCASE(*string, flags), flags);
+
+			if (r == NULL) {
+				if (FOLDCASE('[', flags) != FOLDCASE(*string, flags)) {
+					return FNM_NOMATCH;
+				}
+				++string;
+				break;
 			}
 
 			if (r == (void *)-1) {

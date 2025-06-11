@@ -4402,6 +4402,11 @@ void net_if_ipv4_acd_failed(struct net_if *iface, struct net_if_addr *ifaddr)
 
 void net_if_ipv4_start_acd(struct net_if *iface, struct net_if_addr *ifaddr)
 {
+	if ((l2_flags_get(iface) & NET_L2_POINT_TO_POINT) ||
+	    net_ipv4_is_addr_loopback(&ifaddr->address.in_addr)) {
+		return;
+	}
+
 	ifaddr->addr_state = NET_ADDR_TENTATIVE;
 
 	if (net_if_is_up(iface)) {
@@ -4499,6 +4504,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 	struct net_if_addr *ifaddr = NULL;
 	struct net_if_addr_ipv4 *cur;
 	struct net_if_ipv4 *ipv4;
+	bool do_acd = false;
 	int idx;
 
 	net_if_lock(iface);
@@ -4571,7 +4577,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		    !(l2_flags_get(iface) & NET_L2_POINT_TO_POINT) &&
 		    !net_ipv4_is_addr_loopback(addr)) {
 			/* ACD is started after the lock is released. */
-			;
+			do_acd = true;
 		} else {
 			ifaddr->addr_state = NET_ADDR_PREFERRED;
 		}
@@ -4584,7 +4590,9 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 
 		net_if_unlock(iface);
 
-		net_if_ipv4_start_acd(iface, ifaddr);
+		if (do_acd) {
+			net_if_ipv4_start_acd(iface, ifaddr);
+		}
 
 		return ifaddr;
 	}

@@ -166,7 +166,7 @@ static const struct flash_parameters *
 }
 
 /* Gives the total logical device size in bytes and return 0. */
-static int flash_stm32h7_get_size(const struct device *dev, uint64_t *size)
+static int flash_stm32wba_get_size(const struct device *dev, uint64_t *size)
 {
 	ARG_UNUSED(dev);
 
@@ -204,7 +204,7 @@ static DEVICE_API(flash, flash_stm32_api) = {
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
-	.get_size = flash_stm32_get_size,
+	.get_size = flash_stm32wba_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32wba_page_layout,
 #endif

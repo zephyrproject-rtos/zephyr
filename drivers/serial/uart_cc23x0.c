@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT ti_cc23x0_uart
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
@@ -17,10 +18,38 @@
 #include <driverlib/uart.h>
 #include <driverlib/clkctl.h>
 
+#include <inc/hw_memmap.h>
+
+#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+#define UART_CC23_REG_GET(base, offset) ((base) + (offset))
+/*
+ * For each DMA channel, burst transfer and single transfer request signals
+ * are not mutually exclusive, and both can be asserted at the same time.
+ * For example, when there is more data than the watermark level in the
+ * TX (or RX) FIFO, the burst transfer request and the single transfer
+ * requests are asserted.
+ * When a burst request is detected, the DMA controller transfers the number
+ * of items that is the lesser of the arbitration size or the number of items
+ * remaining in the transfer. Therefore, the arbitration size must be the same
+ * as the number of data items that the peripheral can accommodate when making
+ * a burst request. Since UART, which uses a mix of single or burst requests,
+ * can generate a burst request based on the FIFO trigger level (1/2 full),
+ * the burst length is set to half the FIFO size.
+ */
+#define UART_CC23_BURST_LEN 4
+#endif
+
 struct uart_cc23x0_config {
 	uint32_t reg;
 	uint32_t sys_clk_freq;
 	const struct pinctrl_dev_config *pcfg;
+#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+	const struct device *dma_dev;
+	uint8_t dma_channel_tx;
+	uint8_t dma_trigsrc_tx;
+	uint8_t dma_channel_rx;
+	uint8_t dma_trigsrc_rx;
+#endif
 };
 
 struct uart_cc23x0_data {
@@ -29,6 +58,22 @@ struct uart_cc23x0_data {
 	uart_irq_callback_user_data_t callback;
 	void *user_data;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+	const struct device *dev;
+
+	uart_callback_t async_callback;
+	void *async_user_data;
+
+	struct k_work_delayable tx_timeout_work;
+	const uint8_t *tx_buf;
+	size_t tx_len;
+
+	uint8_t *rx_buf;
+	size_t rx_len;
+	size_t rx_processed_len;
+	uint8_t *rx_next_buf;
+	size_t rx_next_len;
+#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
 };
 
 static int uart_cc23x0_poll_in(const struct device *dev, unsigned char *c)
@@ -296,16 +341,426 @@ static void uart_cc23x0_irq_callback_set(const struct device *dev, uart_irq_call
 	data->user_data = user_data;
 }
 
-static void uart_cc23x0_isr(const struct device *dev)
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#if CONFIG_UART_CC23X0_DMA_DRIVEN
+
+static int uart_cc23x0_async_callback_set(const struct device *dev, uart_callback_t callback,
+					  void *user_data)
 {
 	struct uart_cc23x0_data *data = dev->data;
 
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
+	data->async_callback = NULL;
+	data->async_user_data = NULL;
+#else
+	data->async_callback = callback;
+	data->async_user_data = user_data;
+#endif
+
+	return 0;
+}
+
+static int uart_cc23x0_async_tx(const struct device *dev, const uint8_t *buf, size_t len,
+				int32_t timeout)
+{
+	const struct uart_cc23x0_config *config = dev->config;
+	struct uart_cc23x0_data *data = dev->data;
+	unsigned int key;
+	int ret;
+
+	struct dma_block_config block_cfg_tx = {
+		.source_address = (uint32_t)buf,
+		.dest_address = UART_CC23_REG_GET(config->reg, UART_O_DR),
+		.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+		.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.block_size = len,
+	};
+
+	struct dma_config dma_cfg_tx = {
+		.dma_slot = config->dma_trigsrc_tx,
+		.channel_direction = MEMORY_TO_PERIPHERAL,
+		.block_count = 1,
+		.head_block = &block_cfg_tx,
+		.source_data_size = 1,
+		.dest_data_size = 1,
+		.source_burst_length = UART_CC23_BURST_LEN,
+		.dma_callback = NULL,
+		.user_data = NULL,
+	};
+
+	key = irq_lock();
+
+	if (data->tx_len) {
+		irq_unlock(key);
+		return -EBUSY;
+	}
+
+	data->tx_buf = buf;
+	data->tx_len = len;
+
+	irq_unlock(key);
+
+	ret = dma_config(config->dma_dev, config->dma_channel_tx, &dma_cfg_tx);
+	if (ret) {
+		return ret;
+	}
+
+	/* Disable DMA trigger */
+	UARTDisableDMA(config->reg, UART_DMA_TX);
+
+	/* Schedule timeout work */
+	if (timeout != SYS_FOREVER_US) {
+		k_work_reschedule(&data->tx_timeout_work, K_USEC(timeout));
+	}
+
+	/* Start DMA channel */
+	ret = dma_start(config->dma_dev, config->dma_channel_tx);
+	if (ret) {
+		return ret;
+	}
+
+	/* Enable DMA trigger to start the transfer */
+	UARTEnableDMA(config->reg, UART_DMA_TX);
+
+	return 0;
+}
+
+static int uart_cc23x0_tx_halt(struct uart_cc23x0_data *data)
+{
+	const struct uart_cc23x0_config *config = data->dev->config;
+	struct dma_status status;
+	struct uart_event evt;
+	size_t total_len;
+	unsigned int key;
+
+	key = irq_lock();
+
+	total_len = data->tx_len;
+
+	evt.type = UART_TX_ABORTED;
+	evt.data.tx.buf = data->tx_buf;
+	evt.data.tx.len = 0;
+
+	data->tx_buf = NULL;
+	data->tx_len = 0;
+
+	dma_stop(config->dma_dev, config->dma_channel_tx);
+
+	irq_unlock(key);
+
+	if (dma_get_status(config->dma_dev, config->dma_channel_tx, &status) == 0) {
+		evt.data.tx.len = total_len - status.pending_length;
+	}
+
+	if (total_len) {
+		if (data->async_callback) {
+			data->async_callback(data->dev, &evt, data->async_user_data);
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void uart_cc23x0_async_tx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct uart_cc23x0_data *data = CONTAINER_OF(dwork, struct uart_cc23x0_data,
+						     tx_timeout_work);
+
+	uart_cc23x0_tx_halt(data);
+}
+
+static int uart_cc23x0_async_tx_abort(const struct device *dev)
+{
+	struct uart_cc23x0_data *data = dev->data;
+
+	k_work_cancel_delayable(&data->tx_timeout_work);
+
+	return uart_cc23x0_tx_halt(data);
+}
+
+static int uart_cc23x0_async_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
+				       int32_t timeout)
+{
+	const struct uart_cc23x0_config *config = dev->config;
+	struct uart_cc23x0_data *data = dev->data;
+	struct uart_event evt;
+	unsigned int key;
+	int ret;
+
+	struct dma_block_config block_cfg_rx = {
+		.source_address = UART_CC23_REG_GET(config->reg, UART_O_DR),
+		.dest_address = (uint32_t)buf,
+		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+		.block_size = len,
+	};
+
+	struct dma_config dma_cfg_rx = {
+		.dma_slot = config->dma_trigsrc_rx,
+		.channel_direction = PERIPHERAL_TO_MEMORY,
+		.block_count = 1,
+		.head_block = &block_cfg_rx,
+		.source_data_size = 1,
+		.dest_data_size = 1,
+		.source_burst_length = UART_CC23_BURST_LEN,
+		.dma_callback = NULL,
+		.user_data = NULL,
+	};
+
+	if (timeout != SYS_FOREVER_US) {
+		return -ENOTSUP;
+	}
+
+	key = irq_lock();
+
+	if (data->rx_len) {
+		ret = -EBUSY;
+		goto unlock;
+	}
+
+	ret = dma_config(config->dma_dev, config->dma_channel_rx, &dma_cfg_rx);
+	if (ret) {
+		goto unlock;
+	}
+
+	/* Disable DMA trigger */
+	UARTDisableDMA(config->reg, UART_DMA_RX);
+
+	/* Start DMA channel */
+	ret = dma_start(config->dma_dev, config->dma_channel_rx);
+	if (ret) {
+		goto unlock;
+	}
+
+	/* Enable DMA trigger to start the transfer */
+	UARTEnableDMA(config->reg, UART_DMA_RX);
+
+	data->rx_buf = buf;
+	data->rx_len = len;
+	data->rx_processed_len = 0;
+
+	/* Request next buffer */
+	if (data->async_callback) {
+		evt.type = UART_RX_BUF_REQUEST;
+
+		data->async_callback(dev, &evt, data->async_user_data);
+	}
+
+unlock:
+	irq_unlock(key);
+
+	return ret;
+}
+
+static int uart_cc23x0_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
+{
+	struct uart_cc23x0_data *data = dev->data;
+	unsigned int key;
+	int ret = 0;
+
+	key = irq_lock();
+
+	if (data->rx_len == 0) {
+		ret = -EACCES;
+		goto unlock;
+	}
+
+	if (data->rx_next_len) {
+		ret = -EBUSY;
+		goto unlock;
+	}
+
+	data->rx_next_buf = buf;
+	data->rx_next_len = len;
+
+unlock:
+	irq_unlock(key);
+
+	return ret;
+}
+
+static void uart_cc23x0_notify_rx_processed(struct uart_cc23x0_data *data,
+					    size_t processed)
+{
+	struct uart_event evt;
+
+	if (!data->async_callback || data->rx_processed_len == processed) {
+		return;
+	}
+
+	evt.type = UART_RX_RDY;
+	evt.data.rx.buf = data->rx_buf;
+	evt.data.rx.offset = data->rx_processed_len;
+	evt.data.rx.len = processed - data->rx_processed_len;
+
+	data->rx_processed_len = processed;
+
+	data->async_callback(data->dev, &evt, data->async_user_data);
+}
+
+static int uart_cc23x0_async_rx_disable(const struct device *dev)
+{
+	const struct uart_cc23x0_config *config = dev->config;
+	struct uart_cc23x0_data *data = dev->data;
+	struct dma_status status;
+	struct uart_event evt;
+	size_t rx_processed;
+	unsigned int key;
+	int ret = 0;
+
+	key = irq_lock();
+
+	if (data->rx_len == 0) {
+		ret = -EINVAL;
+		goto unlock;
+	}
+
+	dma_stop(config->dma_dev, config->dma_channel_rx);
+
+	if (dma_get_status(config->dma_dev, config->dma_channel_rx, &status) == 0 &&
+	    status.pending_length) {
+		rx_processed = data->rx_len - status.pending_length;
+
+		uart_cc23x0_notify_rx_processed(data, rx_processed);
+	}
+
+	if (data->async_callback) {
+		evt.type = UART_RX_BUF_RELEASED;
+		evt.data.rx_buf.buf = data->rx_buf;
+
+		data->async_callback(dev, &evt, data->async_user_data);
+	}
+
+	data->rx_buf = NULL;
+	data->rx_len = 0;
+
+	if (data->rx_next_len) {
+		if (data->async_callback) {
+			evt.type = UART_RX_BUF_RELEASED;
+			evt.data.rx_buf.buf = data->rx_next_buf;
+
+			data->async_callback(dev, &evt, data->async_user_data);
+		}
+
+		data->rx_next_buf = NULL;
+		data->rx_next_len = 0;
+	}
+
+	if (data->async_callback) {
+		evt.type = UART_RX_DISABLED;
+
+		data->async_callback(dev, &evt, data->async_user_data);
+	}
+
+unlock:
+	irq_unlock(key);
+
+	return ret;
+}
+
+#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
+
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN
+
+static void uart_cc23x0_isr(const struct device *dev)
+{
+	struct uart_cc23x0_data *data = dev->data;
+#if CONFIG_UART_CC23X0_DMA_DRIVEN
+	const struct uart_cc23x0_config *config = dev->config;
+	struct uart_event evt;
+	unsigned int key;
+	uint32_t int_status = UARTIntStatus(config->reg, true);
+#endif
+
+#if CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->callback) {
 		data->callback(dev, data->user_data);
 	}
+#endif
+
+#if CONFIG_UART_CC23X0_DMA_DRIVEN
+	/*
+	 * When a peripheral channel is used (which is the case here for UART),
+	 * the DMA transfer completion is signaled on the peripheral's interrupt only.
+	 * It is not signaled on the DMA dedicated interrupt.
+	 */
+	if (int_status & UART_INT_TXDMADONE) {
+		k_work_cancel_delayable(&data->tx_timeout_work);
+
+		key = irq_lock();
+
+		if (data->tx_len && data->async_callback) {
+			evt.type = UART_TX_DONE;
+			evt.data.tx.buf = data->tx_buf;
+			evt.data.tx.len = data->tx_len;
+
+			data->async_callback(dev, &evt, data->async_user_data);
+		}
+
+		data->tx_buf = NULL;
+		data->tx_len = 0;
+
+		irq_unlock(key);
+
+		UARTClearInt(config->reg, UART_INT_TXDMADONE);
+	}
+
+	if (int_status & UART_INT_RXDMADONE) {
+		key = irq_lock();
+
+		uart_cc23x0_notify_rx_processed(data, data->rx_len);
+
+		if (data->async_callback) {
+			evt.type = UART_RX_BUF_RELEASED;
+			evt.data.rx.buf = data->rx_buf;
+
+			data->async_callback(dev, &evt, data->async_user_data);
+		}
+
+		if (data->rx_next_len == 0) {
+			/* If no next buffer, end the transfer */
+			data->rx_buf = NULL;
+			data->rx_len = 0;
+
+			if (data->async_callback) {
+				evt.type = UART_RX_DISABLED;
+
+				data->async_callback(dev, &evt, data->async_user_data);
+			}
+		} else {
+			/* Otherwise, load next buffer and start the transfer */
+			data->rx_buf = data->rx_next_buf;
+			data->rx_len = data->rx_next_len;
+			data->rx_next_buf = NULL;
+			data->rx_next_len = 0;
+			data->rx_processed_len = 0;
+
+			dma_reload(config->dma_dev, config->dma_channel_rx,
+				   (uint32_t)UART_CC23_REG_GET(config->reg, UART_O_DR),
+				   (uint32_t)data->rx_buf, data->rx_len);
+
+			dma_start(config->dma_dev, config->dma_channel_rx);
+
+			/* Request a new buffer */
+			if (data->async_callback) {
+				evt.type = UART_RX_BUF_REQUEST;
+
+				data->async_callback(dev, &evt, data->async_user_data);
+			}
+		}
+
+		irq_unlock(key);
+
+		UARTClearInt(config->reg, UART_INT_RXDMADONE);
+	}
+#endif
 }
 
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN */
 
 static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 	.poll_in = uart_cc23x0_poll_in,
@@ -331,10 +786,20 @@ static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 	.irq_update = uart_cc23x0_irq_update,
 	.irq_callback_set = uart_cc23x0_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#if CONFIG_UART_CC23X0_DMA_DRIVEN
+	.callback_set = uart_cc23x0_async_callback_set,
+	.tx = uart_cc23x0_async_tx,
+	.tx_abort = uart_cc23x0_async_tx_abort,
+	.rx_enable = uart_cc23x0_async_rx_enable,
+	.rx_buf_rsp = uart_cc23x0_async_rx_buf_rsp,
+	.rx_disable = uart_cc23x0_async_rx_disable,
+#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
 };
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN
 #define UART_CC23X0_IRQ_CFG(n)                                                                     \
+	const struct uart_cc23x0_config *config = dev->config;                                     \
+                                                                                                   \
 	do {                                                                                       \
 		UARTClearInt(config->reg, UART_INT_RX);                                            \
 		UARTClearInt(config->reg, UART_INT_RT);                                            \
@@ -344,11 +809,55 @@ static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	} while (false)
 
-#define UART_CC23X0_INT_FIELDS .callback = NULL, .user_data = NULL,
 #else
 #define UART_CC23X0_IRQ_CFG(n)
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN */
+
+#if CONFIG_UART_INTERRUPT_DRIVEN
+#define UART_CC23X0_INT_FIELDS .callback = NULL, .user_data = NULL,
+#else
 #define UART_CC23X0_INT_FIELDS
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif
+
+#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+#define UART_CC23X0_DMA_INIT(n)						\
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, tx)),	\
+	.dma_channel_tx = TI_CC23X0_DT_INST_DMA_CHANNEL(n, tx),		\
+	.dma_trigsrc_tx = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, tx),		\
+	.dma_channel_rx = TI_CC23X0_DT_INST_DMA_CHANNEL(n, rx),		\
+	.dma_trigsrc_rx = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, rx),
+#else
+#define UART_CC23X0_DMA_INIT(n)
+#endif
+
+static int uart_cc23x0_init_common(const struct device *dev)
+{
+	const struct uart_cc23x0_config *config = dev->config;
+	struct uart_cc23x0_data *data = dev->data;
+	int ret;
+
+	CLKCTLEnable(CLKCTL_BASE, CLKCTL_UART0);
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+	if (!device_is_ready(config->dma_dev)) {
+		return -ENODEV;
+	}
+
+	UARTEnableInt(config->reg, UART_INT_TXDMADONE | UART_INT_RXDMADONE);
+
+	k_work_init_delayable(&data->tx_timeout_work, uart_cc23x0_async_tx_timeout);
+
+	data->dev = dev;
+#endif
+
+	/* Configure and enable UART */
+	return uart_cc23x0_configure(dev, &data->uart_config);
+}
 
 #define UART_CC23X0_DEVICE_DEFINE(n)                                                               \
                                                                                                    \
@@ -359,19 +868,12 @@ static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 #define UART_CC23X0_INIT_FUNC(n)                                                                   \
 	static int uart_cc23x0_init_##n(const struct device *dev)                                  \
 	{                                                                                          \
-		const struct uart_cc23x0_config *config = dev->config;                             \
-		struct uart_cc23x0_data *data = dev->data;                                         \
 		int ret;                                                                           \
                                                                                                    \
-		CLKCTLEnable(CLKCTL_BASE, CLKCTL_UART0);                                           \
-                                                                                                   \
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                    \
+		ret = uart_cc23x0_init_common(dev);                                                \
 		if (ret < 0) {                                                                     \
 			return ret;                                                                \
 		}                                                                                  \
-                                                                                                   \
-		/* Configure and enable UART */                                                    \
-		ret = uart_cc23x0_configure(dev, &data->uart_config);                              \
                                                                                                    \
 		/* Enable interrupts */                                                            \
 		UART_CC23X0_IRQ_CFG(n);                                                            \
@@ -387,6 +889,7 @@ static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 		.reg = DT_INST_REG_ADDR(n),                                                        \
 		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		UART_CC23X0_DMA_INIT(n)                                                            \
 		};                                                                                 \
                                                                                                    \
 	static struct uart_cc23x0_data uart_cc23x0_data_##n = {                                    \

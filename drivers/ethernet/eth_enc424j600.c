@@ -501,54 +501,6 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int enc424j600_get_config(const struct device *dev,
-				 enum ethernet_config_type type,
-				 struct ethernet_config *config)
-{
-	uint16_t tmp;
-	int rc = 0;
-	struct enc424j600_runtime *context = dev->data;
-
-	if (type != ETHERNET_CONFIG_TYPE_LINK &&
-	    type != ETHERNET_CONFIG_TYPE_DUPLEX) {
-		/* Unsupported configuration query */
-		return -ENOTSUP;
-	}
-
-	k_sem_take(&context->tx_rx_sem, K_FOREVER);
-
-	if (type == ETHERNET_CONFIG_TYPE_LINK) {
-		/* Query active link speed */
-		enc424j600_read_phy(dev, ENC424J600_PSFR_PHSTAT3, &tmp);
-
-		if (tmp & ENC424J600_PHSTAT3_SPDDPX_100) {
-			/* 100Mbps link speed */
-			config->l.link_100bt = true;
-		} else if (tmp & ENC424J600_PHSTAT3_SPDDPX_10) {
-			/* 10Mbps link speed */
-			config->l.link_10bt = true;
-		} else {
-			/* Unknown link speed */
-			rc = -EINVAL;
-		}
-	} else if (type == ETHERNET_CONFIG_TYPE_DUPLEX) {
-		/* Query if half or full duplex */
-		enc424j600_read_phy(dev, ENC424J600_PSFR_PHSTAT3, &tmp);
-
-		/* Assume operating in half duplex mode */
-		config->full_duplex = false;
-
-		if (tmp & ENC424J600_PHSTAT3_SPDDPX_FD) {
-			/* Operating in full duplex mode */
-			config->full_duplex = true;
-		}
-	}
-
-	k_sem_give(&context->tx_rx_sem);
-
-	return rc;
-}
-
 static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -677,7 +629,6 @@ static int enc424j600_stop_device(const struct device *dev)
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= enc424j600_iface_init,
-	.get_config		= enc424j600_get_config,
 	.set_config		= enc424j600_set_config,
 	.get_capabilities	= enc424j600_get_capabilities,
 	.send			= enc424j600_tx,

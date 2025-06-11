@@ -77,6 +77,8 @@
 			reg = <0x40034000 0x52>;
 			interrupts = <11 0>;
 			clocks = <&sysclk>;
+			dmas = <&dma 2 6>, <&dma 3 7>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -158,6 +160,8 @@
 			reg = <0x40050000 0xe30>;
 			interrupts = <15 0>;
 			#io-channel-cells = <1>;
+			dmas = <&dma 3 5>;
+			dma-names = "dma";
 			status = "disabled";
 		};
 	};

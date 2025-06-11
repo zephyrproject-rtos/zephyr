@@ -62,3 +62,4 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_NEORV32_GPTMR       counter_neorv32_
 zephyr_library_sources_ifdef(CONFIG_COUNTER_WUT_MAX32           counter_max32_wut.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_CC23X0_RTC          counter_cc23x0_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_CC23X0_LGPT         counter_cc23x0_lgpt.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_MSPM0_TIMER         counter_mspm0_timer.c)

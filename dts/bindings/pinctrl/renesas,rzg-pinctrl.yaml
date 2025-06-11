@@ -10,7 +10,7 @@ description: |
 
     The pre-defined combinations for the RZ/G variants are defined in the below headers
     - pinctrl-rzg-common.h for RZ/G3S
-    - pinctrl-rzg2-common.h for RZ/G2L, RZ/G2LC
+    - pinctrl-rzg2-common.h for RZ/G2L, RZ/G2LC, RZ/G2UL
 
     #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg(2)-common.h>
     example_pins: device_pin {

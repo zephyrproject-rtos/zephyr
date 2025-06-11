@@ -162,6 +162,8 @@ The IRQ must be subsequently **enabled** to permit the ISR to execute.
     Disabling an IRQ prevents *all* threads in the system from being preempted
     by the associated ISR, not just the thread that disabled the IRQ.
 
+.. _zlis:
+
 Zero Latency Interrupts
 -----------------------
 
@@ -173,10 +175,14 @@ The kernel addresses such use-cases by allowing interrupts with critical
 latency constraints to execute at a priority level that cannot be blocked
 by interrupt locking. These interrupts are defined as
 *zero-latency interrupts*. The support for zero-latency interrupts requires
-:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. In addition to that, the
-flag :c:macro:`IRQ_ZERO_LATENCY` must be passed to :c:macro:`IRQ_CONNECT` or
-:c:macro:`IRQ_DIRECT_CONNECT` macros to configure the particular interrupt
-with zero latency.
+:kconfig:option:`CONFIG_ZERO_LATENCY_IRQS` to be enabled. Any interrupts
+configured as zero-latency must also be declared as :ref:`direct ISRs
+<direct_isrs>` (and must not use the :c:macro:`ISR_DIRECT_PM` in them), since
+regular ISRs interact with the kernel. In addition to that, the flag
+:c:macro:`IRQ_ZERO_LATENCY` must be passed to the :c:macro:`IRQ_DIRECT_CONNECT`
+macro to configure the particular interrupt with
+zero latency. Declaring a zero-latency interrupt ISR to be both direct and
+dynamic is possible on some architectures, see :ref:`direct_isrs`.
 
 Zero-latency interrupts are expected to be used to manage hardware events
 directly, and not to interoperate with the kernel code at all. They should
@@ -306,6 +312,8 @@ Dynamic interrupts require the :kconfig:option:`CONFIG_DYNAMIC_INTERRUPTS` optio
 be enabled. Removing or re-configuring a dynamic interrupt is currently
 unsupported.
 
+.. _direct_isrs:
+
 Defining a 'direct' ISR
 =======================
 
@@ -322,7 +330,10 @@ for some low-latency use-cases. Specifically:
   need to switch to the interrupt stack in code
 
 * After the interrupt is serviced, the OS then performs some logic to
-  potentially make a scheduling decision.
+  potentially make a scheduling decision
+
+* :ref:`zlis` must always be declared as direct ISRs, since regular
+  ISRs interact with the kernel
 
 Zephyr supports so-called 'direct' interrupts, which are installed via
 :c:macro:`IRQ_DIRECT_CONNECT` and whose handlers are declared using
@@ -341,8 +352,12 @@ The following code demonstrates a direct ISR:
     ISR_DIRECT_DECLARE(my_isr)
     {
        do_stuff();
-       ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency */
-       return 1; /* We should check if scheduling decision should be made */
+       /* PM done after servicing interrupt for best latency. This cannot be
+       used for zero-latency IRQs because it accesses kernel data. */
+       ISR_DIRECT_PM();
+       /* Ask the kernel to check if scheduling decision should be made. If the
+       ISR is for a zero-latency IRQ then the return value must always be 0. */
+       return 1;
     }
 
     void my_isr_installer(void)
@@ -354,9 +369,10 @@ The following code demonstrates a direct ISR:
     }
 
 Installation of dynamic direct interrupts is supported on an
-architecture-specific basis. (The feature is currently implemented in
-ARM Cortex-M architecture variant. Dynamic direct interrupts feature is
-exposed to the user via an ARM-only API.)
+architecture-specific basis. The feature is currently implemented in the Arm
+Cortex-M architecture variant via the macro
+:c:macro:`ARM_IRQ_DIRECT_DYNAMIC_CONNECT`, which can be used to declare a direct
+and dynamic interrupt.
 
 Sharing an interrupt line
 =========================

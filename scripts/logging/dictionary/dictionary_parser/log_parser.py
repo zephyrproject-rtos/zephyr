@@ -9,6 +9,7 @@ Abstract Class for Dictionary-based Logging Parsers
 """
 
 import abc
+
 from colorama import Fore
 
 from .data_types import DataTypes

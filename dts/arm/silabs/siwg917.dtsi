@@ -97,7 +97,7 @@
 			};
 		};
 
-		psramctrl0: memory-controller@12040000 {
+		memc: memory-controller@12040000 {
 			compatible = "silabs,siwx91x-qspi-memory";
 			reg = <0x12040000 0x200>;
 			#address-cells = <1>;
@@ -376,6 +376,19 @@
 			silabs,max-channel-count = <1>;
 			clocks = <&clock0 SIWX91X_CLK_ULP_I2S>,
 				 <&clock0 SIWX91X_CLK_STATIC_ULP_I2S>;
+			status = "disabled";
+		};
+
+		adc0: adc@24043800 {
+			compatible = "silabs,siwx91x-adc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24043800 0x214>;
+			interrupts = <11 0>;
+			interrupt-names = "adc0";
+			silabs,adc-sampling-rate = <100000>;
+			clocks = <&clock0 SIWX91X_ADC_CLK>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 	};

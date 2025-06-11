@@ -325,6 +325,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_SetClkDiv(kCLOCK_DivAdc1Clk, 1U);
+	CLOCK_AttachClk(kFRO_HF_to_ADC1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && (CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS)
 	CLOCK_AttachClk(kCLK_48M_to_USB0);
 	CLOCK_EnableClock(kCLOCK_Usb0Ram);

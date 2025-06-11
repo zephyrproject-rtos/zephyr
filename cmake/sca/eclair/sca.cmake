@@ -30,6 +30,7 @@ set(ECLAIR_ANALYSIS_ECL_DIR "${ZEPHYR_BASE}/cmake/sca/eclair/ECL")
 set(ECLAIR_DIAGNOSTICS_OUTPUT "${ECLAIR_OUTPUT_DIR}/DIAGNOSTIC.txt")
 set(ECLAIR_ANALYSIS_DATA_DIR "${ECLAIR_OUTPUT_DIR}/analysis_data")
 set(ECLAIR_PROJECT_ECD "${ECLAIR_OUTPUT_DIR}/PROJECT.ecd")
+set(ECLAIR_WORKSPACE "${ECLAIR_OUTPUT_DIR}/eclair_workspace")
 set(CC_ALIASES "${CMAKE_C_COMPILER}")
 set(CXX_ALIASES "${CMAKE_CXX_COMPILER}")
 set(AS_ALIASES "${CMAKE_AS}")
@@ -43,7 +44,14 @@ set(ECLAIR_REPORT_ADDITIONAL_OPTIONS "")
 set(ECLAIR_RULESET first_analysis)
 
 # ECLAIR env
-if(ECLAIR_RULESET_FIRST_ANALYSIS)
+if(ECLAIR_RULESET_USER)
+  set(ECLAIR_RULESET ${ECLAIR_USER_RULESET_NAME})
+  if(IS_ABSOLUTE ${ECLAIR_USER_RULESET_PATH})
+      set(ECLAIR_ANALYSIS_ECL_DIR ${ECLAIR_USER_RULESET_PATH})
+  else()
+    set(ECLAIR_ANALYSIS_ECL_DIR ${APPLICATION_CONFIG_DIR}/${ECLAIR_USER_RULESET_PATH})
+  endif()
+elseif(ECLAIR_RULESET_FIRST_ANALYSIS)
   set(ECLAIR_RULESET first_analysis)
 elseif(ECLAIR_RULESET_STU)
   set(ECLAIR_RULESET STU)
@@ -53,13 +61,8 @@ elseif(ECLAIR_RULESET_WP)
   set(ECLAIR_RULESET WP)
 elseif(ECLAIR_RULESET_STD_LIB)
   set(ECLAIR_RULESET std_lib)
-elseif(ECLAIR_RULESET_USER)
-  set(ECLAIR_RULESET ${ECLAIR_USER_RULESET_NAME})
-  if(IS_ABSOLUTE ${ECLAIR_USER_RULESET_PATH})
-      set(ECLAIR_ANALYSIS_ECL_DIR ${ECLAIR_USER_RULESET_PATH})
-  else()
-    set(ECLAIR_ANALYSIS_ECL_DIR ${APPLICATION_CONFIG_DIR}/${ECLAIR_USER_RULESET_PATH})
-  endif()
+elseif(ECLAIR_RULESET_ZEPHYR_GUIDELINES)
+  set(ECLAIR_RULESET zephyr_guidelines)
 endif()
 
 # ECLAIR report
@@ -80,6 +83,9 @@ if (ECLAIR_SUMMARY_DOC)
 endif()
 if (ECLAIR_SUMMARY_ODT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-summary_odt=${ECLAIR_OUTPUT_DIR}/summary_odt")
+endif()
+if (ECLAIR_SUMMARY_HTML)
+  list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-summary_html=${ECLAIR_OUTPUT_DIR}/summary_html")
 endif()
 if (ECLAIR_FULL_TXT_ALL_AREAS)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-setq=report_areas,areas")
@@ -102,23 +108,53 @@ endif()
 if (ECLAIR_FULL_ODT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_odt=${ECLAIR_OUTPUT_DIR}/report_full_odt")
 endif()
+if (ECLAIR_FULL_HTL)
+  list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_html=${ECLAIR_OUTPUT_DIR}/report_full_html")
+endif()
 
 message(STATUS "ECLAIR outputs have been written to: ${ECLAIR_OUTPUT_DIR}")
 message(STATUS "ECLAIR ECB files have been written to: ${ECLAIR_ANALYSIS_DATA_DIR}")
 
+list(APPEND ECLAIR_CLEAN_ARGS
+                        +clean
+                        -project_name=${ECLAIR_PROJECT_NAME} -project_root=${ZEPHYR_BASE}
+                        -eval_file=${ECLAIR_ECL_DIR}/analysis.ecl
+                        -eval_file=${ECLAIR_ANALYSIS_ECL_DIR}/analysis_${ECLAIR_RULESET}.ecl
+                        ${ECLAIR_ENV_ADDITIONAL_OPTIONS})
+
 add_custom_target(eclair_setup_analysis_dir ALL
   COMMAND ${CMAKE_COMMAND} -E remove_directory ${ECLAIR_ANALYSIS_DATA_DIR}
   COMMAND ${CMAKE_COMMAND} -E make_directory ${ECLAIR_ANALYSIS_DATA_DIR}
+  COMMAND ${CMAKE_COMMAND} -E env
+    ECLAIR_DIAGNOSTICS_OUTPUT=${ECLAIR_DIAGNOSTICS_OUTPUT}
+    ECLAIR_DATA_DIR=${ECLAIR_ANALYSIS_DATA_DIR}
+    ${ECLAIR_ENV} ${ECLAIR_CLEAN_ARGS} --
   VERBATIM
   USES_TERMINAL
 )
 
-# configure the camke script which will be used to replace the compiler call with the eclair_env
+# configure the cmake script which will be used to replace the compiler call with the eclair_env
 # call which calls the compiler and to generate analysis files.
 configure_file(${CMAKE_CURRENT_LIST_DIR}/eclair.template ${ECLAIR_OUTPUT_DIR}/eclair.cmake @ONLY)
 
 set(launch_environment ${CMAKE_COMMAND} -P ${ECLAIR_OUTPUT_DIR}/eclair.cmake --)
 set(CMAKE_C_COMPILER_LAUNCHER ${launch_environment} CACHE INTERNAL "")
+
+list(APPEND ECLAIR_PROJECT_ARGS
+                        +project
+                        -project_name=${ECLAIR_PROJECT_NAME} -project_root=${ZEPHYR_BASE}
+                        -eval_file=${ECLAIR_ECL_DIR}/analysis.ecl
+                        -eval_file=${ECLAIR_ANALYSIS_ECL_DIR}/analysis_${ECLAIR_RULESET}.ecl
+                        ${ECLAIR_ENV_ADDITIONAL_OPTIONS})
+
+add_custom_target(eclair_project_analysis ALL
+  COMMAND ${CMAKE_COMMAND} -E env
+    ECLAIR_DIAGNOSTICS_OUTPUT=${ECLAIR_DIAGNOSTICS_OUTPUT}
+    ECLAIR_DATA_DIR=${ECLAIR_ANALYSIS_DATA_DIR}
+    ${ECLAIR_ENV} ${ECLAIR_PROJECT_ARGS} --
+  VERBATIM
+  USES_TERMINAL
+)
 
 # This target is used to generate the ECLAIR database when all the compilation is done and the
 # elf file was generated with this we cane make sure that the analysis is completed.
@@ -141,4 +177,6 @@ add_custom_target(eclair_summary_print ALL
     -overall_txt=${ECLAIR_OUTPUT_DIR}/summary_overall.txt
   COMMAND ${CMAKE_COMMAND} -E cat ${ECLAIR_OUTPUT_DIR}/summary_overall.txt
 )
+
+add_dependencies(eclair_report eclair_project_analysis)
 add_dependencies(eclair_summary_print eclair_report)

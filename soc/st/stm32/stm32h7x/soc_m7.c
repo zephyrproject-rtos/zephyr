@@ -31,9 +31,13 @@ static int stm32h7_m4_wakeup(void)
 	LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
 
 	if (READ_BIT(SYSCFG->UR1, SYSCFG_UR1_BCM4)) {
-		/* Cortex-M4 is waiting for end of system initialization made by
-		 * Cortex-M7. This initialization is now finished,
-		 * then Cortex-M7 takes HSEM so that CM4 can continue running.
+		/**
+		 * Cortex-M4 has been started by hardware.
+		 * Its `soc_early_init_hook()` will stall boot until
+		 * a specific HSEM becomes locked, which indicates
+		 * that Cortex-M7 has finished initializing the system.
+		 * As system initialization is now complete, lock the
+		 * HSEM to release CM4 and allow it to continue booting.
 		 */
 		LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID);
 	} else if (IS_ENABLED(CONFIG_STM32H7_BOOT_M4_AT_INIT)) {

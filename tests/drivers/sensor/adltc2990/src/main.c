@@ -1,17 +1,64 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/emul_sensor.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/adltc2990.h>
+#include <zephyr/fff.h>
 #include <zephyr/ztest.h>
 
 #include "adltc2990_emul.h"
 #include "adltc2990_reg.h"
 #include "adltc2990_internal.h"
+
+#include <zephyr/logging/log.h>
+
+DEFINE_FFF_GLOBALS;
+
+DECLARE_FAKE_VALUE_FUNC(int, fake_mock_i2c_transfer, uint8_t, int, int);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_mock_i2c_transfer, uint8_t, int, int);
+
+static int mock_i2c_transfer_fail_reg_number = -1;
+
+static int adltc2990_i2c_is_touching_reg_delegate(uint8_t start_reg, int num_msgs, int reg)
+{
+
+	if (start_reg == reg) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int mock_i2c_transfer_delegate(const struct emul *target, struct i2c_msg *msgs, int num_msgs,
+				      int addr)
+{
+	ARG_UNUSED(target);
+	ARG_UNUSED(addr);
+
+	uint8_t start_reg = msgs[0].buf[0];
+
+	fake_mock_i2c_transfer_fake.return_val =
+		fake_mock_i2c_transfer(start_reg, num_msgs, mock_i2c_transfer_fail_reg_number);
+	if (fake_mock_i2c_transfer_fake.return_val == -EIO) {
+		return -EIO;
+	}
+	return -ENOSYS;
+}
+
+static void reset_mock_i2c_transfer_fake(void)
+{
+	mock_i2c_transfer_fail_reg_number = -1;
+	fake_mock_i2c_transfer_reset();
+	fake_mock_i2c_transfer_fake.custom_fake = adltc2990_i2c_is_touching_reg_delegate;
+}
 
 /* Colllection of common assertion macros */
 #define CHECK_SINGLE_ENDED_VOLTAGE(sensor_val, index, pin_voltage, r1, r2)                         \
@@ -118,6 +165,65 @@ static void adltc2990_4_3_before(void *f)
 
 ZTEST_SUITE(adltc2990_4_3, NULL, adltc2990_4_3_setup, adltc2990_4_3_before, NULL, NULL);
 
+ZTEST_F(adltc2990_4_3, test_mock_i2c_error)
+{
+	struct i2c_emul_api mock_bus_api;
+
+	fixture->target->bus.i2c->mock_api = &mock_bus_api;
+	mock_bus_api.transfer = mock_i2c_transfer_delegate;
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_STATUS;
+	bool is_busy;
+
+	zassert_equal(-EIO, adltc2990_is_busy(fixture->dev, &is_busy), "I2C Error not detected");
+	zassert_equal(1, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_TRIGGER;
+	adltc2990_trigger_measurement(fixture->dev, ADLTC2990_REPEATED_ACQUISITION);
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_CONTROL;
+	adltc2990_trigger_measurement(fixture->dev, ADLTC2990_SINGLE_SHOT_ACQUISITION);
+	zassert_equal(ADLTC2990_REG_CONTROL, fake_mock_i2c_transfer_fake.arg0_val);
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_VCC_LSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(ADLTC2990_REG_VCC_LSB, fake_mock_i2c_transfer_fake.arg0_val);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V1_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_AMBIENT_TEMP));
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V3_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_CURRENT));
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_INTERNAL_TEMP_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_DIE_TEMP));
+	zassert_equal(1, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V1_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_AMBIENT_TEMP));
+	zassert_equal(1, fake_mock_i2c_transfer_fake.call_count);
+}
+
 ZTEST_F(adltc2990_4_3, test_available_channels)
 {
 	struct sensor_value value[3];
@@ -153,10 +259,33 @@ static void adltc2990_1_3_before(void *f)
 {
 	struct adltc2990_1_3_fixture *fixture = f;
 
+	uint8_t ctrl_reg_value;
+
+	adltc2990_emul_get_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_reg_value);
+
 	adltc2990_emul_reset(fixture->target);
+
+	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_reg_value);
 }
 
 ZTEST_SUITE(adltc2990_1_3, NULL, adltc2990_1_3_setup, adltc2990_1_3_before, NULL, NULL);
+
+ZTEST_F(adltc2990_1_3, test_acq_format)
+{
+	uint8_t ctrl_register_value;
+
+	adltc2990_trigger_measurement(fixture->dev, ADLTC2990_SINGLE_SHOT_ACQUISITION);
+	adltc2990_emul_get_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_register_value);
+	zassert_equal(ADLTC2990_SINGLE_SHOT_ACQUISITION,
+		      ADLTC2990_ACQUISITION_BIT_VAL(ctrl_register_value),
+		      "Repeated Acquisition not set");
+
+	adltc2990_trigger_measurement(fixture->dev, ADLTC2990_REPEATED_ACQUISITION);
+	adltc2990_emul_get_reg(fixture->target, ADLTC2990_REG_CONTROL, &ctrl_register_value);
+	zassert_equal(ADLTC2990_REPEATED_ACQUISITION,
+		      ADLTC2990_ACQUISITION_BIT_VAL(ctrl_register_value),
+		      "Single Shot Acquisition not set");
+}
 
 ZTEST_F(adltc2990_1_3, test_die_temperature)
 {
@@ -268,6 +397,20 @@ static void adltc2990_5_3_before(void *f)
 
 ZTEST_SUITE(adltc2990_5_3, NULL, adltc2990_5_3_setup, adltc2990_5_3_before, NULL, NULL);
 
+ZTEST_F(adltc2990_5_3, test_mock_i2c_error)
+{
+	struct i2c_emul_api mock_bus_api;
+
+	fixture->target->bus.i2c->mock_api = &mock_bus_api;
+	mock_bus_api.transfer = mock_i2c_transfer_delegate;
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V3_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_AMBIENT_TEMP));
+	zassert_equal(3, fake_mock_i2c_transfer_fake.call_count);
+}
+
 ZTEST_F(adltc2990_5_3, test_ambient_temperature)
 {
 	/*Kelvin 0b00010001 0b00010010 273.1250*/
@@ -329,6 +472,39 @@ static void adltc2990_6_3_before(void *f)
 
 ZTEST_SUITE(adltc2990_6_3, NULL, adltc2990_6_3_setup, adltc2990_6_3_before, NULL, NULL);
 
+ZTEST_F(adltc2990_6_3, test_mock_i2c_error)
+{
+	struct i2c_emul_api mock_bus_api;
+
+	fixture->target->bus.i2c->mock_api = &mock_bus_api;
+	mock_bus_api.transfer = mock_i2c_transfer_delegate;
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_VCC_LSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+	zassert_equal(2, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V1_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(3, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V3_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(5, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V1_LSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_CURRENT));
+	zassert_equal(2, fake_mock_i2c_transfer_fake.call_count);
+}
+
 ZTEST_F(adltc2990_6_3, test_current)
 {
 	/* 0b00111100 0b01011000 +0.300 */
@@ -375,6 +551,47 @@ static void adltc2990_7_3_before(void *f)
 }
 
 ZTEST_SUITE(adltc2990_7_3, NULL, adltc2990_7_3_setup, adltc2990_7_3_before, NULL, NULL);
+
+ZTEST_F(adltc2990_7_3, test_mock_i2c_error)
+{
+	struct i2c_emul_api mock_bus_api;
+
+	fixture->target->bus.i2c->mock_api = &mock_bus_api;
+	mock_bus_api.transfer = mock_i2c_transfer_delegate;
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_VCC_LSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+	zassert_equal(2, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V1_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+	zassert_equal(3, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V2_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(-EIO, fake_mock_i2c_transfer_fake.return_val);
+	zassert_equal(5, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V3_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(7, fake_mock_i2c_transfer_fake.call_count);
+
+	reset_mock_i2c_transfer_fake();
+
+	mock_i2c_transfer_fail_reg_number = ADLTC2990_REG_V4_MSB;
+	zassert_equal(-EIO, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(9, fake_mock_i2c_transfer_fake.call_count);
+}
 
 ZTEST_F(adltc2990_7_3, test_available_channels)
 {

@@ -13,4 +13,5 @@ supported:
   - spi
   - backup_sram
   - qspi
+  - memc
 vendor: fanke

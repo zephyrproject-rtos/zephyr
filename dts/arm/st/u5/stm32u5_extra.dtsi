@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2025 Harris Tomy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		usart2: serial@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
+			resets = <&rctl STM32_RESET(APB1L, 17)>;
+			interrupts = <62 0>;
+			status = "disabled";
+		};
+
+		gpiof: gpio@42021400 {
+			compatible = "st,stm32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x42021400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+		};
+
+		gpioi: gpio@42022000 {
+			compatible = "st,stm32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x42022000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 8)>;
+		};
+
+		sdmmc2: sdmmc@420c8c00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 28)>,
+					<&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB2L, 28)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+
+		fmc: memory-controller@420d0400 {
+			compatible = "st,stm32-fmc";
+			reg = <0x420d0400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2_2, 0)>;
+			status = "disabled";
+
+			sram {
+				compatible = "st,stm32-fmc-nor-psram";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		octospi2: spi@420d2400 {
+			compatible = "st,stm32-ospi";
+			reg = <0x420d2400 0x400>;
+			interrupts = <120 0>;
+			clock-names = "ospix", "ospi-ker", "ospi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB2_2, 8)>,
+				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
+				<&rcc STM32_CLOCK(AHB2, 21)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		ucpd1: ucpd@4000dc00 {
+			compatible = "st,stm32-ucpd";
+			reg = <0x4000dc00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			interrupts = <106 0>;
+			status = "disabled";
+		};
+	};
+};

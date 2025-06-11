@@ -8,7 +8,7 @@ menuconfig MC3419
 	depends on DT_HAS_MEMSIC_MC3419_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_MEMSIC_MC3419),i2c)
 	help
-	 Enable driver for MC3419 acclerometer.
+	 Enable driver for MC3419 accelerometer.
 
 if MC3419
 
@@ -43,7 +43,7 @@ config MC3419_THREAD_PRIORITY
 	default 10
 
 config MC3419_THREAD_STACK_SIZE
-	int "Own thread stask size"
+	int "Own thread stack size"
 	depends on MC3419_TRIGGER_OWN_THREAD
 	default 1024
 

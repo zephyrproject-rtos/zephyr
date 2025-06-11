@@ -35,4 +35,47 @@
 #define LIS2DUX12_DT_FS_8G  2 /* 8g (0.244 mg/LSB)  */
 #define LIS2DUX12_DT_FS_16G 3 /* 16g (0.488 mg/LSB) */
 
+/* Accelerometer FIFO batching data rate */
+#define LIS2DUX12_DT_BDR_XL_ODR        0x0
+#define LIS2DUX12_DT_BDR_XL_ODR_DIV_2  0x1
+#define LIS2DUX12_DT_BDR_XL_ODR_DIV_4  0x2
+#define LIS2DUX12_DT_BDR_XL_ODR_DIV_8  0x3
+#define LIS2DUX12_DT_BDR_XL_ODR_DIV_16 0x4
+#define LIS2DUX12_DT_BDR_XL_ODR_DIV_32 0x5
+#define LIS2DUX12_DT_BDR_XL_ODR_DIV_64 0x6
+#define LIS2DUX12_DT_BDR_XL_ODR_OFF    0x7
+
+/* Accelerometer FIFO timestamp ratio */
+#define LIS2DUX12_DT_DEC_TS_OFF  0x0
+#define LIS2DUX12_DT_DEC_TS_1    0x1
+#define LIS2DUX12_DT_DEC_TS_8    0x2
+#define LIS2DUX12_DT_DEC_TS_32   0x3
+
+/* Accelerometer FIFO tags (aligned with lis2dux12_fifo_sensor_tag_t) */
+#define LIS2DUXXX_FIFO_EMPTY         0x0
+#define LIS2DUXXX_XL_TEMP_TAG        0x2
+#define LIS2DUXXX_XL_ONLY_2X_TAG     0x3
+#define LIS2DUXXX_TIMESTAMP_TAG      0x4
+#define LIS2DUXXX_STEP_COUNTER_TAG   0x12
+#define LIS2DUXXX_MLC_RESULT_TAG     0x1A
+#define LIS2DUXXX_MLC_FILTER_TAG     0x1B
+#define LIS2DUXXX_MLC_FEATURE        0x1C
+#define LIS2DUXXX_FSM_RESULT_TAG     0x1D
+
+/* Accelerometer FIFO modes (aligned with lis2dux12_operation_t) */
+#define LIS2DUXXX_DT_BYPASS_MODE            0x0
+#define LIS2DUXXX_DT_FIFO_MODE              0x1
+#define LIS2DUXXX_DT_STREAM_TO_FIFO_MODE    0x3
+#define LIS2DUXXX_DT_BYPASS_TO_STREAM_MODE  0x4
+#define LIS2DUXXX_DT_STREAM_MODE            0x6
+#define LIS2DUXXX_DT_BYPASS_TO_FIFO_MODE    0x7
+#define LIS2DUXXX_DT_FIFO_OFF               0x8
+
+/* Accelerometer registers */
+#define LIS2DUXXX_DT_FIFO_CTRL           0x15U
+#define LIS2DUXXX_DT_STATUS              0x25U
+#define LIS2DUXXX_DT_FIFO_STATUS1        0x26U
+#define LIS2DUXXX_DT_OUTX_L              0x28U
+#define LIS2DUXXX_DT_FIFO_DATA_OUT_TAG   0x40U
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_LIS2DUX12_H_ */

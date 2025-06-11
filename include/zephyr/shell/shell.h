@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #if defined CONFIG_SHELL_GETOPT
 #include <getopt.h>
@@ -235,6 +236,83 @@ struct shell_static_entry {
 };
 
 /**
+ * @brief Shell structured help descriptor.
+ *
+ * @details This structure provides an organized way to specify command help
+ * as opposed to a free-form string. This helps make help messages more
+ * consistent and easier to read.
+ */
+struct shell_cmd_help {
+	/* @cond INTERNAL_HIDDEN */
+	uint32_t magic;
+	/* @endcond */
+	const char *description; /*!< Command description */
+	const char *usage;       /*!< Command usage string */
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/**
+ * @brief Magic number used to identify the beginning of a structured help
+ * message when cast to a char pointer.
+ */
+#define SHELL_STRUCTURED_HELP_MAGIC 0x86D20BC4
+
+/**
+ * @endcond
+ */
+
+/**
+ * @brief Check if help string is structured help.
+ *
+ * @param help Pointer to help string or structured help.
+ * @return true if help is structured, false otherwise.
+ */
+static inline bool shell_help_is_structured(const char *help)
+{
+	const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
+
+	return structured != NULL && IS_PTR_ALIGNED(structured, struct shell_cmd_help) &&
+	       structured->magic == SHELL_STRUCTURED_HELP_MAGIC;
+}
+
+#if defined(CONFIG_SHELL_HELP) || defined(__DOXYGEN__)
+/**
+ * @brief Helper macro to create structured help inline.
+ *
+ * This macro allows you to pass structured help directly to existing shell macros.
+ *
+ * Example:
+ *
+ * @code{.c}
+ * #define MY_CMD_HELP SHELL_HELP("Do stuff", "<device> <arg1> [<arg2>]")
+ * SHELL_CMD_REGISTER(my_cmd, NULL, MY_CMD_HELP, &my_cmd_handler, 1, 1);
+ * @endcode
+ *
+ * @param[in] _description	Command description.
+ *				This can be a multi-line string. First line should be one sentence
+ *				describing the command. Additional lines might be used to provide
+ *				additional details.
+ *
+ * @param[in] _usage		Command usage string.
+ *				This can be a multi-line string. First line should always be
+ *				indicating the command syntax (_without_ the command name).
+ *				Additional lines may be used to provide additional details, e.g.
+ *				explain the meaning of each argument, allowed values, etc.
+ */
+#define SHELL_HELP(_description, _usage)                                                           \
+	((const char *)&(const struct shell_cmd_help){                                             \
+		.magic = SHELL_STRUCTURED_HELP_MAGIC,                                              \
+		.description = (_description),                                                     \
+		.usage = (_usage),                                                                 \
+	})
+#else
+#define SHELL_HELP(_description, _usage) NULL
+#endif /* CONFIG_SHELL_HELP */
+
+/**
  * @brief Macro for defining and adding a root command (level 0) with required
  * number of arguments.
  *
@@ -244,7 +322,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string (use @ref SHELL_HELP for structured help)
  * @param[in] handler	Pointer to a function handler.
  * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
@@ -275,7 +353,7 @@ struct shell_static_entry {
  *			exists and equals 1.
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string (use @ref SHELL_HELP for structured help).
  * @param[in] handler	Pointer to a function handler.
  * @param[in] mandatory	Number of mandatory arguments including command name.
  * @param[in] optional	Number of optional arguments.
@@ -303,7 +381,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	Pointer to a function handler.
  */
 #define SHELL_CMD_REGISTER(syntax, subcmd, help, handler) \
@@ -319,7 +397,7 @@ struct shell_static_entry {
  *			exists and equals 1.
  * @param[in] syntax	Command syntax (for example: history).
  * @param[in] subcmd	Pointer to a subcommands array.
- * @param[in] help	Pointer to a command help string.
+ * @param[in] help	Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	Pointer to a function handler.
  */
 #define SHELL_COND_CMD_REGISTER(flag, syntax, subcmd, help, handler) \
@@ -455,7 +533,7 @@ struct shell_static_entry {
  *
  * @param[in] syntax	 Command syntax (for example: history).
  * @param[in] subcmd	 Pointer to a subcommands array.
- * @param[in] help	 Pointer to a command help string.
+ * @param[in] help	 Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	 Pointer to a function handler.
  * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.
@@ -477,7 +555,7 @@ struct shell_static_entry {
  *			 exists and equals 1.
  * @param[in] syntax	 Command syntax (for example: history).
  * @param[in] subcmd	 Pointer to a subcommands array.
- * @param[in] help	 Pointer to a command help string.
+ * @param[in] help	 Pointer to a command help string. Use @ref SHELL_HELP for structured help.
  * @param[in] handler	 Pointer to a function handler.
  * @param[in] mand	 Number of mandatory arguments including command name.
  * @param[in] opt	 Number of optional arguments.

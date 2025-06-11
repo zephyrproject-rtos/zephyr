@@ -16,6 +16,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - memc
   - pwm
   - uart
   - watchdog

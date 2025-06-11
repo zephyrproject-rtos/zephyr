@@ -4,29 +4,30 @@ common:
   tags: net
   depends_on: netif
   build_only: true
-  platform_allow: frdm_k64f
+  platform_allow:
+    - frdm_k64f
+    - stm32h573i_dk
   integration_platforms:
     - frdm_k64f
+    - stm32h573i_dk
 sample:
   description: hawkBit Firmware Over-the-Air (FOTA)
   name: hawkbit
 tests:
   sample.net.hawkbit.default: {}
+  sample.net.hawkbit.sysbuild:
+    sysbuild: true
   sample.net.hawkbit.manual:
     extra_configs:
       - CONFIG_HAWKBIT_MANUAL=y
-  sample.net.hawkbit.shell:
-    extra_configs:
-      - CONFIG_SHELL=y
-      - CONFIG_HAWKBIT_SHELL=y
   sample.net.hawkbit.ddi.target:
     extra_configs:
+      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
       - CONFIG_HAWKBIT_DDI_TARGET_SECURITY=y
-      - CONFIG_HAWKBIT_DDI_SECURITY_TOKEN="abcd1234"
-  sample.net.hawkbit.ddi.gateway:
+  sample.net.hawkbit.ddi.no_security:
     extra_configs:
-      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=y
-      - CONFIG_HAWKBIT_DDI_SECURITY_TOKEN="abcd1234"
+      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
+      - CONFIG_HAWKBIT_DDI_NO_SECURITY=y
   sample.net.hawkbit.tls:
     extra_configs:
       - CONFIG_HAWKBIT_USE_TLS=y

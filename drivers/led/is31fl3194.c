@@ -146,7 +146,7 @@ static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uin
 	}
 
 	/* Rescale 0..100 to 0..255 */
-	value = value * 255 / LED_BRIGTHNESS_MAX;
+	value = value * 255 / LED_BRIGHTNESS_MAX;
 
 	ret = i2c_reg_write_byte_dt(&config->bus, led_channels[led], value);
 	if (ret == 0) {

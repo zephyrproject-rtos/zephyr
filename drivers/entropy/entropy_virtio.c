@@ -98,7 +98,7 @@ static int entropy_virtio_init(const struct device *dev)
 
 	k_sem_init(&data->sem, 0, 1);
 
-	LOG_DBG("VirtIO entropy driver initialized");
+	LOG_DBG("virtio entropy driver initialized");
 	return 0;
 }
 

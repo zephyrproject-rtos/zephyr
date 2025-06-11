@@ -17,6 +17,8 @@ config LV_Z_DEMO_BENCHMARK
 	bool "LVGL benchmark demo"
 	select LV_USE_DEMO_BENCHMARK
 	select LV_USE_DEMO_WIDGETS
+	imply LV_USE_PERF_MONITOR
+	imply LV_USE_SYSMON
 	help
 	  Build benchmarking demo application.
 
@@ -32,12 +34,6 @@ config LV_Z_DEMO_WIDGETS
 	help
 	  Build widgets demo application.
 
-config LV_Z_DEMO_FLEX_LAYOUT
-	bool "LVGL flex layout demo"
-	select LV_USE_DEMO_FLEX_LAYOUT
-	help
-	  Build flex layout demo application.
-
 config LV_Z_DEMO_KEYPAD_AND_ENCODER
 	bool "LVGL keypad and encoder demo"
 	select LV_USE_DEMO_KEYPAD_AND_ENCODER
@@ -49,19 +45,6 @@ config LV_Z_DEMO_RENDER
 	select LV_USE_DEMO_RENDER
 	help
 	  Build render demo application.
-
-config LV_Z_DEMO_SCROLL
-	bool "LVGL scroll demo"
-	select LV_USE_DEMO_SCROLL
-	help
-	  Build scroll demo application.
-
-config LV_Z_DEMO_MULTILANG
-	bool "LVGL multilang demo"
-	select LV_USE_DEMO_MULTILANG
-	select LV_USE_IMGFONT
-	help
-	  Build multilang demo application.
 
 endchoice
 

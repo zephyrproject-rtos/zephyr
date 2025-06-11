@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/dma/max32657_dma.h>
 #include <freq.h>
 
 / {
@@ -142,6 +143,15 @@
 		compatible = "adi,max32-trng";
 		reg = <0x4d000 0x1000>;
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
+		status = "disabled";
+	};
+
+	wdt0: watchdog@3000  {
+		compatible = "adi,max32-watchdog";
+		reg = <0x3000 0x400>;
+		interrupts = <1 0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
+		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		status = "disabled";
 	};
 };

@@ -116,6 +116,8 @@ source "drivers/adc/Kconfig.xmc4xxx"
 
 source "drivers/adc/Kconfig.gecko"
 
+source "drivers/adc/Kconfig.siwx91x"
+
 source "drivers/adc/Kconfig.ifx_cat1"
 
 source "drivers/adc/Kconfig.smartbond"
@@ -153,5 +155,7 @@ source "drivers/adc/Kconfig.ad405x"
 source "drivers/adc/Kconfig.ad4130"
 
 source "drivers/adc/Kconfig.rts5912"
+
+source "drivers/adc/Kconfig.ti_am335x"
 
 endif # ADC

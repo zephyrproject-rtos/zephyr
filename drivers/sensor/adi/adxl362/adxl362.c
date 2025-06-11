@@ -292,7 +292,7 @@ static int adxl362_attr_set_thresh(const struct device *dev,
 {
 	uint8_t reg;
 	uint16_t threshold = val->val1;
-	size_t ret;
+	int ret;
 
 	if (chan != SENSOR_CHAN_ACCEL_X &&
 	    chan != SENSOR_CHAN_ACCEL_Y &&

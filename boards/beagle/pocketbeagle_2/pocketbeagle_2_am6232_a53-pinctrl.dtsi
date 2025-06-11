@@ -24,4 +24,17 @@
 		/* (K22) GPMC0_CSn2.I2C2_SCL */
 		pinmux = <K3_PINMUX(0x00b0, PIN_INPUT_PULLUP, MUX_MODE_1)>;
 	};
+
+	led_pins_default: led-default-pins {
+		pinmux = <
+			/* (F24) OSPI0_D3.GPIO0_6 */
+			K3_PINMUX(0x0018, PIN_OUTPUT, MUX_MODE_7)
+			/* (F25) OSPI0_D2.GPIO0_5 */
+			K3_PINMUX(0x0014, PIN_OUTPUT, MUX_MODE_7)
+			/* (G24) OSPI0_D1.GPIO0_4 */
+			K3_PINMUX(0x0010, PIN_OUTPUT, MUX_MODE_7)
+			/* (E25) OSPI0_D0.GPIO0_3 */
+			K3_PINMUX(0x000c, PIN_OUTPUT, MUX_MODE_7)
+		>;
+	};
 };

@@ -464,6 +464,7 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
+    - samples/bluetooth/classic/
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -567,6 +568,7 @@ Bluetooth Classic:
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
     - tests/bluetooth/classic/
+    - samples/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
     - "area: Bluetooth"
@@ -1458,6 +1460,7 @@ Release Notes:
     - tests/drivers/ethernet/
     - include/zephyr/drivers/ethernet/
     - include/zephyr/net/phy.h
+    - include/zephyr/net/mii.h
     - include/zephyr/net/ethernet.h
   labels:
     - "area: Ethernet"
@@ -3846,10 +3849,19 @@ NXP Platform Wireless:
     - axelnxp
     - George-Stefan
   files:
-    - drivers/wifi/nxp/
-    - drivers/bluetooth/hci/*nxp*
-    - drivers/ieee802154/ieee802154_kw41z.c
+    - boards/nxp/*mcxw*/
+    - boards/nxp/*rw*/
     - drivers/*/*mcxw*.c
+    - drivers/bluetooth/hci/*nxp*
+    - drivers/hdlc_rcp_if/*nxp*
+    - drivers/ieee802154/ieee802154_kw41z.c
+    - drivers/wifi/nxp/
+    - samples/bluetooth/**/*rw*
+    - samples/net/**/*mcxw*
+    - samples/net/**/*nxp*
+    - samples/net/**/*rw*
+    - soc/nxp/mcx/mcxw/
+    - soc/nxp/rw/
   labels:
     - "platform: NXP Drivers"
 
@@ -4280,14 +4292,17 @@ ITE Platforms:
     - Dino-Li
     - GTLin08
     - RuibinChang
+    - Chenhongren
   collaborators:
     - jackrosenthal
     - keith-zephyr
-    - brockus-zephyr
-    - sjg20
+    - fabiobaltieri
   files:
     - boards/ite/
     - drivers/sensor/ite/
+    - drivers/usb/udc/*it82xx2*.c
+    - drivers/usb/device/*it82xx2*.c
+    - drivers/*/*it51xxx*.c
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
     - dts/bindings/*/ite*
@@ -5345,6 +5360,7 @@ West:
     - modules/lvgl/
     - tests/lib/gui/lvgl/
     - include/zephyr/dt-bindings/lvgl/
+    - samples/modules/lvgl/
   labels:
     - "area: LVGL"
 

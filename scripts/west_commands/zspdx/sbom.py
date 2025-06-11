@@ -7,6 +7,7 @@ import os
 from west import log
 
 from zspdx.scanner import ScannerConfig, scanDocument
+from zspdx.version import SPDX_VERSION_2_3
 from zspdx.walker import Walker, WalkerConfig
 from zspdx.writer import writeSPDX
 
@@ -25,6 +26,9 @@ class SBOMConfig:
 
         # location of SPDX document output directory
         self.spdxDir = ""
+
+        # SPDX specification version to use
+        self.spdxVersion = SPDX_VERSION_2_3
 
         # should also analyze for included header files?
         self.analyzeIncludes = False
@@ -101,31 +105,33 @@ def makeSPDX(cfg):
 
     # write SDK document, if we made one
     if cfg.includeSDK:
-        retval = writeSPDX(os.path.join(cfg.spdxDir, "sdk.spdx"), w.docSDK)
+        retval = writeSPDX(os.path.join(cfg.spdxDir, "sdk.spdx"), w.docSDK, cfg.spdxVersion)
         if not retval:
             log.err("SPDX writer failed for SDK document; bailing")
             return False
 
     # write app document
-    retval = writeSPDX(os.path.join(cfg.spdxDir, "app.spdx"), w.docApp)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "app.spdx"), w.docApp, cfg.spdxVersion)
     if not retval:
         log.err("SPDX writer failed for app document; bailing")
         return False
 
     # write zephyr document
-    writeSPDX(os.path.join(cfg.spdxDir, "zephyr.spdx"), w.docZephyr)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "zephyr.spdx"), w.docZephyr, cfg.spdxVersion)
     if not retval:
         log.err("SPDX writer failed for zephyr document; bailing")
         return False
 
     # write build document
-    writeSPDX(os.path.join(cfg.spdxDir, "build.spdx"), w.docBuild)
+    retval = writeSPDX(os.path.join(cfg.spdxDir, "build.spdx"), w.docBuild, cfg.spdxVersion)
     if not retval:
         log.err("SPDX writer failed for build document; bailing")
         return False
 
     # write modules document
-    writeSPDX(os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs)
+    retval = writeSPDX(
+        os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs, cfg.spdxVersion
+    )
     if not retval:
         log.err("SPDX writer failed for modules-deps document; bailing")
         return False

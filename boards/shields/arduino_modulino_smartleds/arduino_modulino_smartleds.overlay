@@ -12,7 +12,7 @@
 	};
 };
 
-&qwiic_i2c {
+&zephyr_i2c {
 	modulino_smartleds: modulino-smartleds@36 {
 		compatible = "arduino,modulino-smartleds";
 		reg = <0x36>;

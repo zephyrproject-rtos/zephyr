@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Harris Tomy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u5.dtsi>
+#include <st/u5/stm32u5_extra.dtsi>
+
+/ {
+	soc {
+		usbotg_hs: otghs@42040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x42040000 0x20000>;
+			interrupts = <73 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
+			phys = <&otghs_phy>;
+			status = "disabled";
+		};
+	};
+
+	otghs_phy: otghs_phy {
+		compatible = "st,stm32u5-otghs-phy";
+		clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+			 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
+		#phy-cells = <0>;
+	};
+};

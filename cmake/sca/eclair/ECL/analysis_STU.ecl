@@ -9,7 +9,7 @@
 -eval_file=zephyr_common_config.ecl
 
 -doc_begin="Selection of guidelines from
-https://docs.zephyrproject.org/latest/guides/coding_guidelines/index.html"
+https://docs.zephyrproject.org/latest/contribute/coding_guidelines/index.html"
 -enable=MC3R1.D4.13
 -enable=MC3R1.D4.2
 -enable=MC3R1.D4.4

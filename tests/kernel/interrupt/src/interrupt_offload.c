@@ -102,6 +102,8 @@ void isr_handler(const void *param)
 #define TEST_IRQ_DYN_LINE 0
 #endif
 
+#else
+#define TEST_IRQ_DYN_LINE 0
 #endif
 
 static void init_dyn_interrupt(void)
@@ -111,11 +113,13 @@ static void init_dyn_interrupt(void)
 		ztest_test_skip();
 	}
 
+#if defined(CONFIG_DYNAMIC_INTERRUPTS)
 	/* We just initialize dynamic interrupt once, then reuse them */
 	if (!vector_num) {
 		vector_num = irq_connect_dynamic(TEST_IRQ_DYN_LINE, 1,
 					isr_handler, (void *)&irq_param, 0);
 	}
+#endif
 
 	TC_PRINT("vector(%d)\n", vector_num);
 	zassert_true(vector_num > 0, "no vector can be used");

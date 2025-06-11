@@ -15,7 +15,7 @@
 
 	pinctrl: pinctrl@f4000 {
 		compatible = "ti,k3-pinctrl";
-		reg = <0x000f4000 0x2ac>;
+		reg = <0x000f4000 0x2b0>;
 		status = "okay";
 	};
 

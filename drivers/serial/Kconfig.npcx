@@ -25,3 +25,10 @@ config UART_NPCX_USE_MDMA
 	select SERIAL_SUPPORT_ASYNC
 	help
 	  Enable support for npcx UART DMA mode.
+
+config UART_NPCX_FIFO_EX
+	bool "Extended NPCX UART FIFO driver support"
+	default y if DT_HAS_NUVOTON_NPCX_UART_NPCKN_ENABLED
+	help
+	  This option enables the extended UART FIFO driver for NPCKN variant
+	  of processors.

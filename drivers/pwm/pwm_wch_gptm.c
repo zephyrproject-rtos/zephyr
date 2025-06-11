@@ -37,7 +37,6 @@ typedef GPTM_TypeDef TIM_TypeDef;
 #define TIM_OC4M TIM2_CHCTLR2_OC4M
 #define TIM_CC1P TIM2_CCER_CC1P
 #define TIM_CC1E TIM2_CCER_CC1E
-#define TIM_CC1E TIM2_CCER_CC1E
 #define TIM_ARPE TIM2_CTLR1_ARPE
 #endif
 
@@ -94,7 +93,11 @@ static int pwm_wch_gptm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	if (period_cycles != 0) {
-		regs->ATRLR = period_cycles;
+		/*
+		 * Note that the period is ATRLR+1. The earlier checks handle the case where
+		 * pulse_cycles is zero or equal to period_cycles.
+		 */
+		regs->ATRLR = period_cycles - 1;
 	}
 
 	/* Set the polarity and enable */

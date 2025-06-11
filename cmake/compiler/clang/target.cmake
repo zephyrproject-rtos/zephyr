@@ -18,18 +18,17 @@ endif()
 find_program(CMAKE_C_COMPILER   clang   ${find_program_clang_args})
 find_program(CMAKE_CXX_COMPILER clang++ ${find_program_clang_args})
 
+if(SYSROOT_DIR)
+  # The toolchain has specified a sysroot dir, pass it to the compiler
+  list(APPEND TOOLCHAIN_C_FLAGS "--sysroot=${SYSROOT_DIR}")
+  list(APPEND TOOLCHAIN_LD_FLAGS "--sysroot=${SYSROOT_DIR}")
+endif()
+
 if(NOT "${ARCH}" STREQUAL "posix")
   include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
   include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
 
   if("${ARCH}" STREQUAL "arm")
-    list(APPEND TOOLCHAIN_C_FLAGS
-      -fshort-enums
-      )
-    list(APPEND TOOLCHAIN_LD_FLAGS
-      -fshort-enums
-      )
-
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm.cmake)
   elseif("${ARCH}" STREQUAL "arm64")
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm64.cmake)
@@ -72,7 +71,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
   #
   # Other clang/LLVM distributions may come with other pre-built C libraries.
   # clang/LLVM supports using an alternative C library, either by direct linking,
-  # or by specifying '--sysroot <path>'.
+  # or by specifying '--sysroot <path>'. Sysroot can also be passed using the
+  # CMake variable SYSROOT_DIR which will append the '--sysroot <path>' flags.
   #
   # LLVM for Arm provides a 'newlib.cfg' file for newlib C selection.
   # Let us support this principle by looking for a dedicated 'newlib.cfg' or

@@ -168,7 +168,7 @@ stm32_lp_tick_source: &lptim1 {
 
 /* connectors: */
 grove_serial: &usart1 {};
-grove_i2c: &i2c2 {};
+zephyr_i2c: &i2c2 {};
 
 &flash0 {
 	partitions {

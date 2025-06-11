@@ -4171,6 +4171,8 @@ static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 	LOG_DBG("conn %p", info->acl);
 
 	index = (size_t)bt_conn_index(info->acl);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_hf_pool), "Index is out of bounds");
+
 	hf = &bt_hfp_hf_pool[index];
 	if (hf->acl != info->acl) {
 		LOG_ERR("ACL %p of HF is unaligned with SCO's %p", hf->acl, info->acl);

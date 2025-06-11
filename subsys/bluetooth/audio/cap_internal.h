@@ -24,6 +24,8 @@
 #include <zephyr/types.h>
 
 bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid);
+bool bt_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8_t ccids[],
+				 uint8_t ccid_cnt);
 
 void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream);
 void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream);

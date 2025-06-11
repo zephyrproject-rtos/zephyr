@@ -60,6 +60,16 @@ config LSM6DSO_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
+config LSM6DSO_TILT
+	bool "Tilt detection"
+	help
+	  Enable tilt detection
+
+config LSM6DSO_TAP
+	bool "Tap and Tap-Tap detection"
+	help
+	  Enable tap (single/double) detection
+
 endif # LSM6DSO_TRIGGER
 
 config LSM6DSO_ENABLE_TEMP

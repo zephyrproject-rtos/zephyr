@@ -656,6 +656,7 @@
 				clocks = <&hsfll120>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			spis120: spi@8e5000 {
@@ -1008,6 +1009,7 @@
 				clocks = <&fll16m>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c130: i2c@9a5000 {
@@ -1141,6 +1143,7 @@
 				clocks = <&fll16m>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c132: i2c@9b5000 {
@@ -1274,6 +1277,7 @@
 				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				idleout-supported;
 			};
 
 			i2c134: i2c@9c5000 {
@@ -1407,6 +1411,7 @@
 				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				idleout-supported;
 			};
 
 			i2c136: i2c@9d5000 {

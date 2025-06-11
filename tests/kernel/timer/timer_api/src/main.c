@@ -752,6 +752,33 @@ ZTEST_USER(timer_api, test_timeout_abs)
 	/* Ensure second alignment for K_TIMEOUT_ABS_SEC */
 	zassert_true(exp_ms % MSEC_PER_SEC == 0);
 
+	/* Check K_TIMEOUT_ABS_TICKS() and Z_IS_TIMEOUT_RELATIVE macros */
+	t2 = K_NO_WAIT;
+	zassert_true(Z_IS_TIMEOUT_RELATIVE(t2));
+	t2 = K_TICKS(1);
+	zassert_true(Z_IS_TIMEOUT_RELATIVE(t2));
+	t2 = K_TICKS(INT64_MAX-1);
+	zassert_true(Z_IS_TIMEOUT_RELATIVE(t2));
+	t2 = K_TICKS(INT64_MAX);
+	zassert_true(Z_IS_TIMEOUT_RELATIVE(t2));
+
+	zassert_false(Z_IS_TIMEOUT_RELATIVE(t));
+	t2 = K_TIMEOUT_ABS_TICKS(1);
+	zassert_false(Z_IS_TIMEOUT_RELATIVE(t2));
+	t2 = K_TIMEOUT_ABS_TICKS(INT64_MAX-1);
+	zassert_false(Z_IS_TIMEOUT_RELATIVE(t2));
+
+	/* Check when INT64_MAX passed to K_TIMEOUT_ABS_TICKS(), with
+	 * both a literal and variable argument.
+	 */
+	t2 = K_TIMEOUT_ABS_TICKS(INT64_MAX);
+	zassert_false(Z_IS_TIMEOUT_RELATIVE(t2));
+
+	uint64_t max_int64 = INT64_MAX;
+
+	t2 = K_TIMEOUT_ABS_TICKS(max_int64);
+	zassert_false(Z_IS_TIMEOUT_RELATIVE(t2));
+
 	/* Check the other generator macros to make sure they produce
 	 * the same (whiteboxed) converted values
 	 */
@@ -796,6 +823,33 @@ ZTEST_USER(timer_api, test_timeout_abs)
 		     t0+rem_ticks-exp_ticks);
 
 	k_timer_stop(&remain_timer);
+
+	/* Rerun test with t set to INT64_MAX. K_TIMEOUT_ABS_TICKS()
+	 * should adjust the abs timeout to INT64_MAX-1 because the negative
+	 * range used for absolute timeouts needs to reserve -1 for
+	 * K_TIMEOUT_FOREVER.
+	 */
+	init_timer_data();
+	exp_ticks = INT64_MAX - 1;
+	k_timer_start(&remain_timer, K_TIMEOUT_ABS_TICKS(INT64_MAX), K_FOREVER);
+
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_usleep(1);
+	}
+
+	do {
+		t0 = k_uptime_ticks();
+		rem_ticks = k_timer_remaining_ticks(&remain_timer);
+		t1 = k_uptime_ticks();
+	} while (t0 != t1);
+
+	zassert_true(t0 + rem_ticks == exp_ticks,
+		     "Wrong remaining: now %lld rem %lld expires %lld (%lld)",
+		     (uint64_t)t0, (uint64_t)rem_ticks, (uint64_t)exp_ticks,
+		     t0+rem_ticks-exp_ticks);
+
+	k_timer_stop(&remain_timer);
+
 #endif
 }
 

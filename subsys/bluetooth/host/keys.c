@@ -79,7 +79,7 @@ static bool key_is_in_use(uint8_t id)
 {
 	struct key_data kdata = { false, id };
 
-	bt_conn_foreach(BT_CONN_TYPE_ALL, find_key_in_use, &kdata);
+	bt_conn_foreach(BT_CONN_TYPE_LE, find_key_in_use, &kdata);
 
 	return kdata.in_use;
 }

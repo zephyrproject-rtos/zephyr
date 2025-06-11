@@ -1,0 +1,18 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MPS4
+	bool
+	select SOC_FAMILY_ARM
+	help
+	  Enable support for ARM MPS4 MCU Series
+
+config SOC_SERIES
+	default "mps4" if SOC_SERIES_MPS4
+
+config SOC_MPS4_CORSTONE320
+	bool
+	select SOC_SERIES_MPS4
+
+config SOC
+	default "corstone320" if SOC_MPS4_CORSTONE320

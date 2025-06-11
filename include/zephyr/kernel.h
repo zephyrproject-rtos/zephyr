@@ -1488,13 +1488,13 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  * This macro generates a timeout delay that represents an expiration
  * at the absolute uptime value specified, in system ticks.  That is, the
  * timeout will expire immediately after the system uptime reaches the
- * specified tick count.
+ * specified tick count. Value is clamped to the range 0 to INT64_MAX-1.
  *
  * @param t Tick uptime value
  * @return Timeout delay value
  */
 #define K_TIMEOUT_ABS_TICKS(t) \
-	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)MAX(t, 0)))
+	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)CLAMP(t, 0, (INT64_MAX - 1))))
 
 /**
  * @brief Generates an absolute/uptime timeout value from seconds
@@ -4219,6 +4219,16 @@ struct k_work_queue_config {
 	 * essential thread.
 	 */
 	bool essential;
+
+	/** Controls whether work queue monitors work timeouts.
+	 *
+	 * If non-zero, and CONFIG_WORKQUEUE_WORK_TIMEOUT is enabled,
+	 * the work queue will monitor the duration of each work item.
+	 * If the work item handler takes longer than the specified
+	 * time to execute, the work queue thread will be aborted, and
+	 * an error will be logged if CONFIG_LOG is enabled.
+	 */
+	uint32_t work_timeout_ms;
 };
 
 /** @brief A structure used to hold work until it can be processed. */
@@ -4246,6 +4256,12 @@ struct k_work_q {
 
 	/* Flags describing queue state. */
 	uint32_t flags;
+
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+	struct _timeout work_timeout_record;
+	struct k_work *work;
+	k_timeout_t work_timeout;
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 };
 
 /* Provide the implementation for inline functions declared above */

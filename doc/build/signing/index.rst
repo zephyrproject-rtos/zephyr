@@ -29,7 +29,7 @@ from the :file:`zephyrproject` workspace you created in the :ref:`getting_starte
 Notes on the above commands:
 
 - ``YOUR_BOARD`` should be changed to match your board
-- The singing key value is the insecure default provided and used by MCUboot for development
+- The signing key value is the insecure default provided and used by MCUboot for development
   and testing
 - You can change the ``hello_world`` application directory to any other application that can be
   loaded by MCUboot, such as the :zephyr:code-sample:`smp-svr` sample.
@@ -37,7 +37,7 @@ Notes on the above commands:
 For more information on these and other related configuration options, see:
 
 - ``SB_CONFIG_BOOTLOADER_MCUBOOT``: build the application for loading by MCUboot
-- ``SB_CONFIG_BOOT_SIGNATURE_KEY_FILE``: the key file to use when singing images. If you have
+- ``SB_CONFIG_BOOT_SIGNATURE_KEY_FILE``: the key file to use when signing images. If you have
   your own key, change this appropriately
 - :kconfig:option:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS`: optional additional command line arguments
   for ``imgtool``

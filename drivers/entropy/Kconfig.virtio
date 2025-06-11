@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config ENTROPY_VIRTIO
-	bool "Driver for VirtIO Entropy device"
+	bool "Driver for VIRTIO Entropy device"
 	depends on DT_HAS_VIRTIO_DEVICE4_ENABLED
 	depends on VIRTIO
 	select ENTROPY_HAS_DRIVER
 	default y
 	help
-	  Enable driver for the VirtIO Entropy device.
+	  Enable driver for the VIRTIO Entropy device.

@@ -15,6 +15,10 @@ common:
       num_of_transitions: 1
       expected_rms_values: [0.26, 140]
       tolerance_percentage: 20
+    record:
+      regex:
+        - "RECORD:(?P<metrics>.*)"
+      as_json: ['metrics']
 
 tests:
   pm.power_wakeup_timer:

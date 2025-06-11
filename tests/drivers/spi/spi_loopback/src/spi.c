@@ -291,10 +291,18 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 	uint32_t start_time, end_time, cycles_spent;
 	uint64_t time_spent_us, expected_transfer_time_us, latency_measurement;
 
+	/*
+	 * spi_loopback_transceive() does an inline pm_device_runtime_get(), but since we are
+	 * timing the transfer, we need to get the SPI controller before we start the measurement.
+	 */
+	zassert_ok(pm_device_runtime_get(spec->bus));
+
 	/* since this is a test program, there shouldn't be much to interfere with measurement */
 	start_time = k_cycle_get_32();
 	spi_loopback_transceive(spec, &tx, &rx);
 	end_time = k_cycle_get_32();
+
+	zassert_ok(pm_device_runtime_put(spec->bus));
 
 	if (end_time >= start_time) {
 		cycles_spent = end_time - start_time;
@@ -327,7 +335,7 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 
 	/* Fail if transfer is faster than theoretically possible */
 	zassert_true(time_spent_us >= minimum_transfer_time_us,
-			"Transfer faster than theoretically possible");
+		     "Transfer faster than theoretically possible");
 
 	/* handle overflow for print statement */
 	latency_measurement = time_spent_us - expected_transfer_time_us;
@@ -337,7 +345,9 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 	TC_PRINT("Latency measurement: %llu us\n", latency_measurement);
 
 	/* Allow some overhead, but not too much */
-	zassert_true(time_spent_us <= expected_transfer_time_us * 8, "Very high latency");
+	zassert_true(time_spent_us <=
+			     expected_transfer_time_us * CONFIG_SPI_IDEAL_TRANSFER_DURATION_SCALING,
+		     "Very high latency");
 
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
 				  buffer_print_tx, buffer_print_rx);
@@ -691,7 +701,8 @@ ZTEST(spi_loopback, test_spi_word_size_32)
 				    sizeof(buffer_tx_32), &spec_copies[4], 32);
 }
 
-static K_THREAD_STACK_DEFINE(thread_stack[3], 512);
+static K_THREAD_STACK_DEFINE(thread_stack[3], CONFIG_ZTEST_STACK_SIZE +
+					      CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread thread[3];
 
 static K_SEM_DEFINE(thread_sem, 0, 3);

@@ -63,15 +63,11 @@ This port is designed and tested to run in Linux.
 
 .. note::
 
-   The 32 bit version of this port does not directly work in the old Windows Subsystem
-   for Linux (WSL1) because WSL1 does not support native 32-bit binaries.
-   You may want to consider WSL2, or, if using :ref:`native_sim <native_sim>`,
-   you can also just use the ``native_sim/native/64``
-   target: Check :ref:`32 and 64bit versions<native_sim32_64>`.
-   Otherwise `with some tinkering
-   <https://github.com/microsoft/WSL/issues/2468#issuecomment-374904520>`_ it
-   should be possible to make it work.
-
+   To use it in Windows, you will need a Virtual Machine running a Linux guest.
+   You can use WSL 2 (Windows Subsystem for Linux v2), or another VM running your preferred Linux
+   distribution.
+   Note: The old WSL 1 is very limited and cannot run 32-bit binaries like the default 32-bit
+   native_sim build configuration.
 
 .. _posix_arch_limitations:
 

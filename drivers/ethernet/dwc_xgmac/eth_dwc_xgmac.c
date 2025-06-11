@@ -49,8 +49,6 @@ struct eth_dwc_xgmac_dev_data {
 	bool dev_started;
 	/* This field specifies the ethernet link type full duplex or half duplex. */
 	bool enable_full_duplex;
-	/* Ethernet auto-negotiation status. */
-	bool auto_neg;
 	/* Ethernet promiscuous mode status. */
 	bool promisc_mode;
 	/* Ethernet interface structure associated with this device. */
@@ -1478,41 +1476,6 @@ abort_tx:
 	return -EIO;
 }
 
-static enum phy_link_speed get_phy_adv_speeds(bool auto_neg, bool duplex_mode,
-					      enum eth_dwc_xgmac_link_speed link_speed)
-{
-	enum phy_link_speed adv_speeds = 0u;
-
-	if (auto_neg) {
-		adv_speeds = LINK_HALF_1000BASE | LINK_HALF_1000BASE | LINK_HALF_100BASE |
-			     LINK_FULL_100BASE | LINK_HALF_10BASE | LINK_FULL_10BASE;
-	} else {
-		if (duplex_mode) {
-			switch (link_speed) {
-			case LINK_1GBIT:
-				adv_speeds = LINK_FULL_1000BASE;
-				break;
-			case LINK_100MBIT:
-				adv_speeds = LINK_FULL_100BASE;
-				break;
-			default:
-				adv_speeds = LINK_FULL_10BASE;
-			}
-		} else {
-			switch (link_speed) {
-			case LINK_1GBIT:
-				adv_speeds = LINK_HALF_1000BASE;
-				break;
-			case LINK_100MBIT:
-				adv_speeds = LINK_HALF_100BASE;
-				break;
-			default:
-				adv_speeds = LINK_HALF_10BASE;
-			}
-		}
-	}
-	return adv_speeds;
-}
 #ifdef CONFIG_ETH_DWC_XGMAC_HW_FILTERING
 static inline uint32_t get_free_mac_addr_indx(const struct device *dev)
 {
@@ -1561,56 +1524,12 @@ static inline void disable_filter_for_mac_addr(const struct device *dev, uint8_t
 static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
-	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
-	const struct device *phy = dev_conf->phy_dev;
-	enum phy_link_speed adv_speeds;
 
 	int retval = 0;
 
 	(void)k_mutex_lock(&dev_data->dev_cfg_lock, K_FOREVER);
 	switch (type) {
-	case ETHERNET_CONFIG_TYPE_AUTO_NEG:
-		if (dev_data->auto_neg != config->auto_negotiation) {
-			dev_data->auto_neg = config->auto_negotiation;
-			adv_speeds =
-				get_phy_adv_speeds(dev_data->auto_neg, dev_data->enable_full_duplex,
-						   dev_data->link_speed);
-			retval = phy_configure_link(phy, adv_speeds);
-		} else {
-			retval = -EALREADY;
-		}
-		break;
-	case ETHERNET_CONFIG_TYPE_LINK:
-		if ((config->l.link_10bt && dev_data->link_speed == LINK_10MBIT) ||
-		    (config->l.link_100bt && dev_data->link_speed == LINK_100MBIT) ||
-		    (config->l.link_1000bt && dev_data->link_speed == LINK_1GBIT)) {
-			retval = -EALREADY;
-			break;
-		}
-
-		if (config->l.link_1000bt) {
-			dev_data->link_speed = LINK_1GBIT;
-		} else if (config->l.link_100bt) {
-			dev_data->link_speed = LINK_100MBIT;
-		} else if (config->l.link_10bt) {
-			dev_data->link_speed = LINK_10MBIT;
-		}
-		adv_speeds = get_phy_adv_speeds(dev_data->auto_neg, dev_data->enable_full_duplex,
-						dev_data->link_speed);
-		retval = phy_configure_link(phy, adv_speeds);
-		break;
-	case ETHERNET_CONFIG_TYPE_DUPLEX:
-		if (config->full_duplex == dev_data->enable_full_duplex) {
-			retval = -EALREADY;
-			break;
-		}
-		dev_data->enable_full_duplex = config->full_duplex;
-
-		adv_speeds = get_phy_adv_speeds(dev_data->auto_neg, dev_data->enable_full_duplex,
-						dev_data->link_speed);
-		retval = phy_configure_link(phy, adv_speeds);
-		break;
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(dev_data->mac_addr, config->mac_address.addr, ETH_MAC_ADDRESS_SIZE);
 		retval = net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
@@ -1667,51 +1586,6 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 
 	return retval;
 }
-/**
- * @brief XGMAC get config function
- * XGMAC get config function facilitates to read the existing MAC settings
- *
- * @param dev Pointer to the ethernet device
- * @param type Type of configuration
- * @param config Pointer to configuration data
- * @retval 0 get configuration successful
- *         -ENOTSUP for invalid config type
- */
-static int eth_dwc_xgmac_get_config(const struct device *dev, enum ethernet_config_type type,
-				    struct ethernet_config *config)
-{
-	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
-
-	switch (type) {
-	case ETHERNET_CONFIG_TYPE_AUTO_NEG:
-		config->auto_negotiation = dev_data->auto_neg;
-		break;
-	case ETHERNET_CONFIG_TYPE_LINK:
-		if (dev_data->link_speed == LINK_1GBIT) {
-			config->l.link_1000bt = true;
-		} else if (dev_data->link_speed == LINK_100MBIT) {
-			config->l.link_100bt = true;
-		} else if (dev_data->link_speed == LINK_10MBIT) {
-			config->l.link_10bt = true;
-		}
-		break;
-	case ETHERNET_CONFIG_TYPE_DUPLEX:
-		config->full_duplex = dev_data->enable_full_duplex;
-		break;
-	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(config->mac_address.addr, dev_data->mac_addr, 6);
-		break;
-#if (!CONFIG_ETH_DWC_XGMAC_PROMISCUOUS_EXCEPTION && CONFIG_NET_PROMISCUOUS_MODE)
-	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		config->promisc_mode = dev_data->promisc_mode;
-		break;
-#endif
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
 
 /**
  * @brief XGMAC capability request function
@@ -1727,8 +1601,7 @@ static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device 
 	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
-	caps = (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE |
-		ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_DUPLEX_SET);
+	caps = (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE);
 
 #ifdef CONFIG_ETH_DWC_XGMAC_RX_CS_OFFLOAD
 	caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
@@ -1828,7 +1701,6 @@ static const struct ethernet_api eth_dwc_xgmac_apis = {
 	static struct eth_dwc_xgmac_dev_data eth_dwc_xgmac##port##_dev_data = {                    \
 		.mac_addr = DT_INST_PROP(port, local_mac_address),                                 \
 		.link_speed = DT_INST_PROP(port, max_speed),                                       \
-		.auto_neg = true,                                                                  \
 		.enable_full_duplex = DT_INST_PROP(port, full_duplex_mode_en),                     \
 		.dma_rx_desc = &eth_dwc_xgmac##port##_rx_desc[0u][0u],                             \
 		.dma_tx_desc = &eth_dwc_xgmac##port##_tx_desc[0u][0u],                             \

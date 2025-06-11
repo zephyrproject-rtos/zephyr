@@ -25,7 +25,7 @@ import subprocess
 import sys
 import yaml
 import pykwalify.core
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from collections import namedtuple
 
 try:
@@ -758,6 +758,9 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
 
     if extra_modules is None:
         extra_modules = []
+        for var in ['EXTRA_ZEPHYR_MODULES', 'ZEPHYR_EXTRA_MODULES']:
+            if var in os.environ:
+                extra_modules.extend(PurePosixPath(p) for p in os.environ[var].split(';'))
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
 

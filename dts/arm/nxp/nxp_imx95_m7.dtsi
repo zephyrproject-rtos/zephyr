@@ -547,6 +547,13 @@
 				si-index = <2>;
 				status = "disabled";
 			};
+
+			enetc_ptp_clock: ptp_clock@4ccc0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4ccc0000 0x10000>;
+				clocks = <&scmi_clk IMX95_CLK_ENET>;
+				status = "disabled";
+			};
 		};
 	};
 };

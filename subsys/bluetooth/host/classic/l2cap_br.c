@@ -60,6 +60,11 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 #define L2CAP_BR_PSM_SDP	0x0001
 
+#define L2CAP_BR_ZL_I_FRAME_FLAG_MASK 0xfffffeffU
+#define L2CAP_BR_ZL_I_FRAME_UD_FLAG   0xfffffeff
+#define L2CAP_BR_IS_ZERO_LEN_I_FRAME(flag)                                       \
+	((POINTER_TO_UINT(flag) & L2CAP_BR_ZL_I_FRAME_FLAG_MASK) == L2CAP_BR_ZL_I_FRAME_UD_FLAG)
+
 #define L2CAP_BR_S_FRAME_FLAG_MASK 0xffffff00U
 #define L2CAP_BR_S_FRAME_UD_FLAG   0xffffff00
 #define L2CAP_BR_IS_S_FRAME(flag)                                                \
@@ -892,6 +897,11 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 		hdr = net_buf_push(buf, sizeof(*hdr));
 		hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 		hdr->cid = sys_cpu_to_le16(cid);
+	} else {
+		if ((cb == NULL) && (user_data == NULL) && (buf->len == 0)) {
+			/* Mask it is a zero-length I-frame */
+			user_data = UINT_TO_POINTER(L2CAP_BR_ZL_I_FRAME_UD_FLAG);
+		}
 	}
 #else
 	hdr = net_buf_push(buf, sizeof(*hdr));
@@ -1137,6 +1147,10 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 		}
 
 		if (L2CAP_BR_IS_S_FRAME(closure_data(sdu->user_data))) {
+			return sdu;
+		}
+
+		if (L2CAP_BR_IS_ZERO_LEN_I_FRAME(closure_data(sdu->user_data))) {
 			return sdu;
 		}
 	}
@@ -1500,6 +1514,10 @@ send_i_frame:
 		if (first) {
 			br_chan->next_tx_seq =
 				bt_l2cap_br_update_seq(br_chan, br_chan->next_tx_seq + 1);
+
+			if (L2CAP_BR_IS_ZERO_LEN_I_FRAME(closure_data(pdu->user_data))) {
+				make_closure(pdu->user_data, NULL, NULL);
+			}
 
 			net_buf_pull(pdu, pdu_len);
 
@@ -5749,17 +5767,15 @@ static void bt_l2cap_br_ret_fc_i_recv(struct bt_l2cap_br_chan *br_chan, struct n
 
 valid_frame:
 	switch (sar) {
-	case BT_L2CAP_CONTROL_SAR_UNSEG:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_START:
 		if (buf->len < 2) {
-			LOG_WRN("Invalid SDU length");
+			LOG_WRN("Too short data packet");
 			bt_l2cap_chan_disconnect(&br_chan->chan);
 			return;
 		}
 		break;
+	case BT_L2CAP_CONTROL_SAR_UNSEG:
 	case BT_L2CAP_CONTROL_SAR_END:
-		__fallthrough;
 	case BT_L2CAP_CONTROL_SAR_CONTI:
 		break;
 	}
