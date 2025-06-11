@@ -72,6 +72,15 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	return arch_float_disable(thread);
+#else
+	return -ENOTSUP;
+#endif
+}
+
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
