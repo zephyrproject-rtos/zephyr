@@ -6346,7 +6346,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  * This should be called when a thread has encountered an unrecoverable
  * runtime condition and needs to terminate. What this ultimately
  * means is determined by the _fatal_error_handler() implementation, which
- * will be called will reason code K_ERR_KERNEL_OOPS.
+ * will be called with reason code K_ERR_KERNEL_OOPS.
  *
  * If this is called from ISR context, the default system fatal error handler
  * will treat it as an unrecoverable system error, just like k_panic().
@@ -6359,7 +6359,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  * This should be called when the Zephyr kernel has encountered an
  * unrecoverable runtime condition and needs to terminate. What this ultimately
  * means is determined by the _fatal_error_handler() implementation, which
- * will be called will reason code K_ERR_KERNEL_PANIC.
+ * will be called with reason code K_ERR_KERNEL_PANIC.
  */
 #define k_panic()	z_except_reason(K_ERR_KERNEL_PANIC)
 
