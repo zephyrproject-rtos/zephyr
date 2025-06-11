@@ -19,6 +19,11 @@ if !USE_DT_CODE_PARTITION
 config FLASH_LOAD_OFFSET
 	default $(dt_nodelabel_reg_addr_hex,cpuapp_boot_partition)
 
+# This is meant to span 'cpuapp_boot_partition' and 'cpuapp_slot0_partition'
+# in the default memory map.
+config FLASH_LOAD_SIZE
+	default 0x64000
+
 endif # !USE_DT_CODE_PARTITION
 
 endif # BOARD_NRF54H20DK_NRF54H20_CPUAPP
