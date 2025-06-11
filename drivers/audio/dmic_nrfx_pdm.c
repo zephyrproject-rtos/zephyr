@@ -148,6 +148,7 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 						    drv_data->block_size, evt->buffer_released);
 			if (ret < 0) {
 				LOG_ERR("Failed to release buffer: %d", ret);
+				free_buffer(drv_data, mem_slab_buffer);
 				return;
 			}
 			free_buffer(drv_data, mem_slab_buffer);
@@ -172,6 +173,7 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 					    drv_data->block_size, evt->buffer_released);
 		if (ret < 0) {
 			LOG_ERR("Failed to release buffer: %d", ret);
+			free_buffer(drv_data, mem_slab_buffer);
 			stop_pdm(drv_data);
 			return;
 		}
