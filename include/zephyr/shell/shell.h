@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #if defined CONFIG_SHELL_GETOPT
 #include <getopt.h>
@@ -273,7 +274,8 @@ static inline bool shell_help_is_structured(const char *help)
 {
 	const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
 
-	return structured != NULL && structured->magic == SHELL_STRUCTURED_HELP_MAGIC;
+	return structured != NULL && IS_PTR_ALIGNED(structured, struct shell_cmd_help) &&
+	       structured->magic == SHELL_STRUCTURED_HELP_MAGIC;
 }
 
 #if defined(CONFIG_SHELL_HELP) || defined(__DOXYGEN__)
