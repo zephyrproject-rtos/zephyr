@@ -634,7 +634,7 @@ static void vcp_vol_ctlr_aics_gain_setting_cb(struct bt_aics *inst, int err, uin
 	}
 }
 
-static void vcp_vol_ctlr_aics_type_cb(struct bt_aics *inst, int err, uint8_t type)
+static void vcp_vol_ctlr_aics_type_cb(struct bt_aics *inst, int err, enum bt_aics_input_type type)
 {
 	struct bt_vcp_vol_ctlr_cb *listener, *next;
 
