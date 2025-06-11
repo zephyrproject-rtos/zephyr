@@ -38,3 +38,16 @@ properties:
       - 0x20 # TMP11X_DT_OVERSAMPLING_8
       - 0x40 # TMP11X_DT_OVERSAMPLING_32
       - 0x60 # TMP11X_DT_OVERSAMPLING_64
+  store-attr-values:
+    type: boolean
+    description: |
+      Enable storage of sensor attribute values in EEPROM. On reset, the device
+      goes through a POR sequence that loads the values programmed in the
+      EEPROM into the respective register map locations.
+
+      The following values are supported by the sensor but might not be
+      implemented by the driver:
+      High limit register, low limit register, conversion cycle time, averaging
+      mode, conversion mode (continuous or shutdown mode), alert function mode
+      (alert or therm mode), alert polarity, and temperature offset (not
+      specified in datasheet).

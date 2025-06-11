@@ -28,6 +28,7 @@
 #define TMP117_DEVICE_ID		0x0117
 #define TMP119_DEVICE_ID		0x2117
 
+#define TMP11X_CFGR_RESET		BIT(1)
 #define TMP11X_CFGR_AVG			(BIT(5) | BIT(6))
 #define TMP11X_CFGR_CONV		(BIT(7) | BIT(8) | BIT(9))
 #define TMP11X_CFGR_MODE		(BIT(10) | BIT(11))
@@ -52,6 +53,7 @@ struct tmp11x_dev_config {
 	struct i2c_dt_spec bus;
 	uint16_t odr;
 	uint16_t oversampling;
+	bool store_attr_values;
 };
 
 #endif /*  ZEPHYR_DRIVERS_SENSOR_TMP11X_TMP11X_H_ */
