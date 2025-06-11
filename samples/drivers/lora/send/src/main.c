@@ -14,13 +14,13 @@
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DEFAULT_RADIO_NODE),
 	     "No default LoRa radio specified in DT");
 
-#define MAX_DATA_LEN 10
+#define MAX_DATA_LEN 12
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lora_send);
 
-char data[MAX_DATA_LEN] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
+char data[MAX_DATA_LEN] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd', ' ', '0'};
 
 int main(void)
 {
@@ -56,10 +56,17 @@ int main(void)
 			return 0;
 		}
 
-		LOG_INF("Data sent!");
+		LOG_INF("Data sent %c!", data[MAX_DATA_LEN - 1]);
 
 		/* Send data at 1s interval */
 		k_sleep(K_MSEC(1000));
+
+		/* Increment final character to differentiate packets */
+		if (data[MAX_DATA_LEN - 1] == '9') {
+			data[MAX_DATA_LEN - 1] = '0';
+		} else {
+			data[MAX_DATA_LEN - 1] += 1;
+		}
 	}
 	return 0;
 }

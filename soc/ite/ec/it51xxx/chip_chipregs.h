@@ -9,6 +9,8 @@
 
 #include <zephyr/sys/util.h>
 
+#define IT51XXX_EC_FREQ KHZ(9200)
+
 #ifdef _ASMLANGUAGE
 #define ECREG(x) x
 #else
@@ -187,9 +189,6 @@ struct gpio_it51xxx_regs {
 /* 0x00: General Control */
 #define IT51XXX_GPIO_LPCRSTEN             (BIT(2) | BIT(1))
 #define ITE_EC_GPIO_LPCRSTEN              IT51XXX_GPIO_LPCRSTEN
-#define IT51XXX_GPIO_GCR_ESPI_RST_D2      0x2
-#define IT51XXX_GPIO_GCR_ESPI_RST_POS     1
-#define IT51XXX_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT51XXX_GPIO_GCR_ESPI_RST_POS)
 /* 0xF0: General Control 1 */
 #define IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN BIT(2)
 #define IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN BIT(0)
@@ -320,5 +319,17 @@ struct gctrl_it51xxx_regs {
 /* Alias gctrl_ite_ec_regs to gctrl_it51xxx_regs for compatibility */
 #define gctrl_ite_ec_regs      gctrl_it51xxx_regs
 #define GCTRL_ITE_EC_REGS_BASE GCTRL_IT51XXX_REGS_BASE
+
+/**
+ *
+ * (42xxh) SMBus Interface for target (SMB) registers
+ *
+ */
+#define IT51XXX_SMB_BASE 0xf04200
+/* 0x0a, 0x2a, 0x4a: Slave n Dedicated FIFO Pre-defined Control Register */
+#define SMB_SADFPCTL     (IT51XXX_SMB_BASE + 0x0a)
+#define SMB_SBDFPCTL     (IT51XXX_SMB_BASE + 0x2a)
+#define SMB_SCDFPCTL     (IT51XXX_SMB_BASE + 0x4a)
+#define SMB_HSAPE        BIT(1)
 
 #endif /* CHIP_CHIPREGS_H */

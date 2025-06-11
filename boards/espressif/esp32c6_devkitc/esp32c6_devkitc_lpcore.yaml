@@ -6,6 +6,8 @@ toolchain:
   - zephyr
 supported:
   - cpu
+  - uart
+  - serial
 testing:
   only_tags:
     - introduction

@@ -388,7 +388,7 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target)
 
 	return status;
 }
-
+#ifdef CONFIG_I3C_TARGET
 int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8_t static_addr,
 			   uint8_t bcr, uint8_t dcr)
 {
@@ -544,7 +544,8 @@ void i3c_sec_handoffed(struct k_work *work)
 	/* Set false, so the next handoff doesn't retrigger regathering info */
 	data->deftgts_refreshed = false;
 }
-#endif
+#endif /* CONFIG_I3C_USE_IBI */
+#endif /* CONFIG_I3C_TARGET */
 
 int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 				 const struct i3c_dev_list *dev_list, uint64_t pid, bool must_match,
@@ -622,7 +623,7 @@ out:
 err:
 	return ret;
 }
-
+#ifdef CONFIG_I3C_TARGET
 uint8_t i3c_odd_parity(uint8_t p)
 {
 	p ^= p >> 4;
@@ -740,7 +741,7 @@ int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool req
 
 	return ret;
 }
-
+#endif /* CONFIG_I3C_TARGET */
 int i3c_device_basic_info_get(struct i3c_device_desc *target)
 {
 	int ret;
@@ -771,33 +772,33 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 	struct i3c_ccc_mwl mwl = {0};
 	union i3c_ccc_getcaps caps = {0};
 	union i3c_ccc_getmxds mxds = {0};
-	int ret;
+	int ret = 0;
 
 	/* GETMRL */
 	if (i3c_ccc_do_getmrl(target, &mrl) != 0) {
 		/* GETMRL may be optionally supported if no settable limit */
-		LOG_DBG("No settable limit for GETMRL");
+		LOG_DBG("%s: No settable limit for GETMRL", target->dev->name);
 	}
 
 	/* GETMWL */
 	if (i3c_ccc_do_getmwl(target, &mwl) != 0) {
 		/* GETMWL may be optionally supported if no settable limit */
-		LOG_DBG("No settable limit for GETMWL");
+		LOG_DBG("%s: No settable limit for GETMWL", target->dev->name);
 	}
 
 	/* GETCAPS */
-	ret = i3c_ccc_do_getcaps_fmt1(target, &caps);
-	/*
-	 * GETCAPS (GETHDRCAP) is required to be supported for I3C v1.0 targets that support HDR
-	 * modes and required if the Target's I3C version is v1.1 or later, but which the version it
-	 * supports it can't be known ahead of time. So if the BCR bit for Advanced capabilities is
-	 * set, then it is expected for GETCAPS to always be supported. Otherwise, then it's a I3C
-	 * v1.0 device without any HDR modes so do not treat as an error if no valid response.
-	 */
-	if ((ret != 0) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) {
-		return ret;
-	} else {
-		ret = 0;
+	if (((target->flags & I3C_V1P0_SUPPORT) && (target->bcr & I3C_BCR_ADV_CAPABILITIES)) ||
+	    (!(target->flags & I3C_V1P0_SUPPORT))) {
+		/*
+		 * GETCAPS (GETHDRCAP) is required to be supported for I3C v1.0 targets that support
+		 * HDR modes and required if the Target's I3C version is v1.1 or later.
+		 * It is also possible for this function to be called on an 'unknown' device such as
+		 * from a secondary controller gathering info about a target it found about through
+		 * DEFTGTS, and it can't be known ahead of time if it is a v1.0 or v1.1 device.
+		 */
+		if (i3c_ccc_do_getcaps_fmt1(target, &caps) != 0) {
+			LOG_DBG("%s: GETCAPS not received", target->dev->name);
+		}
 	}
 
 	/* CRCAPS */
@@ -872,8 +873,9 @@ static int i3c_bus_setdasa(const struct device *dev, const struct i3c_dev_list *
 		 * address as its static address if a different dynamic address
 		 * is not requested
 		 */
-		if ((desc->supports_setaasa) && ((desc->init_dynamic_addr == 0) ||
-						 desc->init_dynamic_addr == desc->static_addr)) {
+		if ((desc->flags & I3C_SUPPORTS_SETAASA) &&
+		    ((desc->init_dynamic_addr == 0) ||
+		     desc->init_dynamic_addr == desc->static_addr)) {
 			*need_aasa = true;
 			continue;
 		}
@@ -935,7 +937,7 @@ bool i3c_bus_has_sec_controller(const struct device *dev)
 
 	return false;
 }
-
+#ifdef CONFIG_I3C_TARGET
 int i3c_bus_deftgts(const struct device *dev)
 {
 	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
@@ -1008,7 +1010,7 @@ int i3c_bus_deftgts(const struct device *dev)
 
 	return ret;
 }
-
+#endif /* CONFIG_I3C_TARGET */
 int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 {
 	int i, ret = 0;
@@ -1078,7 +1080,8 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 				 * Only set for devices that support SETAASA and do not
 				 * request a different dynamic address than its SA
 				 */
-				if ((desc->supports_setaasa) && (desc->static_addr != 0) &&
+				if ((desc->flags & I3C_SUPPORTS_SETAASA) &&
+				    (desc->static_addr != 0) &&
 				    ((desc->init_dynamic_addr == 0) ||
 				     desc->init_dynamic_addr == desc->static_addr)) {
 					desc->dynamic_addr = desc->static_addr;
@@ -1135,14 +1138,14 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 				desc->data_length.mwl, desc->data_length.max_ibi);
 		}
 	}
-
+#ifdef CONFIG_I3C_TARGET
 	if (i3c_bus_has_sec_controller(dev)) {
 		ret = i3c_bus_deftgts(dev);
 		if (ret != 0) {
 			LOG_ERR("Error sending DEFTGTS");
 		}
 	}
-
+#endif /* CONFIG_I3C_TARGET */
 	/*
 	 * Only re-enable Hot-Join from targets.
 	 * Target interrupts will be enabled when IBI is enabled.

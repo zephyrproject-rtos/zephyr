@@ -155,6 +155,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Get reference to ACL context */
 	conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+	LL_ASSERT(conn_lll != NULL);
 
 	/* Pick the event_count calculated in the ULL prepare */
 	cis_lll->event_count = cis_lll->event_count_prepare;
@@ -429,6 +430,17 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		radio_isr_set(isr_done, cis_lll);
 		radio_disable();
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		/* Get reference to ACL context */
+		const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+		LL_ASSERT(conn_lll != NULL);
+
+		if (conn_lll->enc_rx) {
+			radio_ccm_disable();
+		}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 		return;
 	}
 
@@ -470,6 +482,8 @@ static void isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+	LL_ASSERT(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */
@@ -575,6 +589,7 @@ static void isr_tx(void *param)
 
 		/* Get reference to ACL context */
 		evt_conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+		LL_ASSERT(evt_conn_lll != NULL);
 
 		/* Calculate the radio channel to use for next subevent */
 		data_chan_id = lll_chan_id(cis_lll->access_addr);
@@ -621,6 +636,7 @@ static void isr_tx(void *param)
 
 		/* Get reference to ACL context */
 		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
+		LL_ASSERT(next_conn_lll != NULL);
 
 		/* Calculate the radio channel to use for ISO event */
 		data_chan_id = lll_chan_id(next_cis_lll->access_addr);
@@ -761,6 +777,8 @@ static void isr_rx(void *param)
 			/* Get reference to ACL context */
 			const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
 
+			LL_ASSERT(conn_lll != NULL);
+
 			/* If required, wait for CCM to finish
 			 */
 			if (pdu_rx->len && conn_lll->enc_rx) {
@@ -800,10 +818,7 @@ static void isr_rx(void *param)
 
 			ull_iso_pdu_rx_alloc();
 			iso_rx_put(node_rx->hdr.link, node_rx);
-
-#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 			iso_rx_sched();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 			cis_lll->rx.bn_curr++;
 			if ((cis_lll->rx.bn_curr > cis_lll->rx.bn) &&
@@ -851,6 +866,7 @@ isr_rx_next_subevent:
 
 		/* Get reference to ACL context */
 		next_conn_lll = ull_conn_lll_get(next_cis_lll->acl_handle);
+		LL_ASSERT(next_conn_lll != NULL);
 
 		/* Calculate CIS channel if not already calculated */
 		if (se_curr < cis_lll->nse) {
@@ -1026,6 +1042,8 @@ static void isr_prepare_subevent(void *param)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Get reference to ACL context */
 	const struct lll_conn *conn_lll = ull_conn_lll_get(cis_lll->acl_handle);
+
+	LL_ASSERT(conn_lll != NULL);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	/* PHY */

@@ -17,15 +17,18 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 1. Tx device creates `CONFIG_BT_MESH_ADV_BUF_COUNT` advertisements, setting the first byte of the
 # PDU to 0xAA and the second byte of the PDU to the advertisement order number
 # 2. Tx devices pushes all created advs to the pool by calling `bt_mesh_adv_send` function
-# 3. When the `bt_mesh_send_cb.start` callback is called for the first adv, the tx device submits
-#    a work item which suspends the advertiser by calling `bt_mesh_adv_disable`.
+# 3. After calling sending function Tx device immediately suspends the advertiser.
 # 4. Tx device checks that for the first adv the `bt_mesh_send_cb.end` callback is called with the
 #    error code `0`.
 # 5. Tx device checks that for the consecutive advs the `bt_mesh_send_cb.start` is called with error
 #    `-ENODEV`.
 # 6. Tx device checks that no more advs can be created using `bt_mesh_adv_create` function.
 # 7. Tx device resumes the advertiser and repeats steps 1 and 2.
-# 8. Tx device expects that all advs are sent.
+# 8. When the `bt_mesh_send_cb.start` callback is called for the first adv, the tx device submits
+#    a work item which suspends the advertiser by calling `bt_mesh_adv_disable`.
+# 9. Tx device repeats steps 4-6.
+# 10. Tx device resumes the advertiser and repeats steps 1 and 2.
+# 11. Tx device expects that all advs are sent.
 #
 # Rx device procedure:
 # 1. Rx devices listens all the time while tx device sends advs and ensure that no new advs were
@@ -35,7 +38,7 @@ RunTest mesh_adv_disable adv_tx_disable adv_rx_disable
 
 # Low latency overlay uses legacy advertiser
 overlay=overlay_low_lat_conf
-RunTest mesh_adv_disable adv_tx_disable adv_rx_disable
+RunTest mesh_adv_disable_low_lat adv_tx_disable adv_rx_disable
 
 overlay=overlay_workq_sys_conf
 RunTest mesh_adv_disable_workq adv_tx_disable adv_rx_disable

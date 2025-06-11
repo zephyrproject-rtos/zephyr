@@ -7,6 +7,13 @@
 
 #include "clock_source_def.h"
 / {
+	srss_power: srss_power {
+		#clock-cells = <0>;
+		compatible = "infineon,cat1b-power";
+		power-profile = "POWER_PROFILE_0";
+		status = "okay";
+	};
+
 	clocks {
 		/* iho */
 		clk_iho: clk_iho {
@@ -98,6 +105,41 @@
 			clock-div = <2>;
 			clocks = <&path_mux1>;
 			status = "disabled";
+		};
+
+		/* LF frequency */
+
+		/* pilo */
+		clk_pilo: clk_pilo {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "okay";
+		};
+
+		/* wco */
+		clk_wco: clk_wco {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		/* ilo */
+		clk_ilo: clk_ilo {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+
+		/* clk_lf */
+		clk_lf: clk_lf {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&clk_pilo>;
+			status = "okay";
 		};
 
 	};

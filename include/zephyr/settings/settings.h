@@ -45,6 +45,9 @@ extern "C" {
  */
 #define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
 
+/* Maximum Settings name length including separators */
+#define SETTINGS_FULL_NAME_LEN ((SETTINGS_MAX_NAME_LEN) + (SETTINGS_EXTRA_LEN) + 1)
+
 /**
  * Function used to read the data from the settings storage in
  * h_set handler implementations.
@@ -279,6 +282,25 @@ int settings_load(void);
 int settings_load_subtree(const char *subtree);
 
 /**
+ * Load one serialized item from registered persistence sources.
+ *
+ * @param[in]  name    Name/key of the settings item.
+ * @param[out] buf     Pointer to the buffer where the data is going to be loaded
+ * @param[in]  buf_len Length of the allocated buffer.
+ * @return     actual size of value that corresponds to name on success, negative
+ *             value on failure.
+ */
+ssize_t settings_load_one(const char *name, void *buf, size_t buf_len);
+
+/**
+ * Get the data length of the value relative to the key
+ *
+ * @param[in] key Name/key of the settings item.
+ * @return length of value if item exists, 0 if not and negative value on failure.
+ */
+ssize_t settings_get_val_len(const char *key);
+
+/**
  * Callback function used for direct loading.
  * Used by @ref settings_load_subtree_direct function.
  *
@@ -447,8 +469,8 @@ struct settings_store_itf {
 	/**< Loads values from storage limited to subtree defined by subtree.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node,
-	 *  - arg - Structure that holds additional data for data loading.
+	 *  - cs[in] - Corresponding backend handler node,
+	 *  - arg[in] - Structure that holds additional data for data loading.
 	 *
 	 * @note
 	 * Backend is expected not to provide duplicates of the entities.
@@ -457,11 +479,31 @@ struct settings_store_itf {
 	 * load callback only on the final entity.
 	 */
 
+	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name,
+				char *buf, size_t buf_len);
+	/**< Loads one value from storage that corresponds to the key defined by name.
+	 *
+	 * Parameters:
+	 *  - cs[in] - Corresponding backend handler node.
+	 *  - name[in] - Key in string format.
+	 *  - buf[in] - Buffer where data should be copied.
+	 *  - buf_len[in] - Length of buf.
+	 */
+
+	ssize_t (*csi_get_val_len)(struct settings_store *cs, const char *name);
+	/**< Gets the value's length associated to the Key defined by name.
+	 * It returns 0 if the Key/Value doesn't exist.
+	 *
+	 * Parameters:
+	 *  - cs[in] - Corresponding backend handler node.
+	 *  - name[in] - Key in string format.
+	 */
+
 	int (*csi_save_start)(struct settings_store *cs);
 	/**< Handler called before an export operation.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 
 	int (*csi_save)(struct settings_store *cs, const char *name,
@@ -469,23 +511,23 @@ struct settings_store_itf {
 	/**< Save a single key-value pair to storage.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
-	 *  - name - Key in string format
-	 *  - value - Binary value
-	 *  - val_len - Length of value in bytes.
+	 *  - cs[in] - Corresponding backend handler node
+	 *  - name[in] - Key in string format
+	 *  - value[in] - Binary value
+	 *  - val_len[in] - Length of value in bytes.
 	 */
 
 	int (*csi_save_end)(struct settings_store *cs);
 	/**< Handler called after an export operation.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 
 	/**< Get pointer to the storage instance used by the backend.
 	 *
 	 * Parameters:
-	 *  - cs - Corresponding backend handler node
+	 *  - cs[in] - Corresponding backend handler node
 	 */
 	void *(*csi_storage_get)(struct settings_store *cs);
 };

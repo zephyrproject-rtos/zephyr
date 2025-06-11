@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: qemu_rx
+name: QEMU Emulation for Renesas RX
+type: qemu
+simulation:
+  - name: qemu
+arch: rx
+toolchain:
+  - cross-compile
+supported:
+  - serial
+ram: 96
+flash: 512

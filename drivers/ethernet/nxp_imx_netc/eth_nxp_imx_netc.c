@@ -17,15 +17,25 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
-
+#include <zephyr/net/dsa_core.h>
 #include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
+
+#if !(defined(FSL_FEATURE_NETC_HAS_SWITCH_TAG) && FSL_FEATURE_NETC_HAS_SWITCH_TAG) && \
+	defined(CONFIG_NET_DSA)
+#define NETC_HAS_NO_SWITCH_TAG_SUPPORT 1
+#endif
 
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];
 
 static int netc_eth_rx(const struct device *dev)
 {
 	struct netc_eth_data *data = dev->data;
+	struct net_if *iface_dst = data->iface;
+#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+	struct ethernet_context *ctx = net_if_l2_data(iface_dst);
+#endif
+	netc_frame_attr_t attr = {0};
 	struct net_pkt *pkt;
 	int key;
 	int ret = 0;
@@ -48,32 +58,37 @@ static int netc_eth_rx(const struct device *dev)
 	}
 
 	/* Receive frame */
-	result = EP_ReceiveFrameCopy(&data->handle, 0, data->rx_frame, length, NULL);
+	result = EP_ReceiveFrameCopy(&data->handle, 0, data->rx_frame, length, &attr);
 	if (result != kStatus_Success) {
 		LOG_ERR("Error on received frame");
 		ret = -EIO;
 		goto out;
 	}
 
+#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+	if (ctx->dsa_port == DSA_CONDUIT_PORT) {
+		iface_dst = ctx->dsa_switch_ctx->iface_user[attr.srcPort];
+	}
+#endif
 	/* Copy to pkt */
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, length, AF_UNSPEC, 0, NETC_TIMEOUT);
-	if (!pkt) {
-		eth_stats_update_errors_rx(data->iface);
+	pkt = net_pkt_rx_alloc_with_buffer(iface_dst, length, AF_UNSPEC, 0, NETC_TIMEOUT);
+	if (pkt == NULL) {
+		eth_stats_update_errors_rx(iface_dst);
 		ret = -ENOBUFS;
 		goto out;
 	}
 
 	ret = net_pkt_write(pkt, data->rx_frame, length);
-	if (ret) {
-		eth_stats_update_errors_rx(data->iface);
+	if (ret != 0) {
+		eth_stats_update_errors_rx(iface_dst);
 		net_pkt_unref(pkt);
 		goto out;
 	}
 
 	/* Send to upper layer */
-	ret = net_recv_data(data->iface, pkt);
+	ret = net_recv_data(iface_dst, pkt);
 	if (ret < 0) {
-		eth_stats_update_errors_rx(data->iface);
+		eth_stats_update_errors_rx(iface_dst);
 		net_pkt_unref(pkt);
 		LOG_ERR("Failed to enqueue frame into rx queue: %d", ret);
 	}
@@ -140,15 +155,6 @@ static void msgintr_isr(void)
 	SDK_ISR_EXIT_BARRIER;
 }
 
-static status_t netc_eth_reclaim_callback(ep_handle_t *handle, uint8_t ring,
-					  netc_tx_frame_info_t *frameInfo, void *userData)
-{
-	struct netc_eth_data *data = userData;
-
-	data->tx_info = *frameInfo;
-	return kStatus_Success;
-}
-
 int netc_eth_init_common(const struct device *dev)
 {
 	const struct netc_eth_config *config = dev->config;
@@ -184,7 +190,7 @@ int netc_eth_init_common(const struct device *dev)
 	ep_config.siConfig.txRingUse = 1;
 	ep_config.siConfig.rxRingUse = 1;
 	ep_config.userData = data;
-	ep_config.reclaimCallback = netc_eth_reclaim_callback;
+	ep_config.reclaimCallback = NULL;
 	ep_config.msixEntry = &msix_entry[0];
 	ep_config.entryNum = NETC_MSIX_ENTRY_NUM;
 	ep_config.port.ethMac.miiMode = config->phy_mode;
@@ -198,6 +204,17 @@ int netc_eth_init_common(const struct device *dev)
 	result = EP_Init(&data->handle, &data->mac_addr[0], &ep_config, &bdr_config);
 	if (result != kStatus_Success) {
 		return -ENOBUFS;
+	}
+
+	/*
+	 * For management ENETC, the SI 0 hardware Tx ring index 0 should be used for
+	 * direct switch enqueue feature.
+	 * hal enetc driver reserved ring 0 for hal switch driver, so re-enable it here.
+	 */
+	if (config->pseudo_mac) {
+		if (NETC_SIConfigTxBDR(data->handle.hw.si, 0, &tx_bdr_config) != kStatus_Success) {
+			return -ENOBUFS;
+		}
 	}
 
 	for (int i = 0; i < NETC_DRV_MAX_INST_SUPPORT; i++) {
@@ -229,15 +246,30 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	struct netc_eth_data *data = dev->data;
 	netc_buffer_struct_t buff = {.buffer = data->tx_buff, .length = sizeof(data->tx_buff)};
 	netc_frame_struct_t frame = {.buffArray = &buff, .length = 1};
+	netc_tx_frame_info_t *frame_info;
+	struct net_if *iface_dst;
 	size_t pkt_len = net_pkt_get_len(pkt);
+#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+	struct ethernet_context *eth_ctx = net_if_l2_data(data->iface);
+#endif
 	status_t result;
 	int ret;
 
 	__ASSERT(pkt, "Packet pointer is NULL");
 
-	/* TODO: support DSA master */
+	iface_dst = data->iface;
+
 	if (cfg->pseudo_mac) {
+#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+		/* DSA conduit port not used */
+		if (eth_ctx->dsa_port != DSA_CONDUIT_PORT) {
+			return -ENOSYS;
+		}
+		/* DSA driver redirects the iface */
+		iface_dst = pkt->iface;
+#else
 		return -ENOSYS;
+#endif
 	}
 
 	k_mutex_lock(&data->tx_mutex, K_FOREVER);
@@ -253,7 +285,24 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Send */
 	data->tx_done = false;
+
+#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
+		const struct dsa_port_config *port_cfg = net_if_get_device(iface_dst)->config;
+		const int dst_port = port_cfg->port_idx;
+		netc_tx_bd_t txDesc[2] = {0};
+
+		txDesc[0].standard.flags = NETC_SI_TXDESCRIP_RD_FLQ(2) |
+					   NETC_SI_TXDESCRIP_RD_SMSO_MASK |
+					   NETC_SI_TXDESCRIP_RD_PORT(dst_port);
+		result = EP_SendFrameCommon(&data->handle, &data->handle.txBdRing[0], 0, &frame,
+					    NULL, &txDesc[0], data->handle.cfg.txCacheMaintain);
+	} else {
+		result = EP_SendFrame(&data->handle, 0, &frame, NULL, NULL);
+	}
+#else
 	result = EP_SendFrame(&data->handle, 0, &frame, NULL, NULL);
+#endif
 	if (result != kStatus_Success) {
 		LOG_ERR("Failed to tx frame");
 		ret = -EIO;
@@ -263,28 +312,35 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	while (!data->tx_done) {
 	}
 
-	EP_ReclaimTxDescriptor(&data->handle, 0);
-	if (data->tx_info.status != kNETC_EPTxSuccess) {
-		LOG_ERR("Failed to tx frame");
-		ret = -EIO;
-		goto error;
-	}
+	do {
+		frame_info = EP_ReclaimTxDescCommon(&data->handle, &data->handle.txBdRing[0],
+						    0, false);
+		if (frame_info != NULL) {
+			if (frame_info->status != kNETC_EPTxSuccess) {
+				memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
+				LOG_ERR("Failed to tx frame");
+				ret = -EIO;
+				goto error;
+			}
+			memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
+		}
+	} while (frame_info != NULL);
+
 	ret = 0;
 error:
 	k_mutex_unlock(&data->tx_mutex);
 
 	if (ret != 0) {
-		eth_stats_update_errors_tx(data->iface);
+		eth_stats_update_errors_tx(iface_dst);
 	}
 	return ret;
 }
 
 enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 {
-	const struct netc_eth_config *cfg = dev->config;
 	uint32_t caps;
 
-	caps = (ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T |
+	caps = (ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
@@ -293,10 +349,6 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 		| ETHERNET_PROMISC_MODE
 #endif
 	);
-
-	if (cfg->pseudo_mac) {
-		caps |= ETHERNET_DSA_MASTER_PORT;
-	}
 
 	return caps;
 }

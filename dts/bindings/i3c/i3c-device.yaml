@@ -67,3 +67,8 @@ properties:
     description: |
       Indicates if the device supports the CCC SETAASA. If true, it will
       be used as an optimization for bus initialization.
+
+  v1p0-support:
+    type: boolean
+    description: |
+      Indicates if the device compiles to I3C v1.0.

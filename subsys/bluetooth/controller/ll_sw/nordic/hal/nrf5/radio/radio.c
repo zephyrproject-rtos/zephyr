@@ -2072,6 +2072,11 @@ struct ccm_job_ptr {
 #define CCM_JOB_PTR_ATTRIBUTE_ADATA 13U
 #define CCM_JOB_PTR_ATTRIBUTE_MDATA 14U
 
+/* For a Max 27 byte PDU reception, an actual 26 byte PDU needs the below extra MDATA length to
+ * mitigate MIC failures. I.e. MDATA length = 27 + 4 (MIC size) + 2 (extra).
+ */
+#define NRF_CCM_WORKAROUND_XXXX_MDATA_EXTRA 2U
+
 static struct {
 	uint16_t in_alen;
 	uint16_t in_mlen;
@@ -2209,11 +2214,16 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	!defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
+
+#define NRF_CCM_WORKAROUND_XXXX_MAXPACKETSIZE_EXTRA 1U
+
 	const uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
 				RADIO_PCNF1_MAXLEN_Pos;
 
 	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
-	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
+	NRF_CCM->MAXPACKETSIZE =
+		MAX(MIN((max_len - 4U + NRF_CCM_WORKAROUND_XXXX_MAXPACKETSIZE_EXTRA), 0x00FB),
+		    0x001B);
 #endif
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
@@ -2253,7 +2263,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	ccm_job.in[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
 
 	ccm_job.in[4].ptr = (void *)((uint8_t *)_pkt_scratch + 3U);
-	ccm_job.in[4].length = mlen;
+	ccm_job.in[4].length = mlen + NRF_CCM_WORKAROUND_XXXX_MDATA_EXTRA;
 	ccm_job.in[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
 
 	ccm_job.in[5].ptr = NULL;
@@ -2509,6 +2519,12 @@ uint32_t radio_ccm_is_done(void)
 uint32_t radio_ccm_mic_is_valid(void)
 {
 	return (NRF_CCM->MICSTATUS != 0);
+}
+
+void radio_ccm_disable(void)
+{
+	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_STOP);
+	nrf_ccm_disable(NRF_CCM);
 }
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)

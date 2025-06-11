@@ -43,6 +43,7 @@ family:
   - name: stm32f4x
     socs:
     - name: stm32f401xc
+    - name: stm32f401xd
     - name: stm32f401xe
     - name: stm32f405xx
     - name: stm32f407xx
@@ -155,6 +156,7 @@ family:
     - name: stm32l081xx
   - name: stm32l1x
     socs:
+    - name: stm32l100xb
     - name: stm32l151xb
     - name: stm32l151xba
     - name: stm32l151xc
@@ -203,6 +205,8 @@ family:
     socs:
     - name: stm32u5a5xx
     - name: stm32u5a9xx
+    - name: stm32u5g9xx
+    - name: stm32u535xx
     - name: stm32u545xx
     - name: stm32u575xx
     - name: stm32u585xx
@@ -221,6 +225,7 @@ family:
     socs:
     - name: stm32wba52xx
     - name: stm32wba55xx
+    - name: stm32wba65xx
   - name: stm32wlx
     socs:
     - name: stm32wle4xx

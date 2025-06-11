@@ -9,3 +9,6 @@ family:
     socs:
     - name: apollo3_blue
     - name: apollo3p_blue
+  - name: apollo5x
+    socs:
+    - name: apollo510

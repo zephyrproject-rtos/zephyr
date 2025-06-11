@@ -7,6 +7,10 @@
 
 #include <wch/ch32v0/ch32v003f4p.dtsi>
 #include "ch32v003evt-pinctrl.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	model = "ch32v003evt";
@@ -34,8 +38,19 @@
 		};
 	};
 
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		red_pwm: red_pwm0 {
+			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Red LED";
+		};
+	};
+
 	aliases {
 		led0 = &red_led;
+		pwm-led0 = &red_pwm;
 	};
 };
 
@@ -53,8 +68,19 @@
 	clocks = <&pll>;
 };
 
+&gpioc {
+	status = "okay";
+};
+
 &gpiod {
 	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
 };
 
 &usart1 {

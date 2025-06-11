@@ -10,6 +10,6 @@ tests:
     harness_config:
       type: one_line
       regex:
-        - "<inf> lora_send: Data sent!"
+        - "<inf> lora_send: Data sent 0!"
     integration_platforms:
       - b_l072z_lrwan1

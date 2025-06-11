@@ -1,0 +1,12 @@
+# Copyright  2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP EHCI USB host controller
+
+compatible: "nxp,uhc-ehci"
+
+include: [usb-controller.yaml]
+
+properties:
+  phy_handle:
+    type: phandle

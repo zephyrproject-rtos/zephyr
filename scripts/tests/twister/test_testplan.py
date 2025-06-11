@@ -342,11 +342,11 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
             if testname in expected_val:
                 assert instance.status == TwisterStatus.NONE
             else:
-                assert instance.status == TwisterStatus.FILTER
+                assert instance.status == TwisterStatus.SKIP
                 assert instance.reason == "Not under quarantine"
         else:
             if testname in expected_val:
-                assert instance.status == TwisterStatus.FILTER
+                assert instance.status == TwisterStatus.SKIP
                 assert instance.reason == "Quarantine: " + expected_val[testname]
             else:
                 assert instance.status == TwisterStatus.NONE
@@ -1745,7 +1745,7 @@ TESTDATA_14 = [
     ('bad platform', 'dummy reason', [],
      'dummy status', 'dummy reason'),
     ('good platform', 'quarantined', [],
-     TwisterStatus.ERROR, 'quarantined but is one of the integration platforms'),
+     'dummy status', 'quarantined'),
     ('good platform', 'dummy reason', [{'type': 'command line filter'}],
      'dummy status', 'dummy reason'),
     ('good platform', 'dummy reason', [{'type': 'Skip filter'}],

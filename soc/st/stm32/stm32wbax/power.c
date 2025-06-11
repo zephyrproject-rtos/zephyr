@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <zephyr/pm/pm.h>
 #include <soc.h>
 #include <zephyr/init.h>
@@ -13,7 +14,6 @@
 #include <stm32wbaxx_ll_bus.h>
 #include <stm32wbaxx_ll_cortex.h>
 #include <stm32wbaxx_ll_pwr.h>
-#include <stm32wbaxx_ll_icache.h>
 #include <stm32wbaxx_ll_rcc.h>
 #include <stm32wbaxx_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
@@ -28,22 +28,6 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 void stm32_power_init(void);
 
-static void disable_cache(void)
-{
-	/* Disabling ICACHE */
-	LL_ICACHE_Disable();
-	while (LL_ICACHE_IsEnabled() == 1U) {
-	}
-
-	/* Wait until ICACHE_SR.BUSYF is cleared */
-	while (LL_ICACHE_IsActiveFlag_BUSY() == 1U) {
-	}
-
-	/* Wait until ICACHE_SR.BSYENDF is set */
-	while (LL_ICACHE_IsActiveFlag_BSYEND() == 0U) {
-	}
-}
-
 static void set_mode_stop(uint8_t substate_id)
 {
 
@@ -53,7 +37,7 @@ static void set_mode_stop(uint8_t substate_id)
 	/* Erratum 2.2.15:
 	 * Disabling ICACHE is required before entering stop mode
 	 */
-	disable_cache();
+	sys_cache_instr_disable();
 
 #ifdef CONFIG_BT_STM32WBA
 	scm_setwaitstates(LP);
@@ -108,7 +92,7 @@ static void set_mode_suspend_to_ram(void)
 	LL_PWR_ClearFlag_WU();
 	LL_RCC_ClearResetFlags();
 
-	disable_cache();
+	sys_cache_instr_disable();
 
 	/* Select standby mode */
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
@@ -161,10 +145,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			/* Erratum 2.2.15:
 			 * Enable ICACHE when exiting stop mode
 			 */
-			LL_ICACHE_SetMode(LL_ICACHE_1WAY);
-			LL_ICACHE_Enable();
-			while (LL_ICACHE_IsEnabled() == 0U) {
-			}
+			sys_cache_instr_enable();
 
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();

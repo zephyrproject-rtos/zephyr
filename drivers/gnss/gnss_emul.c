@@ -380,6 +380,7 @@ static void gnss_emul_set_utc(const struct device *dev)
 	data->data.utc.millisecond = millisecond;
 	data->data.utc.minute = datetime.tm_min;
 	data->data.utc.month = datetime.tm_mon + 1;
+	data->data.utc.month_day = datetime.tm_mday;
 	data->data.utc.century_year = datetime.tm_year % 100;
 }
 

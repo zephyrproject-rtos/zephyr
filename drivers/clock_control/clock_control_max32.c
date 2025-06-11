@@ -85,6 +85,9 @@ static int api_get_rate(const struct device *dev, clock_control_subsys_t clkcfg,
 	case ADI_MAX32_PRPH_CLK_SRC_IBRO_DIV8:
 		*rate = ADI_MAX32_CLK_IBRO_FREQ / 8;
 		break;
+	case ADI_MAX32_PRPH_CLK_SRC_IPLL:
+		*rate = ADI_MAX32_CLK_IPLL_FREQ;
+		break;
 	default:
 		*rate = 0U;
 		/* Invalid parameters */
@@ -128,6 +131,10 @@ static void setup_fixed_clocks(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ertco))
 	MXC_SYS_ClockSourceEnable(ADI_MAX32_CLK_ERTCO);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ipll))
+	MXC_SYS_ClockSourceEnable(ADI_MAX32_CLK_IPLL);
 #endif
 
 /* Some device does not support external clock */

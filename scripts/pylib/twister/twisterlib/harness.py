@@ -38,7 +38,7 @@ class Harness:
     FAULT = "ZEPHYR FATAL ERROR"
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
-    run_id_pattern = r"RunID: (?P<run_id>.*)"
+    run_id_pattern = r"RunID: (?P<run_id>[0-9A-Fa-f]+)"
 
     def __init__(self):
         self._status = TwisterStatus.NONE
@@ -91,6 +91,7 @@ class Harness:
         config = instance.testsuite.harness_config
         self.id = instance.testsuite.id
         self.run_id = instance.run_id
+        self.expect_reboot = getattr(instance.testsuite, 'expect_reboot', False)
         if instance.testsuite.ignore_faults:
             self.fail_on_fault = False
 
@@ -788,7 +789,7 @@ class Test(Harness):
     # Ztest log patterns don't require to match the line start exactly: there are platforms
     # where there is some logging prefix at each console line whereas on other platforms
     # without prefixes the leading space is stripped.
-    test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\S*)")
+    test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\w*)")
     test_suite_end_pattern = re.compile(
         r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)"
     )
@@ -848,7 +849,7 @@ class Test(Harness):
             logger.debug(f"{phase}: unexpected Ztest suite '{suite_name}' is "
                          f"not present among: {self.instance.testsuite.ztest_suite_names}")
         if suite_name in self.started_suites:
-            if self.started_suites[suite_name]['count'] > 0:
+            if self.started_suites[suite_name]['count'] > 0 and not self.expect_reboot:
                 # Either the suite restarts itself or unexpected state transition.
                 logger.warning(f"{phase}: already STARTED '{suite_name}':"
                                f"{self.started_suites[suite_name]}")
@@ -878,7 +879,7 @@ class Test(Harness):
 
     def start_case(self, tc_name, phase='TC_START'):
         if tc_name in self.started_cases:
-            if self.started_cases[tc_name]['count'] > 0:
+            if self.started_cases[tc_name]['count'] > 0 and not self.expect_reboot:
                 logger.warning(f"{phase}: already STARTED case "
                                f"'{tc_name}':{self.started_cases[tc_name]}")
             self.started_cases[tc_name]['count'] += 1

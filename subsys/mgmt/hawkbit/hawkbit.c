@@ -21,7 +21,6 @@
 #include <zephyr/mgmt/hawkbit/hawkbit.h>
 #include <zephyr/mgmt/hawkbit/config.h>
 #include <zephyr/mgmt/hawkbit/event.h>
-#include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_mgmt.h>
@@ -75,10 +74,21 @@ static bool hawkbit_initialized;
 
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
+#ifdef CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
+#define SERVER_ADDR_LEN CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
+#elif defined(CONFIG_NET_IPV6)
+#define SERVER_ADDR_LEN INET6_ADDRSTRLEN
+#else
+#define SERVER_ADDR_LEN INET_ADDRSTRLEN
+#endif
+
 static struct hawkbit_config {
 	int32_t action_id;
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-	char server_addr[DNS_MAX_NAME_SIZE + 1];
+	char server_addr[SERVER_ADDR_LEN + 1];
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	char server_domain[CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN + 1];
+#endif
 	char server_port[sizeof(STRINGIFY(__UINT16_MAX__))];
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	char ddi_security_token[DDI_SECURITY_TOKEN_SIZE + 1];
@@ -90,11 +100,17 @@ static struct hawkbit_config {
 } hb_cfg;
 
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-#define HAWKBIT_SERVER hb_cfg.server_addr
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+#define HAWKBIT_SERVER_DOMAIN hb_cfg.server_domain
+#else
+#define HAWKBIT_SERVER_DOMAIN hb_cfg.server_addr
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
+#define HAWKBIT_SERVER_ADDR   hb_cfg.server_addr
 #define HAWKBIT_PORT hb_cfg.server_port
 #define HAWKBIT_PORT_INT atoi(hb_cfg.server_port)
 #else
-#define HAWKBIT_SERVER CONFIG_HAWKBIT_SERVER
+#define HAWKBIT_SERVER_ADDR   CONFIG_HAWKBIT_SERVER
+#define HAWKBIT_SERVER_DOMAIN CONFIG_HAWKBIT_SERVER
 #define HAWKBIT_PORT STRINGIFY(CONFIG_HAWKBIT_PORT)
 #define HAWKBIT_PORT_INT CONFIG_HAWKBIT_PORT
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
@@ -285,11 +301,12 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
 	if (settings_name_steq(name, "server_addr", &next) && !next) {
-		if (len != sizeof(hb_cfg.server_addr)) {
+		rc = read_cb(cb_arg, &hb_cfg.server_addr, MIN(len, sizeof(hb_cfg.server_addr)));
+		if (strnlen(hb_cfg.server_addr, sizeof(hb_cfg.server_addr)) ==
+		    sizeof(hb_cfg.server_addr)) {
+			memset(hb_cfg.server_addr, 0, sizeof(hb_cfg.server_addr));
 			return -EINVAL;
 		}
-
-		rc = read_cb(cb_arg, &hb_cfg.server_addr, sizeof(hb_cfg.server_addr));
 		LOG_DBG("<%s> = %s", "hawkbit/server_addr", hb_cfg.server_addr);
 		if (rc >= 0) {
 			return 0;
@@ -297,6 +314,22 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 
 		return rc;
 	}
+
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	if (settings_name_steq(name, "server_domain", &next) && !next) {
+		if (len != sizeof(hb_cfg.server_domain)) {
+			return -EINVAL;
+		}
+
+		rc = read_cb(cb_arg, &hb_cfg.server_domain, sizeof(hb_cfg.server_domain));
+		LOG_DBG("<%s> = %s", "hawkbit/server_domain", hb_cfg.server_domain);
+		if (rc >= 0) {
+			return 0;
+		}
+
+		return rc;
+	}
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 
 	if (settings_name_steq(name, "server_port", &next) && !next) {
 		if (len != sizeof(uint16_t)) {
@@ -336,6 +369,9 @@ static int hawkbit_settings_set(const char *name, size_t len, settings_read_cb r
 	}
 #else  /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 	if (settings_name_steq(name, "server_addr", NULL) ||
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	    settings_name_steq(name, "server_domain", NULL) ||
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 	    settings_name_steq(name, "server_port", NULL) ||
 	    settings_name_steq(name, "ddi_token", NULL)) {
 		rc = read_cb(cb_arg, NULL, 0);
@@ -358,7 +394,10 @@ static int hawkbit_settings_export(int (*cb)(const char *name, const void *value
 	LOG_DBG("export hawkbit settings");
 	(void)cb("hawkbit/action_id", &hb_cfg.action_id, sizeof(hb_cfg.action_id));
 #ifdef CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME
-	(void)cb("hawkbit/server_addr", &hb_cfg.server_addr, sizeof(hb_cfg.server_addr));
+	(void)cb("hawkbit/server_addr", &hb_cfg.server_addr, strlen(hb_cfg.server_addr) + 1);
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+	(void)cb("hawkbit/server_domain", &hb_cfg.server_domain, sizeof(hb_cfg.server_domain));
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 	uint16_t hawkbit_port = atoi(hb_cfg.server_port);
 	(void)cb("hawkbit/server_port", &hawkbit_port, sizeof(hawkbit_port));
 #ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
@@ -439,7 +478,7 @@ static bool start_http_client(int *hb_sock)
 	}
 
 	while (resolve_attempts--) {
-		ret = zsock_getaddrinfo(HAWKBIT_SERVER, HAWKBIT_PORT, &hints, &addr);
+		ret = zsock_getaddrinfo(HAWKBIT_SERVER_ADDR, HAWKBIT_PORT, &hints, &addr);
 		if (ret == 0) {
 			break;
 		}
@@ -469,8 +508,8 @@ static bool start_http_client(int *hb_sock)
 		goto err_sock;
 	}
 
-	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_HOSTNAME, HAWKBIT_SERVER,
-			     sizeof(CONFIG_HAWKBIT_SERVER)) < 0) {
+	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_HOSTNAME, HAWKBIT_SERVER_DOMAIN,
+			     sizeof(HAWKBIT_SERVER_DOMAIN)) < 0) {
 		goto err_sock;
 	}
 #endif /* CONFIG_HAWKBIT_USE_TLS */
@@ -638,7 +677,7 @@ static int hawkbit_find_cancel_action_id(struct hawkbit_ctl_res *res,
 		return -EINVAL;
 	}
 
-	helper += sizeof("cancelAction/");
+	helper += sizeof("cancelAction/") - 1;
 
 	*cancel_action_id = strtol(helper, NULL, 10);
 	if (*cancel_action_id <= 0) {
@@ -764,7 +803,8 @@ int hawkbit_set_custom_data_cb(hawkbit_config_device_data_cb_handler_t cb)
 	return -ENOTSUP;
 }
 
-int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer, const size_t buffer_size)
+int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
+				const size_t buffer_size)
 {
 	struct hawkbit_cfg cfg = {
 		.mode = "merge",
@@ -780,10 +820,30 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 {
 	if (k_sem_take(&probe_sem, HAWKBIT_SET_SERVER_TIMEOUT) == 0) {
 		if (config->server_addr != NULL) {
+			if (strnlen(config->server_addr, sizeof(hb_cfg.server_addr)) ==
+			    sizeof(hb_cfg.server_addr)) {
+				LOG_ERR("%s too long: %s", "hawkbit/server_addr",
+					config->server_addr);
+				return -EINVAL;
+			}
 			strncpy(hb_cfg.server_addr, config->server_addr,
 				sizeof(hb_cfg.server_addr));
 			LOG_DBG("configured %s: %s", "hawkbit/server_addr", hb_cfg.server_addr);
 		}
+#ifdef CONFIG_HAWKBIT_USE_DOMAIN_NAME
+		if (config->server_domain != NULL) {
+			if (strnlen(config->server_domain, CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN + 1)
+			    > CONFIG_HAWKBIT_DOMAIN_NAME_MAX_LEN) {
+				LOG_ERR("%s too long: %s", "hawkbit/server_domain",
+					config->server_domain);
+				return -EINVAL;
+			}
+			strncpy(hb_cfg.server_domain, config->server_domain,
+				sizeof(hb_cfg.server_domain));
+			LOG_DBG("configured %s: %s", "hawkbit/server_domain",
+				hb_cfg.server_domain);
+		}
+#endif /* CONFIG_HAWKBIT_USE_DOMAIN_NAME */
 		if (config->server_port != 0) {
 			snprintf(hb_cfg.server_port, sizeof(hb_cfg.server_port), "%u",
 				 config->server_port);
@@ -817,7 +877,7 @@ int hawkbit_set_config(struct hawkbit_runtime_config *config)
 struct hawkbit_runtime_config hawkbit_get_config(void)
 {
 	struct hawkbit_runtime_config config = {
-		.server_addr = HAWKBIT_SERVER,
+		.server_addr = HAWKBIT_SERVER_ADDR,
 		.server_port = HAWKBIT_PORT_INT,
 		.auth_token = HAWKBIT_DDI_SECURITY_TOKEN,
 		.tls_tag = HAWKBIT_CERT_TAG,
@@ -864,6 +924,8 @@ int hawkbit_init(void)
 			LOG_ERR("Failed to erase second slot: %d", ret);
 			return ret;
 		}
+
+		hawkbit_event_raise(HAWKBIT_EVENT_CONFIRMED_CURRENT_IMAGE);
 	}
 	hawkbit_initialized = true;
 
@@ -994,7 +1056,7 @@ static void response_download_cb(struct http_response *rsp, enum http_final_call
 	}
 }
 
-static void response_cb(struct http_response *rsp, enum http_final_call final_data, void *userdata)
+static int response_cb(struct http_response *rsp, enum http_final_call final_data, void *userdata)
 {
 	struct hawkbit_context *hb_context = userdata;
 
@@ -1005,7 +1067,7 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 		} else {
 			hb_context->code_status = HAWKBIT_METADATA_ERROR;
 		}
-		return;
+		return 0;
 	}
 
 	switch (hb_context->type) {
@@ -1021,6 +1083,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 	default:
 		break;
 	}
+
+	return 0;
 }
 
 static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_request type,
@@ -1041,7 +1105,7 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
 	http_req.url = url_buffer;
-	http_req.host = HAWKBIT_SERVER;
+	http_req.host = HAWKBIT_SERVER_DOMAIN;
 	http_req.port = HAWKBIT_PORT;
 	http_req.protocol = "HTTP/1.1";
 	http_req.response = response_cb;
@@ -1155,7 +1219,7 @@ void hawkbit_reboot(void)
 
 static bool check_hawkbit_server(void)
 {
-	if (strlen(HAWKBIT_SERVER) == 0) {
+	if (strlen(HAWKBIT_SERVER_ADDR) == 0) {
 		if (sizeof(CONFIG_HAWKBIT_SERVER) > 1) {
 			hawkbit_set_server_addr(CONFIG_HAWKBIT_SERVER);
 		} else {
@@ -1265,8 +1329,7 @@ static void s_probe(void *o)
 
 	LOG_INF("Polling target data from hawkBit");
 
-	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s", HAWKBIT_JSON_URL, CONFIG_BOARD,
-		 s->device_id);
+	snprintk(url_buffer, sizeof(url_buffer), "%s/%s", HAWKBIT_JSON_URL, s->device_id);
 
 	if (!send_request(&s->hb_context, HAWKBIT_PROBE, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_PROBE");
@@ -1456,9 +1519,8 @@ static void s_report(void *o)
 	uint8_t status_buffer[CONFIG_HAWKBIT_STATUS_BUFFER_SIZE] = {0};
 	char url_buffer[URL_BUFFER_SIZE] = {0};
 
-	snprintk(url_buffer, sizeof(url_buffer), "%s/%s-%s/%s/%d/%s", HAWKBIT_JSON_URL,
-		 CONFIG_BOARD, s->device_id, "deploymentBase", s->hb_context.json_action_id,
-		 "feedback");
+	snprintk(url_buffer, sizeof(url_buffer), "%s/%s/%s/%d/%s", HAWKBIT_JSON_URL,
+		 s->device_id, "deploymentBase", s->hb_context.json_action_id, "feedback");
 
 	LOG_INF("Reporting deployment feedback %s (%s) for action %d",
 		feedback.status.result.finished, feedback.status.execution,
@@ -1478,6 +1540,11 @@ static void s_report(void *o)
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
 		return;
 	}
+
+	/* After reporting the successful update to the hawkBit server, we can reset the saved
+	 * action ID to 0, as we don't need it anymore.
+	 */
+	(void)hawkbit_device_acid_update(0);
 
 	smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_PROBE]);
 }

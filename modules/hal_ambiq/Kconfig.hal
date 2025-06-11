@@ -5,7 +5,7 @@
 
 config AMBIQ_HAL
 	bool "Ambiq HAL drivers support"
-	depends on SOC_SERIES_APOLLO3X || SOC_SERIES_APOLLO4X
+	depends on SOC_SERIES_APOLLO3X || SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
 	help
 	  Use the Ambiq HAL
 
@@ -50,6 +50,11 @@ config AMBIQ_HAL_USE_WDT
 	bool
 	help
 	  Use the WDT driver from Ambiq HAL
+
+config AMBIQ_HAL_USE_UART
+	bool
+	help
+	  Use the UART driver from Ambiq HAL
 
 config AMBIQ_HAL_USE_I2C
 	bool

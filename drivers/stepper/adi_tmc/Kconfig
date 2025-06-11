@@ -17,9 +17,17 @@ config STEPPER_ADI_TMC_SPI
 	help
 	  A Trinamic Stepper Controller with SPI is enabled
 
+config STEPPER_ADI_TMC_UART
+	bool "Use Trinamic Stepper Controller with single wire UART"
+	depends on STEPPER_ADI_TMC
+	select UART
+	help
+	  A Trinamic Stepper Controller with single wire UART is enabled
+
 comment "Trinamic Stepper Drivers"
 
 rsource "Kconfig.tmc22xx"
 rsource "Kconfig.tmc50xx"
+rsource "Kconfig.tmc51xx"
 
 endif # STEPPER_ADI_TMC

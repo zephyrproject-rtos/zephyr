@@ -70,6 +70,11 @@
 					compatible = "nxp,imx95-pinctrl", "nxp,imx93-pinctrl";
 				};
 			};
+
+			scmi_cpu: protocol@82 {
+				compatible = "nxp,scmi-cpu";
+				reg = <0x82>;
+			};
 		};
 	};
 
@@ -459,6 +464,18 @@
 			status = "disabled";
 		};
 
+		lptmr2: timer@424d0000 {
+			compatible = "nxp,lptmr";
+			reg = <0x424d0000 DT_SIZE_K(4)>;
+			interrupts = <63 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPTMR2>;
+			clock-frequency = <32000>;
+			clk-source = <2>;
+			prescaler = <1>;
+			resolution = <32>;
+			status = "disabled";
+		};
+
 		mu5: mailbox@44610000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x44610000 DT_SIZE_K(4)>;
@@ -528,6 +545,13 @@
 				reg = <0x4cc80000 0x10000>;
 				mac-index = <2>;
 				si-index = <2>;
+				status = "disabled";
+			};
+
+			enetc_ptp_clock: ptp_clock@4ccc0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4ccc0000 0x10000>;
+				clocks = <&scmi_clk IMX95_CLK_ENET>;
 				status = "disabled";
 			};
 		};

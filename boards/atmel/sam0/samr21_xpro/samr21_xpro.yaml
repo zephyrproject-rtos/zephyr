@@ -23,6 +23,7 @@ supported:
   - spi
   - uart
   - usb_device
+  - usbd
   - xpro_gpio
   - xpro_i2c
   - xpro_serial

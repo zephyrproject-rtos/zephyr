@@ -1,0 +1,20 @@
+description: Renesas RZ/A2M UART
+
+compatible: "renesas,rza2m-scif-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    description: |
+      Clock source for calculating BRR value
+
+  channel:
+    type: int
+    required: true

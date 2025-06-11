@@ -8,10 +8,16 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/ite-it51xxx-clock.h>
 #include <zephyr/dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/it51xxx-i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-wuc.h>
 #include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+#include <zephyr/dt-bindings/pwm/it51xxx_pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/sensor/it51xxx_tach.h>
 
 / {
 	#address-cells = <1>;
@@ -68,6 +74,16 @@
 			reg = <0xf01040 3>;	/* SCAR0 */
 		};
 
+		adc0: adc@f04500 {
+			compatible = "ite,it51xxx-adc";
+			reg = <0xf04500 0xc1>;
+			channel-count = <8>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		gpiogcr: gpio-gcr@f01600 {
 			compatible = "ite,it51xxx-gpiogcr";
 			reg = <0x00f01600 0x100>;
@@ -78,7 +94,7 @@
 			reg = <0x00f01601 1   /* GPDR (set) */
 			       0x00f01661 1   /* GPDMR (get) */
 			       0x00f01671 1   /* GPOTR */
-			       0x00f016d4 1   /* P18SCR */
+			       0x00f05001 1   /* GPxyCR1 */
 			       0x00f01610 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -100,7 +116,7 @@
 				   &wuc_wu82    /* GPA5 */
 				   &wuc_wu83    /* GPA6 */
 				   &wuc_wu100>; /* GPA7 */
-			has-volt-sel = <1 1 1 1 0 0 1 1>;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
 			#gpio-cells = <2>;
 		};
 
@@ -109,7 +125,7 @@
 			reg = <0x00f01602 1   /* GPDR (set) */
 			       0x00f01662 1   /* GPDMR (get) */
 			       0x00f01672 1   /* GPOTR */
-			       0x00f016d5 1   /* P18SCR */
+			       0x00f05011 1   /* GPxyCR1 */
 			       0x00f01618 7   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <7>;
@@ -129,7 +145,7 @@
 				   &wuc_no_func /* NO_FUNC */
 				   &wuc_wu104   /* GPB5 */
 				   &wuc_wu105>; /* GPB6 */
-			has-volt-sel = <0 0 1 0 0 0 0 0>;
+			has-volt-sel = <0 0 1 0 0 1 1 0>;
 			#gpio-cells = <2>;
 		};
 
@@ -138,7 +154,7 @@
 			reg = <0x00f01603 1   /* GPDR (set) */
 			       0x00f01663 1   /* GPDMR (get) */
 			       0x00f01673 1   /* GPOTR */
-			       0x00f016d6 1   /* P18SCR */
+			       0x00f05021 1   /* GPxyCR1 */
 			       0x00f01620 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -160,7 +176,7 @@
 				   &wuc_wu109  /* GPC5 */
 				   &wuc_wu23   /* GPC6 */
 				   &wuc_wu86>; /* GPC7 */
-			has-volt-sel = <1 0 0 1 1 1 1 0>;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
 			#gpio-cells = <2>;
 		};
 
@@ -169,7 +185,7 @@
 			reg = <0x00f01604 1   /* GPDR (set) */
 			       0x00f01664 1   /* GPDMR (get) */
 			       0x00f01674 1   /* GPOTR */
-			       0x00f016d7 1   /* P18SCR */
+			       0x00f05031 1   /* GPxyCR1 */
 			       0x00f01628 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -191,7 +207,7 @@
 				   &wuc_wu112  /* GPD5 */
 				   &wuc_wu113  /* GPD6 */
 				   &wuc_wu87>; /* GPD7 */
-			has-volt-sel = <0 0 0 0 0 1 1 1>;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
 			#gpio-cells = <2>;
 		};
 
@@ -200,7 +216,7 @@
 			reg = <0x00f01605 1   /* GPDR (set) */
 			       0x00f01665 1   /* GPDMR (get) */
 			       0x00f01675 1   /* GPOTR */
-			       0x00f016d8 1   /* P18SCR */
+			       0x00f05041 1   /* GPxyCR1 */
 			       0x00f01630 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -222,7 +238,7 @@
 				   &wuc_wu40   /* GPE5 */
 				   &wuc_wu45   /* GPE6 */
 				   &wuc_wu46>; /* GPE7 */
-			has-volt-sel = <0 1 1 1 0 1 0 0>;
+			has-volt-sel = <1 1 1 1 0 1 1 1>;
 			#gpio-cells = <2>;
 		};
 
@@ -231,7 +247,7 @@
 			reg = <0x00f01606 1   /* GPDR (set) */
 			       0x00f01666 1   /* GPDMR (get) */
 			       0x00f01676 1   /* GPOTR */
-			       0x00f016d9 1   /* P18SCR */
+			       0x00f05051 1   /* GPxyCR1 */
 			       0x00f01638 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -253,7 +269,7 @@
 				   &wuc_wu65   /* GPF5 */
 				   &wuc_wu66   /* GPF6 */
 				   &wuc_wu67>; /* GPF7 */
-			has-volt-sel = <1 1 0 0 0 0 0 0>;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
 			#gpio-cells = <2>;
 		};
 
@@ -262,7 +278,7 @@
 			reg = <0x00f01607 1   /* GPDR (set) */
 			       0x00f01667 1   /* GPDMR (get) */
 			       0x00f01677 1   /* GPOTR */
-			       0x00f016da 1   /* P18SCR */
+			       0x00f05061 1   /* GPxyCR1 */
 			       0x00f01640 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -284,7 +300,7 @@
 				   &wuc_no_func   /* NO_FUNC */
 				   &wuc_wu118     /* GPG6 */
 				   &wuc_no_func>; /* NO_FUNC */
-			has-volt-sel = <1 0 1 0 0 0 0 0>;
+			has-volt-sel = <1 1 1 0 0 0 1 0>;
 			#gpio-cells = <2>;
 		};
 
@@ -293,7 +309,7 @@
 			reg = <0x00f01608 1   /* GPDR (set) */
 			       0x00f01668 1   /* GPDMR (get) */
 			       0x00f01678 1   /* GPOTR */
-			       0x00f016db 1   /* P18SCR */
+			       0x00f05071 1   /* GPxyCR1 */
 			       0x00f01648 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -315,7 +331,7 @@
 				   &wuc_wu89    /* GPH5 */
 				   &wuc_wu90    /* GPH6 */
 				   &wuc_wu127>; /* GPH7 */
-			has-volt-sel = <0 0 0 1 1 1 1 1>;
+			has-volt-sel = <1 1 1 1 1 0 0 1>;
 			#gpio-cells = <2>;
 		};
 
@@ -324,7 +340,7 @@
 			reg = <0x00f01609 1   /* GPDR (set) */
 			       0x00f01669 1   /* GPDMR (get) */
 			       0x00f01679 1   /* GPOTR */
-			       0x00f016dc 1   /* P18SCR */
+			       0x00f05081 1   /* GPxyCR1 */
 			       0x00f01650 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -355,7 +371,7 @@
 			reg = <0x00f0160a 1   /* GPDR (set) */
 			       0x00f0166a 1   /* GPDMR (get) */
 			       0x00f0167a 1   /* GPOTR */
-			       0x00f016dd 1   /* P18SCR */
+			       0x00f05091 1   /* GPxyCR1 */
 			       0x00f01658 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
@@ -386,7 +402,7 @@
 			reg = <0x00f0160b 1   /* GPDR (set) */
 			       0x00f0166b 1   /* GPDMR (get) */
 			       0x00f0167b 1   /* GPOTR */
-			       NO_FUNC 1      /* P18SCR */
+			       NO_FUNC 1      /* GPxyCR1 */
 			       0x00f01690 8   /* GPCR */
 			       0x00f01d2d 1>; /* KSOLFSELR */
 			ngpios = <8>;
@@ -416,7 +432,7 @@
 			reg = <0x00f0160c 1   /* GPDR (set) */
 			       0x00f0166c 1   /* GPDMR (get) */
 			       0x00f0167c 1   /* GPOTR */
-			       NO_FUNC 1      /* P18SCR */
+			       NO_FUNC 1      /* GPxyCR1 */
 			       0x00f01698 8   /* GPCR */
 			       0x00f01d2e 1>; /* KSOHFSELR */
 			ngpios = <8>;
@@ -446,7 +462,7 @@
 			reg = <0x00f0160d 1   /* GPDR (set) */
 			       0x00f0166d 1   /* GPDMR (get) */
 			       NO_FUNC 1      /* GPOTR */
-			       NO_FUNC 1      /* P18SCR */
+			       NO_FUNC 1      /* GPxyCR1 */
 			       0x00f016a0 7   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <7>;
@@ -474,7 +490,7 @@
 			reg = <0x00f0160e 1   /* GPDR (set) */
 			       0x00f0166e 1   /* GPDMR (get) */
 			       0x00f0167e 1   /* GPOTR */
-			       NO_FUNC 1      /* P18SCR */
+			       NO_FUNC 1      /* GPxyCR1 */
 			       0x00f016a8 8   /* GPCR */
 			       0x00f01d2c 1>; /* KSIFSELR */
 			ngpios = <8>;
@@ -518,10 +534,10 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
 			func4-en-mask = <0        0        0        0
 					 0        0        0        0       >;
-			volt-sel =      <0xf016d4 0xf016d4 0xf016d4 0xf016d4
-					 NO_FUNC  NO_FUNC  0xf016d4 0xf016d4>;
-			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
-					 0        0        BIT(6)   BIT(7)  >;
+			volt-sel =      <0xf05001 0xf05003 0xf05005 0xf05007
+					 0xf05009 0xf0500b 0xf0500d 0xf0500f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   BIT(3)
+					 BIT(3)   BIT(3)   BIT(3)   BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -538,10 +554,10 @@
 					 NO_FUNC  0xf016ed NO_FUNC  NO_FUNC >;
 			func4-en-mask = <0        0        BIT(2)   0
 					 0        BIT(3)   0        0       >;
-			volt-sel =      <NO_FUNC  NO_FUNC  0xf016d5 NO_FUNC
-					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
-			volt-sel-mask = <0        0        BIT(2)   0
-					 0        0        0        0       >;
+			volt-sel =      <NO_FUNC  NO_FUNC  0xf05015 NO_FUNC
+					 NO_FUNC  0xf0501b 0xf0501d NO_FUNC >;
+			volt-sel-mask = <0        0        BIT(3)   0
+					 0        BIT(3)   BIT(3)   0       >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -558,10 +574,10 @@
 					 NO_FUNC  NO_FUNC  0xf016f4 0xf016f5>;
 			func4-en-mask = <0        0        0        0
 					 0        0        BIT(0)   BIT(0)  >;
-			volt-sel =      <0xf016d6 NO_FUNC  NO_FUNC  0xf016d6
-					 0xf016d6 0xf016d6 0xf016d6 NO_FUNC >;
-			volt-sel-mask = <BIT(0)   0        0        BIT(3)
-					 BIT(4)   BIT(5)   BIT(6)   0       >;
+			volt-sel =      <0xf05021 0xf05023 0xf05025 0xf05027
+					 0xf05029 0xf0502b 0xf0502d 0xf0502f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   BIT(3)
+					 BIT(3)   BIT(3)   BIT(3)   BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -578,10 +594,10 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
 			func4-en-mask = <0        0        0        0
 					 0        0        0        0       >;
-			volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
-					 NO_FUNC  0xf016d7 0xf016d7 0xf016d7>;
-			volt-sel-mask = <0        0        0        0
-					 0        BIT(5)   BIT(6)   BIT(7)  >;
+			volt-sel =      <0xf05031 0xf05033 0xf05035 0xf05037
+					 0xf05039 0xf0503b 0xf0503d 0xf0503f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   BIT(3)
+					 BIT(3)   BIT(3)   BIT(3)   BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -590,18 +606,18 @@
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01630 8     /* GPCR */
 			       NO_FUNC    1>;
-			func3-gcr =     <0xf016f3 NO_FUNC  NO_FUNC  NO_FUNC
+			func3-gcr =     <0xf016f3 0xf016ed 0xf016ed 0xf016ed
 					 NO_FUNC  0xf016f0 0xf016fe 0xf016fe>;
-			func3-en-mask = <BIT(0)   0        0        0
+			func3-en-mask = <BIT(0)   BIT(5)   BIT(6)   BIT(6)
 					 0        BIT(3)   BIT(7)   BIT(4)  >;
 			func4-gcr =     <0xf016fe NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  0xf016f5 NO_FUNC >;
 			func4-en-mask = <BIT(4)   0        0        0
 					 0        0        BIT(1)   0       >;
-			volt-sel =      <NO_FUNC  0xf016d8 0xf016d8 0xf016d8
-					 NO_FUNC  0xf016d8 NO_FUNC  NO_FUNC >;
-			volt-sel-mask = <0        BIT(1)   BIT(2)   BIT(3)
-					 0        BIT(5)   0        0       >;
+			volt-sel =      <0xf05041 0xf05043 0xf05045 0xf05047
+					 NO_FUNC  0xf0504b 0xf0504d 0xf0504f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   BIT(3)
+					 0        BIT(3)   BIT(3)   BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -610,18 +626,18 @@
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01638 8     /* GPCR */
 			       NO_FUNC    1>;
-			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+			func3-gcr =     <0xf016d1 0xf016d1 NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  0xf016f1 NO_FUNC>;
-			func3-en-mask = <0        0        0        0
+			func3-en-mask = <BIT(2)   BIT(2)   0        0
 					 0        0        BIT(4)   0      >;
 			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4-en-mask = <0        0        0        0
 					 0        0        0        0      >;
-			volt-sel =      <0xf016d9 0xf016d9 NO_FUNC  NO_FUNC
-					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
-			volt-sel-mask = <BIT(0)   BIT(1)   0        0
-					 0        0        0        0      >;
+			volt-sel =      <0xf05051 0xf05053 0xf05055 0xf05057
+					 0xf05059 0xf0505b 0xf0505d 0xf0505f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   BIT(3)
+					 BIT(3)   BIT(3)   BIT(3)   BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -638,10 +654,10 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4-en-mask = <0        BIT(6)   0        0
 					 0        0        0        0      >;
-			volt-sel =      <0xf016da NO_FUNC  0xf016da NO_FUNC
-					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
-			volt-sel-mask = <BIT(0)   0        BIT(2)   0
-					 0        0        0        0      >;
+			volt-sel =      <0xf05061 0xf05063 0xf05065 NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf0506d NO_FUNC>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   0
+					 0        0        BIT(3)   0      >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -658,10 +674,10 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  0xf016f5>;
 			func4-en-mask = <BIT(2)   BIT(5)   BIT(5)   0
 					 0        0        0        BIT(7)  >;
-			volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  0xf016db
-					 0xf016db 0xf016db 0xf016db 0xf016db>;
-			volt-sel-mask = <0        0        0        BIT(3)
-					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			volt-sel =      <0xf05071 0xf05073 0xf05075 0xf05077
+					 0xf05079 NO_FUNC  NO_FUNC  0xf0507f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   BIT(3)
+					 BIT(3)   0        0        BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -678,10 +694,10 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
 			func4-en-mask = <0        0        0        0
 					 0        0        0        0       >;
-			volt-sel =      <0xf016dc 0xf016dc 0xf016dc 0xf016dc
-					 0xf016dc 0xf016dc 0xf016dc 0xf016dc>;
-			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
-					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			volt-sel =      <0xf05081 0xf05083 0xf05085 0xf05087
+					 0xf05089 0xf0508b 0xf0508d 0xf0508f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   BIT(3)   BIT(3)
+					 BIT(3)   BIT(3)   BIT(3)   BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -690,18 +706,18 @@
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01658 8     /* GPCR */
 			       NO_FUNC    1>;
-			func3-gcr =     <0xf016f1 0xf016fe NO_FUNC  NO_FUNC
-					 NO_FUNC  NO_FUNC  0xf016f4 0xf016d1>;
-			func3-en-mask = <BIT(7)   BIT(3)   0        0
-					 0        0        BIT(1)   BIT(3)  >;
+			func3-gcr =     <0xf016f1 0xf016fe NO_FUNC  0xf016ed
+					 0xf016ed 0xf016ed 0xf016f4 0xf016d1>;
+			func3-en-mask = <BIT(7)   BIT(3)   0        BIT(4)
+					 BIT(4)   BIT(5)   BIT(1)   BIT(3)  >;
 			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
 					 NO_FUNC  NO_FUNC  0xf016ed 0xf016f0>;
 			func4-en-mask = <0        0        0        0
 					 0        0        BIT(3)   BIT(4)  >;
-			volt-sel =      <0xf016dd NO_FUNC  0xf016dd 0xf016dd
-					 0xf016dd 0xf016dd 0xf016dd 0xf016dd>;
-			volt-sel-mask = <BIT(0)   0        BIT(2)   BIT(3)
-					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			volt-sel =      <0xf05091 0xf05093 NO_FUNC  0xf05097
+					 0xf05099 0xf0509b 0xf0509d 0xf0509f>;
+			volt-sel-mask = <BIT(3)   BIT(3)   0        BIT(3)
+					 BIT(3)   BIT(3)   BIT(3)   BIT(3)  >;
 			#pinmux-cells = <2>;
 			gpio-group;
 		};
@@ -915,6 +931,165 @@
 			#wuc-cells = <1>;
 		};
 
+		i2cbase: i2cbase@f04100 {
+			compatible = "ite,it51xxx-i2cbase";
+			reg = <0x00f04100 1
+			       0x00f01c00 1>;
+		};
+
+		i2c0: i2c@f04100 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04100 0x0028
+			       0x00f04200 0x0020>;
+			interrupts = <IT51XXX_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_SMB_SA IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiof 2 0>;
+			sda-gpios = <&gpiof 3 0>;
+			port-num = <SMB_CHANNEL_A>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE0>;
+			fifo-enable;   /* FIFO1 */
+		};
+
+		i2c1: i2c@f04128 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04128 0x0028
+			       0x00f04220 0x0020>;
+			interrupts = <IT51XXX_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_SMB_SB IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioc 1 0>;
+			sda-gpios = <&gpioc 2 0>;
+			port-num = <SMB_CHANNEL_B>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE1>;
+			fifo-enable;   /* FIFO2 */
+		};
+
+		i2c2: i2c@f04150 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04150 0x0028
+			       0x00f04240 0x0020>;
+			interrupts = <IT51XXX_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_SMB_SC IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiof 6 0>;
+			sda-gpios = <&gpiof 7 0>;
+			port-num = <SMB_CHANNEL_C>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE2>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c3: i2c@f04178 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04178 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioh 1 0>;
+			sda-gpios = <&gpioh 2 0>;
+			port-num = <SMB_CHANNEL_D>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE3>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c4: i2c@f041a0 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f041a0 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioe 0 0>;
+			sda-gpios = <&gpioe 7 0>;
+			port-num = <SMB_CHANNEL_E>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE4>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c5: i2c@f041c8 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f041c8 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpioa 4 0>;
+			sda-gpios = <&gpioa 5 0>;
+			port-num = <SMB_CHANNEL_F>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE5>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c6: i2c@f04260 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04260 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_G IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiod 0 0>;
+			sda-gpios = <&gpiod 1 0>;
+			port-num = <SMB_CHANNEL_G>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE6>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c7: i2c@f04288 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04288 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_H IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiob 2 0>;
+			sda-gpios = <&gpioh 0 0>;
+			port-num = <SMB_CHANNEL_H>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE7>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		i2c8: i2c@f042b0 {
+			compatible = "ite,it51xxx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f042b0 0x0028
+			       0 1>;
+			interrupts = <IT51XXX_IRQ_SMB_I IRQ_TYPE_LEVEL_HIGH
+				      0 0>;
+			interrupt-parent = <&intc>;
+			scl-gpios = <&gpiob 5 0>;
+			sda-gpios = <&gpioj 6 0>;
+			port-num = <SMB_CHANNEL_I>;
+			channel-switch-sel = <SMB_SWITCH_INTERFACE8>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
 		ecpm: clock-controller@f01e00 {
 			compatible = "ite,it51xxx-ecpm";
 			reg = <0x00f01e00 0x0a>;
@@ -983,9 +1158,176 @@
 			interrupts = <IT51XXX_IRQ_TIMER3_DW IRQ_TYPE_EDGE_RISING   /* Event timer */
 				      IT51XXX_IRQ_TIMER4_DW IRQ_TYPE_EDGE_RISING   /* Free run */
 				      IT51XXX_IRQ_TIMER5_DW IRQ_TYPE_EDGE_RISING   /* Busy wait */
-				      IT51XXX_IRQ_TIMER6_DW IRQ_TYPE_EDGE_RISING   /* Busy wait */
-				      IT51XXX_IRQ_TIMER7_DW IRQ_TYPE_EDGE_RISING>;
+				      IT51XXX_IRQ_TIMER6_DW IRQ_TYPE_EDGE_RISING>; /* Busy wait */
 			interrupt-parent = <&intc>;
+		};
+
+		counter0: counter@f04730 {
+			compatible = "ite,it51xxx-counter";
+			reg = <0x00f04730 0xcf>;
+			interrupts = <IT51XXX_IRQ_TIMER7_DW IRQ_TYPE_EDGE_RISING   /* Alarm timer */
+				      IT51XXX_IRQ_TIMER8_DW IRQ_TYPE_EDGE_RISING>; /* Top timer */
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		kbd: kbd@f01d00 {
+			compatible = "ite,it51xxx-kbd";
+			reg = <0x00f01d00 0x29>;
+			interrupt-parent = <&intc>;
+			interrupts = <IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+			wucctrl = <&wuc_wu30   /* KSI[0] */
+				   &wuc_wu31   /* KSI[1] */
+				   &wuc_wu32   /* KSI[2] */
+				   &wuc_wu33   /* KSI[3] */
+				   &wuc_wu34   /* KSI[4] */
+				   &wuc_wu35   /* KSI[5] */
+				   &wuc_wu36   /* KSI[6] */
+				   &wuc_wu37>; /* KSI[7] */
+			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		};
+
+		twd0: watchdog@f04780 {
+			compatible = "ite,it51xxx-watchdog";
+			reg = <0x00f04780 0x20>;
+			interrupts = <IT51XXX_IRQ_TIMER1_DW IRQ_TYPE_EDGE_RISING>; /* Warn timer */
+			interrupt-parent = <&intc>;
+		};
+
+		pwm0: pwm@f04600 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04600 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm1: pwm@f04610 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04610 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm2: pwm@f04620 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04620 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm3: pwm@f04630 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04630 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm4: pwm@f04640 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04640 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm5: pwm@f04650 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04650 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm6: pwm@f04660 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04660 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		pwm7: pwm@f04670 {
+			compatible = "ite,it51xxx-pwm";
+			reg = <0x00f04670 0xf
+			       0x00f04680 0x80>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		tach0: tach@f046c0 {
+			compatible = "ite,it51xxx-tach";
+			reg = <0x00f046c0 0xf>;
+			status = "disabled";
+		};
+
+		tach1: tach@f046d0 {
+			compatible = "ite,it51xxx-tach";
+			reg = <0x00f046d0 0xf>;
+			status = "disabled";
+		};
+
+		tach2: tach@f046e0 {
+			compatible = "ite,it51xxx-tach";
+			reg = <0x00f046e0 0xf>;
+			status = "disabled";
+		};
+
+		i3c0: i3c@f03c00 {
+			compatible = "ite,it51xxx-i3cm";
+			reg = <0x00f03c00 0x0053>;
+			status = "disabled";
+			interrupts = <IT51XXX_IRQ_I3C_M0 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			io-channel = <0>;
+		};
+
+		i3c1: i3c@f03c80 {
+			compatible = "ite,it51xxx-i3cm";
+			reg = <0x00f03c80 0x0053>;
+			status = "disabled";
+			interrupts = <IT51XXX_IRQ_I3C_M1 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			io-channel = <1>;
+		};
+
+		i3c2: i3c@f03d00 {
+			compatible = "ite,it51xxx-i3cs";
+			reg = <0x00f03d00 0x007a>;
+			status = "disabled";
+			interrupts = <IT51XXX_IRQ_I3C_S0 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			io-channel = <2>;
+			extern-enable = <0xf016de 0>;
+		};
+
+		i3c3: i3c@f03d80 {
+			compatible = "ite,it51xxx-i3cs";
+			reg = <0x00f03d80 0x007a>;
+			status = "disabled";
+			interrupts = <IT51XXX_IRQ_I3C_S1 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			io-channel = <3>;
+			extern-enable = <0xf016de 1>;
+		};
+
+		sha256: crypto@f03b00 {
+			compatible = "ite,it51xxx-sha";
+			reg = <0x00f03b00 0x6>;
+			status = "disabled";
 		};
 	};
 };

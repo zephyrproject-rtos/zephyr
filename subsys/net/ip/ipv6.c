@@ -584,6 +584,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	if (!net_pkt_filter_ip_recv_ok(pkt)) {
 		/* drop the packet */
 		NET_DBG("DROP: pkt filter");
+		net_stats_update_filter_rx_ipv6_drop(net_pkt_iface(pkt));
 		return NET_DROP;
 	}
 
@@ -765,7 +766,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	ip.ipv6 = hdr;
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
-		if (net_conn_input(pkt, &ip, current_hdr, NULL) == NET_DROP) {
+		if (net_conn_raw_ip_input(pkt, &ip, current_hdr) == NET_DROP) {
 			goto drop;
 		}
 	}
@@ -1029,6 +1030,12 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 
 			break;
 		case 8:
+			if (sizeof(lladdr->addr) < 8) {
+				NET_ERR("Invalid link layer address length %zu, expecting 8",
+					sizeof(lladdr->addr));
+				return -EINVAL;
+			}
+
 			memcpy(&tmp_addr.s6_addr[8], lladdr->addr, lladdr->len);
 			tmp_addr.s6_addr[8] ^= 0x02;
 			break;

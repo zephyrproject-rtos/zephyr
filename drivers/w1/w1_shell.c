@@ -370,43 +370,41 @@ static int cmd_w1_search(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_w1,
 	SHELL_CMD_ARG(reset, NULL,
-		      "Reset 1-Wire bus.\n"
-		      "Usage: <device>",
+		      SHELL_HELP("Reset 1-Wire bus",
+				 "<device>"),
 		      cmd_w1_reset_bus, 2, 0),
 	SHELL_CMD_ARG(read_bit, NULL,
-		      "Read 1-Wire bit.\n"
-		      "Usage: <device>",
+		      SHELL_HELP("Read 1-Wire bit",
+				 "<device>"),
 		      cmd_w1_read_bit, 2, 0),
 	SHELL_CMD_ARG(read_byte, NULL,
-		      "Read 1-Wire byte.\n"
-		      "Usage: <device>",
+		      SHELL_HELP("Read 1-Wire byte",
+				 "<device>"),
 		      cmd_w1_read_byte, 2, 0),
 	SHELL_CMD_ARG(read_block, NULL,
-		      "Read 1-Wire block.\n"
-		      "Usage: <device> <num_bytes>",
+		      SHELL_HELP("Read 1-Wire block",
+				 "<device> <num_bytes>"),
 		      cmd_w1_read_block, 3, 0),
 	SHELL_CMD_ARG(write_bit, NULL,
-		      "Write 1-Wire bit.\n"
-		      "Usage: <device> <bit>",
+		      SHELL_HELP("Write 1-Wire bit",
+				 "<device> <bit>"),
 		      cmd_w1_write_bit, 3, 0),
 	SHELL_CMD_ARG(write_byte, NULL,
-		      "Write 1-Wire byte.\n"
-		      "Usage: <device> [-r] <byte>\n"
-		      OPTION_HELP_RESET,
+		      SHELL_HELP("Write 1-Wire byte",
+				 "<device> [-r] <byte>"),
 		      cmd_w1_write_byte, 3, 1),
 	SHELL_CMD_ARG(write_block, NULL,
-		      "Write 1-Wire block.\n"
-		      "Usage: <device> [-r] <byte1> [<byte2>, ...]\n"
-		      OPTION_HELP_RESET,
+		      SHELL_HELP("Write 1-Wire block",
+				 "<device> [-r] <byte1> [<byte2>, ...]"),
 		      cmd_w1_write_block, 3, BUF_SIZE),
 	SHELL_CMD_ARG(config, NULL,
-		      "Configure 1-Wire host.\n"
-		      "Usage: <device> <type> <value>\n"
-		      "<type> is either a name or an id.",
+		      SHELL_HELP("Configure 1-Wire host",
+				 "<device> <type> <value>\n"
+				 "<type> is either a name or an id."),
 		      cmd_w1_configure, 4, 0),
 	SHELL_CMD_ARG(search, NULL,
-		      "1-Wire devices.\n"
-		      "Usage: <device>",
+		      SHELL_HELP("Search 1-Wire devices on bus",
+				 "<device>"),
 		      cmd_w1_search, 2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );

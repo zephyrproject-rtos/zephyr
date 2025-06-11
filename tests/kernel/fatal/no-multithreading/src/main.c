@@ -34,8 +34,6 @@ static void entry_cpu_exception(void)
 	TC_PRINT("cpu exception\n");
 #if defined(CONFIG_X86)
 	__asm__ volatile ("ud2");
-#elif defined(CONFIG_NIOS2)
-	__asm__ volatile ("trap");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
 #else
@@ -117,14 +115,14 @@ static const exc_trigger_func_t exc_trigger_func[] = {
 };
 
 /**
- * @brief Test the kernel fatal error handling works correctly
+ * @brief Verify the kernel fatal error handling works correctly
  * @details Manually trigger the crash with various ways and check
  * that the kernel is handling that properly or not. Also the crash reason
  * should match.
  *
- * @ingroup kernel_common_tests
+ * @ingroup kernel_fatal_tests
  */
-ZTEST(fatal_no_mt, test_fatal)
+ZTEST(fatal_no_mt, test_fatal_no_mt)
 {
 #ifdef VIA_TWISTER
 #define EXC_TRIGGER_FUNC_IDX VIA_TWISTER

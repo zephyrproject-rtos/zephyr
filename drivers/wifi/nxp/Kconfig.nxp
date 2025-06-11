@@ -1,4 +1,4 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI_NXP
@@ -10,6 +10,7 @@ menuconfig WIFI_NXP
 	select SDHC if !SOC_SERIES_RW6XX
 	select SDIO_STACK if !SOC_SERIES_RW6XX
 	select WIFI_NM
+	select EVENTS
 	depends on DT_HAS_NXP_WIFI_ENABLED
 	help
 	  Enable NXP SoC Wi-Fi support.
@@ -78,6 +79,13 @@ config NXP_88W8801
 	  Enable NXP 88W8801 Wi-Fi connectivity,
 	  More information about 88W8801 device you can find on
 	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-ghz-single-band-1x1-wi-fi-4-802-11n-solution:88W8801
+
+config NXP_IW610
+	bool "NXP IW610"
+	help
+	  Enable NXP IW610 Wi-Fi connectivity,
+	  More information about IW610 device you can find on
+	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5ghz-dual-band-1x1-wi-fi-6-plus-bluetooth-low-energy-5-4-plus-802-15-4-tri-radio-solution:IW610
 
 endchoice
 
@@ -205,6 +213,28 @@ config NXP_IW416_MURATA_1XK_M2
 
 endchoice
 
+choice NXP_IW416_REGION
+	prompt "Select NXP Wi-Fi Regulatory Domain"
+	depends on NXP_IW416 && !NXP_WIFI_CUSTOM
+	default NXP_IW416_REGION_WW
+
+config NXP_IW416_REGION_WW
+	bool "Regulatory domain WW"
+
+config NXP_IW416_REGION_CA
+	bool "Regulatory domain CA"
+
+config NXP_IW416_REGION_JP
+	bool "Regulatory domain JP"
+
+config NXP_IW416_REGION_EU
+	bool "Regulatory domain EU"
+
+config NXP_IW416_REGION_US
+	bool "Regulatory domain US"
+
+endchoice
+
 choice NXP_IW61X_MODULE
 	prompt "Select NXP IW61X module"
 	depends on NXP_IW61X && !NXP_WIFI_CUSTOM
@@ -257,6 +287,28 @@ config NXP_IW611_MURATA_2DL_M2
 
 endchoice
 
+choice NXP_IW61X_REGION
+	prompt "Select NXP Wi-Fi Regulatory Domain"
+	depends on NXP_IW61X && !NXP_WIFI_CUSTOM
+	default NXP_IW61X_REGION_WW
+
+config NXP_IW61X_REGION_WW
+	bool "Regulatory domain WW"
+
+config NXP_IW61X_REGION_CA
+	bool "Regulatory domain CA"
+
+config NXP_IW61X_REGION_JP
+	bool "Regulatory domain JP"
+
+config NXP_IW61X_REGION_EU
+	bool "Regulatory domain EU"
+
+config NXP_IW61X_REGION_US
+	bool "Regulatory domain US"
+
+endchoice
+
 choice NXP_88W8801_MODULE
 	prompt "Select NXP 88W8801 module"
 	depends on NXP_88W8801 && !NXP_WIFI_CUSTOM
@@ -292,7 +344,7 @@ config NXP_88W8801_MURATA_2DS_USD
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ds
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/usd-m2-adapter
 
-config NXP_88W8801_MURATA_2DS_USD
+config NXP_88W8801_MURATA_2DS_M2
 	bool "NXP MURATA-2DS-M2"
 	help
 	  Murata Type 2DS is a small high-performance module (integrated PCB antenna)
@@ -301,6 +353,36 @@ config NXP_88W8801_MURATA_2DS_USD
 
 	  Detailed information about Murata Type 2DS module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ds
+
+endchoice
+
+choice NXP_IW610_MODULE
+	prompt "Select NXP IW610 module"
+	depends on NXP_IW610 && !NXP_WIFI_CUSTOM
+
+config NXP_IW610_MURATA_2LL_M2
+	bool "NXP IW610-MURATA-2LL-M2"
+	help
+	  Murata Type 2LL is a small and very high performance module based on NXP IW610G
+	  combo chipset which supports Wi-Fi™ 802.11a/b/g/n/ac/ax HE20 + Bluetooth®. 5.4
+	  Low Energy + 802.15.4 up to 114.7Mbps PHY data rate on Wi-Fi™ and 2Mbps PHY data
+	  rate on Bluetooth® Low Energy.
+
+	  Detailed information about Type 2LL module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ll
+
+config NXP_IW610_RD_USD
+	bool "NXP IW610-RD-USD [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  The IW610 Family features a 1x1 Dual-band (2.4 GHz / 5 GHz) Wi-Fi 6 radio subsystem,
+	  offering improved network efficiency, reduced latency and extended range compared to
+	  previous Wi-Fi standards. Its Bluetooth LE radio supports a high-speed data rate of
+	  2 Mbit/s, along with long-range communication and extended advertising for network
+	  commissioning and sensor aggregation.
+
+	  Detailed information about Type RD USD module you can find on
+	  https://www.nxp.com/part/IW610CHN
 
 endchoice
 
@@ -542,7 +624,7 @@ config NXP_WIFI_SOFTAP_SUPPORT
 	select WIFI_NM_HOSTAPD_AP if WIFI_NM_WPA_SUPPLICANT
 	imply WIFI_NM_HOSTAPD_WPS if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_WPS
 	imply WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	default y
+	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 	help
 	  Option to enable Wi-Fi SoftAP functions in the Wi-Fi driver.
 
@@ -611,7 +693,7 @@ config NXP_WIFI_11AX
 	default y
 	select NXP_WIFI_11AC
 	select NXP_WIFI_WMM
-	depends on NXP_RW610 || NXP_IW61X || NXP_WIFI_CUSTOM
+	depends on NXP_RW610 || NXP_IW61X || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enables the use of 802.11ax support.
 
@@ -619,7 +701,7 @@ config NXP_WIFI_11AC
 	bool "802.11AC Support"
 	default y
 	select NXP_WIFI_WMM
-	depends on NXP_RW610 || NXP_IW61X || NXP_88W8987 || NXP_WIFI_CUSTOM
+	depends on NXP_RW610 || NXP_IW61X || NXP_88W8987 || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enables the use of 802.11ac support.
 
@@ -717,6 +799,8 @@ config NXP_WIFI_CSI
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
+	imply NXP_WIFI_IND_DNLD if NXP_IW610
+	imply NXP_WIFI_IND_RESET if NXP_IW610
 	help
 	  This option is used to enable/disable/reset Wi-Fi.
 
@@ -736,7 +820,7 @@ config NXP_WIFI_UNII4_BAND_SUPPORT
 
 config NXP_WIFI_RECOVERY
 	bool "RECOVERY"
-	depends on NXP_RW610
+	depends on NXP_RW610 || NXP_IW610
 	help
 	  This option is used to enable wifi recovery support.
 
@@ -902,7 +986,7 @@ config NXP_WIFI_EU_VALIDATION
 	help
 	  This option enables EU Validation Support.
 
-if NXP_RW610 || NXP_IW61X
+if NXP_RW610 || NXP_IW61X || NXP_IW610
 
 config NXP_WIFI_CLOCKSYNC
 	bool "Clock sync using TSF latch"
@@ -913,12 +997,14 @@ config NXP_WIFI_CLOCKSYNC
 config NXP_WIFI_COMPRESS_TX_PWTBL
 	bool "Compress TX Power Table Support"
 	default y
+	depends on (NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610)
 	help
 	  This option enables the use of Compress TX Power Table support.
 
 config NXP_WIFI_COMPRESS_RU_TX_PWTBL
 	bool "Compress RU TX Power Table Support"
 	default y
+	depends on (NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610)
 	help
 	  This option enables the use of Compress RU TX Power Table support.
 
@@ -950,7 +1036,7 @@ config NXP_WIFI_FIPS
 
 config NXP_WIFI_OWE
 	bool "Opportunistic Wireless Encryption"
-	default y
+	default y if NXP_RW610
 	help
 	  This option enables Wi-Fi Opportunistic Wireless Encryption support
 	  in the Wi-Fi driver.
@@ -967,7 +1053,7 @@ config NXP_WIFI_CUSTOM_CALDATA
 	help
 	  This option force to use custom calibration data.
 
-if NXP_88W8987 || NXP_IW416
+if NXP_88W8987 || NXP_IW416 || NXP_IW610
 
 config NXP_WIFI_FW_AUTO_RECONNECT
 	bool "Firmware Auto Reconnect"

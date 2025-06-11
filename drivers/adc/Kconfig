@@ -56,6 +56,8 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/adc/Kconfig.b91"
 
+source "drivers/adc/Kconfig.it51xxx"
+
 source "drivers/adc/Kconfig.it8xxx2"
 
 source "drivers/adc/Kconfig.mcux"
@@ -78,11 +80,15 @@ source "drivers/adc/Kconfig.lmp90xxx"
 
 source "drivers/adc/Kconfig.mcp320x"
 
+source "drivers/adc/Kconfig.mcp356xr"
+
 source "drivers/adc/Kconfig.npcx"
 
 source "drivers/adc/Kconfig.cc32xx"
 
 source "drivers/adc/Kconfig.cc13xx_cc26xx"
+
+source "drivers/adc/Kconfig.cc23x0"
 
 source "drivers/adc/Kconfig.adc_emul"
 
@@ -109,6 +115,8 @@ source "drivers/adc/Kconfig.rpi_pico"
 source "drivers/adc/Kconfig.xmc4xxx"
 
 source "drivers/adc/Kconfig.gecko"
+
+source "drivers/adc/Kconfig.siwx91x"
 
 source "drivers/adc/Kconfig.ifx_cat1"
 
@@ -145,5 +153,9 @@ source "drivers/adc/Kconfig.ad7124"
 source "drivers/adc/Kconfig.ad405x"
 
 source "drivers/adc/Kconfig.ad4130"
+
+source "drivers/adc/Kconfig.rts5912"
+
+source "drivers/adc/Kconfig.ti_am335x"
 
 endif # ADC

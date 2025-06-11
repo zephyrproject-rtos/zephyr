@@ -7,7 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <zephyr/bluetooth/addr.h>
 
 /* GAP Service */
@@ -311,11 +313,36 @@ struct btp_gap_padv_sync_transfer_start_cmd {
 	uint16_t service_data;
 } __packed;
 
+#define BTP_GAP_PADV_SYNC_TRANSFER_RECV_FLAG_REPORTS_DISABLED	0x01
+
 #define BTP_GAP_PADV_SYNC_TRANSFER_RECV		0x29
 struct btp_gap_padv_sync_transfer_recv_cmd {
 	bt_addr_le_t address;
 	uint16_t skip;
 	uint16_t sync_timeout;
+	uint8_t flags;
+} __packed;
+
+#define BTP_GAP_PAIR_V2_MODE_1			0x01
+#define BTP_GAP_PAIR_V2_MODE_2			0x02
+#define BTP_GAP_PAIR_V2_MODE_3			0x03
+#define BTP_GAP_PAIR_V2_MODE_4			0x04
+#define BTP_GAP_PAIR_V2_MODE_ANY		0xFF
+
+#define BTP_GAP_PAIR_V2_LEVEL_0			0x00
+#define BTP_GAP_PAIR_V2_LEVEL_1			0x01
+#define BTP_GAP_PAIR_V2_LEVEL_2			0x02
+#define BTP_GAP_PAIR_V2_LEVEL_3			0x03
+#define BTP_GAP_PAIR_V2_LEVEL_4			0x04
+#define BTP_GAP_PAIR_V2_LEVEL_ANY		0xFF
+
+#define BTP_GAP_PAIR_V2_FLAG_FORCE_PAIR		BIT(0)
+
+#define BTP_GAP_PAIR_V2				0x2A
+struct btp_gap_pair_v2_cmd {
+	bt_addr_le_t address;
+	uint8_t mode;
+	uint8_t level;
 	uint8_t flags;
 } __packed;
 
@@ -439,13 +466,17 @@ struct btp_gap_ev_periodic_report_ev {
 
 #define BTP_GAP_EV_PERIODIC_TRANSFER_RECEIVED	0x90
 struct btp_gap_ev_periodic_transfer_received_ev {
+	bt_addr_le_t adv_address;
 	uint16_t sync_handle;
-	uint8_t tx_power;
-	uint8_t rssi;
-	uint8_t cte_type;
-	uint8_t data_status;
-	uint8_t data_len;
-	uint8_t data[];
+	uint8_t status;
+	bt_addr_le_t peer_address;
+} __packed;
+
+#define BTP_GAP_EV_ENCRYPTION_CHANGE		0x91
+struct btp_gap_encryption_change_ev {
+	bt_addr_le_t address;
+	uint8_t enabled;
+	uint8_t key_size;
 } __packed;
 
 #if defined(CONFIG_BT_EXT_ADV)

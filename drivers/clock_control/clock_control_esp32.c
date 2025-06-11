@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT espressif_esp32_rtc
+#define DT_DRV_COMPAT espressif_esp32_clock
 
 #define CPU_RESET_REASON RTC_SW_CPU_RESET
 
@@ -98,7 +98,7 @@ static void esp32_clock_perip_init(void)
 						  ? MODEM_CLOCK_LPCLK_SRC_RC32K
 					  : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)
 						  ? MODEM_CLOCK_LPCLK_SRC_EXT32K
-						  : SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
+						  : MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
 
 	modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
 
@@ -812,8 +812,8 @@ static const struct esp32_cpu_clock_config esp32_cpu_clock_config0 = {
 };
 
 static const struct esp32_rtc_clock_config esp32_rtc_clock_config0 = {
-	.rtc_fast_clock_src = DT_PROP(DT_INST(0, espressif_esp32_rtc), fast_clk_src),
-	.rtc_slow_clock_src = DT_PROP(DT_INST(0, espressif_esp32_rtc), slow_clk_src),
+	.rtc_fast_clock_src = DT_PROP(DT_INST(0, espressif_esp32_clock), fast_clk_src),
+	.rtc_slow_clock_src = DT_PROP(DT_INST(0, espressif_esp32_clock), slow_clk_src),
 };
 
 static const struct esp32_clock_config esp32_clock_config0 = {
@@ -821,7 +821,7 @@ static const struct esp32_clock_config esp32_clock_config0 = {
 	.rtc = esp32_rtc_clock_config0
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(rtc),
+DEVICE_DT_DEFINE(DT_NODELABEL(clock),
 		 clock_control_esp32_init,
 		 NULL,
 		 NULL,

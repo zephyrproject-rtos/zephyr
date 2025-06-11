@@ -1,0 +1,40 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2024 CISPA Helmholtz Center for Information Security
+ */
+
+#include <freq.h>
+#include "cva6.dtsi"
+
+/*
+ * Least common denominator of CVA6 32-bit CPUs: no FPU, no compressed instructions,
+ * no MMU, no PMP.
+ * Boards can overwrite the node if additional configurations are available.
+ */
+/ {
+	cpus_0: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu_0: cpu@0 {
+			clock-frequency = <DT_FREQ_M(50)>;
+			timebase-frequency = <DT_FREQ_M(25)>;
+			device_type = "cpu";
+			compatible = "openhwgroup,cva6";
+			riscv,isa = "rv32ima";
+			/* overwrite in board configuration if sv32 MMU is enabled */
+			mmu-type = "riscv,none";
+			reg = <0>;
+
+			status = "okay";
+
+			hlic: interrupt-controller {
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+				status = "okay";
+			};
+		};
+	};
+};

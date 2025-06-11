@@ -1,7 +1,9 @@
 compatible: "silabs,series2-lfrco"
 
+title: Silicon Labs Series 2 LFRCO (Low-Frequency RC Oscillator)
+
 description: |
-  Silicon Labs LFRCO peripheral (low-frequency RC oscillator).
+  Low-Frequency RC Oscillator peripheral.
 
 include: fixed-clock.yaml
 

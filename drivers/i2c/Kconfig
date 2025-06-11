@@ -61,7 +61,7 @@ config I2C_ALLOW_NO_STOP_TRANSACTIONS
 	depends on !I2C_STM32
 	depends on !I2C_GD32
 	depends on !I2C_ESP32
-	depends on !I2C_DW
+	depends on (!I2C_DW || I2C_RTS5912)
 	select DEPRECATED
 	help
 	  Allow I2C transactions with no STOP on the last message. This is
@@ -132,6 +132,7 @@ source "drivers/i2c/Kconfig.gpio"
 source "drivers/i2c/Kconfig.i2c_emul"
 source "drivers/i2c/Kconfig.ifx_cat1"
 source "drivers/i2c/Kconfig.ifx_xmc4"
+source "drivers/i2c/Kconfig.it51xxx"
 source "drivers/i2c/Kconfig.it8xxx2"
 source "drivers/i2c/Kconfig.litex"
 source "drivers/i2c/Kconfig.lpc11u6x"
@@ -145,6 +146,7 @@ source "drivers/i2c/Kconfig.omap"
 source "drivers/i2c/Kconfig.rcar"
 source "drivers/i2c/Kconfig.renesas_ra"
 source "drivers/i2c/Kconfig.renesas_rz"
+source "drivers/i2c/Kconfig.rts5912"
 source "drivers/i2c/Kconfig.sam0"
 source "drivers/i2c/Kconfig.sam_twihs"
 source "drivers/i2c/Kconfig.sbcon"
@@ -156,6 +158,7 @@ source "drivers/i2c/Kconfig.stm32"
 source "drivers/i2c/Kconfig.sy1xx"
 source "drivers/i2c/Kconfig.tca954x"
 source "drivers/i2c/Kconfig.test"
+source "drivers/i2c/Kconfig.wch"
 source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.xilinx_axi"
 # zephyr-keep-sorted-stop

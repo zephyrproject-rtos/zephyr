@@ -14,13 +14,15 @@ endif()
 # MAX32666 share the same target configuration file with MAX32665
 if(CONFIG_SOC_MAX32666)
   set(MAX32_TARGET_CFG "max32665.cfg")
+elseif(CONFIG_SOC_MAX32657)
+  set(MAX32_INTERFACE_CFG "jlink.cfg")
 endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${MAX32_INTERFACE_CFG}]")
 board_runner_args(openocd --cmd-pre-init "source [find target/${MAX32_TARGET_CFG}]")
 board_runner_args(openocd "--target-handle=_CHIPNAME.cpu")
 
-if(CONFIG_SOC_FAMILY_MAX32_M4)
+if(CONFIG_SOC_FAMILY_MAX32_M4 OR CONFIG_SOC_FAMILY_MAX32_M33)
   board_runner_args(openocd --cmd-pre-init "allow_low_pwr_dbg")
   board_runner_args(openocd "--cmd-erase=max32xxx mass_erase 0")
 endif()

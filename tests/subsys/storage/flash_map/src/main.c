@@ -16,12 +16,23 @@
 #define SLOT1_PARTITION_DEV	FIXED_PARTITION_DEVICE(SLOT1_PARTITION)
 #define SLOT1_PARTITION_NODE	DT_NODELABEL(SLOT1_PARTITION)
 #define SLOT1_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(SLOT1_PARTITION)
+#define SLOT1_PARTITION_SIZE	FIXED_PARTITION_SIZE(SLOT1_PARTITION)
+
+#define FLASH_AREA_COPY_SIZE	MIN((SLOT1_PARTITION_SIZE / 2), 128)
 
 extern int flash_map_entries;
 struct flash_sector fs_sectors[2048];
 
 ZTEST(flash_map, test_flash_area_disabled_device)
 {
+	/* The test checks if Flash Map will report partition
+	 * non-existend if it is disabled, but it also assumes that
+	 * disabled parition will have an ID generated.
+	 * Custom partition maps may not be generating entries for
+	 * disabled partitions nor identifiers, which makes the
+	 * test fail with custom partition manager, for no real reason.
+	 */
+#if defined(CONFIG_TEST_FLASH_MAP_DISABLED_PARTITIONS)
 	const struct flash_area *fa;
 	int rc;
 
@@ -35,6 +46,9 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 	 * because this macro will fail, at compile time, if node does not
 	 * exist or is disabled.
 	 */
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(flash_map, test_flash_area_device_is_ready)
@@ -141,6 +155,11 @@ ZTEST(flash_map, test_flash_area_erased_val)
 
 ZTEST(flash_map, test_fixed_partition_node_macros)
 {
+	/* DTS node macros, for accessing fixed partitions, are only available
+	 * for DTS based partitions; custom flash map may define partition outside
+	 * of DTS definition, making the NODE macros fail to evaluate.
+	 */
+#if defined(CONFIG_TEST_FLASH_MAP_NODE_MACROS)
 	/* Test against changes in API */
 	zassert_equal(FIXED_PARTITION_NODE_OFFSET(SLOT1_PARTITION_NODE),
 		DT_REG_ADDR(SLOT1_PARTITION_NODE));
@@ -152,6 +171,9 @@ ZTEST(flash_map, test_fixed_partition_node_macros)
 	/* Taking by node and taking by label should give same device */
 	zassert_equal(FIXED_PARTITION_BY_NODE(DT_NODELABEL(SLOT1_PARTITION)),
 		      FIXED_PARTITION(SLOT1_PARTITION));
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(flash_map, test_flash_area_erase_and_flatten)
@@ -197,7 +219,7 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 		}
 	}
 	zassert_true(erased, "Erase failed at dev abosolute offset index %d",
-		     i + fa->fa_off);
+		     (int)(i + fa->fa_off));
 
 	rc = flash_fill(flash_dev, 0xaa, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash device fill fail");
@@ -220,7 +242,57 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 		}
 	}
 	zassert_true(erased, "Flatten/Erase failed at dev absolute offset %d",
-		     i + fa->fa_off);
+		     (int)(i + fa->fa_off));
+}
+
+ZTEST(flash_map, test_flash_area_copy)
+{
+	const struct flash_area *fa;
+	uint8_t src_buf[FLASH_AREA_COPY_SIZE], dst_buf[FLASH_AREA_COPY_SIZE],
+		copy_buf[32];
+	int rc;
+
+	/* Get source and destination flash areas */
+	fa = FIXED_PARTITION(SLOT1_PARTITION);
+
+	/* First erase the area so it's ready for use. */
+	rc = flash_area_erase(fa, 0, fa->fa_size);
+	zassert_true(rc == 0, "flash area erase fail");
+
+	/* Fill source area with test data */
+	memset(src_buf, 0xAB, sizeof(src_buf));
+	rc = flash_area_write(fa, 0, src_buf, sizeof(src_buf));
+	zassert_true(rc == 0, "Failed to write to source flash area");
+
+	/* Perform the copy operation */
+	rc = flash_area_copy(fa, 0, fa, FLASH_AREA_COPY_SIZE, sizeof(src_buf), copy_buf,
+			     sizeof(copy_buf));
+	zassert_true(rc == 0, "flash_area_copy failed");
+
+	/* Verify the copied data */
+	rc = flash_area_read(fa, FLASH_AREA_COPY_SIZE, dst_buf, sizeof(dst_buf));
+	zassert_true(rc == 0, "Failed to read from destination flash area");
+	zassert_mem_equal(src_buf, dst_buf, sizeof(src_buf), "Data mismatch after copy");
+}
+
+ZTEST(flash_map, test_parameter_overflows)
+{
+	const struct flash_area *fa;
+	uint8_t dst_buf[FLASH_AREA_COPY_SIZE];
+	int rc;
+
+	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	/* -1 cast to size_t gives us max size_t value, added to offset of 1,
+	 * it will overflow to 0.
+	 */
+	rc = flash_area_read(fa, 1, dst_buf, (size_t)(-1));
+	zassert_equal(rc, -EINVAL, "1: Overflow should have been detected");
+	/* Here we have offset 1 below size of area, with added max size_t
+	 * it upper bound of read range should overflow to:
+	 * (max(size_t) + fa->fa_size - 1) mod (max(size_t)) == fa->fa_size - 2
+	 */
+	rc = flash_area_read(fa, fa->fa_size - 1, dst_buf, (size_t)(-1));
+	zassert_equal(rc, -EINVAL, "2: Overflow should have been detected");
 }
 
 ZTEST_SUITE(flash_map, NULL, NULL, NULL, NULL, NULL);

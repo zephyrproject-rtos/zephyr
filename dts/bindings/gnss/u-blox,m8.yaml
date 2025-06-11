@@ -9,9 +9,20 @@ include:
   - uart-device.yaml
 
 properties:
-  uart-baudrate:
+  initial-baudrate:
     type: int
     description: |
-      Baudrate for communication on the UART port.
-    default: 115200
-    enum: [4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600]
+      Initial baudrate to establish Baudrate for communication on the UART port.
+      This will be used for initial modem communication, which afterwards will
+      be changed to the baudrate set on the peripheral. For instance: Starting
+      at 9600 bps, but then switched up to 115200.
+    default: 9600
+    enum: [4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800]
+
+  fix-rate:
+    type: int
+    default: 1000
+    description: |
+      Initial fix-rate GNSS modem will be operating on. May be adjusted at
+      run-time through GNSS APIs. Must be greater than 50-ms.
+      Default is power-on setting.

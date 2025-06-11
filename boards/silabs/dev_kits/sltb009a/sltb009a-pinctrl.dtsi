@@ -7,16 +7,6 @@
 #include <dt-bindings/pinctrl/gecko-pinctrl-s1.h>
 
 &pinctrl {
-	/* configuration for usart0 device, default state - operating as UART */
-	usart0_default: usart0_default {
-		group1 {
-			psels = <GECKO_PSEL(UART_TX, E, 0)>,
-				<GECKO_PSEL(UART_RX, E, 1)>,
-				<GECKO_LOC(UART_TX, 7)>,
-				<GECKO_LOC(UART_RX, 6)>;
-		};
-	};
-
 	i2c0_default: i2c0_default {
 		group1 {
 			psels = <GECKO_PSEL(I2C_SDA, C, 0)>,
@@ -32,6 +22,16 @@
 				<GECKO_PSEL(I2C_SCL, C, 5)>,
 				<GECKO_LOC(I2C_SDA, 0)>,
 				<GECKO_LOC(I2C_SCL, 0)>;
+		};
+	};
+
+	/* configuration for usart0 device, default state - operating as UART */
+	usart0_default: usart0_default {
+		group1 {
+			psels = <GECKO_PSEL(UART_TX, E, 7)>,
+				<GECKO_PSEL(UART_RX, E, 6)>,
+				<GECKO_LOC(UART_TX, 1)>,
+				<GECKO_LOC(UART_RX, 1)>;
 		};
 	};
 };

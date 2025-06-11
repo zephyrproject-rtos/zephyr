@@ -269,10 +269,14 @@ struct usbd_status {
 /**
  * @brief Callback type definition for USB device message delivery
  *
- * The implementation uses the system workqueue, and a callback provided and
- * registered by the application. The application callback is called in the
- * context of the system workqueue. Notification messages are stored in a queue
- * and delivered to the callback in sequence.
+ * If the Kconfig option USBD_MSG_DEFERRED_MODE is enabled, then the callback
+ * is executed in the context of the system workqueue. Notification messages are
+ * stored in a queue and delivered to the callback in sequence.
+ *
+ * If the Kconfig option USBD_MSG_DEFERRED_MODE is disabled, the callback is
+ * executed in the context of the USB device stack thread. The user should make
+ * sure that the callback execution does not block or disrupt device stack
+ * handling.
  *
  * @param[in] ctx Pointer to USB device support context
  * @param[in] msg Pointer to USB device message
@@ -493,6 +497,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.iSerialNumber = 0,					\
 		.bNumConfigurations = 0,				\
 	};								\
+	IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (				\
 	static struct usb_device_descriptor				\
 	hs_desc_##device_name = {					\
 		.bLength = sizeof(struct usb_device_descriptor),	\
@@ -510,11 +515,14 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.iSerialNumber = 0,					\
 		.bNumConfigurations = 0,				\
 	};								\
+	))								\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.dev = udc_dev,						\
 		.fs_desc = &fs_desc_##device_name,			\
+		IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (			\
 		.hs_desc = &hs_desc_##device_name,			\
+		))							\
 	}
 
 /**
@@ -667,11 +675,15 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * The application defines a BOS capability descriptor node for descriptors
  * such as USB 2.0 Extension Descriptor.
  *
+ * @note It requires Kconfig options USBD_BOS_SUPPORT to be enabled.
+ *
  * @param name       Descriptor node identifier
  * @param len        Device Capability descriptor length
  * @param subset     Pointer to a Device Capability descriptor
  */
 #define USBD_DESC_BOS_DEFINE(name, len, subset)					\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_USBD_BOS_SUPPORT),			\
+		     "USB device BOS support is disabled");			\
 	static struct usbd_desc_node name = {					\
 		.bos = {							\
 			.utype = USBD_DUT_BOS_NONE,				\
@@ -684,12 +696,16 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 /**
  * @brief Define a vendor request with recipient device
  *
+ * @note It requires Kconfig options USBD_VREQ_SUPPORT to be enabled.
+ *
  * @param name      Vendor request identifier
  * @param vcode     Vendor request code
  * @param vto_host  Vendor callback for to-host direction request
  * @param vto_dev   Vendor callback for to-device direction request
  */
 #define USBD_VREQUEST_DEFINE(name, vcode, vto_host, vto_dev)			\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_USBD_VREQ_SUPPORT),			\
+		     "USB device vendor request support is disabled");		\
 	static struct usbd_vreq_node name = {					\
 		.code = vcode,							\
 		.to_host = vto_host,						\
@@ -705,6 +721,9 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * USBD_DESC_BOS_VREQ_DEFINE(bos_vreq_webusb, sizeof(bos_cap_webusb), &bos_cap_webusb,
  *                           SAMPLE_WEBUSB_VENDOR_CODE, webusb_to_host_cb, NULL);
  *
+ * @note It requires Kconfig options USBD_VREQ_SUPPORT and USBD_BOS_SUPPORT to
+ *       be enabled.
+ *
  * @param name      Descriptor node identifier
  * @param len       Device Capability descriptor length
  * @param subset    Pointer to a Device Capability descriptor
@@ -713,6 +732,8 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param vto_dev   Vendor callback for to-device direction request
  */
 #define USBD_DESC_BOS_VREQ_DEFINE(name, len, subset, vcode, vto_host, vto_dev)	\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_USBD_BOS_SUPPORT),			\
+		     "USB device BOS support is disabled");			\
 	USBD_VREQUEST_DEFINE(vreq_nd_##name, vcode, vto_host, vto_dev);		\
 	static struct usbd_desc_node name = {					\
 		.bos = {							\
@@ -746,10 +767,12 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		usbd_class_fs, usbd_class_node, class_name##_fs) = {		\
 		.c_data = &class_name,						\
 	};									\
+	IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (					\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
 		usbd_class_hs, usbd_class_node, class_name##_hs) = {		\
 		.c_data = &class_name,						\
-	}
+	}									\
+	))
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req
  *

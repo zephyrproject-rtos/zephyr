@@ -37,8 +37,15 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ_NAME     usb
 #endif
 
+#define UDC_STM32_BASE_ADDRESS	DT_INST_REG_ADDR(0)
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
+
+#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
+			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
+
+#define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
+			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 /**
  * The following defines are used to map the value of the "maxiumum-speed"
@@ -54,6 +61,10 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_FULL_SPEED             PCD_SPEED_FULL
 #else
 #define UDC_STM32_FULL_SPEED             USB_OTG_SPEED_FULL
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+#define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
 #endif
 
 struct udc_stm32_data  {
@@ -962,12 +973,6 @@ static const struct udc_api udc_stm32_api = {
 #define USB_BTABLE_SIZE 0
 #endif /* USB */
 
-#define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
-			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
-#define USB_OTG_HS_ULPI_PHY (DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy) && \
-			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
 static struct udc_stm32_data udc0_priv;
 
 static struct udc_data udc0_data = {
@@ -1001,12 +1006,8 @@ static void priv_pcd_prepare(const struct device *dev)
 	priv->pcd.Instance = USB;
 #elif defined(USB_DRD_FS)
 	priv->pcd.Instance = USB_DRD_FS;
-#elif defined(USB_OTG_FS) || defined(USB_OTG_HS)
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	priv->pcd.Instance = USB_OTG_HS;
-#else
-	priv->pcd.Instance = USB_OTG_FS;
-#endif
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
 #endif /* USB */
 
 #if USB_OTG_HS_EMB_PHY
@@ -1061,6 +1062,15 @@ static int priv_clock_enable(void)
 	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
 	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+	/* Enable Vdd USB voltage monitoring */
+	LL_PWR_EnableVddUSBMonitoring();
+	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
+		/* Wait FOR VDD33USB ready */
+	}
+
+	/* Enable VDDUSB */
+	LL_PWR_EnableVddUSB();
 #elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
 	/*
 	 * VDDUSB independent USB supply (PWR clock is on)
@@ -1136,12 +1146,26 @@ static int priv_clock_enable(void)
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
 	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
 						LL_AHB2_GRP1_PERIPH_USBPHY);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
+	/* Reset specific configuration bits before setting new values */
+	USB1_HS_PHYC->USBPHYC_CR &= ~USB_USBPHYC_CR_FSEL_Msk;
+
+	/* Configure the USB PHY Control Register to operate in the High frequency "24 MHz"
+	 * by setting the Frequency Selection (FSEL) bits 4 and 5 to 10,
+	 * which ensures proper communication.
+	 */
+	USB1_HS_PHYC->USBPHYC_CR |= USB_USBPHYC_CR_FSEL_24MHZ;
+
+	/* Peripheral OTGPHY clock enable */
+	LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_OTGPHY1);
 #else
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif /* defined(CONFIG_SOC_SERIES_STM32H7X) */
 
 #if USB_OTG_HS_EMB_PHY
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#endif
 #endif
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
 	/* The USB2 controller only works in FS mode, but the ULPI clock needs
@@ -1171,9 +1195,11 @@ static int priv_clock_disable(void)
 static struct udc_ep_config ep_cfg_in[DT_INST_PROP(0, num_bidir_endpoints)];
 static struct udc_ep_config ep_cfg_out[DT_INST_PROP(0, num_bidir_endpoints)];
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *usb_pcfg =
 					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
+#endif
 
 #if USB_OTG_HS_ULPI_PHY
 static const struct gpio_dt_spec ulpi_reset =
@@ -1256,11 +1282,13 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	IRQ_CONNECT(UDC_STM32_IRQ, UDC_STM32_IRQ_PRI, udc_stm32_irq,
 		    DEVICE_DT_INST_GET(0), 0);
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	err = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
 		LOG_ERR("USB pinctrl setup failed (%d)", err);
 		return err;
 	}
+#endif
 
 #ifdef SYSCFG_CFGR1_USB_IT_RMP
 	/*

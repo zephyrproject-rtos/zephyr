@@ -596,35 +596,35 @@ ZTEST(lib_json_test, test_json_limits)
 			 "\"uint8_min\":0"
 			 "}";
 
-	struct test_int_limits limits = {
-		.int_max = INT_MAX,
-		.int_cero = 0,
-		.int_min = INT_MIN,
-		.int64_max = INT64_MAX,
-		.int64_cero = 0,
-		.int64_min = INT64_MIN,
-		.uint64_max = UINT64_MAX,
-		.uint64_cero = 0,
-		.uint64_min = 0,
-		.uint32_max = UINT32_MAX,
-		.uint32_cero = 0,
-		.uint32_min = 0,
-		.int16_max = INT16_MAX,
-		.int16_cero = 0,
-		.int16_min = INT16_MIN,
-		.uint16_max = UINT16_MAX,
-		.uint16_cero = 0,
-		.uint16_min = 0,
-		.int8_max = INT8_MAX,
-		.int8_cero = 0,
-		.int8_min = INT8_MIN,
-		.uint8_max = UINT8_MAX,
-		.uint8_cero = 0,
-		.uint8_min = 0,
-	};
+	struct test_int_limits limits = {0};
+	struct test_int_limits limits_decoded = {0};
+
+	limits.int_max = INT_MAX;
+	limits.int_cero = 0;
+	limits.int_min = INT_MIN;
+	limits.int64_max = INT64_MAX;
+	limits.int64_cero = 0;
+	limits.int64_min = INT64_MIN;
+	limits.uint64_max = UINT64_MAX;
+	limits.uint64_cero = 0;
+	limits.uint64_min = 0;
+	limits.uint32_max = UINT32_MAX;
+	limits.uint32_cero = 0;
+	limits.uint32_min = 0;
+	limits.int16_max = INT16_MAX;
+	limits.int16_cero = 0;
+	limits.int16_min = INT16_MIN;
+	limits.uint16_max = UINT16_MAX;
+	limits.uint16_cero = 0;
+	limits.uint16_min = 0;
+	limits.int8_max = INT8_MAX;
+	limits.int8_cero = 0;
+	limits.int8_min = INT8_MIN;
+	limits.uint8_max = UINT8_MAX;
+	limits.uint8_cero = 0;
+	limits.uint8_min = 0;
 
 	char buffer[sizeof(encoded)];
-	struct test_int_limits limits_decoded = {0};
 
 	ret = json_obj_encode_buf(obj_limits_descr, ARRAY_SIZE(obj_limits_descr),
 				&limits, buffer, sizeof(buffer));
@@ -2039,7 +2039,7 @@ ZTEST(lib_json_test, test_large_descriptor)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, large_descr,
 				     ARRAY_SIZE(large_descr), &ls);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_false(ret & ((int64_t)1 << 2), "Field int2 erroneously decoded");
 	zassert_false(ret & ((int64_t)1 << 35), "Field int35 erroneously decoded");
 	zassert_true(ret & ((int64_t)1 << 1), "Field int1 not decoded");
@@ -2084,7 +2084,7 @@ ZTEST(lib_json_test, test_json_array_alignment)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, outer_descr,
 				     ARRAY_SIZE(outer_descr), &o);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
 
 	zassert_equal(o.array[0].int1, 1, "Element 0 int1 not decoded correctly");
@@ -2107,7 +2107,7 @@ ZTEST(lib_json_test, test_json_array_alignment_bool)
 	int64_t ret = json_obj_parse(encoded, sizeof(encoded) - 1, alignment_bool_descr,
 				     ARRAY_SIZE(alignment_bool_descr), &o);
 
-	zassert_false(ret < 0, "json_obj_parse returned error %d", ret);
+	zassert_false(ret < 0, "json_obj_parse returned error %lld", ret);
 	zassert_equal(o.num_elements, 2, "Number of elements not decoded correctly");
 
 	zassert_equal(o.array[0].bool1, true, "Element 0 bool1 not decoded correctly");
@@ -2156,18 +2156,16 @@ ZTEST(lib_json_test, test_json_enums)
 			 "\"i32\":-2147483648,"
 			 "\"u32\":4294967295"
 			 "}";
-
-	struct test_enums enums = {
-		.i8 = I8_MIN,
-		.u8 = U8_MAX,
-		.i16 = I16_MIN,
-		.u16 = U16_MAX,
-		.i32 = I32_MIN,
-		.u32 = U32_MAX,
-	};
-
 	char buffer[sizeof(encoded)];
 	struct test_enums enums_decoded = {0};
+	struct test_enums enums = {0};
+
+	enums.i8 = I8_MIN;
+	enums.u8 = U8_MAX;
+	enums.i16 = I16_MIN;
+	enums.u16 = U16_MAX;
+	enums.i32 = I32_MIN;
+	enums.u32 = U32_MAX;
 
 	ret = json_obj_encode_buf(enums_descr, ARRAY_SIZE(enums_descr),
 				&enums, buffer, sizeof(buffer));

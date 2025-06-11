@@ -1,0 +1,111 @@
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    AFBR-S50 3D ToF sensor
+
+    This sensor requires the SPI bus attached to it, to define the following
+    pinctrl states:
+    - pinctrl-0: default (SPI mode).
+    - pinctrl-1: GPIO mode (used to access the internal EEPROM).
+
+    It also requires defining the GPIO pins used for the SPI bus in GPIO mode,
+    under the AFBR node.
+
+    Example:
+
+    &spi_bus {
+        status = "okay";
+        pinctrl-0 = <&spi_bus_default>;
+        pinctrl-1 = <&spi_bus_gpio>;
+        pinctrl-names = "default", "priv_start";
+        ...
+
+        afbr_s50: afbr_s50@0 {
+          compatible = "brcm,afbr-s50";
+          reg = <0>;
+          spi-max-frequency = <10000000>;
+          int-gpios = <&gpio0 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+          spi-mosi-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+          spi-sck-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+          spi-miso-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+compatible: "brcm,afbr-s50"
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The INT signal default configuration is active-low. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+
+  measurement-mode:
+    type: int
+    required: true
+    description: |
+      Specify Measurement Mode setting.
+    enum:
+      - 1 # AFBR_S50_DT_MODE_SHORT_RANGE
+      - 2 # AFBR_S50_DT_MODE_LONG_RANGE
+      - 5 # AFBR_S50_DT_MODE_HIGH_SPEED_SHORT_RANGE
+      - 6 # AFBR_S50_DT_MODE_HIGH_SPEED_LONG_RANGE
+      - 9 # AFBR_S50_DT_MODE_HIGH_PRECISION_SHORT_RANGE
+      - 129 # AFBR_S50_DT_MODE_SHORT_RANGE_LASER_CLASS_2
+      - 130 # AFBR_S50_DT_MODE_LONG_RANGE_LASER_CLASS_2
+      - 133 # AFBR_S50_DT_MODE_HIGH_SPEED_SHORT_RANGE_LASER_CLASS_2
+      - 134 # AFBR_S50_DT_MODE_HIGH_SPEED_LONG_RANGE_LASER_CLASS_2
+      - 137 # AFBR_S50_DT_MODE_HIGH_PRECISION_SHORT_RANGE_LASER_CLASS_2
+
+  dual-freq-mode:
+    type: int
+    required: true
+    description: |
+      Specify Dual Frequency Mode setting.
+    enum:
+      - 0 # AFBR_S50_DT_DFM_MODE_OFF
+      - 1 # AFBR_S50_DT_DFM_MODE_4X
+      - 2 # AFBR_S50_DT_DFM_MODE_8X
+
+  odr:
+    type: int
+    default: 10
+    description: |
+      Specify the default output data rate expressed in samples per second (Hz).
+      Default configuration used from all sample-codes provided by vendor.
+      Please note the range is limited with Dual Frequency Mode enabled (up to 100 Hz).
+
+  spi-mosi-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      SPI MOSI GPIO pin. Used by the driver in order to use the bus in GPIO
+      mode, which is required to interact with the internal EEPROM the
+      AFBR contains (mandatory).
+      This property is required since the SPI bus is configured and used
+      through pinctrl, which is not directly mapped to a GPIO port/pin.
+
+  spi-miso-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      SPI MISO GPIO pin. Used by the driver in order to use the bus in GPIO
+      mode, which is required to interact with the internal EEPROM the
+      AFBR contains (mandatory).
+      This property is required since the SPI bus is configured and used
+      through pinctrl, which is not directly mapped to a GPIO port/pin.
+
+  spi-sck-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      SPI CLK GPIO pin. Used by the driver in order to use the bus in GPIO
+      mode, which is required to interact with the internal EEPROM the
+      AFBR contains (mandatory).
+      This property is required since the SPI bus is configured and used
+      through pinctrl, which is not directly mapped to a GPIO port/pin.

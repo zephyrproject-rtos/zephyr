@@ -28,12 +28,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
@@ -789,6 +791,52 @@ struct bt_bap_scan_delegator_cb {
 	 * @param is_scanning true if scanning started, false if scanning stopped.
 	 */
 	void (*scanning_state)(struct bt_conn *conn, bool is_scanning);
+	/**
+	 * @brief Add Source operation callback
+	 *
+	 * These callbacks notify the application when a request comes
+	 * in to add a source. The application can return 0 to
+	 * accept or any other value to reject the request.
+	 *
+	 * @param conn       Pointer to the connection that initiated the request,
+	 *                   or NULL if locally triggered.
+	 * @param recv_state Pointer to the requested receive state to be added.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*add_source)(struct bt_conn *conn,
+			  const struct bt_bap_scan_delegator_recv_state *recv_state);
+
+	/**
+	 * @brief Modify Source operation callback
+	 *
+	 * These callbacks notify the application when a request comes
+	 * in to modify a source. The application can return 0 to
+	 * accept or any other value to reject the request.
+	 *
+	 * @param conn       Pointer to the connection that initiated the request,
+	 *                   or NULL if locally triggered.
+	 * @param recv_state Pointer to the requested receive state to be modified.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*modify_source)(struct bt_conn *conn,
+			     const struct bt_bap_scan_delegator_recv_state *recv_state);
+
+	/**
+	 * @brief Remove Source operation callback
+	 *
+	 * These callbacks notify the application when a request comes
+	 * in to remove a source. The application can return 0 to
+	 * accept or any other value to reject the request.
+	 *
+	 * @param conn   Pointer to the connection that initiated the request,
+	 *               or NULL if locally triggered.
+	 * @param src_id The Source ID that is requested to be removed.
+	 *
+	 * @return 0 in case of accept, or other value to reject.
+	 */
+	int (*remove_source)(struct bt_conn *conn, uint8_t src_id);
 };
 
 /** Structure holding information of audio stream endpoint */

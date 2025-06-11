@@ -1,0 +1,266 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <apollo510/ambiq-apollo510-pinmux.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P30>;
+		};
+
+		group2 {
+			pinmux = <UART0RX_P55>;
+			input-enable;
+		};
+	};
+
+	swo_default: swo_default {
+		group0 {
+			pinmux = <SWO_P28>;
+		};
+	};
+
+	adc0_default: adc0_default{
+		group1 {
+			pinmux = <ADCSE4_P15>, <ADCSE7_P12>;
+			drive-strength = "0.1";
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <M0SCL_P5>, <M0SDAWIR3_P6>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <M1SCL_P8>, <M1SDAWIR3_P9>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <M2SCL_P25>, <M2SDAWIR3_P26>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c3_default: i2c3_default {
+		group1 {
+			pinmux = <M3SCL_P31>, <M3SDAWIR3_P32>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c5_default: i2c5_default {
+		group1 {
+			pinmux = <M5SCL_P47>, <M5SDAWIR3_P48>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c6_default: i2c6_default {
+		group1 {
+			pinmux = <M6SCL_P61>, <M6SDAWIR3_P62>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	i2c7_default: i2c7_default {
+		group1 {
+			pinmux = <M7SCL_P22>, <M7SDAWIR3_P23>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	spid0_default: spid0_default {
+		group1 {
+			pinmux = <SLSCK_P11>, <SLMISO_P83>, <SLMOSI_P52>, <SLnCE_P13>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <M0SCK_P5>, <M0MISO_P7>, <M0MOSI_P6>;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <M1SCK_P8>, <M1MISO_P10>, <M1MOSI_P9>;
+		};
+	};
+
+	spi2_default: spi2_default {
+		group1 {
+			pinmux = <M2SCK_P25>, <M2MISO_P27>, <M2MOSI_P26>;
+		};
+	};
+
+	spi3_default: spi3_default {
+		group1 {
+			pinmux = <M3SCK_P31>, <M3MISO_P33>, <M3MOSI_P32>;
+		};
+	};
+
+	spi4_default: spi4_default {
+		group1 {
+			pinmux = <M4SCK_P34>, <M4MISO_P36>, <M4MOSI_P35>;
+		};
+	};
+
+	spi5_default: spi5_default {
+		group1 {
+			pinmux = <M5SCK_P47>, <M5MISO_P49>, <M5MOSI_P48>;
+		};
+	};
+
+	spi6_default: spi6_default {
+		group1 {
+			pinmux = <M6SCK_P61>, <M6MISO_P63>, <M6MOSI_P62>;
+		};
+	};
+
+	spi7_default: spi7_default {
+		group1 {
+			pinmux = <M7SCK_P22>, <M7MISO_P24>, <M7MOSI_P23>;
+		};
+	};
+
+	mspi0_default: mspi0_default {
+		group0 {
+			pinmux = <MSPI0_0_P64>,
+				 <MSPI0_1_P65>,
+				 <MNCE0_0_P199>;
+			drive-strength = "0.5";
+		};
+
+		group1 {
+			pinmux = <MSPI0_8_P72>;
+			drive-strength = "0.75";
+		};
+	};
+
+	mspi1_default: mspi1_default {
+		group0 {
+			pinmux = <MSPI1_0_P95>,
+				 <MSPI1_1_P96>,
+				 <MSPI1_8_P103>,
+				 <MNCE1_0_P53>;
+			drive-strength = "0.5";
+		};
+	};
+
+	mspi0_sleep: mspi0_sleep {
+		group1 {
+			pinmux = <GPIO_P64>,
+				 <GPIO_P65>,
+				 <GPIO_P66>,
+				 <GPIO_P67>,
+				 <GPIO_P68>,
+				 <GPIO_P69>,
+				 <GPIO_P70>,
+				 <GPIO_P71>,
+				 <GPIO_P72>,
+				 <GPIO_P73>,
+				 <GPIO_P37>,
+				 <GPIO_P38>,
+				 <GPIO_P39>,
+				 <GPIO_P40>,
+				 <GPIO_P41>,
+				 <GPIO_P42>,
+				 <GPIO_P43>,
+				 <GPIO_P44>,
+				 <GPIO_P45>,
+				 <GPIO_P199>;
+		};
+	};
+
+	mspi1_sleep: mspi1_sleep {
+		group1 {
+			pinmux = <GPIO_P95>,
+				 <GPIO_P96>,
+				 <GPIO_P97>,
+				 <GPIO_P98>,
+				 <GPIO_P99>,
+				 <GPIO_P100>,
+				 <GPIO_P101>,
+				 <GPIO_P102>,
+				 <GPIO_P103>,
+				 <GPIO_P104>,
+				 <GPIO_P53>;
+		};
+	};
+
+	mspi0_psram: mspi0_psram {
+		group0 {
+			pinmux = <MSPI0_0_P64>,   /* D0 */
+				 <MSPI0_1_P65>,   /* D1 */
+				 <MSPI0_2_P66>,   /* D2 */
+				 <MSPI0_3_P67>,   /* D3 */
+				 <MSPI0_4_P68>,   /* D4 */
+				 <MSPI0_5_P69>,   /* D5 */
+				 <MSPI0_6_P70>,   /* D6 */
+				 <MSPI0_7_P71>,   /* D7 */
+				 <MSPI0_9_P73>,   /* DQS0 */
+				 <MSPI0_10_P37>,  /* D8 */
+				 <MSPI0_11_P38>,  /* D9 */
+				 <MSPI0_12_P39>,  /* D10 */
+				 <MSPI0_13_P40>,  /* D11 */
+				 <MSPI0_14_P41>,  /* D12 */
+				 <MSPI0_15_P42>,  /* D13 */
+				 <MSPI0_16_P43>,  /* D14 */
+				 <MSPI0_17_P44>,  /* D15 */
+				 <MSPI0_18_P45>,  /* DQS1 */
+				 <MNCE0_0_P199>;  /* CE0 */
+			drive-strength = "0.5";
+		};
+
+		group1 {
+			pinmux = <MSPI0_8_P72>;   /* SCK */
+			drive-strength = "0.75";
+		};
+	};
+
+	mspi1_flash: mspi1_flash {
+		group0 {
+			pinmux = <MSPI1_0_P95>,
+				 <MSPI1_1_P96>,
+				 <MSPI1_2_P97>,
+				 <MSPI1_3_P98>,
+				 <MSPI1_4_P99>,
+				 <MSPI1_5_P100>,
+				 <MSPI1_6_P101>,
+				 <MSPI1_7_P102>,
+				 <MSPI1_8_P103>,
+				 <MSPI1_9_P104>;
+			drive-strength = "1.0";
+		};
+
+		group1 {
+			pinmux = <MNCE1_0_P53>;
+			drive-strength = "0.5";
+		};
+	};
+};

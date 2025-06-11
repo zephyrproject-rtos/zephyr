@@ -9,3 +9,4 @@ ram: 2
 flash: 16
 supported:
   - gpio
+  - i2c

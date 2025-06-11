@@ -48,15 +48,50 @@ struct native_pty_status {
 	char *auto_attach_cmd; /* If auto_attach, which command to launch the terminal emulator */
 	bool wait_pts;         /* Hold writes to the uart/pts until a client is connected/ready */
 	bool cmd_request_stdinout; /* User requested to connect this UART to the stdin/out */
+#ifdef CONFIG_UART_ASYNC_API
+	struct  {
+		const struct device *dev;
+		struct k_work_delayable tx_done;
+		uart_callback_t user_callback;
+		void *user_data;
+		const uint8_t *tx_buf;
+		size_t tx_len;
+		uint8_t *rx_buf;
+		size_t rx_len;
+		/* Instance-specific RX thread. */
+		struct k_thread rx_thread;
+		/* Stack for RX thread */
+		K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
+	} async;
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
 static void np_uart_poll_out(const struct device *dev, unsigned char out_char);
 static int np_uart_poll_in(const struct device *dev, unsigned char *p_char);
 static int np_uart_init(const struct device *dev);
 
+#ifdef CONFIG_UART_ASYNC_API
+static void np_uart_tx_done_work(struct k_work *work);
+static int np_uart_callback_set(const struct device *dev, uart_callback_t callback,
+				void *user_data);
+static int np_uart_tx(const struct device *dev, const uint8_t *buf, size_t len, int32_t timeout);
+static int np_uart_tx_abort(const struct device *dev);
+static int np_uart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len);
+static int np_uart_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int32_t timeout);
+static int np_uart_rx_disable(const struct device *dev);
+#endif /* CONFIG_UART_ASYNC_API */
+
 static DEVICE_API(uart, np_uart_driver_api) = {
 	.poll_out = np_uart_poll_out,
 	.poll_in = np_uart_poll_in,
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set = np_uart_callback_set,
+	.tx = np_uart_tx,
+	.tx_abort = np_uart_tx_abort,
+	.rx_buf_rsp = np_uart_rx_buf_rsp,
+	.rx_enable = np_uart_rx_enable,
+	.rx_disable = np_uart_rx_disable,
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
 #define NATIVE_PTY_INSTANCE(inst)                                        \
@@ -119,6 +154,11 @@ static int np_uart_init(const struct device *dev)
 		d->out_fd = tty_fn;
 	}
 
+#ifdef CONFIG_UART_ASYNC_API
+	k_work_init_delayable(&d->async.tx_done, np_uart_tx_done_work);
+	d->async.dev = dev;
+#endif
+
 	return 0;
 }
 
@@ -170,13 +210,11 @@ static int np_uart_stdin_poll_in(const struct device *dev, unsigned char *p_char
 		return -1;
 	}
 
-	rc = np_uart_stdin_poll_in_bottom(in_f, p_char);
+	rc = np_uart_stdin_poll_in_bottom(in_f, p_char, 1);
 	if (rc == -2) {
 		disconnected = true;
-		return -1;
 	}
-
-	return rc;
+	return rc == 1 ? 0 : -1;
 }
 
 /**
@@ -208,6 +246,163 @@ static int np_uart_poll_in(const struct device *dev, unsigned char *p_char)
 		return np_uart_pty_poll_in(dev, p_char);
 	}
 }
+
+#ifdef CONFIG_UART_ASYNC_API
+
+static int np_uart_callback_set(const struct device *dev, uart_callback_t callback, void *user_data)
+{
+	struct native_pty_status *data = dev->data;
+
+	data->async.user_callback = callback;
+	data->async.user_data = user_data;
+
+	return 0;
+}
+
+static void np_uart_tx_done_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct native_pty_status *data =
+		CONTAINER_OF(dwork, struct native_pty_status, async.tx_done);
+	struct uart_event evt;
+	unsigned int key = irq_lock();
+
+	evt.type = UART_TX_DONE;
+	evt.data.tx.buf = data->async.tx_buf;
+	evt.data.tx.len = data->async.tx_len;
+
+	(void)nsi_host_write(data->out_fd, evt.data.tx.buf, evt.data.tx.len);
+
+	data->async.tx_buf = NULL;
+
+	if (data->async.user_callback) {
+		data->async.user_callback(data->async.dev, &evt, data->async.user_data);
+	}
+	irq_unlock(key);
+}
+
+static int np_uart_tx(const struct device *dev, const uint8_t *buf, size_t len, int32_t timeout)
+{
+	struct native_pty_status *data = dev->data;
+
+	if (data->async.tx_buf) {
+		/* Port is busy */
+		return -EBUSY;
+	}
+	data->async.tx_buf = buf;
+	data->async.tx_len = len;
+
+	/* Run the callback on the next tick to give the caller time to use the return value */
+	k_work_reschedule(&data->async.tx_done, K_TICKS(1));
+	return 0;
+}
+
+static int np_uart_tx_abort(const struct device *dev)
+{
+	struct native_pty_status *data = dev->data;
+	struct k_work_sync sync;
+	struct uart_event evt;
+	bool not_idle;
+
+	/* Cancel the callback */
+	not_idle = k_work_cancel_delayable_sync(&data->async.tx_done, &sync);
+	if (!not_idle) {
+		return -EFAULT;
+	}
+
+	/* Generate TX_DONE event with number of bytes transmitted */
+	evt.type = UART_TX_DONE;
+	evt.data.tx.buf = data->async.tx_buf;
+	evt.data.tx.len = 0;
+	if (data->async.user_callback) {
+		data->async.user_callback(data->async.dev, &evt, data->async.user_data);
+	}
+
+	/* Reset state */
+	data->async.tx_buf = NULL;
+	return 0;
+}
+
+/*
+ * Emulate async interrupts using a polling thread
+ */
+static void native_pty_uart_async_poll_function(void *arg1, void *arg2, void *arg3)
+{
+	const struct device *dev = arg1;
+	struct native_pty_status *data = dev->data;
+	struct uart_event evt;
+	int rc;
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	while (data->async.rx_len) {
+		rc = np_uart_stdin_poll_in_bottom(data->in_fd, data->async.rx_buf,
+						  data->async.rx_len);
+		if (rc > 0) {
+			/* Data received */
+			evt.type = UART_RX_RDY;
+			evt.data.rx.buf = data->async.rx_buf;
+			evt.data.rx.offset = 0;
+			evt.data.rx.len = rc;
+			/* User callback */
+			if (data->async.user_callback) {
+				data->async.user_callback(data->async.dev, &evt,
+							  data->async.user_data);
+			}
+		}
+		if ((data->async.rx_len != 0) && (rc < 0)) {
+			/* Sleep if RX not disabled and last read didn't result in any data */
+			k_sleep(K_MSEC(10));
+		}
+	}
+}
+
+static int np_uart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
+{
+	/* Driver never requests additional buffers */
+	return -ENOTSUP;
+}
+
+static int np_uart_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int32_t timeout)
+{
+	struct native_pty_status *data = dev->data;
+
+	ARG_UNUSED(timeout);
+
+	if (data->async.rx_buf != NULL) {
+		return -EBUSY;
+	}
+
+	data->async.rx_buf = buf;
+	data->async.rx_len = len;
+
+	/* Create a thread which will wait for data - replacement for IRQ */
+	k_thread_create(&data->async.rx_thread, data->async.rx_stack,
+			K_KERNEL_STACK_SIZEOF(data->async.rx_stack),
+			native_pty_uart_async_poll_function,
+			(void *)dev, NULL, NULL,
+			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+	return 0;
+}
+
+static int np_uart_rx_disable(const struct device *dev)
+{
+	struct native_pty_status *data = dev->data;
+
+	if (data->async.rx_buf == NULL) {
+		return -EFAULT;
+	}
+
+	data->async.rx_len = 0;
+	data->async.rx_buf = NULL;
+
+	/* Wait for RX thread to terminate */
+	return k_thread_join(&data->async.rx_thread, K_FOREVER);
+}
+
+#endif /* CONFIG_UART_ASYNC_API */
+
 
 #define NATIVE_PTY_SET_AUTO_ATTACH_CMD(inst, cmd)      \
 	native_pty_status_##inst.auto_attach_cmd = cmd;

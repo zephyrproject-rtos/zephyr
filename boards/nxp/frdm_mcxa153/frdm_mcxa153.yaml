@@ -1,0 +1,29 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxa153
+name: NXP FRDM MCXA153
+type: mcu
+arch: arm
+ram: 24
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - counter
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - i3c
+  - pwm
+  - spi
+  - uart
+  - usb_device
+  - watchdog
+vendor: nxp

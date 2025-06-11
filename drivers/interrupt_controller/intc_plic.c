@@ -93,7 +93,7 @@ struct plic_config {
 	uint32_t nr_irqs;
 	uint32_t irq;
 	riscv_plic_irq_config_func_t irq_config_func;
-	struct _isr_table_entry *isr_table;
+	const struct _isr_table_entry *isr_table;
 	const uint32_t *const hart_context;
 };
 
@@ -194,13 +194,6 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, u
 #endif
 
 	return config->reg + (get_hart_context(dev, hartid) * CONTEXT_SIZE);
-}
-
-static ALWAYS_INLINE uint32_t local_irq_to_irq(const struct device *dev, uint32_t local_irq)
-{
-	const struct plic_config *config = dev->config;
-
-	return irq_to_level_2(local_irq) | config->irq;
 }
 
 #ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
@@ -497,7 +490,7 @@ static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
-	struct _isr_table_entry *ite;
+	const struct _isr_table_entry *ite;
 	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
@@ -718,6 +711,13 @@ static int cmd_stats_clear(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_PLIC_SHELL_IRQ_COUNT */
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_AFFINITY
+static ALWAYS_INLINE uint32_t local_irq_to_irq(const struct device *dev, uint32_t local_irq)
+{
+	const struct plic_config *config = dev->config;
+
+	return irq_to_level_2(local_irq) | config->irq;
+}
+
 static int cmd_affinity_set(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);

@@ -473,15 +473,16 @@ static int i3c_stm32_calc_scll_od_sclh_i2c(const struct device *dev, uint32_t i2
 						1000000000ull) -
 				   1;
 			*sclh_i2c = DIV_ROUND_UP(i3c_clock, i2c_bus_freq) - *scll_od - 2;
+			if (*sclh_i2c <
+				  (DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FM_NS * i3c_clock,
+							    1000000000ull) - 1)
+			   ) {
+				LOG_ERR("Cannot find a combination of SCLL_OD and SCLH_I2C at "
+					"current I3C clock frequency for FM I2C bus");
+				return -EINVAL;
+			}
 		}
 
-		if (*sclh_i2c <
-		    DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FM_NS * i3c_clock, 1000000000ull) - 1) {
-			LOG_ERR("Cannot find a combination of SCLL_OD and SCLH_I2C at current I3C "
-				"clock "
-				"frequency for FM I2C bus");
-			return -EINVAL;
-		}
 	} else {
 		if (config->drv_cfg.dev_list.num_i2c > 0) {
 			enum i3c_bus_mode mode = i3c_bus_mode(&config->drv_cfg.dev_list);

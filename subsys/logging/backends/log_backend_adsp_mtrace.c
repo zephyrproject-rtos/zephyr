@@ -221,7 +221,7 @@ void adsp_mtrace_log_init(adsp_mtrace_log_hook_t hook)
 	mtrace_init();
 
 	mtrace_hook = hook;
-	mtrace_active = true;
+	mtrace_active = !!hook;
 }
 
 const struct log_backend *log_backend_adsp_mtrace_get(void)

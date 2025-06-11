@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_LPC55S36)
+#if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_SERIES_LPC55XXX)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
 #define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
 #define FMC_STATUS_DONE	FLASH_INT_CLR_ENABLE_DONE_MASK
@@ -137,6 +137,11 @@ static void clear_flash_caches(void)
 	volatile uint32_t *const lpcac_ctrl = (volatile uint32_t *)0x40000824;
 	/* this bit clears the code cache */
 	*lpcac_ctrl |= BIT(1);
+}
+#elif CONFIG_SOC_SERIES_MCXA
+static void clear_flash_caches(void)
+{
+	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);
 }
 #else
 #undef SOC_FLASH_NEED_CLEAR_CACHES
@@ -233,8 +238,8 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	 * on erased or otherwise unreadable pages. Emulate erased pages,
 	 * return other errors.
 	 */
-  #ifdef CONFIG_SOC_LPC55S36
-	/* On LPC55S36, use a HAL function to safely copy from Flash. */
+  #ifdef CONFIG_SOC_SERIES_LPC55XXX
+	/* On LPC55XXX, use a HAL function to safely copy from Flash. */
 	rc = FLASH_Read(&priv->config, addr, data, len);
 	switch (rc) {
 	case kStatus_FLASH_Success:
@@ -257,7 +262,7 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 		rc = -EIO;
 		break;
 	}
-  #else /* CONFIG_SOC_LPC55S36 */
+  #else /* CONFIG_SOC_SERIES_LPC55XXX */
 	/* On all other targets, check if the Flash area is readable.
 	 * If so, copy data from it directly.
 	 */
@@ -265,7 +270,7 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	if (!rc) {
 		memcpy(data, (void *) addr, len);
 	}
-  #endif /* CONFIG_SOC_LPC55S36 */
+  #endif /* CONFIG_SOC_SERIES_LPC55XXX */
 
 	if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */

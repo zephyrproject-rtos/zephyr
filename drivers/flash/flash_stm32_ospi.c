@@ -1845,6 +1845,49 @@ static int stm32_ospi_write_status_register(const struct device *dev, uint8_t re
 	return ospi_write_access(dev, &s_command, regs_p, size);
 }
 
+static int stm32_ospi_program_addr_4b(const struct device *dev, bool write_enable)
+{
+	uint8_t statReg;
+	struct flash_stm32_ospi_data *data = dev->data;
+	OSPI_HandleTypeDef *hospi = &data->hospi;
+	uint8_t nor_mode = OSPI_SPI_MODE;
+	uint8_t nor_rate = OSPI_STR_TRANSFER;
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(nor_mode, nor_rate);
+
+	if (write_enable) {
+		if (stm32_ospi_write_enable(data, nor_mode, nor_rate) < 0) {
+			LOG_DBG("program_addr_4b failed to write_enable");
+			return -EIO;
+		}
+	}
+
+	/* Initialize the write enable command */
+	s_command.Instruction = SPI_NOR_CMD_4BA;
+	if (nor_mode != OSPI_OPI_MODE) {
+		/* force 1-line InstructionMode for any non-OSPI transfer */
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+	}
+	s_command.AddressMode = HAL_OSPI_ADDRESS_NONE;
+	s_command.DataMode = HAL_OSPI_DATA_NONE;
+	s_command.DummyCycles = 0U;
+
+	if (HAL_OSPI_Command(hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+		LOG_DBG("OSPI Address Mode Change cmd failed");
+		return -EIO;
+	}
+
+	/* Check that ADS Bit in Status Reg 3 is now set indicating 4 Byte Address mode */
+	if (stm32_ospi_read_status_register(dev, 3, &statReg)) {
+		LOG_DBG("Status reg read failed");
+		return -EIO;
+	}
+
+	if (statReg & 0x01) {
+		return 0;
+	}
+	return -EIO;
+}
+
 static int stm32_ospi_enable_qe(const struct device *dev)
 {
 	struct flash_stm32_ospi_data *data = dev->data;
@@ -1983,6 +2026,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 	struct jesd216_instr read_instr = { 0 };
 	struct jesd216_bfp_dw15 dw15;
+	uint8_t addr_mode;
 
 	if (flash_size != dev_cfg->flash_size) {
 		LOG_DBG("Unexpected flash size: %u", flash_size);
@@ -2002,8 +2046,29 @@ static int spi_nor_process_bfp(const struct device *dev,
 		++etp;
 	}
 
-	spi_nor_process_bfp_addrbytes(dev, jesd216_bfp_addrbytes(bfp));
+	addr_mode = jesd216_bfp_addrbytes(bfp);
+	spi_nor_process_bfp_addrbytes(dev, addr_mode);
 	LOG_DBG("Address width: %u Bytes", data->address_width);
+	/* 4 Byte Address Mode has to be explicitly enabled for Winbond Flash */
+	if (addr_mode == JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B4B) {
+		struct jesd216_bfp_dw16 dw16;
+
+		if (jesd216_bfp_decode_dw16(php, bfp, &dw16) == 0) {
+			/*
+			 * According to JESD216, the bit0 of dw16.enter_4ba
+			 * portion of flash description register 16 indicates
+			 * if it is enough to use 0xB7 instruction without
+			 * write enable to switch to 4 bytes addressing mode.
+			 * If bit 1 is set, a write enable is needed.
+			 */
+			if (dw16.enter_4ba & 0x3) {
+				if (stm32_ospi_program_addr_4b(dev, dw16.enter_4ba & 2)) {
+					LOG_ERR("Unable to enter 4B mode.");
+					return -EIO;
+				}
+			}
+		}
+	}
 
 	/* use PP opcode based on configured data mode if nothing is set in DTS */
 	if (data->write_opcode == SPI_NOR_WRITEOC_NONE) {

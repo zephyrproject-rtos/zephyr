@@ -7,6 +7,10 @@ family:
       cpuclusters:
       - name: cpu0
       - name: cpu1
+    - name: mcxn547
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
     - name: mcxn236
   - name: mcxc
     socs:
@@ -16,6 +20,7 @@ family:
     - name: mcxc444
   - name: mcxa
     socs:
+    - name: mcxa153
     - name: mcxa156
     - name: mcxa166
     - name: mcxa276
@@ -47,6 +52,8 @@ runners:
       - qualifiers:
         - mcxc444
       - qualifiers:
+        - mcxa153
+      - qualifiers:
         - mcxa156
       - qualifiers:
         - mcxa166
@@ -72,6 +79,8 @@ runners:
         - mcxc242
       - qualifiers:
         - mcxc444
+      - qualifiers:
+        - mcxa153
       - qualifiers:
         - mcxa156
       - qualifiers:

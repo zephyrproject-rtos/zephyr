@@ -590,7 +590,7 @@ would be in the driver config struct:
 Drivers that do not use Zephyr Device Model
 ===========================================
 
-Some drivers or driver-like code may not user Zephyr's device model,
+Some drivers or driver-like code may not use Zephyr's device model,
 and alternative storage must be arranged for the MMIO data. An
 example of this are timer drivers, or interrupt controller code.
 

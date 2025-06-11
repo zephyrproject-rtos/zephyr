@@ -62,6 +62,14 @@ endchoice
 
 endif # HWINFO_CC13XX_CC26XX
 
+config HWINFO_CC23X0
+	bool "TI CC23X0 hwinfo"
+	default y
+	depends on SOC_FAMILY_TI_SIMPLELINK && SOC_SERIES_CC23X0
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable CC23X0 hwinfo driver.
+
 config HWINFO_STM32
 	bool "STM32 hwinfo"
 	default y
@@ -78,6 +86,14 @@ config HWINFO_NRF
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable Nordic NRF hwinfo driver.
+
+config HWINFO_MCUX_MCX_CMC
+	bool "NXP MCX CMC reset cause"
+	default y
+	depends on HAS_MCUX_MCX_CMC
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP kinetis mcux CMC hwinfo driver.
 
 config HWINFO_MCUX_RCM
 	bool "NXP kinetis reset cause"
@@ -239,7 +255,7 @@ config HWINFO_RW61X
 config HWINFO_AMBIQ
 	bool "AMBIQ hwinfo"
 	default y
-	depends on SOC_SERIES_APOLLO4X
+	depends on SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
 	select HWINFO_HAS_DRIVER
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_HWINFO
@@ -249,7 +265,7 @@ config HWINFO_AMBIQ
 config HWINFO_NUMAKER
 	bool "NuMaker hwinfo"
 	default y
-	depends on SOC_SERIES_M46X
+	depends on SOC_SERIES_M46X || SOC_SERIES_M55M1X
 	select HWINFO_HAS_DRIVER
 	select HAS_NUMAKER_FMC
 	help

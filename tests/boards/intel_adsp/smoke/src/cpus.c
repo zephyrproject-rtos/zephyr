@@ -123,7 +123,7 @@ static void core_smoke(void *arg)
 		int32_t diff = MAX(1, abs(clk_ratios[i] - clk_ratios[cpu]));
 
 		zassert_true((clk_ratios[cpu] / diff) > 100,
-			     "clocks off by more than 1%");
+			     "clocks off by more than 1%%");
 	}
 
 	/* Check tight loop performance to validate instruction cache */

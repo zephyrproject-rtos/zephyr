@@ -203,7 +203,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	zassert_equal_ptr(&eth_vlan_context, context,
 			  "Context pointers do not match (%p vs %p)",
-			  eth_vlan_context, context);
+			  &eth_vlan_context, context);
 
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");

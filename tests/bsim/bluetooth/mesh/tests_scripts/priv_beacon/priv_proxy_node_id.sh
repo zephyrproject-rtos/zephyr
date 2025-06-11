@@ -27,8 +27,3 @@ overlay=overlay_gatt_conf
 RunTest mesh_priv_proxy_node_id \
 	beacon_tx_priv_node_id \
 	beacon_rx_priv_node_id
-
-overlay=overlay_gatt_conf_overlay_psa_conf
-RunTest mesh_priv_proxy_node_id \
-	beacon_tx_priv_node_id \
-	beacon_rx_priv_node_id

@@ -266,8 +266,8 @@ void soc_interrupt_init(void)
 		wdt_regs->EWDKEYR = 0;
 
 		/* Spin and wait for reboot */
-		while (1)
-			;
+		while (1) {
+		}
 	} else {
 		/* Disable ETWD hardware reset */
 		gctrl_regs->GCTRL_ETWDUARTCR &= ~IT8XXX2_GCTRL_ETWD_HW_RST_EN;

@@ -16,11 +16,26 @@ config USBD_CDC_ACM_CLASS
 
 if USBD_CDC_ACM_CLASS
 
+config USBD_CDC_ACM_WORKQUEUE
+	bool "Use dedicated workqueue in CDC ACM"
+	help
+	  Use the dedicated queue in CDC ACM implementation if the systemwork
+	  queue cannot be used due to performance issues or other conflicts.
+
 config USBD_CDC_ACM_STACK_SIZE
 	int "USB CDC ACM workqueue stack size"
+	depends on USBD_CDC_ACM_WORKQUEUE
 	default 1024
 	help
 	  USB CDC ACM workqueue stack size.
+
+config USBD_CDC_ACM_BUF_POOL
+	bool "Use dedicated buffer pool"
+	default y if !USBD_MAX_SPEED_FULL
+	help
+	  Use a dedicated buffer pool whose size is based on the number of CDC
+	  ACM instances and the size of the bulk endpoints. When disabled, the
+	  implementation uses the UDC driver's pool.
 
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm

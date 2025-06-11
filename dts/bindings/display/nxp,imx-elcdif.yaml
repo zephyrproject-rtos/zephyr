@@ -27,7 +27,6 @@ properties:
 
   backlight-gpios:
     type: phandle-array
-    required: true
     description:
       LCB backlight control gpio. Driver will initialize this GPIO to active high
 

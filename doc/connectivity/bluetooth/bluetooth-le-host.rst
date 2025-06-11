@@ -105,7 +105,7 @@ Security
 To achieve a secure relationship between two Bluetooth devices a process
 called pairing is used. This process can either be triggered implicitly
 through the security properties of GATT services, or explicitly using
-the :c:func:`bt_conn_security` API on a connection object.
+the :c:func:`bt_conn_set_security` API on a connection object.
 
 To achieve a higher security level, and protect against
 Man-In-The-Middle (MITM) attacks, it is recommended to use some

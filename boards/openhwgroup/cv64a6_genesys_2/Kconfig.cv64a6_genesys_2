@@ -1,0 +1,4 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+config BOARD_CV64A6_GENESYS_2
+	select SOC_CV64A6_IMAFDC

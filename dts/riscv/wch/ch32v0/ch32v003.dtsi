@@ -7,7 +7,7 @@
 
 #include <freq.h>
 #include <mem.h>
-#include <wch/qingke-v2.dtsi>
+#include <wch/qingke-v2a.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
@@ -66,11 +66,18 @@
 			reg = <0x40007000 0x10>;
 		};
 
+		iwdg: watchdog@40003000 {
+			compatible = "wch,iwdg";
+			reg = <0x40003000 0x10>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40010000 {
 			compatible = "wch,afio";
 			reg = <0x40010000 0x10>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&rcc CH32V00X_CLOCK_AFIO>;
 			status = "okay";
 
 			gpioa: gpio@40010800 {
@@ -102,6 +109,16 @@
 			};
 		};
 
+		i2c1: i2c@40005400 {
+			compatible = "wch,i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005400 0x400>;
+			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <30>, <31>;
+		};
+
 		usart1: uart@40013800 {
 			compatible = "wch,usart";
 			reg = <0x40013800 0x10>;
@@ -125,6 +142,36 @@
 			interrupt-parent = <&pfic>;
 			interrupts = <22>, <23>, <24>, <25>, <26>, <27>, <28>;
 			dma-channels = <7>;
+		};
+
+		tim2: counter@40000000 {
+			compatible = "wch,gptm";
+			reg = <0x40000000 16>;
+			prescaler = <1>;
+			channels = <4>;
+			clocks = <&rcc CH32V00X_CLOCK_TIM2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <38>;
+			interrupt-names = "global";
+			status = "disabled";
+
+			pwm2: pwm {
+				compatible = "wch,gptm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		spi1: spi@40013000 {
+			compatible = "wch,spi";
+			reg = <0x40013000 0x24>;
+			clocks = <&rcc CH32V00X_CLOCK_SPI1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <33>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

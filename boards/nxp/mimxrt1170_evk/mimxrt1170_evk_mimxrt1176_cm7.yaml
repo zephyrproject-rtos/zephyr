@@ -17,6 +17,7 @@ supported:
   - adc
   - can
   - counter
+  - dac
   - display
   - dma
   - flash

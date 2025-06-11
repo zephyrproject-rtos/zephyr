@@ -842,6 +842,11 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 	struct mqtt_sn_gateway *gw = NULL;
 	int64_t next_ping;
 
+	if (CONFIG_MQTT_SN_KEEPALIVE == 0) {
+		/* Keep Alive disabled. */
+		return 0;
+	}
+
 	if (client->ping_retries == N_RETRY) {
 		/* Last ping was acked */
 		next_ping = client->last_ping + T_KEEPALIVE_MSEC;
@@ -1000,6 +1005,8 @@ int mqtt_sn_client_init(struct mqtt_sn_client *client, const struct mqtt_sn_data
 			struct mqtt_sn_transport *transport, mqtt_sn_evt_cb_t evt_cb, void *tx,
 			size_t txsz, void *rx, size_t rxsz)
 {
+	int ret = 0;
+
 	if (!client || !client_id || !transport || !evt_cb || !tx || !rx) {
 		return -EINVAL;
 	}
@@ -1020,10 +1027,10 @@ int mqtt_sn_client_init(struct mqtt_sn_client *client, const struct mqtt_sn_data
 	k_work_init_delayable(&client->process_work, process_work);
 
 	if (transport->init) {
-		transport->init(transport);
+		ret = transport->init(transport);
 	}
 
-	return 0;
+	return ret;
 }
 
 void mqtt_sn_client_deinit(struct mqtt_sn_client *client)

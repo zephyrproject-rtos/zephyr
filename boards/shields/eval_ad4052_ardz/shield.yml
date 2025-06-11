@@ -1,0 +1,6 @@
+shield:
+  name: eval_ad4052_ardz
+  full_name: AD4052 Evaluation Shield
+  vendor: adi
+  supported_features:
+    - adc

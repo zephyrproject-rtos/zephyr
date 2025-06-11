@@ -23,10 +23,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_0: led_3 {
 			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
 		red_led_0: led_4 {
 			gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
@@ -35,6 +37,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
@@ -198,6 +201,7 @@ uart0: &usart3 {
 		&sdmmc1_d6_pc6 &sdmmc1_d7_pc7
 		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
+	disk-name = "SD";
 	status = "okay";
 };
 
@@ -266,14 +270,17 @@ zephyr_udc0: &usbotg_hs {
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(1952)>;
 		};
+
 		slot1_partition: partition@1f8000 {
 			label = "image-1";
 			reg = <0x001f8000 DT_SIZE_K(1960)>;
 		};
+
 		storage_partition: partition@3e2000 {
 			label = "storage";
 			reg = <0x003e2000 DT_SIZE_K(120)>;

@@ -18,6 +18,8 @@ extern "C" {
 /**
  * @brief Zbus API
  * @defgroup zbus_apis Zbus APIs
+ * @since 3.3.0
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
@@ -177,6 +179,9 @@ struct zbus_channel_observation_mask {
 	bool enabled;
 };
 
+/**
+ * @brief Structure for linking observers to chanels
+ */
 struct zbus_channel_observation {
 	const struct zbus_channel *chan;
 	const struct zbus_observer *obs;
@@ -862,9 +867,61 @@ static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
 #if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS) || defined(__DOXYGEN__)
 
 /**
+ * @brief Structure used to register runtime obeservers
+ *
+ */
+struct zbus_observer_node {
+	sys_snode_t node;
+	const struct zbus_observer *obs;
+#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE)
+	const struct zbus_channel *chan;
+#endif
+};
+
+#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE) || defined(__DOXYGEN__)
+/**
  * @brief Add an observer to a channel.
  *
- * This routine adds an observer to the channel.
+ * This routine adds an observer to the channel by providing an allocated node. This function is
+ * only supported if the CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE is enabled.
+ *
+ * @param chan The channel's reference.
+ * @param obs The observer's reference to be added.
+ * @param node Persistent structure to link the channel to the observer
+ * @param timeout Waiting period to add an observer,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 Observer added to the channel.
+ * @retval -EEXIST The observer is already present in the channel's observers list.
+ * @retval -EALREADY The observer is already present in the channel's runtime observers list.
+ * @retval -EAGAIN Waiting period timed out.
+ * @retval -EINVAL Some parameter is invalid.
+ * @retval -EBUSY The node is already in use.
+ */
+int zbus_chan_add_obs_with_node(const struct zbus_channel *chan, const struct zbus_observer *obs,
+				struct zbus_observer_node *node, k_timeout_t timeout);
+#else
+static inline int zbus_chan_add_obs_with_node(const struct zbus_channel *chan,
+					      const struct zbus_observer *obs,
+					      struct zbus_observer_node *node, k_timeout_t timeout)
+{
+	ARG_UNUSED(chan);
+	ARG_UNUSED(obs);
+	ARG_UNUSED(node);
+	ARG_UNUSED(timeout);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE */
+
+#if !defined(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE) || defined(__DOXYGEN__)
+/**
+ * @brief Add an observer to a channel.
+ *
+ * This routine adds an observer to the channel in runtime. This function is only supported if the
+ * CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC or
+ * CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC is enabled.
+ *
  *
  * @param chan The channel's reference.
  * @param obs The observer's reference to be added.
@@ -872,14 +929,26 @@ static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Observer added to the channel.
- * @retval -EALREADY The observer is already present in the channel's runtime observers list.
- * @retval -ENOMEM Returned without waiting.
+ * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @retval -EINVAL Some parameter is invalid.
+ * @retval -EEXIST The observer is already present in the channel's observers list.
+ * @retval -EALREADY The observer is already present in the channel's runtime observers list.
+ * @retval -ENOMEM No memory available for a new runtime observer node.
  */
 int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observer *obs,
 		      k_timeout_t timeout);
+#else
+static inline int zbus_chan_add_obs(const struct zbus_channel *chan,
+				    const struct zbus_observer *obs, k_timeout_t timeout)
+{
+	ARG_UNUSED(chan);
+	ARG_UNUSED(obs);
+	ARG_UNUSED(timeout);
 
+	return -ENOTSUP;
+}
+
+#endif /* !CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE */
 /**
  * @brief Remove an observer from a channel.
  *
@@ -891,23 +960,12 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Observer removed to the channel.
- * @retval -EINVAL Invalid data supplied.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -ENODATA no observer found in channel's runtime observer list.
- * @retval -ENOMEM Returned without waiting.
  */
 int zbus_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer *obs,
 		     k_timeout_t timeout);
-
-/** @cond INTERNAL_HIDDEN */
-
-struct zbus_observer_node {
-	sys_snode_t node;
-	const struct zbus_observer *obs;
-};
-
-/** @endcond */
 
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
 

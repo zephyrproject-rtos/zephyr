@@ -1,0 +1,32 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CV64A6
+	bool
+	select SOC_FAMILY_OPENHWGROUP_CVA6
+	help
+	  CVA6 64-bit RISC-V CPUs, commonly used as soft cores on FPGAs.
+	  This configuration works with the upstream project (https://github.com/openhwgroup/cva6)
+	  as well as the forked project with support for the Xilinx AXI Ethernet Subsystem
+	  (https://github.com/cispa/CVA6-Vivado-Project-with-Xilinx-AXI-Ethernet).
+
+config SOC_CV64A6_IMAFDC
+	bool
+	select SOC_SERIES_CV64A6
+	help
+	  Standard CVA6 core in 64-bit configuration: SV39 MMU and SoC with CLINT, PLIC, UART,
+	  SPI, and Ethernet (Xilinx or lowRISC). Supports imafdc instruction sets.
+
+config SOC_CV64A6_IMAC
+	bool
+	select SOC_SERIES_CV64A6
+	help
+	  Minimal CVA6 core in 64-bit configuration: SV39 MMU and SoC with CLINT, PLIC, UART,
+	  SPI, and Ethernet (Xilinx or lowRISC). Supports imac instruction sets.
+
+config SOC_SERIES
+	default "cv64a6" if SOC_SERIES_CV64A6
+
+config SOC
+	default "cv64a6_imac" if SOC_CV64A6_IMAC
+	default "cv64a6_imafdc" if SOC_CV64A6_IMAFDC

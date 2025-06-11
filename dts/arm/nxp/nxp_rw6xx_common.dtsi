@@ -202,6 +202,7 @@
 		reg = <0xe000 0x1000>;
 		interrupts = <0 0>;
 		status = "disabled";
+		power-domains = <&power_mode3_domain>;
 		clk-divider = <1>;
 	};
 
@@ -244,7 +245,8 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x106000 0x1000>;
 		interrupts = <14 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK &clkctl1 MCUX_FLEXCOMM0_LP_CLK>;
+		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		dmas = <&dma0 0>, <&dma0 1>;
 		dma-names = "rx", "tx";
@@ -257,7 +259,8 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x107000 0x1000>;
 		interrupts = <15 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK &clkctl1 MCUX_FLEXCOMM1_LP_CLK>;
+		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 9)>;
 		dmas = <&dma0 2>, <&dma0 3>;
 		dma-names = "rx", "tx";
@@ -270,7 +273,8 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x108000 0x1000>;
 		interrupts = <16 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK &clkctl1 MCUX_FLEXCOMM2_LP_CLK>;
+		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 10)>;
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
@@ -283,7 +287,8 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x109000 0x1000>;
 		interrupts = <17 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK &clkctl1 MCUX_FLEXCOMM3_LP_CLK>;
+		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 11)>;
 		dmas = <&dma0 6>, <&dma0 7>;
 		dma-names = "rx", "tx";
@@ -292,7 +297,7 @@
 		status = "disabled";
 	};
 
-	flexcomm14: flexcom@126000 {
+	flexcomm14: flexcomm@126000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x126000 0x2000>;
 		interrupts = <20 0>;
@@ -327,6 +332,7 @@
 			<35 2>, <36 2>, <37 2>, <38 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
+		power-domains = <&power_mode3_domain>;
 	};
 
 	imu: nxp_wifi {
@@ -355,6 +361,7 @@
 		#size-cells = <0>;
 		clocks = <&clkctl1 MCUX_LCDIC_CLK>;
 		dmas = <&dma0 0>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&power_mode3_domain>;
 	};
 

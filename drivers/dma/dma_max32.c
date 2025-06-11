@@ -69,11 +69,6 @@ static inline int max32_dma_addr_adj(uint16_t addr_adj)
 	}
 }
 
-static inline int max32_dma_ch_index(mxc_dma_regs_t *dma, uint8_t ch)
-{
-	return (ch + MXC_DMA_GET_IDX(dma) * (MXC_DMA_CHANNELS / MXC_DMA_INSTANCES));
-}
-
 static int max32_dma_config(const struct device *dev, uint32_t channel, struct dma_config *config)
 {
 	int ret = 0;
@@ -87,7 +82,7 @@ static int max32_dma_config(const struct device *dev, uint32_t channel, struct d
 		return -EINVAL;
 	}
 
-	ch = max32_dma_ch_index(cfg->regs, channel);
+	ch = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, channel);
 
 	/* DMA Channel Config */
 	mxc_dma_config_t mxc_dma_cfg;
@@ -135,7 +130,7 @@ static int max32_dma_config(const struct device *dev, uint32_t channel, struct d
 	}
 
 	/* Enable interrupts for the DMA peripheral */
-	ret = MXC_DMA_EnableInt(ch);
+	ret = Wrap_MXC_DMA_EnableInt(cfg->regs, ch);
 	if (ret != E_NO_ERROR) {
 		return ret;
 	}
@@ -166,7 +161,7 @@ static int max32_dma_reload(const struct device *dev, uint32_t channel, uint32_t
 		return -EINVAL;
 	}
 
-	channel = max32_dma_ch_index(cfg->regs, channel);
+	channel = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, channel);
 	flags = MXC_DMA_ChannelGetFlags(channel);
 	if (flags & ADI_MAX32_DMA_STATUS_ST) {
 		return -EBUSY;
@@ -190,7 +185,7 @@ static int max32_dma_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	channel = max32_dma_ch_index(cfg->regs, channel);
+	channel = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, channel);
 	flags = MXC_DMA_ChannelGetFlags(channel);
 	if (flags & ADI_MAX32_DMA_STATUS_ST) {
 		return -EBUSY;
@@ -209,7 +204,7 @@ static int max32_dma_stop(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	channel = max32_dma_ch_index(cfg->regs, channel);
+	channel = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, channel);
 
 	return MXC_DMA_Stop(channel);
 }
@@ -227,7 +222,7 @@ static int max32_dma_get_status(const struct device *dev, uint32_t channel, stru
 		return -EINVAL;
 	}
 
-	channel = max32_dma_ch_index(cfg->regs, channel);
+	channel = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, channel);
 	txfer.ch = channel;
 
 	flags = MXC_DMA_ChannelGetFlags(channel);
@@ -253,7 +248,7 @@ static void max32_dma_isr(const struct device *dev)
 	int flags;
 	int status = 0;
 
-	uint8_t channel_base = max32_dma_ch_index(cfg->regs, 0);
+	uint8_t channel_base = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, 0);
 
 	for (ch = channel_base, c = 0; c < cfg->channels; ch++, c++) {
 		flags = MXC_DMA_ChannelGetFlags(ch);
@@ -347,7 +342,7 @@ static DEVICE_API(dma, max32_dma_driver_api) = {
 		.channels = DT_INST_PROP(inst, dma_channels),                                      \
 		.irq_configure = max32_dma##inst##_irq_configure,                                  \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &max32_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg,    \
+	DEVICE_DT_INST_DEFINE(inst, max32_dma_init, NULL, &dma##inst##_data, &dma##inst##_cfg,     \
 			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &max32_dma_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_DMA_INIT)

@@ -12,4 +12,5 @@ ram: 1536
 flash: 2048
 supported:
   - gpio
+  - can
 vendor: nuvoton

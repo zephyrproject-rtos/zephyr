@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config GPIO_SN74HC595
-	bool "SN74HC595 shift register as GPIO extender"
+	bool "SN74HC595 shift register as GPIO expander"
 	default y
 	depends on DT_HAS_TI_SN74HC595_ENABLED
 	depends on SPI
 	help
-	  Use SN74HC595 as GPIO extender
+	  Use SN74HC595 as GPIO expander
 
 if GPIO_SN74HC595
 

@@ -5051,12 +5051,6 @@ static void vs_read_supported_commands(struct net_buf *buf,
 	/* Write Tx Power, Read Tx Power */
 	rp->commands[1] |= BIT(5) | BIT(6);
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
-#if defined(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)
-	/* Read Supported USB Transport Modes */
-	rp->commands[1] |= BIT(7);
-	/* Set USB Transport Mode */
-	rp->commands[2] |= BIT(0);
-#endif /* USB_DEVICE_BLUETOOTH_VS_H4 */
 }
 
 static void vs_read_supported_features(struct net_buf *buf,
@@ -5210,8 +5204,7 @@ static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 /* A memory pool for vandor specific events for fatal error reporting purposes. */
-NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE,
-			  sizeof(struct bt_buf_data), NULL);
+NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE, 0, NULL);
 
 /* The alias for convenience of Controller HCI implementation. Controller is build for
  * a particular architecture hence the alias will allow to avoid conditional compilation.
@@ -5244,8 +5237,7 @@ static struct net_buf *vs_err_evt_create(uint8_t subevt, uint8_t len)
 		struct bt_hci_evt_le_meta_event *me;
 		struct bt_hci_evt_hdr *hdr;
 
-		net_buf_reserve(buf, BT_BUF_RESERVE);
-		bt_buf_set_type(buf, BT_BUF_EVT);
+		net_buf_add_u8(buf, BT_HCI_H4_EVT);
 
 		hdr = net_buf_add(buf, sizeof(*hdr));
 		hdr->evt = BT_HCI_EVT_VENDOR;
@@ -5699,14 +5691,6 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES):
 		vs_read_supported_features(cmd, evt);
 		break;
-
-#if defined(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)
-	case BT_OCF(BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE):
-		break;
-	case BT_OCF(BT_HCI_OP_VS_SET_USB_TRANSPORT_MODE):
-		reset(cmd, evt);
-		break;
-#endif /* CONFIG_USB_DEVICE_BLUETOOTH_VS_H4 */
 
 	case BT_OCF(BT_HCI_OP_VS_READ_BUILD_INFO):
 		vs_read_build_info(cmd, evt);

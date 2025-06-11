@@ -10,7 +10,7 @@
 
 #include "fpga_ice40_common.h"
 
-LOG_MODULE_REGISTER(fpga_ice40);
+LOG_MODULE_REGISTER(fpga_ice40, CONFIG_FPGA_LOG_LEVEL);
 
 void fpga_ice40_crc_to_str(uint32_t crc, char *s)
 {

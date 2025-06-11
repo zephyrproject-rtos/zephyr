@@ -1,0 +1,194 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxa153.dtsi>
+#include "frdm_mcxa153-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <freq.h>
+
+/ {
+	model = "NXP FRDM_MCXA153 board";
+	compatible = "nxp,mcxa153", "nxp,mcx";
+
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+		pwm-0 = &flexpwm0_pwm0;
+		watchdog0 = &wwdt0;
+		ambient-temp0 = &p3t1755;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpio3 12 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_2: button_2 {
+			label = "User SW2";
+			gpios = <&gpio3 29 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_button_3: button_3 {
+			label = "User SW3";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(32)>;
+			read-only;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 DT_SIZE_K(40)>;
+		};
+		slot1_partition: partition@12000 {
+			label = "image-1";
+			reg = <0x00012000 DT_SIZE_K(40)>;
+		};
+		storage_partition: partition@1C000 {
+			label = "storage";
+			reg = <0x0001C000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&flexpwm0_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&i3c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i3c0>;
+	pinctrl-names = "default";
+
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+
+	p3t1755: p3t1755@4800000236152a0090 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48 0x0236 0x152a0090>;
+		status = "okay";
+	};
+};
+
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&lpcmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+};
+
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};

@@ -23,6 +23,10 @@ mapping:
             required: true
             type: str
             desc: Location of the arch implementation relative to the archs.yml file.
+          full_name:
+            required: false
+            type: str
+            desc: Full display name of the architecture
           comment:
             required: false
             type: str

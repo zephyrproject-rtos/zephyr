@@ -43,14 +43,20 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL) && \
-	(defined(CONFIG_HAS_HW_NRF_SPIM120) || \
-	 defined(CONFIG_HAS_HW_NRF_SPIM121))
-#define SPIM_REQUESTS_CLOCK(idx) UTIL_OR(IS_EQ(idx, 120), \
-					 IS_EQ(idx, 121))
+#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL)
+#define SPIM_REQUESTS_CLOCK(node) \
+	DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(node), nordic_nrf_hsfll_global)
+#define SPIM_REQUESTS_CLOCK_OR(node) SPIM_REQUESTS_CLOCK(node) ||
+#if (DT_FOREACH_STATUS_OKAY(nordic_nrf_spim, SPIM_REQUESTS_CLOCK_OR) 0)
 #define USE_CLOCK_REQUESTS 1
+/* If fast instances are used then system managed device PM cannot be used because
+ * it may call PM actions from locked context and fast SPIM PM actions can only be
+ * called from a thread context.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
+#endif
 #else
-#define SPIM_REQUESTS_CLOCK(idx) 0
+#define SPIM_REQUESTS_CLOCK(node) 0
 #endif
 
 struct spi_nrfx_data {
@@ -155,7 +161,7 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 		nrfy_spim_disable(reg);
 	}
 
-	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+	if (!pm_device_runtime_is_enabled(dev)) {
 		release_clock(dev);
 	}
 
@@ -397,6 +403,11 @@ static void finish_transaction(const struct device *dev, int error)
 	spi_context_complete(ctx, dev, error);
 	dev_data->busy = false;
 
+	if (dev_data->ctx.config->operation & SPI_LOCK_ON) {
+		/* Keep device resumed until call to spi_release() */
+		(void)pm_device_runtime_get(dev);
+	}
+
 	finalize_spi_transaction(dev, true);
 }
 
@@ -539,7 +550,7 @@ static int transceive(const struct device *dev,
 
 	error = configure(dev, spi_cfg);
 
-	if (error == 0 && !IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+	if (error == 0 && !pm_device_runtime_is_enabled(dev)) {
 		error = request_clock(dev);
 	}
 
@@ -587,7 +598,11 @@ static int transceive(const struct device *dev,
 			finish_transaction(dev, -ETIMEDOUT);
 
 			/* Clean up the driver state. */
+#ifdef CONFIG_MULTITHREADING
 			k_sem_reset(&dev_data->ctx.sync);
+#else
+			dev_data->ctx.ready = 0;
+#endif /* CONFIG_MULTITHREADING */
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 			anomaly_58_workaround_clear(dev_data);
 #endif
@@ -656,17 +671,22 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 static int spim_resume(const struct device *dev)
 {
 	const struct spi_nrfx_config *dev_config = dev->config;
+	struct spi_nrfx_data *dev_data = dev->data;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 	/* nrfx_spim_init() will be called at configuration before
 	 * the next transfer.
 	 */
 
+	if (spi_context_cs_get_all(&dev_data->ctx)) {
+		return -EAGAIN;
+	}
+
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
 #endif
 
-	return IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) ? request_clock(dev) : 0;
+	return pm_device_runtime_is_enabled(dev) ? request_clock(dev) : 0;
 }
 
 static void spim_suspend(const struct device *dev)
@@ -679,9 +699,11 @@ static void spim_suspend(const struct device *dev)
 		dev_data->initialized = false;
 	}
 
-	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+	if (pm_device_runtime_is_enabled(dev)) {
 		release_clock(dev);
 	}
+
+	spi_context_cs_put_all(&dev_data->ctx);
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(dev_config->pcfg, true);
@@ -777,7 +799,7 @@ static int spi_nrfx_init(const struct device *dev)
 #if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY) && \
 	CONFIG_SPI_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY
 #define SPIM_INIT_PRIORITY(idx) \
-	COND_CODE_1(SPIM_REQUESTS_CLOCK(idx), \
+	COND_CODE_1(SPIM_REQUESTS_CLOCK(SPIM(idx)), \
 		(UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)), \
 		(CONFIG_SPI_INIT_PRIORITY))
 #else
@@ -799,8 +821,10 @@ static int spi_nrfx_init(const struct device *dev)
 			[CONFIG_SPI_NRFX_RAM_BUFFER_SIZE]		       \
 			SPIM_MEMORY_SECTION(idx);))			       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),))       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),))       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPIM(idx), ctx)		       \
 		IF_ENABLED(SPI_BUFFER_IN_RAM,				       \
 			(.tx_buffer = spim_##idx##_tx_buffer,		       \
@@ -834,8 +858,8 @@ static int spi_nrfx_init(const struct device *dev)
 		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
 		IF_ENABLED(CONFIG_DCACHE,				       \
 			(.mem_attr = SPIM_GET_MEM_ATTR(idx),))		       \
-		IF_ENABLED(USE_CLOCK_REQUESTS,			       \
-			(.clk_dev = SPIM_REQUESTS_CLOCK(idx)		       \
+		IF_ENABLED(USE_CLOCK_REQUESTS,				       \
+			(.clk_dev = SPIM_REQUESTS_CLOCK(SPIM(idx))	       \
 				  ? DEVICE_DT_GET(DT_CLOCKS_CTLR(SPIM(idx)))   \
 				  : NULL,				       \
 			 .clk_spec = {					       \
@@ -860,82 +884,7 @@ static int spi_nrfx_init(const struct device *dev)
 			SPIM_MEM_REGION(idx)))))),			       \
 		())
 
-#ifdef CONFIG_HAS_HW_NRF_SPIM0
-SPI_NRFX_SPIM_DEFINE(0);
-#endif
+#define COND_NRF_SPIM_DEVICE(unused, prefix, i, _) \
+	IF_ENABLED(CONFIG_HAS_HW_NRF_SPIM##prefix##i, (SPI_NRFX_SPIM_DEFINE(prefix##i);))
 
-#ifdef CONFIG_HAS_HW_NRF_SPIM1
-SPI_NRFX_SPIM_DEFINE(1);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM2
-SPI_NRFX_SPIM_DEFINE(2);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM3
-SPI_NRFX_SPIM_DEFINE(3);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM4
-SPI_NRFX_SPIM_DEFINE(4);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM00
-SPI_NRFX_SPIM_DEFINE(00);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM20
-SPI_NRFX_SPIM_DEFINE(20);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM21
-SPI_NRFX_SPIM_DEFINE(21);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM22
-SPI_NRFX_SPIM_DEFINE(22);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM30
-SPI_NRFX_SPIM_DEFINE(30);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM120
-SPI_NRFX_SPIM_DEFINE(120);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM121
-SPI_NRFX_SPIM_DEFINE(121);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM130
-SPI_NRFX_SPIM_DEFINE(130);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM131
-SPI_NRFX_SPIM_DEFINE(131);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM132
-SPI_NRFX_SPIM_DEFINE(132);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM133
-SPI_NRFX_SPIM_DEFINE(133);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM134
-SPI_NRFX_SPIM_DEFINE(134);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM135
-SPI_NRFX_SPIM_DEFINE(135);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM136
-SPI_NRFX_SPIM_DEFINE(136);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_SPIM137
-SPI_NRFX_SPIM_DEFINE(137);
-#endif
+NRFX_FOREACH_PRESENT(SPIM, COND_NRF_SPIM_DEVICE, (), (), _)

@@ -36,6 +36,12 @@
 				reg = <0x1>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_pcm1681: pcm1681@2 {
+				compatible = "ti,pcm1681";
+				status = "okay";
+				reg = <0x2>;
+			};
 		};
 	};
 };

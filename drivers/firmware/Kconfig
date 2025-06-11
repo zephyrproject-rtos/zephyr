@@ -10,6 +10,9 @@ config ARM_SCMI
 	  Enable support for ARM's System Configuration and Management
 	  Interface (SCMI).
 
+# zephyr-keep-sorted-start
+source "drivers/firmware/nrf_ironside/Kconfig"
 source "drivers/firmware/scmi/Kconfig"
+# zephyr-keep-sorted-stop
 
 endmenu

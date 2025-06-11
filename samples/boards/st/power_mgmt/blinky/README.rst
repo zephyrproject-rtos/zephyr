@@ -31,7 +31,7 @@ Building and Running
 Build and flash Blinky as follows, changing ``stm32l562e_dk`` for your board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
+   :zephyr-app: samples/boards/st/power_mgmt/blinky
    :board: stm32l562e_dk
    :goals: build flash
    :compact:

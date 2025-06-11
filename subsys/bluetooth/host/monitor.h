@@ -4,11 +4,15 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
-#if defined(CONFIG_BT_MONITOR)
+#include <zephyr/net_buf.h>
+#include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #define BT_MONITOR_NEW_INDEX    0
 #define BT_MONITOR_DEL_INDEX    1
@@ -75,25 +79,37 @@ struct bt_monitor_user_logging {
 	uint8_t  ident_len;
 } __packed;
 
-static inline uint8_t bt_monitor_opcode(struct net_buf *buf)
+enum bt_monitor_dir {
+	BT_MONITOR_TX,
+	BT_MONITOR_RX,
+};
+
+static inline uint8_t bt_monitor_opcode(uint8_t type, enum bt_monitor_dir dir)
 {
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_CMD:
+	switch (type) {
+	case BT_HCI_H4_CMD:
 		return BT_MONITOR_COMMAND_PKT;
-	case BT_BUF_EVT:
+	case BT_HCI_H4_EVT:
 		return BT_MONITOR_EVENT_PKT;
-	case BT_BUF_ACL_OUT:
-		return BT_MONITOR_ACL_TX_PKT;
-	case BT_BUF_ACL_IN:
-		return BT_MONITOR_ACL_RX_PKT;
-	case BT_BUF_ISO_OUT:
-		return BT_MONITOR_ISO_TX_PKT;
-	case BT_BUF_ISO_IN:
-		return BT_MONITOR_ISO_RX_PKT;
+	case BT_HCI_H4_ACL:
+		if (dir == BT_MONITOR_TX) {
+			return BT_MONITOR_ACL_TX_PKT;
+		} else {
+			return BT_MONITOR_ACL_RX_PKT;
+		}
+	case BT_HCI_H4_ISO:
+		if (dir == BT_MONITOR_TX) {
+			return BT_MONITOR_ISO_TX_PKT;
+		} else {
+			return BT_MONITOR_ISO_RX_PKT;
+		}
 	default:
 		return BT_MONITOR_NOP;
 	}
 }
+
+/* TODO: Remove guard and replace with IS_ENABLED(CONFIG_BT_MONITOR) */
+#if defined(CONFIG_BT_MONITOR)
 
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len);
 
@@ -102,7 +118,20 @@ void bt_monitor_new_index(uint8_t type, uint8_t bus, const bt_addr_t *addr,
 
 #else /* !CONFIG_BT_MONITOR */
 
-#define bt_monitor_send(opcode, data, len)
-#define bt_monitor_new_index(type, bus, addr, name)
+static inline void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
+{
+	ARG_UNUSED(opcode);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+}
+
+static inline void bt_monitor_new_index(uint8_t type, uint8_t bus, const bt_addr_t *addr,
+					const char *name)
+{
+	ARG_UNUSED(type);
+	ARG_UNUSED(bus);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(name);
+}
 
 #endif

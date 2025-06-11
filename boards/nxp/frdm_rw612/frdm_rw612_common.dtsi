@@ -63,6 +63,7 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";
+	wakeup-source;
 };
 
 &flexcomm0 {
@@ -75,6 +76,14 @@
 
 &hsgpio0 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio0>;
+	pinctrl-names = "default";
+};
+
+&hsgpio1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_hsgpio1>;
+	pinctrl-names = "default";
 };
 
 &flexspi {
@@ -101,24 +110,25 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 2 sectors
-			 * of the primary slot0 for swap status and move.
-			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
+				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@323000 {
+			slot1_partition: partition@320000 {
 				label = "image-1";
-				reg = <0x00323000 DT_SIZE_M(3)>;
+				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@623000 {
+			storage_partition: partition@620000 {
 				label = "storage";
-				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
+				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 			};
 		};
 	};
@@ -225,6 +235,11 @@
 };
 
 &nbu {
+	status = "okay";
+	wakeup-source;
+};
+
+&imu {
 	status = "okay";
 	wakeup-source;
 };

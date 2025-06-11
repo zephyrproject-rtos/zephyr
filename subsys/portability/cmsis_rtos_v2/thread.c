@@ -192,37 +192,25 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 	(void)k_thread_create(&tid->z_thread, stack, stack_size, zephyr_thread_wrapper, (void *)arg,
 			      NULL, threadfunc, prio, 0, K_NO_WAIT);
 
-	if (attr->name == NULL) {
-		strncpy(tid->name, init_thread_attrs.name, sizeof(tid->name) - 1);
-	} else {
-		strncpy(tid->name, attr->name, sizeof(tid->name) - 1);
-	}
+	const char *name = (attr->name == NULL) ? init_thread_attrs.name : attr->name;
 
-	k_thread_name_set(&tid->z_thread, tid->name);
+	k_thread_name_set(&tid->z_thread, name);
 
 	return (osThreadId_t)tid;
 }
 
 /**
  * @brief Get name of a thread.
+ * This function may be called from Interrupt Service Routines.
  */
 const char *osThreadGetName(osThreadId_t thread_id)
 {
-	const char *name = NULL;
+	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 
-	if (k_is_in_isr() || (thread_id == NULL)) {
-		name = NULL;
-	} else {
-		if (is_cmsis_rtos_v2_thread(thread_id) == NULL) {
-			name = NULL;
-		} else {
-			struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
-
-			name = k_thread_name_get(&tid->z_thread);
-		}
+	if (tid == NULL) {
+		return NULL;
 	}
-
-	return name;
+	return k_thread_name_get(&tid->z_thread);
 }
 
 /**

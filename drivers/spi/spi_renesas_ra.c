@@ -41,14 +41,14 @@ struct ra_spi_data {
 	/* RX */
 	struct st_transfer_instance rx_transfer;
 	struct st_dtc_instance_ctrl rx_transfer_ctrl;
-	struct st_transfer_info rx_transfer_info;
+	struct st_transfer_info rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg rx_transfer_cfg;
 	struct st_dtc_extended_cfg rx_transfer_cfg_extend;
 
 	/* TX */
 	struct st_transfer_instance tx_transfer;
 	struct st_dtc_instance_ctrl tx_transfer_ctrl;
-	struct st_transfer_info tx_transfer_info;
+	struct st_transfer_info tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg tx_transfer_cfg;
 	struct st_dtc_extended_cfg tx_transfer_cfg_extend;
 #endif
@@ -82,6 +82,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 {
 	struct ra_spi_data *data = dev->data;
 	fsp_err_t fsp_err;
+	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
 
 	if (spi_context_configured(&data->ctx, config)) {
 		/* Nothing to do */
@@ -93,6 +94,12 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
+		return -ENOTSUP;
+	}
+
+	if (!((word_size >= 8 && word_size <= 16) || word_size == 20 || word_size == 24 ||
+	      word_size == 32)) {
+		LOG_ERR("Unsupported SPI word size: %u", word_size);
 		return -ENOTSUP;
 	}
 

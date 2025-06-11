@@ -99,6 +99,7 @@ IndentCaseLabels: false
 IndentGotoLabels: false
 IndentWidth: 8
 InsertBraces: true
+InsertNewlineAtEOF: true
 SpaceBeforeInheritanceColon: False
 SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: Never

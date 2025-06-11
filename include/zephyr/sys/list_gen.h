@@ -56,21 +56,21 @@
 
 #define Z_GENLIST_IS_EMPTY(__lname)					\
 	static inline bool						\
-	sys_ ## __lname ## _is_empty(sys_ ## __lname ## _t *list)	\
+	sys_ ## __lname ## _is_empty(const sys_ ## __lname ## _t *list)	\
 	{								\
 		return (sys_ ## __lname ## _peek_head(list) == NULL);	\
 	}
 
 #define Z_GENLIST_PEEK_NEXT_NO_CHECK(__lname, __nname)			    \
 	static inline sys_ ## __nname ## _t *				    \
-	sys_ ## __lname ## _peek_next_no_check(sys_ ## __nname ## _t *node) \
+	sys_ ## __lname ## _peek_next_no_check(const sys_ ## __nname ## _t *node) \
 	{								    \
 		return z_ ## __nname ## _next_peek(node);		    \
 	}
 
 #define Z_GENLIST_PEEK_NEXT(__lname, __nname)				     \
 	static inline sys_ ## __nname ## _t *				     \
-	sys_ ## __lname ## _peek_next(sys_ ## __nname ## _t *node)	     \
+	sys_ ## __lname ## _peek_next(const sys_ ## __nname ## _t *node)     \
 	{								     \
 		return (node != NULL) ?                                        \
 			sys_ ## __lname ## _peek_next_no_check(node) :       \
@@ -236,7 +236,8 @@
 
 #define Z_GENLIST_FIND(__lname, __nname)                                                 \
 	static inline bool sys_##__lname##_find(                                         \
-		sys_##__lname##_t *list, sys_##__nname##_t *node, sys_##__nname##_t **prev)        \
+		const sys_##__lname##_t *list, const sys_##__nname##_t *node,                      \
+		sys_##__nname##_t **prev)                                                          \
 	{                                                                                          \
 		sys_##__nname##_t *current = NULL;                                                 \
 		sys_##__nname##_t *previous = NULL;                                                \
@@ -260,7 +261,7 @@
 	}
 
 #define Z_GENLIST_LEN(__lname, __nname)                                                            \
-	static inline size_t sys_##__lname##_len(sys_##__lname##_t * list)                         \
+	static inline size_t sys_##__lname##_len(const sys_##__lname##_t * list)                   \
 	{                                                                                          \
 		size_t len = 0;                                                                    \
 		static sys_##__nname##_t * node;                                                   \

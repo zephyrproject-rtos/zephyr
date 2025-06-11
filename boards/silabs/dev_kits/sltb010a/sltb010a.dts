@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32bg22.dtsi>
+#include <silabs/xg22/efr32bg22c224f512im40.dtsi>
 #include "sltb010a-pinctrl.dtsi"
 #include "thunderboard.dtsi"
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -14,40 +14,41 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
-		sw0 = &button0;
 		spi0 = &usart0;
+		sw0 = &button0;
 		watchdog0 = &wdog0;
+
 		/* If enabled, MCUboot uses this for recovery mode entrance */
 		mcuboot-led0 = &led0;
 		mcuboot-button0 = &button0;
 	};
 
 	chosen {
-		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
 	};
 };
 
 &hfxo {
-	status = "okay";
 	ctune = <120>;
 	precision = <50>;
+	status = "okay";
 };
 
 &lfxo {
-	status = "okay";
 	ctune = <37>;
 	precision = <50>;
+	status = "okay";
 };
 
 &hfrcodpll {
 	clock-frequency = <DT_FREQ_K(76800)>;
 	clocks = <&hfxo>;
-	dpll-n = <3839>;
-	dpll-m = <1919>;
+	dpll-autorecover;
 	dpll-edge = "fall";
 	dpll-lock = "phase";
-	dpll-autorecover;
+	dpll-m = <1919>;
+	dpll-n = <3839>;
 };
 
 &em23grpaclk {
@@ -67,36 +68,36 @@
 };
 
 &dcdc {
-	status = "okay";
 	regulator-boot-on;
 	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	status = "okay";
 };
 
 &flash0 {
 	partitions {
 		/* Reserve 48 KiB for the bootloader */
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 0x0000c000>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* Reserve 224 KiB for the application in slot 0 */
 		slot0_partition: partition@c000 {
-			label = "image-0";
 			reg = <0x0000c000 0x00038000>;
+			label = "image-0";
 		};
 
 		/* Reserve 224 KiB for the application in slot 1 */
 		slot1_partition: partition@44000 {
-			label = "image-1";
 			reg = <0x00044000 0x00038000>;
+			label = "image-1";
 		};
 
 		/* Set 16 KiB of storage at the end of the 512 KiB of flash */
 		storage_partition: partition@7c000 {
-			label = "storage";
 			reg = <0x0007c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };

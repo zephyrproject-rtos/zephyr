@@ -9,6 +9,7 @@
 #include <zephyr/drivers/comparator/nrf_comp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
+#include "comparator_nrf_common.h"
 
 #define DT_DRV_COMPAT nordic_nrf_comp
 
@@ -16,16 +17,16 @@
 	_CONCAT(COMP_NRF_COMP_REFSEL_, DT_INST_STRING_TOKEN(inst, refsel))
 
 #define SHIM_NRF_COMP_DT_INST_REFSEL_IS_AREF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, refsel, AREF)
+	DT_INST_ENUM_HAS_VALUE(inst, refsel, aref)
 
 #define SHIM_NRF_COMP_DT_INST_EXTREFSEL(inst) \
 	_CONCAT(COMP_NRF_COMP_EXTREFSEL_, DT_INST_STRING_TOKEN(inst, extrefsel))
 
 #define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_SE(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, main_mode, SE)
+	DT_INST_ENUM_HAS_VALUE(inst, main_mode, se)
 
 #define SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_DIFF(inst) \
-	DT_INST_ENUM_HAS_VALUE(inst, main_mode, DIFF)
+	DT_INST_ENUM_HAS_VALUE(inst, main_mode, diff)
 
 #define SHIM_NRF_COMP_DT_INST_TH_DOWN(inst) \
 	DT_INST_PROP(inst, th_down)
@@ -66,30 +67,6 @@ struct shim_nrf_comp_data {
 	comparator_callback_t callback;
 	void *user_data;
 };
-
-#if (NRF_COMP_HAS_AIN_AS_PIN)
-static const uint32_t shim_nrf_comp_ain_map[] = {
-#if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
-	NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-#elif defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || defined(CONFIG_SOC_NRF54L15)
-	NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
-	NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
-#endif
-};
-#endif
 
 #if SHIM_NRF_COMP_DT_INST_MAIN_MODE_IS_SE(0)
 BUILD_ASSERT(SHIM_NRF_COMP_DT_INST_TH_DOWN(0) < 64);

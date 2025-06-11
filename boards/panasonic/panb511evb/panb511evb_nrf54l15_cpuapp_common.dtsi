@@ -27,12 +27,12 @@
 
 &lfxo {
 	load-capacitors = "internal";
-	load-capacitance-femtofarad = <15500>;
+	load-capacitance-femtofarad = <15000>;
 };
 
 &hfxo {
 	load-capacitors = "internal";
-	load-capacitance-femtofarad = <15000>;
+	load-capacitance-femtofarad = <16000>;
 };
 
 &regulators {

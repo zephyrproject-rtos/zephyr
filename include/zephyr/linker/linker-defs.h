@@ -37,6 +37,18 @@
 #include <zephyr/devicetree.h>
 #endif
 
+/* The GCC for Renesas RX processors adds leading underscores to C-symbols
+ * by default. As a workaroud for symbols defined in linker scripts to be
+ * available in C code, an alias with a leading underscore has to be provided.
+ */
+#if defined(CONFIG_RX)
+#define PLACE_SYMBOL_HERE(symbol)                                                                  \
+	symbol = .;                                                                                \
+	PROVIDE(_CONCAT(_, symbol) = symbol)
+#else
+#define PLACE_SYMBOL_HERE(symbol) symbol = .
+#endif
+
 #ifdef _LINKER
 /*
  * generate a symbol to mark the start of the objects array for
@@ -44,9 +56,10 @@
  * (sorted by priority). Ensure the objects aren't discarded if there is
  * no direct reference to them
  */
+
 /* clang-format off */
 #define CREATE_OBJ_LEVEL(object, level)				\
-		__##object##_##level##_start = .;		\
+		PLACE_SYMBOL_HERE(__##object##_##level##_start);\
 		KEEP(*(SORT(.z_##object##_##level##_P_?_*)));	\
 		KEEP(*(SORT(.z_##object##_##level##_P_??_*)));	\
 		KEEP(*(SORT(.z_##object##_##level##_P_???_*)));
@@ -154,6 +167,12 @@ extern char _vector_end[];
 extern char __vector_relay_table[];
 #endif
 
+#ifdef CONFIG_SRAM_VECTOR_TABLE
+extern char _sram_vector_start[];
+extern char _sram_vector_end[];
+extern char _sram_vector_size[];
+#endif
+
 #ifdef CONFIG_COVERAGE_GCOV
 extern char __gcov_bss_start[];
 extern char __gcov_bss_end[];
@@ -225,6 +244,7 @@ extern char __sg_size[];
 extern char _nocache_ram_start[];
 extern char _nocache_ram_end[];
 extern char _nocache_ram_size[];
+extern char _nocache_load_start[];
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 /* Memory owned by the kernel. Start and end will be aligned for memory

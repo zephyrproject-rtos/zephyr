@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CH32V00X_SYSTICK
-	bool "CH32V00X systick timer"
-	depends on SOC_CH32V003 || SOC_SERIES_QINGKE_V4C
+	bool "CH32V QingKe core systick timer"
+	depends on SOC_SERIES_QINGKE_V2A || SOC_SERIES_QINGKE_V4C || SOC_SERIES_CH32V00X || SOC_SERIES_QINGKE_V4B || SOC_SERIES_QINGKE_V4F
 	default y
 	depends on DT_HAS_WCH_SYSTICK_ENABLED

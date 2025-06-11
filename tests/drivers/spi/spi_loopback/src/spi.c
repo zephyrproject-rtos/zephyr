@@ -15,6 +15,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -41,6 +42,21 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 static struct spi_dt_spec *loopback_specs[2] = {&spi_slow, &spi_fast};
 static char *spec_names[2] = {"SLOW", "FAST"};
 static int spec_idx;
+
+/* Driver may need to reconfigure due to different spi config for the
+ * some of the tests. If we use the same memory location for the spec,
+ * it will be treated like the same owner of the bus as previously,
+ * and many drivers will think it is the same spec and skip reconfiguring.
+ * Even declaring a copy of the spec on the stack will most likely have it end up at the same
+ * location on the stack every time and have the same problem.
+ * It's not clear from the API if this is expected but it is a common trick that is de facto
+ * standardized by the use of the private spi_context header, so for now consider it
+ * expected behavior in this test, and write the test accordingly. The point of those cases is
+ * not to test the specifics of bus ownership in the API, so we just deal with it.
+ */
+struct spi_dt_spec spec_copies[5];
+
+
 
 /*
  ********************
@@ -71,6 +87,18 @@ static const char large_tx_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydo
 static __aligned(32) char large_buffer_tx[BUF3_SIZE] __NOCACHE;
 static __aligned(32) char large_buffer_rx[BUF3_SIZE] __NOCACHE;
 
+#define BUFWIDE_SIZE 12
+static const uint16_t tx_data_16[] = {0x1234, 0x5678, 0x9ABC, 0xDEF0,
+				      0xFF00, 0x00FF, 0xAAAA, 0x5555,
+				      0xF0F0, 0x0F0F, 0xA5A5, 0x5A5A};
+static __aligned(32) uint16_t buffer_tx_16[BUFWIDE_SIZE] __NOCACHE;
+static __aligned(32) uint16_t buffer_rx_16[BUFWIDE_SIZE] __NOCACHE;
+static const uint32_t tx_data_32[] = {0x12345678, 0x56781234, 0x9ABCDEF0, 0xDEF09ABC,
+				      0xFFFF0000, 0x0000FFFF, 0x00FF00FF, 0xFF00FF00,
+				      0xAAAA5555, 0x5555AAAA, 0xAA55AA55, 0x55AA55AA};
+static __aligned(32) uint32_t buffer_tx_32[BUFWIDE_SIZE] __NOCACHE;
+static __aligned(32) uint32_t buffer_rx_32[BUFWIDE_SIZE] __NOCACHE;
+
 /*
  ********************
  * Helper functions *
@@ -99,14 +127,83 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), cs_loopback_gpios)
+
+static const struct gpio_dt_spec cs_loopback_gpio =
+			GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), cs_loopback_gpios, {0});
+static struct gpio_callback cs_cb_data;
+static K_SEM_DEFINE(cs_sem, 0, UINT_MAX);
+
+static void spi_loopback_gpio_cs_loopback_prepare(void)
+{
+	k_sem_reset(&cs_sem);
+}
+
+static int spi_loopback_gpio_cs_loopback_check(int expected_triggers)
+{
+	return k_sem_count_get(&cs_sem) != expected_triggers;
+}
+
+static void cs_callback(const struct device *port,
+		     struct gpio_callback *cb,
+		     gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(pins);
+
+	/* Give semaphore to indicate CS triggered */
+	k_sem_give(&cs_sem);
+}
+
+static int spi_loopback_gpio_cs_loopback_init(void)
+{
+	const struct gpio_dt_spec *gpio = &cs_loopback_gpio;
+	int ret;
+
+	if (!gpio_is_ready_dt(gpio)) {
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+	if (ret) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_BOTH);
+	if (ret) {
+		return ret;
+	}
+
+	gpio_init_callback(&cs_cb_data, cs_callback, BIT(gpio->pin));
+
+	return gpio_add_callback(gpio->port, &cs_cb_data);
+}
+#else
+#define spi_loopback_gpio_cs_loopback_init(...) (0)
+#define spi_loopback_gpio_cs_loopback_prepare(...)
+#define spi_loopback_gpio_cs_loopback_check(...) (0)
+#endif
+
 /* just a wrapper of the driver transceive call with ztest error assert */
 static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 				    const struct spi_buf_set *const tx,
 				    const struct spi_buf_set *const rx)
 {
-	int ret = spi_transceive_dt(spec, tx, rx);
+	int ret;
 
-	zassert_false(ret, "SPI transceive failed, code %d", ret);
+	zassert_ok(pm_device_runtime_get(spec->bus));
+	spi_loopback_gpio_cs_loopback_prepare();
+	ret = spi_transceive_dt(spec, tx, rx);
+	if (ret == -EINVAL || ret == -ENOTSUP) {
+		TC_PRINT("Spi config invalid for this controller\n");
+		zassert_ok(pm_device_runtime_put(spec->bus));
+		ztest_test_skip();
+	}
+	zassert_ok(ret, "SPI transceive failed, code %d", ret);
+	/* There should be two CS triggers during the transaction, start and end */
+	zassert_false(spi_loopback_gpio_cs_loopback_check(2));
+	zassert_ok(pm_device_runtime_put(spec->bus));
 }
 
 /* The most spi buf currently used by any test case is 4, change if needed */
@@ -180,18 +277,146 @@ ZTEST(spi_loopback, test_spi_complete_multiple)
 				  buffer_print_tx2, buffer_print_rx2);
 }
 
-ZTEST(spi_loopback, test_spi_complete_loop)
+/* same as the test_spi_complete_multiple test, but seeing if there is any unreasonable latency */
+ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 2,
+							      buffer_tx, BUF_SIZE,
+							      buffer2_tx, BUF2_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
+							      buffer_rx, BUF_SIZE,
+							      buffer2_rx, BUF2_SIZE);
+	uint32_t freq = spec->config.frequency;
+	uint32_t start_time, end_time, cycles_spent;
+	uint64_t time_spent_us, expected_transfer_time_us, latency_measurement;
+
+	/*
+	 * spi_loopback_transceive() does an inline pm_device_runtime_get(), but since we are
+	 * timing the transfer, we need to get the SPI controller before we start the measurement.
+	 */
+	zassert_ok(pm_device_runtime_get(spec->bus));
+
+	/* since this is a test program, there shouldn't be much to interfere with measurement */
+	start_time = k_cycle_get_32();
+	spi_loopback_transceive(spec, &tx, &rx);
+	end_time = k_cycle_get_32();
+
+	zassert_ok(pm_device_runtime_put(spec->bus));
+
+	if (end_time >= start_time) {
+		cycles_spent = end_time - start_time;
+	} else {
+		/* number of cycles from start to counter reset + rest of cycles */
+		cycles_spent = (UINT32_MAX - start_time) + end_time;
+	}
+
+	time_spent_us = k_cyc_to_us_ceil64(cycles_spent);
+
+	/* Number of bits to transfer * usec per bit */
+	expected_transfer_time_us = (uint64_t)(BUF_SIZE + BUF2_SIZE) * BITS_PER_BYTE *
+						USEC_PER_SEC / freq;
+
+	TC_PRINT("Transfer took %llu us vs theoretical minimum %llu us\n",
+			time_spent_us, expected_transfer_time_us);
+
+	/* For comparing the lower bound, some kernel timer implementations
+	 * do not actually update the elapsed cycles until a tick boundary,
+	 * so we need to account for that by subtracting one tick from the comparison metric
+	 */
+	uint64_t us_per_kernel_tick = k_ticks_to_us_ceil64(1);
+	uint32_t minimum_transfer_time_us;
+
+	if (expected_transfer_time_us > us_per_kernel_tick) {
+		minimum_transfer_time_us = expected_transfer_time_us - us_per_kernel_tick;
+	} else {
+		minimum_transfer_time_us = 0;
+	}
+
+	/* Fail if transfer is faster than theoretically possible */
+	zassert_true(time_spent_us >= minimum_transfer_time_us,
+		     "Transfer faster than theoretically possible");
+
+	/* handle overflow for print statement */
+	latency_measurement = time_spent_us - expected_transfer_time_us;
+	if (latency_measurement > time_spent_us) {
+		latency_measurement = 0;
+	}
+	TC_PRINT("Latency measurement: %llu us\n", latency_measurement);
+
+	/* Allow some overhead, but not too much */
+	zassert_true(time_spent_us <=
+			     expected_transfer_time_us * CONFIG_SPI_IDEAL_TRANSFER_DURATION_SCALING,
+		     "Very high latency");
+
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+	spi_loopback_compare_bufs(buffer2_tx, buffer2_rx, BUF2_SIZE,
+				  buffer_print_tx2, buffer_print_rx2);
+}
+
+void spi_loopback_test_mode(struct spi_dt_spec *spec, bool cpol, bool cpha)
+{
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
 							      buffer_tx, BUF_SIZE);
 	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
 							      buffer_rx, BUF_SIZE);
+	uint32_t original_op = spec->config.operation;
+
+	if (cpol) {
+		spec->config.operation |= SPI_MODE_CPOL;
+	} else {
+		spec->config.operation &= ~SPI_MODE_CPOL;
+	}
+
+	if (cpha) {
+		spec->config.operation |= SPI_MODE_CPHA;
+	} else {
+		spec->config.operation &= ~SPI_MODE_CPHA;
+	}
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
+	spec->config.operation = original_op;
+
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
-				  buffer_print_tx, buffer_print_rx);
+		buffer_print_tx, buffer_print_rx);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_0)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[0];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, false, false);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_1)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[1];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, false, true);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_2)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[2];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, true, false);
+}
+
+ZTEST(spi_loopback, test_spi_complete_loop_mode_3)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	struct spi_dt_spec *spec_copy = &spec_copies[3];
+	*spec_copy = *spec;
+
+	spi_loopback_test_mode(spec_copy, true, true);
 }
 
 ZTEST(spi_loopback, test_spi_null_tx_buf)
@@ -321,6 +546,30 @@ ZTEST(spi_loopback, test_spi_complete_large_transfers)
 			"Large Buffer contents are different");
 }
 
+ZTEST(spi_loopback, test_spi_null_tx_buf_set)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	static const uint8_t expected_nop_return_buf[BUF_SIZE] = { 0 };
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
+
+	(void)memset(buffer_rx, 0x77, BUF_SIZE);
+
+	spi_loopback_transceive(spec, NULL, &rx);
+
+	spi_loopback_compare_bufs(expected_nop_return_buf, buffer_rx, BUF_SIZE,
+				  buffer_print_rx, buffer_print_rx);
+}
+
+ZTEST(spi_loopback, test_spi_null_rx_buf_set)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+
+	spi_loopback_transceive(spec, &tx, NULL);
+}
+
 ZTEST(spi_loopback, test_nop_nil_bufs)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
@@ -330,6 +579,240 @@ ZTEST(spi_loopback, test_nop_nil_bufs)
 	spi_loopback_transceive(spec, &tx, &rx);
 
 	/* nothing really to check here, check is done in spi_loopback_transceive */
+}
+
+/* test using the same buffer for RX and TX will write same data back */
+ZTEST(spi_loopback, test_spi_write_back)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      buffer_rx, BUF_SIZE);
+
+	memcpy(buffer_rx, tx_data, sizeof(tx_data));
+
+	spi_loopback_transceive(spec, &tx, &rx);
+
+	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+}
+
+/* similar to test_spi_write_back, simulates the real common case of 1 word command */
+ZTEST(spi_loopback, test_spi_same_buf_cmd)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
+							      buffer_rx, 1,
+							      NULL, BUF_SIZE - 1);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      NULL, BUF_SIZE - 1,
+							      buffer_rx+(BUF_SIZE - 1), 1);
+
+	memcpy(buffer_rx, tx_data, sizeof(tx_data));
+
+	spi_loopback_transceive(spec, &tx, &rx);
+
+	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
+				  buffer_print_tx, buffer_print_rx);
+}
+
+
+static void spi_loopback_test_word_size(struct spi_dt_spec *spec,
+					const void *tx_data,
+					void *rx_buffer,
+					const void *compare_data,
+					size_t buffer_size,
+					struct spi_dt_spec *spec_copy,
+					uint8_t word_size)
+{
+	struct spi_config config_copy = spec->config;
+
+	config_copy.operation &= ~SPI_WORD_SIZE_MASK;
+	config_copy.operation |= SPI_WORD_SET(word_size);
+	spec_copy->config = config_copy;
+	spec_copy->bus = spec->bus;
+
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      tx_data, buffer_size);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      rx_buffer, buffer_size);
+
+	spi_loopback_transceive(spec_copy, &tx, &rx);
+
+	zassert_false(memcmp(compare_data, rx_buffer, buffer_size),
+		      "%d-bit word buffer contents are different", word_size);
+}
+
+/* Test case for 7-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_7)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_test_word_size(spec, tx_data, buffer_rx, tx_data,
+				    sizeof(tx_data), &spec_copies[0], 7);
+}
+
+/* Test case for 9-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_9)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	static __aligned(32) uint16_t tx_data_9[BUFWIDE_SIZE];
+
+	for (int i = 0; i < BUFWIDE_SIZE; i++) {
+		tx_data_9[i] = tx_data_16[i] & 0x1FF;
+	}
+
+	spi_loopback_test_word_size(spec, tx_data_9, buffer_rx_16, tx_data_9,
+				    sizeof(tx_data_9), &spec_copies[1], 9);
+}
+
+/* Test case for 16-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_16)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_test_word_size(spec, buffer_tx_16, buffer_rx_16, tx_data_16,
+				    sizeof(buffer_tx_16), &spec_copies[2], 16);
+}
+
+/* Test case for 24-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_24)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	static __aligned(32) uint32_t tx_data_24[BUFWIDE_SIZE];
+
+	for (int i = 0; i < BUFWIDE_SIZE; i++) {
+		tx_data_24[i] = tx_data_32[i] & 0xFFFFFF;
+	}
+
+	spi_loopback_test_word_size(spec, tx_data_24, buffer_rx_32, tx_data_24,
+				    sizeof(tx_data_24), &spec_copies[3], 24);
+}
+
+/* Test case for 32-bit word size transfers */
+ZTEST(spi_loopback, test_spi_word_size_32)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_test_word_size(spec, buffer_tx_32, buffer_rx_32, tx_data_32,
+				    sizeof(buffer_tx_32), &spec_copies[4], 32);
+}
+
+static K_THREAD_STACK_DEFINE(thread_stack[3], CONFIG_ZTEST_STACK_SIZE +
+					      CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread thread[3];
+
+static K_SEM_DEFINE(thread_sem, 0, 3);
+static K_SEM_DEFINE(sync_sem, 0, 1);
+
+static uint8_t __aligned(32) tx_buffer[3][32];
+static uint8_t __aligned(32) rx_buffer[3][32];
+
+atomic_t thread_test_fails;
+
+static void spi_transfer_thread(void *p1, void *p2, void *p3)
+{
+	struct spi_dt_spec *spec = (struct spi_dt_spec *)p1;
+	uint8_t *tx_buf_ptr = (uint8_t *)p2;
+	uint8_t *rx_buf_ptr = (uint8_t *)p3;
+	int ret = 0;
+
+	/* Wait for all threads to be ready */
+	k_sem_give(&thread_sem);
+	/* Perform SPI transfer */
+	const struct spi_buf_set tx_bufs = {
+		.buffers = &(struct spi_buf) {
+			.buf = tx_buf_ptr,
+			.len = 32,
+		},
+		.count = 1,
+	};
+	const struct spi_buf_set rx_bufs = {
+		.buffers = &(struct spi_buf) {
+			.buf = rx_buf_ptr,
+			.len = 32,
+		},
+		.count = 1,
+	};
+
+	k_sem_take(&sync_sem, K_FOREVER);
+
+	ret = spi_transceive_dt(spec, &tx_bufs, &rx_bufs);
+	if (ret) {
+		TC_PRINT("SPI concurrent transfer failed, spec %p\n", spec);
+		atomic_inc(&thread_test_fails);
+	}
+
+	ret = memcmp(tx_buf_ptr, rx_buf_ptr, 32);
+	if (ret) {
+		TC_PRINT("SPI concurrent transfer data mismatch, spec %p\n", spec);
+		atomic_inc(&thread_test_fails);
+	}
+}
+
+/* Test case for concurrent SPI transfers */
+static void test_spi_concurrent_transfer_helper(struct spi_dt_spec **specs)
+{
+	/* Create three threads */
+	for (int i = 0; i < 3; i++) {
+		memset(tx_buffer[i], 0xaa, sizeof(tx_buffer[i]));
+		memset(rx_buffer[i], 0, sizeof(rx_buffer[i]));
+		k_thread_create(&thread[i], thread_stack[i],
+				K_THREAD_STACK_SIZEOF(thread_stack[i]),
+				spi_transfer_thread, specs[i],
+				tx_buffer[i], rx_buffer[i],
+				K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+	}
+
+	/* Wait for all threads to be ready */
+	for (int i = 0; i < 3; i++) {
+		k_sem_take(&thread_sem, K_FOREVER);
+	}
+
+	atomic_set(&thread_test_fails, 0);
+
+	/* Start all threads simultaneously */
+	for (int i = 0; i < 3; i++) {
+		k_sem_give(&sync_sem);
+	}
+
+	/* Wait for threads to complete */
+	for (int i = 0; i < 3; i++) {
+		k_thread_join(&thread[i], K_FOREVER);
+	}
+
+	zassert_equal(atomic_get(&thread_test_fails), 0);
+}
+
+/* test for multiple threads accessing the driver / bus with the same spi_config */
+ZTEST(spi_loopback, test_spi_concurrent_transfer_same_spec)
+{
+	struct spi_dt_spec *specs[3] = {
+		loopback_specs[spec_idx],
+		loopback_specs[spec_idx],
+		loopback_specs[spec_idx]
+	};
+	test_spi_concurrent_transfer_helper(specs);
+}
+
+/* test for multiple threads accessing the driver / bus with different spi_config
+ * (different address of the config is what's important here
+ */
+ZTEST(spi_loopback, test_spi_concurrent_transfer_different_spec)
+{
+	struct spi_dt_spec *specs[3] = {
+		&spec_copies[0],
+		&spec_copies[1],
+		&spec_copies[2]
+	};
+	spec_copies[0] = *loopback_specs[spec_idx];
+	spec_copies[1] = *loopback_specs[spec_idx];
+	spec_copies[2] = *loopback_specs[spec_idx];
+
+	test_spi_concurrent_transfer_helper(specs);
 }
 
 #if (CONFIG_SPI_ASYNC)
@@ -419,13 +902,74 @@ ZTEST(spi_extra_api_features, test_spi_lock_release)
 
 	lock_spec->config.operation |= SPI_LOCK_ON;
 
+	zassert_ok(pm_device_runtime_get(lock_spec->bus));
 	spi_loopback_transceive(lock_spec, &tx, &rx);
-
 	zassert_false(spi_release_dt(lock_spec), "SPI release failed");
+	zassert_ok(pm_device_runtime_put(lock_spec->bus));
 
 	spi_loopback_transceive(try_spec, &tx, &rx);
 
 	lock_spec->config.operation &= ~SPI_LOCK_ON;
+}
+
+ZTEST(spi_extra_api_features, test_spi_hold_on_cs)
+{
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      NULL, BUF_SIZE);
+	struct spi_dt_spec *hold_spec = &spi_slow;
+	int ret = 0;
+
+	hold_spec->config.operation |= SPI_HOLD_ON_CS;
+
+	spi_loopback_gpio_cs_loopback_prepare();
+	ret = spi_transceive_dt(hold_spec, &tx, &rx);
+	if (ret == -ENOTSUP || ret == -EINVAL) {
+		TC_PRINT("SPI hold on CS not supported");
+		ret = 0;
+		goto early_exit;
+	} else if (ret) {
+		goto early_exit;
+	}
+	/* Should get start assertion is 1 CS edge but no end */
+	if (spi_loopback_gpio_cs_loopback_check(1)) {
+		ret = -EIO;
+		goto early_exit;
+	}
+
+	spi_loopback_gpio_cs_loopback_prepare();
+	ret = spi_transceive_dt(hold_spec, &tx, &rx);
+	if (ret) {
+		goto early_exit;
+	}
+	/* CS is already asserted, and we still have hold on, so no edges */
+	if (spi_loopback_gpio_cs_loopback_check(0)) {
+		ret = -EIO;
+		goto early_exit;
+	}
+
+	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
+
+	spi_loopback_gpio_cs_loopback_prepare();
+	ret = spi_transceive_dt(hold_spec, &tx, &rx);
+	if (ret) {
+		goto early_exit;
+	}
+	/* This time we don't have hold flag but it starts held, so only end trigger */
+	if (spi_loopback_gpio_cs_loopback_check(1)) {
+		ret = -EIO;
+		goto early_exit;
+	}
+
+	/* now just do a normal transfer to make sure there was no leftover effects */
+	spi_loopback_transceive(hold_spec, &tx, &rx);
+
+	return;
+
+early_exit:
+	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
+	zassert_false(ret, "SPI transceive failed, code %d", ret);
 }
 
 /*
@@ -442,6 +986,10 @@ static void *spi_loopback_common_setup(void)
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
 	memset(large_buffer_tx, 0, sizeof(large_buffer_tx));
 	memcpy(large_buffer_tx, large_tx_data, sizeof(large_tx_data));
+	memset(buffer_tx_16, 0, sizeof(buffer_tx_16));
+	memcpy(buffer_tx_16, tx_data_16, sizeof(tx_data_16));
+	memset(buffer_tx_32, 0, sizeof(buffer_tx_32));
+	memcpy(buffer_tx_32, tx_data_32, sizeof(tx_data_32));
 	return NULL;
 }
 
@@ -463,6 +1011,7 @@ static void run_after_lock(void *unused)
 	spi_release_dt(&spi_slow);
 	spi_slow.config.operation &= ~SPI_LOCK_ON;
 	spi_fast.config.operation &= ~SPI_LOCK_ON;
+	spi_slow.config.operation &= ~SPI_HOLD_ON_CS;
 }
 
 ZTEST_SUITE(spi_loopback, NULL, spi_loopback_setup, NULL, NULL, run_after_suite);
@@ -494,6 +1043,8 @@ void test_main(void)
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
+
+	zassert_false(spi_loopback_gpio_cs_loopback_init());
 
 	ztest_run_all(NULL, false, ARRAY_SIZE(loopback_specs), 1);
 

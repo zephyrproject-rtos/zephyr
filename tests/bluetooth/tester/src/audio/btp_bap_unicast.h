@@ -7,9 +7,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
+#include <zephyr/sys/util.h>
+
+#include "btp_bap_audio_stream.h"
 
 #define BTP_BAP_UNICAST_MAX_SNK_STREAMS_COUNT MIN(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT, \
 						  CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT)

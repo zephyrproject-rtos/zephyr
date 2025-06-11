@@ -1,10 +1,12 @@
 # Copyright (c) 2022 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+title: Renesas SmartBond Pin Controller
+
 description: |
-    The SmartBond pin controller is a singleton node responsible for controlling
-    pin function selection and pin properties, such as routing a UART RX to pin
-    P1.8 and enabling the pullup resistor on that pin.
+    Singleton node responsible for controlling pin function selection and pin
+    properties, such as routing a UART RX to pin P1.8 and enabling the pullup
+    resistor on that pin.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
     so you can modify it like this:

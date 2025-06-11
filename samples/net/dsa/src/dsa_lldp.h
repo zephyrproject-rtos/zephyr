@@ -46,7 +46,7 @@ static inline void dsa_buf_write_be16(uint16_t tl, uint8_t **p)
 	(*p)++;
 }
 
-int start_slave_port_packet_socket(struct net_if *iface, struct instance_data *pd);
+int start_user_port_packet_socket(struct net_if *iface, struct instance_data *pd);
 
 enum net_verdict dsa_ll_addr_switch_cb(struct net_if *iface, struct net_pkt *pkt);
 
@@ -74,9 +74,9 @@ void dsa_lldp(struct ud *user_data);
 		iface = user_data.lan[ID - 1];                                                     \
                                                                                                    \
 		data.if_name = "lan" #ID;                                                          \
-		ret = start_slave_port_packet_socket(iface, &data);                                \
+		ret = start_user_port_packet_socket(iface, &data);                                \
 		if (ret < 0) {                                                                     \
-			LOG_ERR("start_slave_port_packet_socket failed %d", ret);                  \
+			LOG_ERR("start_user_port_packet_socket failed %d", ret);                  \
 			return;                                                                    \
 		}                                                                                  \
 		dsa_register_recv_callback(iface, dsa_ll_addr_switch_cb);                          \

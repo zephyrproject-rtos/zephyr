@@ -1,0 +1,12 @@
+sample:
+  name: CDC ACM USB bridge
+tests:
+  sample.usb.cdc-acm-bridge.arduino_serial:
+    tags: usb
+    build_only: true
+    depends_on: usbd arduino_serial
+  sample.usb.cdc-acm-bridge.two_devices:
+    tags: usb
+    build_only: true
+    platform_allow:
+      - rpi_pico

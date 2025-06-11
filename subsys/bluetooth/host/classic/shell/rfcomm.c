@@ -232,6 +232,42 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_send_rpn(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct bt_rfcomm_rpn rpn;
+
+	if (!rfcomm_dlc.session) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	/* Initialize RPN with default values */
+	memset(&rpn, 0, sizeof(rpn));
+
+	/* Set default values for RPN parameters */
+	rpn.baud_rate = BT_RFCOMM_RPN_BAUD_RATE_9600;
+	rpn.line_settings = BT_RFCOMM_SET_LINE_SETTINGS(
+		BT_RFCOMM_RPN_DATA_BITS_8,
+		BT_RFCOMM_RPN_STOP_BITS_1,
+		BT_RFCOMM_RPN_PARITY_NONE);
+	rpn.flow_control = BT_RFCOMM_RPN_FLOW_NONE;
+	rpn.xon_char = BT_RFCOMM_RPN_XON_CHAR;
+	rpn.xoff_char = BT_RFCOMM_RPN_XOFF_CHAR;
+	rpn.param_mask = BT_RFCOMM_RPN_PARAM_MASK_ALL;
+
+	shell_print(sh, "Sending RFCOMM RPN command with default settings");
+
+	err = bt_rfcomm_send_rpn_cmd(&rfcomm_dlc, &rpn);
+	if (err < 0) {
+		shell_error(sh, "Unable to send RPN command: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "RFCOMM RPN command sent successfully");
+	return 0;
+}
+
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
@@ -240,6 +276,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(rfcomm_cmds,
 	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(send, NULL, "<number of packets>", cmd_send, 2, 0),
+	SHELL_CMD_ARG(rpn, NULL, "Send RPN command with default settings", cmd_send_rpn, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

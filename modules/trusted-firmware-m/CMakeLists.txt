@@ -246,6 +246,11 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
   endif()
 
+  if(CONFIG_BOARD_MAX32657EVKIT_MAX32657_NS)
+    # Supply path to hal_adi for TF-M build
+    list(APPEND TFM_CMAKE_ARGS -DHAL_ADI_PATH=${ZEPHYR_ADI_MODULE_DIR})
+  endif()
+
   if(CONFIG_TFM_BL2 AND CONFIG_TFM_MCUBOOT_PATH_LOCAL)
     # Supply path to MCUboot for TF-M build
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR})
@@ -289,7 +294,7 @@ if (CONFIG_BUILD_WITH_TFM)
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
-      -DCMSIS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/cmsis
+      -DCMSIS_PATH=${ZEPHYR_CMSIS_6_MODULE_DIR}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
     COMMAND_EXPAND_LISTS
@@ -309,6 +314,9 @@ if (CONFIG_BUILD_WITH_TFM)
 	# Leave PARALLEL_JOBS unset and use the default number of
 	# threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
   endif()
+
+  set(tfm_image_info MAP "name: tfm, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
+  build_info(images VALUE ${tfm_image_info})
 
   ExternalProject_Add(
     tfm

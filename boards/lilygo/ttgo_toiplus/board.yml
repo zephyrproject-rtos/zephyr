@@ -1,0 +1,6 @@
+board:
+  name: ttgo_toiplus
+  full_name: TTGO T-OI-PLUS
+  vendor: lilygo
+  socs:
+  - name: esp32c3

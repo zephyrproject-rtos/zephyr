@@ -14,9 +14,7 @@
 
 static void remove_one_char(char *str)
 {
-	int i;
-
-	for (i = 0; str[i] != 0; i++) {
+	for (int i = 0; str[i] != 0; i++) {
 		str[i] = str[i+1];
 	}
 }

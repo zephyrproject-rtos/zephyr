@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: VIRTIO over PCI
+
+compatible: "virtio,pci"
+
+include: [base.yaml, pcie-device.yaml]

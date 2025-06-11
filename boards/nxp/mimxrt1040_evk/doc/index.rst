@@ -293,7 +293,7 @@ steps:
 Bluetooth Module
 ----------------
 
-For Murate 2EL M.2 Mdoule, the following hardware rework needs to be applied,
+For the :ref:`nxp_m2_wifi_bt` shield, the following hardware rework needs to be applied,
 Solder 0 ohm resistors for R96, and R93.
 Remove resistors from R497, R498, R456 and R457.
 

@@ -6,8 +6,11 @@
 
 #include <st/n6/stm32n657X0.dtsi>
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
+#include "zephyr/dt-bindings/display/panel.h"
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-22pins-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include "arduino_r3_connector.dtsi"
 
 / {
@@ -16,11 +19,20 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
+		zephyr,display = &ltdc;
+		zephyr,touch = &gt911;
 		spi-flash0 = &mx66uw1g45g;
 	};
 
 	aliases {
 		led0 = &green_led_1;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911>;
+		display = <&ltdc>;
+		invert-y;
 	};
 
 	psram: memory@90000000 {
@@ -43,6 +55,37 @@
 			label = "User LD2";
 		};
 	};
+
+	csi_22pins_connector: connector_csi_22pins {
+		compatible = "raspberrypi,csi-22pins-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_22PINS_IO0  0 &gpioc 8  0>,
+			   <CSI_22PINS_IO1  0 &gpiod 2  0>;
+	};
+};
+
+&i2c2 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB1, 22)>,
+		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
+	pinctrl-0 = <&i2c2_scl_pd14 &i2c2_sda_pd4>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+	};
+};
+
+&clk_hse {
+	hse-div2;
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
 };
 
 &clk_hsi {
@@ -51,6 +94,33 @@
 };
 
 &pll1 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <150>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+&pll2 {
+	clocks = <&clk_hsi>;
+	div-m = <2>;
+	mul-n = <48>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+&pll3 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <125>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+&pll4 {
 	clocks = <&clk_hsi>;
 	div-m = <4>;
 	mul-n = <75>;
@@ -59,35 +129,32 @@
 	status = "okay";
 };
 
-&pll2 {
-	clocks = <&clk_hsi>;
-	div-m = <4>;
-	mul-n = <24>;
-	div-p1 = <2>;
-	div-p2 = <2>;
-	status = "okay";
-};
-
 &ic1 {
-	pll-src = <1>;
-	ic-div = <2>;
-	status = "okay";
-};
-
-&ic2 {
 	pll-src = <1>;
 	ic-div = <3>;
 	status = "okay";
 };
 
+&ic2 {
+	pll-src = <1>;
+	ic-div = <6>;
+	status = "okay";
+};
+
+&ic3 {
+	pll-src = <1>;
+	ic-div = <6>;
+	status = "okay";
+};
+
 &ic4 {
 	pll-src = <2>;
-	ic-div = <2>;
+	ic-div = <32>;
 	status = "okay";
 };
 
 &ic6 {
-	pll-src = <1>;
+	pll-src = <3>;
 	ic-div = <2>;
 	status = "okay";
 };
@@ -98,6 +165,24 @@
 	status = "okay";
 };
 
+&ic16 {
+	pll-src = <4>;
+	ic-div = <60>;
+	status = "okay";
+};
+
+&ic17 {
+	pll-src = <1>;
+	ic-div = <4>;
+	status = "okay";
+};
+
+&ic18 {
+	pll-src = <1>;
+	ic-div = <60>;
+	status = "okay";
+};
+
 &perck {
 	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
 	status = "okay";
@@ -105,7 +190,7 @@
 
 &cpusw {
 	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
-	clock-frequency = <DT_FREQ_M(600)>;
+	clock-frequency = <DT_FREQ_M(800)>;
 	status = "okay";
 };
 
@@ -114,10 +199,7 @@
 	clocks = <&ic2>;
 	clock-frequency = <DT_FREQ_M(400)>;
 	ahb-prescaler = <2>;
-	apb1-prescaler = <1>;
-	apb2-prescaler = <1>;
-	apb4-prescaler = <1>;
-	apb5-prescaler = <1>;
+	timg-prescaler = <2>;
 };
 
 &adc1 {
@@ -137,7 +219,7 @@
 	status = "okay";
 };
 
-&i2c1 {
+csi_22pins_i2c: &i2c1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 21)>,
 		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
 	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
@@ -164,8 +246,9 @@
 			&sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
 	pinctrl-names = "default";
 	bus-width = <4>;
-	cd-gpios = <&gpion 8 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
+	disk-name = "SD";
 };
 
 &spi5 {
@@ -194,6 +277,10 @@
 	status = "okay";
 };
 
+zephyr_udc0: &usbotg_hs1 {
+	status = "okay";
+};
+
 &xspi1 {
 	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
 		     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
@@ -204,11 +291,16 @@
 		     &xspim_p1_io12_pp12 &xspim_p1_io13_pp13 &xspim_p1_io14_pp14
 		     &xspim_p1_io15_pp15>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
+		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	memc: aps256xxn_obr: memory@90000000 {
+	memc: aps256xxn_obr: memory@0 {
 		compatible = "st,stm32-xspi-psram";
-		reg = <0x90000000 DT_SIZE_M(32)>; /* 256 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		max-frequency = <DT_FREQ_M(200)>;
 		fixed-latency;
 		io-x16-mode;
 		read-latency = <4>;
@@ -224,11 +316,15 @@
 		     &xspim_p2_io3_pn5 &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
+		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
-	mx66uw1g45g: ospi-nor-flash@70000000 {
+	mx66uw1g45g: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
-		reg = <0x70000000 DT_SIZE_M(128)>; /* 1 Gbits */
+		reg = <0>;
+		size = <DT_SIZE_M(1024)>; /* 1Gbits */
 		ospi-max-frequency = <DT_FREQ_M(200)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
@@ -277,5 +373,58 @@
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x0>;
+	};
+};
+
+&ltdc {
+	clocks = <&rcc STM32_CLOCK(APB5, 1)>,
+		 <&rcc STM32_SRC_IC16 LTDC_SEL(2)>;
+	pinctrl-0 = <&ltdc_r0_pg0 &ltdc_r1_pd9 &ltdc_r2_pd15 &ltdc_r3_pb4
+			&ltdc_r4_ph4 &ltdc_r5_pa15 &ltdc_r6_pg11 &ltdc_r7_pd8
+			&ltdc_g0_pg12 &ltdc_g1_pg1 &ltdc_g2_pa1 &ltdc_g3_pa0
+			&ltdc_g4_pb15 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pg8
+			&ltdc_b0_pg15 &ltdc_b1_pa7 &ltdc_b2_pb2 &ltdc_b3_pg6
+			&ltdc_b4_ph3 &ltdc_b5_ph6 &ltdc_b6_pa8 &ltdc_b7_pa2
+			&ltdc_de_pg13 &ltdc_clk_pb13 &ltdc_hsync_pb14 &ltdc_vsync_pe11>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioq 3 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpioq 6 GPIO_ACTIVE_HIGH>;
+
+	ext-sdram = <&psram>;
+
+	status = "okay";
+
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <4>;
+		vsync-len = <4>;
+		hback-porch = <8>;
+		vback-porch = <8>;
+		hfront-porch = <8>;
+		vfront-porch = <8>;
+	};
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+};
+
+csi_22pins_interface: &dcmipp {
+	ports {
+		port@0 {
+			csi_22pins_ep_in: endpoint { };
+		};
+
+		port@1 {
+			csi_22pins_capture_port: endpoint@1 { };
+		};
 	};
 };

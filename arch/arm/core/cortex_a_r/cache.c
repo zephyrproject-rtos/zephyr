@@ -63,13 +63,13 @@ void arch_dcache_disable(void)
 {
 	uint32_t val;
 
+	L1C_CleanInvalidateDCacheAll();
+
 	val = __get_SCTLR();
 	val &= ~SCTLR_C_Msk;
 	barrier_dsync_fence_full();
 	__set_SCTLR(val);
 	barrier_isync_fence_full();
-
-	arch_dcache_flush_and_invd_all();
 }
 
 int arch_dcache_flush_all(void)

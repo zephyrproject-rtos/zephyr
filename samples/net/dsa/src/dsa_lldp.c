@@ -54,7 +54,7 @@ enum net_verdict dsa_ll_addr_switch_cb(struct net_if *iface, struct net_pkt *pkt
 	return NET_OK;
 }
 
-int start_slave_port_packet_socket(struct net_if *iface, struct instance_data *pd)
+int start_user_port_packet_socket(struct net_if *iface, struct instance_data *pd)
 {
 	struct sockaddr_ll dst;
 	int ret;
@@ -83,7 +83,7 @@ void dsa_lldp(struct ud *user_data)
 
 	/*
 	 * Set static table to forward LLDP protocol packets
-	 * to master port.
+	 * to conduit port.
 	 */
 	dsa_switch_set_mac_table_entry(user_data->lan[0], &eth_filter_l2_addr_base[0][0], BIT(4), 0,
 				       0);

@@ -138,7 +138,7 @@ extern "C" {
  *
  *  Helper macro to declare a Managed CCC attribute.
  *
- *  @param _ccc    CCC attribute user data, shall point to a _bt_gatt_ccc.
+ *  @param _ccc    CCC attribute user data, shall point to a bt_gatt_ccc_managed_user_data.
  *  @param _perm   CCC access permissions.
  *  @param _handle Descriptor attribute handle.
  */
@@ -161,7 +161,7 @@ extern "C" {
  *         BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, \
  *         bt_gatt_attr_read_ccc, \
  *         bt_gatt_attr_write_ccc, \
- *         (&(struct _bt_gatt_ccc) { \
+ *         (&(struct bt_gatt_ccc_managed_user_data) { \
  *             .cfg = _cfg, \
  *             .cfg_len = ARRAY_SIZE(_cfg), \
  *             .cfg_changed = _cfg_changed \
@@ -177,10 +177,10 @@ extern "C" {
  *  @param _cfg_changed Configuration changed callback.
  *  @param _handle      Descriptor attribute handle.
  */
-#define BT_GATT_H_CCC(_cfg, _cfg_changed, _handle) \
-		BT_GATT_H_MANAGED((&(struct _bt_gatt_ccc) \
-			BT_GATT_CCC_INITIALIZER(_cfg_changed, NULL, NULL)),\
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, _handle)
+#define BT_GATT_H_CCC(_cfg, _cfg_changed, _handle)                                                 \
+	BT_GATT_H_MANAGED((&(struct bt_gatt_ccc_managed_user_data)                                 \
+				   BT_GATT_CCC_MANAGED_USER_DATA_INIT(_cfg_changed, NULL, NULL)),  \
+			  BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, _handle)
 
 /**
  *  @brief Characteristic Extended Properties Declaration Macro.

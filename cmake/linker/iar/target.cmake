@@ -10,6 +10,10 @@ find_program(CMAKE_LINKER
   NO_DEFAULT_PATH
 )
 
+if(CONFIG_IAR_DATA_INIT)
+  zephyr_linker_section(NAME .iar.init_table KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
 add_custom_target(${IAR_LINKER})
 set(ILINK_THUMB_CALLS_WARNING_SUPPRESSED)
 set(IAR_LIB_USED)
@@ -61,6 +65,8 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       ${STEERING_FILE_ARG}
       -DCONFIG_LINKER_LAST_SECTION_ID=${CONFIG_LINKER_LAST_SECTION_ID}
       -DCONFIG_LINKER_LAST_SECTION_ID_PATTERN=${CONFIG_LINKER_LAST_SECTION_ID_PATTERN}
+      -DCONFIG_IAR_DATA_INIT=${CONFIG_IAR_DATA_INIT}
+      -DCONFIG_IAR_ZEPHYR_INIT=${CONFIG_IAR_ZEPHYR_INIT}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
       ${IAR_LIB_USED}
       -P ${ZEPHYR_BASE}/cmake/linker/iar/config_file_script.cmake
@@ -77,9 +83,9 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
-  foreach(lib ${ZEPHYR_LIBS_PROPERTY})
-    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_OBJECTS:${lib}>)
-    list(APPEND ZEPHYR_LIBS_OBJECTS $<TARGET_PROPERTY:${lib},LINK_LIBRARIES>)
+  set(whole_libs)
+  foreach(lib ${WHOLE_ARCHIVE_LIBS})
+	  list(APPEND whole_libs --whole_archive ${lib})
   endforeach()
 
   set(ILINK_SEMIHOSTING)
@@ -111,8 +117,8 @@ function(toolchain_ld_link_elf)
     --map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     --log_file=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}.log
 
-    ${ZEPHYR_LIBS_OBJECTS}
-    kernel
+    ${whole_libs}
+    ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     --entry=$<TARGET_PROPERTY:linker,ENTRY>
 

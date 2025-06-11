@@ -11,7 +11,7 @@ def parseCMakeCacheFile(filePath):
     log.dbg(f"parsing CMake cache file at {filePath}")
     kv = {}
     try:
-        with open(filePath, "r") as f:
+        with open(filePath) as f:
             # should be a short file, so we'll use readlines
             lines = f.readlines()
 

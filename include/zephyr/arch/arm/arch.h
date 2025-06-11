@@ -10,7 +10,7 @@
  *
  * This header contains the ARM AArch32 specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * (include/arm/cpu.h)
+ * (include/zephyr/arch/cpu.h).
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
@@ -115,7 +115,7 @@ enum k_fatal_error_reason_arch {
 	K_ERR_ARM_DOMAIN_FAULT_2ND_LEVEL,
 	K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_1ST_LEVEL,
 	K_ERR_ARM_SYNC_EXTERNAL_ABORT_TRANSLATION_TABLE_2ND_LEVEL,
-	K_ERR_ARM_TLB_CONFLICT_FAULT,
+	K_ERR_ARM_TLB_CONFLICT_ABORT,
 	K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL,
 	K_ERR_ARM_SYNC_PARITY_ERROR_TRANSLATION_TABLE_2ND_LEVEL,
 };

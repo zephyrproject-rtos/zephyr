@@ -65,6 +65,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 	}
 
 	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
+		/* Handle h in valid range, hence conn will be non-NULL */
 		struct ll_conn *conn = ll_conn_get(h);
 		uint16_t cis_handle = ull_cp_cc_ongoing_handle(conn);
 
@@ -317,6 +318,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	}
 
 	conn = ll_conn_get(cis->lll.acl_handle);
+	LL_ASSERT(conn != NULL);
 
 	cis_offset = sys_get_le24(ind->cis_offset);
 

@@ -54,6 +54,9 @@ void soc_early_init_hook(void)
 	/* Enable PWR */
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
+	/* Set the main internal Regulator output voltage for best performance */
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+
 	/* Enable IOs */
 	LL_PWR_EnableVddIO2();
 	LL_PWR_EnableVddIO3();

@@ -257,6 +257,14 @@ for a kernel object, such as a mutex.
 Use preemptive threads to give priority to time-sensitive processing
 over less time-sensitive processing.
 
+
+Configuration Options
+**********************
+
+* :kconfig:option:`CONFIG_TIMESLICING`
+* :kconfig:option:`CONFIG_TIMESLICE_SIZE`
+* :kconfig:option:`CONFIG_TIMESLICE_PRIORITY`
+
 .. _cpu_idle:
 
 CPU Idling

@@ -45,6 +45,7 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,input-positive = <NRF_SAADC_AIN9>; /* P9.01 */
+		zephyr,vref-mv = <3686>; /* 3.6V * 1024 */
 		zephyr,resolution = <12>;
 		zephyr,oversampling = <8>;
 	};

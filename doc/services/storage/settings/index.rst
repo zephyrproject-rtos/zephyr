@@ -78,6 +78,14 @@ backend.
     This gets called when loading values from persistent storage using
     :c:func:`settings_load()`.
 
+**csi_load_one**
+    This gets called when loading only one item from persistent storage using
+    :c:func:`settings_load_one()`.
+
+**csi_get_val_len**
+    This gets called when getting a value's length from persistent storage using
+    :c:func:`settings_get_val_len()`.
+
 **csi_save**
     This gets called when saving a single setting to persistent storage using
     :c:func:`settings_save_one()`.
@@ -125,7 +133,7 @@ that some collisions between key's hashes could occur if a big number of
 different keys are stored. This number depends on the selected hash function.
 
 ZMS backend can handle :math:`2^n` maximum collisions where n is defined by
-(:kconfig:option:`SETTINGS_ZMS_MAX_COLLISIONS_BITS`).
+(:kconfig:option:`CONFIG_SETTINGS_ZMS_MAX_COLLISIONS_BITS`).
 
 
 Storage Location
@@ -147,6 +155,14 @@ to load settings data from storage to volatile memory.
 After all data is loaded, the ``h_commit`` handler is issued,
 signalling the application that the settings were successfully
 retrieved.
+
+Alternatively, a call to :c:func:`settings_load_one()` will load only one
+Settings entry and store it in the provided buffer.
+
+Optionally, to get only the value's length associated with the Settings entry,
+a call to :c:func:`settings_get_val_len()` can be performed.
+This is used for example by applications that allocates dynamically the data
+buffer and needs to get the data size before reading it by settings_load_one().
 
 Technically FCB and file backends may store some history of the entities.
 This means that the newest data entity is stored after any

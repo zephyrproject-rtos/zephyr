@@ -19,8 +19,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-/* Zephyr OpenThread integration Library */
-#include <zephyr/net/openthread.h>
+#include <openthread.h>
 
 /* OpenThread BLE driver API */
 #include <openthread/error.h>
@@ -163,7 +162,7 @@ static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3)
 			ring_buf_get(&ot_plat_ble_ring_buf, ot_plat_ble_msg_buf, len);
 		}
 
-		openthread_api_mutex_lock(openthread_get_default_context());
+		openthread_mutex_lock();
 
 		if (len <= PLAT_BLE_MSG_DATA_MAX) {
 			/* The packet parameter in otPlatBleGattServerOnWriteRequest is not const.
@@ -178,7 +177,7 @@ static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3)
 		} else if (len == PLAT_BLE_MSG_DISCONNECT) {
 			otPlatBleGapOnDisconnected(ble_openthread_instance, 0);
 		}
-		openthread_api_mutex_unlock(openthread_get_default_context());
+		openthread_mutex_unlock();
 	}
 }
 
@@ -430,6 +429,30 @@ otError otPlatBleGapAdvSetData(otInstance *aInstance, uint8_t *aAdvertisementDat
 
 	ad[1].data_len = (uint8_t)aAdvertisementLen;
 	sd[1].data_len = (uint8_t)aAdvertisementLen;
+	return OT_ERROR_NONE;
+}
+
+otError otPlatBleGapAdvUpdateData(otInstance *aInstance, uint8_t *aAdvertisementData,
+				  uint16_t aAdvertisementLen)
+{
+	ARG_UNUSED(aInstance);
+
+	int err;
+
+	if (aAdvertisementLen > OT_TCAT_ADVERTISEMENT_MAX_LEN || aAdvertisementData == NULL) {
+		LOG_ERR("Invalid TCAT Advertisement parameters advlen: %d", aAdvertisementLen);
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	ad[1].data_len = (uint8_t)aAdvertisementLen;
+	sd[1].data_len = (uint8_t)aAdvertisementLen;
+
+	err = bt_le_adv_update_data(ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+
+	if (err != 0) {
+		return OT_ERROR_FAILED;
+	}
+
 	return OT_ERROR_NONE;
 }
 

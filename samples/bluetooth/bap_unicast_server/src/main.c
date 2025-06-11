@@ -509,7 +509,7 @@ static void stream_recv_lc3_codec(struct bt_bap_stream *stream,
 				  const struct bt_iso_recv_info *info,
 				  struct net_buf *buf)
 {
-	const bool valid_data = (info->flags & BT_ISO_FLAGS_VALID) == 0;
+	const bool valid_data = (info->flags & BT_ISO_FLAGS_VALID) != 0;
 	const int octets_per_frame = buf->len / frames_per_sdu;
 
 	if (lc3_decoder == NULL) {

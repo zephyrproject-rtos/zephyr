@@ -11,13 +11,19 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
@@ -25,17 +31,18 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-
-#include "common/bt_str.h"
-
-#include "crypto/bt_crypto.h"
-
-#include "hci_core.h"
-#include "ecc.h"
-#include "keys.h"
 #include "conn_internal.h"
+#include "common/bt_str.h"
+#include "crypto/bt_crypto.h"
+#include "ecc.h"
+#include "hci_core.h"
+#include "keys.h"
 #include "l2cap_internal.h"
 #include "smp.h"
 
@@ -1256,7 +1263,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
 	struct bt_keys_link_key *key;
-	bool le_bonded;
+	struct bt_keys *le_keys;
 
 	if (!smp->chan.chan.conn) {
 		return false;
@@ -1266,7 +1273,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 
 	addr.type = BT_ADDR_LE_PUBLIC;
 	bt_addr_copy(&addr.a, &conn->br.dst);
-	le_bonded = bt_le_bond_exists(BT_ID_DEFAULT, &addr);
+	le_keys = bt_keys_find_addr(BT_ID_DEFAULT, &addr);
 
 	key = bt_keys_find_link_key(&conn->br.dst);
 	if (!key) {
@@ -1280,7 +1287,9 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	 * or MITM protection, then neither device shall generate an LE LTK using cross-transport
 	 * key derivation from a BR/EDR link key.
 	 */
-	if (le_bonded && !(key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+	if ((le_keys != NULL) && ((le_keys->flags & BT_KEYS_AUTHENTICATED) != 0) &&
+	    ((key->flags & BT_LINK_KEY_AUTHENTICATED) == 0)) {
+		LOG_WRN("Stronger LTK (MITM) cannot be overwrote by weaker LK");
 		return false;
 	}
 
@@ -1351,7 +1360,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 	rsp->oob_flag = 0x00;
 	rsp->max_key_size = max_key_size;
 	rsp->init_key_dist = (req->init_key_dist & BR_RECV_KEYS_SC);
-	rsp->resp_key_dist = (req->resp_key_dist & BR_RECV_KEYS_SC);
+	rsp->resp_key_dist = (req->resp_key_dist & BR_SEND_KEYS_SC);
 
 	smp->local_dist = rsp->resp_key_dist;
 	smp->remote_dist = rsp->init_key_dist;
@@ -4390,7 +4399,7 @@ static uint8_t smp_public_key_periph(struct bt_smp *smp)
 
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
 	    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
-		/* Deny public key with identitcal X coordinate unless it is the
+		/* Deny public key with identical X coordinate unless it is the
 		 * debug public key.
 		 */
 		LOG_WRN("Remote public key rejected");
@@ -4476,7 +4485,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_CENTRAL) {
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
 		    memcmp(smp->pkey, sc_public_key, BT_PUB_KEY_COORD_LEN) == 0) {
-			/* Deny public key with identitcal X coordinate unless
+			/* Deny public key with identical X coordinate unless
 			 * it is the debug public key.
 			 */
 			LOG_WRN("Remote public key rejected");

@@ -168,9 +168,9 @@ DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt),
 	defined(CONFIG_SOC_SERIES_ESP32C3))
 #error "XT WDT is not supported"
 #else
-BUILD_ASSERT((DT_PROP(DT_INST(0, espressif_esp32_rtc), slow_clk_src) ==
+BUILD_ASSERT((DT_PROP(DT_INST(0, espressif_esp32_clock), slow_clk_src) ==
 	      ESP32_RTC_SLOW_CLK_SRC_XTAL32K) ||
-		     (DT_PROP(DT_INST(0, espressif_esp32_rtc), slow_clk_src) ==
+		     (DT_PROP(DT_INST(0, espressif_esp32_clock), slow_clk_src) ==
 		      ESP32_RTC_SLOW_CLK_32K_EXT_OSC),
 	     "XT WDT is only supported with XTAL32K or 32K_EXT_OSC as slow clock source");
 #endif
