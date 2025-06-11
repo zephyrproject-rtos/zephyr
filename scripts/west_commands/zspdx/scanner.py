@@ -6,6 +6,7 @@ import hashlib
 import os
 import re
 
+from reuse.project import Project
 from west import log
 
 from zspdx.licenses import LICENSES
@@ -177,6 +178,32 @@ def normalizeExpression(licsConcluded):
     return " AND ".join(revised)
 
 
+def getCopyrightInfo(filePath):
+    """
+    Scans the specified file for copyright information using REUSE tools.
+
+    Arguments:
+        - filePath: path to file to scan
+
+    Returns: list of copyright statements if found; empty list if not found
+    """
+    log.dbg(f"  - getting copyright info for {filePath}")
+
+    try:
+        project = Project(os.path.dirname(filePath))
+        infos = project.reuse_info_of(filePath)
+        copyrights = []
+
+        for info in infos:
+            if info.copyright_lines:
+                copyrights.extend(info.copyright_lines)
+
+        return copyrights
+    except Exception as e:
+        log.wrn(f"Error getting copyright info for {filePath}: {e}")
+        return []
+
+
 def scanDocument(cfg, doc):
     """
     Scan for licenses and calculate hashes for all Files and Packages
@@ -212,6 +239,9 @@ def scanDocument(cfg, doc):
                 if cfg.shouldConcludeFileLicenses:
                     f.concludedLicense = expression
                 f.licenseInfoInFile = splitExpression(expression)
+
+            if copyrights := getCopyrightInfo(f.abspath):
+                f.copyrightText = f"<text>\n{'\n'.join(copyrights)}\n</text>"
 
             # check if any custom license IDs should be flagged for document
             for lic in f.licenseInfoInFile:
