@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-/** @brief Maximum number of arguments to an IRONside call.
+/** @brief Maximum number of arguments to an IronSide call.
  *
  * This is chosen so that the containing message buffer size is minimal but
  * cache line aligned.
@@ -50,7 +50,7 @@ struct ironside_call_buf {
  */
 
 /**
- * @brief Allocate memory for an IRONside call.
+ * @brief Allocate memory for an IronSide call.
  *
  * This function will block when no buffers are available, until one is
  * released by another thread on the client side.
@@ -60,7 +60,7 @@ struct ironside_call_buf {
 struct ironside_call_buf *ironside_call_alloc(void);
 
 /**
- * @brief Dispatch an IRONside call.
+ * @brief Dispatch an IronSide call.
  *
  * This function will block until a response is received from the server.
  *
@@ -71,7 +71,7 @@ struct ironside_call_buf *ironside_call_alloc(void);
 void ironside_call_dispatch(struct ironside_call_buf *buf);
 
 /**
- * @brief Release an IRONside call buffer.
+ * @brief Release an IronSide call buffer.
  *
  * This function must be called after processing the response.
  *
