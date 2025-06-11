@@ -13,3 +13,10 @@ properties:
 
   interrupts:
     required: true
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      The frequency in Hz for this timer's clock source.
+      This value is used to set SYS_CLOCK_HW_CYCLES_PER_SEC.
