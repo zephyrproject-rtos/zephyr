@@ -753,7 +753,7 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 	}
 
 	/* Is the STOP condition issued? */
-	if ((data->msg->flags & I2C_MSG_STOP) != 0) {
+	if (data->msg != NULL && (data->msg->flags & I2C_MSG_STOP) != 0) {
 		/* Clear rx FIFO threshold and status bits */
 		i2c_ctrl_fifo_clear_status(dev);
 
