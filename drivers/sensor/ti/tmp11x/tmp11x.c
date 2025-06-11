@@ -91,6 +91,23 @@ static bool check_eeprom_bounds(const struct device *dev, off_t offset,
 	return true;
 }
 
+int tmp11x_eeprom_await(const struct device *dev)
+{
+	int res;
+	uint16_t val;
+
+	k_sleep(K_MSEC(EEPROM_MIN_BUSY_MS));
+
+	do {
+		res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val);
+		if (res != 0) {
+			break;
+		}
+	} while (val & TMP11X_EEPROM_UL_BUSY);
+
+	return res;
+}
+
 int tmp11x_eeprom_write(const struct device *dev, off_t offset,
 			const void *data, size_t len)
 {
@@ -115,14 +132,7 @@ int tmp11x_eeprom_write(const struct device *dev, off_t offset,
 			break;
 		}
 
-		k_sleep(K_MSEC(EEPROM_MIN_BUSY_MS));
-
-		do {
-			res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val);
-			if (res != 0) {
-				break;
-			}
-		} while (val & TMP11X_EEPROM_UL_BUSY);
+		res = tmp11x_eeprom_await(dev);
 		src++;
 
 		if (res != 0) {
