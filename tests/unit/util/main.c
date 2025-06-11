@@ -755,6 +755,25 @@ ZTEST(util, test_bytecpy)
 	zassert_mem_equal(buf, expected4, sizeof(expected4), "Overlapping memory copy failed");
 }
 
+ZTEST(util, test_byteswp)
+{
+	uint8_t a1 = 0xAAU;
+	uint8_t b1 = 0x55U;
+	uint32_t a2 = 0x12345678U;
+	uint32_t b2 = 0xABCDEF00U;
+
+	byteswp(&a1, &b1, sizeof(a1));
+	zassert_equal(a1, 0x55U, "Failed to swap single bytes");
+	zassert_equal(b1, 0xAAU, "Failed to swap single bytes");
+	byteswp(&a1, &b1, 0);
+	zassert_equal(a1, 0x55U, "Zero size swap should not modify values");
+	zassert_equal(b1, 0xAAU, "Zero size swap should not modify values");
+
+	byteswp(&a2, &b2, sizeof(a2));
+	zassert_equal(a2, 0xABCDEF00U, "Failed to swap multiple bytes");
+	zassert_equal(b2, 0x12345678U, "Failed to swap multiple bytes");
+}
+
 ZTEST(util, test_mem_xor_n)
 {
 	const size_t max_len = 128;
