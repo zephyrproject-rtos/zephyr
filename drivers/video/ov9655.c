@@ -326,7 +326,12 @@ static int ov9655_get_fmt(const struct device *dev, struct video_format *fmt)
 static int ov9655_init(const struct device *dev)
 {
 	const struct ov9655_config *config = dev->config;
-	struct video_format fmt;
+	/* Set default camera format (QQVGA, YUYV) */
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_YUYV,
+		.width = 160,
+		.height = 120,
+	};
 	uint32_t pid;
 	int ret;
 
@@ -379,11 +384,6 @@ static int ov9655_init(const struct device *dev)
 		LOG_ERR("Incorrect product ID: 0x%04X", pid);
 		return -ENODEV;
 	}
-
-	/* Set default camera format (QQVGA, YUYV) */
-	fmt.pixelformat = VIDEO_PIX_FMT_YUYV;
-	fmt.width = 160;
-	fmt.height = 120;
 
 	return ov9655_set_fmt(dev, &fmt);
 }
