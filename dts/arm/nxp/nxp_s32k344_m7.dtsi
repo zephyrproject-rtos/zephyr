@@ -892,6 +892,7 @@
 		mc_me: mc_me@402dc000 {
 			compatible = "nxp,s32-mc-me";
 			reg = <0x402dc000 0x4000>;
+			software-reset-supported;
 		};
 
 		mc_rgm: mc_rgm@4028c000 {
