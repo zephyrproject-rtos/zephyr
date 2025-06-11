@@ -12,6 +12,9 @@ config GEN_SW_ISR_TABLE
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	default n
+
 config DYNAMIC_INTERRUPTS
 	default y if !SOC_ESP32C6_LPCORE
 
