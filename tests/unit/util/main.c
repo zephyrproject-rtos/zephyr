@@ -718,6 +718,43 @@ skipped_c:
 	#undef test_IF_DISABLED_FLAG_B
 }
 
+ZTEST(util, test_bytecpy)
+{
+	/* Test basic byte-by-byte copying */
+	uint8_t src1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+			    0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+	uint8_t dst1[16] = {0};
+	uint8_t expected1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+				 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+
+	bytecpy(dst1, src1, sizeof(src1));
+	zassert_mem_equal(dst1, expected1, sizeof(expected1), "Basic byte-by-byte copy failed");
+
+	/* Test copying with different sizes */
+	uint8_t src2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+	uint8_t dst2[8] = {0};
+	uint8_t expected2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+
+	bytecpy(dst2, src2, sizeof(src2));
+	zassert_mem_equal(dst2, expected2, sizeof(expected2), "Copy with different size failed");
+
+	/* Test copying with zero size */
+	uint8_t src3[4] = {0x11, 0x22, 0x33, 0x44};
+	uint8_t dst3[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+	uint8_t expected3[4] = {0xAA, 0xBB, 0xCC, 0xDD}; /* Should remain unchanged */
+
+	bytecpy(dst3, src3, 0);
+	zassert_mem_equal(dst3, expected3, sizeof(expected3),
+			  "Zero size copy should not modify destination");
+
+	/* Test copying with overlapping memory regions */
+	uint8_t buf[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+	uint8_t expected4[8] = {0x11, 0x22, 0x33, 0x44, 0x11, 0x22, 0x33, 0x44};
+
+	bytecpy(&buf[4], buf, 4); /* Copy first 4 bytes to last 4 bytes */
+	zassert_mem_equal(buf, expected4, sizeof(expected4), "Overlapping memory copy failed");
+}
+
 ZTEST(util, test_mem_xor_n)
 {
 	const size_t max_len = 128;
