@@ -1460,6 +1460,7 @@ Release Notes:
     - tests/drivers/ethernet/
     - include/zephyr/drivers/ethernet/
     - include/zephyr/net/phy.h
+    - include/zephyr/net/mii.h
     - include/zephyr/net/ethernet.h
   labels:
     - "area: Ethernet"
