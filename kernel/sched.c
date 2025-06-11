@@ -1281,9 +1281,7 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 			return;
 		}
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-		arch_float_disable(thread);
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+		arch_coprocessors_disable(thread);
 
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
