@@ -682,6 +682,8 @@ static const struct hid_device_driver_api hid_device_api = {
 	.dev_register = hid_dev_register,
 };
 
+static const struct hid_device_ops null_ops;
+
 #include "usbd_hid_macros.h"
 
 #define USBD_HID_INTERFACE_SIMPLE_DEFINE(n)					\
@@ -710,74 +712,67 @@ static const struct hid_device_driver_api hid_device_api = {
 		NULL,								\
 	}
 
-#define USBD_HID_INTERFACE_ALTERNATE_DEFINE(n)					\
-	static struct usbd_hid_descriptor hid_desc_##n = {			\
-		.if0 = HID_INTERFACE_DEFINE(n, 0),				\
-		.hid = HID_DESCRIPTOR_DEFINE(n),				\
-		.in_ep = HID_IN_EP_DEFINE(n, false, false),			\
-		.hs_in_ep = HID_IN_EP_DEFINE(n, true, false),			\
-		.out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, false, false),		\
-		.hs_out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, true, false),		\
-		.if0_1 = HID_INTERFACE_DEFINE(n, 1),				\
-		.alt_hs_in_ep = HID_IN_EP_DEFINE(n, true, true),		\
-		.alt_hs_out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, true, true),	\
-	};									\
-										\
-	const static struct usb_desc_header *hid_fs_desc_##n[] = {		\
-		(struct usb_desc_header *) &hid_desc_##n.if0,			\
-		(struct usb_desc_header *) &hid_desc_##n.hid,			\
-		(struct usb_desc_header *) &hid_desc_##n.in_ep,			\
-		(struct usb_desc_header *) &hid_desc_##n.out_ep,		\
-		NULL,								\
-	};									\
-										\
-	const static struct usb_desc_header *hid_hs_desc_##n[] = {		\
-		(struct usb_desc_header *) &hid_desc_##n.if0,			\
-		(struct usb_desc_header *) &hid_desc_##n.hid,			\
-		(struct usb_desc_header *) &hid_desc_##n.hs_in_ep,		\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, out_report_size),			\
-		((struct usb_desc_header *) &hid_desc_##n.hs_out_ep,), ())	\
-		(struct usb_desc_header *)&hid_desc_##n.if0_1,			\
-		(struct usb_desc_header *) &hid_desc_##n.hid,			\
-		(struct usb_desc_header *) &hid_desc_##n.alt_hs_in_ep,		\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, out_report_size),			\
-		((struct usb_desc_header *) &hid_desc_##n.alt_hs_out_ep,), ())	\
-		NULL,								\
+#define USBD_HID_INTERFACE_ALTERNATE_DEFINE(n)                                                     \
+	static struct usbd_hid_descriptor hid_desc_##n = {                                         \
+		.if0 = HID_INTERFACE_DEFINE(n, 0),                                                 \
+		.hid = HID_DESCRIPTOR_DEFINE(n),                                                   \
+		.in_ep = HID_IN_EP_DEFINE(n, false, false),                                        \
+		.hs_in_ep = HID_IN_EP_DEFINE(n, true, false),                                      \
+		.out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, false, false),                              \
+		.hs_out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, true, false),                            \
+		.if0_1 = HID_INTERFACE_DEFINE(n, 1),                                               \
+		.alt_hs_in_ep = HID_IN_EP_DEFINE(n, true, true),                                   \
+		.alt_hs_out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, true, true),                         \
+	};                                                                                         \
+                                                                                                   \
+	const static struct usb_desc_header *hid_fs_desc_##n[] = {                                 \
+		(struct usb_desc_header *)&hid_desc_##n.if0,                                       \
+		(struct usb_desc_header *)&hid_desc_##n.hid,                                       \
+		(struct usb_desc_header *)&hid_desc_##n.in_ep,                                     \
+		(struct usb_desc_header *)&hid_desc_##n.out_ep,                                    \
+		NULL,                                                                              \
+	};                                                                                         \
+                                                                                                   \
+	const static struct usb_desc_header *hid_hs_desc_##n[] = {                                 \
+		(struct usb_desc_header *)&hid_desc_##n.if0,                                       \
+		(struct usb_desc_header *)&hid_desc_##n.hid,                                       \
+		(struct usb_desc_header *)&hid_desc_##n.hs_in_ep,                                  \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, out_report_size),			\
+		((struct usb_desc_header *) &hid_desc_##n.hs_out_ep,), ()) (struct usb_desc_header *) & hid_desc_##n.if0_1,                      \
+			 (struct usb_desc_header *)&hid_desc_##n.hid,                              \
+			 (struct usb_desc_header *)&hid_desc_##n.alt_hs_in_ep,                     \
+			 COND_CODE_1(DT_INST_NODE_HAS_PROP(n, out_report_size),			\
+		((struct usb_desc_header *) &hid_desc_##n.alt_hs_out_ep,), ()) NULL,  \
 	}
 
-#define USBD_HID_INTERFACE_DEFINE(n)						\
+#define USBD_HID_INTERFACE_DEFINE(n)                                                               \
 	COND_CODE_1(HID_ALL_MPS_LESS_65(n),					\
 		    (USBD_HID_INTERFACE_SIMPLE_DEFINE(n)),			\
 		    (USBD_HID_INTERFACE_ALTERNATE_DEFINE(n)))
 
-#define USBD_HID_INSTANCE_DEFINE(n)						\
-	HID_VERIFY_REPORT_SIZES(n);						\
-										\
-	NET_BUF_POOL_DEFINE(hid_buf_pool_in_##n,				\
-			    CONFIG_USBD_HID_IN_BUF_COUNT, 0,			\
-			    sizeof(struct udc_buf_info), NULL);			\
-										\
-	HID_OUT_POOL_DEFINE(n);							\
-	USBD_HID_INTERFACE_DEFINE(n);						\
-										\
-	USBD_DEFINE_CLASS(hid_##n,						\
-			  &usbd_hid_api,					\
-			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
-										\
-	static const struct hid_device_config hid_config_##n = {		\
-		.desc = &hid_desc_##n,						\
-		.c_data = &hid_##n,						\
-		.pool_in = &hid_buf_pool_in_##n,				\
-		.pool_out = HID_OUT_POOL_ADDR(n),				\
-		.fs_desc = hid_fs_desc_##n,					\
-		.hs_desc = hid_hs_desc_##n,					\
-	};									\
-										\
-	static struct hid_device_data hid_data_##n;				\
-										\
-	DEVICE_DT_INST_DEFINE(n, hid_device_init, NULL,				\
-		&hid_data_##n, &hid_config_##n,					\
-		POST_KERNEL, CONFIG_USBD_HID_INIT_PRIORITY,			\
-		&hid_device_api);
+#define USBD_HID_INSTANCE_DEFINE(n)                                                                \
+	HID_VERIFY_REPORT_SIZES(n);                                                                \
+                                                                                                   \
+	NET_BUF_POOL_DEFINE(hid_buf_pool_in_##n, CONFIG_USBD_HID_IN_BUF_COUNT, 0,                  \
+			    sizeof(struct udc_buf_info), NULL);                                    \
+                                                                                                   \
+	HID_OUT_POOL_DEFINE(n);                                                                    \
+	USBD_HID_INTERFACE_DEFINE(n);                                                              \
+                                                                                                   \
+	USBD_DEFINE_CLASS(hid_##n, &usbd_hid_api, (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);    \
+                                                                                                   \
+	static const struct hid_device_config hid_config_##n = {                                   \
+		.desc = &hid_desc_##n,                                                             \
+		.c_data = &hid_##n,                                                                \
+		.pool_in = &hid_buf_pool_in_##n,                                                   \
+		.pool_out = HID_OUT_POOL_ADDR(n),                                                  \
+		.fs_desc = hid_fs_desc_##n,                                                        \
+		.hs_desc = hid_hs_desc_##n,                                                        \
+	};                                                                                         \
+                                                                                                   \
+	static struct hid_device_data hid_data_##n = {.ops = &null_ops};                           \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, hid_device_init, NULL, &hid_data_##n, &hid_config_##n,            \
+			      POST_KERNEL, CONFIG_USBD_HID_INIT_PRIORITY, &hid_device_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBD_HID_INSTANCE_DEFINE);
