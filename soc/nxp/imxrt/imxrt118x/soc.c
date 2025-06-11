@@ -26,7 +26,8 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
 #include <zephyr_image_info.h>
 /* Memcpy macro to copy segments from secondary core image stored in flash
  * to RAM section that secondary core boots from.
@@ -36,6 +37,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 	memcpy((uint32_t *)(((SEGMENT_LMA_ADDRESS_ ## n) - ADJUSTED_LMA) + 0x303C0000),	\
 		(uint32_t *)(SEGMENT_LMA_ADDRESS_ ## n),			\
 		(SEGMENT_SIZE_ ## n))
+#endif /* !defined(CONFIG_CM7_BOOT_FROM_FLASH) */
 #endif
 
 /*
@@ -69,6 +71,18 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define CM33_SET_TRDC 1U
 #endif
 
+#if (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33))
+/* Handle CM7 core initialization based on execution mode */
+#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
+#define CM7_BOOT_ADDRESS (0)
+#else
+/* Get CM7 partition address from device tree */
+#define CM7_PARTITION_NODE DT_CHOSEN(zephyr_code_m7_partition)
+#define CM7_FLASH_ADDR     DT_REG_ADDR(CM7_PARTITION_NODE)
+#define CM7_BOOT_ADDRESS   (CM7_FLASH_ADDR + CONFIG_CM7_FLEXSPI_OFFSET)
+#endif /* defined(CONFIG_CM7_BOOT_FROM_FLASH) */
+#endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
+
 #ifdef CONFIG_INIT_ARM_PLL
 static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
 #if defined(CONFIG_SOC_MIMXRT1189_CM33) || defined(CONFIG_SOC_MIMXRT1189_CM7)
@@ -77,7 +91,7 @@ static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
 	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
 	.loopDivider = 132,
 #else
-	#error "Unknown SOC, no pll configuration defined"
+#error "Unknown SOC, no pll configuration defined"
 #endif
 };
 #endif
@@ -791,6 +805,7 @@ void soc_early_init_hook(void)
 #endif /* defined(CONFIG_WDT_MCUX_RTWDOG) */
 
 #if (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33))
+#if !defined(CONFIG_CM7_BOOT_FROM_FLASH)
 	/**
 	 * Copy CM7 core from flash to memory. Note that depending on where the
 	 * user decided to store CM7 code, this is likely going to read from the
@@ -802,6 +817,7 @@ void soc_early_init_hook(void)
 	 */
 	LISTIFY(SEGMENT_NUM, MEMCPY_SEGMENT, (;));
 #endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
+#endif /* !defined(CONFIG_CM7_BOOT_FROM_FLASH) */
 
 	/* Enable data cache */
 	sys_cache_data_enable();
@@ -816,7 +832,7 @@ void soc_reset_hook(void)
 	SystemInit();
 
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
-	Prepare_CM7(0);
+	Prepare_CM7(CM7_BOOT_ADDRESS);
 #endif
 }
 #endif
