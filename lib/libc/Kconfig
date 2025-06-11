@@ -143,6 +143,13 @@ config IAR_LIBC
 	  A reduced Zephyr minimal libc will be used for library functionality
 	  not provided by the IAR C Runtime Library.
 
+config XTENSA_LIBC
+	bool "Xtensa C library"
+	depends on !NATIVE_APPLICATION
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"
+	help
+	  C library provided by Xtensa toolchain.
+
 endchoice # LIBC_IMPLEMENTATION
 
 config HAS_NEWLIB_LIBC_NANO
