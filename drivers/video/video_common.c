@@ -419,6 +419,10 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 		return -ERANGE;
 	}
 
+	if (ctrl_query.int_menu == NULL) {
+		return -EINVAL;
+	}
+
 	return (int64_t)ctrl_query.int_menu[ctrl.val];
 
 fallback:
