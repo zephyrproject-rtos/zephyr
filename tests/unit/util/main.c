@@ -78,6 +78,27 @@ ZTEST(util, test_sign_extend) {
 	zassert_equal(sign_extend(u32, 28), 0xfffffff);
 }
 
+ZTEST(util, test_arithmetic_shift_right)
+{
+	/* Test positive number */
+	zassert_equal(arithmetic_shift_right(0x8, 2), 0x2);
+	zassert_equal(arithmetic_shift_right(0x10, 3), 0x2);
+	zassert_equal(arithmetic_shift_right(0x20, 4), 0x2);
+
+	/* Test negative number */
+	zassert_equal(arithmetic_shift_right(-0x8, 2), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x10, 3), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x20, 4), -0x2);
+
+	/* Test zero shift */
+	zassert_equal(arithmetic_shift_right(0x2A, 0), 0x2A);
+	zassert_equal(arithmetic_shift_right(-0x2A, 0), -0x2A);
+
+	/* Test large shifts */
+	zassert_equal(arithmetic_shift_right(0x7FFFFFFFFFFFFFFF, 63), 0x0);
+	zassert_equal(arithmetic_shift_right(0x8000000000000000, 63), -0x1);
+}
+
 ZTEST(util, test_sign_extend_64) {
 	uint8_t u8;
 	uint16_t u16;
