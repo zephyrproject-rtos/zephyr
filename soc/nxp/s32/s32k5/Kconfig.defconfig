@@ -1,0 +1,18 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_S32K5
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default 4000000 if ARM_ARCH_TIMER
+
+config FPU
+	default y if CPU_HAS_FPU
+
+config CACHE_MANAGEMENT
+	default y
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_S32K5
