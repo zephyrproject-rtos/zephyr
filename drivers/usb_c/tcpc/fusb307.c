@@ -676,7 +676,12 @@ void fusb307_init_work_cb(struct k_work *work)
 	gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
 
 	gpio_init_callback(&data->alert_cb, fusb307_alert_cb, BIT(cfg->alert_gpio.pin));
-	gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
+	ret = gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
+	if (ret < 0) {
+		LOG_ERR("Failed to add GPIO callback: %d", ret);
+		return;
+	}
+
 	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
 	tcpci_init_alert_mask(data->dev);
