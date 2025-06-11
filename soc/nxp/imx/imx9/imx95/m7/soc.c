@@ -88,6 +88,64 @@ static int soc_init(void)
 	return ret;
 }
 
+void pm_state_set(enum pm_state state, uint8_t substate_id)
+{
+	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+
+	/* iMX95 M7 core is based on ARMv7-M architecture. For this architecture,
+	 * the current implementation of arch_irq_lock of zephyr is based on BASEPRI,
+	 * which will only retain abnormal interrupts such as NMI,
+	 * and all other interrupts from the CPU(including systemtick) will be masked,
+	 * which makes the CORE unable to be woken up from WFI.
+	 * Set PRIMASK as workaround, Shield the CPU from responding to interrupts,
+	 * the CPU will not jump to the interrupt service routine (ISR).
+	 */
+	__disable_irq();
+	/* Set BASEPRI to 0 */
+	irq_unlock(0);
+
+	switch (state) {
+	case PM_STATE_RUNTIME_IDLE:
+		cpu_cfg.cpu_id = CPU_IDX_M7P;
+		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_WAIT;
+		scmi_cpu_sleep_mode_set(&cpu_cfg);
+		__DSB();
+		__WFI();
+		break;
+	case PM_STATE_SUSPEND_TO_IDLE:
+		cpu_cfg.cpu_id = CPU_IDX_M7P;
+		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_STOP;
+		scmi_cpu_sleep_mode_set(&cpu_cfg);
+		__DSB();
+		__WFI();
+		break;
+	case PM_STATE_STANDBY:
+		cpu_cfg.cpu_id = CPU_IDX_M7P;
+		cpu_cfg.sleep_mode = CPU_SLEEP_MODE_SUSPEND;
+		scmi_cpu_sleep_mode_set(&cpu_cfg);
+		__DSB();
+		__WFI();
+		break;
+	default:
+		break;
+	}
+}
+
+/* Handle SOC specific activity after Low Power Mode Exit */
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+
+	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
+	/* restore M7 core state into ACTIVE. */
+	cpu_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
+	scmi_cpu_sleep_mode_set(&cpu_cfg);
+
+	/* Clear PRIMASK */
+	__enable_irq();
+}
+
 /*
  * Because platform is using ARM SCMI, drivers like scmi, mbox etc. are
  * initialized during PRE_KERNEL_1. Common init hooks is not able to use.
