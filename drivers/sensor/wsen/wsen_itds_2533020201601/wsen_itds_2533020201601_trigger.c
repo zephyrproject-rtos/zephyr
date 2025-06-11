@@ -228,9 +228,9 @@ int itds_2533020201601_trigger_set(const struct device *dev, const struct sensor
 								   data->temp_data_ready_handler);
 			if (state) {
 				/* Dummy read: re-trigger interrupt */
-				ITDS_getRawAccelerationX(&data->sensor_interface, &x);
-				ITDS_getRawAccelerationY(&data->sensor_interface, &y);
-				ITDS_getRawAccelerationZ(&data->sensor_interface, &z);
+				(void)ITDS_getRawAccelerationX(&data->sensor_interface, &x);
+				(void)ITDS_getRawAccelerationY(&data->sensor_interface, &y);
+				(void)ITDS_getRawAccelerationZ(&data->sensor_interface, &z);
 			}
 			if (ITDS_enableDataReadyINT1(&data->sensor_interface, state) !=
 			    WE_SUCCESS) {
@@ -246,7 +246,7 @@ int itds_2533020201601_trigger_set(const struct device *dev, const struct sensor
 								   data->temp_data_ready_handler);
 			if (state) {
 				/* Dummy read: re-trigger interrupt */
-				ITDS_getRawTemperature12bit(&data->sensor_interface, &x);
+				(void)ITDS_getRawTemperature12bit(&data->sensor_interface, &x);
 			}
 			if (ITDS_enableTempDataReadyINT1(&data->sensor_interface, state) !=
 			    WE_SUCCESS) {
