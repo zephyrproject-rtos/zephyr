@@ -1,0 +1,9 @@
+board:
+  name: pic64gx_curiosity_kit
+  full_name: pic64gx_curiosity_kit
+  vendor: microchip
+  socs:
+  - name: pic64gx1000
+    variants:
+    - name: smp
+      cpucluster: u54
