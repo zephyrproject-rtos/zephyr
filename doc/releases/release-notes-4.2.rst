@@ -1047,3 +1047,9 @@ Other notable changes
 
 * Updated TF-M to version 2.1.2 (from 2.1.1). The release notes can be found at:
   https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.2/releases/2.1.2.html
+
+* Updated all boards with an external I2C connectors (Qwiic, Stemma, Grove...)
+  to use the ``zephyr_i2c`` devicetree label. This allows using the existing
+  :ref:`shields` build system feature (``west build --shield``) to interface
+  any connectorized i2c module to any board with a compatible i2c port,
+  regardless of the specific i2c connector branding.
