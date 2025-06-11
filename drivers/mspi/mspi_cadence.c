@@ -759,6 +759,12 @@ int mspi_cadence_dev_config(const struct device *controller, const struct mspi_d
 			goto exit;
 		}
 	}
+
+	/* FIXME: Here some delay is needed and the idle field is not indicating it
+	 * properly! This however is bad, if the kernel didn't start timing services
+	 * yet!
+	 */
+	k_sleep(K_MSEC(50));
 exit:
 	/* Re-enable MSPI */
 	MSPI_CADENCE_REG_WRITE(1, CONFIG, ENABLE_SPI, base_addr);
