@@ -173,6 +173,7 @@ uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 		     void *user_op, ticker_caller_id_get_cb_t caller_id_get_cb,
 		     ticker_sched_cb_t sched_cb,
 		     ticker_trigger_set_cb_t trigger_set_cb);
+int ticker_deinit(uint8_t instance_index);
 bool ticker_is_initialized(uint8_t instance_index);
 void ticker_trigger(uint8_t instance_index);
 void ticker_worker(void *param);
