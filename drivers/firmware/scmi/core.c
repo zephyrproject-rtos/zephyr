@@ -87,7 +87,7 @@ static int scmi_core_setup_chan(const struct device *transport,
 	return 0;
 }
 
-static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
+static int scmi_send_message_polling(struct scmi_protocol *proto,
 					struct scmi_message *msg,
 					struct scmi_message *reply)
 {
@@ -103,6 +103,9 @@ static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 	 * Cortex-M quirk: no interrupts at this point => no timer =>
 	 * no timeout mechanism => this can block the whole system.
 	 *
+	 * Polling mode repeatedly checks the chan_status field in share memory
+	 * to detect whether the remote side have completed message processing
+	 *
 	 * TODO: is there a better way to handle this?
 	 */
 	while (!scmi_transport_channel_is_free(proto->transport, proto->tx)) {
@@ -116,7 +119,7 @@ static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 	return ret;
 }
 
-static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
+static int scmi_send_message_interrupt(struct scmi_protocol *proto,
 					 struct scmi_message *msg,
 					 struct scmi_message *reply)
 {
@@ -159,7 +162,7 @@ out_release_mutex:
 }
 
 int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
-		      struct scmi_message *reply)
+		      struct scmi_message *reply, bool use_polling)
 {
 	if (!proto->tx) {
 		return -ENODEV;
@@ -169,10 +172,10 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		return -EINVAL;
 	}
 
-	if (k_is_pre_kernel()) {
-		return scmi_send_message_pre_kernel(proto, msg, reply);
+	if (use_polling) {
+		return scmi_send_message_polling(proto, msg, reply);
 	} else {
-		return scmi_send_message_post_kernel(proto, msg, reply);
+		return scmi_send_message_interrupt(proto, msg, reply);
 	}
 }
 
