@@ -12,5 +12,5 @@ add_subdirectory_ifdef(CONFIG_NORDIC_VPR_LAUNCHER nordic_vpr_launcher)
 add_subdirectory_ifdef(CONFIG_MCUX_FLEXIO mcux_flexio)
 add_subdirectory_ifdef(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT renesas_ra_external_interrupt)
 add_subdirectory_ifdef(CONFIG_NXP_RTXXX_DSP_CTRL nxp_rtxxx_dsp_ctrl)
-
+add_subdirectory_ifdef(CONFIG_DISPLAY_TM1637 tm1637)
 add_subdirectory(coresight)

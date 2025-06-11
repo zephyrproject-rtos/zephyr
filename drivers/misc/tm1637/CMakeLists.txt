@@ -1,0 +1,1 @@
+zephyr_library_sources_ifdef(CONFIG_DISPLAY_TM1637 tm1637_driver.c)

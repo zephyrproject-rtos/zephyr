@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_TM1637
+    bool "TM1637 driver"
+    depends on GPIO
+    default y
+    help
+      Enable support for TM1637 7-segment display module.
