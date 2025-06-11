@@ -4,7 +4,11 @@
 
 description: ILI9XXX display controllers common properties.
 
-include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+include:
+  - display-controller.yaml
+  - name: mipi-dbi-spi-device.yaml
+    property-blocklist:
+      - te-delay
 
 properties:
   pixel-format:
