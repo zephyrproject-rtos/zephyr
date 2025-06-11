@@ -591,13 +591,15 @@ files for a board named ``plank``:
   place the adjustments specific for a given SoC or board variant in the
   :file:`plank_<qualifiers>_defconfig`.
 
-  The ``_defconfig`` should contain mandatory settings for your system clock,
+  The ``_defconfig`` should contain mandatory settings for your UART,
   console, etc. The results are architecture-specific, but typically look
   something like this:
 
   .. code-block:: cfg
 
-     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
+     CONFIG_GPIO=y
+     CONFIG_CONSOLE=y
+     CONFIG_UART_CONSOLE=y
      CONFIG_SERIAL=y
 
 :file:`plank_x_y_z_defconfig` / :file:`plank_<qualifiers>_x_y_z_defconfig`
