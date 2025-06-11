@@ -489,7 +489,11 @@ static int ov7670_init(const struct device *dev)
 	const struct ov7670_config *config = dev->config;
 	int ret, i;
 	uint8_t pid;
-	struct video_format fmt;
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = 320,
+		.height = 240,
+	};
 	const struct ov7670_reg *reg;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
@@ -563,10 +567,6 @@ static int ov7670_init(const struct device *dev)
 	/* Delay after reset */
 	k_msleep(5);
 
-	/* Set default camera format (QVGA, YUYV) */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = 320;
-	fmt.height = 240;
 	ret = ov7670_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		return ret;

@@ -528,7 +528,11 @@ static int mt9m114_init_controls(const struct device *dev)
 static int mt9m114_init(const struct device *dev)
 {
 	const struct mt9m114_config *cfg = dev->config;
-	struct video_format fmt;
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = 480,
+		.height = 272,
+	};
 	uint16_t val;
 	int ret;
 
@@ -560,11 +564,6 @@ static int mt9m114_init(const struct device *dev)
 		LOG_ERR("Unable to initialize mt9m114 config");
 		return ret;
 	}
-
-	/* Set default format to 480x272 RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = 480;
-	fmt.height = 272;
 
 	ret = mt9m114_set_fmt(dev, &fmt);
 	if (ret) {
