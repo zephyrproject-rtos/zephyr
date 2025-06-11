@@ -1489,6 +1489,9 @@ static void siwx91x_iface_init(struct net_if *iface)
 	}
 	net_if_set_link_addr(iface, sidev->macaddr.octet, sizeof(sidev->macaddr.octet),
 			     NET_LINK_ETHERNET);
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
+		net_if_dormant_on(sidev->iface);
+	}
 	siwx91x_sock_init(iface);
 	siwx91x_ethernet_init(iface);
 
