@@ -350,7 +350,6 @@ static int tmp11x_attr_set(const struct device *dev,
 	const struct tmp11x_dev_config *cfg = dev->config;
 	struct tmp11x_data *drv_data = dev->data;
 	int16_t value;
-	uint16_t avg;
 	int res = 0;
 	bool store;
 	int store_res = 0;
@@ -394,19 +393,19 @@ static int tmp11x_attr_set(const struct device *dev,
 		/* sensor supports averaging 1, 8, 32 and 64 samples */
 		switch (val->val1) {
 		case 1:
-			avg = TMP11X_AVG_1_SAMPLE;
+			value = TMP11X_AVG_1_SAMPLE;
 			break;
 
 		case 8:
-			avg = TMP11X_AVG_8_SAMPLES;
+			value = TMP11X_AVG_8_SAMPLES;
 			break;
 
 		case 32:
-			avg = TMP11X_AVG_32_SAMPLES;
+			value = TMP11X_AVG_32_SAMPLES;
 			break;
 
 		case 64:
-			avg = TMP11X_AVG_64_SAMPLES;
+			value = TMP11X_AVG_64_SAMPLES;
 			break;
 
 		default:
@@ -415,7 +414,7 @@ static int tmp11x_attr_set(const struct device *dev,
 		}
 
 		if (res == 0) {
-			res = tmp11x_write_config(dev, TMP11X_CFGR_AVG, avg);
+			res = tmp11x_write_config(dev, TMP11X_CFGR_AVG, value);
 		}
 
 		break;
