@@ -37,6 +37,9 @@ static const struct bt_data sd[] = {
 };
 #endif /* !CONFIG_BT_EXT_ADV */
 
+/* Currently active peripheral connections count */
+static uint8_t conn_count;
+
 /* Use atomic variable, 2 bits for connection and disconnection state */
 static ATOMIC_DEFINE(state, 2U);
 
@@ -264,6 +267,8 @@ int main(void)
 
 	/* Implement notification. */
 	while (1) {
+		bool is_adv_start = false;
+
 		k_sleep(K_SECONDS(1));
 
 		/* Heartrate measurements simulation */
@@ -275,10 +280,18 @@ int main(void)
 		if (atomic_test_and_clear_bit(state, STATE_CONNECTED)) {
 			/* Connected callback executed */
 
+			conn_count++;
+			if (conn_count < CONFIG_BT_MAX_CONN) {
+				is_adv_start = true;
+			}
 #if defined(HAS_LED)
 			blink_stop();
 #endif /* HAS_LED */
-		} else if (atomic_test_and_clear_bit(state, STATE_DISCONNECTED)) {
+		}
+
+		if (is_adv_start ||
+		    (atomic_test_and_clear_bit(state, STATE_DISCONNECTED) &&
+		     (conn_count == CONFIG_BT_MAX_CONN))) {
 #if !defined(CONFIG_BT_EXT_ADV)
 			printk("Starting Legacy Advertising (connectable and scannable)\n");
 			err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd,
@@ -298,7 +311,9 @@ int main(void)
 #endif /* CONFIG_BT_EXT_ADV */
 
 #if defined(HAS_LED)
-			blink_start();
+			if (!is_adv_start) {
+				blink_start();
+			}
 #endif /* HAS_LED */
 		}
 	}
