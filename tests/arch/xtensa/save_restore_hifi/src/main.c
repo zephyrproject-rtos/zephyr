@@ -68,10 +68,16 @@ ZTEST(hifi, test_register_sanity)
 				thread_entry, (void *)(uintptr_t)i, NULL, NULL,
 				priority - 1, 0, K_FOREVER);
 
-
+#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+		k_thread_cpu_pin(&thread[i], i % CONFIG_MP_MAX_NUM_CPUS);
+#endif
 	}
 
 	k_thread_start(&thread[0]);
+
+	for (i = 0; i < NUM_THREADS; i++) {
+		k_thread_join(&thread[i], K_FOREVER);
+	}
 }
 
 ZTEST_SUITE(hifi, NULL, NULL, NULL, NULL, NULL);
