@@ -77,3 +77,8 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 	return -ENOTSUP;
 }
 #endif /* CONFIG_FPU_SHARING */
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	return -ENOTSUP;
+}
