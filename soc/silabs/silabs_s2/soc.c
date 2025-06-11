@@ -81,8 +81,11 @@ void soc_prep_hook(void)
 	 * all bus transactions from the CPU have non-secure attribution.
 	 * This makes the secure-only app behave more like a non-secure app, allowing the use of
 	 * libraries that only expect to use non-secure peripherals, such as the radio subsystem.
+	 * If MCUboot is used, assume that the bootloader has configured the SMU and SAU
+	 * appropriately, and only connect the IRQ for SMU faults.
 	 */
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT)
 #if defined(CMU_CLKEN1_SMU)
 	CMU_S->CLKEN1_SET = CMU_CLKEN1_SMU;
 #endif
@@ -100,6 +103,7 @@ void soc_prep_hook(void)
 	NVIC_ClearPendingIRQ(SMU_SECURE_IRQn);
 	SMU->IF_CLR = SMU_IF_PPUSEC | SMU_IF_BMPUSEC;
 	SMU->IEN = SMU_IEN_PPUSEC | SMU_IEN_BMPUSEC;
+#endif
 
 	IRQ_DIRECT_CONNECT(SMU_SECURE_IRQn, 0, smu_fault, 0);
 	irq_enable(SMU_SECURE_IRQn);
