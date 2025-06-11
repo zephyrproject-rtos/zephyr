@@ -70,6 +70,7 @@ static struct k_spinlock lock;
 static uint64_t last_count; /* Time (SYSCOUNTER value) @last sys_clock_announce() */
 static atomic_t int_mask;
 static uint8_t ext_channels_allocated;
+static uint64_t grtc_start_value;
 static nrfx_grtc_channel_t system_clock_channel_data = {
 	.handler = sys_clock_timeout_handler,
 	.p_context = NULL,
@@ -362,6 +363,11 @@ int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time)
 	return 0;
 }
 
+uint64_t z_nrf_grtc_timer_startup_value_get(void)
+{
+	return grtc_start_value;
+}
+
 #if defined(CONFIG_POWEROFF) && defined(CONFIG_NRF_GRTC_START_SYSCOUNTER)
 int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 {
@@ -489,6 +495,8 @@ static int sys_clock_driver_init(void)
 	}
 #endif /* CONFIG_NRF_GRTC_START_SYSCOUNTER */
 
+	last_count = (counter() / CYC_PER_TICK) * CYC_PER_TICK;
+	grtc_start_value = last_count;
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		system_timeout_set_relative(CYC_PER_TICK);
