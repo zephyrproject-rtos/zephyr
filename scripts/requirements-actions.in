@@ -28,6 +28,7 @@ pytest
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
 pyyaml
+reuse
 ruff==0.11.11
 setuptools>=70.2.0
 spdx-tools
