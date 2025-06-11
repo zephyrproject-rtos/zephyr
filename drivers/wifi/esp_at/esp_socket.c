@@ -76,6 +76,11 @@ void esp_socket_unref(struct esp_socket *sock)
 		}
 	} while (!atomic_cas(&sock->refcount, ref, ref - 1));
 
+	/* notifies free only on 1-to-0 transition */
+	if (ref > 1) {
+		return;
+	}
+
 	k_sem_give(&sock->sem_free);
 }
 
