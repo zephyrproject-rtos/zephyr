@@ -20,6 +20,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
+      - CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
   sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp

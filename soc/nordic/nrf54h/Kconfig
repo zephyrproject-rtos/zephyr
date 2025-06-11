@@ -10,6 +10,7 @@ config SOC_SERIES_NRF54HX
 	select SOC_EARLY_INIT_HOOK if ARM
 	select SOC_LATE_INIT_HOOK if SOC_NRF54H20_CPURAD_ENABLE
 	select NRF_PLATFORM_HALTIUM
+	select EXPERIMENTAL if MCUBOOT
 
 config SOC_NRF54H20_CPUAPP_COMMON
 	bool
@@ -88,6 +89,3 @@ config SOC_NRF54H20_CPUFLPR
 
 rsource "bicr/Kconfig"
 rsource "gpd/Kconfig"
-
-config SOC_NRF54H20_IRON
-	select EXPERIMENTAL if MCUBOOT

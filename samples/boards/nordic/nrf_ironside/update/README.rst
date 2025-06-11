@@ -25,8 +25,8 @@ The update procedure works as follows:
 
 Once the operation has completed, you can read the boot report to verify that the update has taken place.
 
-Building and running the application for nrf54h20dk/nrf54h20/cpuapp/iron
-************************************************************************
+Building and running the application for nrf54h20dk/nrf54h20/cpuapp
+*******************************************************************
 
 .. note::
    You can use this application only when there is already a version of IronSide SE installed on the device.
@@ -55,7 +55,7 @@ Building and running the application for nrf54h20dk/nrf54h20/cpuapp/iron
 
    .. zephyr-app-commands::
       :zephyr-app: samples/boards/nordic/nrf_ironside/update
-      :board: nrf54h20dk/nrf54h20/cpuapp/iron
+      :board: nrf54h20dk/nrf54h20/cpuapp
       :goals: flash
 
 #. Trigger a reset:
