@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: IPC configuration for Nordic IRONside calls
+description: IPC configuration for Nordic IronSide calls
 
 compatible: "nordic,ironside-call"
 

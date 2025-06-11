@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: nrf54h20dk/nrf54h20/cpuapp/iron
-name: nRF54H20-DK-nRF54H20-Application (IRONside compatible) (revision 0.9.0)
+name: nRF54H20-DK-nRF54H20-Application (IronSide compatible) (revision 0.9.0)
 type: mcu
 arch: arm
 toolchain:

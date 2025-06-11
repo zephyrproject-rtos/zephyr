@@ -36,7 +36,7 @@ config SOC_NRF54H20_CPUFLPR
 config SOC_NRF54H20_IRON
 	bool
 	help
-	  Indicates that local domain firmware is compatible with Nordic IRONside SE.
+	  Indicates that local domain firmware is compatible with Nordic IronSide SE.
 
 config SOC
 	default "nrf54h20" if SOC_NRF54H20
