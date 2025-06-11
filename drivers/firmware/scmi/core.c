@@ -8,6 +8,7 @@
 #include <zephyr/drivers/firmware/scmi/transport.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
+#include <kthread.h>
 
 LOG_MODULE_REGISTER(scmi_core);
 
@@ -169,7 +170,15 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		return -EINVAL;
 	}
 
-	if (k_is_pre_kernel()) {
+	bool use_pre_kernel_path = k_is_pre_kernel();
+#ifdef CONFIG_PM
+	/* When PM is enabled and the system manager is referenced in the idle task context,
+	 * the sm interrupt should be disabled in the soc low power phase.
+	 * In this case, the pre kernel is used instead of the post kernel.
+	 */
+	use_pre_kernel_path |= z_is_idle_thread_object(_current);
+#endif
+	if (use_pre_kernel_path) {
 		return scmi_send_message_pre_kernel(proto, msg, reply);
 	} else {
 		return scmi_send_message_post_kernel(proto, msg, reply);
