@@ -854,6 +854,10 @@ static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 		user_input_spd = shell_strtoul(argv[k], 10, &ret);
 		switch (user_input_spd) {
 		case 0:
+			if (strcmp(argv[k], "no-autoneg") == 0) {
+				speed |= LINK_AUTO_NEGOTIATION_DISABLED;
+				continue;
+			}
 			break;
 		case 10:
 			speed |= half_duplex ? LINK_HALF_10BASE : LINK_FULL_10BASE;
