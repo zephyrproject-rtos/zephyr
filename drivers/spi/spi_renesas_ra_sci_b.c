@@ -22,7 +22,8 @@
 #endif /* CONFIG_SPI_RENESAS_RA_SCI_B_DTC */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(renesas_ra_spi_sci_b);
+
+LOG_MODULE_REGISTER(renesas_ra_spi_sci_b, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
@@ -209,8 +210,6 @@ static void spi_renesas_ra_sci_b_callback(spi_callback_args_t *p_args)
 							    spi_context_total_rx_len(&data->ctx));
 			} else if (data->ctx.tx_buf == NULL) {
 				data->ctx.recv_frames = data->data_len;
-			} else {
-				/* Do nothing */
 			}
 		}
 #endif /* CONFIG_SPI_SLAVE */
@@ -535,7 +534,8 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_renesas_ra_sci_b_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
-	.release = spi_renesas_ra_sci_b_release};
+	.release = spi_renesas_ra_sci_b_release,
+};
 
 #define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
 #define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
