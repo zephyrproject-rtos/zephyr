@@ -212,6 +212,14 @@ int arch_float_disable(struct k_thread *thread);
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+/**
+ * @brief Disable coprocessor context preservation
+ *
+ * This function serves as a catchall for disabling the preservation of
+ * coprocessor context information when aborting a thread.
+ */
+int arch_coprocessors_disable(struct k_thread *thread);
+
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET)
 /**
  * @brief Obtain privileged stack usage information for the specified thread

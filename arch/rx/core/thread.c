@@ -51,3 +51,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 
 	thread->switch_handle = (void *)iframe;
 }
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	return -ENOTSUP;
+}

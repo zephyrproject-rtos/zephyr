@@ -145,6 +145,51 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+
+#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
+void xtensa_hifi_disown(struct k_thread *thread)
+{
+	unsigned int cpu_id = 0;
+	struct k_thread *owner;
+
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	cpu_id = thread->base.cpu;
+#endif
+
+	owner = atomic_ptr_get(&_kernel.cpus[cpu_id].arch.hifi_owner);
+
+	if (owner == thread) {
+		atomic_ptr_set(&_kernel.cpus[cpu_id].arch.hifi_owner, NULL);
+	}
+}
+#endif
+
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	bool enotsup = true;
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	arch_float_disable(thread);
+	enotsup = false;
+#endif
+
+#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
+	xtensa_hifi_disown(thread);
+
+	/*
+	 * This routine is only called when aborting a thread and we
+	 * deliberately do not disable the HiFi coprocessor here.
+	 * 1. Such disabling can only be done for the current CPU, and we do
+	 *    not have control over which CPU the thread is running on.
+	 * 2. If the thread (being deleted) is a currently executing thread,
+	 *    there will be a context switch to another thread and that CPU
+	 *    will automatically disable the HiFi coprocessor upon the switch.
+	 */
+	enotsup = false;
+#endif
+	return enotsup ? -ENOTSUP : 0;
+}
+
 #ifdef CONFIG_USERSPACE
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
