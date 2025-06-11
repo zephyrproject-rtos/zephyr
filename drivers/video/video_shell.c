@@ -1049,28 +1049,26 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_video_format_dev, complete_video_format_dev);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
 	SHELL_CMD_ARG(start, &dsub_video_dev,
-		"Start a video device and its sources\n"
-		"Usage: video start <device>",
+		SHELL_HELP("Start a video device and its sources", "<device>"),
 		cmd_video_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_video_dev,
-		"Stop a video device and its sources\n"
-		"Usage: video stop <device>",
+		SHELL_HELP("Stop a video device and its sources", "<device>"),
 		cmd_video_stop, 2, 0),
 	SHELL_CMD_ARG(capture, &dsub_video_dev,
-		"Capture a given number of buffers from a device\n"
-		"Usage: video capture <device> <num-buffers>",
+		SHELL_HELP("Capture a given number of buffers from a device",
+			   "<device> <num-buffers>"),
 		cmd_video_capture, 3, 0),
 	SHELL_CMD_ARG(format, &dsub_video_format_dev,
-		"Query or set the video format of a device\n"
-		"Usage: video format <device> <dir> [<fourcc> <width>x<height>]",
+		SHELL_HELP("Query or set the video format of a device",
+			   "<device> <dir> [<fourcc> <width>x<height>]"),
 		cmd_video_format, 3, 2),
 	SHELL_CMD_ARG(frmival, &dsub_video_frmival_dev,
-		"Query or set the video frame rate/interval of a device\n"
-		"Usage: video frmival <device> [<n>fps|<n>ms|<n>us]",
+		SHELL_HELP("Query or set the video frame rate/interval of a device",
+			   "<device> [<n>fps|<n>ms|<n>us]"),
 		cmd_video_frmival, 2, 1),
 	SHELL_CMD_ARG(ctrl, &dsub_video_ctrl_dev,
-		"Query or set video controls of a device\n"
-		"Usage: video ctrl <device> [<ctrl> <value>]",
+		SHELL_HELP("Query or set video controls of a device",
+			   "<device> [<ctrl> <value>]"),
 		cmd_video_ctrl, 2, 2),
 	SHELL_SUBCMD_SET_END
 );
