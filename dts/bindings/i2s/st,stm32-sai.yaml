@@ -25,17 +25,29 @@ properties:
   pinctrl-names:
     required: true
 
-  mclk-div-enable:
-    type: boolean
-    description: |
-      SAI NODIV property.
-      When property is not present, oversampling is enabled @ 256.
-
   mclk-enable:
     type: boolean
     description: |
       Master Clock Output function.
       An mck pin must be listed within pinctrl-0 when enabling this property.
+
+  mclk-divider:
+    type: string
+    default: "no-div"
+    description: |
+      Master Clock Divider Configuration.
+
+      When no-div property is present:
+      - MCKDIV = SAI_CK_x / (FS * (FRL + 1))
+      Otherwise:
+      - MCKDIV = SAI_CK_x / (FS * (OSR + 1) * 256)
+
+      When div-256 is present OSR is set to 0.
+      When div-512 is present OSR is set to 1.
+    enum:
+      - "no-div"
+      - "div-256"
+      - "div-512"
 
   synchronous:
     type: boolean
