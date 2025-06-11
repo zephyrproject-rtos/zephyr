@@ -50,6 +50,7 @@ enum {
 	ERASE_BLOCK,
 	READ_ID,
 	READ_STATUS_REG,
+	WRITE_REG,
 	ERASE_CHIP,
 	READ_JESD216,
 	/* Entries after this should be for scratch commands */
@@ -668,6 +669,60 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 }
 
 /*
+ * This function enables octal mode, when supported. Otherwise it
+ * returns an error.
+ * @param dev: Flexspi device
+ * @param flexspi_lut: flexspi lut table, useful if instruction writes are needed
+ * @return 0 if octal mode was entered, or -ENOTSUP if octal mode is not supported
+ */
+static int flash_flexspi_nor_octal_enable(struct flash_flexspi_nor_data *data,
+					  uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
+{
+	int ret;
+	uint32_t buffer = 0;
+
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.SeqNumber = 1,
+		.data = &buffer,
+	};
+	flexspi_device_config_t config = {
+		.flexspiRootClk = MHZ(50),
+		.flashSize = FLEXSPI_FLSHCR0_FLSHSZ_MASK, /* Max flash size */
+		.ARDSeqNumber = 1,
+		.ARDSeqIndex = READ,
+	};
+
+	ret = memc_flexspi_set_device_config(&data->controller,
+				&config,
+				(uint32_t *)flexspi_lut,
+				FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+				data->port);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Enable write */
+	ret = flash_flexspi_nor_write_enable(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Enable octal DDR mode */
+	buffer = 0xE7;
+	transfer.dataSize = 1;
+	transfer.seqIndex = WRITE_REG;
+	transfer.cmdType = kFLEXSPI_Write;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Wait for QE bit to complete programming */
+	return flash_flexspi_nor_wait_bus_busy(data);
+}
+/*
  * This function enables 4 byte addressing, when supported. Otherwise it
  * returns an error.
  * @param dev: Flexspi device
@@ -1184,6 +1239,61 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
 		/* Device has no QE bit, 1-4-4 and 1-1-4 is always enabled */
 		return 0;
+	case 0x195b2c: /* MT35XU256 */
+	case 0x1a5b2c: /* MT35XU512 */
+	case 0x1b5b2c: /* MT35XU01G */
+	case 0x1c5b2c: /* MT35XU02G */
+	case 0x195a2c: /* MT35XL256 */
+	case 0x1a5a2c: /* MT35XL512 */
+	case 0x1b5a2c: /* MT35XL01G */
+	case 0x1c5a2c: /* MT35XL02G */
+		/* MT35X flash with more than 32MB, use 8 byte read/write */
+		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_OCMD_READ,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20);
+		/* Flash needs 16 dummy cycles */
+		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_DUMMY_DDR, kFLEXSPI_8PAD, 0x20,
+				kFLEXSPI_Command_READ_DDR, kFLEXSPI_8PAD, 0x04);
+		/* Update PROGRAM commands for 8 byte mode */
+		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_PP_4B,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20);
+		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_DDR, kFLEXSPI_8PAD, 0x4,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		/* Update ERASE commands for 4 byte mode */
+		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_SE_4B,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20);
+		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_BE_4B,
+				kFLEXSPI_Command_RADDR_DDR, kFLEXSPI_8PAD, 0x20),
+		/* Read instruction used for polling is 0x05 */
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_DUMMY_DDR, kFLEXSPI_8PAD, 0x10);
+		flexspi_lut[READ_STATUS_REG][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_READ_DDR,  kFLEXSPI_8PAD, 0x01,
+				kFLEXSPI_Command_STOP,      kFLEXSPI_1PAD, 0x00);
+		/* Write volatile register for 1 byte mode, used to enter OPI mode */
+		flexspi_lut[WRITE_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WR_VCFGREG,
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00);
+		flexspi_lut[WRITE_REG][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00,
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x00);
+		flexspi_lut[WRITE_REG][2] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x01,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+		/* enable octal mode */
+		flash_flexspi_nor_octal_enable(data, flexspi_lut);
+		flexspi_lut[WRITE_ENABLE][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_8PAD, SPI_NOR_CMD_WREN,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0);
+		return 0;
+
 	default:
 		return -ENOTSUP;
 	}
