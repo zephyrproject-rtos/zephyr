@@ -40,7 +40,7 @@ struct phy_mii_dev_data {
 	struct k_work_delayable autoneg_work;
 	bool gigabit_supported;
 	bool restart_autoneg;
-	uint32_t autoneg_timeout;
+	k_timepoint_t autoneg_timeout;
 #endif
 };
 
@@ -212,7 +212,7 @@ static int update_link_state(const struct device *dev)
 	data->restart_autoneg = false;
 
 	/* We have to wait for the auto-negotiation process to complete */
-	data->autoneg_timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / MII_AUTONEG_POLL_INTERVAL_MS;
+	data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
 	return -EINPROGRESS;
 }
 
@@ -244,7 +244,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 	}
 
 	if (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE)) {
-		if (data->autoneg_timeout-- == 0U) {
+		if (sys_timepoint_expired(data->autoneg_timeout)) {
 			LOG_DBG("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
 			return -ETIMEDOUT;
 		}
