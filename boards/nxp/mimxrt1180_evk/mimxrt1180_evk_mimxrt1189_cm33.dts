@@ -20,6 +20,7 @@
 		zephyr,flash-controller = &w25q128jw;
 		zephyr,flash = &w25q128jw;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,code-m7-partition = &slot1_partition;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-mcumgr = &lpuart1;
