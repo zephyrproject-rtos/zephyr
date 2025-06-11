@@ -31,8 +31,8 @@ void sys_arch_reboot(int type)
 	ARG_UNUSED(type);
 }
 
-#define SY1XX_ARCHI_REF_CLOCK (32768)
-#define SY1XX_ARCHI_PER_CLOCK (125000000)
+#define SY1XX_ARCHI_REF_CLOCK 32768
+#define SY1XX_ARCHI_PER_CLOCK 125000000
 
 uint32_t sy1xx_soc_get_rts_clock_frequency(void)
 {
