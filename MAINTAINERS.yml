@@ -5359,6 +5359,7 @@ West:
     - modules/lvgl/
     - tests/lib/gui/lvgl/
     - include/zephyr/dt-bindings/lvgl/
+    - samples/modules/lvgl/
   labels:
     - "area: LVGL"
 
