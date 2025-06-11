@@ -4491,7 +4491,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		}
 	} else if (!bt_pub_key_is_valid(smp->pkey)) {
 		LOG_WRN("Received invalid public key");
-		return BT_SMP_ERR_INVALID_PARAMS;
+		return BT_SMP_ERR_DHKEY_CHECK_FAILED;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
