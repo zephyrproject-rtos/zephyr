@@ -35,7 +35,7 @@ struct stm32_exti_range {
 	uint8_t len;
 };
 
-#define NUM_EXTI_LINES DT_PROP(DT_NODELABEL(exti), num_lines)
+#define NUM_EXTI_LINES DT_PROP(EXTI_NODE, num_lines)
 
 static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 0xFF};
 
@@ -220,7 +220,7 @@ static int stm32_exti_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
+	DT_FOREACH_PROP_ELEM(EXTI_NODE,
 			     interrupt_names,
 			     STM32_EXTI_INIT_LINE_RANGE);
 
