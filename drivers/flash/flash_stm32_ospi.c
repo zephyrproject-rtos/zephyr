@@ -2686,7 +2686,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
 	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id) && defined(CONFIG_FLASH_JESD216_API)
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 #endif /* jedec_id */
 	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)
