@@ -11,27 +11,6 @@
 LOG_MODULE_REGISTER(min_heap);
 
 /**
- * @brief Swap two elements in the heap.
- *
- * This function swaps the contents of two elements at the specified indices
- * within the heap.
- *
- * @param heap Pointer to the min-heap.
- * @param a Index of the first element.
- * @param b Index of the second element.
- */
-static void swap(struct min_heap *heap, size_t a, size_t b)
-{
-	uint8_t tmp[heap->elem_size];
-	void *elem_a = min_heap_get_element(heap, a);
-	void *elem_b = min_heap_get_element(heap, b);
-
-	memcpy(tmp, elem_a, heap->elem_size);
-	memcpy(elem_a, elem_b, heap->elem_size);
-	memcpy(elem_b, tmp, heap->elem_size);
-}
-
-/**
  * @brief Restore heap order by moving a node up the tree.
  *
  * Moves the node at the given index upward in the heap until the min-heap
@@ -42,17 +21,15 @@ static void swap(struct min_heap *heap, size_t a, size_t b)
  */
 static void heapify_up(struct min_heap *heap, size_t index)
 {
-	size_t parent;
-	void *curr, *par;
-
 	while (index > 0) {
-		parent = (index - 1) / 2;
-		curr = min_heap_get_element(heap, index);
-		par = min_heap_get_element(heap, parent);
+		size_t parent = (index - 1) / 2;
+		void *curr = min_heap_get_element(heap, index);
+		void *par = min_heap_get_element(heap, parent);
+
 		if (heap->cmp(curr, par) >= 0) {
 			break;
 		}
-		swap(heap, index, parent);
+		byteswp(curr, par, heap->elem_size);
 		index = parent;
 	}
 }
@@ -69,30 +46,34 @@ static void heapify_up(struct min_heap *heap, size_t index)
 
 static void heapify_down(struct min_heap *heap, size_t index)
 {
-	size_t left, right, smallest;
+	/* Terminate the loop naturally when the left child is out of bounds */
+	for (size_t left = 2 * index + 1; left < heap->size; left = 2 * index + 1) {
 
-	while (true) {
-		left = 2 * index + 1;
-		right = 2 * index + 2;
-		smallest = index;
+		size_t right = left + 1;
+		size_t smallest = index;
+		void *elem_index = min_heap_get_element(heap, index);
+		void *elem_left = min_heap_get_element(heap, left);
+		void *elem_smallest = elem_index;
 
-		if (left < heap->size &&
-			heap->cmp(min_heap_get_element(heap, left),
-			min_heap_get_element(heap, smallest)) < 0) {
+		if (heap->cmp(elem_left, elem_index) < 0) {
 			smallest = left;
+			elem_smallest = elem_left;
 		}
 
-		if (right < heap->size &&
-			heap->cmp(min_heap_get_element(heap, right),
-			min_heap_get_element(heap, smallest)) < 0) {
-			smallest = right;
+		if (right < heap->size) {
+			void *elem_right = min_heap_get_element(heap, right);
+
+			if (heap->cmp(elem_right, elem_smallest) < 0) {
+				smallest = right;
+				elem_smallest = elem_right;
+			}
 		}
 
 		if (smallest == index) {
 			break;
 		}
 
-		swap(heap, index, smallest);
+		byteswp(elem_index, elem_smallest, heap->elem_size);
 		index = smallest;
 	}
 }
