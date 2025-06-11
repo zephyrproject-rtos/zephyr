@@ -2052,7 +2052,7 @@ def _main(args):
 
         test = testcase()
         try:
-            print(f"Running {test.name:16} tests in "
+            print(f"Running {test.name:30} tests in "
                   f"{resolve_path_hint(test.path_hint)} ...")
             test.run()
         except EndTest:
