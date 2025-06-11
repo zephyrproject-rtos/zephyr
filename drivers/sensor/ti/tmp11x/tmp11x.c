@@ -23,6 +23,7 @@
 #define  EEPROM_SIZE_REG sizeof(uint16_t)
 #define  EEPROM_TMP117_RESERVED (2 * sizeof(uint16_t))
 #define  EEPROM_MIN_BUSY_MS 7
+#define  RESET_MIN_BUSY_MS 2
 
 LOG_MODULE_REGISTER(TMP11X, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -311,17 +312,59 @@ static int16_t tmp11x_conv_value(const struct sensor_value *val)
 	}
 }
 
+static bool tmp11x_is_attr_store_supported(enum sensor_attribute attr)
+{
+	switch ((int) attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+	case SENSOR_ATTR_LOWER_THRESH:
+	case SENSOR_ATTR_UPPER_THRESH:
+	case SENSOR_ATTR_OFFSET:
+	case SENSOR_ATTR_OVERSAMPLING:
+	case SENSOR_ATTR_TMP11X_SHUTDOWN_MODE:
+	case SENSOR_ATTR_TMP11X_CONTINUOUS_CONVERSION_MODE:
+	case SENSOR_ATTR_TMP11X_ALERT_PIN_POLARITY:
+	case SENSOR_ATTR_TMP11X_ALERT_MODE:
+		return true;
+	case SENSOR_ATTR_TMP11X_ONE_SHOT_MODE:
+		return false;
+	}
+
+	return false;
+}
+
+static int tmp11x_attr_store_reload(const struct device *dev)
+{
+	int await_res = tmp11x_eeprom_await(dev);
+	int reset_res = tmp11x_reg_write(dev, TMP11X_REG_CFGR, TMP11X_CFGR_RESET);
+
+	k_sleep(K_MSEC(RESET_MIN_BUSY_MS));
+
+	return await_res != 0 ? await_res : reset_res;
+}
+
 static int tmp11x_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
+	const struct tmp11x_dev_config *cfg = dev->config;
 	struct tmp11x_data *drv_data = dev->data;
 	int16_t value;
 	uint16_t avg;
+	int res = 0;
+	bool store;
+	int store_res = 0;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
+	}
+
+	store = cfg->store_attr_values && tmp11x_is_attr_store_supported(attr);
+	if (store) {
+		store_res = tmp11x_reg_write(dev, TMP11X_REG_EEPROM_UL, TMP11X_EEPROM_UL_UNLOCK);
+		if (store_res != 0) {
+			return store_res;
+		}
 	}
 
 	switch ((int)attr) {
@@ -331,7 +374,8 @@ static int tmp11x_attr_set(const struct device *dev,
 			return value;
 		}
 
-		return tmp11x_write_config(dev, TMP11X_CFGR_CONV, value);
+		res = tmp11x_write_config(dev, TMP11X_CFGR_CONV, value);
+		break;
 
 	case SENSOR_ATTR_OFFSET:
 		if (!tmp11x_is_offset_supported(drv_data)) {
@@ -343,7 +387,8 @@ static int tmp11x_attr_set(const struct device *dev,
 		 */
 		value = tmp11x_sensor_value_to_reg_format(val);
 
-		return tmp11x_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
+		res = tmp11x_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
+		break;
 
 	case SENSOR_ATTR_OVERSAMPLING:
 		/* sensor supports averaging 1, 8, 32 and 64 samples */
@@ -365,56 +410,79 @@ static int tmp11x_attr_set(const struct device *dev,
 			break;
 
 		default:
-			return -EINVAL;
+			res = -EINVAL;
+			break;
 		}
-		return tmp11x_write_config(dev, TMP11X_CFGR_AVG, avg);
+
+		if (res == 0) {
+			res = tmp11x_write_config(dev, TMP11X_CFGR_AVG, avg);
+		}
+
+		break;
+
 	case SENSOR_ATTR_TMP11X_SHUTDOWN_MODE:
-		return tmp11x_write_config(dev, TMP11X_CFGR_MODE, TMP11X_MODE_SHUTDOWN);
+		res = tmp11x_write_config(dev, TMP11X_CFGR_MODE, TMP11X_MODE_SHUTDOWN);
+		break;
 
 	case SENSOR_ATTR_TMP11X_CONTINUOUS_CONVERSION_MODE:
-		return tmp11x_write_config(dev, TMP11X_CFGR_MODE, TMP11X_MODE_CONTINUOUS);
+		res = tmp11x_write_config(dev, TMP11X_CFGR_MODE, TMP11X_MODE_CONTINUOUS);
+		break;
 
 	case SENSOR_ATTR_TMP11X_ONE_SHOT_MODE:
-		return tmp11x_write_config(dev, TMP11X_CFGR_MODE, TMP11X_MODE_ONE_SHOT);
+		res = tmp11x_write_config(dev, TMP11X_CFGR_MODE, TMP11X_MODE_ONE_SHOT);
+		break;
 
 #ifdef CONFIG_TMP11X_TRIGGER
 	case SENSOR_ATTR_TMP11X_ALERT_PIN_POLARITY:
 		if (val->val1 == TMP11X_ALERT_PIN_ACTIVE_HIGH) {
-			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_POL,
+			res = tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_POL,
 						   TMP11X_CFGR_ALERT_PIN_POL);
 		} else {
-			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_POL, 0);
+			res = tmp11x_write_config(dev, TMP11X_CFGR_ALERT_PIN_POL, 0);
 		}
+		break;
 
 	case SENSOR_ATTR_TMP11X_ALERT_MODE:
 		if (val->val1 == TMP11X_ALERT_THERM_MODE) {
-			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_MODE,
+			res = tmp11x_write_config(dev, TMP11X_CFGR_ALERT_MODE,
 						   TMP11X_CFGR_ALERT_MODE);
 		} else {
-			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_MODE, 0);
+			res = tmp11x_write_config(dev, TMP11X_CFGR_ALERT_MODE, 0);
 		}
+		break;
 
 	case SENSOR_ATTR_UPPER_THRESH:
 		/* Convert temperature to register format */
 		value = tmp11x_sensor_value_to_reg_format(val);
-		return tmp11x_reg_write(dev, TMP11X_REG_HIGH_LIM, value);
+		res = tmp11x_reg_write(dev, TMP11X_REG_HIGH_LIM, value);
+		break;
 
 	case SENSOR_ATTR_LOWER_THRESH:
 		/* Convert temperature to register format */
 		value = tmp11x_sensor_value_to_reg_format(val);
-		return tmp11x_reg_write(dev, TMP11X_REG_LOW_LIM, value);
+		res = tmp11x_reg_write(dev, TMP11X_REG_LOW_LIM, value);
+		break;
+
 	case SENSOR_ATTR_TMP11X_ALERT_PIN_SELECT:
 		if (val->val1 == TMP11X_ALERT_PIN_ALERT_SEL) {
-			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_DR_SEL, 0);
+			res = tmp11x_write_config(dev, TMP11X_CFGR_ALERT_DR_SEL, 0);
 		} else {
-			return tmp11x_write_config(dev, TMP11X_CFGR_ALERT_DR_SEL,
+			res = tmp11x_write_config(dev, TMP11X_CFGR_ALERT_DR_SEL,
 						   TMP11X_CFGR_ALERT_DR_SEL);
 		}
+		break;
 #endif /* CONFIG_TMP11X_TRIGGER */
 
 	default:
-		return -ENOTSUP;
+		res = -ENOTSUP;
+		break;
 	}
+
+	if (store) {
+		store_res = tmp11x_attr_store_reload(dev);
+	}
+
+	return res != 0 ? res : store_res;
 }
 
 static int tmp11x_attr_get(const struct device *dev, enum sensor_channel chan,
@@ -585,6 +653,7 @@ static int tmp11x_pm_control(const struct device *dev, enum pm_device_action act
 		.alert_pin_polarity = DT_INST_PROP(_num, alert_polarity),                          \
 		.alert_mode = DT_INST_PROP(_num, alert_mode),                                      \
 		.alert_dr_sel = DT_INST_PROP(_num, alert_dr_sel),                                  \
+		.store_attr_values = DT_INST_PROP(_num, store_attr_values),                        \
 		IF_ENABLED(CONFIG_TMP11X_TRIGGER, \
 			(.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(_num, alert_gpios, {}),)) }; \
 	PM_DEVICE_DT_INST_DEFINE(_num, tmp11x_pm_control); \
