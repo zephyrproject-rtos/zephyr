@@ -158,6 +158,13 @@ out_release_mutex:
 	return ret;
 }
 
+bool scmi_is_current_thread_idle(void)
+{
+	struct k_thread *current = k_current_get();
+
+	return strcmp(k_thread_name_get(current), "idle") == 0;
+}
+
 int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		      struct scmi_message *reply)
 {
@@ -169,7 +176,16 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		return -EINVAL;
 	}
 
-	if (k_is_pre_kernel()) {
+	bool use_pre_kernel_path = k_is_pre_kernel();
+#ifdef CONFIG_PM
+	/* When PM is enabled and the system manager is referenced in the idle task context,
+	 * the sm interrupt should be disabled in the soc low power phase.
+	 * In this case, the pre kernel is used instead of the post kernel.
+	 */
+	use_pre_kernel_path = use_pre_kernel_path || scmi_is_current_thread_idle();
+#endif
+
+	if (use_pre_kernel_path) {
 		return scmi_send_message_pre_kernel(proto, msg, reply);
 	} else {
 		return scmi_send_message_post_kernel(proto, msg, reply);
