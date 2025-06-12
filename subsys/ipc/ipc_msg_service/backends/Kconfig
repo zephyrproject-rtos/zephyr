@@ -10,3 +10,5 @@ config IPC_MSG_SERVICE_REG_BACKEND_PRIORITY
 	default 46
 	help
 	  The backend must be registered before the endpoint register.
+
+rsource "Kconfig.intel_adsp"
