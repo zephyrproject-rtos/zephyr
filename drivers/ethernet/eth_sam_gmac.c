@@ -141,6 +141,10 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 #endif /* !CONFIG_NET_TEST */
 
+BUILD_ASSERT(!(DT_ANY_INST_HAS_PROP_STATUS_OKAY(mac_eeprom) &&
+	       (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)),
+	     "Only support one activated instance get MAC address from EEPROM");
+
 /* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
  * supported are: mii, rmii and gmii. Otherwise mii and rmii are supported.
  */
