@@ -1401,7 +1401,7 @@ static int i3c_dw_irq(const struct device *dev)
 		}
 		/* DA has been assigned, could happen after a IBI HJ request */
 		if (status & INTR_DYN_ADDR_ASSGN_STAT) {
-			/* TODO: handle IBI HJ with semaphore */
+			k_sem_give(&data->sem_hj);
 			sys_write32(INTR_DYN_ADDR_ASSGN_STAT, config->regs + INTR_STATUS);
 		}
 #endif /* CONFIG_I3C_USE_IBI */
