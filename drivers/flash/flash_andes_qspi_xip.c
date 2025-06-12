@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/cache.h>
+#include <zephyr/drivers/flash/andes_flash_xip_api_ex.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -100,10 +101,21 @@ struct flash_andes_qspi_xip_config {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 };
 
+struct flash_andes_qspi_xip_data {
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+	/* Lock of the status registers. */
+	bool status_lock;
+#endif
+};
+
 #define flash_andes_qspi_xip_cmd_read(dev, opcode, dest, length)                                   \
 	flash_andes_qspi_xip_access(dev, opcode, 0, 0, dest, length)
+#define flash_andes_qspi_xip_cmd_write_data(dev, opcode, src, length)                              \
+	flash_andes_qspi_xip_access(dev, opcode, ANDES_ACCESS_WRITE, 0, src, length)
 #define flash_andes_qspi_xip_cmd_write(dev, opcode)                                                \
 	flash_andes_qspi_xip_access(dev, opcode, ANDES_ACCESS_WRITE, 0, NULL, 0)
+#define flash_andes_qspi_xip_cmd_addr_read(dev, opcode, addr, dest, length)                        \
+	flash_andes_qspi_xip_access(dev, opcode, ANDES_ACCESS_ADDRESSED, addr, dest, length)
 #define flash_andes_qspi_xip_cmd_addr_write(dev, opcode, addr, src, length)                        \
 	flash_andes_qspi_xip_access(dev, opcode, ANDES_ACCESS_WRITE | ANDES_ACCESS_ADDRESSED,      \
 				    addr, (void *)src, length)
@@ -486,6 +498,236 @@ static void flash_andes_qspi_xip_pages_layout(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static __ramfunc int flash_andes_qspi_xip_get_status(const struct device *dev,
+						     struct andes_xip_ex_ops_get_out *op_out)
+{
+	int ret = 0;
+
+	prepare_for_flashing(dev);
+
+	ret = flash_andes_qspi_xip_cmd_read(dev, SPI_NOR_CMD_RDSR, &op_out->regs[0], 1);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = flash_andes_qspi_xip_cmd_read(dev, SPI_NOR_CMD_RDSR2, &op_out->regs[1], 1);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = flash_andes_qspi_xip_cmd_read(dev, SPI_NOR_CMD_RDSR3, &op_out->regs[2], 1);
+
+cleanup:
+	cleanup_after_flashing(dev, 0, 0);
+
+	return ret;
+}
+
+static __ramfunc int write_status_register(const struct device *dev, uint8_t sr, uint8_t mask,
+					   uint8_t op_read, uint8_t op_write)
+{
+	uint8_t sr_curr;
+	uint8_t sr_new;
+	int ret, ret2 = 0;
+
+	if (!mask) {
+		return 0;
+	}
+
+	ret = flash_andes_qspi_xip_cmd_read(dev, op_read, &sr_curr, 1);
+	if (ret) {
+		return ret;
+	}
+	sr_new = (sr_curr & ~mask) | sr;
+	if (sr_new != sr_curr) {
+		ret = write_protection_set(dev, false);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = flash_andes_qspi_xip_cmd_write_data(dev, op_write, &sr_new, 1);
+		ret2 = flash_andes_qspi_xip_wait_until_ready(dev);
+	}
+
+	if (!ret) {
+		ret = ret2;
+	}
+
+	return ret;
+}
+
+static __ramfunc int flash_andes_qspi_xip_set_status(const struct device *dev,
+						     struct andes_xip_ex_ops_set_in *op_out)
+{
+	int ret;
+	struct flash_andes_qspi_xip_data *data = dev->data;
+
+	if (data->status_lock) {
+		return -EPERM;
+	}
+
+	prepare_for_flashing(dev);
+
+	ret = write_status_register(dev, op_out->regs[0], op_out->masks[0], SPI_NOR_CMD_RDSR,
+				    SPI_NOR_CMD_WRSR);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = write_status_register(dev, op_out->regs[1], op_out->masks[1], SPI_NOR_CMD_RDSR2,
+				    SPI_NOR_CMD_WRSR2);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = write_status_register(dev, op_out->regs[2], op_out->masks[2], SPI_NOR_CMD_RDSR3,
+				    SPI_NOR_CMD_WRSR3);
+
+cleanup:
+	cleanup_after_flashing(dev, 0, 0);
+
+	return ret;
+}
+
+static __ramfunc int flash_andes_qspi_xip_lock(const struct device *dev,
+					       struct andes_xip_ex_ops_lock_in *op_in)
+{
+	struct flash_andes_qspi_xip_data *data = dev->data;
+
+	data->status_lock = op_in->enable;
+
+	return 0;
+}
+
+static __ramfunc int flash_andes_qspi_xip_lock_state(const struct device *dev,
+						     struct andes_xip_ex_ops_lock_state_out *op_out)
+{
+	struct flash_andes_qspi_xip_data *data = dev->data;
+
+	op_out->state = data->status_lock;
+
+	return 0;
+}
+
+static __ramfunc int
+flash_andes_qspi_xip_set_memrdcmd(const struct device *dev,
+				  struct andes_xip_ex_ops_mem_read_cmd_in *op_in)
+{
+	const struct flash_andes_qspi_xip_config *config = dev->config;
+	struct atcspi200_regs *regs = config->regs;
+
+	prepare_for_flashing(dev);
+
+	regs->MEMCTRL = (uint32_t)op_in->cmd;
+	while (regs->MEMCTRL & MEMCTRL_CHG) {
+	}
+
+	cleanup_after_flashing(dev, 0, 0);
+
+	return 0;
+}
+
+static int flash_andes_qspi_xip_ex_op(const struct device *dev, uint16_t code, const uintptr_t in,
+				      void *out)
+{
+#ifdef CONFIG_USERSPACE
+	bool syscall_trap = z_syscall_trap();
+#endif
+	int key, ret;
+
+	switch (code) {
+	case FLASH_ANDES_XIP_EX_OP_GET_STATUS_REGS: {
+		struct andes_xip_ex_ops_get_out *op_out = (struct andes_xip_ex_ops_get_out *)out;
+#ifdef CONFIG_USERSPACE
+		struct andes_xip_ex_ops_get_out copy_out;
+
+		if (syscall_trap) {
+			op_out = &copy_out;
+		}
+#endif
+		key = prepare_for_ramfunc();
+		ret = flash_andes_qspi_xip_get_status(dev, op_out);
+		cleanup_after_ramfunc(key);
+#ifdef CONFIG_USERSPACE
+		if (ret == 0 && syscall_trap) {
+			K_OOPS(k_usermode_to_copy(out, op_out, sizeof(copy_out)));
+		}
+#endif
+		break;
+	}
+	case FLASH_ANDES_XIP_EX_OP_SET_STATUS_REGS: {
+		struct andes_xip_ex_ops_set_in *op_in = (struct andes_xip_ex_ops_set_in *)in;
+#ifdef CONFIG_USERSPACE
+		struct andes_xip_ex_ops_set_in copy_in;
+
+		if (syscall_trap) {
+			K_OOPS(k_usermode_from_copy(&copy_in, op_in, sizeof(copy_in)));
+			op_in = &copy_in;
+		}
+#endif
+		key = prepare_for_ramfunc();
+		ret = flash_andes_qspi_xip_set_status(dev, op_in);
+		cleanup_after_ramfunc(key);
+		break;
+	}
+	case FLASH_ANDES_XIP_EX_OP_LOCK: {
+		struct andes_xip_ex_ops_lock_in *op_in = (struct andes_xip_ex_ops_lock_in *)in;
+#ifdef CONFIG_USERSPACE
+		struct andes_xip_ex_ops_lock_in copy_in;
+
+		if (syscall_trap) {
+			K_OOPS(k_usermode_from_copy(&copy_in, op_in, sizeof(copy_in)));
+			op_in = &copy_in;
+		}
+#endif
+		ret = flash_andes_qspi_xip_lock(dev, op_in);
+		break;
+	}
+	case FLASH_ANDES_XIP_EX_OP_LOCK_STATE: {
+		struct andes_xip_ex_ops_lock_state_out *op_out =
+			(struct andes_xip_ex_ops_lock_state_out *)out;
+#ifdef CONFIG_USERSPACE
+		struct andes_xip_ex_ops_lock_state_out copy_out;
+
+		if (syscall_trap) {
+			op_out = &copy_out;
+		}
+#endif
+		key = prepare_for_ramfunc();
+		ret = flash_andes_qspi_xip_lock_state(dev, op_out);
+		cleanup_after_ramfunc(key);
+#ifdef CONFIG_USERSPACE
+		if (ret == 0 && syscall_trap) {
+			K_OOPS(k_usermode_to_copy(out, op_out, sizeof(copy_out)));
+		}
+#endif
+		break;
+	}
+	case FLASH_ANDES_XIP_EX_OP_MEM_READ_CMD: {
+		struct andes_xip_ex_ops_mem_read_cmd_in *op_in =
+			(struct andes_xip_ex_ops_mem_read_cmd_in *)in;
+#ifdef CONFIG_USERSPACE
+		struct andes_xip_ex_ops_mem_read_cmd_in copy_in;
+
+		if (syscall_trap) {
+			K_OOPS(k_usermode_from_copy(&copy_in, op_in, sizeof(copy_in)));
+			op_in = &copy_in;
+		}
+#endif
+		key = prepare_for_ramfunc();
+		ret = flash_andes_qspi_xip_set_memrdcmd(dev, op_in);
+		cleanup_after_ramfunc(key);
+		break;
+	}
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif
+
 static DEVICE_API(flash, flash_andes_qspi_xip_api) = {
 	.read = flash_andes_qspi_xip_read,
 	.write = flash_andes_qspi_xip_write,
@@ -493,6 +735,9 @@ static DEVICE_API(flash, flash_andes_qspi_xip_api) = {
 	.get_parameters = flash_andes_qspi_xip_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_andes_qspi_xip_pages_layout,
+#endif
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+	.ex_op = flash_andes_qspi_xip_ex_op,
 #endif
 };
 
@@ -517,7 +762,9 @@ static DEVICE_API(flash, flash_andes_qspi_xip_api) = {
 		.flash_size = DT_INST_PROP(n, size),                                               \
 		LAYOUT_PAGES_PROP(n)};                                                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &flash_andes_qspi_xip_init, NULL, NULL,                           \
+	static struct flash_andes_qspi_xip_data flash_andes_qspi_xip_data_##n;                     \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &flash_andes_qspi_xip_init, NULL, &flash_andes_qspi_xip_data_##n, \
 			      &flash_andes_qspi_xip_config_##n, POST_KERNEL,                       \
 			      CONFIG_FLASH_ANDES_QSPI_INIT_PRIORITY, &flash_andes_qspi_xip_api);
 
