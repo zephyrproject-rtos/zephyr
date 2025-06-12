@@ -1317,7 +1317,7 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 		return -ETIMEDOUT;
 	}
 
-	slv_ibi_resp = sys_read32(config->regs + SLV_INTR_REQ);
+	slv_ibi_resp = sys_read32(config->regs + SLV_IBI_RESP);
 	switch (SLV_IBI_RESP_IBI_STS(slv_ibi_resp)) {
 	case SLV_IBI_RESP_IBI_STS_ACK:
 		LOG_DBG("%s: Controller ACKed IBI TIR", dev->name);
