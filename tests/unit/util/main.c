@@ -898,30 +898,40 @@ ZTEST(util, test_SIZEOF_FIELD)
 
 ZTEST(util, test_utf8_trunc_truncated)
 {
-	char test_str[] = "€€€";
-	char expected_result[] = "€€";
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"ééé", "éé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎"},                 /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!"},   /* mixed UTF-8 characters */
+	};
 
-	/* Remove last byte from truncated_test_str and verify that it first is incorrectly
-	 * truncated, followed by a proper truncation and verification
-	 */
-	test_str[strlen(test_str) - 1] = '\0';
-	zassert(strcmp(test_str, "€€€") != 0, "Failed to do invalid truncation");
-	zassert(strcmp(test_str, expected_result) != 0, "Failed to do invalid truncation");
-
-	utf8_trunc(test_str);
-
-	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		tests[i].input[strlen(tests[i].input) - 1] = '\0';
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "Failed to truncate");
+	}
 }
 
 ZTEST(util, test_utf8_trunc_not_truncated)
 {
-	/* Attempt to truncate a valid UTF8 string and verify no changed */
-	char test_str[] = "€€€";
-	char expected_result[] = "€€€";
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"abc", "abc"},                    /* 1-byte ASCII characters */
+		{"ééé", "ééé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎𠜎"},                /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!🌍"},  /* mixed UTF-8 characters */
+	};
 
-	utf8_trunc(test_str);
-
-	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "No-op truncation failed");
+	}
 }
 
 ZTEST(util, test_utf8_trunc_zero_length)
