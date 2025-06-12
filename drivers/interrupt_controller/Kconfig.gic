@@ -82,4 +82,13 @@ config GIC_V3_RDIST_DMA_NONCOHERENT
 	  downstream interconnect, it need to use Non-cahable and Non-shareable
 	  access atttributes to access external memory.
 
+config GIC_V3_ITS_DMA_NONCOHERENT
+	bool "GIC ITS is DMA noncoherent"
+	depends on GIC_V3_ITS
+	default n
+	help
+	  GIC ITS on Some platform are connected to a non-coherent downstream
+	  interconnect, it need to use Non-cahable and Non-shareable access
+	  atttributes to access external memory.
+
 endif # CPU_CORTEX
