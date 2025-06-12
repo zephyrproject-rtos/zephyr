@@ -2297,6 +2297,7 @@ static int dw_i3c_init(const struct device *dev)
 
 #ifdef CONFIG_I3C_USE_IBI
 	k_sem_init(&data->ibi_sts_sem, 0, 1);
+	k_sem_init(&data->sem_hj, 0, 1);
 #endif /* CONFIG_I3C_USE_IBI */
 	k_sem_init(&data->sem_xfer, 0, 1);
 	k_mutex_init(&data->mt);
