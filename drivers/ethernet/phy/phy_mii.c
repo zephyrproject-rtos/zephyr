@@ -101,13 +101,12 @@ static bool is_gigabit_supported(const struct device *dev)
 		return -EIO;
 	}
 
-	if (bmsr_reg & MII_BMSR_EXTEND_STATUS) {
+	if ((bmsr_reg & MII_BMSR_EXTEND_STATUS) != 0U) {
 		if (phy_mii_reg_read(dev, MII_ESTAT, &estat_reg) < 0) {
 			return -EIO;
 		}
 
-		if (estat_reg & (MII_ESTAT_1000BASE_T_HALF
-				 | MII_ESTAT_1000BASE_T_FULL)) {
+		if ((estat_reg & (MII_ESTAT_1000BASE_T_HALF | MII_ESTAT_1000BASE_T_FULL)) != 0U) {
 			return true;
 		}
 	}
@@ -139,7 +138,7 @@ static int reset(const struct device *dev)
 		if (phy_mii_reg_read(dev, MII_BMCR, &value) < 0) {
 			return -EIO;
 		}
-	} while (value & MII_BMCR_RESET);
+	} while ((value & MII_BMCR_RESET) != 0U);
 
 	return 0;
 }
@@ -176,7 +175,7 @@ static int update_link_state(const struct device *dev)
 		return -EIO;
 	}
 
-	link_up = bmsr_reg & MII_BMSR_LINK_STATUS;
+	link_up = (bmsr_reg & MII_BMSR_LINK_STATUS) != 0U;
 
 	/* If there is no change in link state don't proceed. */
 	if ((link_up == data->state.is_up) && !data->restart_autoneg) {
@@ -264,7 +263,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE)) {
+	if ((bmsr_reg & MII_BMSR_AUTONEG_COMPLETE) == 0U) {
 		if (sys_timepoint_expired(data->autoneg_timeout)) {
 			LOG_DBG("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
 			return -ETIMEDOUT;
@@ -296,16 +295,16 @@ static int check_autonegotiation_completion(const struct device *dev)
 	}
 
 	if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_FULL)) {
+			((c1kt_reg & s1kt_reg & MII_ADVERTISE_1000_FULL) != 0U)) {
 		data->state.speed = LINK_FULL_1000BASE;
 	} else if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_HALF)) {
+			((c1kt_reg & s1kt_reg & MII_ADVERTISE_1000_HALF) != 0U)) {
 		data->state.speed = LINK_HALF_1000BASE;
-	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_FULL) {
+	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_100_FULL) != 0U) {
 		data->state.speed = LINK_FULL_100BASE;
-	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_HALF) {
+	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_100_HALF) != 0U) {
 		data->state.speed = LINK_HALF_100BASE;
-	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_10_FULL) {
+	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_10_FULL) != 0U) {
 		data->state.speed = LINK_FULL_10BASE;
 	} else {
 		data->state.speed = LINK_HALF_10BASE;
