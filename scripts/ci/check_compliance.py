@@ -21,6 +21,7 @@ import shlex
 import shutil
 import textwrap
 import unidiff
+import yaml
 
 from yamllint import config, linter
 
@@ -34,6 +35,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from get_maintainer import Maintainers, MaintainersError
 import list_boards
 import list_hardware
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                       / "scripts" / "dts" / "python-devicetree" / "src"))
+from devicetree import edtlib
+
+
+# Let the user run this script as ./scripts/ci/check_compliance.py without
+# making them set ZEPHYR_BASE.
+ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
+if ZEPHYR_BASE:
+    ZEPHYR_BASE = Path(ZEPHYR_BASE)
+else:
+    ZEPHYR_BASE = Path(__file__).resolve().parents[2]
+    # Propagate this decision to child processes.
+    os.environ['ZEPHYR_BASE'] = str(ZEPHYR_BASE)
+
+# Initialize the property names allowlist
+BINDINGS_PROPERTIES_AL = None
+with open(Path(__file__).parents[1] / 'bindings_properties_allowlist.yaml') as f:
+    allowlist = yaml.safe_load(f.read())
+    if allowlist is not None:
+        BINDINGS_PROPERTIES_AL = set(allowlist)
+    else:
+        BINDINGS_PROPERTIES_AL = set()
 
 logger = None
 
@@ -380,32 +405,75 @@ class DevicetreeBindingsCheck(ComplianceTest):
     doc = "See https://docs.zephyrproject.org/latest/build/dts/bindings.html for more details."
 
     def run(self, full=True):
-        dts_bindings = self.parse_dt_bindings()
+        bindings_diff, bindings = self.get_yaml_bindings()
 
-        for dts_binding in dts_bindings:
-            self.required_false_check(dts_binding)
+        # If no bindings are changed, skip this check.
+        try:
+            subprocess.check_call(['git', 'diff', '--quiet', COMMIT_RANGE]
+                                  + bindings_diff)
+            nodiff = True
+        except subprocess.CalledProcessError:
+            nodiff = False
+        if nodiff:
+            self.skip('no changes to bindings were made')
 
-    def parse_dt_bindings(self):
+        for binding in bindings:
+            self.check(binding, self.check_yaml_property_name)
+            self.check(binding, self.required_false_check)
+
+    @staticmethod
+    def check(binding, callback):
+        while binding is not None:
+            callback(binding)
+            binding = binding.child_binding
+
+    def get_yaml_bindings(self):
         """
-        Returns a list of dts/bindings/**/*.yaml files
+        Returns a list of 'dts/bindings/**/*.yaml'
         """
+        from glob import glob
+        BINDINGS_PATH = 'dts/bindings/'
+        bindings_diff_dir, bindings = set(), []
 
-        dt_bindings = []
-        for file_name in get_files(filter="d"):
-            if 'dts/bindings/' in file_name and file_name.endswith('.yaml'):
-                dt_bindings.append(file_name)
+        for file_name in get_files(filter='d'):
+            if BINDINGS_PATH in file_name:
+                p = file_name.partition(BINDINGS_PATH)
+                bindings_diff_dir.add(os.path.join(p[0], p[1]))
 
-        return dt_bindings
+        for path in bindings_diff_dir:
+            yamls = glob(f'{os.fspath(path)}/**/*.yaml', recursive=True)
+            bindings.extend(yamls)
 
-    def required_false_check(self, dts_binding):
-        with open(dts_binding) as file:
-            for line_number, line in enumerate(file, 1):
-                if 'required: false' in line:
-                    self.fmtd_failure(
-                        'warning', 'Devicetree Bindings', dts_binding,
-                        line_number, col=None,
-                        desc="'required: false' is redundant, please remove")
+        bindings = edtlib.bindings_from_paths(bindings, ignore_errors=True)
+        return list(bindings_diff_dir), bindings
 
+    def check_yaml_property_name(self, binding):
+        """
+        Checks if the property names in the binding file contain underscores.
+        """
+        for prop_name in binding.prop2specs:
+            if '_' in prop_name and prop_name not in BINDINGS_PROPERTIES_AL:
+                better_prop = prop_name.replace('_', '-')
+                print(f"Required: In '{binding.path}', "
+                      f"the property '{prop_name}' "
+                      f"should be renamed to '{better_prop}'.")
+                self.failure(
+                    f"{binding.path}: property '{prop_name}' contains underscores.\n"
+                    f"\tUse '{better_prop}' instead unless this property name is from Linux.\n"
+                    "Or another authoritative upstream source of bindings for "
+                    f"compatible '{binding.compatible}'.\n"
+                    "\tHint: update 'bindings_properties_allowlist.yaml' if you need to "
+                    "override this check for this property."
+                )
+
+    def required_false_check(self, binding):
+        raw_props = binding.raw.get('properties', {})
+        for prop_name, raw_prop in raw_props.items():
+            if raw_prop.get('required') is False:
+                self.failure(
+                    f'{binding.path}: property "{prop_name}": '
+                    "'required: false' is redundant, please remove"
+                )
 
 class KconfigCheck(ComplianceTest):
     """
@@ -2000,17 +2068,6 @@ def parse_args(argv):
 def _main(args):
     # The "real" main(), which is wrapped to catch exceptions and report them
     # to GitHub. Returns the number of test failures.
-
-    global ZEPHYR_BASE
-    ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
-    if not ZEPHYR_BASE:
-        # Let the user run this script as ./scripts/ci/check_compliance.py without
-        #  making them set ZEPHYR_BASE.
-        ZEPHYR_BASE = str(Path(__file__).resolve().parents[2])
-
-        # Propagate this decision to child processes.
-        os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
-    ZEPHYR_BASE = Path(ZEPHYR_BASE)
 
     # The absolute path of the top-level git directory. Initialize it here so
     # that issues running Git can be reported to GitHub.
