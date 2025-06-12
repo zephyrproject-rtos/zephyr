@@ -24,8 +24,8 @@
 #define SAMPLE_BIT_WIDTH    16
 #define BYTES_PER_SAMPLE    sizeof(int16_t)
 #define NUMBER_OF_CHANNELS  2
-/* Such block length provides an echo with the delay of 100 ms. */
-#define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
+/* Such block length provides an echo with the delay of 40 ms. */
+#define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY / 25) * NUMBER_OF_CHANNELS)
 #define INITIAL_BLOCKS      2
 #define TIMEOUT             1000
 
@@ -281,7 +281,15 @@ int main(void)
 	config.word_size = SAMPLE_BIT_WIDTH;
 	config.channels = NUMBER_OF_CHANNELS;
 	config.format = I2S_FMT_DATA_FORMAT_I2S;
+	/*
+	 * On MAX32655FTHR, MAX9867 MCLK is connected to external 12.2880 crystal
+	 * thus using slave mode
+	 */
+#if CONFIG_BOARD_MAX32655FTHR_MAX32655_M4
+	config.options = I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_SLAVE;
+#else
 	config.options = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER;
+#endif
 	config.frame_clk_freq = SAMPLE_FREQUENCY;
 	config.mem_slab = &mem_slab;
 	config.block_size = BLOCK_SIZE;
