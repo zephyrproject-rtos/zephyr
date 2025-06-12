@@ -70,17 +70,33 @@ struct i2c_sam_twi_dev_data {
 	struct twi_msg msg;
 };
 
-static int i2c_clk_set(Twi *const twi, uint32_t speed)
+static int i2c_clk_set(const struct device *dev, Twi * const twi, uint32_t speed)
 {
 	uint32_t ck_div = 0U;
 	uint32_t cl_div;
 	bool div_completed = false;
 
+#ifdef SOC_ATMEL_SAM_MCK_FREQ_HZ
+	ARG_UNUSED(dev);
+
+	const uint32_t rate = SOC_ATMEL_SAM_MCK_FREQ_HZ;
+#else
+	const struct i2c_sam_twi_dev_cfg *const config = dev->config;
+	uint32_t rate;
+	int ret;
+
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
+				     (clock_control_subsys_t)&config->clock_cfg, &rate);
+	if (ret) {
+		return ret;
+	}
+#endif
+
 	/*  From the datasheet "TWI Clock Waveform Generator Register"
 	 *  T_low = ( ( CLDIV × 2^CKDIV ) + 4 ) × T_MCK
 	 */
 	while (!div_completed) {
-		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (speed * 2U)) - 4)
+		cl_div =   ((rate / (speed * 2U)) - 4)
 			 / (1 << ck_div);
 
 		if (cl_div <= 255U) {
@@ -137,7 +153,7 @@ static int i2c_sam_twi_configure(const struct device *dev, uint32_t config)
 	k_sem_take(&dev_data->lock, K_FOREVER);
 
 	/* Setup clock waveform */
-	ret = i2c_clk_set(twi, bitrate);
+	ret = i2c_clk_set(dev, twi, bitrate);
 	if (ret < 0) {
 		goto unlock;
 	}
