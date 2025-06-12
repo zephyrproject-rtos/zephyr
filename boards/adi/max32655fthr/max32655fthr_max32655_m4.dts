@@ -155,6 +155,12 @@
 	status = "okay";
 };
 
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s_sck_p1_2 &i2s_ws_p1_3 &i2s_sdi_p1_4 &i2s_sdo_p1_5>;
+	pinctrl-names = "default";
+};
+
 &wdt0 {
 	status = "okay";
 };
