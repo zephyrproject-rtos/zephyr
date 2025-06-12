@@ -44,18 +44,6 @@ extern "C" {
 #define USBD_MAX_BULK_MPS COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED, (512), (64))
 
 /*
- * The USB Unicode bString is encoded in UTF16LE, which means it takes up
- * twice the amount of bytes than the same string encoded in ASCII7.
- * Use this macro to determine the length of the bString array.
- *
- * bString length without null character:
- *   bString_length = (sizeof(initializer_string) - 1) * 2
- * or:
- *   bString_length = sizeof(initializer_string) * 2 - 2
- */
-#define USB_BSTRING_LENGTH(s)		(sizeof(s) * 2 - 2)
-
-/*
  * The length of the string descriptor (bLength) is calculated from the
  * size of the two octets bLength and bDescriptorType plus the
  * length of the UTF16LE string:
@@ -574,7 +562,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param name Language string descriptor node identifier.
  */
 #define USBD_DESC_LANG_DEFINE(name)					\
-	static uint16_t langid_##name = sys_cpu_to_le16(0x0409);	\
+	static const uint16_t langid_##name = sys_cpu_to_le16(0x0409);	\
 	static struct usbd_desc_node name = {				\
 		.str = {						\
 			.idx = 0,					\
@@ -597,7 +585,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param d_utype  String descriptor usage type
  */
 #define USBD_DESC_STRING_DEFINE(d_name, d_string, d_utype)			\
-	static uint8_t ascii_##d_name[USB_BSTRING_LENGTH(d_string)] = d_string;	\
+	static const uint8_t ascii_##d_name[sizeof(d_string)] = d_string;	\
 	static struct usbd_desc_node d_name = {					\
 		.str = {							\
 			.utype = d_utype,					\
