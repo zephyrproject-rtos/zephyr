@@ -1901,7 +1901,7 @@ class PythonCompatCheck(ComplianceTest):
     name = "PythonCompat"
     doc = "Check that Python files are compatible with Zephyr minimum supported Python version."
 
-    MAX_VERSION = (3, 10)
+    MAX_VERSION = (3, 12)
     MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
 
     def run(self):

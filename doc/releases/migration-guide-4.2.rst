@@ -20,6 +20,11 @@ the :ref:`release notes<zephyr_4.2>`.
     :local:
     :depth: 2
 
+Common
+******
+
+* The minimum required Python version is now 3.12 (from 3.10).
+
 Build System
 ************
 
