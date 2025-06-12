@@ -15,4 +15,5 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+  - netif:eth
 vendor: nxp
