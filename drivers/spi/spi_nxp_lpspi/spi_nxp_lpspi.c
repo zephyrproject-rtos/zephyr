@@ -252,6 +252,12 @@ static void lpspi_isr(const struct device *dev)
 		return;
 	}
 
+	/* the lpspi v1 has an errata where it doesn't clock the last bit
+	 * in continuous mode until you write the TCR
+	 */
+	bool likely_stalling_v1 = data->major_version < 2 &&
+		(DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1);
+
 	if (spi_context_rx_on(ctx)) {
 		/* capture these values because they could change during this code block */
 		size_t rx_fifo_len = rx_fifo_cur_len(base);
@@ -279,6 +285,10 @@ static void lpspi_isr(const struct device *dev)
 		size_t max_fifo_fill = MIN(tx_fifo_space_left, rx_fifo_space_left);
 		size_t max_fill = MIN(max_fifo_fill, expected_rx_left);
 
+		if (likely_stalling_v1 && max_fill > 0) {
+			max_fill -= 1;
+		}
+
 		/* If we already have some words in the tx fifo, we should count those */
 		if (max_fill > tx_fifo_len) {
 			max_fill -= tx_fifo_len;
@@ -290,8 +300,7 @@ static void lpspi_isr(const struct device *dev)
 		lpspi_fill_tx_fifo_nop(dev, max_fill);
 	}
 
-	if ((DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1) &&
-	    (data->major_version < 2)) {
+	if (likely_stalling_v1) {
 		/* Due to stalling behavior on older LPSPI,
 		 * need to end xfer in order to get last bit clocked out on bus.
 		 */
