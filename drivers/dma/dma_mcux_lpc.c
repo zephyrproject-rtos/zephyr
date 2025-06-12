@@ -336,6 +336,101 @@ static void dma_mcux_lpc_clear_channel_data(struct channel_data *data)
 	data->width = 0;
 }
 
+static int get_block_increments(const struct dma_config *config,
+				struct dma_block_config *block_config, uint8_t *src_inc_p,
+				uint8_t *dst_inc_p)
+{
+	uint8_t src_inc = 1;
+	uint8_t dst_inc = 1;
+
+	uint8_t width = config->dest_data_size;
+
+	if ((block_config->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
+	    (block_config->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
+		LOG_ERR("DMA_ADDR_ADJ_DECREMENT not supported");
+		return -EINVAL;
+	}
+
+	switch (config->channel_direction) {
+	case MEMORY_TO_MEMORY:
+	case HOST_TO_MEMORY:
+	case MEMORY_TO_HOST:
+		if (block_config->source_gather_en && (block_config->source_gather_interval != 0)) {
+			src_inc = block_config->source_gather_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((src_inc > 4) || (src_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+
+		if (block_config->dest_scatter_en && (block_config->dest_scatter_interval != 0)) {
+			dst_inc = block_config->dest_scatter_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((dst_inc > 4) || (dst_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+		break;
+	case LPC_DMA_SPI_MCUX_FLEXCOMM_TX:
+	case MEMORY_TO_PERIPHERAL:
+		/* Set the source increment value */
+		if (block_config->source_gather_en) {
+			src_inc = block_config->source_gather_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((src_inc > 4) || (src_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+
+		dst_inc = 0;
+		if (block_config->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
+			LOG_ERR("DMA to peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
+			return -EINVAL;
+		}
+		break;
+	case PERIPHERAL_TO_MEMORY:
+		src_inc = 0;
+		if (block_config->source_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
+			LOG_ERR("DMA from peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
+			return -EINVAL;
+		}
+
+		/* Set the destination increment value */
+		if (block_config->dest_scatter_en) {
+			dst_inc = block_config->dest_scatter_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((dst_inc > 4) || (dst_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+		break;
+	default:
+		LOG_ERR("not support transfer direction");
+		return -EINVAL;
+	}
+
+	/* Check if user does not want to increment address */
+	if (block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+		src_inc = 0;
+	}
+	if (block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+		dst_inc = 0;
+	}
+
+	*src_inc_p = src_inc;
+	*dst_inc_p = dst_inc;
+
+	return 0;
+}
+
 /* Configure a channel */
 static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
@@ -348,8 +443,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	struct dma_block_config *block_config;
 	uint32_t virtual_channel;
 	uint8_t otrig_index;
-	uint8_t src_inc = 1, dst_inc = 1;
-	bool is_periph = true;
+	uint8_t src_inc, dst_inc;
+	bool is_periph;
 	uint8_t width;
 	uint32_t max_xfer_bytes;
 	uint8_t reload = 0;
@@ -414,72 +509,15 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	switch (config->channel_direction) {
-	case MEMORY_TO_MEMORY:
-	case HOST_TO_MEMORY:
-	case MEMORY_TO_HOST:
+	if ((config->channel_direction == MEMORY_TO_PERIPHERAL) ||
+	    (config->channel_direction == PERIPHERAL_TO_MEMORY)) {
+		is_periph = true;
+	} else {
 		is_periph = false;
-		if (block_config->source_gather_en && (block_config->source_gather_interval != 0)) {
-			src_inc = block_config->source_gather_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((src_inc > 4) || (src_inc == 3)) {
-				return -EINVAL;
-			}
-		}
+	}
 
-		if (block_config->dest_scatter_en && (block_config->dest_scatter_interval != 0)) {
-			dst_inc = block_config->dest_scatter_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((dst_inc > 4) || (dst_inc == 3)) {
-				return -EINVAL;
-			}
-		}
-		break;
-	case LPC_DMA_SPI_MCUX_FLEXCOMM_TX:
-	case MEMORY_TO_PERIPHERAL:
-		/* Set the source increment value */
-		if (block_config->source_gather_en) {
-			src_inc = block_config->source_gather_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((src_inc > 4) || (src_inc == 3)) {
-				return -EINVAL;
-			}
-		}
-
-		dst_inc = 0;
-		break;
-	case PERIPHERAL_TO_MEMORY:
-		src_inc = 0;
-
-		/* Set the destination increment value */
-		if (block_config->dest_scatter_en) {
-			dst_inc = block_config->dest_scatter_interval / width;
-			/* The current controller only supports incrementing the
-			 * source and destination up to 4 time transfer width
-			 */
-			if ((dst_inc > 4) || (dst_inc == 3)) {
-				return -EINVAL;
-			}
-		}
-		break;
-	default:
-		LOG_ERR("not support transfer direction");
+	if (get_block_increments(config, block_config, &src_inc, &dst_inc) != 0) {
 		return -EINVAL;
-	}
-
-	/* Check if user does not want to increment address */
-	if (block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-		src_inc = 0;
-	}
-
-	if (block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-		dst_inc = 0;
 	}
 
 	/* If needed, allocate a slot to store dma channel data */
@@ -682,6 +720,12 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		block_config = block_config->next_block;
 
 		while (block_config != NULL) {
+			/* Each block can have a different configuration so update
+			 * src_inc/dst_inc based on the block_config.
+			 */
+			if (get_block_increments(config, block_config, &src_inc, &dst_inc) != 0) {
+				return -EINVAL;
+			}
 			block_config->source_reload_en = reload;
 
 			/* DMA controller requires that the address be aligned to transfer size */
