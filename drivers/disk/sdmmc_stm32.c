@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <stm32_ll_dma.h>
+/* Uses a shared DMA channel for read & write */
+#define STM32_SDMMC_USE_DMA_SHARED DT_INST_DMAS_HAS_NAME(0, txrx)
 #endif
 
 #ifndef MMC_TypeDef
@@ -87,11 +89,16 @@ struct stm32_sdmmc_priv {
 	const struct reset_dt_spec reset;
 
 #if STM32_SDMMC_USE_DMA
+#if STM32_SDMMC_USE_DMA_SHARED
+	struct sdmmc_dma_stream dma_txrx;
+	DMA_HandleTypeDef dma_txrx_handle;
+#else
 	struct sdmmc_dma_stream dma_rx;
 	struct sdmmc_dma_stream dma_tx;
 	DMA_HandleTypeDef dma_tx_handle;
 	DMA_HandleTypeDef dma_rx_handle;
 #endif
+#endif /* STM32_SDMMC_USE_DMA */
 };
 
 #ifdef CONFIG_SDMMC_STM32_HWFC
@@ -208,12 +215,16 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 
 	dma->cfg.user_data = handle;
 
+	/* Reserve the channel in the DMA subsystem, even though we use the HAL API.
+	 * See the usage of STM32_DMA_HAL_OVERRIDE.
+	 */
 	ret = dma_config(dma->dev, dma->channel, &dma->cfg);
 	if (ret != 0) {
 		LOG_ERR("Failed to conig");
 		return ret;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
 	handle->Instance                 = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
 	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
 	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
@@ -221,11 +232,28 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
 	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
 	handle->Init.Mode                = DMA_PFCTRL;
-	handle->Init.Priority            = table_priority[dma->cfg.channel_priority],
+	handle->Init.Priority            = table_priority[dma->cfg.channel_priority];
 	handle->Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
 	handle->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
 	handle->Init.MemBurst            = DMA_MBURST_INC4;
 	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
+#else
+	uint32_t channel_id = dma->channel_nb - STM32_DMA_STREAM_OFFSET;
+
+	BUILD_ASSERT(STM32_SDMMC_USE_DMA_SHARED == 1, "Only txrx is supported on this family");
+	/* handle->Init.Direction is not initialised here on purpose.
+	 * Since the channel is reused for both directions, the direction is
+	 * configured before each read/write call.
+	 */
+	handle->Instance                 = __LL_DMA_GET_CHANNEL_INSTANCE(dma->reg, channel_id);
+	handle->Init.Request             = dma->cfg.dma_slot;
+	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
+	handle->Init.MemInc              = DMA_MINC_ENABLE;
+	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+	handle->Init.Mode                = DMA_NORMAL;
+	handle->Init.Priority            = table_priority[dma->cfg.channel_priority];
+#endif
 
 	return ret;
 }
@@ -236,6 +264,15 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 
 	LOG_DBG("using dma");
 
+#if STM32_SDMMC_USE_DMA_SHARED
+	err = stm32_sdmmc_configure_dma(&priv->dma_txrx_handle, &priv->dma_txrx);
+	if (err) {
+		LOG_ERR("failed to init shared DMA");
+		return err;
+	}
+	__HAL_LINKDMA(&priv->hsd, hdmatx, priv->dma_txrx_handle);
+	__HAL_LINKDMA(&priv->hsd, hdmarx, priv->dma_txrx_handle);
+#else
 	err = stm32_sdmmc_configure_dma(&priv->dma_tx_handle, &priv->dma_tx);
 	if (err) {
 		LOG_ERR("failed to init tx dma");
@@ -251,6 +288,7 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmarx, priv->dma_rx_handle);
 	HAL_DMA_Init(&priv->dma_rx_handle);
+#endif /* STM32_SDMMC_USE_DMA_SHARED */
 
 	return err;
 }
@@ -258,22 +296,31 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
 {
 	int ret;
+
+	/* Since we use STM32_DMA_HAL_OVERRIDE, the only purpose of dma_stop
+	 * is to notify the DMA subsystem that the channel is no longer in use.
+	 * Calling this before or after HAL_DMA_DeInit makes no difference.
+	 * There is no possibility of runtime failures apart from providing an
+	 * invalid channel ID, which is already validated by the setup.
+	 */
+#if STM32_SDMMC_USE_DMA_SHARED
+	struct sdmmc_dma_stream *dma_txrx = &priv->dma_txrx;
+
+	ret = dma_stop(dma_txrx->dev, dma_txrx->channel);
+	__ASSERT(ret == 0, "Shared DMA channel index corrupted");
+#else
 	struct sdmmc_dma_stream *dma_tx = &priv->dma_tx;
 	struct sdmmc_dma_stream *dma_rx = &priv->dma_rx;
 
 	ret = dma_stop(dma_tx->dev, dma_tx->channel);
+	__ASSERT(ret == 0, "TX DMA channel index corrupted");
 	HAL_DMA_DeInit(&priv->dma_tx_handle);
-	if (ret != 0) {
-		LOG_ERR("Failed to stop tx DMA transmission");
-		return ret;
-	}
+
 	ret = dma_stop(dma_rx->dev, dma_rx->channel);
+	__ASSERT(ret == 0, "RX DMA channel index corrupted");
 	HAL_DMA_DeInit(&priv->dma_rx_handle);
-	if (ret != 0) {
-		LOG_ERR("Failed to stop rx DMA transmission");
-		return ret;
-	}
-	return ret;
+#endif
+	return 0;
 }
 
 #endif
@@ -401,6 +448,15 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
+#if STM32_SDMMC_USE_DMA_SHARED
+	/* Initialise the shared DMA channel for the current direction */
+	priv->dma_txrx_handle.Init.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+	if (HAL_DMA_Init(&priv->dma_txrx_handle) != HAL_OK) {
+		err = -EIO;
+		goto end;
+	}
+#endif
+
 	err = stm32_sdmmc_read_blocks(&priv->hsd, data_buf, start_sector, num_sector);
 	if (err != HAL_OK) {
 		LOG_ERR("sd read block failed %d", err);
@@ -409,6 +465,10 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	}
 
 	k_sem_take(&priv->sync, K_FOREVER);
+
+#if STM32_SDMMC_USE_DMA_SHARED
+	HAL_DMA_DeInit(&priv->dma_txrx_handle);
+#endif
 
 	if (priv->status != DISK_STATUS_OK) {
 		LOG_ERR("sd read error %d", priv->status);
@@ -457,6 +517,15 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
 
+#if STM32_SDMMC_USE_DMA_SHARED
+	/* Initialise the shared DMA channel for the current direction */
+	priv->dma_txrx_handle.Init.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+	if (HAL_DMA_Init(&priv->dma_txrx_handle) != HAL_OK) {
+		err = -EIO;
+		goto end;
+	}
+#endif
+
 	err = stm32_sdmmc_write_blocks(&priv->hsd, (uint8_t *)data_buf, start_sector, num_sector);
 	if (err != HAL_OK) {
 		LOG_ERR("sd write block failed %d", err);
@@ -465,6 +534,10 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 	}
 
 	k_sem_take(&priv->sync, K_FOREVER);
+
+#if STM32_SDMMC_USE_DMA_SHARED
+	HAL_DMA_DeInit(&priv->dma_txrx_handle);
+#endif
 
 	if (priv->status != DISK_STATUS_OK) {
 		LOG_ERR("sd write error %d", priv->status);
@@ -813,8 +886,12 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.pclken = pclken_sdmmc,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.reset = RESET_DT_SPEC_INST_GET(0),
+#if STM32_SDMMC_USE_DMA_SHARED
+	SDMMC_DMA_CHANNEL(txrx, TXRX)
+#else
 	SDMMC_DMA_CHANNEL(rx, RX)
 	SDMMC_DMA_CHANNEL(tx, TX)
+#endif
 };
 
 DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, NULL,
