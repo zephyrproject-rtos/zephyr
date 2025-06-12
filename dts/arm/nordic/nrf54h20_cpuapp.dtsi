@@ -59,7 +59,3 @@ wdt011: &cpuapp_wdt011 {};
 &grtc {
 	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>;
 };
-
-&nfct {
-	compatible = "nordic,nrf-nfct-v2";
-};
