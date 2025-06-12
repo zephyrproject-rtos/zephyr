@@ -145,6 +145,8 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	status = SPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start");
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, dev, -EIO);
 	}
 }
 
