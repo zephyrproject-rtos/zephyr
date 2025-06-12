@@ -522,12 +522,15 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 	return ret;
 }
 
-static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
+static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
+			       enum phy_cfg_link_flag flags)
 {
 	uint8_t ret;
 	uint16_t data;
 	uint16_t req_speed;
 	const struct phy_dm8806_config *cfg = dev->config;
+
+	ARG_UNUSED(flags);
 
 	req_speed = adv_speeds;
 	switch (req_speed) {
@@ -546,6 +549,10 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	case LINK_FULL_100BASE:
 		req_speed = DM8806_MODE_100_BASET_FULL_DUPLEX;
 		break;
+
+	default:
+		LOG_ERR("Invalid speed %d for PHY (%d)", adv_speeds, cfg->phy_addr);
+		return -EINVAL;
 	}
 
 	/* Power down */
