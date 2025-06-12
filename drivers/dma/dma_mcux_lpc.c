@@ -224,8 +224,9 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 		 * address does not need to be change for these
 		 * transactions and the transfer width is 4 bytes
 		 */
-		if ((local_block.source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) &&
-			(local_block.dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE)) {
+		if ((data->dir == LPC_DMA_SPI_MCUX_FLEXCOMM_TX) &&
+		    (local_block.block_size == sizeof(uint32_t)) &&
+		    (local_block.next_block == NULL)) {
 			src_inc = 0;
 			dest_inc = 0;
 			width = sizeof(uint32_t);
@@ -438,6 +439,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			}
 		}
 		break;
+	case LPC_DMA_SPI_MCUX_FLEXCOMM_TX:
 	case MEMORY_TO_PERIPHERAL:
 		/* Set the source increment value */
 		if (block_config->source_gather_en) {

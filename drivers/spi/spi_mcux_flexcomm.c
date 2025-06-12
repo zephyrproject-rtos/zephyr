@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_mcux_lpc.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys_clock.h>
@@ -398,15 +399,15 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 	blk_cfg = &stream->dma_blk_cfg[dma_block_num];
 	/* tx direction has memory as source and periph as dest. */
 	blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+	blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	blk_cfg->source_gather_en = 0;
 	if (last_packet) {
 		data->last_word = spi_mcux_get_last_tx_word(spi_cfg, buf, len, config->def_char,
 							    data->word_size_bits);
 		blk_cfg->source_address = (uint32_t)&data->last_word;
+		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->block_size = sizeof(uint32_t);
 		blk_cfg->next_block = NULL;
-		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		data->dma_tx.wait_for_dma_status = DMA_STATUS_COMPLETE;
 	} else {
 		blk_cfg->block_size = len;
@@ -418,14 +419,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 			data->dummy_tx_buffer = 0;
 			blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-			/* The DMA driver uses the special case of source_addr_adj and dest_addr_adj
-			 * both set to DMA_ADDR_ADJ_NO_CHANGE to set the transfer width to 32 bits,
-			 * which is required on the last packet. To keep that case from being
-			 * inadvertantly triggered on a dummy transfer we must set the dest_addr_adj
-			 * to increment. This flag is ignored on the peripheral side of the
-			 * transfer, so this does not affect anything except the special case.
-			 */
-			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		}
 		data->dma_tx.wait_for_dma_status = DMA_STATUS_BLOCK;
 	}
@@ -919,7 +912,7 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 		.channel =					\
 			DT_INST_DMAS_CELL_BY_NAME(id, tx, channel),	\
 		.dma_cfg = {						\
-			.channel_direction = MEMORY_TO_PERIPHERAL,	\
+			.channel_direction = LPC_DMA_SPI_MCUX_FLEXCOMM_TX,	\
 			.dma_callback = spi_mcux_dma_callback,		\
 			.complete_callback_en = true,			\
 			.block_count = 2,				\
