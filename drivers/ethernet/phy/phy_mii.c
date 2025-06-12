@@ -347,8 +347,8 @@ static int phy_mii_write(const struct device *dev, uint16_t reg_addr,
 	return phy_mii_reg_write(dev, reg_addr, (uint16_t)data);
 }
 
-static int phy_mii_cfg_link(const struct device *dev,
-			    enum phy_link_speed adv_speeds)
+static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
+			    enum phy_cfg_link_flag flags)
 {
 	struct phy_mii_dev_data *const data = dev->data;
 	const struct phy_mii_dev_config *const cfg = dev->config;
@@ -521,7 +521,7 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
 	/* Advertise default speeds */
-	phy_mii_cfg_link(dev, cfg->default_speeds);
+	phy_mii_cfg_link(dev, cfg->default_speeds, 0);
 
 	monitor_work_handler(&data->monitor_work.work);
 
