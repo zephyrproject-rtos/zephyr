@@ -55,12 +55,17 @@
 #endif
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+#include <zephyr/retention/bootmode.h>
+#include <limits.h>
+#endif
+
 LOG_MODULE_REGISTER(mcumgr_os_grp, CONFIG_MCUMGR_GRP_OS_LOG_LEVEL);
 
 #if defined(CONFIG_REBOOT) && defined(CONFIG_MULTITHREADING)
 static void os_mgmt_reset_work_handler(struct k_work *work);
 
-K_WORK_DELAYABLE_DEFINE(os_mgmt_reset_work, os_mgmt_reset_work_handler);
+static K_WORK_DELAYABLE_DEFINE(os_mgmt_reset_work, os_mgmt_reset_work_handler);
 #endif
 
 /* This is passed to zcbor_map_start/end_endcode as a number of
@@ -373,18 +378,38 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 	int32_t err_rc;
 	uint16_t err_group;
 
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+	uint32_t boot_mode = BOOT_MODE_TYPE_NORMAL;
+#endif
+
 	struct os_mgmt_reset_data reboot_data = {
 		.force = false
 	};
 
 	struct zcbor_map_decode_key_val reset_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("force", zcbor_bool_decode, &reboot_data.force),
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+		ZCBOR_MAP_DECODE_KEY_DECODER("boot_mode", zcbor_uint32_decode, &boot_mode),
+#endif
 	};
 
 	/* Since this is a core command, if we fail to decode the data, ignore the error and
-	 * continue with the default parameter of force being false.
+	 * continue with the default parameters.
 	 */
 	(void)zcbor_map_decode_bulk(zsd, reset_decode, ARRAY_SIZE(reset_decode), &decoded);
+
+#ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
+	if (zcbor_map_decode_bulk_key_found(reset_decode, ARRAY_SIZE(reset_decode), "boot_mode")) {
+		if (boot_mode > UCHAR_MAX) {
+			return MGMT_ERR_EINVAL;
+		}
+
+		reboot_data.boot_mode = (uint8_t)boot_mode;
+	} else {
+		reboot_data.boot_mode = BOOT_MODE_TYPE_NORMAL;
+	}
+#endif
+
 	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_RESET, &reboot_data,
 				      sizeof(reboot_data), &err_rc, &err_group);
 
@@ -397,6 +422,31 @@ static int os_mgmt_reset(struct smp_streamer *ctxt)
 
 		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
 		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	}
+#elif defined(CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE)
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	size_t decoded;
+	uint32_t boot_mode;
+
+	struct zcbor_map_decode_key_val reset_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("boot_mode", zcbor_uint32_decode, &boot_mode),
+	};
+
+	/* Since this is a core command, if we fail to decode the data, ignore the error and
+	 * continue with the default parameters.
+	 */
+	(void)zcbor_map_decode_bulk(zsd, reset_decode, ARRAY_SIZE(reset_decode), &decoded);
+
+	if (zcbor_map_decode_bulk_key_found(reset_decode, ARRAY_SIZE(reset_decode), "boot_mode")) {
+		if (boot_mode > UCHAR_MAX) {
+			return MGMT_ERR_EINVAL;
+		}
+	}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE)
+	if (zcbor_map_decode_bulk_key_found(reset_decode, ARRAY_SIZE(reset_decode), "boot_mode")) {
+		(void)bootmode_set((uint8_t)boot_mode);
 	}
 #endif
 
