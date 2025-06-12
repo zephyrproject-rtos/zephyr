@@ -255,9 +255,15 @@ static void monitor_work_handler(struct k_work *work)
 	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
-static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
+static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
+			      enum phy_cfg_link_flag flags)
 {
 	uint32_t bmcr_reg;
+
+	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		return -ENOTSUP;
+	}
 
 	if (qc_ar8031_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
@@ -431,7 +437,7 @@ static int qc_ar8031_init(const struct device *dev)
 		/* Advertise all speeds */
 		qc_ar8031_cfg_link(dev, LINK_HALF_10BASE | LINK_FULL_10BASE |
 						LINK_HALF_100BASE | LINK_FULL_100BASE |
-						LINK_HALF_1000BASE | LINK_FULL_1000BASE);
+						LINK_HALF_1000BASE | LINK_FULL_1000BASE, 0);
 
 		k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
