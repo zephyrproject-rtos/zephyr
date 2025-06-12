@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF54H20DK_NRF54H20_CPURAD
+
+config NRF_DEFAULT_EMPTY
+	default y
+
+endif # BOARD_NRF54H20DK_NRF54H20_CPURAD
