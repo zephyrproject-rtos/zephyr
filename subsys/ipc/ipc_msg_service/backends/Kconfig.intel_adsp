@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config IPC_MSG_BACKEND_INTEL_ADSP_IPC
+	bool "Backend for the Intel Audio DSP IPC"
+	default DT_HAS_INTEL_ADSP_HOST_IPC_ENABLED
+	help
+	  Backend for Intel Audio DSP IPC.
+
+	  Note that this is currently not used SOF as its own driver for this hardware.
