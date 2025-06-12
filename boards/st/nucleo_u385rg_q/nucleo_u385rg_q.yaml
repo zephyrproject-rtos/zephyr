@@ -8,6 +8,7 @@ supported:
   - arduino_gpio
   - dac
   - adc
+  - dma
   - gpio
   - usart
 ram: 256
