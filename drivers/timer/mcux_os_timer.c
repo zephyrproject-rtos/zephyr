@@ -16,7 +16,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/pm/pm.h>
 #include "fsl_ostimer.h"
-#ifndef CONFIG_SOC_MCXN236
+#if !defined(CONFIG_SOC_MCXN236) && !defined(CONFIG_SOC_SERIES_MCXA)
 #include "fsl_power.h"
 #endif
 
