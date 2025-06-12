@@ -487,6 +487,65 @@ static void spi_stm32_cs_control(const struct device *dev, bool on __maybe_unuse
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz) */
 }
 
+static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
+{
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
+
+	ARG_UNUSED(is_rx_empty);
+
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Make sure IRQ is disabled to avoid any spurious IRQ to happen */
+	irq_disable(cfg->irq_line);
+#endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
+
+	LL_SPI_Enable(spi);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	/* With the STM32MP1, STM32U5 and the STM32H7,
+	 * if the device is the SPI master,
+	 * we need to enable the start of the transfer with
+	 * LL_SPI_StartMasterTransfer(spi)
+	 */
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	/*
+	 * Add a small delay after enabling to prevent transfer stalling at high
+	 * system clock frequency (see errata sheet ES0392).
+	 */
+	k_busy_wait(WAIT_1US);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+	/* This is turned off in spi_stm32_complete(). */
+	spi_stm32_cs_control(dev, true);
+
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_EnableIT_EOT(spi);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+	ll_func_enable_int_errors(spi);
+
+	if (!is_rx_empty) {
+		ll_func_enable_int_rx_not_empty(spi);
+	}
+
+	ll_func_enable_int_tx_empty(spi);
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	irq_enable(cfg->irq_line);
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
+#endif /* CONFIG_SPI_STM32_INTERRUPT */
+}
+
 static void spi_stm32_complete(const struct device *dev, int status)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -975,57 +1034,9 @@ static int transceive(const struct device *dev,
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
-	/* Make sure IRQ is disabled to avoid any spurious IRQ to happen */
-	irq_disable(cfg->irq_line);
-#endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
-	LL_SPI_Enable(spi);
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	/* With the STM32MP1, STM32U5 and the STM32H7,
-	 * if the device is the SPI master,
-	 * we need to enable the start of the transfer with
-	 * LL_SPI_StartMasterTransfer(spi)
-	 */
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		LL_SPI_StartMasterTransfer(spi);
-		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
-			/* NOP */
-		}
-	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
-
-#ifdef CONFIG_SOC_SERIES_STM32H7X
-	/*
-	 * Add a small delay after enabling to prevent transfer stalling at high
-	 * system clock frequency (see errata sheet ES0392).
-	 */
-	k_busy_wait(WAIT_1US);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-
-	/* This is turned off in spi_stm32_complete(). */
-	spi_stm32_cs_control(dev, true);
+	spi_stm32_msg_start(dev, rx_bufs == NULL);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (cfg->fifo_enabled) {
-		LL_SPI_EnableIT_EOT(spi);
-	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
-
-	ll_func_enable_int_errors(spi);
-
-	if (rx_bufs) {
-		ll_func_enable_int_rx_not_empty(spi);
-	}
-
-	ll_func_enable_int_tx_empty(spi);
-
-#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
-	irq_enable(cfg->irq_line);
-#endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
-
 	do {
 		ret = spi_context_wait_for_completion(&data->ctx);
 
