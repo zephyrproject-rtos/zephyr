@@ -1105,6 +1105,16 @@ config NRFX_UARTE22
 	depends on $(dt_nodelabel_exists,uart22)
 	select NRFX_UARTE
 
+config NRFX_UARTE23
+	bool "UARTE23 driver instance"
+	depends on $(dt_nodelabel_exists,uart23)
+	select NRFX_UARTE
+
+config NRFX_UARTE24
+	bool "UARTE24 driver instance"
+	depends on $(dt_nodelabel_exists,uart24)
+	select NRFX_UARTE
+
 config NRFX_UARTE30
 	bool "UARTE30 driver instance"
 	depends on $(dt_nodelabel_exists,uart30)
