@@ -92,7 +92,7 @@ static inline int phy_mii_reg_write(const struct device *dev, uint16_t reg_addr,
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
-static bool is_gigabit_supported(const struct device *dev)
+static int read_gigabit_supported_flag(const struct device *dev, bool *supported)
 {
 	uint16_t bmsr_reg;
 	uint16_t estat_reg;
@@ -107,11 +107,13 @@ static bool is_gigabit_supported(const struct device *dev)
 		}
 
 		if ((estat_reg & (MII_ESTAT_1000BASE_T_HALF | MII_ESTAT_1000BASE_T_FULL)) != 0U) {
-			return true;
+			*supported = true;
+			return 0;
 		}
 	}
 
-	return false;
+	*supported = false;
+	return 0;
 }
 
 static int reset(const struct device *dev)
@@ -536,13 +538,18 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 	const struct phy_mii_dev_config *const cfg = dev->config;
 	struct phy_mii_dev_data *const data = dev->data;
 	uint32_t phy_id;
+	int ret = 0;
 
 	data->state.is_up = false;
 
 	mdio_bus_enable(cfg->mdio);
 
 	if (cfg->no_reset == false) {
-		reset(dev);
+		ret = reset(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to reset PHY (%d): %d", cfg->phy_addr, ret);
+			return ret;
+		}
 	}
 
 	if (get_id(dev, &phy_id) == 0) {
@@ -555,7 +562,11 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 		LOG_INF("PHY (%d) ID %X", cfg->phy_addr, phy_id);
 	}
 
-	data->gigabit_supported = is_gigabit_supported(dev);
+	ret = read_gigabit_supported_flag(dev, &data->gigabit_supported);
+	if (ret < 0) {
+		LOG_ERR("Failed to read PHY capabilities: %d", ret);
+		return ret;
+	}
 
 	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
