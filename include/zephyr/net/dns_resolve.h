@@ -320,6 +320,7 @@ typedef void (*dns_resolve_cb_t)(enum dns_resolve_status status,
 /** @cond INTERNAL_HIDDEN */
 
 enum dns_resolve_context_state {
+	DNS_RESOLVE_CONTEXT_UNINITIALIZED = 0,
 	DNS_RESOLVE_CONTEXT_ACTIVE,
 	DNS_RESOLVE_CONTEXT_DEACTIVATING,
 	DNS_RESOLVE_CONTEXT_INACTIVE,
