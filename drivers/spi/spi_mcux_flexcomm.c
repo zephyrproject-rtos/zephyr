@@ -400,6 +400,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 	/* tx direction has memory as source and periph as dest. */
 	blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 	blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	blk_cfg->dest_scatter_en = 0;
 	blk_cfg->source_gather_en = 0;
 	if (last_packet) {
 		data->last_word = spi_mcux_get_last_tx_word(spi_cfg, buf, len, config->def_char,
@@ -480,6 +481,8 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t l
 	}
 	/* rx direction has periph as source and mem as dest. */
 	blk_cfg->source_address = (uint32_t)&base->FIFORD;
+	blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	blk_cfg->source_gather_en = 0;
 	if (buf == NULL) {
 		/* if rx buff is null, then write data to dummy address. */
 		blk_cfg->dest_address = (uint32_t)&dummy_rx_buffer;
