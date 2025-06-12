@@ -20,4 +20,11 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+config ETH_NXP_IMX_MSGINTR
+	default 2
+
 endif # SOC_MIMX94398_M33
