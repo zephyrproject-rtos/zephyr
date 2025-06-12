@@ -28,6 +28,8 @@
 #include <zephyr/arch/posix/exception.h>
 #elif defined(CONFIG_SPARC)
 #include <zephyr/arch/sparc/exception.h>
+#elif defined(CONFIG_RX)
+#include <zephyr/arch/rx/exception.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_ */
