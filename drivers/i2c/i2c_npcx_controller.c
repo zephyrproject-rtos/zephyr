@@ -403,6 +403,37 @@ static inline void i2c_ctrl_fifo_clear_status(const struct device *dev)
 	inst->SMBFIF_CTS |= BIT(NPCX_SMBFIF_CTS_CLR_FIFO);
 }
 
+/* I2C target reg access */
+#ifdef CONFIG_I2C_TARGET
+static volatile uint8_t *npcx_i2c_ctrl_target_get_reg_smbaddr(const struct device *i2c_dev,
+							      int index)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(i2c_dev);
+
+	switch (index) {
+	case 0:
+		return &inst->SMBADDR1;
+	case 1:
+		return &inst->SMBADDR2;
+	case 2:
+		return &inst->SMBADDR3;
+	case 3:
+		return &inst->SMBADDR4;
+	case 4:
+		return &inst->SMBADDR5;
+	case 5:
+		return &inst->SMBADDR6;
+	case 6:
+		return &inst->SMBADDR7;
+	case 7:
+		return &inst->SMBADDR8;
+	default:
+		LOG_ERR("Invalid SMBADDR index: %d", index);
+		return NULL;
+	}
+}
+#endif /* CONFIG_I2C_TARGET */
+
 /*
  * I2C local functions which touch the registers in 'Normal' bank. These
  * utilities will change bank back to FIFO mode when leaving themselves in case
@@ -432,6 +463,16 @@ static void i2c_ctrl_init_module(const struct device *dev)
 
 	/* Enable module - before configuring CTL1 */
 	inst->SMBCTL2  |= BIT(NPCX_SMBCTL2_ENABLE);
+
+#ifdef CONFIG_I2C_TARGET
+	volatile uint8_t *reg_smbaddr;
+
+	/* Clear all the SMBnADDR */
+	for (int i = 0; i < NPCX_I2C_FLAG_COUNT; i++) {
+		reg_smbaddr = npcx_i2c_ctrl_target_get_reg_smbaddr(dev, i);
+		*reg_smbaddr = 0;
+	}
+#endif
 
 	/* Enable SMB interrupt and 'New Address Match' interrupt source */
 	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
@@ -1194,33 +1235,6 @@ recover_exit:
 }
 
 #ifdef CONFIG_I2C_TARGET
-static volatile uint8_t *npcx_i2c_ctrl_target_get_reg_smbaddr(const struct device *i2c_dev,
-							      int index)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(i2c_dev);
-
-	switch (index) {
-	case 0:
-		return &inst->SMBADDR1;
-	case 1:
-		return &inst->SMBADDR2;
-	case 2:
-		return &inst->SMBADDR3;
-	case 3:
-		return &inst->SMBADDR4;
-	case 4:
-		return &inst->SMBADDR5;
-	case 5:
-		return &inst->SMBADDR6;
-	case 6:
-		return &inst->SMBADDR7;
-	case 7:
-		return &inst->SMBADDR8;
-	default:
-		LOG_ERR("Invalid SMBADDR index: %d", index);
-		return NULL;
-	}
-}
 
 int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 				 struct i2c_target_config *target_cfg, uint8_t port)
@@ -1372,7 +1386,7 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 		i2c_ctrl_bank_sel(i2c_dev, NPCX_I2C_BANK_FIFO);
 
 		/* Reconfigure SMBCTL1 */
-		inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
+		inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_INTEN);
 
 		/* Disable irq of smb wake-up event */
 		if (IS_ENABLED(CONFIG_PM)) {
@@ -1392,13 +1406,8 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 
 static void i2c_target_wk_isr(const struct device *dev, struct npcx_wui *wui)
 {
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
 	/* Clear wake up detection event status */
 	npcx_i2c_target_clear_detection_event();
-
-	/* Reconfigure SMBCTL1 */
-	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_NMINTE) | BIT(NPCX_SMBCTL1_INTEN);
 
 	/*
 	 * Suspend-to-idle stops SMB module clocks (derived from APB2/APB3), which must remain
