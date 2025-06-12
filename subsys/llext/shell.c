@@ -19,25 +19,25 @@ LOG_MODULE_REGISTER(llext_shell, CONFIG_LLEXT_LOG_LEVEL);
 #define LLEXT_LIST_HELP "List loaded extensions and their size in memory"
 
 #define LLEXT_LOAD_HEX_HELP                                                                        \
-	"Load an elf file encoded in hex directly from the shell input. Syntax:\n"                 \
-	"<ext_name> <ext_hex_string>"
+	SHELL_HELP("Load an elf file encoded in hex directly from the shell input.",               \
+		   "<ext_name> <ext_hex_string>")
 
 #define LLEXT_UNLOAD_HELP                                                                          \
-	"Unload an extension by name. Syntax:\n"                                                   \
-	"<ext_name>"
+	SHELL_HELP("Unload an extension by name.",                                                 \
+		   "<ext_name>")
 
 #define LLEXT_LIST_SYMBOLS_HELP                                                                    \
-	"List extension symbols. Syntax:\n"                                                        \
-	"<ext_name>"
+	SHELL_HELP("List extension symbols.",                                                      \
+		   "<ext_name>")
 
 #define LLEXT_CALL_FN_HELP                                                                         \
-	"Call extension function with prototype void fn(void). Syntax:\n"                          \
-	"<ext_name> <function_name>"
+	SHELL_HELP("Call extension function with prototype void fn(void).",                        \
+		   "<ext_name> <function_name>")
 
 #ifdef CONFIG_FILE_SYSTEM
 #define LLEXT_LOAD_FS_HELP                                                                         \
-	"Load an elf file directly from filesystem. Syntax:\n"                                     \
-	"<ext_name> <ext_llext_file_name>"
+	SHELL_HELP("Load an elf file directly from filesystem.",                                   \
+		   "<ext_name> <ext_llext_file_name>")
 
 #endif /* CONFIG_FILE_SYSTEM */
 
