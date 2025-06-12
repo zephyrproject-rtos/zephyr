@@ -44,13 +44,13 @@ struct channel_data {
 	const struct device *dev;
 	void *user_data;
 	dma_callback_t dma_callback;
+	dma_descriptor_t *curr_descriptor;
+	uint32_t width;
 	enum dma_channel_direction dir;
 	uint8_t src_inc;
 	uint8_t dst_inc;
-	dma_descriptor_t *curr_descriptor;
 	uint8_t num_of_descriptors;
 	bool descriptors_queued;
-	uint32_t width;
 	bool busy;
 };
 
@@ -93,13 +93,19 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 
 	if (intmode == kDMA_IntError) {
 		DMA_AbortTransfer(handle);
+		data->busy = false;
 	} else if (intmode == kDMA_IntA) {
+		/* this is interrupt for a block that is not the
+		 * last so leave busy flag set.
+		 */
 		ret = DMA_STATUS_BLOCK;
 	} else {
+		/* this is interrupt for end of a block list
+		 * or a single transfer.
+		 */
+		data->busy = false;
 		ret = DMA_STATUS_COMPLETE;
 	}
-
-	data->busy = DMA_ChannelIsBusy(data->dma_handle.base, channel);
 
 	if (data->dma_callback) {
 		data->dma_callback(data->dev, data->user_data, channel, ret);
@@ -238,7 +244,7 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 			enable_b_interrupt = 0;
 		} else {
 			/* Use intB when this is the end of the block list and transfer */
-			if (last_block) {
+			if (last_block && !setup_extra_descriptor) {
 				enable_a_interrupt = 0;
 				enable_b_interrupt = 1;
 			} else {
@@ -661,8 +667,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 					block_config->block_size);
 		}
 	} else {
-		/* Enable interrupt for the descriptor */
-		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
+		/* Enable interrupt for the descriptor. Use int_b */
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 0UL, 1UL,
 				width,
 				src_inc,
 				dst_inc,
@@ -796,11 +802,16 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMA CTRL 0x%x", DEV_BASE(dev)->CTRL);
 	data->busy = true;
-	DMA_StartTransfer(DEV_DMA_HANDLE(dev, virtual_channel));
+	/* In case of a restart after a stop, reinstall the DMA callback
+	 * that was removed by the stop.
+	 */
+	DMA_SetCallback(p_handle, nxp_lpc_dma_callback, (void *)data);
+	DMA_StartTransfer(p_handle);
 	return 0;
 }
 
@@ -809,14 +820,28 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
+	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
-	if (!data->busy) {
-		return 0;
-	}
-	DMA_AbortTransfer(DEV_DMA_HANDLE(dev, virtual_channel));
-	DMA_DisableChannel(DEV_BASE(dev), channel);
+	/* Abort/disable even if not busy. it's safe and avoids
+	 * any risk of data->busy not being accurate.
+	 */
+	DMA_AbortTransfer(p_handle);
+	DMA_DisableChannel(DEV_BASE(dev), p_handle->channel);
 
 	data->busy = false;
+
+	/* Handle race condition where if this is called from an ISR
+	 * and the DMA channel completion interrupt becomes pending
+	 * before we complete the abort and disable, then the DMA ISR
+	 * may run and invoke the callback may run after we return,
+	 * which is unexpected by user since from their perspective
+	 * the stop was already completed. We cannot just checking
+	 * and clear the pending IRQ since it is shared by other
+	 * channels. This way, the pending DMA ISR will still run,
+	 * but should just clear the interrupt and not invoke
+	 * the callback.
+	 */
+	DMA_SetCallback(p_handle, NULL, NULL);
 	return 0;
 }
 
@@ -837,8 +862,8 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 
 		p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
 
-		/* Only one buffer, enable interrupt */
-		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
+		/* Only one buffer, enable interrupt b */
+		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 0UL, 1UL,
 					data->width,
 					data->src_inc,
 					data->dst_inc,
