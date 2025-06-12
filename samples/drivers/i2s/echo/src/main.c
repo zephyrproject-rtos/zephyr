@@ -275,6 +275,12 @@ int main(void)
 	k_msleep(1000);
 #endif
 
+#if DT_ON_BUS(MAX9867_NODE, i2c)
+	if (!init_max9867_i2c()) {
+		return 0;
+	}
+#endif
+
 	if (!init_buttons()) {
 		return 0;
 	}
