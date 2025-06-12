@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/adc.h>
+#include <zephyr/sys/util.h>
 
 struct gain_desc {
 	uint8_t mul;
@@ -41,10 +42,10 @@ int adc_gain_invert(enum adc_gain gain, int32_t *value)
 	if ((uint8_t)gain < ARRAY_SIZE(gains)) {
 		const struct gain_desc *gdp = &gains[gain];
 
-		if ((gdp->mul != 0) && (gdp->div != 0)) {
-			*value = (gdp->mul * *value) / gdp->div;
-			rv = 0;
-		}
+		__ASSERT_NO_MSG(gdp->mul != 0);
+		__ASSERT_NO_MSG(gdp->div != 0);
+		*value = (gdp->mul * *value) / gdp->div;
+		rv = 0;
 	}
 
 	return rv;
@@ -57,10 +58,10 @@ int adc_gain_invert_64(enum adc_gain gain, int64_t *value)
 	if ((uint8_t)gain < ARRAY_SIZE(gains)) {
 		const struct gain_desc *gdp = &gains[gain];
 
-		if ((gdp->mul != 0) && (gdp->div != 0)) {
-			*value = (gdp->mul * *value) / gdp->div;
-			rv = 0;
-		}
+		__ASSERT_NO_MSG(gdp->mul != 0);
+		__ASSERT_NO_MSG(gdp->div != 0);
+		*value = (gdp->mul * *value) / gdp->div;
+		rv = 0;
 	}
 
 	return rv;
