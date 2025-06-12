@@ -103,7 +103,7 @@ ZTEST(k_heap_api, test_k_heap_min_size)
 }
 
 /**
- * @brief Test to demonstrate k_heap_alloc() and k_heap_free() API usage
+ * @brief Test k_heap_alloc() and k_heap_free() API usage
  *
  * @ingroup k_heap_api_tests
  *
@@ -127,7 +127,7 @@ ZTEST(k_heap_api, test_k_heap_alloc)
 
 
 /**
- * @brief Test to demonstrate k_heap_alloc() and k_heap_free() API usage
+ * @brief Test k_heap_alloc() and k_heap_free() API usage
  *
  * @ingroup k_heap_api_tests
  *
@@ -149,7 +149,7 @@ ZTEST(k_heap_api, test_k_heap_alloc_fail)
 
 
 /**
- * @brief Test to demonstrate k_heap_free() API functionality.
+ * @brief Test k_heap_free() API functionality.
  *
  * @ingroup k_heap_api_tests
  *
@@ -269,7 +269,7 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 }
 
 /**
- * @brief Test to demonstrate k_heap_calloc() and k_heap_free() API usage
+ * @brief Test k_heap_calloc() and k_heap_free() API usage
  *
  * @ingroup k_heap_api_tests
  *
@@ -293,7 +293,7 @@ ZTEST(k_heap_api, test_k_heap_calloc)
 }
 
 /**
- * @brief Test to demonstrate k_heap_array_get()
+ * @brief Test k_heap_array_get()
  *
  * @ingroup kernel_kheap_api_tests
  *
