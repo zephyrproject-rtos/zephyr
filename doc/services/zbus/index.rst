@@ -579,6 +579,59 @@ sample, it's OK to use stack allocated messages since VDED copies the data inter
 .. warning::
     Only use this function inside an ISR with a :c:macro:`K_NO_WAIT` timeout.
 
+.. _publishing to a channel using a publisher:
+
+Publishing to a channel using a Publisher
+=======================
+
+Publishers allow messages to be scheduled for periodic publication from a workqueue
+thread, which can be useful for tasks like periodic sampling.
+
+.. code-block:: c
+
+  int event1 = SAMPLE_SENSOR_A;
+  int event2 = SAMPLE_SENSOR_B;
+  int event3 = SAMPLE_SENSOR_c;
+
+  ZBUS_CHANNEL_PUBLISHER_DEFINE(pub1, &simple_chan, &event1);
+  ZBUS_CHANNEL_PUBLISHER_DEFINE(pub2, &simple_chan, &event2);
+  ZBUS_CHANNEL_PUBLISHER_DEFINE(pub2, &simple_chan, &event3);
+
+  static void msg_subscriber_task(void *ptr1, void *ptr2, void *ptr3)
+  {
+    int msg;
+
+    /* schedule a SAMPLE_SENSOR_A every 100 msec */
+    zbus_chan_publisher_start(&pub1, K_NO_WAIT, K_MSEC(100));
+    zbus_chan_publisher_start(&pub2, K_NO_WAIT, K_MINUTES(2));
+    zbus_chan_publisher_start(&pub3, K_NO_WAIT, K_HOURS(1));
+
+    while (1) {
+      zbus_sub_wait_msg(zbus_obs, &chan, &msg, K_FOREVER);
+      if (msg == SAMPLE_SENSOR_A) {
+      }
+      if (msg == SAMPLE_SENSOR_B) {
+      }
+      if (msg == SAMPLE_SENSOR_C) {
+      }
+    }
+  }
+
+When calling :c:func:`zbus_chan_pub` with :c:macro:`K_NO_WAIT` from an ISR, a message will not
+deliver if the channel is locked. To ensure delivery a publisher could be used.
+
+.. code-block:: c
+
+  int isr_msg = DATA_READY_MSG;
+  ZBUS_CHANNEL_PUBLISHER_DEFINE(isr_pub, &simple_chan, &isr_msg);
+
+  void my_isr( ... )
+  {
+    /* process ISR */
+    /* alert application */
+    zbus_chan_publisher_reschedule(&isr_pub, K_NO_WAIT);
+  }
+
 .. _reading from a channel:
 
 Reading from a channel
