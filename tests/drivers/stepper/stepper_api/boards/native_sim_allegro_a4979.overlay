@@ -23,5 +23,6 @@
 		m0-gpios = <&gpio3 0 0>;
 		m1-gpios = <&gpio3 1 0>;
 		counter = <&counter0>;
+		step-dir = "common";
 	};
 };
