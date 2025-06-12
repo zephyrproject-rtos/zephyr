@@ -220,23 +220,18 @@ static inline void *min_heap_get_element(const struct min_heap *heap,
  *
  * @param heap Pointer to the heap.
  * @param node_var The loop variable used to reference each node.
- * @param body Code block to execute for each node.
  *
  * Example:
  * ```
  * void *node;
- * MIN_HEAP_FOREACH(&heap, node, {
+ * MIN_HEAP_FOREACH(&heap, node) {
  *	printk("Value: %d\n", node->value);
- * });
+ * }
  * ```
  */
-#define MIN_HEAP_FOREACH(heap, node_var, body) \
-	do { for (size_t _i = 0; _i < (heap)->size && \
-		(((node_var) = min_heap_get_element((heap), _i)) || true); \
-		++_i) { \
-			body; \
-		} \
-	} while (0)
+#define MIN_HEAP_FOREACH(heap, node_var)                                                           \
+	for (size_t _i = 0;                                                                        \
+	     _i < (heap)->size && (((node_var) = min_heap_get_element((heap), _i)) || true); ++_i)
 
 /**
  * @}
