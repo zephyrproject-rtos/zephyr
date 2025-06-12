@@ -234,6 +234,10 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI1);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
 /*
