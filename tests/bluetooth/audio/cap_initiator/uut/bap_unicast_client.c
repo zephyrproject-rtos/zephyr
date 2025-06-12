@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Codecoup
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/ztest_assert.h>
@@ -155,11 +156,15 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 {
+	struct bt_bap_ep *ep;
+
 	if (stream == NULL) {
 		return -EINVAL;
 	}
 
-	switch (stream->ep->status.state) {
+	ep = stream->ep;
+
+	switch (ep->status.state) {
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 	case BT_BAP_EP_STATE_ENABLING:
 		break;
@@ -167,13 +172,14 @@ int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
+	ep->iso->chan.state = BT_ISO_STATE_CONNECTED;
 	if (stream->ops != NULL && stream->ops->connected != NULL) {
 		stream->ops->connected(stream);
 	}
 
-	if (stream->ep != NULL && stream->ep->dir == BT_AUDIO_DIR_SINK) {
+	if (ep->dir == BT_AUDIO_DIR_SINK) {
 		/* Mocking that the unicast server automatically starts the stream */
-		stream->ep->status.state = BT_BAP_EP_STATE_STREAMING;
+		ep->status.state = BT_BAP_EP_STATE_STREAMING;
 
 		if (stream->ops != NULL && stream->ops->started != NULL) {
 			stream->ops->started(stream);
