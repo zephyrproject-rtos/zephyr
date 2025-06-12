@@ -133,6 +133,10 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif
 #endif /* !CONFIG_NET_TEST */
 
+BUILD_ASSERT(!(DT_ANY_INST_HAS_PROP_STATUS_OKAY(mac_eeprom) &&
+	       (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)),
+	     "Only support one activated instance get MAC address from EEPROM");
+
 /* RX descriptors list */
 #define DEFN_RX_DESC(n)									\
 		static struct gmac_desc rx_desc##n##_que[PRIORITY_QUEUE_RX_DESC_COUNT]	\
