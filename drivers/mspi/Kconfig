@@ -55,6 +55,11 @@ config MSPI_TIMING
 	  Enables mspi_timing_config calls in device drivers for those
 	  controllers that need this to proper function at high frequencies.
 
+config MSPI_SINGLE_IO_DUMMY_CYCLES_SUPPORTED
+	bool "Single IO mode supports dummy TX/RX cycles"
+	help
+	  Some drivers do not support dummy TX/RX cycles in single IO mode.
+
 module = MSPI
 module-str = mspi
 source "subsys/logging/Kconfig.template.log_config"
