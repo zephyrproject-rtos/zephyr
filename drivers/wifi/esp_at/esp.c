@@ -490,18 +490,23 @@ static void esp_dns_work(struct k_work *work)
 	struct dns_resolve_context *dnsctx;
 	struct sockaddr_in *addrs = data->dns_addresses;
 	const struct sockaddr *dns_servers[ESP_MAX_DNS + 1] = {};
+	int interfaces[ESP_MAX_DNS];
 	size_t i;
-	int err;
+	int err, ifindex;
+
+	ifindex = net_if_get_by_ifindex(data->net_iface);
 
 	for (i = 0; i < ESP_MAX_DNS; i++) {
 		if (!addrs[i].sin_addr.s_addr) {
 			break;
 		}
 		dns_servers[i] = (struct sockaddr *) &addrs[i];
+		interfaces[i] = ifindex;
 	}
 
 	dnsctx = dns_resolve_get_default();
-	err = dns_resolve_reconfigure(dnsctx, NULL, dns_servers);
+	err = dns_resolve_reconfigure_with_interfaces(dnsctx, NULL, dns_servers,
+						      interfaces);
 	if (err) {
 		LOG_ERR("Could not set DNS servers: %d", err);
 	}
