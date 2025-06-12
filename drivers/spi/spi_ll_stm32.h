@@ -61,6 +61,9 @@ struct stream {
 #endif
 
 struct spi_stm32_data {
+#ifdef CONFIG_SPI_RTIO
+	struct spi_rtio *rtio_ctx;
+#endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
