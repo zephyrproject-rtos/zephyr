@@ -452,11 +452,11 @@ static int siwx91x_get_power_save_config(const struct device *dev, struct wifi_p
 }
 
 static unsigned int siwx91x_on_join(sl_wifi_event_t event,
-				    char *result, uint32_t result_size, void *arg)
+				    const char *result, uint32_t result_size, void *arg)
 {
 	struct siwx91x_dev *sidev = arg;
 
-	if (*result != 'C') {
+	if (result_size == 0 || *result != 'C') {
 		/* TODO: report the real reason of failure */
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		sidev->state = WIFI_STATE_INACTIVE;
@@ -924,6 +924,7 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 	};
 	struct siwx91x_dev *sidev = dev->data;
 	enum wifi_mfp_options mfp_conf;
+	const char *join_success_res = "C";
 	int ret = 0;
 
 	if (sidev->state == WIFI_STATE_COMPLETED) {
@@ -1009,10 +1010,15 @@ static int siwx91x_connect(const struct device *dev, struct wifi_connect_req_par
 	wifi_config.ssid.length = params->ssid_length,
 	memcpy(wifi_config.ssid.value, params->ssid, params->ssid_length);
 
-	ret = sl_wifi_connect(interface, &wifi_config, 0);
-	if (ret != SL_STATUS_IN_PROGRESS) {
+	ret = sl_wifi_connect(interface, &wifi_config, params->timeout * 1000);
+	if (params->timeout && ret == SL_STATUS_OK) {
+		siwx91x_on_join(SL_WIFI_JOIN_EVENT, join_success_res, strlen(join_success_res),
+				sidev);
+	} else if (ret != SL_STATUS_IN_PROGRESS) {
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		return -EIO;
+	} else {
+		/* No action needed */
 	}
 
 	return 0;
