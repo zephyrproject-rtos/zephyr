@@ -61,7 +61,7 @@ static int cmd_device_list(const struct shell *sh,
 	shell_fprintf(sh, SHELL_NORMAL, "devices:\n");
 
 	for (dev = devlist; dev < devlist_end; dev++) {
-		char buf[20];
+		char buf[Z_DEVICE_MAX_NAME_LEN];
 		const char *name = get_device_name(dev, buf, sizeof(buf));
 		const char *state = "READY";
 		int usage;
