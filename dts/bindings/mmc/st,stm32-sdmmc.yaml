@@ -70,10 +70,15 @@ properties:
 
       For example dmas for TX/RX on SDMMC
          dmas = <&dma2 4 6 0x30000 0x00>, <&dma2 4 3 0x30000 0x00>;
+      Alternatively, for a shared TX/RX DMA channels on a STM32L4
+         dmas = <&dma2 5 7 STM32_DMA_PRIORITY_HIGH>;
 
   dma-names:
     description: |
-      DMA channel name. If DMA should be used, expected value is "tx", "rx".
+      DMA channel name. If DMA should be used, expected value is either "tx", "rx"
+      or a single "txrx" for the shared channel configuration
 
       For example
          dma-names = "tx", "rx";
+      or
+         dma-names = "txrx";
