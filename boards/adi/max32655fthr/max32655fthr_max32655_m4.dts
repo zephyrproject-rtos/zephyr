@@ -145,6 +145,12 @@
 	status = "okay";
 };
 
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_p0_16 &i2c1_sda_p0_17>;
+	pinctrl-names = "default";
+};
+
 &i2c2 {
 	status = "okay";
 	pinctrl-0 = <&i2c2_scl_p0_30 &i2c2_sda_p0_31>;
@@ -217,6 +223,7 @@
 			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(448)>;
 		};
+
 		storage_partition: partition@70000 {
 			label = "storage";
 			reg = <0x70000 DT_SIZE_K(64)>;
