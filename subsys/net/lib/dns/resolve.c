@@ -81,6 +81,7 @@ NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
 DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 
+static K_MUTEX_DEFINE(lock);
 static int init_called;
 static struct dns_resolve_context dns_default_ctx;
 
@@ -414,12 +415,86 @@ static int bind_to_iface(int sock, const struct sockaddr *addr, int if_index)
 	return ret;
 }
 
+static bool is_server_name_found(struct dns_resolve_context *ctx,
+				 const char *server, size_t server_len,
+				 const char *iface_str)
+{
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		if (ctx->servers[i].dns_server.sa_family == AF_INET ||
+		    ctx->servers[i].dns_server.sa_family == AF_INET6) {
+			char addr_str[INET6_ADDRSTRLEN];
+			size_t addr_len;
+
+			if (net_addr_ntop(ctx->servers[i].dns_server.sa_family,
+					  &net_sin(&ctx->servers[i].dns_server)->sin_addr,
+					  addr_str, sizeof(addr_str)) < 0) {
+				continue;
+			}
+
+			addr_len = strlen(addr_str);
+			if (addr_len != server_len ||
+			    strncmp(addr_str, server, server_len) != 0) {
+				continue;
+			}
+
+			if (iface_str != NULL && ctx->servers[i].if_index > 0) {
+				char iface_name[IFNAMSIZ];
+
+				net_if_get_name(net_if_get_by_index(
+						ctx->servers[i].if_index),
+						iface_name, sizeof(iface_name));
+
+				if (strcmp(iface_name, iface_str) != 0) {
+					continue;
+				}
+			}
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool is_server_addr_found(struct dns_resolve_context *ctx,
+				 const struct sockaddr *addr,
+				 int if_index)
+{
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		if (ctx->servers[i].dns_server.sa_family == addr->sa_family &&
+		    memcmp(&ctx->servers[i].dns_server, addr,
+			   sizeof(ctx->servers[i].dns_server)) == 0) {
+			if (if_index == 0 ||
+			    (if_index > 0 &&
+			     ctx->servers[i].if_index != if_index)) {
+				continue;
+			}
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static int get_free_slot(struct dns_resolve_context *ctx)
+{
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		if (ctx->servers[i].dns_server.sa_family == 0) {
+			return i;
+		}
+	}
+
+	return -ENOENT;
+}
+
 /* Must be invoked with context lock held */
 static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				   const char *servers[],
 				   const struct sockaddr *servers_sa[],
 				   const struct net_socket_service_desc *svc,
-				   uint16_t port, int interfaces[])
+				   uint16_t port, int interfaces[],
+				   bool do_cleanup)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6 = {
@@ -445,17 +520,20 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		return -ENOENT;
 	}
 
-	if (ctx->state != DNS_RESOLVE_CONTEXT_INACTIVE) {
-		ret = -ENOTEMPTY;
-		goto fail;
-	}
+	if (do_cleanup) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_INACTIVE) {
+			ret = -ENOTEMPTY;
+			NET_DBG("DNS resolver context is not inactive (%d)", ctx->state);
+			goto fail;
+		}
 
-	ARRAY_FOR_EACH(ctx->servers, j) {
-		ctx->servers[j].sock = -1;
-	}
+		ARRAY_FOR_EACH(ctx->servers, j) {
+			ctx->servers[j].sock = -1;
+		}
 
-	ARRAY_FOR_EACH(ctx->fds, j) {
-		ctx->fds[j].fd = -1;
+		ARRAY_FOR_EACH(ctx->fds, j) {
+			ctx->fds[j].fd = -1;
+		}
 	}
 
 	/* If user has provided a list of servers in string format, then
@@ -464,78 +542,146 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 	 * The interfaces parameter should point to an array that is the
 	 * the same length as the servers_sa parameter array.
 	 */
-	if (servers) {
-		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
-			const char *iface_str;
-			size_t server_len;
+	for (i = 0; servers != NULL && idx < SERVER_COUNT && servers[i] != NULL; i++) {
+		const char *iface_str;
+		size_t server_len;
+		struct sockaddr *addr;
+		bool found;
 
-			struct sockaddr *addr = &ctx->servers[idx].dns_server;
+		iface_str = strstr(servers[i], "%");
+		if (iface_str != NULL) {
+			server_len = iface_str - servers[i];
+			iface_str++;
 
-			iface_str = strstr(servers[i], "%");
-			if (iface_str) {
-				server_len = iface_str - servers[i];
-				iface_str++;
-
-				if (server_len == 0) {
-					NET_DBG("Empty server name");
-					continue;
-				}
-
-				/* Skip empty interface name */
-				if (iface_str[0] == '\0') {
-					ctx->servers[idx].if_index = 0;
-					iface_str = NULL;
-				} else {
-					ctx->servers[idx].if_index =
-						net_if_get_by_name(iface_str);
-				}
-
-			} else {
-				server_len = strlen(servers[i]);
-				ctx->servers[idx].if_index = 0;
-			}
-
-			(void)memset(addr, 0, sizeof(*addr));
-
-			ret = net_ipaddr_parse(servers[i], server_len, addr);
-			if (!ret) {
-				if (servers[i] != NULL && servers[i][0] != '\0') {
-					NET_DBG("Invalid server address %.*s",
-						(int)server_len, servers[i]);
-				}
-
+			if (server_len == 0) {
+				NET_DBG("Empty server name");
 				continue;
 			}
 
-			dns_postprocess_server(ctx, idx);
-
-			NET_DBG("[%d] %.*s%s%s%s%s", i, (int)server_len, servers[i],
-				IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
-				(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
-				IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
-				(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
-				iface_str != NULL ? " via " : "",
-				iface_str != NULL ? iface_str : "");
-			idx++;
-		}
-	}
-
-	if (servers_sa) {
-		for (i = 0; idx < SERVER_COUNT && servers_sa[i]; i++) {
-			memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
-			       sizeof(ctx->servers[idx].dns_server));
-
-			if (interfaces != NULL) {
-				ctx->servers[idx].if_index = interfaces[idx];
+			found = is_server_name_found(ctx, servers[i],
+						     server_len, iface_str);
+			if (found) {
+				NET_DBG("Server %.*s already exists",
+					(int)server_len, servers[i]);
+				continue;
 			}
 
-			dns_postprocess_server(ctx, idx);
-			idx++;
+			/* Figure out if there are free slots where to add
+			 * the server.
+			 */
+			idx = get_free_slot(ctx);
+			if (idx < 0) {
+				NET_DBG("No free slots for server %.*s",
+					(int)server_len, servers[i]);
+				break;
+			}
+
+			/* Skip empty interface name */
+			if (iface_str[0] == '\0') {
+				ctx->servers[idx].if_index = 0;
+				iface_str = NULL;
+			} else {
+				ctx->servers[idx].if_index =
+					net_if_get_by_name(iface_str);
+			}
+
+		} else {
+			server_len = strlen(servers[i]);
+			if (server_len == 0) {
+				NET_DBG("Empty server name");
+				continue;
+			}
+
+			found = is_server_name_found(ctx, servers[i],
+						     server_len, NULL);
+			if (found) {
+				NET_DBG("Server %.*s already exists",
+					(int)server_len, servers[i]);
+				continue;
+			}
+
+			idx = get_free_slot(ctx);
+			if (idx < 0) {
+				NET_DBG("No free slots for server %.*s",
+					(int)server_len, servers[i]);
+				break;
+			}
 		}
+
+		addr = &ctx->servers[idx].dns_server;
+
+		(void)memset(addr, 0, sizeof(*addr));
+
+		ret = net_ipaddr_parse(servers[i], server_len, addr);
+		if (!ret) {
+			if (servers[i][0] != '\0') {
+				NET_DBG("Invalid server address %.*s",
+					(int)server_len, servers[i]);
+			}
+
+			continue;
+		}
+
+		dns_postprocess_server(ctx, idx);
+
+		NET_DBG("[%d] %.*s%s%s%s%s", i, (int)server_len, servers[i],
+			IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
+			(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
+			IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
+			(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
+			iface_str != NULL ? " via " : "",
+			iface_str != NULL ? iface_str : "");
+		idx++;
+	}
+
+	for (i = 0; servers_sa != NULL && idx < SERVER_COUNT && servers_sa[i] != NULL; i++) {
+		char iface_str[IFNAMSIZ] = { 0 };
+		bool found;
+
+		found = is_server_addr_found(ctx, servers_sa[i], interfaces[i]);
+		if (found) {
+			NET_DBG("Server %s already exists",
+				net_sprint_addr(ctx->servers[i].dns_server.sa_family,
+						&net_sin(&ctx->servers[i].dns_server)->sin_addr));
+			continue;
+		}
+
+		/* Figure out if there are free slots where to add the server.
+		 */
+		idx = get_free_slot(ctx);
+		if (idx < 0) {
+			NET_DBG("No free slots for server %s",
+				net_sprint_addr(ctx->servers[i].dns_server.sa_family,
+						&net_sin(&ctx->servers[i].dns_server)->sin_addr));
+			break;
+		}
+
+		memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
+		       sizeof(ctx->servers[idx].dns_server));
+
+		if (interfaces != NULL) {
+			ctx->servers[idx].if_index = interfaces[i];
+
+			net_if_get_name(net_if_get_by_index(ctx->servers[idx].if_index),
+					iface_str, sizeof(iface_str));
+		}
+
+		dns_postprocess_server(ctx, idx);
+
+		NET_DBG("[%d] %s%s%s%s%s", i,
+			net_sprint_addr(servers_sa[i]->sa_family,
+					&net_sin(servers_sa[i])->sin_addr),
+			IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
+			(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
+			IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
+			(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
+			interfaces != NULL ? " via " : "",
+			interfaces != NULL ? iface_str : "");
+		idx++;
 	}
 
 	for (i = 0, count = 0;
-	     i < SERVER_COUNT && ctx->servers[i].dns_server.sa_family; i++) {
+	     i < SERVER_COUNT && ctx->servers[i].dns_server.sa_family != 0; i++) {
 
 		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
@@ -571,6 +717,16 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			goto fail;
 		}
 
+		if (ctx->servers[i].sock >= 0) {
+			/* Socket already exists, so skip it */
+			NET_DBG("Socket %d already exists for %s",
+				ctx->servers[i].sock,
+				net_sprint_addr(ctx->servers[i].dns_server.sa_family,
+						&net_sin(&ctx->servers[i].dns_server)->sin_addr));
+			count++;
+			continue;
+		}
+
 		ret = zsock_socket(ctx->servers[i].dns_server.sa_family,
 				   SOCK_DGRAM, IPPROTO_UDP);
 		if (ret < 0) {
@@ -589,6 +745,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			if (ret < 0) {
 				zsock_close(ctx->servers[i].sock);
 				ctx->servers[i].sock = -1;
+				ctx->servers[i].dns_server.sa_family = 0;
 				continue;
 			}
 
@@ -637,6 +794,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		if (ret < 0) {
 			NET_DBG("Cannot set %s to socket (%d)", "polling", ret);
 			zsock_close(ctx->servers[i].sock);
+			ctx->servers[i].sock = -1;
+			ctx->servers[i].dns_server.sa_family = 0;
 			continue;
 		}
 
@@ -695,20 +854,28 @@ int dns_resolve_init_with_svc(struct dns_resolve_context *ctx, const char *serve
 			      const struct net_socket_service_desc *svc,
 			      uint16_t port, int interfaces[])
 {
+	int ret;
+
 	if (!ctx) {
 		return -ENOENT;
 	}
 
-	(void)memset(ctx, 0, sizeof(*ctx));
+	k_mutex_lock(&lock, K_FOREVER);
 
-	(void)k_mutex_init(&ctx->lock);
-	ctx->state = DNS_RESOLVE_CONTEXT_INACTIVE;
+	/* Do cleanup only if we are starting the context for the first time */
+	if (init_called == 0) {
+		(void)memset(ctx, 0, sizeof(*ctx));
 
-	/* As this function is called only once during system init, there is no
-	 * reason to acquire lock.
-	 */
-	return dns_resolve_init_locked(ctx, servers, servers_sa, svc, port,
-				       interfaces);
+		(void)k_mutex_init(&ctx->lock);
+		ctx->state = DNS_RESOLVE_CONTEXT_INACTIVE;
+	}
+
+	ret = dns_resolve_init_locked(ctx, servers, servers_sa, svc, port,
+				      interfaces, true);
+
+	k_mutex_unlock(&lock);
+
+	return ret;
 }
 
 int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
@@ -1739,10 +1906,51 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 					 user_data, timeout, true);
 }
 
+static int dns_server_close(struct dns_resolve_context *ctx,
+			    int server_idx)
+{
+	struct net_if *iface;
+
+	if (ctx->servers[server_idx].sock < 0) {
+		return -ENOENT;
+	}
+
+	(void)dns_dispatcher_unregister(&ctx->servers[server_idx].dispatcher);
+
+	if (ctx->servers[server_idx].dns_server.sa_family == AF_INET6) {
+		iface = net_if_ipv6_select_src_iface(
+			&net_sin6(&ctx->servers[server_idx].dns_server)->sin6_addr);
+	} else {
+		iface = net_if_ipv4_select_src_iface(
+			&net_sin(&ctx->servers[server_idx].dns_server)->sin_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+		net_mgmt_event_notify_with_info(
+			NET_EVENT_DNS_SERVER_DEL,
+			iface,
+			(void *)&ctx->servers[server_idx].dns_server,
+			sizeof(struct sockaddr));
+	} else {
+		net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL, iface);
+	}
+
+	zsock_close(ctx->servers[server_idx].sock);
+
+	ctx->servers[server_idx].sock = -1;
+	ctx->servers[server_idx].dns_server.sa_family = 0;
+
+	ARRAY_FOR_EACH(ctx->fds, j) {
+		ctx->fds[j].fd = -1;
+	}
+
+	return 0;
+}
+
 /* Must be invoked with context lock held */
 static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 {
-	int i;
+	int i, ret;
 
 	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 		return -ENOENT;
@@ -1762,44 +1970,10 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 	k_mutex_unlock(&ctx->lock);
 
 	for (i = 0; i < SERVER_COUNT; i++) {
-		struct net_if *iface;
-
-		if (ctx->servers[i].sock < 0) {
-			continue;
+		ret = dns_server_close(ctx, i);
+		if (ret < 0) {
+			NET_DBG("Cannot close DNS server %d (%d)", i, ret);
 		}
-
-		(void)dns_dispatcher_unregister(&ctx->servers[i].dispatcher);
-
-		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
-			iface = net_if_ipv6_select_src_iface(
-				&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
-		} else {
-			iface = net_if_ipv4_select_src_iface(
-				&net_sin(&ctx->servers[i].dns_server)->sin_addr);
-		}
-
-		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
-			net_mgmt_event_notify_with_info(
-				NET_EVENT_DNS_SERVER_DEL,
-				iface,
-				(void *)&ctx->servers[i].dns_server,
-				sizeof(struct sockaddr));
-		} else {
-			net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL,
-					      iface);
-		}
-
-		zsock_close(ctx->servers[i].sock);
-
-		ARRAY_FOR_EACH(ctx->fds, j) {
-			if (ctx->fds[j].fd == ctx->servers[i].sock) {
-				ctx->fds[j].fd = -1;
-			}
-		}
-
-		(void)dns_dispatcher_unregister(&ctx->servers[i].dispatcher);
-
-		ctx->servers[i].sock = -1;
 	}
 
 	if (--init_called <= 0) {
@@ -1877,10 +2051,11 @@ static bool dns_servers_exists(struct dns_resolve_context *ctx,
 	return true;
 }
 
-int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
-					    const char *servers[],
-					    const struct sockaddr *servers_sa[],
-					    int interfaces[])
+static int do_dns_resolve_reconfigure(struct dns_resolve_context *ctx,
+				      const char *servers[],
+				      const struct sockaddr *servers_sa[],
+				      int interfaces[],
+				      bool do_close)
 {
 	int err;
 
@@ -1888,6 +2063,7 @@ int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 		return -ENOENT;
 	}
 
+	k_mutex_lock(&lock, K_FOREVER);
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	if (dns_servers_exists(ctx, servers, servers_sa)) {
@@ -1901,32 +2077,99 @@ int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 		goto unlock;
 	}
 
-	if (ctx->state == DNS_RESOLVE_CONTEXT_ACTIVE) {
+	if (ctx->state == DNS_RESOLVE_CONTEXT_ACTIVE &&
+	    (do_close || init_called == 0)) {
 		dns_resolve_cancel_all(ctx);
 
 		err = dns_resolve_close_locked(ctx);
 		if (err) {
 			goto unlock;
 		}
+
+		/* Make sure we do fresh start once */
+		do_close = true;
 	}
 
 	err = dns_resolve_init_locked(ctx, servers, servers_sa,
-				      &resolve_svc, 0, interfaces);
+				      &resolve_svc, 0, interfaces,
+				      do_close);
 
 unlock:
 	k_mutex_unlock(&ctx->lock);
+	k_mutex_unlock(&lock);
 
 	return err;
+}
+
+int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
+					    const char *servers[],
+					    const struct sockaddr *servers_sa[],
+					    int interfaces[])
+{
+	return do_dns_resolve_reconfigure(ctx,
+					  servers,
+					  servers_sa,
+					  interfaces,
+					  IS_ENABLED(CONFIG_DNS_RECONFIGURE_CLEANUP) ?
+					  true : false);
 }
 
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers[],
 			    const struct sockaddr *servers_sa[])
 {
-	return dns_resolve_reconfigure_with_interfaces(ctx,
-						       servers,
-						       servers_sa,
-						       NULL);
+	return do_dns_resolve_reconfigure(ctx,
+					  servers,
+					  servers_sa,
+					  NULL,
+					  IS_ENABLED(CONFIG_DNS_RECONFIGURE_CLEANUP) ?
+					  true : false);
+}
+
+int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index)
+{
+	int i;
+	int ret = -ENOENT;
+	int st = 0;
+
+	if (!ctx) {
+		return -ENOENT;
+	}
+
+	if (if_index <= 0) {
+		/* If network interface index is 0, then do nothing.
+		 * If your want to remove all the servers, then just call
+		 * dns_resolve_close() directly.
+		 */
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	for (i = 0; i < SERVER_COUNT; i++) {
+		if (ctx->servers[i].if_index != if_index) {
+			continue;
+		}
+
+		ctx->servers[i].if_index = 0;
+
+		/* See comment in dns_resolve_close_locked() about
+		 * releasing the lock before closing the server socket.
+		 */
+		k_mutex_unlock(&ctx->lock);
+
+		ret = dns_server_close(ctx, i);
+
+		k_mutex_lock(&ctx->lock, K_FOREVER);
+
+		if (ret < 0) {
+			st = ret;
+		}
+	}
+
+	k_mutex_unlock(&ctx->lock);
+
+	return st;
 }
 
 struct dns_resolve_context *dns_resolve_get_default(void)

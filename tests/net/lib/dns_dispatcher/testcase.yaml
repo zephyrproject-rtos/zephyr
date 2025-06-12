@@ -8,3 +8,9 @@ common:
 tests:
   net.dns.dispatch:
     min_ram: 21
+  net.dns.dispatch.ctx_cleanup:
+    extra_configs:
+      - CONFIG_DNS_RECONFIGURE_CLEANUP=y
+  net.dns.dispatch.ctx_no_cleanup:
+    extra_configs:
+      - CONFIG_DNS_RECONFIGURE_CLEANUP=n
