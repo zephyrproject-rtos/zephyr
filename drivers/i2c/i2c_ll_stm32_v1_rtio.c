@@ -333,12 +333,6 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 	data->is_restart = 0;
 	data->slave_address = i2c_addr;
 
-	/* TODO deal with larger than 255 byte transfers correctly */
-	if (buf_len > UINT8_MAX) {
-		/* TODO LL_I2C_EnableReloadMode(i2c); */
-		return -EINVAL;
-	}
-
 	LL_I2C_Enable(i2c);
 
 	LL_I2C_DisableBitPOS(i2c);
