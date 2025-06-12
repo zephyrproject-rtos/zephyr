@@ -360,11 +360,17 @@ done:
 	return ret;
 }
 
-static int phy_ti_dp83825_cfg_link(const struct device *dev, enum phy_link_speed speeds)
+static int phy_ti_dp83825_cfg_link(const struct device *dev, enum phy_link_speed speeds,
+				   enum phy_cfg_link_flag flags)
 {
 	const struct ti_dp83825_config *config = dev->config;
 	struct ti_dp83825_data *data = dev->data;
 	int ret;
+
+	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		return -ENOTSUP;
+	}
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
