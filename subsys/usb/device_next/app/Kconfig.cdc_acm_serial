@@ -16,6 +16,13 @@ menuconfig CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
 
 if CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
 
+config CDC_ACM_SERIAL_ENABLE_AT_BOOT
+	bool "USB device will be enabled at boot"
+	default y
+	help
+	  When disabled, the application is responsible for enabling/disabling
+	  the USB device.
+
 config CDC_ACM_SERIAL_MANUFACTURER_STRING
 	string "USB device manufacturer string descriptor"
 	default "Zephyr Project"
