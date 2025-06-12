@@ -287,10 +287,9 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_IDLE_TIME_NS 1000000U
 #define BUS_I3C_IDLE_TIME(x) ((x) & GENMASK(19, 0))
 
-#define I3C_VER_ID          0xe0
-#define I3C_VER_TYPE        0xe4
-#define EXTENDED_CAPABILITY 0xe8
-#define SLAVE_CONFIG        0xec
+#define I3C_VER_ID         0xe0
+#define I3C_VER_TYPE       0xe4
+#define RELEASE_SDA_TIMING 0xec
 
 #define QUEUE_SIZE_CAPABILITY                        0xe8
 #define QUEUE_SIZE_CAPABILITY_IBI_BUF_DWORD_SIZE(x)  (2 << (((x) & GENMASK(19, 16)) >> 16))
