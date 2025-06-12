@@ -69,7 +69,6 @@ set_variable_ifdef(CONFIG_ENTROPY_MCUX_RNGA     CONFIG_MCUX_COMPONENT_driver.rng
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_TRNG     CONFIG_MCUX_COMPONENT_driver.trng)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_CAAM     CONFIG_MCUX_COMPONENT_driver.caam)
 set_variable_ifdef(CONFIG_ETH_NXP_ENET          CONFIG_MCUX_COMPONENT_driver.enet)
-set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC      CONFIG_MCUX_COMPONENT_driver.netc)
 set_variable_ifdef(CONFIG_HAS_MCUX_SMC          CONFIG_MCUX_COMPONENT_driver.smc)
 set_variable_ifdef(CONFIG_I2C_MCUX              CONFIG_MCUX_COMPONENT_driver.i2c)
 set_variable_ifdef(CONFIG_I2C_NXP_II2C          CONFIG_MCUX_COMPONENT_driver.ii2c)
@@ -153,13 +152,16 @@ set_variable_ifdef(CONFIG_SOC_FAMILY_KINETIS      CONFIG_MCUX_COMPONENT_driver.p
 set_variable_ifdef(CONFIG_SOC_SERIES_MCXW         CONFIG_MCUX_COMPONENT_driver.ccm32k)
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT5XX     CONFIG_MCUX_COMPONENT_driver.iap3)
 
-if(CONFIG_SOC_MIMXRT1189)
-  set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC CONFIG_MCUX_COMPONENT_driver.netc_rt1180)
-  set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC CONFIG_MCUX_COMPONENT_driver.msgintr)
-elseif(CONFIG_SOC_MIMX9596)
-  set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC CONFIG_MCUX_COMPONENT_driver.netc_imx95)
-  set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC CONFIG_MCUX_COMPONENT_driver.msgintr)
-  set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC CONFIG_MCUX_COMPONENT_driver.irqsteer)
+if(CONFIG_ETH_NXP_IMX_NETC)
+  set_variable_ifdef(CONFIG_SOC_MIMXRT1189 CONFIG_MCUX_COMPONENT_driver.netc_rt1180)
+  set_variable_ifdef(CONFIG_SOC_MIMX9596   CONFIG_MCUX_COMPONENT_driver.netc_imx95)
+  set_variable_ifdef(CONFIG_SOC_MIMX94398  CONFIG_MCUX_COMPONENT_driver.netc_imx943)
+
+  if(CONFIG_SOC_MIMXRT1189 OR CONFIG_SOC_MIMX9596_M7 OR CONFIG_SOC_MIMX94398_M33)
+    set(CONFIG_MCUX_COMPONENT_driver.msgintr ON)
+  endif()
+
+  set_variable_ifdef(CONFIG_SOC_MIMX9596_M7 CONFIG_MCUX_COMPONENT_driver.irqsteer)
 endif()
 
 if(CONFIG_SOC_SERIES_MCXN OR CONFIG_SOC_SERIES_MCXA)
