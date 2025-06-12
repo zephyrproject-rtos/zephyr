@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/adc/stm32u5_adc.h>
 #include <zephyr/dt-bindings/clock/stm32u3_clock.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/reset/stm32u3_reset.h>
 #include <freq.h>
@@ -280,6 +281,19 @@
 			reg = <0x420c0800 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
 			interrupts = <94 0>;
+			status = "disabled";
+		};
+
+		gpdma1: dma@40020000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x400>;
+			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0
+					80 0 81 0 82 0 83 0>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
+			dma-channels = <12>;
+			dma-requests = <114>;
+			dma-offset = <0>;
 			status = "disabled";
 		};
 	};
