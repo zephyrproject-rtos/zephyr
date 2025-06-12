@@ -379,7 +379,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 )
 
             if self.erase:
-                if self.build_conf.get('CONFIG_SOC_NRF54H20_IRON'):
+                if self.family == 'nrf54h':
                     self.exec_op('erase', kind='all')
                 else:
                     self.exec_op('erase', core='Application', kind='all')
@@ -465,7 +465,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                           f'{ext_mem_erase_opt}')
 
         # Temp hack while waiting for NRF54H20_IRON support for Network in nrfutil
-        if self.build_conf.get('CONFIG_SOC_NRF54H20_IRON') and core == "Network":
+        if self.family == 'nrf54h' and core == "Network":
             core = "Application"
 
         self.op_program(self.hex_, erase_arg, ext_mem_erase_opt, defer=True, core=core)
