@@ -56,9 +56,6 @@ static int cmd_device_list(const struct shell *sh,
 	const struct device *devlist_end = devlist + devcnt;
 	const struct device *dev;
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
 	shell_fprintf(sh, SHELL_NORMAL, "devices:\n");
 
 	for (dev = devlist; dev < devlist_end; dev++) {
@@ -66,6 +63,11 @@ static int cmd_device_list(const struct shell *sh,
 		const char *name = get_device_name(dev, buf, sizeof(buf));
 		const char *state = "READY";
 		int usage;
+
+		if (argc == 2
+		    && strstr(name, argv[1]) == NULL) {
+			continue;
+		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "- %s", name);
 		if (!device_is_ready(dev)) {
@@ -117,6 +119,20 @@ static int cmd_device_list(const struct shell *sh,
 
 	return 0;
 }
+
+static void device_name_lookup(size_t idx,
+			       struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup_all(idx, NULL);
+
+	entry->syntax = dev != NULL ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = "device";
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name_lookup, device_name_lookup);
+
 
 #ifdef CONFIG_DEVICE_SHELL_INIT_CMD
 #ifdef CONFIG_DEVICE_DEPS
@@ -239,8 +255,12 @@ static int cmd_device_pm_toggle(const struct shell *sh,
 #endif /* CONFIG_PM_DEVICE_RUNTIME  */
 
 
+#define LIST_CMD_HELP SHELL_HELP("List configured devices, with an optional filter", \
+				 "[<device filter>]")
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_device,
-	SHELL_CMD(list, NULL, "List configured devices", cmd_device_list),
+	SHELL_CMD_ARG(list, &dsub_device_name_lookup,
+		      LIST_CMD_HELP, cmd_device_list, 1, 1),
 	DEVICE_INIT_CMD
 	PM_SHELL_CMD
 	SHELL_SUBCMD_SET_END /* Array terminated. */
