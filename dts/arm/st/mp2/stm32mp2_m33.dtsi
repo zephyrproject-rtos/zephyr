@@ -1,0 +1,161 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <freq.h>
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+		};
+	};
+
+	ddr_code: memory0@80100000 {
+		compatible = "mmio-sram";
+	};
+
+	ddr_sys: memory1@80a00000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		rcc: rcc@44200000  {
+			compatible = "st,stm32mp2-rcc";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x44200000 DT_SIZE_K(64)>;
+		};
+
+		exti2: interrupt-controller@46230000 {
+			compatible = "st,stm32-exti";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <1>;
+			reg = <0x46230000 DT_SIZE_K(1)>;
+			num-lines = <16>;
+			interrupts = <17 0>, <18 0>, <19 0>, <20 0>,
+					 <21 0>, <22 0>, <23 0>, <24 0>,
+					 <25 0>, <26 0>, <27 0>, <28 0>,
+					 <29 0>, <30 0>, <31 0>, <32 0>;
+			interrupt-names = "line0", "line1", "line2", "line3",
+					  "line4", "line5", "line6", "line7",
+					  "line8", "line9", "line10", "line11",
+					  "line12", "line13", "line14", "line15";
+			line-ranges = <0 1>, <1 1>, <2 1>, <3 1>,
+				      <4 1>, <5 1>, <6 1>, <7 1>,
+				      <8 1>, <9 1>, <10 1>, <11 1>,
+				      <12 1>, <13 1>, <14 1>, <15 1>;
+		};
+
+		pinctrl: pin-controller@44240000 {
+			compatible = "st,stm32-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x44240000 0xb0000>;
+
+			gpioa: gpio@44240000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44240000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@44250000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44250000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioc: gpio@44260000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44260000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiod: gpio@44270000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44270000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioe: gpio@44280000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44280000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiof: gpio@44290000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x44290000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiog: gpio@442a0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442a0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioh: gpio@442b0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442b0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioi: gpio@442c0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442c0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpioj: gpio@442d0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442d0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+
+			gpiok: gpio@442e0000 {
+				compatible = "st,stm32mp2-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x442e0000 DT_SIZE_K(1)>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
