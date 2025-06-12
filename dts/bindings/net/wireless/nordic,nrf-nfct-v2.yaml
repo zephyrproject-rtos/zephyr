@@ -12,7 +12,8 @@ properties:
     type: boolean
     description: |
       When enabled this property will configure pins dedicated to NFCT
-      peripheral as regular GPIOs. This property must be applied in cpuapp
-      if NFCT pins are intended to be used as regular GPIOs by any core.
+      peripheral as regular GPIOs. If this property is applied in cpuapp then node
+      can be disabled or reserved (because NFCT is by default assigned to cpuapp).
+      If property is applied in cpurad CPU then node must be reserved.
 
       NFC pins in nRF54H series: P2.10 and P2.11
