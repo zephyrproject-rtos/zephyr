@@ -553,10 +553,12 @@ static void dw_i3c_end_xfer(const struct device *dev)
 
 			for (j = 0; j < cmd->rx_len; j += 4) {
 				rx_data = sys_read32(config->regs + RX_TX_DATA_PORT);
-				/* Call write received cb for each remaining byte  */
-				for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
-					target_cb->write_received_cb(data->target_config,
-								    (rx_data >> (8 * k)) & 0xff);
+				if (target_cb != NULL && target_cb->write_received_cb != NULL) {
+					/* Call write received cb for each remaining byte  */
+					for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
+						target_cb->write_received_cb(data->target_config,
+								(rx_data >> (8 * k)) & 0xff);
+					}
 				}
 			}
 
