@@ -62,6 +62,13 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART1 for Cortex-A55, and UART8 for Cortex-M33.
 
+Ethernet
+--------
+
+NETC driver supports to manage the Physical Station Interface (PSI).
+The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
+``-DEXTRA_DTC_OVERLAY_FILE=enetc.overlay``.
+
 Programming and Debugging (A55)
 *******************************
 
