@@ -885,7 +885,7 @@ static int cmd_net_link_speed(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (speed != 0U) {
-		return phy_configure_link(phy_dev, speed);
+		return phy_configure_link(phy_dev, speed, 0);
 	}
 	PR_WARNING("No speed specified\n");
 	return -ENOEXEC;
