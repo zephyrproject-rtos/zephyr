@@ -161,7 +161,7 @@ void thread_entry(void *thread, void *cb, void *user_data)
 uint32_t lv_os_get_idle_percent(void)
 {
 #ifdef CONFIG_CPU_LOAD
-	int load = cpu_load_get();
+	int load = cpu_load_get(true);
 
 	if (load < 0) {
 		LOG_ERR("Failed to get CPU load, returning UINT32_MAX");
