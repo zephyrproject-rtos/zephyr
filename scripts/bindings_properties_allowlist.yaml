@@ -1,0 +1,11 @@
+# This file is a YAML allowlist of property names that are allowed to
+# bypass the underscore check in bindings. These properties are exempt
+# from the rule that requires using '-' instead of '_'.
+#
+# The file content can be as shown below:
+# - propname1
+# - propname2
+# - ...
+
+- mmc-hs200-1_8v
+- mmc-hs400-1_8v
