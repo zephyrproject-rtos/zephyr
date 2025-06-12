@@ -98,13 +98,12 @@ static bool is_gigabit_supported(const struct device *dev)
 		return -EIO;
 	}
 
-	if (bmsr_reg & MII_BMSR_EXTEND_STATUS) {
+	if ((bmsr_reg & MII_BMSR_EXTEND_STATUS) != 0U) {
 		if (phy_mii_reg_read(dev, MII_ESTAT, &estat_reg) < 0) {
 			return -EIO;
 		}
 
-		if (estat_reg & (MII_ESTAT_1000BASE_T_HALF
-				 | MII_ESTAT_1000BASE_T_FULL)) {
+		if ((estat_reg & (MII_ESTAT_1000BASE_T_HALF | MII_ESTAT_1000BASE_T_FULL)) != 0U) {
 			return true;
 		}
 	}
@@ -136,7 +135,7 @@ static int reset(const struct device *dev)
 		if (phy_mii_reg_read(dev, MII_BMCR, &value) < 0) {
 			return -EIO;
 		}
-	} while (value & MII_BMCR_RESET);
+	} while ((value & MII_BMCR_RESET) != 0U);
 
 	return 0;
 }
@@ -173,7 +172,7 @@ static int update_link_state(const struct device *dev)
 		return -EIO;
 	}
 
-	link_up = bmsr_reg & MII_BMSR_LINK_STATUS;
+	link_up = (bmsr_reg & MII_BMSR_LINK_STATUS) != 0U;
 
 	/* If there is no change in link state don't proceed. */
 	if ((link_up == data->state.is_up) && !data->restart_autoneg) {
@@ -195,7 +194,7 @@ static int update_link_state(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!(bmcr_reg & MII_BMCR_AUTONEG_ENABLE)) {
+	if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
 		enum phy_link_speed new_speed;
 
 		switch (bmcr_reg & (MII_BMCR_DUPLEX_MODE |
@@ -284,7 +283,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE)) {
+	if ((bmsr_reg & MII_BMSR_AUTONEG_COMPLETE) == 0U) {
 		if (data->autoneg_timeout-- == 0U) {
 			LOG_DBG("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
 			return -ETIMEDOUT;
@@ -316,16 +315,16 @@ static int check_autonegotiation_completion(const struct device *dev)
 	}
 
 	if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_FULL)) {
+			((c1kt_reg & s1kt_reg & MII_ADVERTISE_1000_FULL) != 0U)) {
 		data->state.speed = LINK_FULL_1000BASE;
 	} else if (data->gigabit_supported &&
-			((c1kt_reg & s1kt_reg) & MII_ADVERTISE_1000_HALF)) {
+			((c1kt_reg & s1kt_reg & MII_ADVERTISE_1000_HALF) != 0U)) {
 		data->state.speed = LINK_HALF_1000BASE;
-	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_FULL) {
+	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_100_FULL) != 0U) {
 		data->state.speed = LINK_FULL_100BASE;
-	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_100_HALF) {
+	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_100_HALF) != 0U) {
 		data->state.speed = LINK_HALF_100BASE;
-	} else if ((anar_reg & anlpar_reg) & MII_ADVERTISE_10_FULL) {
+	} else if ((anar_reg & anlpar_reg & MII_ADVERTISE_10_FULL) != 0U) {
 		data->state.speed = LINK_FULL_10BASE;
 	} else {
 		data->state.speed = LINK_HALF_10BASE;
@@ -488,25 +487,25 @@ static int phy_mii_cfg_link(const struct device *dev,
 		}
 		anar_reg_old = anar_reg;
 
-		if (adv_speeds & LINK_FULL_10BASE) {
+		if ((adv_speeds & LINK_FULL_10BASE) != 0U) {
 			anar_reg |= MII_ADVERTISE_10_FULL;
 		} else {
 			anar_reg &= ~MII_ADVERTISE_10_FULL;
 		}
 
-		if (adv_speeds & LINK_HALF_10BASE) {
+		if ((adv_speeds & LINK_HALF_10BASE) != 0U) {
 			anar_reg |= MII_ADVERTISE_10_HALF;
 		} else {
 			anar_reg &= ~MII_ADVERTISE_10_HALF;
 		}
 
-		if (adv_speeds & LINK_FULL_100BASE) {
+		if ((adv_speeds & LINK_FULL_100BASE) != 0U) {
 			anar_reg |= MII_ADVERTISE_100_FULL;
 		} else {
 			anar_reg &= ~MII_ADVERTISE_100_FULL;
 		}
 
-		if (adv_speeds & LINK_HALF_100BASE) {
+		if ((adv_speeds & LINK_HALF_100BASE) != 0U) {
 			anar_reg |= MII_ADVERTISE_100_HALF;
 		} else {
 			anar_reg &= ~MII_ADVERTISE_100_HALF;
@@ -519,13 +518,13 @@ static int phy_mii_cfg_link(const struct device *dev,
 			}
 			c1kt_reg_old = c1kt_reg;
 
-			if (adv_speeds & LINK_FULL_1000BASE) {
+			if ((adv_speeds & LINK_FULL_1000BASE) != 0U) {
 				c1kt_reg |= MII_ADVERTISE_1000_FULL;
 			} else {
 				c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
 			}
 
-			if (adv_speeds & LINK_HALF_1000BASE) {
+			if ((adv_speeds & LINK_HALF_1000BASE) != 0U) {
 				c1kt_reg |= MII_ADVERTISE_1000_HALF;
 			} else {
 				c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
