@@ -445,6 +445,9 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 		/* Settings entry exist, let's verify if this is the same
 		 * name
 		 */
+		if (rc >= sizeof(rdname)) {
+			return -EOVERFLOW;
+		}
 		rdname[rc] = '\0';
 		if ((rc == name_len) && !memcmp(name, rdname, rc)) {
 			/* Hash exist and the names are equal, we should
