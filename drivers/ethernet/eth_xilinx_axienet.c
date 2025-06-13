@@ -534,13 +534,6 @@ static int xilinx_axienet_probe(const struct device *dev)
 				      XILINX_AXIENET_RECEIVER_CONFIGURATION_FLOW_CONTROL_OFFSET,
 				      XILINX_AXIENET_RECEIVER_CONFIGURATION_FLOW_CONTROL_EN_MASK);
 
-	/* at time of writing, hardware does not support half duplex */
-	err = phy_configure_link(config->phy,
-				 LINK_FULL_10BASE | LINK_FULL_100BASE | LINK_FULL_1000BASE, 0);
-	if (err) {
-		LOG_WRN("Could not configure PHY: %d", -err);
-	}
-
 	LOG_INF("RX Checksum offloading %s",
 		config->have_rx_csum_offload ? "requested" : "disabled");
 	LOG_INF("TX Checksum offloading %s",
