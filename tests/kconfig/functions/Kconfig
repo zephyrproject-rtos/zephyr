@@ -6,60 +6,60 @@ config KCONFIG_ARITHMETIC_ADD_10
 	default $(add, 10)
 
 config KCONFIG_ARITHMETIC_ADD_10_3
-	int
-	default $(add, 10, 3)
+	hex
+	default $(add_hex, 10, 3)
 
 config KCONFIG_ARITHMETIC_ADD_10_3_2
 	int
-	default $(add, 10, 3, 2)
+	default $(add, 0xa, 3, 0b10)
 
 config KCONFIG_ARITHMETIC_SUB_10
 	int
 	default $(sub, 10)
 
 config KCONFIG_ARITHMETIC_SUB_10_3
-	int
-	default $(sub, 10, 3)
+	hex
+	default $(sub_hex, 10, 3)
 
 config KCONFIG_ARITHMETIC_SUB_10_3_2
 	int
-	default $(sub, 10, 3, 2)
+	default $(sub, 0xa, 3, 0b10)
 
 config KCONFIG_ARITHMETIC_MUL_10
 	int
 	default $(mul, 10)
 
 config KCONFIG_ARITHMETIC_MUL_10_3
-	int
-	default $(mul, 10, 3)
+	hex
+	default $(mul_hex, 10, 3)
 
 config KCONFIG_ARITHMETIC_MUL_10_3_2
 	int
-	default $(mul, 10, 3, 2)
+	default $(mul, 0xa, 3, 0b10)
 
 config KCONFIG_ARITHMETIC_DIV_10
 	int
 	default $(div, 10)
 
 config KCONFIG_ARITHMETIC_DIV_10_3
-	int
-	default $(div, 10, 3)
+	hex
+	default $(div_hex, 10, 3)
 
 config KCONFIG_ARITHMETIC_DIV_10_3_2
 	int
-	default $(div, 10, 3, 2)
+	default $(div, 0xa, 3, 0b10)
 
 config KCONFIG_ARITHMETIC_MOD_10
 	int
 	default $(mod, 10)
 
 config KCONFIG_ARITHMETIC_MOD_10_3
-	int
-	default $(mod, 10, 3)
+	hex
+	default $(mod_hex, 10, 3)
 
 config KCONFIG_ARITHMETIC_MOD_10_3_2
 	int
-	default $(mod, 10, 3, 2)
+	default $(mod, 0xa, 3, 0b10)
 
 config KCONFIG_ARITHMETIC_INC_1
 	int
@@ -67,11 +67,11 @@ config KCONFIG_ARITHMETIC_INC_1
 
 config KCONFIG_ARITHMETIC_INC_1_1
 	string
-	default "$(inc, 1, 1)"
+	default "$(inc_hex, 1, 1)"
 
 config KCONFIG_ARITHMETIC_INC_INC_1_1
 	string
-	default "$(inc, $(inc, 1, 1))"
+	default "$(inc, $(inc_hex, 0x1, 0b1))"
 
 config KCONFIG_ARITHMETIC_DEC_1
 	int
@@ -79,38 +79,38 @@ config KCONFIG_ARITHMETIC_DEC_1
 
 config KCONFIG_ARITHMETIC_DEC_1_1
 	string
-	default "$(dec, 1, 1)"
+	default "$(dec_hex, 1, 1)"
 
 config KCONFIG_ARITHMETIC_DEC_DEC_1_1
 	string
-	default "$(dec, $(dec, 1, 1))"
+	default "$(dec, $(dec_hex, 0x1, 0b1))"
 
 config KCONFIG_ARITHMETIC_ADD_INC_1_1
 	int
-	default $(add, $(inc, 1, 1))
+	default $(add, $(inc_hex, 1, 1))
 
 config KCONFIG_MIN_10
 	int
 	default $(min, 10)
 
 config KCONFIG_MIN_10_3
-	int
-	default $(min, 10, 3)
+	hex
+	default $(min_hex, 10, 3)
 
 config KCONFIG_MIN_10_3_2
 	int
-	default $(min, 10, 3, 2)
+	default $(min, 0xa, 3, 0b10)
 
 config KCONFIG_MAX_10
 	int
 	default $(max, 10)
 
 config KCONFIG_MAX_10_3
-	int
-	default $(max, 10, 3)
+	hex
+	default $(max_hex, 10, 3)
 
 config KCONFIG_MAX_10_3_2
 	int
-	default $(max, 10, 3, 2)
+	default $(max, 0xa, 3, 0b10)
 
 source "Kconfig.zephyr"
