@@ -156,7 +156,7 @@ arduino_i2c: &flexcomm2 {
 
 			/*
 			 * Partition sizes must be aligned
-			 * to the flash memory sector size of 4KB.
+			 * to the flash security sub-region size of 128KB.
 			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
@@ -165,17 +165,27 @@ arduino_i2c: &flexcomm2 {
 
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 DT_SIZE_M(3)>;
+				reg = <0x00020000 DT_SIZE_K(640)>;
 			};
 
-			slot1_partition: partition@320000 {
+			slot0_ns_partition: partition@C0000 {
+				label = "image-0-non-secure";
+				reg = <0x000C0000 DT_SIZE_M(3)>;
+			};
+
+			slot1_partition: partition@3C0000 {
 				label = "image-1";
-				reg = <0x00320000 DT_SIZE_M(3)>;
+				reg = <0x003C0000 DT_SIZE_K(640)>;
 			};
 
-			storage_partition: partition@620000 {
+			slot1_ns_partition: partition@460000 {
+				label = "image-1-non-secure";
+				reg = <0x00460000 DT_SIZE_M(3)>;
+			};
+
+			storage_partition: partition@760000 {
 				label = "storage";
-				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				reg = <0x00760000 (DT_SIZE_M(57) - DT_SIZE_K(384))>; 
 			};
 		};
 	};
