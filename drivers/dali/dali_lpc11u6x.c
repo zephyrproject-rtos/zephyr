@@ -374,14 +374,29 @@ static int dali_lpc11u6x_calculate_counts(const struct device *dev, const struct
 	return 0;
 }
 
+static int dali_lpc11u6x_err_no(struct dali_lpc11u6x_data *data)
+{
+	switch (data->rx.status)
+	{
+		case DESTROY_FRAME:
+			return -ECOMM;
+		case BUS_LOW:
+		case BUS_FAILURE_DETECT:
+			return -EAGAIN;
+		default:
+			return 0;
+	}
+}
+
 static void dali_lpc11u6x_stop_tx(struct dali_lpc11u6x_data *data)
 {
 	if (data->tx.index_next) {
+		int err = dali_lpc11u6x_err_no(data);
 		data->rx.status = STOP_TRANSMISSION;
 		dali_lpc11u6x_stop_tx_counter();
 		dali_lpc11u6x_set_tx_counter(DALI_TX_IDLE);
 		if (data->cb.tx.function) {
-			data->cb.tx.function(data->dev, 0, data->cb.tx.user_data);
+			data->cb.tx.function(data->dev, err, data->cb.tx.user_data);
 		}
 	}
 }
