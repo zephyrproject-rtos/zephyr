@@ -1,0 +1,25 @@
+# LPC11U6x DALI configuration options
+
+# Copyright (c) 2025 by Sven Hädrich <sven.haedrich@sevenlab.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config DALI_LPC11U6X
+	bool "LPC11U6x DALI driver"
+	default y
+	depends on DT_HAS_NXP_DALI_LPC11U6X_ENABLED
+	help
+	  Enable the DALI driver for LPC11U6X MCUs.
+
+config DALI_LPC11U6X_PRIORITY
+	int "DALI workqueue priority"
+	depends on DT_HAS_NXP_DALI_LPC11U6X_ENABLED
+	default 5
+	help
+	  The priority of the workqueue used for the DALI driver.
+
+config DALI_LPC11U6X_STACK_SIZE
+	int "DALI driver workqueue thread stack size"
+	depends on DT_HAS_NXP_DALI_LPC11U6X_ENABLED
+	default 768
+	help
+	  The thread stack size.
