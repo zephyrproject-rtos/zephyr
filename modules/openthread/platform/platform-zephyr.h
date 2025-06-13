@@ -17,6 +17,7 @@
 
 #include <openthread/instance.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/openthread.h>
 
 /**
  * This function initializes the alarm service used by OpenThread.
@@ -116,5 +117,9 @@ int notify_new_rx_frame(struct net_pkt *pkt);
  * Notify OpenThread task about new tx message.
  */
 int notify_new_tx_frame(struct net_pkt *pkt);
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+otError infra_if_init(otInstance *instance);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 #endif /* PLATFORM_ZEPHYR_H_ */
