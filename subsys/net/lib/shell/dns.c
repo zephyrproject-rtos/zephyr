@@ -28,24 +28,29 @@ static void dns_result_cb(enum dns_resolve_status status,
 	}
 
 	if (status == DNS_EAI_INPROGRESS && info) {
-		char addr[NET_IPV6_ADDR_LEN];
+#define MAX_STR_LEN CONFIG_DNS_RESOLVER_MAX_NAME_LEN
+		char str[MAX_STR_LEN + 1];
 
 		if (info->ai_family == AF_INET) {
 			net_addr_ntop(AF_INET,
 				      &net_sin(&info->ai_addr)->sin_addr,
-				      addr, NET_IPV4_ADDR_LEN);
+				      str, NET_IPV4_ADDR_LEN);
 		} else if (info->ai_family == AF_INET6) {
 			net_addr_ntop(AF_INET6,
 				      &net_sin6(&info->ai_addr)->sin6_addr,
-				      addr, NET_IPV6_ADDR_LEN);
+				      str, NET_IPV6_ADDR_LEN);
+		} else if (info->ai_family == AF_LOCAL) {
+			/* service discovery */
+			memset(str, 0, MAX_STR_LEN);
+			memcpy(str, info->ai_canonname,
+			       MIN(info->ai_addrlen, MAX_STR_LEN));
 		} else {
-			strncpy(addr, "Invalid protocol family",
-				sizeof(addr));
-			/* strncpy() doesn't guarantee NUL byte at the end. */
-			addr[sizeof(addr) - 1] = 0;
+			strncpy(str, "Invalid proto family", MAX_STR_LEN + 1);
 		}
 
-		PR("dns: %s\n", addr);
+		str[MAX_STR_LEN] = '\0';
+
+		PR("dns: %s\n", str);
 		return;
 	}
 
@@ -59,7 +64,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 		return;
 	}
 
-	PR_WARNING("dns: Unhandled status %d received\n", status);
+	PR_WARNING("dns: Unhandled status %d received (errno %d)\n", status, errno);
 }
 
 static const char *printable_iface(const char *iface_name,
@@ -127,15 +132,26 @@ static void print_dns_info(const struct shell *sh,
 			k_work_delayable_remaining_get(&ctx->queries[i].timer));
 
 		if (ctx->queries[i].query_type == DNS_QUERY_TYPE_A) {
-			PR("\tIPv4[%u]: %s remaining %d\n",
+			PR("\t%s[%u]: %s remaining %d\n", "IPv4",
 			   ctx->queries[i].id,
 			   ctx->queries[i].query,
 			   remaining);
 		} else if (ctx->queries[i].query_type == DNS_QUERY_TYPE_AAAA) {
-			PR("\tIPv6[%u]: %s remaining %d\n",
+			PR("\t%s[%u]: %s remaining %d\n", "IPv6",
 			   ctx->queries[i].id,
 			   ctx->queries[i].query,
 			   remaining);
+		} else if (ctx->queries[i].query_type == DNS_QUERY_TYPE_PTR) {
+			PR("\t%s[%u]: %s remaining %d\n", "PTR",
+			   ctx->queries[i].id,
+			   ctx->queries[i].query,
+			   remaining);
+		} else {
+			PR_WARNING("\tUnknown query type %d for query %s[%u] "
+				   "remaining %d\n",
+				   ctx->queries[i].query_type,
+				   ctx->queries[i].query, ctx->queries[i].id,
+				   remaining);
 		}
 	}
 }
@@ -304,6 +320,42 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_DNS_RESOLVER)
+#define DNS_TIMEOUT (MSEC_PER_SEC * 2) /* ms */
+	struct dns_resolve_context *ctx;
+	char *service;
+	uint16_t dns_id;
+	int ret, arg = 1;
+
+	service = argv[arg++];
+	if (service == NULL) {
+		PR_WARNING("Service not specified.\n");
+		return -ENOEXEC;
+	}
+
+	ctx = dns_resolve_get_default();
+	if (ctx == NULL) {
+		PR_WARNING("No default DNS context found.\n");
+		return -ENOEXEC;
+	}
+
+	ret = dns_resolve_service(ctx, service, &dns_id, dns_result_cb,
+				(void *)sh, DNS_TIMEOUT);
+	if (ret < 0) {
+		PR_WARNING("Cannot resolve '%s' (%d)\n", service, ret);
+	} else {
+		PR("Query for '%s' sent.\n", service);
+	}
+#else
+	PR_INFO("DNS resolver not supported. Set CONFIG_DNS_RESOLVER to "
+		"enable it.\n");
+#endif
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dns,
 	SHELL_CMD(cancel, NULL, "Cancel all pending requests.",
 		  cmd_net_dns_cancel),
@@ -314,6 +366,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dns,
 	SHELL_CMD(list, NULL,
 		  "List local DNS service records.",
 		  cmd_net_dns_list),
+	SHELL_CMD(service, NULL,
+		  "'net dns service <service-description>\n"
+		  "Execute DNS service discovery query.",
+		  cmd_net_dns_service),
 	SHELL_SUBCMD_SET_END
 );
 
