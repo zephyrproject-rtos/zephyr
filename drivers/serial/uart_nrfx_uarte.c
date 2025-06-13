@@ -2407,13 +2407,13 @@ static void uarte_pm_suspend(const struct device *dev)
 		wait_for_tx_stopped(dev);
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
-#endif
+	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 
 	nrf_uarte_disable(uarte);
 
-	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+#endif
 }
 
 static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
