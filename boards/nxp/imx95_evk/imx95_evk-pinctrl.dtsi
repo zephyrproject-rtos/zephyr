@@ -42,6 +42,26 @@
 
 	};
 
+	flexspi_default: flexspi_default {
+		group0 {
+			pinmux = <&iomuxc_xspi1_sclk_flexspi_a_sclk_flexspi1_a_sclk>,
+				<&iomuxc_xspi1_ss0_b_flexspi_a_ss_b_flexspi1_a_ss0_b>,
+				<&iomuxc_xspi1_ss1_b_flexspi_a_ss_b_flexspi1_a_ss1_b>,
+				<&iomuxc_xspi1_dqs_flexspi_a_dqs_flexspi1_a_dqs>,
+				<&iomuxc_xspi1_data0_flexspi_a_data_bit_flexspi1_a_data_bit0>,
+				<&iomuxc_xspi1_data1_flexspi_a_data_bit_flexspi1_a_data_bit1>,
+				<&iomuxc_xspi1_data2_flexspi_a_data_bit_flexspi1_a_data_bit2>,
+				<&iomuxc_xspi1_data3_flexspi_a_data_bit_flexspi1_a_data_bit3>,
+				<&iomuxc_xspi1_data4_flexspi_a_data_bit_flexspi1_a_data_bit4>,
+				<&iomuxc_xspi1_data5_flexspi_a_data_bit_flexspi1_a_data_bit5>,
+				<&iomuxc_xspi1_data6_flexspi_a_data_bit_flexspi1_a_data_bit6>,
+				<&iomuxc_xspi1_data7_flexspi_a_data_bit_flexspi1_a_data_bit7>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
 	lpi2c5_default: lpi2c5_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io23_lpi2c_scl_lpi2c5_scl>,
