@@ -10561,7 +10561,7 @@
       </item>
     </profile>
     <profile>
-      <name>MBT</name>
+      <name>MBTM</name>
       <item>
         <table>10</table>
         <row>1</row>
@@ -10592,7 +10592,7 @@
       </item>
     </profile>
     <profile>
-      <name>DFU</name>
+      <name>DFUM</name>
       <item>
         <table>3</table>
         <row>3</row>
