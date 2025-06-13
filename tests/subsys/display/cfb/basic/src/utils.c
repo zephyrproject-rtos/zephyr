@@ -80,8 +80,8 @@ bool verify_image(int cmp_x, int cmp_y, const uint32_t *img, size_t width, size_
 			uint32_t img_pix = image_pixel(img, width, x, y);
 
 			if (disp_pix != img_pix) {
-				LOG_INF("get_pixel(%d, %d) = %lu", x, y, disp_pix);
-				LOG_INF("pixel_color(%d, %d) = %lu", x, y, img_pix);
+				LOG_INF("get_pixel(%d, %d) = %" PRIu32, x, y, disp_pix);
+				LOG_INF("pixel_color(%d, %d) = %" PRIu32, x, y, img_pix);
 				LOG_INF("disp@(0, %d) %p", y, read_buffer + (y * width / 8));
 				LOG_HEXDUMP_INF(read_buffer + (y * width / 8), 64, "");
 				LOG_INF("img@(0, %d) %p", y, (uint32_t *)img + (y * width));
