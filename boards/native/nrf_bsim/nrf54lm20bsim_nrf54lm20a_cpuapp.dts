@@ -1,0 +1,144 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/nordic/nrf54lm20a_enga_cpuapp.dtsi>
+#include <../boards/nordic/nrf54lm20dk/nrf54lm20dk_nrf54lm20a-pinctrl.dtsi>
+
+/ {
+	model = "Nordic NRF54LM20 BSIM NRF54LM20A Application MCU";
+	compatible = "bsim,nrf54lm20-bsim-nrf54lm20a-cpuapp", "bsim,nrf54";
+
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,entropy = &rng;
+		zephyr,bt-c2h-uart = &uart20;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
+	};
+
+	/delete-node/ cpus;
+	/delete-node/ sw-pwm;
+
+	soc {
+		/delete-node/ memory@20000000;
+		/delete-node/ memory@20067c00;
+
+		peripheral@50000000 {
+			/delete-node/ vpr@4c000;
+			/delete-node/ interrupt-controller@f0000000;
+			/delete-node/spi@4d000;
+			/delete-node/usbhs@5a000;
+			/delete-node/i2c@c6000;
+			/delete-node/spi@c6000;
+			/delete-node/i2c@c7000;
+			/delete-node/spi@c7000;
+			/delete-node/i2c@c8000;
+			/delete-node/spi@c8000;
+			/delete-node/pdm@d0000;
+			/delete-node/pdm@d1000;
+			/delete-node/pwm@d2000;
+			/delete-node/pwm@d3000;
+			/delete-node/pwm@d4000;
+			/delete-node/adc@d5000;
+			/delete-node/nfct@d6000;
+			/delete-node/qdec@e0000;
+			/delete-node/qdec@e1000;
+			/delete-node/tdm@e8000;
+			/delete-node/i2c@ed000;
+			/delete-node/spi@ed000;
+			/delete-node/i2c@ee000;
+			/delete-node/spi@ee000;
+			/delete-node/i2c@104000;
+			/delete-node/spi@104000;
+			/delete-node/comparator@106000;
+			/delete-node/watchdog@108000;
+			/delete-node/watchdog@109000;
+			/delete-node/regulator@120000;
+		};
+	};
+
+	rng: rng {
+		status = "okay";
+		compatible = "nordic,nrf-cracen-ctrdrbg";
+	};
+
+	psa_rng: psa-rng {
+		status = "disabled";
+	};
+};
+
+&grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(500)>;
+		};
+	};
+};
+
+&uart20 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart30 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
+
+&temp {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+	/* These features are not yet supported by the RADIO model */
+	/delete-property/ dfe-supported;
+	/delete-property/ cs-supported;
+};
+
+&clock {
+	status = "okay";
+};
