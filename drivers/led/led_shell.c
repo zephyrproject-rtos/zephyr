@@ -348,19 +348,33 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	sub_led, SHELL_CMD_ARG(off, &dsub_device_name, "<device> <led>", cmd_off, 3, 0),
-	SHELL_CMD_ARG(on, &dsub_device_name, "<device> <led>", cmd_on, 3, 0),
-	SHELL_CMD_ARG(get_info, &dsub_device_name, "<device> <led>", cmd_get_info, 3, 0),
-	SHELL_CMD_ARG(set_brightness, &dsub_device_name, "<device> <led> <value [0-100]>",
+	sub_led,
+	SHELL_CMD_ARG(off, &dsub_device_name, SHELL_HELP("Turn off LED", "<device> <led>"), cmd_off,
+		      3, 0),
+	SHELL_CMD_ARG(on, &dsub_device_name, SHELL_HELP("Turn on LED", "<device> <led>"), cmd_on, 3,
+		      0),
+	SHELL_CMD_ARG(get_info, &dsub_device_name,
+		      SHELL_HELP("Get LED information", "<device> <led>"), cmd_get_info, 3, 0),
+	SHELL_CMD_ARG(set_brightness, &dsub_device_name,
+		      SHELL_HELP("Set LED brightness",
+				 "<device> <led> <value>\n"
+				 "value: 0-100"),
 		      cmd_set_brightness, 4, 0),
 	SHELL_CMD_ARG(set_color, &dsub_device_name,
-		      "<device> <led> <color 0 [0-255]> ... <color N>", cmd_set_color, 4,
-		      MAX_CHANNEL_ARGS - 1),
-	SHELL_CMD_ARG(set_channel, &dsub_device_name, "<device> <channel> <value [0-255]>",
+		      SHELL_HELP("Set LED color",
+				 "<device> <led> <color0> ... <colorN>\n"
+				 "colorN: raw value of the N-th color channel (0-255)"),
+		      cmd_set_color, 4, MAX_CHANNEL_ARGS - 1),
+	SHELL_CMD_ARG(set_channel, &dsub_device_name,
+		      SHELL_HELP("Set LED channel",
+				 "<device> <channel> <value>\n"
+				  "value: raw channel value (0-255)"),
 		      cmd_set_channel, 4, 0),
 	SHELL_CMD_ARG(write_channels, &dsub_device_name,
-		      "<device> <chan> <value 0 [0-255]> ... <value N>", cmd_write_channels, 4,
-		      MAX_CHANNEL_ARGS - 1),
+		      SHELL_HELP("Write to LED channels",
+				 "<device> <channel> <value0> ... <valueN>\n"
+				 "valueN: raw value of the N-th channel (0-255)"),
+		      cmd_write_channels, 4, MAX_CHANNEL_ARGS - 1),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(led, &sub_led, "LED commands", NULL);
