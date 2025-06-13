@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <silabs/xg24/efr32mg24b020f1536im40.dtsi>
+#include <silabs/xg24/mgm240pb32vna.dtsi>
 #include "sparkfun_thing_plus_matter_mgm240p-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
