@@ -92,6 +92,10 @@ Bluetooth Audio
 * Setting the BGS role for GMAP now requires also supporting and implementing the
   :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`.
   See the :zephyr:code-sample:`bluetooth_bap_broadcast_assistant` sample as a reference.
+* :c:func:`bt_bap_broadcast_assistant_discover` will now no longer perform reads of the remote BASS
+  receive states at the end of the procedure. Users will have to manually call
+  :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
+  prior to performing any operations. (:github:`91587``)
 
 .. zephyr-keep-sorted-stop
 
