@@ -714,6 +714,11 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 				sub_params = &inst->recv_state_sub_params[idx];
 				sub_params->disc_params = &inst->recv_state_disc_params[idx];
 			}
+		} else {
+			LOG_DBG("Invalid UUID %s", bt_uuid_str(chrc->uuid));
+			bap_broadcast_assistant_discover_complete(conn, -EBADMSG, 0);
+
+			return BT_GATT_ITER_STOP;
 		}
 
 		if (sub_params != NULL) {
