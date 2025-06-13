@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 import shlex
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import check_output, getstatusoutput
@@ -113,3 +115,24 @@ class MCUmgr:
         if not hash:
             hash = self.get_hash_to_confirm()
         self.run_command(f'image confirm {hash}')
+
+
+class MCUmgrBle(MCUmgr):
+    """MCUmgr wrapper for BLE connection"""
+
+    @classmethod
+    def create_for_ble(cls, hci_index: int, peer_name: str) -> MCUmgr:
+        """Create MCUmgr instance for BLE connection"""
+        connection_string = (
+            f'--conntype ble --hci {hci_index} '
+            f'--connstring peer_name="{peer_name}"'
+        )
+        return cls(connection_options=connection_string)
+
+    @classmethod
+    def is_available(cls) -> bool:
+        """Check if mcumgr is available. For BLE, it requires root privileges."""
+        if os.getuid() != 0 and 'sudo' not in cls.mcumgr_exec:
+            mcumgr_path = shutil.which(cls.mcumgr_exec)
+            cls.mcumgr_exec = f'sudo {mcumgr_path}'
+        return super().is_available()
