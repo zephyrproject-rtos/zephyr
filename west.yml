@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: soburi
+      url-base: https://github.com/soburi
 
   group-filter: [-babblesim, -optional]
 
@@ -367,6 +369,10 @@ manifest:
     - name: uoscore-uedhoc
       revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
       path: modules/lib/uoscore-uedhoc
+    - name: xen
+      revision: 79be8f334a8e83feb5e67ac7df3139702dfdf448
+      path: modules/lib/xen
+      remote: soburi
     - name: zcbor
       revision: 9b07780aca6fb21f82a241ba386ad9b379809337
       path: modules/lib/zcbor
