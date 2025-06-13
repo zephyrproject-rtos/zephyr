@@ -128,18 +128,18 @@ Multiple SoCs and SoC series in a common folder can be described in the
 .. code-block:: yaml
 
    family:
-     name: <family-name>
-     series:
-       - name: <series-1-name>
-         socs:
-           - name: <soc1>
-             cpuclusters:
-               - name: <coreA>
-               - name: <coreB>
-                 ...
-           - name: <soc2>
-       - name: <series-2-name>
-         ...
+     - name: <family-name>
+       series:
+         - name: <series-1-name>
+           socs:
+             - name: <soc1>
+               cpuclusters:
+                 - name: <coreA>
+                 - name: <coreB>
+                   ...
+             - name: <soc2>
+         - name: <series-2-name>
+           ...
 
 
 Write your SoC devicetree
