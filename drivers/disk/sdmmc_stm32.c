@@ -801,7 +801,9 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 		.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING,
 #ifdef SDMMC_CLOCK_BYPASS_DISABLE
-		.Init.ClockBypass = SDMMC_CLOCK_BYPASS_DISABLE,
+		.Init.ClockBypass = DT_INST_PROP(0, clk_bypass)
+						? SDMMC_CLOCK_BYPASS_ENABLE
+						: SDMMC_CLOCK_BYPASS_DISABLE,
 #endif
 		.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE,
 		.Init.BusWide = SDMMC_BUS_WIDTH,
