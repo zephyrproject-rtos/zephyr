@@ -320,43 +320,30 @@ static int gpio_rza2m_pin_configure(const struct device *port_dev, gpio_pin_t pi
 		return -ENOTSUP;
 	}
 
-	/* Configure pin direction */
-	if (flags & GPIO_OUTPUT) {
-		gpio_rza2m_pin_configure_as_gpio(port_dev, pin, RZA2M_PDR_OUTPUT);
-	} else if (flags & GPIO_INPUT) {
-		gpio_rza2m_pin_configure_as_gpio(port_dev, pin, RZA2M_PDR_INPUT);
-	} else {
-		return -ENOTSUP;
-	}
-
-	/* Configure pin drive strength */
-	ret = gpio_rza2m_pin_drive_set(port_dev, pin, flags);
-	if (ret) {
-		LOG_ERR("unable to set gpio drive level");
-		return ret;
-	}
-
-	/* Configure pin initial value */
-	if (flags & GPIO_OUTPUT_INIT_HIGH) {
-		ret = gpio_rza2m_port_set_bits_raw(port_dev, BIT(pin));
-	} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-		ret = gpio_rza2m_port_clear_bits_raw(port_dev, BIT(pin));
-	}
-
-	/* Configure pin interrupt */
-	if (flags & GPIO_INT_ENABLE) {
-		if (flags & GPIO_INT_LOW_0) {
-			return -ENOTSUP;
+	if (!flags) {
+		/* Disconnected mode */
+		gpio_rza2m_pin_configure_as_gpio(port_dev, pin, RZA2M_PDR_HIZ);
+	} else if (!(flags & GPIO_OPEN_DRAIN)) {
+		/* Configure pin direction */
+		if (flags & GPIO_OUTPUT) {
+			gpio_rza2m_pin_configure_as_gpio(port_dev, pin, RZA2M_PDR_OUTPUT);
+		} else if (flags & GPIO_INPUT) {
+			gpio_rza2m_pin_configure_as_gpio(port_dev, pin, RZA2M_PDR_INPUT);
 		}
 
-		enum gpio_int_mode mode =
-			(flags & GPIO_INT_EDGE) ? GPIO_INT_MODE_EDGE : GPIO_INT_MODE_LEVEL;
-		enum gpio_int_trig trig = GPIO_INT_TRIG_HIGH;
+		/* Configure pin drive strength */
+		ret = gpio_rza2m_pin_drive_set(port_dev, pin, flags);
+		if (ret) {
+			LOG_ERR("unable to set gpio drive level");
+			return ret;
+		}
 
-		ret = gpio_rza2m_pin_interrupt_configure(port_dev, pin, mode, trig);
-	} else if (flags & GPIO_INT_DISABLE) {
-		ret = gpio_rza2m_pin_interrupt_configure(port_dev, pin, GPIO_INT_MODE_DISABLED,
-							 GPIO_INT_TRIG_HIGH);
+		/* Configure pin initial value */
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			ret = gpio_rza2m_port_set_bits_raw(port_dev, BIT(pin));
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			ret = gpio_rza2m_port_clear_bits_raw(port_dev, BIT(pin));
+		}
 	}
 
 	return ret;
