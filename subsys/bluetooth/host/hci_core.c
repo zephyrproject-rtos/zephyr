@@ -334,7 +334,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	cp->num_handles = sys_cpu_to_le16(1);
+	cp->num_handles = 1;
 
 	hc = net_buf_add(buf, sizeof(*hc));
 	hc->handle = sys_cpu_to_le16(handle);
