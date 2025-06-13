@@ -16,6 +16,8 @@ import argparse
 import errno
 import logging
 import os
+import pathlib
+import pickle
 import platform
 import re
 import selectors
@@ -716,12 +718,44 @@ class ZephyrBinaryRunner(abc.ABC):
             return default
 
     @staticmethod
+    def get_chosen_code_partition_offset(build_dir: str):
+        '''Get the offset corresponding to the zephyr,code-partition.'''
+        b = pathlib.Path(build_dir)
+        edt_pickle = b / 'zephyr' / 'edt.pickle'
+        if not edt_pickle.is_file():
+            raise RuntimeError('cannot load devicetree; expected to find:' +
+                               str(edt_pickle))
+
+        # Load the devicetree.
+        try:
+            with open(edt_pickle, 'rb') as f:
+                edt = pickle.load(f)
+        except ModuleNotFoundError as err:
+            raise RuntimeError('could not load devicetree, something may be'
+                               'wrong with the python environment') from err
+
+        # Find the zephyr,code-partition node.
+        node = edt.chosen_node('zephyr,code-partition')
+        if node is not None:
+            return node.regs[0].addr
+
+        return None
+
+    @staticmethod
     def flash_address_from_build_conf(build_conf: BuildConfiguration):
-        '''If CONFIG_HAS_FLASH_LOAD_OFFSET is n in build_conf,
+        '''If CONFIG_USE_DT_CODE_PARTITION return zephyr,code-partition
+        offset + CONFIG_FLASH_BASE_ADDRESS.
+        If CONFIG_HAS_FLASH_LOAD_OFFSET is n in build_conf,
         return the CONFIG_FLASH_BASE_ADDRESS value. Otherwise, return
         CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET.
         '''
-        if build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
+        if build_conf.getboolean('CONFIG_USE_DT_CODE_PARTITION'):
+            offset = ZephyrBinaryRunner.get_chosen_code_partition_offset(build_conf.build_dir)
+            if offset is None:
+                raise RuntimeError('The device tree zephyr,code-partition chosen'
+                                   ' node must be defined.')
+            return build_conf['CONFIG_FLASH_BASE_ADDRESS'] + offset
+        elif build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
             return (build_conf['CONFIG_FLASH_BASE_ADDRESS'] +
                     build_conf['CONFIG_FLASH_LOAD_OFFSET'])
         else:
