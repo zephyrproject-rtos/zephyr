@@ -420,17 +420,6 @@ static int lan86xx_config_collision_detection(const struct device *dev, bool plc
 	return phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN86XX_REG_COL_DET_CTRL0, new);
 }
 
-static int phy_mc_t1s_cfg_link(const struct device *dev, enum phy_link_speed speeds)
-{
-	ARG_UNUSED(dev);
-
-	if (speeds & LINK_HALF_10BASE) {
-		return 0;
-	}
-
-	return -ENOTSUP;
-}
-
 static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 {
 	uint32_t value;
@@ -533,7 +522,6 @@ static int phy_mc_t1s_init(const struct device *dev)
 
 static DEVICE_API(ethphy, mc_t1s_phy_api) = {
 	.get_link = phy_mc_t1s_get_link,
-	.cfg_link = phy_mc_t1s_cfg_link,
 	.link_cb_set = phy_mc_t1s_link_cb_set,
 	.set_plca_cfg = phy_mc_t1s_set_plca_cfg,
 	.get_plca_cfg = genphy_get_plca_cfg,
