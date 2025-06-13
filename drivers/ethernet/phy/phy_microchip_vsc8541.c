@@ -89,8 +89,8 @@ struct mc_vsc8541_data {
 	uint8_t link_monitor_thread_stack[STACK_SIZE];
 };
 
-static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint32_t *data);
-static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uint32_t data);
+static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint16_t *data);
+static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uint16_t data);
 static void phy_mc_vsc8541_link_monitor(void *arg1, void *arg2, void *arg3);
 
 #if CONFIG_PHY_VERIFY_DEVICE_IDENTIFICATION
@@ -102,11 +102,11 @@ static int phy_mc_vsc8541_verify_phy_id(const struct device *dev)
 	uint16_t phy_id_1;
 	uint16_t phy_id_2;
 
-	if (phy_mc_vsc8541_read(dev, MII_PHYID1R, (uint32_t *)&phy_id_1) < 0) {
+	if (phy_mc_vsc8541_read(dev, MII_PHYID1R, &phy_id_1) < 0) {
 		return -EINVAL;
 	}
 
-	if (phy_mc_vsc8541_read(dev, MII_PHYID2R, (uint32_t *)&phy_id_2) < 0) {
+	if (phy_mc_vsc8541_read(dev, MII_PHYID2R, &phy_id_2) < 0) {
 		return -EINVAL;
 	}
 
@@ -133,7 +133,7 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 {
 	const struct mc_vsc8541_config *cfg = dev->config;
 	int ret;
-	uint32_t reg = 0U;
+	uint16_t reg = 0U;
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
@@ -219,10 +219,10 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_state *state)
 {
 	int ret;
-	uint32_t aux_status;
-	uint32_t link10_status;
-	uint32_t link100_status;
-	uint32_t link1000_status;
+	uint16_t aux_status;
+	uint16_t link10_status;
+	uint16_t link100_status;
+	uint16_t link1000_status;
 	bool is_duplex;
 
 	ret = phy_mc_vsc8541_read(dev, PHY_REG_PAGE0_EXT_DEV_AUX, &aux_status);
@@ -317,8 +317,8 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 static int phy_mc_vsc8541_get_link(const struct device *dev, struct phy_link_state *state)
 {
 	int ret;
-	uint32_t reg_sr;
-	uint32_t reg_cr;
+	uint16_t reg_sr;
+	uint16_t reg_cr;
 	bool hasLink;
 	bool auto_negotiation_finished = true;
 
@@ -412,7 +412,7 @@ void phy_mc_vsc8541_link_monitor(void *arg1, void *arg2, void *arg3)
  * - to speed up, we store the last used page and only swap page if needed
  *
  */
-static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint32_t *data)
+static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint16_t *data)
 {
 	const struct mc_vsc8541_config *cfg = dev->config;
 	struct mc_vsc8541_data *dev_data = dev->data;
@@ -421,7 +421,7 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 	*data = 0U;
 
 	/* decode page */
-	uint32_t page = reg_addr >> 8;
+	uint16_t page = reg_addr >> 8;
 
 	/* mask out lower byte */
 	reg_addr &= 0x00ff;
@@ -431,7 +431,7 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 
 	/* select page, given by register upper byte */
 	if (dev_data->active_page != page) {
-		ret = mdio_write(cfg->mdio_dev, cfg->addr, PHY_REG_PAGE_SELECTOR, (uint16_t)page);
+		ret = mdio_write(cfg->mdio_dev, cfg->addr, PHY_REG_PAGE_SELECTOR, page);
 		if (ret < 0) {
 			goto read_end;
 		}
@@ -439,13 +439,22 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 	}
 
 	/* select register, given by register lower byte */
-	ret = mdio_read(cfg->mdio_dev, cfg->addr, reg_addr, (uint16_t *)data);
+	ret = mdio_read(cfg->mdio_dev, cfg->addr, reg_addr, data);
 
 read_end:
 	mdio_bus_disable(cfg->mdio_dev);
 	k_mutex_unlock(&dev_data->mutex);
 
 	return ret;
+}
+
+/**
+ * @brief Reading of phy register content at given address via mdio interface
+ * For external API using uint32_t as data type
+ */
+static int phy_mc_vsc8541_read_ext(const struct device *dev, uint16_t reg_addr, uint32_t *data)
+{
+	return phy_mc_vsc8541_read(dev, reg_addr, (uint16_t *)data);
 }
 
 /**
@@ -456,14 +465,14 @@ read_end:
  * - to speed up, we store the last used page and only swap page if needed
  *
  */
-static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
+static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uint16_t data)
 {
 	const struct mc_vsc8541_config *cfg = dev->config;
 	struct mc_vsc8541_data *dev_data = dev->data;
 	int ret;
 
 	/* decode page */
-	uint32_t page = reg_addr >> 8;
+	uint16_t page = reg_addr >> 8;
 
 	/* mask out lower byte */
 	reg_addr &= 0x00ff;
@@ -481,7 +490,7 @@ static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uin
 	}
 
 	/* write register, given by lower byte */
-	ret = mdio_write(cfg->mdio_dev, cfg->addr, reg_addr, (uint16_t)data);
+	ret = mdio_write(cfg->mdio_dev, cfg->addr, reg_addr, data);
 
 write_end:
 	mdio_bus_disable(cfg->mdio_dev);
@@ -490,12 +499,21 @@ write_end:
 	return ret;
 }
 
+/**
+ * @brief Writing of new value to phy register at given address via mdio interface
+ * For external API using uint32_t as data type
+ */
+static int phy_mc_vsc8541_write_ext(const struct device *dev, uint16_t reg_addr, uint32_t data)
+{
+	return phy_mc_vsc8541_write(dev, reg_addr, (uint16_t)data);
+}
+
 static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 	.get_link = phy_mc_vsc8541_get_link,
 	.cfg_link = phy_mc_vsc8541_cfg_link,
 	.link_cb_set = phy_mc_vsc8541_link_cb_set,
-	.read = phy_mc_vsc8541_read,
-	.write = phy_mc_vsc8541_write,
+	.read = phy_mc_vsc8541_read_ext,
+	.write = phy_mc_vsc8541_write_ext,
 };
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
