@@ -1175,6 +1175,13 @@
 		ulps-control;
 		status = "disabled";
 	};
+
+	acmp: acmp@20b000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x20b000 0x1000>;
+		interrupts = <17 0>;
+		status = "disabled";
+	};
 };
 
 &systick {
