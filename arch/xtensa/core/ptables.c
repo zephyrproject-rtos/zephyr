@@ -1112,7 +1112,7 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, int rin
 	return ret;
 }
 
-bool xtensa_mem_kernel_has_access(void *addr, size_t size, int write)
+bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write)
 {
 	return mem_buffer_validate(addr, size, write, XTENSA_MMU_KERNEL_RING) == 0;
 }
