@@ -432,7 +432,7 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 
 	for (int i = 0; i <= cf->hash_collision_num; i++) {
 		rc = zms_read(&cf->cf_zms, name_hash + i * LSB_GET(ZMS_COLLISIONS_MASK), &rdname,
-			      sizeof(rdname));
+			      sizeof(rdname) - 1);
 		if (rc == -ENOENT) {
 			if (first_available_hash_index < 0) {
 				first_available_hash_index = i;
@@ -445,6 +445,8 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 		/* Settings entry exist, let's verify if this is the same
 		 * name
 		 */
+		__ASSERT_NO_MSG(rc < sizeof(rdname));
+
 		rdname[rc] = '\0';
 		if ((rc == name_len) && !memcmp(name, rdname, rc)) {
 			/* Hash exist and the names are equal, we should
