@@ -527,6 +527,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kSENSE_BASE_to_I3C23);
 	CLOCK_SetClkDiv(kCLOCK_DivI3c23Clk, 4U);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(acmp), okay)
+	CLOCK_EnableClock(kCLOCK_Acmp0);
+	RESET_ClearPeripheralReset(kACMP0_RST_SHIFT_RSTn);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
