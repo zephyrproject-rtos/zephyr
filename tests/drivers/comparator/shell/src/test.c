@@ -255,7 +255,7 @@ ZTEST(comparator_shell, test_await_trigger_set_callback_fail)
 	shell_backend_dummy_clear_output(test_sh);
 	comp_fake_comp_set_trigger_callback_fake.custom_fake = test_set_trigger_callback_stub_eio;
 	ret = shell_execute_cmd(test_sh, "comp await_trigger " FAKE_COMP_NAME);
-	zassert_ok(0);
+	zassert_not_ok(ret);
 	zassert_equal(comp_fake_comp_set_trigger_callback_fake.call_count, 1);
 	zassert_equal(comp_fake_comp_set_trigger_callback_fake.return_val, 0);
 	out = shell_backend_dummy_get_output(test_sh, &out_size);
@@ -271,7 +271,7 @@ ZTEST(comparator_shell, test_await_trigger_timeout)
 	shell_backend_dummy_clear_output(test_sh);
 	comp_fake_comp_set_trigger_callback_fake.custom_fake = test_set_trigger_callback_stub_0;
 	ret = shell_execute_cmd(test_sh, "comp await_trigger " FAKE_COMP_NAME);
-	zassert_ok(0);
+	zassert_ok(ret);
 	zassert_equal(comp_fake_comp_set_trigger_callback_fake.call_count, 2);
 	zassert_equal(comp_fake_comp_set_trigger_callback_fake.return_val_history[0], 0);
 	zassert_equal(comp_fake_comp_set_trigger_callback_fake.return_val_history[1], 0);
@@ -310,7 +310,7 @@ ZTEST(comparator_shell, test_await_trigger)
 	comp_fake_comp_set_trigger_callback_fake.custom_fake_seq_len = ARRAY_SIZE(seq);
 	test_schedule_trigger();
 	ret = shell_execute_cmd(test_sh, "comp await_trigger " FAKE_COMP_NAME);
-	zassert_ok(0);
+	zassert_ok(ret);
 	zassert_equal(comp_fake_comp_set_trigger_callback_fake.call_count, 2);
 	zassert_equal(comp_fake_comp_set_trigger_callback_fake.arg0_history[0], test_dev);
 	zassert_not_equal(comp_fake_comp_set_trigger_callback_fake.arg1_history[0], NULL);
