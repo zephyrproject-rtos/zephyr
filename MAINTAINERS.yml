@@ -6288,6 +6288,13 @@ West:
   labels:
     - "area: Rust"
 
+"West project: zephyr-xenlib":
+  status: maintained
+  maintainers:
+    - firscity
+    - soburi
+  files: []
+
 Wurth Elektronik Platforms:
   status: maintained
   maintainers:
