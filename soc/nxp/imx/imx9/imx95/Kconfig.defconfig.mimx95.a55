@@ -22,8 +22,10 @@ config ARM64_DCACHE_ALL_OPS
 config ARM64_BOOT_DISABLE_DCACHE
 	default y
 
+# Reserve 8192 LPI interrupt ID starts from 8192 when ITS is enabled
 config NUM_IRQS
-	default 320
+	default 16384 if GIC_V3_ITS
+	default 407 if !GIC_V3_ITS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 24000000
