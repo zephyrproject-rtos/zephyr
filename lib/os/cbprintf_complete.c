@@ -360,6 +360,7 @@ static inline const char *extract_flags(struct conversion *conv,
 			break;
 		default:
 			loop = false;
+			break;
 		}
 		if (loop) {
 			++sp;
