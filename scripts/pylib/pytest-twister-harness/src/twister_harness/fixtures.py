@@ -13,7 +13,7 @@ from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.device.factory import DeviceFactory
 from twister_harness.twister_harness_config import DeviceConfig, TwisterHarnessConfig
 from twister_harness.helpers.shell import Shell
-from twister_harness.helpers.mcumgr import MCUmgr
+from twister_harness.helpers.mcumgr import MCUmgr, MCUmgrBle
 from twister_harness.helpers.utils import find_in_config
 
 logger = logging.getLogger(__name__)
@@ -46,13 +46,16 @@ def determine_scope(fixture_name, config):
 
 
 @pytest.fixture(scope=determine_scope)
-def unlaunched_dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
+def unlaunched_dut(
+    request: pytest.FixtureRequest, device_object: DeviceAdapter
+) -> Generator[DeviceAdapter, None, None]:
     """Return device object - with logs connected, but not run"""
     device_object.initialize_log_files(request.node.name)
     try:
         yield device_object
     finally:  # to make sure we close all running processes execution
         device_object.close()
+
 
 @pytest.fixture(scope=determine_scope)
 def dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
@@ -83,12 +86,34 @@ def shell(dut: DeviceAdapter) -> Shell:
     return shell
 
 
-@pytest.fixture(scope='session')
-def is_mcumgr_available() -> None:
+@pytest.fixture()
+def mcumgr(device_object: DeviceAdapter) -> Generator[MCUmgr, None, None]:
+    """Fixture to create an MCUmgr instance for serial connection."""
     if not MCUmgr.is_available():
         pytest.skip('mcumgr not available')
+    yield MCUmgr.create_for_serial(device_object.device_config.serial)
 
 
 @pytest.fixture()
-def mcumgr(is_mcumgr_available: None, dut: DeviceAdapter) -> Generator[MCUmgr, None, None]:
-    yield MCUmgr.create_for_serial(dut.device_config.serial)
+def mcumgr_ble(device_object: DeviceAdapter) -> Generator[MCUmgrBle, None, None]:
+    """Fixture to create an MCUmgr instance for BLE connection."""
+    if not MCUmgrBle.is_available():
+        pytest.skip('mcumgr for ble not available')
+
+    for fixture in device_object.device_config.fixtures:
+        if fixture.startswith('usb_hci:'):
+            hci_name = fixture.split(':', 1)[1]
+            break
+    else:
+        pytest.skip('usb_hci fixture not found')
+
+    try:
+        hci_index = int(hci_name.split('hci')[-1])
+    except ValueError:
+        pytest.skip(f'Invalid HCI name: {hci_name}. Expected format is "hciX".')
+
+    peer_name = find_in_config(
+        Path(device_object.device_config.app_build_dir) / 'zephyr' / '.config', 'CONFIG_BT_DEVICE_NAME'
+    ) or 'Zephyr'
+
+    yield MCUmgrBle.create_for_ble(hci_index, peer_name)
