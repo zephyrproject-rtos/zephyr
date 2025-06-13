@@ -171,17 +171,6 @@ static void phy_tja11xx_cfg_irq_poll(const struct device *dev)
 	monitor_work_handler(&data->monitor_work.work);
 }
 
-static int phy_tja11xx_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds)
-{
-	ARG_UNUSED(dev);
-
-	if (adv_speeds & LINK_FULL_100BASE) {
-		return 0;
-	}
-
-	return -ENOTSUP;
-}
-
 static int phy_tja11xx_init(const struct device *dev)
 {
 	struct phy_tja11xx_data *const data = dev->data;
@@ -233,7 +222,6 @@ static int phy_tja11xx_link_cb_set(const struct device *dev, phy_callback_t cb, 
 
 static const struct ethphy_driver_api phy_tja11xx_api = {
 	.get_link = phy_tja11xx_get_link_state,
-	.cfg_link = phy_tja11xx_cfg_link,
 	.link_cb_set = phy_tja11xx_link_cb_set,
 	.read = phy_tja11xx_reg_read,
 	.write = phy_tja11xx_reg_write,
