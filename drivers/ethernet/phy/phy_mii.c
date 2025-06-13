@@ -549,16 +549,8 @@ static DEVICE_API(ethphy, phy_mii_driver_api) = {
 #endif
 };
 
-#define PHY_MII_GENERATE_DEFAULT_SPEEDS(n)							\
-((DT_INST_ENUM_HAS_VALUE(n, default_speeds, 10base_half_duplex) ? LINK_HALF_10BASE : 0) |	\
-(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 10base_full_duplex) ? LINK_FULL_10BASE : 0) |	\
-(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 100base_half_duplex) ? LINK_HALF_100BASE : 0) |	\
-(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 100base_full_duplex) ? LINK_FULL_100BASE : 0) |	\
-(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 1000base_half_duplex) ? LINK_HALF_1000BASE : 0) |	\
-(DT_INST_ENUM_HAS_VALUE(n, default_speeds, 1000base_full_duplex) ? LINK_FULL_1000BASE : 0))
-
 #define PHY_MII_CONFIG(n)						 \
-BUILD_ASSERT(PHY_MII_GENERATE_DEFAULT_SPEEDS(n) != 0,			 \
+BUILD_ASSERT(PHY_INST_GENERATE_DEFAULT_SPEEDS(n) != 0,			 \
 	"At least one valid speed must be configured for this driver");	 \
 									 \
 static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
@@ -566,7 +558,7 @@ static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 	.no_reset = DT_INST_PROP(n, no_reset),				 \
 	.fixed = IS_FIXED_LINK(n),					 \
 	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
-	.default_speeds = PHY_MII_GENERATE_DEFAULT_SPEEDS(n),		 \
+	.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \
 			 DEVICE_DT_GET(DT_INST_BUS(n)))			 \
 };
