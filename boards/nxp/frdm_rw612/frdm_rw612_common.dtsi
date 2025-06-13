@@ -164,36 +164,35 @@ mikrobus_serial: &flexcomm0 {};
 
 			/*
 			 * Partition sizes must be aligned
-			 * to the flash memory sector size of 4KB.
+			 * to the flash security sub-region size of 128KB.
 			 */
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>; // 128 KB
+				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
 
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 0x000A0000>;  // 640 KB
+				reg = <0x00020000 DT_SIZE_K(640)>;
 			};
 
 			slot0_ns_partition: partition@C0000 {
 				label = "image-0-non-secure";
-				reg = <0x000C0000 0x00300000>;  // 3 MB
+				reg = <0x000C0000 DT_SIZE_M(3)>;
 			};
 
 			slot1_partition: partition@3C0000 {
 				label = "image-1";
-				reg = <0x003C0000 0x000A0000>;  // 640 KB
+				reg = <0x003C0000 DT_SIZE_K(640)>;
 			};
 
 			slot1_ns_partition: partition@460000 {
 				label = "image-1-non-secure";
-				reg = <0x00460000 0x00300000>;  // 3 MB
+				reg = <0x00460000 DT_SIZE_M(3)>;
 			};
 
 			storage_partition: partition@760000 {
 				label = "storage";
-				/* above partition sizes are: 128 KB + 640 KB + 3 MB + 640 KB + 3 MB => 7 MB + 384 KB */
 				reg = <0x00760000 (DT_SIZE_M(57) - DT_SIZE_K(384))>; 
 			};
 		};
