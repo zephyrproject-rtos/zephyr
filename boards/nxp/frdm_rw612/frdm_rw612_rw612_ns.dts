@@ -56,12 +56,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* Note slot 0 has one additional sector,
-		 * this is intended for use with the swap move algorithm
-		 */
 		slot0_ns_partition: partition@080C0000 {
 			label = "image-0-non-secure";
-			reg = <0x080C0000 0x00300000>;  // 3 MB
+			reg = <0x080C0000 DT_SIZE_M(3)>;
 		};
 
 		/* This partition is reserved for connectivity firmwares storage

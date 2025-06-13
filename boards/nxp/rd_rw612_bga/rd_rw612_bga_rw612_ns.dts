@@ -61,9 +61,9 @@
 		/* Note slot 0 has one additional sector,
 		 * this is intended for use with the swap move algorithm
 		 */
-		slot0_ns_partition: partition@80A0000 {
-			label = "image-0-nonsecure";
-			reg = <0x080A0000 0x083A0000>;
+		slot0_ns_partition: partition@080C0000 {
+			label = "image-0-non-secure";
+			reg = <0x080C0000 DT_SIZE_M(3)>;
 		};
 
 		/* This partition is reserved for connectivity firmwares storage
@@ -78,5 +78,5 @@
 };
 
 &flexspi {
-	reg = <0x40134000 0x1000>, <0x080A0000 DT_SIZE_M(128)>;
+	reg = <0x40134000 0x1000>, <0x080C0000 DT_SIZE_M(3)>;
 };
