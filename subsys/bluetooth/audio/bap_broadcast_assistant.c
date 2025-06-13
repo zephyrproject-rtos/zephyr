@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -565,19 +565,14 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 				  const void *data, uint16_t length)
 {
 	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	bool active_recv_state = data != NULL && length != 0;
+	struct bt_bap_scan_delegator_recv_state recv_state;
+	uint16_t handle = params->single.handle;
+	int cb_err = err;
 
 	if (inst == NULL) {
 		return BT_GATT_ITER_STOP;
 	}
-
-	uint16_t handle = params->single.handle;
-	uint8_t last_handle_index = inst->recv_state_cnt - 1;
-	uint16_t last_handle = inst->recv_state_handles[last_handle_index];
-	struct bt_bap_scan_delegator_recv_state recv_state;
-	int cb_err = err;
-	bool active_recv_state = data != NULL && length != 0;
-
-	/* TODO: Split discovery and receive state characteristic read */
 
 	(void)memset(params, 0, sizeof(*params));
 
@@ -611,48 +606,12 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	if (cb_err != 0) {
 		LOG_DBG("err %d", cb_err);
-
-		if (atomic_test_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS)) {
-			bap_broadcast_assistant_discover_complete(conn, cb_err, 0);
-		} else {
-			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-			bap_broadcast_assistant_recv_state_changed(conn, cb_err, NULL);
-		}
-	} else if (handle == last_handle) {
-		if (atomic_test_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS)) {
-			const uint8_t recv_state_cnt = inst->recv_state_cnt;
-
-			bap_broadcast_assistant_discover_complete(conn, cb_err, recv_state_cnt);
-		} else {
-			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-			bap_broadcast_assistant_recv_state_changed(conn, cb_err,
-								   active_recv_state ?
-								   &recv_state : NULL);
-		}
+		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+		bap_broadcast_assistant_recv_state_changed(conn, cb_err, NULL);
 	} else {
-		for (uint8_t i = 0U; i < inst->recv_state_cnt; i++) {
-			if (handle != inst->recv_state_handles[i]) {
-				continue;
-			}
-
-			if (i + 1 < ARRAY_SIZE(inst->recv_state_handles)) {
-				cb_err = read_recv_state(inst, i + 1);
-				if (cb_err != 0) {
-					LOG_DBG("Failed to read receive state: %d", cb_err);
-
-					if (atomic_test_bit(inst->flags,
-							    BAP_BA_FLAG_DISCOVER_IN_PROGRESS)) {
-						bap_broadcast_assistant_discover_complete(
-							conn, cb_err, 0);
-					} else {
-						atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-						bap_broadcast_assistant_recv_state_changed(
-							conn, cb_err, NULL);
-					}
-				}
-			}
-			break;
-		}
+		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+		bap_broadcast_assistant_recv_state_changed(conn, cb_err,
+							   active_recv_state ? &recv_state : NULL);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -686,10 +645,7 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		LOG_DBG("Found %u BASS receive states", inst->recv_state_cnt);
 		(void)memset(params, 0, sizeof(*params));
 
-		err = read_recv_state(inst, 0);
-		if (err != 0) {
-			bap_broadcast_assistant_discover_complete(conn, err, 0);
-		}
+		bap_broadcast_assistant_discover_complete(conn, 0, inst->recv_state_cnt);
 
 		return BT_GATT_ITER_STOP;
 	}
