@@ -5,13 +5,9 @@
  */
 
 #include "esp32s3_common.dtsi"
+#include "esp32s3_r2.dtsi"
 
 /* 4MB flash */
 &flash0 {
 	size = <0x0 DT_SIZE_M(4)>;
-};
-
-/* 2MB psram */
-&psram0 {
-	size = <DT_SIZE_M(2)>;
 };
