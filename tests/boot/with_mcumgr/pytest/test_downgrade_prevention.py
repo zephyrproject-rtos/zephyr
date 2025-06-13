@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from test_upgrade import create_signed_image
+from test_upgrade import WELCOME_STRING, create_signed_image
 from twister_harness import DeviceAdapter, MCUmgr, Shell
 from twister_harness.helpers.utils import find_in_config, match_lines, match_no_lines
 from utils import check_with_mcumgr_command, check_with_shell_command
@@ -48,7 +48,7 @@ def test_downgrade_prevention(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     match_no_lines(output, ['Starting swap using move algorithm'])
     match_lines(output, ['erased due to downgrade prevention'])
     logger.info('Verify that the original APP is booted')

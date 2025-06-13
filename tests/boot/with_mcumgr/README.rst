@@ -19,8 +19,18 @@ use following command:
     -p nrf52840dk/nrf52840 --device-testing --device-serial /dev/ttyACM0
 
 .. note::
-   Twister requires ``--west-flash`` flag enabled (without additional parameters
-   like ``erase``) to use sysbuild.
+   Twister requires ``--west-flash`` flag enabled to use sysbuild.
+
+To test with ``mcumgr`` with Bluetooth, one must add ``usb_hci:hciX`` fixture
+where ``hciX`` is the Bluetooth HCI device (e.g. ``hci1``).
+Fixture can be added to Twister command: ``-X usb_hci:hci1``,
+or added to the hardware map
+
+.. code-block:: yaml
+
+      - connected: true
+        fixtures:
+          - usb_hci:hci1
 
 Test scripts can be found in ``pytest`` directory. To list available
 scenarios with described procedures, one can use a pytest command:

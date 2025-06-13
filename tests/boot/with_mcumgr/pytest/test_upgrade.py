@@ -14,6 +14,9 @@ from west_sign_wrapper import west_sign_with_imgtool
 
 logger = logging.getLogger(__name__)
 
+# This string is used to verify that the device is running the application
+WELCOME_STRING = "smp_sample: build time:"
+
 
 def create_signed_image(build_dir: Path, app_build_dir: Path, version: str) -> Path:
     image_to_test = Path(build_dir) / 'test_{}.signed.bin'.format(
@@ -49,7 +52,7 @@ def clear_buffer(dut: DeviceAdapter) -> None:
         dut.disconnect()
 
 
-def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
+def run_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     """
     Verify that the application can be updated
     1) Device flashed with MCUboot and an application that contains SMP server
@@ -77,7 +80,7 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
@@ -93,12 +96,17 @@ def test_upgrade_with_confirm(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     match_no_lines(output, [
         upgrade_string_to_verify
     ])
     logger.info('Verify new APP is still booted')
     check_with_shell_command(shell, new_version)
+
+
+def test_upgrade_with_confirm(mcumgr: MCUmgr, dut: DeviceAdapter, shell: Shell):
+    """Verify that the application can be updated over serial"""
+    run_upgrade_with_confirm(dut, shell, mcumgr)
 
 
 def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
@@ -133,7 +141,7 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_lines(output, [
         'Swap type: test',
@@ -148,7 +156,7 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     match_lines(output, [
         'Swap type: revert',
         upgrade_string_to_verify
@@ -159,10 +167,8 @@ def test_upgrade_with_revert(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr):
 
 @pytest.mark.parametrize(
     'key_file', [None, 'root-ec-p256.pem'],
-    ids=[
-        'no_key',
-        'invalid_key'
-    ])
+    ids=['no_key', 'invalid_key']
+)
 def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key_file):
     """
     Verify that the application is not updated when app is not signed or signed with invalid key
@@ -210,7 +216,7 @@ def test_upgrade_signature(dut: DeviceAdapter, shell: Shell, mcumgr: MCUmgr, key
     mcumgr.reset_device()
 
     dut.connect()
-    output = dut.readlines_until('Launching primary slot application')
+    output = dut.readlines_until(WELCOME_STRING)
     upgrade_string_to_verify = get_upgrade_string_to_verify(dut.device_config.build_dir)
     match_no_lines(output, [upgrade_string_to_verify])
     match_lines(output, ['Image in the secondary slot is not valid'])
