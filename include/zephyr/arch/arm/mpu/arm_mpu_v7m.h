@@ -223,7 +223,8 @@ typedef struct {
 			__is_writable__ = 1;                                                       \
 			break;                                                                     \
 		default:                                                                           \
-			__is_writable__ = 0;                                                       \
+			__is_writable__ = 0;							   \
+			break;                                                                     \
 		}                                                                                  \
 		__is_writable__;                                                                   \
 	})
