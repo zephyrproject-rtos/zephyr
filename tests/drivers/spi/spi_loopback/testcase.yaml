@@ -51,17 +51,6 @@ tests:
       - robokit1
     integration_platforms:
       - sam_e70_xplained/same70q21
-  drivers.spi.stm32_spi_16bits_frames.loopback:
-    extra_args:
-      - EXTRA_CONF_FILE="overlay-stm32-spi-16bits.conf"
-      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
-    platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
-      - nucleo_h745zi_q/stm32h745xx/m4
-      - nucleo_h745zi_q/stm32h745xx/m7
-    integration_platforms:
-      - nucleo_h743zi
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
@@ -90,29 +79,6 @@ tests:
     # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`
     extra_args:
       - EXTRA_CONF_FILE="overlay-stm32-spi-dma-dt-nocache-mem.conf"
-    filter: CONFIG_CPU_HAS_DCACHE
-    platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
-      - nucleo_h745zi_q/stm32h745xx/m4
-      - nucleo_h745zi_q/stm32h745xx/m7
-    integration_platforms:
-      - nucleo_h743zi
-  drivers.spi.stm32_spi_16bits_frames_dma.loopback:
-    extra_args:
-      - EXTRA_CONF_FILE="overlay-stm32-spi-16bits-dma.conf"
-      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
-    platform_allow:
-      - nucleo_h743zi
-      - nucleo_h753zi
-      - nucleo_h745zi_q/stm32h745xx/m4
-      - nucleo_h745zi_q/stm32h745xx/m7
-    integration_platforms:
-      - nucleo_h743zi
-  drivers.spi.stm32_spi_16bits_frames_dma_dt_nocache_mem.loopback:
-    extra_args:
-      - EXTRA_CONF_FILE="overlay-stm32-spi-16bits-dma-dt-nocache-mem.conf"
-      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
     filter: CONFIG_CPU_HAS_DCACHE
     platform_allow:
       - nucleo_h743zi
