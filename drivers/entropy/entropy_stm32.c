@@ -749,45 +749,90 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 
 	if (len) {
 		/**
-		 * On TRNG without interrupt line, we cannot allow reentrancy,
-		 * so we have to suspend all interrupts. Otherwise, only suspend
-		 * it until we have established ourselves as owner of the TRNG
-		 * to prevent race with a higher priority interrupt handler.
+		 * Suspend interrupts to check whether RNG is active or not.
+		 * If active, use the RNG and return without disabling it.
+		 * Otherwise, enable the RNG, fill the caller's buffer and
+		 * disable the RNG before returning.
+		 *
+		 * NOTE: insufficient on SMP (but there's no such STM32 yet)
 		 */
-		unsigned int key = irq_lock();
-		bool rng_already_acquired = false;
-#if !IRQLESS_TRNG
-		int irq_enabled = irq_is_enabled(IRQN);
+		bool rng_owned_by_us;
+		bool release_rng_after_read;
+		unsigned int key;
+		enum clock_control_status rng_clk_status;
 
-		rng_already_acquired = (irq_enabled != 0);
+		key = irq_lock();
+		rng_clk_status = clock_control_get_status(
+			entropy_stm32_rng_data.clock,
+			&(entropy_stm32_rng_config.pclken[0]));
+
+		/**
+		 * z_stm32_hsem_is_owned() evaluates to false on single-CPU SoCs,
+		 * but we always own RNG on these SoCs since there's only one CPU.
+		 */
+		if (IS_ENABLED(CONFIG_SOC_SERIES_STM32WBX)
+		 || IS_ENABLED(CONFIG_SOC_SERIES_STM32MP1X)
+		 || IS_ENABLED(CONFIG_STM32H7_DUAL_CORE)) {
+			rng_owned_by_us = z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID);
+		} else {
+			rng_owned_by_us = true;
+		}
+
+		if (rng_clk_status == CLOCK_CONTROL_STATUS_ON
+			&& ll_rng_is_enabled(entropy_stm32_rng_data.rng)
+			&& rng_owned_by_us) {
+			/* RNG already in use by this CPU.
+			 * Preempted user will release once we return control
+			 * and it generates the entropy it wanted.
+			 */
+			release_rng_after_read = false;
+		} else {
+			/* RNG not in use - release it once we are done */
+			release_rng_after_read = true;
+		}
+
+#if !IRQLESS_TRNG
+		/**
+		 * Disable RNG interrupt at NVIC level to ensure RNG ISR cannot preempt us.
+		 * The ISR might disable the RNG while we're using it, and it would steal
+		 * entropy that our caller wants anyways, so let's make sure it will not
+		 * get a chance to run while we're generating entropy.
+		 */
+		int rng_irq_enabled = irq_is_enabled(IRQN);
+
 		irq_disable(IRQN);
-		irq_unlock(key);
 #endif /* !IRQLESS_TRNG */
 
-		/* Do not release if IRQ is enabled. RNG will be released in ISR
-		 * when the pools are full. On TRNG without interrupt line, the
-		 * default value of false ensures TRNG is always released.
-		 */
-		if (z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID)) {
-			rng_already_acquired = true;
-		}
 		acquire_rng();
+
+		/**
+		 * RNG is enabled so interrupts can be resumed: if a re-entrant
+		 * call to `get_entropy_isr` is made while we are in this section,
+		 * the re-entrant call will see that the RNG is enabled and owned,
+		 * and `release_rng_after_read` will be false for that call, making
+		 * sure it doesn't disable RNG before returning control to us.
+		 */
+		irq_unlock(key);
 
 		cnt = generate_from_isr(buf, len);
 
-		/* Restore the state of the RNG lock and IRQ */
-		if (!rng_already_acquired) {
-			release_rng();
-		}
+		/**
+		 * Disable the RNG (and re-enable interrupt at NVIC level if applicable)
+		 * with interrupts suspended to ensure function is re-entrant.
+		 */
+		key = irq_lock();
 
-#if IRQLESS_TRNG
-		/* Exit critical section */
-		irq_unlock(key);
-#else
-		if (irq_enabled) {
+#if !IRQLESS_TRNG
+		if (rng_irq_enabled) {
 			irq_enable(IRQN);
 		}
 #endif /* !IRQLESS_TRNG */
+
+		if (release_rng_after_read) {
+			release_rng();
+		}
+
+		irq_unlock(key);
 	}
 
 	return cnt;
