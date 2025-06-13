@@ -895,17 +895,19 @@ static int dali_lpc11u6x_send(const struct device *dev, const struct dali_frame 
 
 	k_mutex_lock(&data->tx_mutex, K_FOREVER);
 
-	data->cb.tx.function = callback;
-	data->cb.tx.user_data = user_data;
+	int result = -EBUSY;
+	if (data->rx.status == IDLE) {
+		data->cb.tx.function = callback;
+		data->cb.tx.user_data = user_data;
 
-	int err = dali_lpc11u6x_calculate_counts(dev, frame);
-	if (err != 0) {
-		return err;
+		result = dali_lpc11u6x_calculate_counts(dev, frame);
+		if (result == 0) {
+			dali_lpc11u6x_start_tx(&data->tx);
+		}
 	}
-	dali_lpc11u6x_start_tx(&data->tx);
-	k_mutex_unlock(&data->tx_mutex);
 
-	return 0;
+	k_mutex_unlock(&data->tx_mutex);
+	return result;
 }
 
 static void dali_lpc11u6x_abort(const struct device *dev)

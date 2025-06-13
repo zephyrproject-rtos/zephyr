@@ -119,7 +119,8 @@ static inline int dali_receive(const struct device *dev, dali_rx_callback_t call
  * @param user_data User data to pass to callback function.
  *
  * @retval 0        if successful.
- * @retval -EINVAL  if invalid parametr was passed to function
+ * @retval -EBUSY   if a frame is in transit
+ * @retval -EINVAL  if invalid parameter was passed to function
  * @retval -ECOMM   if collision occured during transmission
  */
 static inline int dali_send(const struct device *dev, const struct dali_frame *frame,
