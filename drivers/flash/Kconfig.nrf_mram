@@ -7,7 +7,7 @@
 config SOC_FLASH_NRF_MRAM
 	bool "Nordic Semiconductor flash driver for MRAM"
 	default y
-	depends on DT_HAS_NORDIC_MRAM_ENABLED
+	depends on DT_HAS_NORDIC_MRAM_ENABLED && !DT_HAS_NORDIC_MRAM_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_NO_EXPLICIT_ERASE
