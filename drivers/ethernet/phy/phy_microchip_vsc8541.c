@@ -134,6 +134,7 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 	const struct mc_vsc8541_config *cfg = dev->config;
 	int ret;
 	uint16_t reg = 0U;
+	int count = 0;
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
@@ -197,8 +198,15 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 
 	/* wait for phy finished software reset */
 	do {
-		phy_mc_vsc8541_read(dev, MII_BMCR, &reg);
-	} while (reg & MII_BMCR_RESET);
+		ret = phy_mc_vsc8541_read(dev, MII_BMCR, &reg);
+		if (ret < 0) {
+			return ret;
+		}
+		if (count++ > 1000) {
+			LOG_ERR("phy reset timed out");
+			return -ETIMEDOUT;
+		}
+	} while ((reg & MII_BMCR_RESET) != 0U);
 
 	/* configure the RGMII clk delay */
 	reg = 0x0;
