@@ -56,6 +56,7 @@ family:
       - name: mgm24
         socs:
           - name: mgm240sd22vna
+          - name: mgm240pb32vna
       - name: efr32bg27
         socs:
           - name: efr32bg27c140f768im40
