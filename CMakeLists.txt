@@ -1793,16 +1793,30 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
     set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
   else()
-    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+    if(CONFIG_USE_DT_CODE_PARTITION)
+      dt_chosen(chosen_code_partition PROPERTY "zephyr,code-partition")
+      dt_reg_addr(flash_addr PATH ${chosen_code_partition})
+    else()
+      set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+    endif()
   endif()
 
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_OFFSET)
     # Note, the `+ 0` in formula below avoids errors in cases where a Kconfig
     #       variable is undefined and thus expands to nothing.
-    math(EXPR flash_addr
-        "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
-         OUTPUT_FORMAT HEXADECIMAL
-    )
+    if(CONFIG_USE_DT_CODE_PARTITION)
+      dt_chosen(chosen_code_partition PROPERTY "zephyr,code-partition")
+      dt_reg_addr(flash_code_partition_addr PATH ${chosen_code_partition})
+      math(EXPR flash_addr
+          "${flash_addr} + ${flash_code_partition_addr} + 0"
+           OUTPUT_FORMAT HEXADECIMAL
+      )
+    else()
+      math(EXPR flash_addr
+          "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+           OUTPUT_FORMAT HEXADECIMAL
+      )
+    endif()
   endif()
 
   list(APPEND
