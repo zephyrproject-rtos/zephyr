@@ -2138,6 +2138,7 @@ Release Notes:
     - tbursztyka
   collaborators:
     - teburd
+    - decsny
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
