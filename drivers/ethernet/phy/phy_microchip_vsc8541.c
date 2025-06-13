@@ -143,14 +143,14 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 	}
 
 	/* configure the reset pin */
-	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
 		return ret;
 	}
 
 	for (uint32_t i = 0; i < 2; i++) {
 		/* Start reset */
-		ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
+		ret = gpio_pin_set_dt(&cfg->reset_gpio, 1);
 		if (ret < 0) {
 			LOG_WRN("failed to set reset gpio");
 			return -EINVAL;
@@ -160,7 +160,7 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 		k_sleep(K_MSEC(200));
 
 		/* Reset over */
-		gpio_pin_set_dt(&cfg->reset_gpio, 1);
+		gpio_pin_set_dt(&cfg->reset_gpio, 0);
 
 		/* After de-asserting reset, must wait before using the config interface */
 		k_sleep(K_MSEC(200));
