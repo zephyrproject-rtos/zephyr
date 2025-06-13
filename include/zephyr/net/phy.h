@@ -48,6 +48,8 @@ enum phy_link_speed {
 	LINK_FULL_2500BASE = BIT(6),
 	/** 5GBase Full-Duplex */
 	LINK_FULL_5000BASE = BIT(7),
+	/** Auto-negotiation disable (only for phy_configure_link()) */
+	LINK_AUTO_NEGOTIATION_DISABLED = BIT(8),
 };
 
 /**
