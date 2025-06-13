@@ -918,6 +918,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *  Read include service attribute value from local database storing the result
  *  into buffer after encoding it.
  *  @note Only use this with attributes which user_data is a ``bt_gatt_include``.
+ *  The function returns EINVAL if @p attr or @p attr->user_data is NULL.
  *
  *  @param conn Connection object.
  *  @param attr Attribute to read.
