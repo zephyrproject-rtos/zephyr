@@ -22,6 +22,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_qc_ar8031, CONFIG_PHY_LOG_LEVEL);
 
+#include "phy_common.h"
+
 #define AR8031_PHY_ID1           0x004DU
 #define PHY_READID_TIMEOUT_COUNT 1000U
 
@@ -56,6 +58,7 @@ LOG_MODULE_REGISTER(phy_qc_ar8031, CONFIG_PHY_LOG_LEVEL);
 struct qc_ar8031_config {
 	uint8_t addr;
 	bool enable_eee;
+	enum phy_link_speed default_speeds;
 	const struct device *mdio_dev;
 };
 
@@ -447,10 +450,8 @@ static int qc_ar8031_init(const struct device *dev)
 		}
 	}
 
-	/* Advertise all speeds */
-	qc_ar8031_cfg_link(dev, LINK_HALF_10BASE | LINK_FULL_10BASE |
-				LINK_HALF_100BASE | LINK_FULL_100BASE |
-				LINK_HALF_1000BASE | LINK_FULL_1000BASE);
+	/* Advertise default speeds */
+	qc_ar8031_cfg_link(dev, cfg->default_speeds);
 
 	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
 
@@ -471,6 +472,7 @@ static DEVICE_API(ethphy, ar8031_driver_api) = {
 	static const struct qc_ar8031_config qc_ar8031_config_##n = {                              \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 		.mdio_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
 		.enable_eee = DT_INST_NODE_HAS_PROP(n, eee_en),                                    \
 	};
 
