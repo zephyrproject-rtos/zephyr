@@ -100,6 +100,7 @@ void z_multiboot_init(struct multiboot_info *info_pa)
 				break;
 			default:
 				type = X86_MEMMAP_ENTRY_UNKNOWN;
+				break;
 			}
 
 			x86_memmap[index].type = type;
