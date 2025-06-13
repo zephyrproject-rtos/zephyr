@@ -64,6 +64,21 @@ static bool test_set_fix_rate(const struct test_config *config)
 	return true;
 }
 
+static bool test_get_fix_rate(const struct test_config *config)
+{
+	int ret;
+	uint32_t fix_interval;
+
+	ret = gnss_get_fix_rate(dev, &fix_interval);
+
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+	zassert_ok(ret, "failed to get fix rate");
+	zassert_equal(fix_interval, config->fix_interval, "fix_rate mismatch");
+	return true;
+}
+
 static void test_validate_fix_rate(const struct test_config *config)
 {
 	bool valid;
@@ -81,6 +96,9 @@ ZTEST(gnss_api, test_fix_rate)
 {
 	for (uint32_t i = 0; i < ARRAY_SIZE(configs); i++) {
 		if (!test_set_fix_rate(&configs[i])) {
+			continue;
+		}
+		if (!test_get_fix_rate(&configs[i])) {
 			continue;
 		}
 		test_validate_fix_rate(&configs[i]);
