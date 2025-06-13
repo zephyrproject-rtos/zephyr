@@ -1097,6 +1097,7 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		}
 
 		switch (dns_msg->response_type) {
+		case DNS_RESPONSE_DATA:
 		case DNS_RESPONSE_IP: {
 			int query_name_len;
 
@@ -1205,28 +1206,73 @@ rr_qtype_aaaa:
 					ret = DNS_EAI_ADDRFAMILY;
 					goto quit;
 				}
+
+			} else if (ctx->queries[*query_idx].query_type ==
+							DNS_QUERY_TYPE_PTR) {
+				/* Synthesize a reply and place the returned info
+				 * in to the ai_canonname field. Use AF_LOCAL address
+				 * family as this is not a real address.
+				 */
+				struct net_buf *result;
+				uint8_t *pos;
+
+				address_size = MIN(dns_msg->response_length,
+						   DNS_MAX_NAME_SIZE);
+
+				/* Temporary buffer that is needed by dns_unpack_name()
+				 * to unpack the resolved name.
+				 */
+				result = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
+				if (result == NULL) {
+					NET_DBG("Cannot allocate buffer for DNS query result");
+					ret = DNS_EAI_MEMORY;
+					goto quit;
+				}
+
+				pos = dns_msg->msg + dns_msg->response_position;
+				ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, pos,
+						      result, NULL);
+				if (ret < 0) {
+					errno = -ret;
+					ret = DNS_EAI_SYSTEM;
+					net_buf_unref(result);
+					goto quit;
+				}
+
+				info.ai_family = AF_LOCAL;
+				info.ai_addrlen = MIN(result->len, DNS_MAX_NAME_SIZE);
+				memcpy(&info.ai_canonname, result->data, info.ai_addrlen);
+				info.ai_canonname[info.ai_addrlen] = '\0';
+
+				net_buf_unref(result);
+
 			} else {
 				ret = DNS_EAI_FAMILY;
 				goto quit;
 			}
 
-			if (dns_msg->response_length < address_size) {
-				/* it seems this is a malformed message */
-				errno = EMSGSIZE;
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
-			}
+			if (ctx->queries[*query_idx].query_type ==
+							DNS_QUERY_TYPE_A ||
+			    ctx->queries[*query_idx].query_type ==
+							DNS_QUERY_TYPE_AAAA) {
+				if (dns_msg->response_length < address_size) {
+					/* it seems this is a malformed message */
+					errno = EMSGSIZE;
+					ret = DNS_EAI_SYSTEM;
+					goto quit;
+				}
 
-			if ((dns_msg->response_position + address_size) >
-			    dns_msg->msg_size) {
-				/* Too short message */
-				errno = EMSGSIZE;
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
-			}
+				if ((dns_msg->response_position + address_size) >
+				    dns_msg->msg_size) {
+					/* Too short message */
+					errno = EMSGSIZE;
+					ret = DNS_EAI_SYSTEM;
+					goto quit;
+				}
 
-			src = dns_msg->msg + dns_msg->response_position;
-			memcpy(addr, src, address_size);
+				src = dns_msg->msg + dns_msg->response_position;
+				memcpy(addr, src, address_size);
+			}
 
 			invoke_query_callback(DNS_EAI_INPROGRESS, &info,
 					      &ctx->queries[*query_idx]);
