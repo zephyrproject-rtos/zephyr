@@ -38,6 +38,8 @@ extern "C" {
 enum dns_query_type {
 	/** IPv4 query */
 	DNS_QUERY_TYPE_A = 1,
+	/** PTR query */
+	DNS_QUERY_TYPE_PTR = 12,
 	/** IPv6 query */
 	DNS_QUERY_TYPE_AAAA = 28
 };
