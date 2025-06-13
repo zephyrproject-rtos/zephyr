@@ -128,7 +128,7 @@ Multiple SoCs and SoC series in a common folder can be described in the
 .. code-block:: yaml
 
    family:
-     name: <family-name>
+     - name: <family-name>
      series:
        - name: <series-1-name>
          socs:
