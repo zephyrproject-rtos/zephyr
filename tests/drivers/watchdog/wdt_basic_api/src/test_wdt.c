@@ -400,9 +400,74 @@ static int test_wdt_bad_window_max(void)
 	return TC_FAIL;
 }
 
+static int test_wdt_enable_wait_mode(void)
+{
+#ifndef CONFIG_PM
+	TC_PRINT("Testcase: %s\n", __func__);
+	ztest_test_skip();
+	m_state = WDT_TEST_STATE_IDLE;
+	return TC_SKIP;
+#else
+	int err;
+	int wdt_channel_id;
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Testcase: %s\n", __func__);
+
+	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
+		m_state = WDT_TEST_STATE_IDLE;
+		TC_PRINT("Testcase passed\n");
+		return TC_PASS;
+	}
+
+	struct wdt_timeout_cfg wdt_config = {
+		/* Reset SoC when watchdog timer expires. */
+		.flags = WDT_FLAG_RESET_SOC,
+
+		/* Expire watchdog after max window */
+		.window.min = 0U,
+		.window.max = 1000U,
+	};
+
+	wdt_channel_id = wdt_install_timeout(wdt, &wdt_config);
+	if (wdt_channel_id < 0) {
+		printk("Watchdog install error\n");
+		return TC_FAIL;
+	}
+
+	err = wdt_setup(wdt, (WDT_OPT_PAUSE_HALTED_BY_DBG | WDT_OPT_PAUSE_IN_SLEEP));
+	if (err < 0) {
+		printk("Watchdog setup error\n");
+		ztest_test_skip();
+		return TC_SKIP;
+	}
+
+	for (int i = 0; i < 20; ++i) {
+		printk("Feeding watchdog... %d\n", i);
+		wdt_feed(wdt, 0);
+		k_sleep(K_MSEC(2000));
+	}
+
+	TC_PRINT("Waiting to restart MCU\n");
+	m_testvalue = 0U;
+	m_state = WDT_TEST_STATE_CHECK_RESET;
+	while (1) {
+		k_yield();
+	}
+
+	return TC_PASS;
+#endif
+}
+
 ZTEST(wdt_basic_test_suite, test_wdt)
 {
-	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)) {
+	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)
+		&& (m_testcase_index != 3U)) {
 		zassert_true(test_wdt_no_callback() == TC_PASS);
 	}
 	if (m_testcase_index == 1U) {
@@ -420,10 +485,14 @@ ZTEST(wdt_basic_test_suite, test_wdt)
 #endif
 	}
 	if (m_testcase_index == 3U) {
+		zassert_true(test_wdt_enable_wait_mode() == TC_PASS);
+		m_testcase_index++;
+	}
+	if (m_testcase_index == 4U) {
 		zassert_true(test_wdt_bad_window_max() == TC_PASS);
 		m_testcase_index++;
 	}
-	if (m_testcase_index > 3) {
+	if (m_testcase_index > 4) {
 		m_state = WDT_TEST_STATE_IDLE;
 	}
 }
