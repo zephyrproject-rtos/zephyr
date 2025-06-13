@@ -36,7 +36,8 @@ menuconfig I2S_STM32_SAI
 	select USE_STM32_HAL_DMA_EX
 	select USE_STM32_HAL_SAI
 	help
-	  Enable SAI support on the STM32U5 family of processors.
+	  Enable SAI support on the STM32 family of processors.
+	  (Tested on the STM32U5 & STM32H5 series)
 
 if I2S_STM32_SAI
 
