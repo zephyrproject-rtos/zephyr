@@ -76,7 +76,7 @@ static void mdio_xilinx_axienet_bus_disable(const struct device *dev)
 	const struct mdio_xilinx_axienet_config *config = dev->config;
 	struct mdio_xilinx_axienet_data *data = dev->data;
 
-	LOG_INF("Disable MDIO Bus!");
+	LOG_DBG("Disable MDIO Bus!");
 
 	xilinx_axienet_mdio_write_register(config, XILINX_AXIENET_MDIO_INTERRUPT_ENABLE_REG_OFFSET,
 					   XILINX_AXIENET_MDIO_INTERRUPT_DISABLE_ALL_MASK);
@@ -147,7 +147,7 @@ static void mdio_xilinx_axienet_bus_enable(const struct device *dev)
 
 	data->clock_divider = clock_divider;
 
-	LOG_INF("Enable MDIO Bus assuming ethernet clock frequency %u divider %u!",
+	LOG_DBG("Enable MDIO Bus assuming ethernet clock frequency %u divider %u!",
 		config->clock_frequency_hz, clock_divider);
 
 	xilinx_axienet_mdio_write_register(config, XILINX_AXIENET_MDIO_SETUP_REG_OFFSET,
@@ -155,7 +155,7 @@ static void mdio_xilinx_axienet_bus_enable(const struct device *dev)
 
 	enable_mdio_bus(config, data);
 
-	LOG_INF("MDIO ready!");
+	LOG_DBG("MDIO ready!");
 }
 
 static int mdio_xilinx_axienet_read(const struct device *dev, uint8_t prtad, uint8_t devad,
