@@ -377,7 +377,7 @@ manifest:
       revision: 9b07780aca6fb21f82a241ba386ad9b379809337
       path: modules/lib/zcbor
     - name: zephyr-xenlib
-      revision: migrate-headers-to-module
+      revision: xen-virtio-backend
       path: modules/lib/zephyr-xenlib
       remote: soburi
   # zephyr-keep-sorted-stop
