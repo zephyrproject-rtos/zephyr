@@ -32,10 +32,10 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define R_XTENSA_ASM_EXPAND	11
 #define R_XTENSA_SLOT0_OP	20
 
-static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
-				const elf_rela_t *rel, uintptr_t addr,
-				uint8_t *loc, int type, uint32_t stb,
-				const struct llext_load_param *ldr_parm)
+static int xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
+			       const elf_rela_t *rel, uintptr_t addr,
+			       uint8_t *loc, int type, uint32_t stb,
+			       const struct llext_load_param *ldr_parm)
 {
 	elf_word *got_entry = (elf_word *)loc;
 
@@ -59,7 +59,7 @@ static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 
 		if (sh_ndx == ext->sect_cnt) {
 			LOG_ERR("%#x not found in any of the sections", *got_entry);
-			return;
+			return -ENOENT;
 		}
 
 		*got_entry += (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sh_ndx) -
@@ -87,7 +87,7 @@ static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 		}
 		if (ret) {
 			LOG_ERR("Failed to read a symbol table entry, LLEXT linking might fail.");
-			return;
+			return ret;
 		}
 
 		/*
@@ -124,19 +124,21 @@ static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 	default:
 		LOG_DBG("Unsupported relocation type %u", type);
 
-		return;
+		return 0;
 	}
 
 	LOG_DBG("Applied relocation to %#x type %u at %p",
 		*(uint32_t *)((uintptr_t)got_entry & ~3), type, (void *)got_entry);
+
+	return 0;
 }
 
 /**
  * @brief Architecture specific function for STB_LOCAL ELF relocations
  */
-void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
-			     const elf_sym_t *sym, uint8_t *rel_addr,
-			     const struct llext_load_param *ldr_parm)
+int arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
+			    const elf_sym_t *sym, uint8_t *rel_addr,
+			    const struct llext_load_param *ldr_parm)
 {
 	int type = ELF32_R_TYPE(rel->r_info);
 	uintptr_t sh_addr;
@@ -152,15 +154,15 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const 
 		sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
 	}
 
-	xtensa_elf_relocate(ldr, ext, rel, sh_addr, rel_addr, type, ELF_ST_BIND(sym->st_info),
-			    ldr_parm);
+	return xtensa_elf_relocate(ldr, ext, rel, sh_addr, rel_addr, type,
+				   ELF_ST_BIND(sym->st_info), ldr_parm);
 }
 
 /**
  * @brief Architecture specific function for STB_GLOBAL ELF relocations
  */
-void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
-			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr)
+int arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
+			     const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr)
 {
 	int type = ELF32_R_TYPE(rel->r_info);
 
@@ -169,6 +171,6 @@ void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext, const
 		LOG_WRN("global: non-zero relative value %#x", *(elf_word *)rel_addr);
 	}
 
-	xtensa_elf_relocate(ldr, ext, rel, (uintptr_t)link_addr, rel_addr, type,
-			    ELF_ST_BIND(sym->st_info), NULL);
+	return xtensa_elf_relocate(ldr, ext, rel, (uintptr_t)link_addr, rel_addr, type,
+				   ELF_ST_BIND(sym->st_info), NULL);
 }
