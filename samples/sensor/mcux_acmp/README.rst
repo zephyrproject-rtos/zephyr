@@ -9,17 +9,11 @@ Overview
 
 This sample show how to use the NXP MCUX Analog Comparator (ACMP) driver. The
 sample supports the :zephyr:board:`twr_ke18f`, :zephyr:board:`mimxrt1170_evk`, :zephyr:board:`frdm_ke17z`
-, :zephyr:board:`frdm_ke17z512` and :zephyr:board:`mimxrt1180_evk`.
+, :zephyr:board:`frdm_ke17z512`, :zephyr:board:`mimxrt1180_evk` and :zephyr:board:`mimxrt700_evk`.
 
 The input voltage for the negative input of the analog comparator is
-provided by the ACMP Digital-to-Analog Converter (DAC). The input voltage for
-the positive input can be adjusted by turning the on-board potentiometer for
-:zephyr:board:`twr_ke18f` board, for :zephyr:board:`mimxrt1170_evk` the voltage signal is
-captured on J25-13, the :zephyr:board:`frdm_ke17z` and :zephyr:board:`frdm_ke17z512` boards are
-captured in J2-3, the :zephyr:board:`mimxrt1180_evk` board are captured in J45-13, need
-change the external voltage signal to check the output.
-
-The output value of the analog comparator is reported on the console.
+provided by the ACMP Digital-to-Analog Converter (DAC). The output value
+of the analog comparator is reported on the console.
 
 Building and Running
 ********************
@@ -82,5 +76,24 @@ ACMP input voltage by changing the voltage input to J45-13.
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mcux_acmp
    :board: mimxrt1180_evk/mimxrt1189/cm7
+   :goals: flash
+   :compact:
+
+Building and Running for MIMXRT700-EVK
+=======================================
+Build the application for the MIMXRT700-EVK board, and adjust the
+ACMP input voltage by changing the voltage input to J7-9.
+
+Note:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/mcux_acmp
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu0
+   :goals: flash
+   :compact:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/mcux_acmp
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu1
    :goals: flash
    :compact:
