@@ -135,7 +135,7 @@ struct modem_chat_script_chat {
 	}
 
 #define MODEM_CHAT_SCRIPT_CMDS_DEFINE(_sym, ...)                                                   \
-	const struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
+	const static struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
 
 /* Helper struct to have no chat script command. */
 extern const struct modem_chat_script_chat modem_chat_empty_script_chats[0];
