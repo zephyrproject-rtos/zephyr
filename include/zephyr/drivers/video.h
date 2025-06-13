@@ -149,6 +149,8 @@ struct video_buffer {
 	void *driver_data;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
+	/** index of the buffer, optionally set by the application */
+	uint8_t index;
 	/** size of the buffer in bytes. */
 	uint32_t size;
 	/** number of bytes occupied by the valid data in the buffer. */
