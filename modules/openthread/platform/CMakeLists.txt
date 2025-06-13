@@ -28,4 +28,11 @@ zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT messa
 zephyr_library_sources_ifdef(CONFIG_SETTINGS settings.c)
 zephyr_library_sources_ifndef(CONFIG_LOG_BACKEND_SPINEL logging.c)
 
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER infra_if.c)
+
 zephyr_include_directories(.)
+
+if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2/openthread)
+endif()
