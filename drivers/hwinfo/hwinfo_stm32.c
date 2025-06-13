@@ -15,7 +15,8 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 
-#if defined(CONFIG_SOC_SERIES_STM32MP13X)
+#if defined(CONFIG_SOC_SERIES_STM32MP13X) \
+	|| defined(CONFIG_SOC_SERIES_STM32MP2X)
 
 /* No ll_utils for the stm32mp13x series, instead use the HAL functions */
 /* zephyr-keep-sorted-start */
@@ -32,7 +33,7 @@
 #define STM32_UID_WORD_2 LL_GetUID_Word0()
 /* zephyr-keep-sorted-stop */
 
-#endif /* CONFIG_SOC_SERIES_STM32MP13X */
+#endif /* CONFIG_SOC_SERIES_STM32MP13X || CONFIG_SOC_SERIES_STM32MP2X */
 
 struct stm32_uid {
 	uint32_t id[3];
@@ -171,6 +172,10 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (LL_PWR_MPU_IsActiveFlag_SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32MP2X) && defined(PWR_FLAG_SB)
+	if (LL_PWR_HasSystemBeenInStandby()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
 #elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)
 	if (LL_PWR_IsActiveFlag_C1SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
@@ -200,6 +205,8 @@ int z_impl_hwinfo_clear_reset_cause(void)
 	LL_PWR_ClearFlag_MCU();
 #elif defined(CONFIG_SOC_SERIES_STM32MP13X)
 	LL_PWR_ClearFlag_MPU();
+#elif defined(CONFIG_SOC_SERIES_STM32MP2X) && defined(PWR_FLAG_SB)
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
 #elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_PWR_ClearFlag_C1STOP_C1STB();
 #elif defined(CONFIG_SOC_SERIES_STM32U0X) && defined(PWR_FLAG_SB)
