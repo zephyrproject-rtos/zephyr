@@ -8,6 +8,13 @@ config VHOST
 
 if VHOST
 
+config VHOST_XEN_MMIO
+	bool "support for MMIO-based VIRTIO backend on Xen hypervisor"
+	default y
+	depends on DT_HAS_XEN_VHOST_MMIO_ENABLED
+	help
+	  Enable VIRTIO-MMIO backend on Xen hypervisor
+
 endif # VIRTIO
 
 module = VHOST
