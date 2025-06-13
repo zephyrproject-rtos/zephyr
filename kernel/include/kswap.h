@@ -193,7 +193,6 @@ static inline void z_swap_unlocked(void)
 
 #else /* !CONFIG_USE_SWITCH */
 
-extern int arch_swap(unsigned int key);
 
 static inline void z_sched_switch_spin(struct k_thread *thread)
 {
