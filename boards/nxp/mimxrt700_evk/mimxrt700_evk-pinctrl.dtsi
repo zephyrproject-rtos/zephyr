@@ -167,4 +167,12 @@
 			drive-strength = "normal";
 		};
 	};
+
+	pinmux_acmp: pinmux_acmp {
+		group0 {
+			pinmux = <ACMP0_IN1_PIO10_8>;
+			drive-strength = "normal";
+			slew-rate = "normal";
+		};
+	};
 };

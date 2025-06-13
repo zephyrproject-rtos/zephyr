@@ -97,3 +97,9 @@
 		status = "okay";
 	};
 };
+
+&acmp {
+	status = "okay";
+	pinctrl-0 = <&pinmux_acmp>;
+	pinctrl-names = "default";
+};

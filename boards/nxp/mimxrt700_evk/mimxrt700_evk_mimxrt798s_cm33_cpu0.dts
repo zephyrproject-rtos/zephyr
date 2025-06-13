@@ -263,4 +263,10 @@ zephyr_udc0: &usb0 {
 	status = "okay";
 };
 
+&acmp {
+	status = "okay";
+	pinctrl-0 = <&pinmux_acmp>;
+	pinctrl-names = "default";
+};
+
 p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
