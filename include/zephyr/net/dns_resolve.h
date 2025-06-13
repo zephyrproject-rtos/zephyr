@@ -45,9 +45,11 @@ enum dns_query_type {
 };
 
 /** Max size of the resolved name. */
-#ifndef DNS_MAX_NAME_SIZE
+#if defined(CONFIG_DNS_RESOLVER_MAX_NAME_LEN)
+#define DNS_MAX_NAME_SIZE CONFIG_DNS_RESOLVER_MAX_NAME_LEN
+#else
 #define DNS_MAX_NAME_SIZE 20
-#endif
+#endif /* CONFIG_DNS_RESOLVER_MAX_NAME_LEN */
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -590,6 +592,44 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		     dns_resolve_cb_t cb,
 		     void *user_data,
 		     int32_t timeout);
+
+/**
+ * @brief Resolve DNS service.
+ *
+ * @details This function can be used to resolve service records needed in
+ * DNS-SD service discovery.
+ * Note that this is an asynchronous call, the function will return immediately
+ * and the system will call the callback after resolving has finished or a timeout
+ * has occurred.
+ * We might send the query to multiple servers (if there are more than one
+ * server configured), but we only use the result of the first received
+ * response.
+ *
+ * @param ctx DNS context
+ * @param query What the caller wants to resolve.
+ * @param dns_id DNS id is returned to the caller. This is needed if one
+ * wishes to cancel the query. This can be set to NULL if there is no need
+ * to cancel the query.
+ * @param cb Callback to call after the resolving has finished or timeout
+ * has happened.
+ * @param user_data The user data.
+ * @param timeout The timeout value for the query. Possible values:
+ * SYS_FOREVER_MS: the query is tried forever, user needs to cancel it
+ *            manually if it takes too long time to finish
+ * >0: start the query and let the system timeout it after specified ms
+ *
+ * @return 0 if resolving was started ok, < 0 otherwise
+ */
+static inline int dns_resolve_service(struct dns_resolve_context *ctx,
+				      const char *query,
+				      uint16_t *dns_id,
+				      dns_resolve_cb_t cb,
+				      void *user_data,
+				      int32_t timeout)
+{
+	return dns_resolve_name(ctx, query, DNS_QUERY_TYPE_PTR,
+				dns_id, cb, user_data, timeout);
+}
 
 /**
  * @brief Get default DNS context.
