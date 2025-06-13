@@ -220,7 +220,7 @@ static int phy_tja11xx_link_cb_set(const struct device *dev, phy_callback_t cb, 
 	return 0;
 }
 
-static const struct ethphy_driver_api phy_tja11xx_api = {
+static DEVICE_API(ethphy, phy_tja11xx_api) = {
 	.get_link = phy_tja11xx_get_link_state,
 	.link_cb_set = phy_tja11xx_link_cb_set,
 	.read = phy_tja11xx_reg_read,
