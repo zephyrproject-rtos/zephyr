@@ -633,6 +633,28 @@
 			status = "disabled";
 		};
 
+		sai1_a: sai1@40015404 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015404 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+			dmas = <&gpdma1 1 53 0>;
+			status = "disabled";
+		};
+
+		sai1_b: sai1@40015424 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015424 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+			dmas = <&gpdma1 0 54 0>;
+			status = "disabled";
+		};
+
 		usb: usb@40016000 {
 			compatible = "st,stm32-usb";
 			reg = <0x40016000 0x400>;
