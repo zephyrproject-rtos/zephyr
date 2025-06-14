@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Dmitrii Sharshakov
+# SPDX-License-Identifier: Apache-2.0
+
+name: rp2350-ram-boot
+append:
+  EXTRA_DTC_OVERLAY_FILE: rp2350-ram-boot.overlay

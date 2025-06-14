@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2025 Dmitrii Sharshakov
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* We should partition SRAM between executable and data */
+/delete-node/ &sram0;
+
+&flash0 {
+	/* remove image definition and code partition in Flash */
+	/delete-node/ partitions;
+};
+
+#define RP2350_RAM_TOTAL_SIZE DT_SIZE_K(520)
+#define RP2350_RAM_CODE_SIZE  DT_SIZE_K(256)
+// Has to be adjusted as 0x20000000 + RP2350_RAM_CODE_SIZE if code partition is resized
+#define RP2350_RAM_OFFSET     20040000
+#define RP2350_IMAGE_DEF_SIZE 0x100
+
+/ {
+	chosen {
+		zephyr,sram = &sram0_ram;
+		zephyr,flash = &sram0_code;
+	};
+
+	sram0_code: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 RP2350_RAM_CODE_SIZE>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Reserved memory for an image definition block added by linker.
+			 * The block is much smaller than 256 bytes, but in practice the
+			 * linker places the vector table at a much larger alignment offset.
+			 */
+			image_def: partition@0 {
+				label = "image_def";
+				reg = <0x00000000 RP2350_IMAGE_DEF_SIZE>;
+				read-only;
+			};
+
+			/* Actual code, whole code RAM - 0x100 for header */
+			code_partition: partition@100 {
+				label = "code-partition";
+				reg = <RP2350_IMAGE_DEF_SIZE
+					(RP2350_RAM_CODE_SIZE - RP2350_IMAGE_DEF_SIZE)>;
+				read-only;
+			};
+		};
+	};
+
+	sram0_ram: memory@RP2350_RAM_OFFSET {
+		compatible = "mmio-sram";
+		reg = <(0x20000000 + RP2350_RAM_CODE_SIZE)
+			(RP2350_RAM_TOTAL_SIZE - RP2350_RAM_CODE_SIZE - RP2350_IMAGE_DEF_SIZE)>;
+	};
+};
