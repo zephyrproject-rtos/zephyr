@@ -33,6 +33,8 @@ We are pleased to announce the release of Zephyr version 4.2.0.
 
 Major enhancements with this release include:
 
+* Zephyr now requires Python 3.12 or higher.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.1.0 to Zephyr v4.2.0 can be found in the separate :ref:`migration guide<migration_4.2>`.
 
