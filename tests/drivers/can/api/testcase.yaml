@@ -21,3 +21,9 @@ tests:
     extra_configs:
       - CONFIG_CAN_NXP_S32_RX_FIFO=n
     filter: dt_compat_enabled("nxp,s32-canxl")
+  drivers.can.api.bxcan:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_CAN_FD_MODE=n
+      - CONFIG_CAN_TEST_MODE_LISTENONLY=y
+    filter: dt_compat_enabled("st,stm32-bxcan")
