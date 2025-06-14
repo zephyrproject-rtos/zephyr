@@ -176,7 +176,7 @@ static int cmd_w1_write_bit(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	(void)w1_lock_bus(dev);
-	ret = w1_write_byte(dev, (bool)input);
+	ret = w1_write_bit(dev, (bool)input);
 	if (ret < 0) {
 		shell_error(sh, "Failed to write bit [%d]", ret);
 	}
