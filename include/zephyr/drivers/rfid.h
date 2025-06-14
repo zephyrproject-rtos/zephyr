@@ -11,22 +11,22 @@
 #include <zephyr/drivers/gpio.h>
 
 typedef enum {
-	UNINITIALIZED,
-	POWER_UP,
-	READY,
-	HIBERNATE,
-	SLEEP,
-	TAG_DETECTOR,
-	READER,
-	INVALID
+	UNINITIALIZED = 0,
+	POWER_UP = 1,
+	READY = 2,
+	HIBERNATE = 3,
+	SLEEP = 4,
+	TAG_DETECTOR = 5,
+	READER = 6,
+	INVALID = 7
 } rfid_mode_t;
 
 typedef enum {
-	FIELD_OFF,
-	ISO_15693,
-	ISO_14443A,
-	ISO_14443B,
-	ISO_18092,
+	FIELD_OFF = 0,
+	ISO_15693 = 1,
+	ISO_14443A = 2,
+	ISO_14443B = 3,
+	ISO_18092 = 4,
 } rfid_protocol_t;
 
 /**
@@ -85,16 +85,6 @@ typedef int (*rfid_api_transceive)(const struct device *dev, const uint8_t *tx, 
 					uint8_t *rx, size_t *rx_len);
 
 /**
- * @typedef rfid_api_calibration()
- * @brief API for calibrating the CR95HF RFID device. Returns DacDataRef.
- *        Set DacDataH to DacDataRef+8 and DacDataL to DacDataRef-8
- *
- * @param dev RFID device
- * @return DacDataRef on success, negative on error
- */
-typedef int (*rfid_api_calibration)(const struct device *dev);
-
-/**
  * @brief RFID driver API
  */
 struct rfid_driver_api {
@@ -102,12 +92,15 @@ struct rfid_driver_api {
 	rfid_api_protocol_select protocol_select;
 	rfid_api_get_uid get_uid;
 	rfid_api_transceive transceive;
-	rfid_api_calibration calibration;
 };
 
 static inline int rfid_select_mode(const struct device *dev, rfid_mode_t req_mode)
 {
 	const struct rfid_driver_api *api = dev->api;
+
+	if (api->select_mode == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->select_mode(dev, req_mode);
 }
@@ -116,12 +109,20 @@ static inline int rfid_protocol_select(const struct device *dev, rfid_protocol_t
 {
 	const struct rfid_driver_api *api = dev->api;
 
+	if (api->protocol_select == NULL) {
+		return -ENOSYS;
+	}
+
 	return api->protocol_select(dev, proto);
 }
 
 static inline int rfid_get_uid(const struct device *dev, uint8_t *uid, size_t *uid_len)
 {
 	const struct rfid_driver_api *api = dev->api;
+
+	if (api->get_uid == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->get_uid(dev, uid, uid_len);
 }
@@ -131,15 +132,13 @@ static inline int rfid_transceive(const struct device *dev, const uint8_t *tx, s
 {
 	const struct rfid_driver_api *api = dev->api;
 
+	if (api->transceive == NULL) {
+		return -ENOSYS;
+	}
+
 	return api->transceive(dev, tx, tx_len, rx, rx_len);
 }
 
-static inline int rfid_calibration(const struct device *dev)
-{
-	const struct rfid_driver_api *api = dev->api;
-
-	return api->calibration(dev);
-}
 
 #ifdef __cplusplus
 }
