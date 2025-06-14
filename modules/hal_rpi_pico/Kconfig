@@ -54,3 +54,14 @@ config PICOSDK_USE_RTC
 	bool
 	help
 	  Use the RTC driver from pico-sdk
+
+config PICOSDK_USE_SYNC
+	bool
+	help
+	  Use the sync support from pico-sdk
+
+config PICOSDK_USE_MULTICORE
+	bool
+	select PICOSDK_USE_SYNC
+	help
+	  Use the multicore support from pico-sdk

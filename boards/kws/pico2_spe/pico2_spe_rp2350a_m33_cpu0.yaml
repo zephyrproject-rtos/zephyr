@@ -1,4 +1,4 @@
-identifier: pico2_spe/rp2350a/m33
+identifier: pico2_spe/rp2350a/m33_cpu0
 name: KWS Pico2 SinglePairEthernet
 type: mcu
 arch: arm

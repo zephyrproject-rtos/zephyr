@@ -278,23 +278,6 @@ uint64_t rpi_pico_frequency_count(const struct device *dev, clock_control_subsys
 	       ((fc0->result & CLOCKS_FC0_RESULT_FRAC_BITS) * 1000 / CLOCKS_FC0_RESULT_FRAC_BITS);
 }
 
-static int rpi_pico_rosc_write(const struct device *dev, io_rw_32 *addr, uint32_t value)
-{
-	hw_clear_bits(&rosc_hw->status, ROSC_STATUS_BADWRITE_BITS);
-
-	if (rosc_hw->status & ROSC_STATUS_BADWRITE_BITS) {
-		return -EINVAL;
-	}
-
-	*addr = value;
-
-	if (rosc_hw->status & ROSC_STATUS_BADWRITE_BITS) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 /**
  * Get source clock id of this clock
  *
@@ -621,14 +604,17 @@ static int clock_control_rpi_pico_get_rate(const struct device *dev, clock_contr
 	return 0;
 }
 
-void rpi_pico_clkid_tuple_swap(struct rpi_pico_clkid_tuple *lhs, struct rpi_pico_clkid_tuple *rhs)
+#if !defined(CONFIG_RPI_PICO_SKIP_CLOCK_INIT)
+static void rpi_pico_clkid_tuple_swap(struct rpi_pico_clkid_tuple *lhs,
+				      struct rpi_pico_clkid_tuple *rhs)
 {
 	struct rpi_pico_clkid_tuple tmp = *lhs;
 	*lhs = *rhs;
 	*rhs = tmp;
 }
 
-void rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *tuples, size_t len)
+static void rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *tuples,
+							 size_t len)
 {
 	uint32_t sorted_idx = 0;
 	uint32_t checked_idx = 0;
@@ -643,6 +629,23 @@ void rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *t
 		}
 		target = tuples[checked_idx++].clk;
 	}
+}
+
+static int rpi_pico_rosc_write(const struct device *dev, io_rw_32 *addr, uint32_t value)
+{
+	hw_clear_bits(&rosc_hw->status, ROSC_STATUS_BADWRITE_BITS);
+
+	if (rosc_hw->status & ROSC_STATUS_BADWRITE_BITS) {
+		return -EINVAL;
+	}
+
+	*addr = value;
+
+	if (rosc_hw->status & ROSC_STATUS_BADWRITE_BITS) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int clock_control_rpi_pico_init(const struct device *dev)
@@ -782,6 +785,12 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 
 	return 0;
 }
+#else
+static int clock_control_rpi_pico_init(const struct device *dev)
+{
+	return 0;
+}
+#endif
 
 static DEVICE_API(clock_control, clock_control_rpi_pico_api) = {
 	.on = clock_control_rpi_pico_on,
