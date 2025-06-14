@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set(COMPILER host-gcc)
-set(LINKER ld)
-set(BINTOOLS host-gnu)
+if(TOOLCHAIN_VARIANT_COMPILER STREQUAL "gcc" OR
+   TOOLCHAIN_VARIANT_COMPILER STREQUAL "default")
+ include(${ZEPHYR_BASE}/cmake/toolchain/host/gnu/generic.cmake)
+ set(TOOLCHAIN_KCONFIG_DIR ${ZEPHYR_BASE}/cmake/toolchain/host/gnu)
 
-set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
+elseif(TOOLCHAIN_VARIANT_COMPILER STREQUAL "llvm")
+  include(${ZEPHYR_BASE}/cmake/toolchain/host/llvm/generic.cmake)
+  set(TOOLCHAIN_KCONFIG_DIR ${ZEPHYR_BASE}/cmake/toolchain/host/llvm)
+endif()
 
-message(STATUS "Found toolchain: host (gcc/ld)")
