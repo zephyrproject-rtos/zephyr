@@ -30,25 +30,11 @@ uint8_t fcb_test_erase_value;
  * area. This test suite is the non bootable application so 1. image slot is
  * suitable for it.
  */
-struct flash_sector test_fcb_sector[] = {
-	[0] = {
-		.fs_off = 0,
-		.fs_size = SECTOR_SIZE
-	},
-	[1] = {
-		.fs_off = SECTOR_SIZE,
-		.fs_size = SECTOR_SIZE
-	},
-	[2] = {
-		.fs_off = 2 * SECTOR_SIZE,
-		.fs_size = SECTOR_SIZE
-	},
-	[3] = {
-		.fs_off = 3 * SECTOR_SIZE,
-		.fs_size = SECTOR_SIZE
-	}
-};
-
+const struct flash_sector test_fcb_sector[] = {
+	[0] = {.fs_off = 0, .fs_size = SECTOR_SIZE},
+	[1] = {.fs_off = SECTOR_SIZE, .fs_size = SECTOR_SIZE},
+	[2] = {.fs_off = 2 * SECTOR_SIZE, .fs_size = SECTOR_SIZE},
+	[3] = {.fs_off = 3 * SECTOR_SIZE, .fs_size = SECTOR_SIZE}};
 
 void test_fcb_wipe(void)
 {
