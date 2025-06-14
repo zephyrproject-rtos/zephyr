@@ -51,6 +51,8 @@ struct spi_pico_pio_data {
 	uint32_t pio_rx_wrap;
 	uint32_t bits;
 	uint32_t dfs;
+	const pio_program_t *loaded_tx_program;
+	const pio_program_t *loaded_rx_program;
 };
 
 /* ------------ */
@@ -239,6 +241,16 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		return 0;
 	}
 
+	/* Clean up previously loaded PIO programs before configuring new ones */
+	if (data->loaded_tx_program != NULL) {
+		pio_remove_program(data->pio, data->loaded_tx_program, data->pio_tx_offset);
+		data->loaded_tx_program = NULL;
+	}
+	if (data->loaded_rx_program != NULL) {
+		pio_remove_program(data->pio, data->loaded_rx_program, data->pio_rx_offset);
+		data->loaded_rx_program = NULL;
+	}
+
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
 		LOG_ERR("Slave mode not supported");
 		return -ENOTSUP;
@@ -322,11 +334,14 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		float clock_div = spi_pico_pio_clock_divisor(clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES,
 							     spi_cfg->frequency);
 
-		data->pio_tx_offset =
-			pio_add_program(data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx));
+		const pio_program_t *tx_program = RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_tx);
+		const pio_program_t *rx_program = RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx);
 
-		data->pio_rx_offset =
-			pio_add_program(data->pio, RPI_PICO_PIO_GET_PROGRAM(spi_sio_mode_0_0_rx));
+		data->pio_tx_offset = pio_add_program(data->pio, tx_program);
+		data->loaded_tx_program = tx_program;
+
+		data->pio_rx_offset = pio_add_program(data->pio, rx_program);
+		data->loaded_rx_program = rx_program;
 		data->pio_rx_wrap_target =
 			data->pio_rx_offset + RPI_PICO_PIO_GET_WRAP_TARGET(spi_sio_mode_0_0_rx);
 		data->pio_rx_wrap =
@@ -407,6 +422,8 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		}
 
 		data->pio_tx_offset = pio_add_program(data->pio, program);
+		data->loaded_tx_program = program;
+		data->loaded_rx_program = NULL; /* 4-wire mode uses only TX program */
 		sm_config = pio_get_default_sm_config();
 
 		sm_config_set_clkdiv(&sm_config, clock_div);
@@ -694,6 +711,16 @@ int spi_pico_pio_release(const struct device *dev, const struct spi_config *spi_
 {
 	struct spi_pico_pio_data *data = dev->data;
 
+	/* Clean up PIO programs when releasing the device */
+	if (data->loaded_tx_program != NULL) {
+		pio_remove_program(data->pio, data->loaded_tx_program, data->pio_tx_offset);
+		data->loaded_tx_program = NULL;
+	}
+	if (data->loaded_rx_program != NULL) {
+		pio_remove_program(data->pio, data->loaded_rx_program, data->pio_rx_offset);
+		data->loaded_rx_program = NULL;
+	}
+
 	spi_context_unlock_unconditionally(&data->spi_ctx);
 
 	return 0;
@@ -779,7 +806,10 @@ int spi_pico_pio_init(const struct device *dev)
 	static struct spi_pico_pio_data spi_pico_pio_data_##inst = {                               \
 		SPI_CONTEXT_INIT_LOCK(spi_pico_pio_data_##inst, spi_ctx),                          \
 		SPI_CONTEXT_INIT_SYNC(spi_pico_pio_data_##inst, spi_ctx),                          \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)};                      \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx),                       \
+		.loaded_tx_program = NULL,                                                          \
+		.loaded_rx_program = NULL,                                                          \
+	};
 	SPI_DEVICE_DT_INST_DEFINE(inst, spi_pico_pio_init, NULL, &spi_pico_pio_data_##inst,        \
 			      &spi_pico_pio_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,  \
 			      &spi_pico_pio_api);                                                  \
