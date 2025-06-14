@@ -226,6 +226,7 @@ int usb_dc_detach(void)
 		return -EIO;
 	}
 
+	irq_disable(DT_INST_IRQN(0));
 	status = dev_state.dev_struct.controllerInterface->deviceDeinit(
 						   dev_state.dev_struct.controllerHandle);
 	if (kStatus_USB_Success != status) {
