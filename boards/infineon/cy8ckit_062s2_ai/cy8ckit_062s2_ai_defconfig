@@ -20,5 +20,8 @@ CONFIG_GPIO=y
 # Enable clock controller
 CONFIG_CLOCK_CONTROL=y
 
+# Enable pin control driver
+CONFIG_PINCTRL=y
+
 # Add catcm0p sleep images for CM0 Devices
 CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP=y
