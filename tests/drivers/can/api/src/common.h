@@ -165,6 +165,21 @@ void assert_frame_equal(const struct can_frame *frame1,
 			uint32_t id_mask);
 
 /**
+ * Initial can mode.
+ */
+#if CONFIG_CAN_TEST_MODE_LOOPBACK
+#define TEST_CAN_INIT_MODE_LOOPBACK CAN_MODE_LOOPBACK
+#else
+#define TEST_CAN_INIT_MODE_LOOPBACK 0
+#endif // CONFIG_CAN_TEST_MODE_LOOPBACK
+#if CONFIG_CAN_TEST_MODE_LISTENONLY
+#define TEST_CAN_INIT_MODE_LISTENONLY CAN_MODE_LISTENONLY
+#else
+#define TEST_CAN_INIT_MODE_LISTENONLY 0
+#endif // CONFIG_CAN_TEST_MODE_LISTENONLY
+#define TEST_CAN_INIT_MODE (TEST_CAN_INIT_MODE_LOOPBACK | TEST_CAN_INIT_MODE_LISTENONLY)
+
+/**
  * @brief Common setup function for the CAN controller device under test.
  *
  * @param initial_mode Initial CAN controller operational mode.
