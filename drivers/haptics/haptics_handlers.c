@@ -20,7 +20,7 @@ static inline int z_vrfy_haptics_stop_output(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_HAPTICS(dev, stop_output));
 
-	z_impl_haptics_stop_output(dev);
+	return z_impl_haptics_stop_output(dev);
 }
 
 #include <syscalls/haptics_stop_output_mrsh.c>
