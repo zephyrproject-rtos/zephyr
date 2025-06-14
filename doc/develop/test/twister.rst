@@ -420,6 +420,43 @@ extra_configs: <list of extra configurations>
               - arch:x86:CONFIG_ADC_ASYNC=y
               - platform:qemu_x86:CONFIG_DEBUG=y
 
+extra_conf_files: <list of extra config files>
+    Extra configuration files to cmake leading with 'CONF_FILE='
+    multiply files can separated with ';', and can use conditional
+    namespacing with arch/platform/simulation. when building or
+    running the test scenario. For example:
+
+    .. code-block:: yaml
+
+        drivers.uart.async_api.nocache_mem:
+          extra_conf_files:
+            - ${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-overlay.conf
+            - ${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-overlay.conf
+
+extra_overlay_confs: <list of extra overlay configs>
+    Extra overlay files pass to cmake leading with 'OVERLAY_CONFIG='
+    multiply files can separated with ';', and can use conditional
+    namespacing with arch/platform/simulation. when building or
+    running the test scenario. For example:
+
+    .. code-block:: yaml
+
+        buildsystem.overlays.var_expansions.OVERLAY_CONFIG:
+          extra_overlay_confs:
+            - ${ZEPHYR_MY_MODULE_NAME_MODULE_DIR}/zephyr/my_module-overlay.conf
+            - ${ZEPHYR_MY_EXTRA_MODULE_NAME_MODULE_DIR}/zephyr/my_extra_module-overlay.conf
+
+extra_dtc_overlay_files: <list of extra dts overlay files>
+    Extra dts overlay files pass to cmake leading with 'DTC_OVERLAY_FILE='
+    multiply files can separated with ';', and can use conditional
+    namespacing with arch/platform/simulation. when building or
+    running the test scenario. For example:
+
+    .. code-block:: yaml
+
+    drivers.gpio.1pin.aw9523b:
+      extra_dtc_overlay_files:
+        - "boards/aw9523b_on_arduino_header.overlay"
 
 build_only: <True|False> (default False)
     If true, twister will not try to run the test even if the test is runnable
