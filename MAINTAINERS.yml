@@ -2380,6 +2380,7 @@ Xen Platform:
     - soc/xen/
     - boards/xen/
     - dts/bindings/xen/
+    - modules/xen/
   labels:
     - "area: Xen Platform"
 
