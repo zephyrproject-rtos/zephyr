@@ -160,7 +160,7 @@ struct cmd_data {
 static struct cmd_data cmd_data[BT_BUF_CMD_TX_COUNT];
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
-#define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
+#define acl(buf) ((struct bt_conn_rx *)net_buf_user_data(buf))
 
 static bool drv_quirk_no_reset(void)
 {
