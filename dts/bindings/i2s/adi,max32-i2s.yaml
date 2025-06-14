@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Croxel Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices MAX32 series I2S controller
+
+compatible: "adi,max32-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  dmas:
+    required: true
+    description: |
+      DMA channels for RX and TX. Two channels must be provided in the following order:
+      - RX DMA channel
+      - TX DMA channel
+
+  dma-names:
+    required: true
+    description: |
+      Names of DMA channels for RX and TX. Must be provided in the following order:
+      - rx
+      - tx
