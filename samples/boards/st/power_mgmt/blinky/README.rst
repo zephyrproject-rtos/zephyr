@@ -40,6 +40,10 @@ After flashing, the LED starts to blink with a fixed period (SLEEP_TIME_MS).
 When LPTIM input clock has a prescaler, longer perdiod (up to 64 seconds)
 of low power can be tested.
 
+Note that Debugging is only possible when CONFIG_DEBUG=y. That will enable the
+CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP and prevent the system to go to low power mode.
+This is the opposite effect of what this sample is demonstrating.
+With CONFIG_DEBUG set, the power consumption will increase as the system will not sleep/stop.
 
 PM configurations
 *****************
