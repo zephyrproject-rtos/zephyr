@@ -289,4 +289,9 @@ config USE_RX_RDP_RSPI
 	help
 	  Enable RX RDP RSPI driver
 
+config USE_RX_RDP_I2C
+	bool
+	help
+	  Enable RX RDP I2C driver
+
 endif # HAS_RENESAS_RX_RDP
