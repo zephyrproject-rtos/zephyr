@@ -1,5 +1,5 @@
-# Copyright (c) 2022, CSIRO.
-# SPDX-License-Identifier: Apache-2.0
+#Copyright(c) 2022, CSIRO.
+#SPDX - License - Identifier : Apache - 2.0
 
 menuconfig POWER_DOMAIN
 	bool "Power domain drivers"
@@ -98,5 +98,23 @@ config POWER_DOMAIN_SOC_PM_STATE
 	help
 	  Generic power domain control to turn on/off devices when the
 	  PM subsystem transitions in and out certain power states.
+
+config POWER_DOMAIN_TISCI
+	bool "TISCI managed power domain"
+	default y
+	depends on DT_HAS_TI_SCI_PM_DOMAIN_ENABLED
+	help
+	  TISCI managed power domain control to turn on/off devices when the
+	  PM subsystem transitions in and out certain power states.
+
+if POWER_DOMAIN_TISCI
+
+config POWER_DOMAIN_TISCI_INIT_PRIORITY
+	int "TISCI managed power domain init priority"
+	default 10
+	help
+	  TISCI managed power domain initialization priority.
+
+endif #POWER_DOMAIN_TISCI
 
 endif
