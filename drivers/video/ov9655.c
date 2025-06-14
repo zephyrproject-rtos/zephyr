@@ -326,7 +326,7 @@ static int ov9655_get_fmt(const struct device *dev, struct video_format *fmt)
 static int ov9655_init(const struct device *dev)
 {
 	const struct ov9655_config *config = dev->config;
-	struct video_format fmt;
+	struct video_format fmt = {0};
 	uint32_t pid;
 	int ret;
 

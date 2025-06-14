@@ -1324,7 +1324,7 @@ static int ov5640_init_controls(const struct device *dev)
 static int ov5640_init(const struct device *dev)
 {
 	const struct ov5640_config *cfg = dev->config;
-	struct video_format fmt;
+	struct video_format fmt = {0};
 	uint16_t chip_id;
 	int ret;
 

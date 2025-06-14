@@ -344,7 +344,7 @@ static int emul_imager_init_controls(const struct device *dev)
 
 int emul_imager_init(const struct device *dev)
 {
-	struct video_format fmt;
+	struct video_format fmt = {0};
 	uint8_t sensor_id;
 	int ret;
 

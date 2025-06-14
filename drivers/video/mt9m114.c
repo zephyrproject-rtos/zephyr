@@ -527,7 +527,7 @@ static int mt9m114_init_controls(const struct device *dev)
 static int mt9m114_init(const struct device *dev)
 {
 	const struct mt9m114_config *cfg = dev->config;
-	struct video_format fmt;
+	struct video_format fmt = {0};
 	uint16_t val;
 	int ret;
 

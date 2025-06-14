@@ -473,7 +473,7 @@ static int ov7670_init(const struct device *dev)
 	const struct ov7670_config *config = dev->config;
 	int ret, i;
 	uint8_t pid;
-	struct video_format fmt;
+	struct video_format fmt = {0};
 	const struct ov7670_reg *reg;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
