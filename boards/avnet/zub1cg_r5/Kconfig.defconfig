@@ -1,0 +1,16 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ZUB1CG_R5
+
+config BUILD_OUTPUT_BIN
+	default y
+
+if USERSPACE
+
+config COMPILER_ISA_THUMB2
+	default n
+
+endif
+
+endif # BOARD_ZUB1CG_R5
