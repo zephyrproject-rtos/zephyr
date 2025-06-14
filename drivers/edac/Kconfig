@@ -28,6 +28,13 @@ config EDAC_IBECC
 	help
 	  This option selects In-Band ECC (IBECC) IP support.
 
+config EDAC_SYNOPSYS
+	bool "Synopsis DDR controller EDAC driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_DDRC_2_40A_ENABLED
+	help
+	  Enable the Synopsys DDR controller EDAC driver.
+
 module = EDAC
 module-str = edac
 source "subsys/logging/Kconfig.template.log_config"
