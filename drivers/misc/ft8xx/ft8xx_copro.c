@@ -57,18 +57,58 @@ static void increase_reg_cmd_write(const struct device *dev, uint16_t value)
 	data->reg_cmd_write = (data->reg_cmd_write + value) % FT800_RAM_CMD_SIZE;
 }
 
-void ft8xx_copro_cmd(const struct device *dev, uint32_t cmd)
+static uint32_t ram_cmd_wr_address(const struct device *dev)
 {
-	struct ft8xx_data *data = dev->data;
+	struct ft8xx_data *dev_data = dev->data;
 
-	while (ram_cmd_freespace(dev) < sizeof(cmd)) {
-		refresh_reg_cmd_read(dev);
+	return FT800_RAM_CMD + dev_data->reg_cmd_write;
+}
+
+static size_t ram_cmd_wr16(const struct device *dev, uint16_t data)
+{
+	ft8xx_wr16(dev, ram_cmd_wr_address(dev), data);
+	increase_reg_cmd_write(dev, sizeof(data));
+
+	return sizeof(data);
+}
+
+static size_t ram_cmd_wr32(const struct device *dev, uint32_t data)
+{
+	ft8xx_wr32(dev, ram_cmd_wr_address(dev), data);
+	increase_reg_cmd_write(dev, sizeof(data));
+
+	return sizeof(data);
+}
+
+static size_t ram_cmd_wr_var(const struct device *dev, const uint8_t *data, size_t data_size,
+			   size_t padding_size)
+{
+	(void)ft8xx_drv_write(dev, ram_cmd_wr_address(dev), data, data_size);
+	increase_reg_cmd_write(dev, data_size + padding_size);
+
+	return data_size + padding_size;
+}
+
+#define CMD_BEGINNING(command_size)                                                                \
+	const size_t cmd_size = (command_size);                                                    \
+	size_t written_bytes = 0;                                                                  \
+	while (ram_cmd_freespace(dev) < cmd_size) {                                                \
+		refresh_reg_cmd_read(dev);                                                         \
 	}
 
-	ft8xx_wr32(dev, FT800_RAM_CMD + data->reg_cmd_write, cmd);
-	increase_reg_cmd_write(dev, sizeof(cmd));
-
+#define CMD_ENDING                                                                                 \
+	__ASSERT(written_bytes == cmd_size, "Written %d bytes, expected %d", written_bytes,        \
+		 cmd_size);                                                                        \
+	(void)written_bytes;                                                                       \
 	flush_reg_cmd_write(dev);
+
+void ft8xx_copro_cmd(const struct device *dev, uint32_t cmd)
+{
+	CMD_BEGINNING(sizeof(cmd))
+
+	written_bytes += ram_cmd_wr32(dev, cmd);
+
+	CMD_ENDING
 }
 
 void ft8xx_copro_cmd_dlstart(const struct device *dev)
@@ -88,42 +128,25 @@ void ft8xx_copro_cmd_text(const struct device *dev,
 			   uint16_t options,
 			   const char *string)
 {
-	struct ft8xx_data *data = dev->data;
-
 	const uint16_t str_bytes = strlen(string) + 1;
 	const uint16_t padding_bytes = (4 - (str_bytes % 4)) % 4;
-	const uint16_t cmd_size = sizeof(CMD_TEXT) +
-				   sizeof(x) +
-				   sizeof(y) +
-				   sizeof(font) +
-				   sizeof(options) +
-				   str_bytes +
-				   padding_bytes;
 
-	while (ram_cmd_freespace(dev) < cmd_size) {
-		refresh_reg_cmd_read(dev);
-	}
+	CMD_BEGINNING(sizeof(CMD_TEXT) +
+		      sizeof(x) +
+		      sizeof(y) +
+		      sizeof(font) +
+		      sizeof(options) +
+		      str_bytes +
+		      padding_bytes)
 
-	ft8xx_wr32(dev, FT800_RAM_CMD + data->reg_cmd_write, CMD_TEXT);
-	increase_reg_cmd_write(dev, sizeof(CMD_TEXT));
+	written_bytes += ram_cmd_wr32(dev, CMD_TEXT);
+	written_bytes += ram_cmd_wr16(dev, x);
+	written_bytes += ram_cmd_wr16(dev, y);
+	written_bytes += ram_cmd_wr16(dev, font);
+	written_bytes += ram_cmd_wr16(dev, options);
+	written_bytes += ram_cmd_wr_var(dev, (const uint8_t *)string, str_bytes, padding_bytes);
 
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, x);
-	increase_reg_cmd_write(dev, sizeof(x));
-
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, y);
-	increase_reg_cmd_write(dev, sizeof(y));
-
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, font);
-	increase_reg_cmd_write(dev, sizeof(font));
-
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, options);
-	increase_reg_cmd_write(dev, sizeof(options));
-
-	(void)ft8xx_drv_write(dev, FT800_RAM_CMD + data->reg_cmd_write, (uint8_t *)string,
-			      str_bytes);
-	increase_reg_cmd_write(dev, str_bytes + padding_bytes);
-
-	flush_reg_cmd_write(dev);
+	CMD_ENDING
 }
 
 void ft8xx_copro_cmd_number(const struct device *dev,
@@ -133,59 +156,35 @@ void ft8xx_copro_cmd_number(const struct device *dev,
 			     uint16_t options,
 			     int32_t number)
 {
-	struct ft8xx_data *data = dev->data;
+	CMD_BEGINNING(sizeof(CMD_NUMBER) +
+		      sizeof(x) +
+		      sizeof(y) +
+		      sizeof(font) +
+		      sizeof(options) +
+		      sizeof(number))
 
-	const uint16_t cmd_size = sizeof(CMD_NUMBER) +
-				   sizeof(x) +
-				   sizeof(y) +
-				   sizeof(font) +
-				   sizeof(options) +
-				   sizeof(number);
+	written_bytes += ram_cmd_wr32(dev, CMD_NUMBER);
+	written_bytes += ram_cmd_wr16(dev, x);
+	written_bytes += ram_cmd_wr16(dev, y);
+	written_bytes += ram_cmd_wr16(dev, font);
+	written_bytes += ram_cmd_wr16(dev, options);
+	written_bytes += ram_cmd_wr32(dev, number);
 
-	while (ram_cmd_freespace(dev) < cmd_size) {
-		refresh_reg_cmd_read(dev);
-	}
-
-	ft8xx_wr32(dev, FT800_RAM_CMD + data->reg_cmd_write, CMD_NUMBER);
-	increase_reg_cmd_write(dev, sizeof(CMD_NUMBER));
-
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, x);
-	increase_reg_cmd_write(dev, sizeof(x));
-
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, y);
-	increase_reg_cmd_write(dev, sizeof(y));
-
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, font);
-	increase_reg_cmd_write(dev, sizeof(font));
-
-	ft8xx_wr16(dev, FT800_RAM_CMD + data->reg_cmd_write, options);
-	increase_reg_cmd_write(dev, sizeof(options));
-
-	ft8xx_wr32(dev, FT800_RAM_CMD + data->reg_cmd_write, number);
-	increase_reg_cmd_write(dev, sizeof(number));
-
-	flush_reg_cmd_write(dev);
+	CMD_ENDING
 }
 
 void ft8xx_copro_cmd_calibrate(const struct device *dev, uint32_t *result)
 {
-	struct ft8xx_data *data = dev->data;
-
-	const uint16_t cmd_size = sizeof(CMD_CALIBRATE) + sizeof(uint32_t);
 	uint32_t result_address;
 
-	while (ram_cmd_freespace(dev) < cmd_size) {
-		refresh_reg_cmd_read(dev);
-	}
+	CMD_BEGINNING(sizeof(CMD_CALIBRATE) +
+		      sizeof(uint32_t))
 
-	ft8xx_wr32(dev, FT800_RAM_CMD + data->reg_cmd_write, CMD_CALIBRATE);
-	increase_reg_cmd_write(dev, sizeof(CMD_CALIBRATE));
+	written_bytes += ram_cmd_wr32(dev, CMD_CALIBRATE);
+	result_address = ram_cmd_wr_address(dev);
+	written_bytes += ram_cmd_wr32(dev, 1UL);
 
-	result_address = FT800_RAM_CMD + data->reg_cmd_write;
-	ft8xx_wr32(dev, result_address, 1UL);
-	increase_reg_cmd_write(dev, sizeof(uint32_t));
-
-	flush_reg_cmd_write(dev);
+	CMD_ENDING
 
 	/* Wait until calibration is finished. */
 	while (ram_cmd_fullness(dev) > 0) {
