@@ -247,7 +247,7 @@ static int input_cmd_kbd_matrix_state_dump(const struct shell *sh,
 	}
 
 	memset(kbd_matrix_state, 0, sizeof(kbd_matrix_state));
-	memset(kbd_matrix_key_mask, 0, sizeof(kbd_matrix_state));
+	memset(kbd_matrix_key_mask, 0, sizeof(kbd_matrix_key_mask));
 	kbd_matrix_state_dev = dev;
 
 	shell_info(sh, "Keyboard state logging enabled for %s", dev->name);
