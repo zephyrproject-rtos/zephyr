@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "CAN Api test"
+
+source "Kconfig.zephyr"
+
+config CAN_TEST_MODE_LOOPBACK
+    bool "Use Loopback mode for test"
+    default y
+    help
+      Set the CAN controller into loopback mode to run the test
+
+config CAN_TEST_MODE_LISTENONLY
+   bool "Use Listenonly mode for test"
+   default n
+   help
+     Set the CAN controller into listenonly mode to run the test

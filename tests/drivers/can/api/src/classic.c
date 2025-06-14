@@ -1418,7 +1418,7 @@ ZTEST_USER(can_classic, test_set_mode_while_started)
 
 void *can_classic_setup(void)
 {
-	can_common_test_setup(CAN_MODE_LOOPBACK);
+	can_common_test_setup(TEST_CAN_INIT_MODE);
 
 	return NULL;
 }

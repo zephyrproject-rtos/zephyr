@@ -559,7 +559,7 @@ static bool canfd_predicate(const void *state)
 
 void *canfd_setup(void)
 {
-	can_common_test_setup(CAN_MODE_LOOPBACK | CAN_MODE_FD);
+	can_common_test_setup(TEST_CAN_INIT_MODE | CAN_MODE_FD);
 
 	return NULL;
 }
