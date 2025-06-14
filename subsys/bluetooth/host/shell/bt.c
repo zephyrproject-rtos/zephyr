@@ -2577,7 +2577,11 @@ static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "Advertiser[%d] %p", selected_adv, adv);
 	shell_print(sh, "Id: %d, TX power: %d dBm", info.id, info.tx_power);
-	print_le_addr("Address", info.addr);
+	shell_print(sh, "Adv state: %d", info.ext_adv_state);
+	if (info.ext_adv_state == BT_LE_EXT_ADV_STATE_STARTED) {
+		print_le_addr("Address", info.addr);
+	}
+	shell_print(sh, "Per Adv state: %d", info.per_adv_state);
 
 	return 0;
 }
