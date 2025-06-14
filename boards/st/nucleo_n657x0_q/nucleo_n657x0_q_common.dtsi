@@ -200,7 +200,6 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth1_rmii_ref_clk_pf7
 		     &eth1_rmii_crs_dv_pf10
 		     &eth1_rmii_rxd0_pf14
@@ -211,12 +210,13 @@ zephyr_udc0: &usbotg_hs1 {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth1_mdio_pf4 &eth1_mdc_pg11>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -251,8 +251,8 @@ zephyr_udc0: &usbotg_hs1 {
 			#size-cells = <1>;
 
 			storage_partition: partition@3ff0000 {
-				label = "storage";
 				reg = <0x3ff0000 DT_SIZE_K(64)>;
+				label = "storage";
 			};
 		};
 	};

@@ -187,8 +187,8 @@
 	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
 		     &spi5_miso_pf8 &spi5_mosi_pf9>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &fmc {
@@ -238,13 +238,15 @@
 		     &ltdc_b6_pb8 &ltdc_b7_pb9 &ltdc_de_pf10 &ltdc_clk_pg7
 		     &ltdc_hsync_pc6 &ltdc_vsync_pa4>;
 	pinctrl-names = "default";
-	ext-sdram = <&sdram2>;
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
 	display-controller = <&ili9341>;
-	status = "okay";
-
-	width = <240>;
+	ext-sdram = <&sdram2>;
 	height = <320>;
+	width = <240>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -259,10 +261,6 @@
 		hfront-porch = <10>;
 		vfront-porch = <4>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
 
 zephyr_udc0: &usbotg_hs {

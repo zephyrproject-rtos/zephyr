@@ -39,39 +39,39 @@
 		 */
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(224)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* Secure image primary slot */
 		slot0_partition: partition@38000 {
-			label = "image-0";
 			reg = <0x00038000 DT_SIZE_K(384)>;
+			label = "image-0";
 		};
 
 		/* Non-secure image primary slot */
 		slot0_ns_partition: partition@98000 {
-			label = "image-0-nonsecure";
 			reg = <0x00098000 DT_SIZE_K(512)>;
+			label = "image-0-nonsecure";
 		};
 
 		/* Secure image secondary slot */
 		slot1_partition: partition@118000 {
-			label = "image-1";
 			reg = <0x00118000 DT_SIZE_K(384)>;
+			label = "image-1";
 		};
 
 		/* Non-secure image secondary slot */
 		slot1_ns_partition: partition@178000 {
-			label = "image-1-nonsecure";
 			reg = <0x00178000 DT_SIZE_K(512)>;
+			label = "image-1-nonsecure";
 		};
 
 		/* Applicative Non Volatile Storage */
 		storage_partition: partition@1f8000 {
-			label = "storage";
 			reg = <0x001f8000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

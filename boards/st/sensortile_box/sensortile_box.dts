@@ -105,8 +105,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	hts221@5f {
 		compatible = "st,hts221";
@@ -124,8 +124,8 @@
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	stts751@38 {
 		compatible = "st,stts751";
@@ -170,6 +170,7 @@
 	pinctrl-0 = <&spi2_sck_pd1 &spi2_miso_pd3 &spi2_mosi_pc3>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	cs-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
 
 	spbtle_1s_sensortile_box: spbtle-1s@0 {
@@ -218,8 +219,8 @@ zephyr_udc0: &usbotg_fs {
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
@@ -229,23 +230,23 @@ zephyr_udc0: &usbotg_fs {
 		 */
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(432)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@8c000 {
-			label = "image-1";
 			reg = <0x0008C000 DT_SIZE_K(432)>;
+			label = "image-1";
 		};
 
 		scratch_partition: partition@f8000 {
-			label = "image-scratch";
 			reg = <0x000F8000 DT_SIZE_K(24)>;
+			label = "image-scratch";
 		};
 
 		storage_partition: partition@fc000 {
-			label = "storage";
 			reg = <0x000fc000 DT_SIZE_K(24)>;
+			label = "storage";
 		};
 	};
 };

@@ -42,33 +42,33 @@
 		 */
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* Secure image primary slot */
 		slot0_partition: partition@14000 {
-			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(180)>;
+			label = "image-0";
 		};
 
 		/* Non-secure image primary slot */
 		slot0_ns_partition: partition@41000 {
-			label = "image-0-nonsecure";
 			reg = <0x00041000 DT_SIZE_K(36)>;
+			label = "image-0-nonsecure";
 		};
 
 		/* Secure image secondary slot */
 		slot1_partition: partition@4a000 {
-			label = "image-1";
 			reg = <0x0004a000 DT_SIZE_K(180)>;
+			label = "image-1";
 		};
 
 		/* Non-secure image secondary slot */
 		slot1_ns_partition: partition@77000 {
-			label = "image-1-nonsecure";
 			reg = <0x00077000 DT_SIZE_K(36)>;
+			label = "image-1-nonsecure";
 		};
 		/* Applicative Non Volatile Storage */
 		/* Not available in this config, use secure storage */
