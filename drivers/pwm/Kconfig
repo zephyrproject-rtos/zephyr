@@ -1,6 +1,7 @@
 # PWM configuration options
 
 # Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2025 Siemens SA
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PWM
@@ -31,6 +32,12 @@ config PWM_CAPTURE
 	help
 	  This option extends the Zephyr PWM API with the ability to capture PWM
 	  period/pulse widths.
+
+config PWM_WITH_DMA
+	bool "Provide API for using PWM with DMA"
+	help
+	  This option extends the Zephyr PWM API with the ability to trigger DMA
+	  requests from PWM channels.
 
 source "drivers/pwm/Kconfig.b91"
 
