@@ -185,6 +185,8 @@
 &sci9 {
 	pinctrl-0 = <&sci9_default>;
 	pinctrl-names = "default";
+	interrupts = <0 12>, <1 12>, <2 12>, <3 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	uart9: uart {
 		current-speed = <115200>;
@@ -210,6 +212,14 @@
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	interrupts = <4 12>, <5 12>, <6 12>, <7 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&flash {
+	interrupts = <8 12>, <9 12>;
+	interrupt-names = "frdyi", "fiferr";
 	status = "okay";
 };
 
@@ -228,17 +238,21 @@
 
 &pwm7 {
 	pinctrl-0 = <&pwm7_default>;
-	interrupts = <40 1>, <41 1>;
+	interrupts = <10 12>, <11 12>;
 	interrupt-names = "gtioca", "overflow";
 	pinctrl-names = "default";
 	status = "okay";
 };
 
 &canfd_global {
+	interrupts = <12 12>, <13 12>;
+	interrupt-names = "rxf", "glerr";
 	status = "okay";
 	canfd0 {
 		pinctrl-0 = <&canfd0_default>;
 		pinctrl-names = "default";
+		interrupts = <14 12>, <15 12>, <16 12>;
+		interrupt-names = "err", "tx", "rx";
 		rx-max-filters = <16>;
 		status = "okay";
 	};
@@ -250,9 +264,12 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	interrupts = <17 12>, <18 12>, <19 12>, <20 12>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
 };
 
 &eth {
+	interrupts = <21 0>;
 	local-mac-address = [74 90 50 B0 5D E9];
 	status = "okay";
 	phy-handle = <&phy>;
@@ -273,6 +290,8 @@
 &usbhs {
 	pinctrl-0 = <&usbhs_default>;
 	pinctrl-names = "default";
+	interrupts = <22 12>;
+	interrupt-names = "usbhs-ir";
 	maximum-speed = "high-speed";
 	status = "okay";
 	zephyr_udc0: udc {
@@ -288,6 +307,8 @@
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	interrupts = <23 12>;
+	interrupt-names = "scanend";
 };
 
 &dac0 {
@@ -297,12 +318,12 @@
 };
 
 &port_irq12 {
-	interrupts = <88 12>;
+	interrupts = <24 12>;
 	status = "okay";
 };
 
 &port_irq13 {
-	interrupts = <89 12>;
+	interrupts = <25 12>;
 	status = "okay";
 };
 
@@ -348,6 +369,8 @@ pmod_sd_shield: &sdhc1 {};
 };
 
 &ulpt0 {
+	interrupt-names = "ulpti";
+	interrupts = <26 1>;
 	status = "okay";
 
 	timer {
