@@ -7,8 +7,8 @@
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/events.h>
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/xen.h>
-#include <zephyr/xen/public/memory.h>
+#include <xen/public/xen.h>
+#include <xen/public/memory.h>
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
