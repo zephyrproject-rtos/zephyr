@@ -6,6 +6,8 @@
  * Application overlay for spi devices
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
  ***************************************/
