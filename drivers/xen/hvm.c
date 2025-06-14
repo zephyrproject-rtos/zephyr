@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <xen/public/hvm/hvm_op.h>
+#include <xen/public/hvm/params.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/hvm.h>
-#include <zephyr/xen/public/hvm/hvm_op.h>
-#include <zephyr/xen/public/hvm/params.h>
 
 #include <zephyr/kernel.h>
 
