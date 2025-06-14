@@ -92,6 +92,11 @@ struct wdt_timeout_cfg {
 	struct wdt_window window;
 	/** Timeout callback (can be `NULL`). */
 	wdt_callback_t callback;
+#if defined(CONFIG_WDT_EARLY_WARNING_INTERRUPT_SUPPORT) || defined(__DOXYGEN__)
+	/** Early warning callback (can be `NULL`). */
+	wdt_callback_t ew_callback;
+#endif /**WDT_EARLY_WARNING_INTERRUPT_SUPPORT*/
+
 #if defined(CONFIG_WDT_MULTISTAGE) || defined(__DOXYGEN__)
 	/**
 	 * Pointer to the next timeout configuration.
