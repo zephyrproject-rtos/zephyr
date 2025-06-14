@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <xen/public/xen.h>
+#include <xen/public/event_channel.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
-#include <zephyr/xen/public/xen.h>
-#include <zephyr/xen/public/event_channel.h>
 #include <zephyr/xen/events.h>
 #include <zephyr/sys/barrier.h>
 
