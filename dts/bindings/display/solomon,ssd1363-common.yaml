@@ -1,0 +1,100 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+include: display-controller.yaml
+
+properties:
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider (3:0) / oscillator frequency (7:4). It can be set to 0x0.
+      If you get weird scanlines, increase oscillator frequency and play with phase length values,
+      for example set this to 0x70. Note this increases power consumption.
+
+  display-offset:
+    type: int
+    required: true
+    description: Vertical offset by com from 0 ~ 159. Typically 160 - height.
+
+  start-line:
+    type: int
+    required: true
+    description: Start line of display RAM to be displayed by selecting a value from 0 to 159.
+      Typically 0.
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex ratio from 3MUX to 159MUX. Typically same value as height - 1.
+
+  remap-value:
+    type: int
+    required: true
+    description: Remap register of 16-bits length
+
+      Has multiple configurations (see each bit setting in the datasheet)
+      first byte [15:8]
+      - A[0] 0 is htiled, 1 is vtiled
+      - A[1] invert SEG mapping
+      - A[3] reserved
+      - A[4] Invert COM
+      - A[5] Sequential (0) or Alternative (Odd/Even) COMs
+      second byte [7:0]
+      - B[0] reserved
+      - B[4] Dual COM mode (mux <= 79)
+
+      A[5] is needed when display has striping.
+
+  phase-length:
+    type: int
+    required: true
+    description: Phase Length for segment charging (7:4) and discharging (3:0).
+      Good values to try first are 0x1f and 0xf1.
+
+  column-offset:
+    type: int
+    required: true
+    description: Offset in columns. Typically (320 - width) / 2.
+      This is done in software as SSD1363 lacks hardware tooling for this.
+
+  precharge-period:
+    type: int
+    required: true
+    description: Second pre-charge period ranging from 0 to 15 DCLK's.
+
+  internal-iref:
+    type: int
+    default: 0x90
+    description: Internal or external iref. 0x80 is External, 0x90 Internal.
+      Most displays use Internal.
+
+  precharge-config:
+    type: int
+    default: 0x3
+    description: Vp pin floating (0x2) or linked to external capacitance (0x3).
+      Most displays use a external capacitor.
+
+  precharge-voltage:
+    type: int
+    default: 0x7
+    description: Set precharge voltage (4:0) from 0.10 x VCC to 0.513 x VCC (0x1F).
+      0x7 is the reset default.
+
+  vcomh-voltage:
+    type: int
+    default: 0x4
+    description: Set COM deselect voltage (3:0) from 0.72 x VCC (0x0) to 0.86 x VCC (0x7)
+      0x4 is the reset default.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
+
+  greyscale-enhancement:
+    type: boolean
+    description: Enable greyscale enhancement, undocumented.
+
+  greyscale-table:
+    type: uint8-array
+    description: 15 elements array defines gamma settings for each brightness levels.
+      It seems last element must always be 60/0x3C.
