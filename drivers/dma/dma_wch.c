@@ -89,6 +89,22 @@ static int dma_wch_init(const struct device *dev)
 	return 0;
 }
 
+/* Coverts a transfer width in bytes to the corresponding bitfield */
+static uint16_t dma_wch_width_index(uint32_t bytes)
+{
+	switch (bytes) {
+	case 1:
+		return 0;
+	case 2:
+		return 1;
+	case 4:
+		return 2;
+	default:
+		/* Return a bad but safe value rather than validate */
+		return 0;
+	}
+}
+
 static int dma_wch_config(const struct device *dev, uint32_t ch, struct dma_config *dma_cfg)
 {
 	const struct dma_wch_config *config = dev->config;
@@ -146,10 +162,8 @@ static int dma_wch_config(const struct device *dev, uint32_t ch, struct dma_conf
 	cfgr |= dma_cfg->channel_priority * DMA_CFGR1_PL_0;
 
 	if (dma_cfg->channel_direction == MEMORY_TO_PERIPHERAL) {
-		cfgr |= dma_width_index(dma_cfg->source_data_size / BITS_PER_BYTE) *
-			DMA_CFGR1_MSIZE_0;
-		cfgr |= dma_width_index(dma_cfg->dest_data_size / BITS_PER_BYTE) *
-			DMA_CFGR1_PSIZE_0;
+		cfgr |= dma_wch_width_index(dma_cfg->source_data_size) * DMA_CFGR1_MSIZE_0;
+		cfgr |= dma_wch_width_index(dma_cfg->dest_data_size) * DMA_CFGR1_PSIZE_0;
 
 		cfgr |= (dma_cfg->head_block->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT)
 				? DMA_CFGR1_PINC
@@ -158,10 +172,8 @@ static int dma_wch_config(const struct device *dev, uint32_t ch, struct dma_conf
 				? DMA_CFGR1_MINC
 				: 0;
 	} else {
-		cfgr |= dma_width_index(dma_cfg->source_data_size / BITS_PER_BYTE) *
-			DMA_CFGR1_PSIZE_0;
-		cfgr |= dma_width_index(dma_cfg->dest_data_size / BITS_PER_BYTE) *
-			DMA_CFGR1_MSIZE_0;
+		cfgr |= dma_wch_width_index(dma_cfg->source_data_size) * DMA_CFGR1_PSIZE_0;
+		cfgr |= dma_wch_width_index(dma_cfg->dest_data_size) * DMA_CFGR1_MSIZE_0;
 
 		cfgr |= (dma_cfg->head_block->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT)
 				? DMA_CFGR1_MINC
