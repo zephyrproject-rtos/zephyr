@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <xen/public/xen.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/dom0/sysctl.h>
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/xen.h>
 
 static int do_sysctl(xen_sysctl_t *sysctl)
 {

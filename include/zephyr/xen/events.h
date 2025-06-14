@@ -7,7 +7,7 @@
 #ifndef __XEN_EVENTS_H__
 #define __XEN_EVENTS_H__
 
-#include <zephyr/xen/public/event_channel.h>
+#include <xen/public/event_channel.h>
 
 #include <zephyr/kernel.h>
 
