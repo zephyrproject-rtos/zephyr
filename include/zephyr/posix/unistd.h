@@ -30,7 +30,9 @@ extern "C" {
 /* File related operations */
 int close(int file);
 ssize_t write(int file, const void *buffer, size_t count);
+ssize_t pwrite(int file, const void *buffer, size_t count, off_t offset);
 ssize_t read(int file, void *buffer, size_t count);
+ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 off_t lseek(int file, off_t offset, int whence);
 int fsync(int fd);
 int ftruncate(int fd, off_t length);
