@@ -8,6 +8,18 @@ tests:
     extra_args: EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi_nor.conf
     integration_platforms:
       - nrf52840dk/nrf52840
+  drivers.flash.common.max32_spixf_nor:
+    platform_allow: apard32690/max32690/m4
+    extra_args: DTC_OVERLAY_FILE=boards/apard32690_max32690_m4_spixf_nor.overlay
+    integration_platforms:
+      - apard32690/max32690/m4
+  drivers.flash.common.max32_spixf_nor_sfdp_runtime:
+    platform_allow: apard32690/max32690/m4
+    extra_args:
+      - EXTRA_CONF_FILE=boards/apard32690_max32690_m4_spixf_nor_sfdp_runtime.conf
+      - DTC_OVERLAY_FILE=boards/apard32690_max32690_m4_spixf_nor.overlay
+    integration_platforms:
+      - apard32690/max32690/m4
   drivers.flash.common.nrf_qspi_nor.size_in_bytes:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
