@@ -401,33 +401,6 @@ int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
 			     const char *search_name, elf_shdr_t *shdr);
 
 /**
- * @brief Architecture specific function for local binding relocations
- *
- * @param[in] loader Extension loader data and context
- * @param[in] ext Extension to call function in
- * @param[in] rel Relocation data provided by elf
- * @param[in] sym Corresponding symbol table entry
- * @param[in] rel_addr Address where relocation should be performed
- * @param[in] ldr_parm Loader parameters
- */
-void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			     const elf_sym_t *sym, uint8_t *rel_addr,
-			     const struct llext_load_param *ldr_parm);
-
-/**
- * @brief Architecture specific function for global binding relocations
- *
- * @param[in] loader Extension loader data and context
- * @param[in] ext Extension to call function in
- * @param[in] rel Relocation data provided by elf
- * @param[in] sym Corresponding symbol table entry
- * @param[in] rel_addr Address where relocation should be performed
- * @param[in] link_addr target address for table-based relocations
- */
-void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
-			      const elf_sym_t *sym, uint8_t *rel_addr, const void *link_addr);
-
-/**
  * @brief Initialize LLEXT heap dynamically
  *
  * Use the provided memory block as the LLEXT heap at runtime.
