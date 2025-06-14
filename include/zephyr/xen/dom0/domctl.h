@@ -13,9 +13,10 @@
 #ifndef __XEN_DOM0_DOMCTL_H__
 #define __XEN_DOM0_DOMCTL_H__
 
+#include <xen/public/xen.h>
+#include <xen/public/domctl.h>
+
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/domctl.h>
-#include <zephyr/xen/public/xen.h>
 
 #include <zephyr/kernel.h>
 

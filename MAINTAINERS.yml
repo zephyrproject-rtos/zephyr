@@ -5921,6 +5921,19 @@ West:
   labels:
     - "area: Rust"
 
+"West project: zephyr-xenlib":
+  status: maintained
+  maintainers:
+    - firscity
+  collaborators:
+    - lorc
+    - luca-fancellu
+    - soburi
+  files:
+    - modules/zephyr-xenlib/
+  labels:
+    - "area: Xen Platform"
+
 "West project: zscilib":
   status: maintained
   maintainers:
