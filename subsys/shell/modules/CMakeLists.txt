@@ -16,3 +16,7 @@ zephyr_sources_ifdef(
   CONFIG_DEVMEM_SHELL
   devmem_service.c
   )
+zephyr_sources_ifdef(
+  CONFIG_ZYCLICTEST_SHELL
+  zyclictest_service.c
+  )
