@@ -760,12 +760,12 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
 		if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
 		}
-#endif
+#endif /* defined(CONFIG_BT_PRIVACY) */
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -881,12 +881,13 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
 		if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 			/* Host resolving is used, use the RPA directly. */
 			peer_addr = &conn->le.resp_addr;
 		}
-#endif
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 		bt_addr_le_copy(&cp->peer_addr, peer_addr);
 		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_NO_FILTER;
 	}
@@ -3273,7 +3274,7 @@ static void le_read_maximum_adv_data_len_complete(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_BROADCASTER */
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
 static void le_read_resolving_list_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_le_read_rl_size *rp = (void *)buf->data;
@@ -3282,7 +3283,7 @@ static void le_read_resolving_list_size_complete(struct net_buf *buf)
 
 	bt_dev.le.rl_size = rp->rl_size;
 }
-#endif /* defined(CONFIG_BT_SMP) */
+#endif /* defined(CONFIG_BT_PRIVACY) */
 
 static int common_init(void)
 {
@@ -3663,9 +3664,8 @@ static int le_init(void)
 		}
 	}
 
-#if defined(CONFIG_BT_SMP)
-	if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 #if defined(CONFIG_BT_PRIVACY)
+	if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 		struct bt_hci_cp_le_set_rpa_timeout *cp;
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
@@ -3681,7 +3681,6 @@ static int le_init(void)
 		if (err) {
 			return err;
 		}
-#endif /* defined(CONFIG_BT_PRIVACY) */
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_RL_SIZE, NULL,
 					   &rsp);
@@ -3691,7 +3690,7 @@ static int le_init(void)
 		le_read_resolving_list_size_complete(rsp);
 		net_buf_unref(rsp);
 	}
-#endif
+#endif /* defined(CONFIG_BT_PRIVACY) */
 
 #if defined(CONFIG_BT_DF)
 	if (BT_FEAT_LE_CONNECTIONLESS_CTE_TX(bt_dev.le.features) ||
@@ -4471,8 +4470,12 @@ int bt_disable(void)
 
 	/* Reset IDs and corresponding keys. */
 	bt_dev.id_count = 0;
+
 #if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_PRIVACY)
 	bt_dev.le.rl_entries = 0;
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 	bt_keys_reset();
 #endif
 
@@ -4588,7 +4591,7 @@ int bt_le_get_local_features(struct bt_le_local_features *remote_info)
 	remote_info->acl_pkts = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_pkts.limit), (0));
 	remote_info->iso_mtu = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_mtu), (0));
 	remote_info->iso_pkts = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_limit), (0));
-	remote_info->rl_size = COND_CODE_1(CONFIG_BT_SMP, (bt_dev.le.rl_size), (0));
+	remote_info->rl_size = COND_CODE_1(CONFIG_BT_PRIVACY, (bt_dev.le.rl_size), (0));
 	remote_info->max_adv_data_len =
 		COND_CODE_1(CONFIG_BT_BROADCASTER, (bt_dev.le.max_adv_data_len), (0));
 
