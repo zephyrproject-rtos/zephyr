@@ -470,6 +470,32 @@ SECTIONS
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
 
+#ifdef CONFIG_HW_SHADOW_STACK
+SECTION_PROLOGUE(.x86shadowstack,,)
+{
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_start = .;
+
+	*(.x86shadowstack)
+
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_end = .;
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+SECTION_PROLOGUE(.x86shadowstack.arr,,)
+{
+	MMU_PAGE_ALIGN
+
+	*(.x86shadowstack.arr*)
+
+	MMU_PAGE_ALIGN
+
+	__x86shadowstack_end = .;
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 /* Must be last in RAM */
 #include <zephyr/linker/kobject-data.ld>
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */

@@ -278,6 +278,16 @@ __csSet:
 	call	z_bss_zero
 #endif
 
+#ifdef CONFIG_X86_CET
+	call z_x86_cet_enable
+#ifdef CONFIG_X86_CET_IBT
+	call z_x86_ibt_enable
+#endif
+#ifdef CONFIG_HW_SHADOW_STACK
+	call z_x86_set_irq_shadow_stack
+#endif
+#endif
+
 	/* load 32-bit operand size IDT */
 	lidt	z_x86_idt
 
