@@ -552,22 +552,25 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq)
 {
 	int ret;
-	struct video_device *vdev;
 	struct video_ctrl *ctrl = NULL;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(cq != NULL);
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
-		vdev = video_find_vdev(dev);
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
-		while (vdev) {
-			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
+		if (cq->vdev == NULL) {
+			cq->vdev = video_find_vdev(dev);
+		}
+
+		while (cq->vdev != NULL) {
+			SYS_DLIST_FOR_EACH_CONTAINER(&cq->vdev->ctrls, ctrl, node) {
 				if (ctrl->id > cq->id) {
 					goto fill_query;
 				}
 			}
-			vdev = video_find_vdev(vdev->src_dev);
+			cq->vdev = video_find_vdev(cq->vdev->src_dev);
+			cq->id = 0;
 		}
 		return -ENOTSUP;
 	}
@@ -633,14 +636,14 @@ void video_print_ctrl(const struct device *const dev, const struct video_ctrl_qu
 
 	/* Print the control information */
 	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
-		LOG_INF("%32s 0x%08x %-8s (flags=0x%02x) : min=%lld max=%lld step=%lld "
+		LOG_INF("%16s %32s 0x%08x %-8s (flags=0x%02x) : min=%lld max=%lld step=%lld "
 			"default=%lld value=%lld ",
-			cq->name, cq->id, typebuf, cq->flags, cq->range.min64, cq->range.max64,
-			cq->range.step64, cq->range.def64, vc.val64);
+			cq->vdev->dev->name, cq->name, cq->id, typebuf, cq->flags, cq->range.min64,
+			cq->range.max64, cq->range.step64, cq->range.def64, vc.val64);
 	} else {
-		LOG_INF("%32s 0x%08x %-8s (flags=0x%02x) : min=%d max=%d step=%d default=%d "
+		LOG_INF("%16s %32s 0x%08x %-8s (flags=0x%02x) : min=%d max=%d step=%d default=%d "
 			"value=%d ",
-			cq->name, cq->id, typebuf, cq->flags, cq->range.min, cq->range.max,
+			cq->vdev->dev->name, cq->name, cq->id, typebuf, cq->flags, cq->range.min, cq->range.max,
 			cq->range.step, cq->range.def, vc.val);
 	}
 
