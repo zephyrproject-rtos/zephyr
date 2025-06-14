@@ -101,6 +101,7 @@
 
 -eval_file=adopted_code.ecl
 -eval_file=adopted_deviations.ecl
+-eval_file=deviations.ecl
 
 -doc="Hide reports marked as compliant."
 -remap_rtag={compliant,hide}
