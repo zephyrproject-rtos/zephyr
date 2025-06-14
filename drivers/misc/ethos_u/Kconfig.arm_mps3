@@ -1,0 +1,14 @@
+# Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ETHOS_U_ARM
+	bool "Arm Ethos-U NPU driver"
+	default y
+	depends on DT_HAS_ARM_ETHOS_U_ENABLED
+	help
+	  Enables Arm Ethos-U NPU driver.
+
+choice ARM_ETHOS_U_NPU_CONFIG
+	default ARM_ETHOS_U55_128
+endchoice # ARM_ETHOS_U_NPU_CONFIG
