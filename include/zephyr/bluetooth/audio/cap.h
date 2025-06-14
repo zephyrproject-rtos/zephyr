@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2022-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,9 @@ extern "C" {
 
 /** @brief Abstract Audio Broadcast Source structure. */
 struct bt_cap_broadcast_source;
+
+/** @brief Abstract CAP Unicast Group structure. */
+struct bt_cap_unicast_group;
 
 /**
  * @brief Register the Common Audio Service.
@@ -144,6 +147,22 @@ struct bt_cap_initiator_cb {
 	 */
 	void (*broadcast_stopped)(struct bt_cap_broadcast_source *source, uint8_t reason);
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+#if defined(CONFIG_BT_CAP_HANDOVER)
+	/**
+	 * @brief The unicast to broadcast handover procedure has finished
+	 *
+	 * @param err 0 if success else a negative errno value.
+	 * @param conn Pointer to the connection where the error
+	 *                       occurred or NULL local failure.
+	 * @param unicast_group NULL if the unicast group was deleted during the procedure, else
+	 *                      pointer to the unicast group provided in the parameters.
+	 * @param broadcast_source Pointer to newly created broadcast source, or NULL in case of an
+	 *                         error happening before it was created.
+	 */
+	void (*unicast_to_broadcast_complete)(int err, struct bt_conn *conn,
+					      struct bt_cap_unicast_group *unicast_group,
+					      struct bt_cap_broadcast_source *broadcast_source);
+#endif /* CONFIG_BT_CAP_HANDOVER */
 };
 
 /**
@@ -253,6 +272,173 @@ int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uin
  * @retval Any return value from bt_bap_stream_get_tx_sync()
  */
 int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info);
+
+/** Parameter struct for each stream in the unicast group */
+struct bt_cap_unicast_group_stream_param {
+	/** Pointer to a stream object. */
+	struct bt_cap_stream *stream;
+
+	/** The QoS settings for the stream object. */
+	struct bt_bap_qos_cfg *qos_cfg;
+};
+
+/**
+ * @brief Parameter struct for the unicast group functions
+ *
+ * Parameter struct for the bt_cap_unicast_group_create() and
+ * bt_cap_unicast_group_add_streams() functions.
+ */
+struct bt_cap_unicast_group_stream_pair_param {
+	/** Pointer to a receiving stream parameters. */
+	struct bt_cap_unicast_group_stream_param *rx_param;
+
+	/** Pointer to a transmitting stream parameters. */
+	struct bt_cap_unicast_group_stream_param *tx_param;
+};
+
+/** Parameters for the creating unicast groups with bt_cap_unicast_group_create() */
+struct bt_cap_unicast_group_param {
+	/** The number of parameters in @p params */
+	size_t params_count;
+
+	/** Array of stream parameters */
+	struct bt_cap_unicast_group_stream_pair_param *params;
+
+	/**
+	 * @brief Unicast Group packing mode.
+	 *
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 *
+	 * @note This is a recommendation to the controller, which the controller may ignore.
+	 */
+	uint8_t packing;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
+	/**
+	 * @brief Central to Peripheral flush timeout
+	 *
+	 * The flush timeout in multiples of ISO_Interval for each payload sent
+	 * from the Central to Peripheral.
+	 *
+	 * Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX
+	 */
+	uint8_t c_to_p_ft;
+
+	/**
+	 * @brief Peripheral to Central flush timeout
+	 *
+	 * The flush timeout in multiples of ISO_Interval for each payload sent
+	 * from the Peripheral to Central.
+	 *
+	 * Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX.
+	 */
+	uint8_t p_to_c_ft;
+
+	/**
+	 * @brief ISO interval
+	 *
+	 * Time between consecutive CIS anchor points.
+	 *
+	 * Value range from @ref BT_ISO_ISO_INTERVAL_MIN to @ref BT_ISO_ISO_INTERVAL_MAX.
+	 */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+};
+
+/**
+ * @brief Create unicast group.
+ *
+ * Create a new audio unicast group with one or more audio streams as a unicast client.
+ * All streams shall share the same framing.
+ * All streams in the same direction shall share the same interval and latency (see
+ * @ref bt_bap_qos_cfg).
+ *
+ * @param[in]  param          The unicast group create parameters.
+ * @param[out] unicast_group  Pointer to the unicast group created.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
+				struct bt_cap_unicast_group **unicast_group);
+
+/**
+ * @brief Reconfigure unicast group.
+ *
+ * Reconfigure a unicast group with one or more audio streams as a unicast client.
+ * All streams shall share the same framing.
+ * All streams in the same direction shall share the same interval and latency (see
+ * @ref bt_bap_qos_cfg).
+ * All streams in @p param shall already belong to @p unicast_group.
+ * Use bt_cap_unicast_group_add_streams() to add additional streams.
+ *
+ * @param unicast_group  Pointer to the unicast group created.
+ * @param param          The unicast group reconfigure parameters.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
+				  const struct bt_cap_unicast_group_param *param);
+
+/**
+ * @brief Add streams to a unicast group as a unicast client
+ *
+ * This function can be used to add additional streams to a  bt_cap_unicast_group.
+ *
+ * This can be called at any time before any of the streams in the group has been started
+ * (see bt_bap_stream_ops.started()).
+ * This can also be called after the streams have been stopped (see bt_bap_stream_ops.stopped()).
+ *
+ * Once a stream has been added to a unicast group, it cannot be removed. To remove a stream from a
+ * group, the group must be deleted with bt_cap_unicast_group_delete(), but this will require all
+ * streams in the group to be released first.
+ *
+ * @param unicast_group  Pointer to the unicast group
+ * @param params         Array of stream parameters with streams being added to the group.
+ * @param num_param      Number of parameters in @p params.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
+				     const struct bt_cap_unicast_group_stream_pair_param params[],
+				     size_t num_param);
+
+/**
+ * @brief Delete audio unicast group.
+ *
+ * Delete a audio unicast group as a client. All streams in the group shall
+ * be in the idle or configured state.
+ *
+ * @param unicast_group  Pointer to the unicast group to delete
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group);
+
+/** Callback function for bt_bap_unicast_group_foreach_stream()
+ *
+ * @param stream     The audio stream
+ * @param user_data  User data
+ *
+ * @retval true Stop iterating.
+ * @retval false Continue iterating.
+ */
+typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream *stream,
+							   void *user_data);
+
+/**
+ * @brief Iterate through all streams in a unicast group
+ *
+ * @param unicast_group  The unicast group
+ * @param func           The callback function
+ * @param user_data      User specified data that sent to the callback function
+ *
+ * @retval 0 Success (even if no streams exists in the group).
+ * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -EINVAL @p unicast_group or @p func were NULL.
+ */
+int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
+					bt_cap_unicast_group_foreach_stream_func_t func,
+					void *user_data);
 
 /** Stream specific parameters for the bt_cap_initiator_unicast_audio_start() function */
 struct bt_cap_unicast_audio_start_stream_param {
@@ -644,50 +830,54 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
 
 /** Parameters for  bt_cap_initiator_unicast_to_broadcast() */
 struct bt_cap_unicast_to_broadcast_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
 	/** The source unicast group with the streams. */
-	struct bt_bap_unicast_group *unicast_group;
+	struct bt_cap_unicast_group *unicast_group;
 
 	/**
-	 * @brief Whether or not to encrypt the streams.
+	 * @brief The advertising set to use for the broadcast source
 	 *
-	 * If set to true, then the broadcast code in @p broadcast_code
-	 * will be used to encrypt the streams.
+	 * This shall remain valid until the procedure has completed.
+	 * If the advertising set is not started at the time of calling
+	 * bt_cap_initiator_unicast_to_broadcast(),
+	 * the procedure will start the advertising set with @ref BT_LE_EXT_ADV_START_DEFAULT.
 	 */
-	bool encrypt;
+	struct bt_le_ext_adv *ext_adv;
+
+	/** The SID of the advertising set. */
+	uint8_t sid;
+
+	/** The periodic advertising interval configured for the advertising set. */
+	uint16_t pa_interval;
+
+	/** The broadcast ID the advertising set is, or will be, using. */
+	uint32_t broadcast_id;
 
 	/**
-	 * @brief 16-octet broadcast code.
+	 * @brief Broadcast source parameters.
 	 *
-	 * Only valid if @p encrypt is true.
-	 *
-	 * If the value is a string or a the value is less than 16 octets,
-	 * the remaining octets shall be 0.
-	 *
-	 * Example:
-	 *   The string "Broadcast Code" shall be
-	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 * These parameters shall remain valid until the procedure has completed.
 	 */
-	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+	struct bt_cap_initiator_broadcast_create_param *broadcast_create_param;
 };
 
 /**
- * @brief Hands over the data streams in a unicast group to a broadcast source.
+ * @brief Hands over the sink streams in a unicast group to a broadcast source.
  *
- * The streams in the unicast group will be stopped and the unicast group
- * will be deleted. This can only be done for source streams.
+ * All streams in the provided unicast group will be stopped and released. The sink streams will be
+ * tranferred to a broadcast source, and the broadcast source information will be shared with
+ * all accepters that are currently receiving audio. Any stream that is not in the streaming state
+ * will only be released.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_HANDOVER}
  *
- * @param param         The parameters for the handover.
- * @param source        The resulting broadcast source.
+ * @param param The parameters for the handover.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadcast_param *param,
-					  struct bt_cap_broadcast_source **source);
+int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadcast_param *param);
 
 /** Parameters for  bt_cap_initiator_broadcast_to_unicast() */
 struct bt_cap_broadcast_to_unicast_param {
@@ -720,10 +910,7 @@ struct bt_cap_broadcast_to_unicast_param {
  * The streams in the broadcast source will be stopped and the broadcast source
  * will be deleted.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_HANDOVER}
  *
  * @param[in]  param          The parameters for the handover.
  * @param[out] unicast_group  The resulting broadcast source.
