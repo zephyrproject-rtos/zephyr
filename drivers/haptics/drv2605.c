@@ -16,7 +16,6 @@
 #include <zephyr/drivers/haptics/drv2605.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/drivers/haptics.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
