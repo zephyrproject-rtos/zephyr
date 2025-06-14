@@ -60,7 +60,7 @@ endif()
 add_subdirectory_ifdef(CONFIG_XEN xen)
 
 if(CONFIG_GEN_SW_ISR_TABLE)
-  if(CONFIG_DYNAMIC_INTERRUPTS)
+  if(CONFIG_SRAM_SW_ISR_TABLE)
     zephyr_linker_sources(RWDATA swi_tables.ld)
   else()
     zephyr_linker_sources(RODATA swi_tables.ld)
