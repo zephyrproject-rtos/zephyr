@@ -4,6 +4,7 @@
  */
 
 #include "step_dir_stepper_common.h"
+#include "step_dir_stepper.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(step_dir_stepper, CONFIG_STEPPER_LOG_LEVEL);
@@ -53,7 +54,7 @@ static inline int step_dir_stepper_perform_step(const struct device *dev)
 	return 0;
 }
 
-void stepper_trigger_callback(const struct device *dev, enum stepper_event event)
+void step_dir_stepper_common_trigger_callback(const struct device *dev, enum stepper_event event)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
@@ -118,7 +119,7 @@ static void update_remaining_steps(struct step_dir_stepper_common_data *data)
 	} else if (data->step_count < 0) {
 		data->step_count++;
 	} else {
-		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
+		step_dir_stepper_common_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 		config->timing_source->stop(data->dev);
 	}
 }
@@ -163,7 +164,7 @@ static void velocity_mode_task(const struct device *dev)
 	}
 }
 
-void stepper_handle_timing_signal(const struct device *dev)
+void step_dir_stepper_common_handle_timing_signal(const struct device *dev)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
@@ -212,6 +213,13 @@ int step_dir_stepper_common_init(const struct device *dev)
 		}
 	}
 
+	ret = config->timing_source->register_step_handler(
+		dev, step_dir_stepper_common_handle_timing_signal);
+	if (ret < 0) {
+		LOG_ERR("Failed to register step handler: %d", ret);
+		return ret;
+	}
+
 #ifdef CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS
 	struct step_dir_stepper_common_data *data = dev->data;
 
@@ -245,7 +253,7 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 }
 
 int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
-					      const uint64_t microstep_interval_ns)
+						   const uint64_t microstep_interval_ns)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
@@ -332,7 +340,7 @@ int step_dir_stepper_common_stop(const struct device *dev)
 		return ret;
 	}
 
-	stepper_trigger_callback(dev, STEPPER_EVENT_STOPPED);
+	step_dir_stepper_common_trigger_callback(dev, STEPPER_EVENT_STOPPED);
 	return 0;
 }
 
@@ -345,3 +353,18 @@ int step_dir_stepper_common_set_event_callback(const struct device *dev,
 	data->event_cb_user_data = user_data;
 	return 0;
 }
+
+const struct step_dir_stepper_api step_dir_stepper_common_api = {
+	.init = step_dir_stepper_common_init,
+	.move_by = step_dir_stepper_common_move_by,
+	.move_to = step_dir_stepper_common_move_to,
+	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
+	.set_reference_position = step_dir_stepper_common_set_reference_position,
+	.get_actual_position = step_dir_stepper_common_get_actual_position,
+	.is_moving = step_dir_stepper_common_is_moving,
+	.run = step_dir_stepper_common_run,
+	.stop = step_dir_stepper_common_stop,
+	.set_event_callback = step_dir_stepper_common_set_event_callback,
+	.handle_timing_signal = step_dir_stepper_common_handle_timing_signal,
+	.trigger_callback = step_dir_stepper_common_trigger_callback,
+};
