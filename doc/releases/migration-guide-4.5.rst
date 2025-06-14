@@ -382,6 +382,12 @@ WiFi
   that previously disabled the Espressif-specific option must now disable the generic option
   to retain manual DHCPv4 or static IP behavior after STA connection.
 
+Xen
+===
+
+* With the introduction of zephyr-xenlib, the path to Xen's public headers has changed.
+  Please use ``xen/public/...`` instead of ``zephyr/xen/public/...``.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth

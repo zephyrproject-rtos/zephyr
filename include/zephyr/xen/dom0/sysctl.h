@@ -12,9 +12,11 @@
 
 #ifndef __XEN_DOM0_SYSCTL_H__
 #define __XEN_DOM0_SYSCTL_H__
+
+#include <xen/public/xen.h>
+#include <xen/public/sysctl.h>
+
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/sysctl.h>
-#include <zephyr/xen/public/xen.h>
 
 /**
  * @brief Retrieves information about the host system.

@@ -5,9 +5,10 @@
  */
 #ifndef __XEN_DOM0_VERSION_H__
 #define __XEN_DOM0_VERSION_H__
+
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/version.h>
-#include <zephyr/xen/public/xen.h>
+#include <xen/public/version.h>
+#include <xen/public/xen.h>
 
 /**
  * Get Xen hypervisor version integer encoded information
