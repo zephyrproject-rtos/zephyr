@@ -405,7 +405,7 @@ static inline int wait_read_transfer_done(Hsmci *hsmci)
 	int sr;
 
 	do {
-		sr = HSMCI->HSMCI_SR;
+		sr = hsmci->HSMCI_SR;
 		if (sr & (HSMCI_SR_UNRE | HSMCI_SR_OVRE | HSMCI_SR_DTOE | HSMCI_SR_DCRCE)) {
 			return -EIO;
 		}
