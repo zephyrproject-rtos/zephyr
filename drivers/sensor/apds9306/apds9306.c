@@ -1,5 +1,5 @@
 /* Copyright (c) 2024 Daniel Kampert
- * Author: Daniel Kampert <DanielKampert@kampis-Elektroecke.de>
+ * Author: Daniel Kampert <DanielKampert@kampis-elektroecke.de.de>
  */
 
 #include <zephyr/device.h>
@@ -45,8 +45,16 @@
 
 LOG_MODULE_REGISTER(avago_apds9306, CONFIG_SENSOR_LOG_LEVEL);
 
+/* See datasheet for the values. Aligned with avago,apds9306.yaml */
+static const uint8_t avago_apds9306_gain[] = {18, 9, 6, 3, 1};
+
+/* See datasheet for the values. Aligned with avago,apds9306.yaml */
+static const uint16_t avago_apds9306_frequency[] = {2000, 1000, 500, 200, 100, 50, 25};
+
 struct apds9306_data {
 	uint32_t light;
+	uint8_t frequency; /**< This field hols the index of the current sampling frequency. */
+	uint8_t gain;      /**< This field hols the index of the current sampling gain. */
 };
 
 struct apds9306_config {
@@ -128,6 +136,13 @@ static void apds9306_worker(struct k_work *p_work)
 	}
 
 	data->light = sys_get_le24(buffer);
+	LOG_DBG("Last raw measurement: %u", data->light);
+
+	/* Based on
+	 * https://github.com/esphome/esphome/blob/dev/esphome/components/apds9306/apds9306.cpp#L144
+	 */
+	data->light = (data->light / avago_apds9306_gain[data->gain]) *
+		      (100.0f / avago_apds9306_frequency[data->frequency]);
 
 	LOG_DBG("Last measurement: %u", data->light);
 }
@@ -139,8 +154,9 @@ static int apds9306_attr_set(const struct device *dev, enum sensor_channel chann
 	uint8_t mask;
 	uint8_t temp;
 	const struct apds9306_config *config = dev->config;
+	struct apds9306_data *data = dev->data;
 
-	if (channel != SENSOR_CHAN_LIGHT) {
+	if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_LIGHT)) {
 		return -ENOTSUP;
 	}
 
@@ -148,10 +164,12 @@ static int apds9306_attr_set(const struct device *dev, enum sensor_channel chann
 		reg = APDS9306_REGISTER_ALS_MEAS_RATE;
 		mask = GENMASK(2, 0);
 		temp = FIELD_PREP(0x07, value->val1);
+		data->frequency = value->val1;
 	} else if (attribute == SENSOR_ATTR_GAIN) {
 		reg = APDS9306_REGISTER_ALS_GAIN;
 		mask = GENMASK(2, 0);
 		temp = FIELD_PREP(0x07, value->val1);
+		data->gain = value->val1;
 	} else if (attribute == SENSOR_ATTR_RESOLUTION) {
 		reg = APDS9306_REGISTER_ALS_MEAS_RATE;
 		mask = GENMASK(7, 4);
@@ -176,7 +194,7 @@ static int apds9306_attr_get(const struct device *dev, enum sensor_channel chann
 	uint8_t reg;
 	const struct apds9306_config *config = dev->config;
 
-	if (channel != SENSOR_CHAN_LIGHT) {
+	if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_LIGHT)) {
 		return -ENOTSUP;
 	}
 
@@ -252,12 +270,13 @@ static int apds9306_channel_get(const struct device *dev, enum sensor_channel ch
 {
 	struct apds9306_data *data = dev->data;
 
-	if (channel != SENSOR_CHAN_LIGHT) {
+	switch (channel) {
+	case SENSOR_CHAN_LIGHT:
+		value->val1 = data->light;
+		value->val2 = 0;
+	default:
 		return -ENOTSUP;
 	}
-
-	value->val1 = data->light;
-	value->val2 = 0;
 
 	return 0;
 }
@@ -316,6 +335,7 @@ static int apds9306_init(const struct device *dev)
 {
 	uint8_t value;
 	const struct apds9306_config *config = dev->config;
+	struct apds9306_data *data = dev->data;
 
 	LOG_DBG("Start to initialize APDS9306...");
 
@@ -329,16 +349,17 @@ static int apds9306_init(const struct device *dev)
 		return -EFAULT;
 	}
 
-	value = ((config->resolution & 0x07) << 4) | (config->frequency & 0x0F);
+	data->frequency = config->frequency;
+	value = ((config->resolution & 0x07) << 4) | (data->frequency & 0x07);
 	LOG_DBG("Write configuration 0x%x to register 0x%x", value,
 		APDS9306_REGISTER_ALS_MEAS_RATE);
 	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_MEAS_RATE, value)) {
 		return -EFAULT;
 	}
 
-	value = config->gain;
+	data->gain = config->gain;
 	LOG_DBG("Write configuration 0x%x to register 0x%x", value, APDS9306_REGISTER_ALS_GAIN);
-	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_GAIN, value)) {
+	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_GAIN, data->gain)) {
 		return -EFAULT;
 	}
 
