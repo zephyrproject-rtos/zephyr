@@ -1,0 +1,13 @@
+identifier: esp32s3_s3/esp32s3/procpu
+name: ESP32-S3-Zero PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - spi
+  - watchdog
+  - pinmux
+  - nvs
+vendor: waveshare
