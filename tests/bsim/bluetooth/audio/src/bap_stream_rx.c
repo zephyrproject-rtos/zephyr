@@ -38,8 +38,7 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 			test_stream->valid_rx_cnt++;
 
 			if (test_stream->valid_rx_cnt >= MIN_SEND_COUNT) {
-				/* We set the flag is just one stream has received the expected */
-				SET_FLAG(flag_audio_received);
+				SET_FLAG(test_stream->flag_audio_received);
 			}
 		} else {
 			log_stream_rx(stream, info, buf);
@@ -68,7 +67,8 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 	if (info->flags & BT_ISO_FLAGS_ERROR) {
 		/* Fail the test if we have not received what we expected */
 		log_stream_rx(stream, info, buf);
-		if (test_stream->valid_rx_cnt > 1U && !TEST_FLAG(flag_audio_received)) {
+		if (test_stream->valid_rx_cnt > 1U &&
+		    !TEST_FLAG(test_stream->flag_audio_received)) {
 			FAIL("ISO receive error\n");
 		}
 	}
