@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/hwinfo.h>
 
 #ifdef CONFIG_PTP_CLOCK
 #include <zephyr/drivers/ptp_clock.h>
@@ -641,12 +642,28 @@ static const struct device *eth_nxp_enet_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
+/* we enable HWINFO from kconfig if the relevant DT prop is in the tree */
+#ifdef CONFIG_HWINFO
 /* Note this is not universally unique, it just is probably unique on a network */
 static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
-	uint32_t id = ETH_NXP_ENET_UNIQUE_ID;
+	uint8_t id_buf[3];
+	uint32_t id = 0;
+	int ret;
+
+	ret = hwinfo_get_device_id(id_buf, sizeof(id_buf));
+	if (ret == sizeof(id_buf)) {
+		id |= FIELD_PREP(0xFF0000, id_buf[2]);
+		id |= FIELD_PREP(0x00FF00, id_buf[1]);
+		id |= FIELD_PREP(0x0000FF, id_buf[0]);
+	} else {
+		/* Either implemented wrong, implemented insufficiently, or not at all */
+		/* This is fallback for platforms that don't have HWINFO properly */
+		id = ETH_NXP_ENET_UNIQUE_ID;
+	}
 
 	if (id == 0xFFFFFF) {
+		/* Allowed but should raise highest level error notice to user */
 		LOG_ERR("No unique MAC can be provided in this platform");
 	}
 
@@ -658,6 +675,9 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 	mac_addr[4] = FIELD_GET(0x00FF00, id);
 	mac_addr[5] = FIELD_GET(0x0000FF, id);
 }
+#else
+#define nxp_enet_unique_mac(...)
+#endif
 
 #ifdef CONFIG_SOC_FAMILY_NXP_IMXRT
 #include <fsl_ocotp.h>

@@ -163,7 +163,7 @@
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	phy-handle = <&phy>;
-	zephyr,random-mac-address;
+	nxp,unique-mac;
 	phy-connection-type = "rmii";
 };
 
