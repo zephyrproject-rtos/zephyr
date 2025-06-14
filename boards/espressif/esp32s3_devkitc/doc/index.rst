@@ -218,6 +218,17 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp32s3_devkitc
 
+.. note::
+
+   The default ``esp32s3_devkitc`` :term:`board target` corresponds to ``ESP32-S3-DevKitC-1-N8``.
+   Other variants of this board with different SPI Flash and PSRAM sizes can be selected
+   by specifying the :term:`variant` in the :term:`board qualifiers`:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: esp32s3_devkitc/esp32s3/procpu/n16r8
+      :goals: flash
+
 Debugging
 *********
 
