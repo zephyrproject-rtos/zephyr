@@ -13,9 +13,10 @@
 #ifndef __XEN_DOM0_SYSCTL_H__
 #define __XEN_DOM0_SYSCTL_H__
 
+#include <xen/public/xen.h>
+#include <xen/public/sysctl.h>
+
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/sysctl.h>
-#include <zephyr/xen/public/xen.h>
 
 /**
  * @defgroup xen_dom0 Xen Dom0 control

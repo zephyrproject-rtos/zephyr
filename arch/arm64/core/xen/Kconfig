@@ -8,6 +8,7 @@ config XEN
 	default y
 	depends on ARMV8_A
 	depends on DT_HAS_XEN_XEN_ENABLED
+	select GNU_C_EXTENSIONS
 	help
 	  Enables support of Xen hypervisor on arm64 platform. Get enabled
 	  when board device tree contains "hypervisor" node with "xen,xen"
