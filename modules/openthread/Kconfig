@@ -350,6 +350,13 @@ config OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS
 	help
 	  Enable support for functions such as modulated carrier and continuous carrier.
 
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER
+	bool "Enables support for Border Router functionality [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	imply NET_ROUTING
+	help 
+	  Enable support for Border Router using Openthread's implementation.
+
 menu "OpenThread stack features"
 rsource "Kconfig.features"
 endmenu
