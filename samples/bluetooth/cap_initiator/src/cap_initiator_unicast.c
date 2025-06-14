@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(cap_initiator_unicast, LOG_LEVEL_INF);
  */
 static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
-static struct bt_bap_unicast_group *unicast_group;
+static struct bt_cap_unicast_group *unicast_group;
 uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
 uint64_t total_unicast_tx_iso_packet_count; /* This value is exposed to test code */
 
@@ -336,16 +336,16 @@ static int discover_sources(void)
 
 static int unicast_group_create(void)
 {
-	struct bt_bap_unicast_group_stream_param source_stream_param = {
-		.qos = &unicast_preset_16_2_1.qos,
-		.stream = &peer.source_stream.bap_stream,
+	struct bt_cap_unicast_group_stream_param source_stream_param = {
+		.qos_cfg = &unicast_preset_16_2_1.qos,
+		.stream = &peer.source_stream,
 	};
-	struct bt_bap_unicast_group_stream_param sink_stream_param = {
-		.qos = &unicast_preset_16_2_1.qos,
-		.stream = &peer.sink_stream.bap_stream,
+	struct bt_cap_unicast_group_stream_param sink_stream_param = {
+		.qos_cfg = &unicast_preset_16_2_1.qos,
+		.stream = &peer.sink_stream,
 	};
-	struct bt_bap_unicast_group_stream_pair_param pair_params = {0};
-	struct bt_bap_unicast_group_param group_param = {0};
+	struct bt_cap_unicast_group_stream_pair_param pair_params = {0};
+	struct bt_cap_unicast_group_param group_param = {0};
 	int err;
 
 	if (peer.source_ep != NULL) {
@@ -359,7 +359,7 @@ static int unicast_group_create(void)
 	group_param.params_count = 1U;
 	group_param.params = &pair_params;
 
-	err = bt_bap_unicast_group_create(&group_param, &unicast_group);
+	err = bt_cap_unicast_group_create(&group_param, &unicast_group);
 	if (err != 0) {
 		LOG_ERR("Failed to create group: %d", err);
 		return err;
@@ -374,7 +374,7 @@ static int unicast_group_delete(void)
 {
 	int err;
 
-	err = bt_bap_unicast_group_delete(unicast_group);
+	err = bt_cap_unicast_group_delete(unicast_group);
 	if (err != 0) {
 		LOG_ERR("Failed to delete group: %d", err);
 		return err;
