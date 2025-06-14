@@ -319,6 +319,58 @@ static int cmd_i2c_speed(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+/* i2c target register <device> */
+static int cmd_i2c_target_register(const struct shell *sh,
+				   size_t argc, char **argv)
+{
+	char *s_dev_name = argv[ARGV_DEV];
+	const struct device *dev;
+	int ret;
+
+	dev = shell_device_get_binding(s_dev_name);
+	if (!dev) {
+		shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
+		return -ENODEV;
+	}
+
+	ret = i2c_target_driver_register(dev);
+	if (ret < 0) {
+		shell_error(sh, "I2C: Failed to register %s with err=%d",
+			    s_dev_name, ret);
+		return ret;
+	}
+
+	shell_print(sh, "I2C: Successfully registered %s", s_dev_name);
+
+	return 0;
+}
+
+/* i2c target unregister <device> */
+static int cmd_i2c_target_unregister(const struct shell *sh,
+				     size_t argc, char **argv)
+{
+	char *s_dev_name = argv[ARGV_DEV];
+	const struct device *dev;
+	int ret;
+
+	dev = shell_device_get_binding(s_dev_name);
+	if (!dev) {
+		shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
+		return -ENODEV;
+	}
+
+	ret = i2c_target_driver_unregister(dev);
+	if (ret < 0) {
+		shell_error(sh, "I2C: Failed to unregister %s with err=%d",
+			    s_dev_name, ret);
+		return ret;
+	}
+
+	shell_print(sh, "I2C: Successfully unregistered %s", s_dev_name);
+
+	return 0;
+}
+
 static bool device_is_i2c(const struct device *dev)
 {
 #ifdef CONFIG_I3C
@@ -339,6 +391,19 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 }
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_i2c_target,
+	SHELL_CMD_ARG(register, &dsub_device_name,
+		      "Register an i2c-target on its respective bus.\n"
+		      "Usage: target register <device>",
+		      cmd_i2c_target_register, 2, 0),
+	SHELL_CMD_ARG(unregister, &dsub_device_name,
+		      "Unegister an i2c-target from its respective bus.\n"
+		      "Usage: target unregister <device>",
+		      cmd_i2c_target_unregister, 2, 0),
+	SHELL_SUBCMD_SET_END     /* Array terminated. */
+);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 	SHELL_CMD_ARG(scan, &dsub_device_name,
@@ -374,6 +439,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 		      "Configure I2C bus speed\n"
 		      "Usage: speed <device> <speed>",
 		      cmd_i2c_speed, 3, 0),
+	SHELL_CMD_ARG(target, &sub_i2c_target,
+		      "Subcommands operating on i2c targets.",
+		      NULL, 3, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 
