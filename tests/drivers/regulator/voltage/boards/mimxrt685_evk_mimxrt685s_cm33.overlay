@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,19 +9,19 @@
  * so limit regulator voltage to this range.
  * Only test regulators we can safely change voltage to in RUN mode
  */
- &ldo1 {
+&ldo1 {
 	regulator-max-microvolt = <1800000>;
- };
+};
 
- &ldo2 {
+&ldo2 {
 	regulator-max-microvolt = <1800000>;
- };
+};
 
 /* Override LPADC0 pinctrl settings */
 &pinmux_lpadc0 {
 	group0 {
-		pinmux = <ADC0_CH0_PIO0_5>,
-			<ADC0_CH2_PIO0_19>;
+		pinmux = <ADC0_CH10_PIO0_20>,
+				<ADC0_CH2_PIO0_19>;
 		slew-rate = "normal";
 		drive-strength = "normal";
 		nxp,analog-mode;
@@ -29,9 +29,14 @@
 };
 
 / {
-	/* Note: make the following connections to run test on an RT685:
-	 * J30.1-> TP15
-	 * J30.3-> TP17
+	/* In this case, the LPADC reference source is set to set to VREFP (VREF_H),
+	 * The user needs to measure the voltage of VREF_H pin to set the value of
+	 * 'zephyr,vref-mv'.
+	 *
+	 * Note: make the following connections to run test on an RT685:
+	 * J30.4 (ADC channel0) -> JS11.1 (LDO2 output)
+	 * J30.3 (ADC channel1) -> JP26.1 (LDO1 output)
+	 * Connect VREF_L to GND, and VREF_H to 1.8V (connect JP9 and JP10).
 	 */
 	resources: resources {
 		compatible = "test-regulator-voltage";
@@ -52,22 +57,28 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	/* In this case, the LPADC reference source is set to VREFP(VREF_H),
+	 * The user needs to measure the voltage of VREFP pin to set the
+	 * value of 'zephyr,vref-mv'.
+	 */
+	voltage-ref= <0>;
+
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
-		zephyr,vref-mv = <1800>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <1793>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <12>;
-		zephyr,input-positive = <MCUX_LPADC_CH0A>;
+		zephyr,input-positive = <MCUX_LPADC_CH2B>;
 	};
 
 	channel@1 {
 		reg = <1>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
-		zephyr,vref-mv = <1800>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <1793>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 7)>;
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <MCUX_LPADC_CH2A>;
 	};
