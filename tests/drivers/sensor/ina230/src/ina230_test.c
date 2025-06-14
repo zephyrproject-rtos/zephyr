@@ -24,7 +24,6 @@ struct ina230_fixture {
 	const struct emul *mock;
 	const uint16_t current_lsb_uA;
 	const uint16_t rshunt_uOhms;
-	const uint16_t config;
 	const enum ina23x_ids dev_type;
 };
 
@@ -216,7 +215,6 @@ static void test_power(struct ina230_fixture *fixture)
 		.mock = EMUL_DT_GET(DT_DRV_INST(inst)),                                            \
 		.current_lsb_uA = DT_INST_PROP(inst, current_lsb_microamps),                       \
 		.rshunt_uOhms = DT_INST_PROP(inst, rshunt_micro_ohms),                             \
-		.config = DT_INST_PROP(inst, config),                                              \
 		.dev_type = INA23##v,                                                              \
 	}
 
