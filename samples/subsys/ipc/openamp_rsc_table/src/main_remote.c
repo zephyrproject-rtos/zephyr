@@ -38,6 +38,13 @@ LOG_MODULE_REGISTER(openamp_rsc_table);
 #define IPM_SEND(dev, w, id, d, s) ipm_send(dev, w, id, NULL, 0)
 #endif
 
+#ifdef CONFIG_OPENAMP_ADDR_TRANSLATION
+#include <addr_translation/addr_translation.h>
+#define METAL_IO_GET_OPS() metal_io_get_ops()
+#else
+#define METAL_IO_GET_OPS() NULL
+#endif
+
 /* Constants derived from device tree */
 #define SHM_NODE		DT_CHOSEN(zephyr_ipc_shm)
 #define SHM_START_ADDR	DT_REG_ADDR(SHM_NODE)
@@ -159,7 +166,7 @@ int platform_init(void)
 
 	/* declare shared memory region */
 	metal_io_init(shm_io, (void *)SHM_START_ADDR, &shm_physmap,
-		      SHM_SIZE, -1, 0, NULL);
+		      SHM_SIZE, -1, 0, METAL_IO_GET_OPS());
 
 	/* declare resource table region */
 	rsc_table_get(&rsc_table, &rsc_size);
