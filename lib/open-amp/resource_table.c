@@ -39,54 +39,34 @@ extern char ram_console_buf[];
 
 #define __resource Z_GENERIC_SECTION(.resource_table)
 
-static struct fw_resource_table __resource resource_table = {
-	.hdr = {
-		.ver = 1,
-		.num = RSC_TABLE_NUM_ENTRY,
-	},
-	.offset = {
+static struct fw_resource_table __resource resource_table = RESOURCE_TABLE_INIT;
 
-#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
-		offsetof(struct fw_resource_table, vdev),
-#endif
-
-#if defined(CONFIG_RAM_CONSOLE)
-		offsetof(struct fw_resource_table, cm_trace),
-#endif
-	},
-
-#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
-	/* Virtio device entry */
-	.vdev = {
-		RSC_VDEV, VIRTIO_ID_RPMSG, 0, RPMSG_IPU_C0_FEATURES, 0, 0, 0,
-		VRING_COUNT, {0, 0},
-	},
-
-	/* Vring rsc entry - part of vdev rsc entry */
-	.vring0 = {VRING_TX_ADDRESS, VRING_ALIGNMENT,
-		   CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF,
-		   VRING0_ID, 0},
-	.vring1 = {VRING_RX_ADDRESS, VRING_ALIGNMENT,
-		   CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF,
-		   VRING1_ID, 0},
-#endif
-
-#if defined(CONFIG_RAM_CONSOLE)
-	.cm_trace = {
-		RSC_TRACE,
-		(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,
-		"Zephyr_log",
-	},
-#endif
-};
-
-void rsc_table_get(struct fw_resource_table **table_ptr, int *length)
+void rsc_table_get(void **table_ptr, int *length)
 {
 	*length = sizeof(resource_table);
 #ifdef CONFIG_OPENAMP_COPY_RSC_TABLE
-	*table_ptr = (struct fw_resource_table *)RSC_TABLE_ADDR;
+	*table_ptr = (void *)RSC_TABLE_ADDR;
 	memcpy(*table_ptr, &resource_table, *length);
 #else
 	*table_ptr = &resource_table;
 #endif
 }
+
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+
+struct fw_rsc_vdev *rsc_table_to_vdev(void *rsc_table)
+{
+	return &((struct fw_resource_table *)rsc_table)->vdev;
+}
+
+struct fw_rsc_vdev_vring *rsc_table_get_vring0(void *rsc_table)
+{
+	return &((struct fw_resource_table *)rsc_table)->vring0;
+}
+
+struct fw_rsc_vdev_vring *rsc_table_get_vring1(void *rsc_table)
+{
+	return &((struct fw_resource_table *)rsc_table)->vring1;
+}
+
+#endif
