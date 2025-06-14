@@ -401,7 +401,7 @@ static int quectel_lcx6g_get_fix_rate(const struct device *dev, uint32_t *fix_in
 
 unlock_return:
 	quectel_lcx6g_unlock(dev);
-	return 0;
+	return ret;
 }
 
 static int quectel_lcx6g_set_navigation_mode(const struct device *dev,
