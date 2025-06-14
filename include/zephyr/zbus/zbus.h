@@ -59,11 +59,12 @@ struct zbus_channel_data {
 	sys_slist_t observers;
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION) || defined(__DOXYGEN__)
-	/** Net buf pool for message subscribers. It can be either the global or a separated one.
+#if defined(CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION) || defined(__DOXYGEN__)
+	/** Net buf pool for message subscribers and async listeners. It can be either the global or
+	 * a separated one.
 	 */
-	struct net_buf_pool *msg_subscriber_pool;
-#endif /* ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION */
+	struct net_buf_pool *msg_buf_pool;
+#endif /* ZBUS_MSG_BUF_POOL_ISOLATION */
 
 #if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS) || defined(__DOXYGEN__)
 	/** Kernel timestamp of the last publish action on this channel */
@@ -71,6 +72,13 @@ struct zbus_channel_data {
 	/** Number of times data has been published to this channel */
 	uint32_t publish_count;
 #endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
+
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER_ISOLATED_WORK_QUEUE) || defined(__DOXYGEN__)
+	/** The work queue used for processing the async listeners of this channel. It can be either
+	 * the system work queue or an isolated one.
+	 */
+	struct k_work_q *work_queue;
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER_ISOLATED_WORK_QUEUE */
 };
 
 /**
@@ -120,6 +128,7 @@ enum __packed zbus_observer_type {
 	ZBUS_OBSERVER_LISTENER_TYPE,
 	ZBUS_OBSERVER_SUBSCRIBER_TYPE,
 	ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,
+	ZBUS_OBSERVER_ASYNC_LISTENER_TYPE,
 };
 
 struct zbus_observer_data {
@@ -171,6 +180,13 @@ struct zbus_observer {
 		 */
 		struct k_fifo *message_fifo;
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
+
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER) || defined(__DOXGEN__)
+		/** Observer work. It turns the observer into an async listener. It only
+		 * exists if the @kconfig{CONFIG_ZBUS_ASYNC_LISTENER} is enabled.
+		 */
+		struct k_work *work;
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER */
 	};
 };
 
@@ -286,7 +302,6 @@ struct zbus_channel_observation {
 			   (.observers = SYS_SLIST_STATIC_INIT(                                    \
 				&_CONCAT(_zbus_chan_data_, _name).observers),))                    \
 	};                                                                                         \
-	static K_MUTEX_DEFINE(_CONCAT(_zbus_mutex_, _name));                                       \
 	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_channel, _name) = {                    \
 		ZBUS_CHANNEL_NAME_INIT(_name) /* Maybe removed */                                  \
 		IF_ENABLED(CONFIG_ZBUS_CHANNEL_ID, (.id = _id,))                                   \
@@ -297,6 +312,8 @@ struct zbus_channel_observation {
 		.data = &_CONCAT(_zbus_chan_data_, _name),                                         \
 		IF_ENABLED(ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,                             \
 			   (.msg_subscriber_pool = &_zbus_msg_subscribers_pool,))                  \
+		IF_ENABLED(CONFIG_ZBUS_ASYNC_LISTENER_ISOLATED_WORK_QUEUE,                         \
+			   (.work_queue = NULL,))                                                  \
 	}
 /* clang-format on */
 
@@ -555,6 +572,53 @@ struct zbus_channel_observation {
  * @param[in] _name The subscriber's name.
  */
 #define ZBUS_MSG_SUBSCRIBER_DEFINE(_name) ZBUS_MSG_SUBSCRIBER_DEFINE_WITH_ENABLE(_name, true)
+
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+struct zbus_async_listener_work {
+	struct k_work work;
+	struct k_fifo *message_fifo;
+	void (*callback)(const struct zbus_channel *chan, const void *msg);
+};
+
+void async_listener_work_handler(struct k_work *item);
+
+/* clang-format off */
+/**
+ * @brief Define and initialize an async listener.
+ *
+ * FIXME: [rodrigopex] add this text and update the params
+ *
+ * @param[in] _name The async listener's name.
+ * @param[in] _cb The async listener's callback function.
+ * @param[in] _enable The async listener's initial state.
+ */
+#define ZBUS_ASYNC_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, _enable)               \
+	static K_FIFO_DEFINE(_zbus_observer_work_fifo_##_name);                   \
+	static struct zbus_async_listener_work _zbus_observer_work_##_name = {    \
+		.work = Z_WORK_INITIALIZER(async_listener_work_handler),          \
+		.message_fifo = &_CONCAT(_zbus_observer_work_fifo_, _name),       \
+		.callback = _cb,                                                  \
+	};                                                                        \
+	static struct zbus_observer_data _CONCAT(_zbus_obs_data_, _name) = {      \
+		.enabled = _enable,                                               \
+		IF_ENABLED(CONFIG_ZBUS_PRIORITY_BOOST, (                          \
+			.priority = ZBUS_MIN_THREAD_PRIORITY,                     \
+		))                                                                \
+	};                                                                        \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
+		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                   \
+		.type = ZBUS_OBSERVER_ASYNC_LISTENER_TYPE,                        \
+		.data = &_CONCAT(_zbus_obs_data_, _name),                         \
+		.work = &_CONCAT(_zbus_observer_work_, _name).work,               \
+	}
+
+// FIXME: [rodrigopex]: add comments
+#define ZBUS_ASYNC_LISTENER_DEFINE(_name, _cb)                    \
+	ZBUS_ASYNC_LISTENER_DEFINE_WITH_ENABLE(_name, _cb, true)
+
+/* clang-format on */
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER */
+
 /**
  *
  * @brief Publish to a channel
@@ -762,7 +826,7 @@ static inline void *zbus_chan_user_data(const struct zbus_channel *chan)
 	return chan->user_data;
 }
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION) || defined(__DOXYGEN__)
+#if defined(CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION) || defined(__DOXYGEN__)
 
 /**
  * @brief Set the channel's msg subscriber `net_buf` pool.
@@ -776,10 +840,10 @@ static inline void zbus_chan_set_msg_sub_pool(const struct zbus_channel *chan,
 	__ASSERT(chan != NULL, "chan is required");
 	__ASSERT(pool != NULL, "pool is required");
 
-	chan->data->msg_subscriber_pool = pool;
+	chan->data->msg_buf_pool = pool;
 }
 
-#endif /* ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION */
+#endif /* CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION */
 
 #if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS) || defined(__DOXYGEN__)
 
