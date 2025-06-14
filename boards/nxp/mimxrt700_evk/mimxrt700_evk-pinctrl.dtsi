@@ -20,6 +20,18 @@
 		};
 	};
 
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <LP_FLEXCOMM2_P0_PIO1_11>,
+				<LP_FLEXCOMM2_P1_PIO1_12>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "high";
+			drive-open-drain;
+		};
+	};
+
 	pinmux_flexcomm8_i2c: pinmux_flexcomm8_i2c {
 		group0 {
 			pinmux = <LP_FLEXCOMM8_P0_PIO0_6>,
@@ -73,6 +85,21 @@
 			slew-rate = "normal";
 			drive-strength = "normal";
 			nxp,analog-mode;
+		};
+	};
+
+	pinmux_sai0: pinmux_sai0 {
+		group0 {
+			pinmux = <CLKCTL0_MCLK_PIO0_21>,
+				<SAI0_RX_SYNC_PIO0_1>,
+				<SAI0_TX_BCLK_PIO0_3>,
+				<SAI0_RX_DATA0_PIO0_2>,
+				<SAI0_TX_DATA0_PIO0_4>,
+				<SAI0_RX_BCLK_PIO0_0>,
+				<SAI0_TX_SYNC_PIO0_5>;
+			drive-strength = "high";
+			slew-rate = "normal";
+			input-enable;
 		};
 	};
 

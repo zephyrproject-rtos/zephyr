@@ -17,6 +17,11 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
+# The existing SAI diver cannot initialize the PLL on the board,
+# so the PLL settings will not be performed in the driver.
+config I2S_HAS_PLL_SETTING
+	default n
+
 endif # SOC_MIMXRT798S_CM33_CPU0
 
 if SOC_MIMXRT798S_CM33_CPU1
