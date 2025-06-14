@@ -319,6 +319,43 @@ static int cmd_i2c_speed(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_i2c_write_read(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	/* make space for extended register addresses */
+	uint8_t wbuf[MAX_I2C_BYTES + MAX_BYTES_FOR_REGISTER_INDEX - 1];
+	uint8_t rbuf[MAX_I2C_BYTES];
+	int read_bytes, dev_addr;
+	int write_bytes = 0;
+	int ret;
+
+	const struct device *dev = shell_device_get_binding(argv[ARGV_DEV]);
+
+	if (!dev) {
+		shell_error(shell_ctx, "I2C: Device driver %s not found.",
+			    argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	dev_addr = strtol(argv[ARGV_ADDR], NULL, 16);
+	read_bytes = strtol(argv[3], NULL, 16);
+
+	for (size_t i = 4; i < argc && i < MAX_I2C_BYTES; i++) {
+		wbuf[write_bytes++] = strtol(argv[i], NULL, 16);
+	}
+
+	ret = i2c_write_read(dev, dev_addr,
+			     wbuf, write_bytes,
+			     rbuf, read_bytes);
+	if (ret < 0) {
+		shell_error(shell_ctx, "Failed to write to device: %s (%d)",
+			    argv[ARGV_DEV], ret);
+	} else {
+		shell_hexdump(shell_ctx, rbuf, read_bytes);
+	}
+
+	return ret;
+}
+
 static bool device_is_i2c(const struct device *dev)
 {
 #ifdef CONFIG_I3C
@@ -374,6 +411,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 		      "Configure I2C bus speed\n"
 		      "Usage: speed <device> <speed>",
 		      cmd_i2c_speed, 3, 0),
+	SHELL_CMD_ARG(write_read, &dsub_device_name,
+		      "Writes bytes to an I2C device, followed by a read\n"
+		      "Usage: write_read <device> <addr> <read_byte_no> <byte> [<bytes>]",
+		      cmd_i2c_write_read, 5, MAX_I2C_BYTES),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 
