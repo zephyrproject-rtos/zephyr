@@ -9,5 +9,5 @@
 
 /* 4MB flash */
 &flash0 {
-	size = <0x0 DT_SIZE_M(4)>;
+	reg = <0x0 DT_SIZE_M(4)>;
 };
