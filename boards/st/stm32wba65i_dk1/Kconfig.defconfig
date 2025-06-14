@@ -1,10 +1,10 @@
-# STM32WBA65RI Nucleo board configuration
+# STM32WBA65I Discovery kit board configuration
 
 # Copyright (c) 2025 STMicroelectronics
 
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NUCLEO_WBA65RI
+if BOARD_STM32WBA65I_DK1
 
 config SPI_STM32_INTERRUPT
 	default y
@@ -22,4 +22,4 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 
 endif # BUILD_WITH_TFM
 
-endif # BOARD_NUCLEO_WBA65RI
+endif # BOARD_STM32WBA65I_DK1
