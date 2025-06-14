@@ -1919,7 +1919,6 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 {
 	struct bt_gatt_attr *incl = attr->user_data;
 	uint16_t handle = bt_gatt_attr_get_handle(incl);
-	struct bt_uuid *uuid = incl->user_data;
 	struct gatt_incl pdu;
 	uint8_t value_len;
 
@@ -1932,9 +1931,13 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 	 * The Service UUID shall only be present when the UUID is a
 	 * 16-bit Bluetooth UUID.
 	 */
-	if (uuid->type == BT_UUID_TYPE_16) {
-		pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(uuid)->val);
-		value_len += sizeof(pdu.uuid16);
+	if (incl != NULL) {
+		struct bt_uuid *uuid = incl->user_data;
+
+		if (uuid->type == BT_UUID_TYPE_16) {
+			pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(uuid)->val);
+			value_len += sizeof(pdu.uuid16);
+		}
 	}
 
 	/* Lookup for service end handle */
