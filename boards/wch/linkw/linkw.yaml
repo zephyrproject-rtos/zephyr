@@ -9,3 +9,7 @@ ram: 64
 flash: 128
 supported:
   - gpio
+  - i2c
+  - pwm
+  - uart
+  - watchdog
