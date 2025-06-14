@@ -6,4 +6,16 @@ if BOARD_RPI_PICO2
 config USB_SELF_POWERED
 	default n
 
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 16384 if NETWORKING
+
+if WIFI_AIROC
+
+choice AIROC_PART
+	default CYW43439
+endchoice
+
+endif # WIFI_AIROC
+
 endif # BOARD_RPI_PICO2
