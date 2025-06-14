@@ -1,0 +1,6 @@
+board:
+  name: ttgo_t3stm32
+  full_name: TTGO T3-STM32
+  vendor: lilygo
+  socs:
+    - name: stm32wl55xx
