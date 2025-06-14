@@ -15,4 +15,7 @@ config ESPI_TAF_NPCX
 	default y
 	depends on ESPI_TAF
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,itims,clock-frequency)
+
 endif # SOC_SERIES_NPCK3
