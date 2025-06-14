@@ -18,42 +18,6 @@
 
 LOG_MODULE_REGISTER(virtio_mmio, CONFIG_VIRTIO_LOG_LEVEL);
 
-/*
- * Based on Virtual I/O Device (VIRTIO) Version 1.3 specification:
- * https://docs.oasis-open.org/virtio/virtio/v1.3/csd01/virtio-v1.3-csd01.pdf
- */
-
-#define VIRTIO_MMIO_MAGIC_VALUE             0x000
-#define VIRTIO_MMIO_VERSION                 0x004
-#define VIRTIO_MMIO_DEVICE_ID               0x008
-#define VIRTIO_MMIO_VENDOR_ID               0x00c
-#define VIRTIO_MMIO_DEVICE_FEATURES         0x010
-#define VIRTIO_MMIO_DEVICE_FEATURES_SEL     0x014
-#define VIRTIO_MMIO_DRIVER_FEATURES         0x020
-#define VIRTIO_MMIO_DRIVER_FEATURES_SEL     0x024
-#define VIRTIO_MMIO_QUEUE_SEL               0x030
-#define VIRTIO_MMIO_QUEUE_SIZE_MAX          0x034
-#define VIRTIO_MMIO_QUEUE_SIZE              0x038
-#define VIRTIO_MMIO_QUEUE_READY             0x044
-#define VIRTIO_MMIO_QUEUE_NOTIFY            0x050
-#define VIRTIO_MMIO_INTERRUPT_STATUS        0x060
-#define VIRTIO_MMIO_INTERRUPT_ACK           0x064
-#define VIRTIO_MMIO_STATUS                  0x070
-#define VIRTIO_MMIO_QUEUE_DESC_LOW          0x080
-#define VIRTIO_MMIO_QUEUE_DESC_HIGH         0x084
-#define VIRTIO_MMIO_QUEUE_DRIVER_LOW        0x090
-#define VIRTIO_MMIO_QUEUE_DRIVER_HIGH       0x094
-#define VIRTIO_MMIO_QUEUE_DEVICE_LOW        0x0a0
-#define VIRTIO_MMIO_QUEUE_DEVICE_HIGH       0x0a4
-#define VIRTIO_MMIO_QUEUE_SHM_SEL           0x0ac
-#define VIRTIO_MMIO_QUEUE_SHM_LEN_LOW       0x0b0
-#define VIRTIO_MMIO_QUEUE_SHM_LEN_HIGH      0x0b4
-#define VIRTIO_MMIO_QUEUE_SHM_BASE_LOW      0x0b8
-#define VIRTIO_MMIO_QUEUE_SHM_BASE_HIGH     0x0bc
-#define VIRTIO_MMIO_QUEUE_RESET             0x0c0
-#define VIRTIO_MMIO_QUEUE_CONFIG_GENERATION 0x0fc
-#define VIRTIO_MMIO_CONFIG                  0x100
-
 #define VIRTIO_MMIO_MAGIC             0x74726976
 #define VIRTIO_MMIO_SUPPORTED_VERSION 2
 #define VIRTIO_MMIO_INVALID_DEVICE_ID 0
@@ -220,13 +184,13 @@ static int virtio_mmio_set_virtqueue(const struct device *dev, uint16_t virtqueu
 			    k_mem_phys_addr(virtqueue->desc) & UINT32_MAX);
 	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_DESC_HIGH,
 			    k_mem_phys_addr(virtqueue->desc) >> 32);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_DRIVER_LOW,
+	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_AVAIL_LOW,
 			    k_mem_phys_addr(virtqueue->avail) & UINT32_MAX);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_DRIVER_HIGH,
+	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_AVAIL_HIGH,
 			    k_mem_phys_addr(virtqueue->avail) >> 32);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_DEVICE_LOW,
+	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_USED_LOW,
 			    k_mem_phys_addr(virtqueue->used) & UINT32_MAX);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_DEVICE_HIGH,
+	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_USED_HIGH,
 			    k_mem_phys_addr(virtqueue->used) >> 32);
 
 	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_READY, 1);
