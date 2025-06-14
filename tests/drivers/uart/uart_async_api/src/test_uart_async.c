@@ -17,7 +17,7 @@
 #define NOCACHE_MEM 0
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-K_SEM_DEFINE(tx_done, 0, 1);
+K_SEM_DEFINE(tx_done, 0, 2);
 K_SEM_DEFINE(tx_aborted, 0, 1);
 K_SEM_DEFINE(rx_rdy, 0, 1);
 K_SEM_DEFINE(rx_buf_coherency, 0, 255);
@@ -833,8 +833,8 @@ static void test_chained_write_callback(const struct device *dev,
 	switch (evt->type) {
 	case UART_TX_DONE:
 		if (chained_write_next_buf) {
-			uart_tx(dev, chained_write_tx_bufs[1], 10, 100 * USEC_PER_MSEC);
 			chained_write_next_buf = false;
+			uart_tx(dev, chained_write_tx_bufs[1], 10, 100 * USEC_PER_MSEC);
 		}
 		tx_sent = 1;
 		k_sem_give(&tx_done);
