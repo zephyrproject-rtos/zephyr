@@ -386,7 +386,7 @@ static int uart_ra_sci_b_fifo_read(const struct device *dev, uint8_t *rx_data, c
 	}
 
 	/* Clear overrun error flag */
-	cfg->regs->CFCLR_b.ORERC = 0U;
+	cfg->regs->CFCLR_b.ORERC = 1U;
 
 	return num_rx;
 }
