@@ -181,6 +181,7 @@ static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
 {
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 	struct net_buf *buf;
+	int ret;
 
 	buf = bt_hci_buf_alloc(ep);
 	if (buf == NULL) {
@@ -189,7 +190,11 @@ static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
 	}
 
 	net_buf_add_mem(buf, bt_buf->data, bt_buf->len);
-	usbd_ep_enqueue(c_data, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
+	if (ret) {
+		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+	}
+
 	k_sem_take(&hci_data->sync_sem, K_FOREVER);
 	net_buf_unref(buf);
 }
