@@ -1,0 +1,18 @@
+version = 1
+
+[[annotations]]
+path = [
+        # zephyr-keep-sorted-start
+        "**/*.cfg",
+        "**/*.conf",
+        "**/*.html",
+        "**/*.rst",
+        "**/*.yaml",
+        "**/*.yml",
+        "**/*_defconfig",
+        "scripts/requirements-*.in",
+        "scripts/requirements-*.txt",
+        # zephyr-keep-sorted-stop
+]
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"

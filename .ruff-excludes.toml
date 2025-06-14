@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 
 # This list is generated, it contains all python scripts that existed before ruff was introduced,
 # remove entries for files that pass CI compliance testing.
@@ -313,7 +314,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM112",   # https://docs.astral.sh/ruff/rules/uncapitalized-environment-variables
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]

@@ -4,36 +4,37 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+
 import argparse
 import collections
-from itertools import takewhile
 import json
 import logging
 import os
-from pathlib import Path
 import platform
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
-import traceback
-import shlex
-import shutil
 import textwrap
-import unidiff
+import traceback
+from collections.abc import Iterable
+from itertools import takewhile
+from pathlib import Path
 
+import magic
+import unidiff
+from junitparser import Error, Failure, JUnitXml, Skipped, TestCase, TestSuite
+from reuse.project import Project
+from reuse.report import ProjectReport, ProjectSubsetReport
+from west.manifest import Manifest, ManifestProject
 from yamllint import config, linter
 
-from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
-import magic
-
-from west.manifest import Manifest
-from west.manifest import ManifestProject
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from get_maintainer import Maintainers, MaintainersError
 import list_boards
 import list_hardware
+from get_maintainer import Maintainers, MaintainersError
 
 logger = None
 
@@ -1362,6 +1363,85 @@ class GitDiffCheck(ComplianceTest):
             self.failure("\n".join(offending_lines))
 
 
+class LicenseAndCopyrightCheck(ComplianceTest):
+    """
+    Verify that every file touched by the patch set complies with the
+    `REUSE <https://reuse.software/>`_ licensing specification.
+    """
+
+    name = "LicenseAndCopyrightCheck"
+    doc = "Check SPDX headers and copyright lines with the reuse Python API."
+
+    _SEVERITY_FOR_CATEGORY = {
+        "missing_licenses": "error",
+        "files_without_licenses": "error",
+        "files_without_copyright": "error",
+        "read_errors": "error",
+        "non_compliant": "error",
+    }
+
+
+    def _record_paths(
+        self,
+        paths: Iterable[Path],
+        title: str,
+        severity: str,
+        desc: str | None = None,
+    ) -> None:
+        """Emit one ``fmtd_failure`` per path in *paths*."""
+        for p in paths:
+            rel_path = os.path.relpath(str(p), GIT_TOP)
+            self.fmtd_failure(severity, title, rel_path, desc=desc or "", line=1)
+
+    def run(self) -> None:
+        changed_files = get_files(filter="d")
+        if not changed_files:
+            return
+
+        project = Project.from_directory(GIT_TOP)
+        report = (
+            ProjectSubsetReport.generate(project, changed_files, multiprocessing=False)
+            if changed_files
+            else ProjectReport.generate(project, multiprocessing=False)
+        )
+
+        # ---- specific categories ---------------------------------------- #
+        self._record_paths(
+            report.files_without_licenses,
+            "License missing",
+            self._SEVERITY_FOR_CATEGORY["files_without_licenses"],
+            "File carries no SPDX-License-Identifier",
+        )
+        self._record_paths(
+            report.files_without_copyright,
+            "Copyright missing",
+            self._SEVERITY_FOR_CATEGORY["files_without_copyright"],
+            "File carries no SPDX-FileCopyrightText",
+        )
+        # Ignore?
+        self._record_paths(
+            report.read_errors,
+            "Read error",
+            self._SEVERITY_FOR_CATEGORY["read_errors"],
+            "File could not be read or parsed by reuse",
+        )
+
+        # Missing licence texts (keyed by licence identifier)
+        for lic_id, paths in getattr(report, "missing_licenses", {}).items():
+            self._record_paths(
+                paths,
+                "License text absent from LICENSES/",
+                self._SEVERITY_FOR_CATEGORY["missing_licenses"],
+                f"Licence file for '{lic_id}' not found in the repository.",
+            )
+
+        # Summarise
+        if not report.is_compliant:
+            self.failure(
+                "One or more modified files are not REUSE compliant. "
+                "See individual annotations above for details."
+            )
+
 class GitLint(ComplianceTest):
     """
     Runs gitlint on the commits and finds issues with style and syntax
@@ -2063,7 +2143,7 @@ def _main(args):
 
         test = testcase()
         try:
-            print(f"Running {test.name:16} tests in "
+            print(f"Running {test.name:30} tests in "
                   f"{resolve_path_hint(test.path_hint)} ...")
             test.run()
         except EndTest:
