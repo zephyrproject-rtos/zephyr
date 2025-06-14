@@ -5,6 +5,6 @@ config A4979_STEPPER
 	bool "Activate allegro A4979 stepper driver"
 	default y
 	depends on DT_HAS_ALLEGRO_A4979_ENABLED
-	select STEP_DIR_STEPPER
+	select STEPPER_INTERFACE_STEP_DIR
 	help
 	  Microstepping motor driver for stepper motors.

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-FileCopyrightText: Copyright (c) 2025 Andre Stefanov <mail@andrestefanov.de>
+# SPDX-License-Identifier: Apache-2.0
+
+comment "Stepper motion controller"
+
+rsource "ramp/Kconfig"
