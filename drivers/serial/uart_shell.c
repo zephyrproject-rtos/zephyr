@@ -170,20 +170,20 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_uart_cmds,
 	SHELL_CMD_ARG(write, &dsub_device_name,
-		      "Write data to the UART device\n"
-		      "Usage: write <device> <data>",
+		      SHELL_HELP("Write data to the UART device",
+				 "<device> <data>"),
 		      cmd_uart_write, 3, 0),
 	SHELL_CMD_ARG(read, &dsub_device_name,
-		      "read data from the UART device\n"
-		      "Usage: read <device> <duration in secs>",
+		      SHELL_HELP("Read data from the UART device",
+				 "<device> <duration in secs>"),
 		      cmd_uart_read, 3, 0),
 	SHELL_CMD_ARG(baudrate, &dsub_device_name,
-		      "Configure UART device baudrate\n"
-		      "Usage: baudrate <device> <baudrate>",
+		      SHELL_HELP("Configure the UART device baudrate",
+				 "<device> <baudrate>"),
 		      cmd_uart_baudrate, 3, 0),
 	SHELL_CMD_ARG(fc, &dsub_device_name,
-		      "Configure UART device flow control\n"
-		      "Usage: fc <device> <none|rtscts|dtrdsr|rs485>",
+		      SHELL_HELP("Configure the UART device flow control",
+				 "<device> <none|rtscts|dtrdsr|rs485>"),
 		      cmd_uart_flow_control, 3, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
