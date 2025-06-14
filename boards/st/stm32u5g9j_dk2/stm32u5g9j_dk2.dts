@@ -21,6 +21,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ltdc;
+		zephyr,touch = &gt911;
 	};
 
 	leds {
@@ -56,6 +57,14 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
+	};
+
+	ext_memory: memory@a0000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xa0000000 DT_SIZE_M(128)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 };
 
@@ -175,10 +184,17 @@
 };
 
 &i2c2 {
-	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpioe 5 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpiod 2 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &spi1 {
@@ -311,9 +327,45 @@ zephyr_udc0: &usbotg_hs {
 	};
 };
 
+&xspi1 {
+	clocks = <&rcc STM32_CLOCK(AHB2_2, 12U)>,
+			 <&rcc STM32_SRC_PLL2_Q HSPI_SEL(2)>;
+
+	pinctrl-0 = <&hspi1_dqs0_pi2 &hspi1_ncs_ph9
+		&hspi1_io0_ph10 &hspi1_io1_ph11
+		&hspi1_io2_ph12 &hspi1_io3_ph13
+		&hspi1_io4_ph14 &hspi1_io5_ph15
+		&hspi1_io6_pi0 &hspi1_io7_pi1
+		&hspi1_clk_pi3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx66lm1g45: xspi-nor-flash@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(1024)>; /* 1 Gbits */
+		ospi-max-frequency = <DT_FREQ_M(133)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			extflash_partition: partition@0 {
+				label = "ext_storage";
+				reg = <0 DT_SIZE_M(128)>;
+			};
+		};
+	};
+};
+
 &rtc {
 	clocks =  <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
-			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+			  <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
