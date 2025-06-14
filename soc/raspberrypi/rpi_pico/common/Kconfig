@@ -1,0 +1,65 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config RPI_PICO_BINARY_INFO
+	bool "Generate RaspberryPi Pico binary info"
+	default y
+	help
+	  Binary info is able to embed machine readable information with the binary in FLASH.
+	  It can read with picotool(https://github.com/raspberrypi/picotool).
+
+if RPI_PICO_BINARY_INFO
+
+config RPI_PICO_BINARY_INFO_PROGRAM_NAME_ENABLE
+	bool "Override program name in binary info"
+
+config RPI_PICO_BINARY_INFO_PROGRAM_NAME
+	string "Override string for program name in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_NAME_ENABLE
+
+config RPI_PICO_BINARY_INFO_PROGRAM_URL_ENABLE
+	bool "Override program url in binary info"
+
+config RPI_PICO_BINARY_INFO_PROGRAM_URL
+	string "String for program description in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_URL_ENABLE
+
+config RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION_ENABLE
+	bool "Override program descrpition in binary info"
+
+config RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION
+	string "String for program description in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_DESCRIPTION_ENABLE
+
+config RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE_ENABLE
+	bool "Override build date in binary info"
+
+config RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE
+	string "Override string for build date in binary info"
+	depends on RPI_PICO_BINARY_INFO_PROGRAM_BUILD_DATE_ENABLE
+
+config RPI_PICO_BINARY_INFO_PROGRAM_VERSION_STRING_ENABLE
+	bool "Override program version in binary info"
+	default y
+
+config RPI_PICO_BINARY_INFO_SDK_VERSION_STRING_ENABLE
+	bool "Override sdk version in binary info"
+	default y
+
+config RPI_PICO_BINARY_INFO_PICO_BOARD_ENABLE
+	bool "Override board in binary info"
+	default y
+
+config RPI_PICO_BINARY_INFO_ATTRIBUTE_BUILD_TYPE_ENABLE
+	bool "Override board in binary info"
+	default y
+
+config RPI_PICO_BINARY_INFO_BOOT_STAGE2_NAME_ENABLE
+	bool "Override board in binary info"
+	default y
+
+config RPI_PICO_BINARY_INFO_PINS_WITH_FUNC_ENABLE
+	bool "Override board in binary info"
+	default y
+
+endif
