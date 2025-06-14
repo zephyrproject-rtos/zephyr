@@ -19,6 +19,7 @@ config MSPI_AMBIQ_AP3
 	imply MSPI_XIP
 	imply MSPI_SCRAMBLE
 	imply MSPI_TIMING
+	imply MSPI_SINGLE_IO_DUMMY_CYCLES_SUPPORTED
 	help
 	  Enable driver for Ambiq MSPI.
 

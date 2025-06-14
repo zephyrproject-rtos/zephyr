@@ -293,6 +293,7 @@ ipc0: &cpuapp_cpurad_ipc {
 		mspi-cpp-mode = "MSPI_CPP_MODE_0";
 		mspi-endian = "MSPI_BIG_ENDIAN";
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		quad-enable-requirements = "S1B6";
 	};
 };
 

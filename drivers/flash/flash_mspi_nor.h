@@ -84,6 +84,7 @@ const struct flash_mspi_nor_cmds commands_single = {
 		.cmd = SPI_NOR_CMD_WREN,
 		.cmd_length = 1,
 	},
+#ifdef CONFIG_MSPI_SINGLE_IO_DUMMY_CYCLES_SUPPORTED
 	.read = {
 		.dir = MSPI_RX,
 		.cmd = SPI_NOR_CMD_READ_FAST,
@@ -91,6 +92,14 @@ const struct flash_mspi_nor_cmds commands_single = {
 		.addr_length = 3,
 		.rx_dummy = 8,
 	},
+#else
+	.read = {
+		.dir = MSPI_RX,
+		.cmd = SPI_NOR_CMD_READ,
+		.cmd_length = 1,
+		.addr_length = 3,
+	},
+#endif
 	.status = {
 		.dir = MSPI_RX,
 		.cmd = SPI_NOR_CMD_RDSR,
@@ -118,6 +127,7 @@ const struct flash_mspi_nor_cmds commands_single = {
 		.cmd = SPI_NOR_CMD_CE,
 		.cmd_length = 1,
 	},
+#ifdef CONFIG_MSPI_SINGLE_IO_DUMMY_CYCLES_SUPPORTED
 	.sfdp = {
 		.dir = MSPI_RX,
 		.cmd = JESD216_CMD_READ_SFDP,
@@ -125,6 +135,14 @@ const struct flash_mspi_nor_cmds commands_single = {
 		.addr_length = 3,
 		.rx_dummy = 8,
 	},
+#else
+	.sfdp = {
+		.dir = MSPI_RX,
+		.cmd = JESD216_CMD_READ_SFDP,
+		.cmd_length = 2,
+		.addr_length = 3,
+	},
+#endif
 };
 
 const struct flash_mspi_nor_cmds commands_quad_1_4_4 = {
