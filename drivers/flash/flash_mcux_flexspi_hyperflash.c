@@ -493,9 +493,11 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		len -= i;
 	}
 
+	/* FIXME: Currently, the clock update causes the system to get stuck. */
 	/* Clock FlexSPI at 332 MHZ (166 MHz SCLK in DDR mode) */
-	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MHZ(332));
+	/* (void)memc_flexspi_update_clock(&data->controller, &data->config,
+	 * data->port, MHZ(332));
+	 */
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange((uint32_t) dst, size);
