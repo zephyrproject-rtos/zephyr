@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Beechwoods Software, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_PICO_W
+	bool "Pico W LED driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_W_ENABLED
+	depends on NETWORKING
+	depends on WIFI
+	depends on CYW43439
+	help
+	  Enable support for Pico W LED controllers.
