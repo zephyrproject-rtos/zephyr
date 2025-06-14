@@ -82,6 +82,7 @@ struct display_stm32_ltdc_config {
 	const struct pinctrl_dev_config *pctrl;
 	void (*irq_config_func)(const struct device *dev);
 	const struct device *display_controller;
+	const int irqn;
 };
 
 static void stm32_ltdc_global_isr(const struct device *dev)
@@ -223,7 +224,10 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	data->pend_buf = pend_buf;
 
+	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+	irq_enable(config->irqn);
 	k_sem_take(&data->sem, K_FOREVER);
+	irq_disable(config->irqn);
 
 	return 0;
 }
@@ -602,7 +606,6 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 			    stm32_ltdc_global_isr,						\
 			    DEVICE_DT_INST_GET(inst),						\
 			    0);									\
-		irq_enable(DT_INST_IRQN(inst));							\
 	}											\
 	static struct display_stm32_ltdc_data stm32_ltdc_data_##inst = {			\
 		.frame_buffer = STM32_LTDC_FRAME_BUFFER_ADDR(inst),				\
@@ -708,6 +711,7 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 		.irq_config_func = stm32_ltdc_irq_config_func_##inst,				\
 		.display_controller = DEVICE_DT_GET_OR_NULL(					\
 			DT_INST_PHANDLE(inst, display_controller)),				\
+		.irqn = DT_INST_IRQN(inst),							\
 	};											\
 	DEVICE_DT_INST_DEFINE(inst,								\
 			&stm32_ltdc_init,							\
