@@ -370,7 +370,7 @@ manifest:
       revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
       path: modules/lib/uoscore-uedhoc
     - name: xen
-      revision: 784b3c216b52bf41204b8046fca39b2e1b34bc49
+      revision: 2aed8da0734432d22f81666cb6136013b99262d4
       path: modules/lib/xen
       remote: soburi
     - name: zcbor
