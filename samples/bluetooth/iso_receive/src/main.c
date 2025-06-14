@@ -15,6 +15,7 @@
 
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
 #define NAME_LEN            30
+#define BIS_INDEX_INVALID   0
 
 #define BT_LE_SCAN_CUSTOM BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
 					   BT_LE_SCAN_OPT_NONE, \
@@ -30,8 +31,12 @@ static bool         per_adv_lost;
 static bt_addr_le_t per_addr;
 static uint8_t      per_sid;
 static uint32_t     per_interval_us;
+static bool         print_adverts=true;
 
-static uint32_t     iso_recv_count;
+static uint32_t     iso_frame_count; /* incremented once per iso interval */
+#if (CONFIG_APP_FEATURES_BITMASK & 0x00000002)
+static uint32_t     iso_bis_lost_count[BIS_ISO_CHAN_COUNT];
+#endif
 
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
 static K_SEM_DEFINE(sem_per_sync, 0, 1);
@@ -39,6 +44,10 @@ static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
 static K_SEM_DEFINE(sem_per_big_info, 0, 1);
 static K_SEM_DEFINE(sem_big_sync, 0, BIS_ISO_CHAN_COUNT);
 static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
+
+/* converts iso chan pointer into to a bis_index in the range 1..N and o
+   deemed invalid */
+uint8_t get_bis_idx(struct bt_iso_chan *chan);
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
@@ -95,34 +104,36 @@ static const char *phy2str(uint8_t phy)
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-	char name[NAME_LEN];
+	if(print_adverts) {
+		char le_addr[BT_ADDR_LE_STR_LEN];
+		char name[NAME_LEN];
 
-	(void)memset(name, 0, sizeof(name));
+		(void)memset(name, 0, sizeof(name));
 
-	bt_data_parse(buf, data_cb, name);
+		bt_data_parse(buf, data_cb, name);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
-	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
-	       "Interval: 0x%04x (%u us), SID: %u\n",
-	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
-	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
-	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
-	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
-	       info->interval, BT_CONN_INTERVAL_TO_US(info->interval), info->sid);
+		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
+			"C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
+			"Interval: 0x%04x (%u us), SID: %u\n",
+			le_addr, info->adv_type, info->tx_power, info->rssi, name,
+			(info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
+			(info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
+			(info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
+			(info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
+			(info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+			phy2str(info->primary_phy), phy2str(info->secondary_phy),
+			info->interval, BT_CONN_INTERVAL_TO_US(info->interval), info->sid);
 
-	if (!per_adv_found && info->interval) {
-		per_adv_found = true;
+		if (!per_adv_found && info->interval) {
+			per_adv_found = true;
 
-		per_sid = info->sid;
-		per_interval_us = BT_CONN_INTERVAL_TO_US(info->interval);
-		bt_addr_le_copy(&per_addr, info->addr);
+			per_sid = info->sid;
+			per_interval_us = BT_CONN_INTERVAL_TO_US(info->interval);
+			bt_addr_le_copy(&per_addr, info->addr);
 
-		k_sem_give(&sem_per_adv);
+			k_sem_give(&sem_per_adv);
+		}
 	}
 }
 
@@ -133,16 +144,18 @@ static struct bt_le_scan_cb scan_callbacks = {
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
+	if(print_adverts) {
+		char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
-	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-	       "Interval 0x%04x (%u ms), PHY %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr,
-	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
+		printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+			"Interval 0x%04x (%u ms), PHY %s\n",
+			bt_le_per_adv_sync_get_index(sync), le_addr,
+			info->interval, info->interval * 5 / 4, phy2str(info->phy));
 
-	k_sem_give(&sem_per_sync);
+		k_sem_give(&sem_per_sync);
+	}
 }
 
 static void term_cb(struct bt_le_per_adv_sync *sync,
@@ -163,42 +176,46 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-	char data_str[129];
+	if(print_adverts) {
+		char le_addr[BT_ADDR_LE_STR_LEN];
+		char data_str[129];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
+		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
 
-	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
-	       "RSSI %i, CTE %u, data length %u, data: %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
-	       info->rssi, info->cte_type, buf->len, data_str);
+		printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
+			"RSSI %i, CTE %u, data length %u, data: %s\n",
+			bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+			info->rssi, info->cte_type, buf->len, data_str);
+	}
 }
 
 static void biginfo_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_iso_biginfo *biginfo)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
+	if( print_adverts) {
+		char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
+		bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
 
-	printk("BIG INFO[%u]: [DEVICE]: %s, sid 0x%02x, "
-	       "num_bis %u, nse %u, interval 0x%04x (%u ms), "
-	       "bn %u, pto %u, irc %u, max_pdu %u, "
-	       "sdu_interval %u us, max_sdu %u, phy %s, "
-	       "%s framing, %sencrypted\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid,
-	       biginfo->num_bis, biginfo->sub_evt_count,
-	       biginfo->iso_interval,
-	       (biginfo->iso_interval * 5 / 4),
-	       biginfo->burst_number, biginfo->offset,
-	       biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
-	       biginfo->max_sdu, phy2str(biginfo->phy),
-	       biginfo->framing ? "with" : "without",
-	       biginfo->encryption ? "" : "not ");
+		printk("BIG INFO[%u]: [DEVICE]: %s, sid 0x%02x, "
+			"num_bis %u, nse %u, interval 0x%04x (%u ms), "
+			"bn %u, pto %u, irc %u, max_pdu %u, "
+			"sdu_interval %u us, max_sdu %u, phy %s, "
+			"%s framing, %sencrypted\n",
+			bt_le_per_adv_sync_get_index(sync), le_addr, biginfo->sid,
+			biginfo->num_bis, biginfo->sub_evt_count,
+			biginfo->iso_interval,
+			(biginfo->iso_interval * 5 / 4),
+			biginfo->burst_number, biginfo->offset,
+			biginfo->rep_count, biginfo->max_pdu, biginfo->sdu_interval,
+			biginfo->max_sdu, phy2str(biginfo->phy),
+			biginfo->framing ? "with" : "without",
+			biginfo->encryption ? "" : "not ");
 
 
-	k_sem_give(&sem_per_big_info);
+		k_sem_give(&sem_per_big_info);
+	}
 }
 
 static struct bt_le_per_adv_sync_cb sync_callbacks = {
@@ -211,6 +228,7 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
+#if (CONFIG_APP_FEATURES_BITMASK & 0x00000002)==0	
 	char data_str[128];
 	size_t str_len;
 	uint32_t count = 0; /* only valid if the data is a counter */
@@ -218,29 +236,99 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	if (buf->len == sizeof(count)) {
 		count = sys_get_le32(buf->data);
 		if (IS_ENABLED(CONFIG_ISO_ALIGN_PRINT_INTERVALS)) {
-			iso_recv_count = count;
+			iso_frame_count = count;
 		}
 	}
 
-	if ((iso_recv_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
+	if ((iso_frame_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
 		str_len = bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
 		printk("Incoming data channel %p flags 0x%x seq_num %u ts %u len %u: "
 		       "%s (counter value %u)\n", chan, info->flags, info->seq_num,
 		       info->ts, buf->len, data_str, count);
 	}
+	iso_frame_count++;
+#else
+	/*
+	  The following code is used to print the received data from all BIS
+	  channels. 
+	  The data is expected to be in the format:
+ 	   R d < n:[s,m,c,l] n:[s,m,c,l] n:[s,m,c,l] n:[s,m,c,l] ...
+		 where for each BIS channel ...
+		  d is the delta time in ms since last print
+		  n is the BIS index 1..N as per the callback chan pointer
+		  s is the source id 1=Primary, 10..99=Secondary
+		  m is the source bis index in the payload
+		  c is the packet count provided by source in the payload
+		  l is the packet lost count for this bis channel 'n' since last print
+	*/
+	uint8_t bis_idx = get_bis_idx(chan);
+	if(bis_idx == BIS_INDEX_INVALID) {
+		printk("Invalid BIS Index %p\n", chan);
+		return;
+	}
+	uint8_t index = bis_idx-1;
 
-	iso_recv_count++;
+	/* Increment frame count if this is BIS1 as that is always the start of the frame*/
+	if(bis_idx==1){
+		iso_frame_count++;
+	}
+
+	/* if invalid packet then increment appropriate count*/
+	if((info->flags & BT_ISO_FLAGS_VALID)==0) {
+		iso_bis_lost_count[index]++;
+	}
+
+	if ((iso_frame_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
+		/* Print this BIS in format n:[s,m,c,l] */
+		uint8_t *payload = buf->data;
+	    
+		/* calculate the delta time since the last print */
+		static k_ticks_t old_ms = 0;
+		k_ticks_t now_ms = k_uptime_get();
+		k_ticks_t delta_ms = now_ms - old_ms;
+		old_ms = now_ms;
+
+		/* Print the current BIS number for this callback and a newline also if BIS1*/
+		if(bis_idx==1){
+			printk("\nR %u < %u:", (uint32_t)delta_ms, bis_idx);
+		} else {
+			printk(" %u:", bis_idx);
+		}
+		/* print data if valid in this callback */
+		if(info->flags & BT_ISO_FLAGS_VALID){
+			uint32_t count = *(uint32_t *)&payload[0];
+			printk("[%u,%u,%u,%u]", payload[4], payload[5], count, iso_bis_lost_count[index]);
+		} else {
+			printk("[-,-,-,%u]", iso_bis_lost_count[index]);
+		}
+		/* reset the lost count for this BIS channel */
+		iso_bis_lost_count[index]=0;
+	}
+#endif
 }
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	uint8_t bis_idx = get_bis_idx(chan);
+	if(bis_idx == BIS_INDEX_INVALID) {
+		printk("Invalid BIS Index %p\n", chan);
+		return;
+	}
+
 	const struct bt_iso_chan_path hci_path = {
 		.pid = BT_ISO_DATA_PATH_HCI,
 		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
 	};
 	int err;
 
-	printk("ISO Channel %p connected\n", chan);
+	printk("ISO Channel %p (bix_index=%u) connected\n", chan, bis_idx);
+
+#if CONFIG_APP_FEATURES_BITMASK & 0x00000002	
+	/* reset all the bis lost counts */
+	for (uint8_t i = 0U; i < BIS_ISO_CHAN_COUNT; i++) {
+		iso_bis_lost_count[i]=0;
+	}
+#endif	
 
 	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
 	if (err != 0) {
@@ -252,8 +340,14 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	printk("ISO Channel %p disconnected with reason 0x%02x\n",
-	       chan, reason);
+	uint8_t bis_idx = get_bis_idx(chan);
+	if(bis_idx == BIS_INDEX_INVALID) {
+		printk("Invalid BIS Index %p\n", chan);
+		return;
+	}
+
+	printk("ISO Channel %p (bix_index=%u) disconnected with reason 0x%02x\n",
+	       chan, bis_idx, reason);
 
 	if (reason != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
 		k_sem_give(&sem_big_sync_lost);
@@ -293,6 +387,17 @@ static struct bt_iso_big_sync_param big_sync_param = {
 	.sync_timeout = 100, /* in 10 ms units */
 };
 
+uint8_t get_bis_idx(struct bt_iso_chan *chan)
+{
+	/* valid bis index values are 1 .. CONFIG_BT_ISO_MAX_CHAN*/
+	for(int i=0; i<BIS_ISO_CHAN_COUNT;i++){
+		if(bis[i] == chan){
+			return i+1;
+		}
+	}
+	return BIS_INDEX_INVALID;
+}
+
 static void reset_semaphores(void)
 {
 	k_sem_reset(&sem_per_adv);
@@ -311,7 +416,7 @@ int main(void)
 	uint32_t sem_timeout_us;
 	int err;
 
-	iso_recv_count = 0;
+	iso_frame_count = 0;
 
 	printk("Starting Synchronized Receiver Demo\n");
 
@@ -350,6 +455,7 @@ int main(void)
 	printk("Success.\n");
 
 	do {
+		print_adverts=true;
 		reset_semaphores();
 		per_adv_lost = false;
 
@@ -435,6 +541,9 @@ int main(void)
 			continue;
 		}
 		printk("Periodic sync established.\n");
+#if CONFIG_APP_FEATURES_BITMASK & 0x00000001
+		print_adverts=false;
+#endif
 
 big_sync_create:
 		printk("Create BIG Sync...\n");

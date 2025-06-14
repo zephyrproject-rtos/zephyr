@@ -392,7 +392,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 
 		err = bt_send(buf);
 		if (err) {
-			LOG_ERR("Unable to send to driver (err %d)", err);
+			LOG_ERR("bt_hci_cmd_send() - unable to send to driver (err %d)", err);
 			net_buf_unref(buf);
 		}
 
@@ -3085,7 +3085,7 @@ static void hci_core_send_cmd(void)
 
 	err = bt_send(buf);
 	if (err) {
-		LOG_ERR("Unable to send to driver (err %d)", err);
+		LOG_ERR("hci_core.c: unable to send to driver (err %d)", err);
 		k_sem_give(&bt_dev.ncmd_sem);
 		hci_cmd_done(cmd(buf)->opcode, BT_HCI_ERR_UNSPECIFIED, buf);
 		net_buf_unref(buf);

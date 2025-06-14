@@ -239,6 +239,9 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 	LOG_DBG("iso %p chan %p", iso, chan);
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000004
+__attribute__((optimize("O0")))
+#endif
 static int validate_iso_setup_data_path_parms(const struct bt_iso_chan *chan, uint8_t dir,
 					      const struct bt_iso_chan_path *path)
 {
@@ -270,6 +273,7 @@ static int validate_iso_setup_data_path_parms(const struct bt_iso_chan *chan, ui
 		return -ENODEV;
 	}
 
+#if !defined(CONFIG_BT_ISO_BIS_RECV_SEND)
 	if (!iso->iso.info.can_recv && dir == BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 		LOG_DBG("Invalid dir %u for chan %p that cannot receive data", dir, chan);
 
@@ -281,6 +285,7 @@ static int validate_iso_setup_data_path_parms(const struct bt_iso_chan *chan, ui
 
 		return -EINVAL;
 	}
+#endif /* !CONFIG_BT_ISO_BIS_RECV_SEND */
 
 	CHECKIF(path->pid != BT_ISO_DATA_PATH_HCI &&
 		!IN_RANGE(path->pid, BT_ISO_DATA_PATH_VS_ID_MIN, BT_ISO_DATA_PATH_VS_ID_MAX)) {
@@ -311,16 +316,21 @@ static int validate_iso_setup_data_path_parms(const struct bt_iso_chan *chan, ui
 	return 0;
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000001
+__attribute__((optimize("O0")))
+#endif
 int bt_iso_setup_data_path(const struct bt_iso_chan *chan, uint8_t dir,
 			   const struct bt_iso_chan_path *path)
 {
 	int err;
 
+    printk("~MT~ bt_iso_setup_data_path(dir=%u)\n", dir);
 	err = validate_iso_setup_data_path_parms(chan, dir, path);
 	if (err != 0) {
 		return err;
 	}
 
+    printk("~MT~ calling hci_le_setup_iso_data_path()\n");
 	err = hci_le_setup_iso_data_path(chan->iso, dir, path);
 	if (err != 0) {
 		LOG_DBG("Failed to set data path: %d", err);
@@ -876,10 +886,12 @@ int conn_iso_send(struct bt_conn *conn, struct net_buf *buf, enum bt_iso_timesta
 	return 0;
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000008
+__attribute__((optimize("O0")))
+#endif
 static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *buf,
 			 uint8_t hdr_size)
 {
-	const struct bt_conn *iso_conn;
 	uint16_t max_data_len;
 
 	CHECKIF(!chan || !buf) {
@@ -894,11 +906,13 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 		return -ENOTCONN;
 	}
 
-	iso_conn = chan->iso;
+#if !defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+	const struct bt_conn *iso_conn = chan->iso;
 	if (!iso_conn->iso.info.can_send) {
 		LOG_DBG("Channel %p not able to send", chan);
 		return -EINVAL;
 	}
+#endif	
 
 	if (net_buf_headroom(buf) != BT_BUF_ISO_SIZE(0)) {
 		LOG_DBG("Buffer headroom (%d) != BT_BUF_ISO_SIZE(0) (%d) bytes",
@@ -928,6 +942,9 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 	return 0;
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000008
+__attribute__((optimize("O0")))
+#endif
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num)
 {
 	struct bt_hci_iso_sdu_hdr *hdr;
@@ -2750,7 +2767,7 @@ static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan **bis_channel
 
 		sys_slist_append(&big->bis_channels, &bis->node);
 	}
-
+	big->num_bis = num_bis;
 	return 0;
 }
 
@@ -3289,7 +3306,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	return err;
 }
 
-#if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
+#if defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(CONFIG_BT_ISO_BIS_RECV_SEND)
 static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_established *evt,
 					 struct bt_iso_info *info)
 {
@@ -3431,6 +3448,9 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 	return err;
 }
 
+#if CONFIG_BT_ISO_FUNC_NO_OPTIMIZE_MASK & 0x00000004
+__attribute__((optimize("O0")))
+#endif
 int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
 		    struct bt_iso_big **out_big)
 {
@@ -3502,10 +3522,25 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 			return -EINVAL;
 		}
 
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)	
+		/* For Group Talk BIS1 is rx and all the rest are Tx */
+		if(i==0) {
+			CHECKIF(param_bis->qos->rx == NULL) {
+				LOG_DBG("bis_channels[%u]: qos->rx is NULL", i);
+				return -EINVAL;
+			}
+		} else {
+			CHECKIF(param_bis->qos->tx == NULL) {
+				LOG_DBG("bis_channels[%u]: qos->tx is NULL", i);
+				return -EINVAL;
+			}
+		}
+#else	
 		CHECKIF(param_bis->qos->rx == NULL) {
 			LOG_DBG("bis_channels[%u]: qos->rx is NULL", i);
 			return -EINVAL;
 		}
+#endif		
 	}
 
 	big = get_free_big();
@@ -3520,7 +3555,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		cleanup_big(big);
 		return err;
 	}
-	big->num_bis = param->num_bis;
+	big->num_bis = param->num_bis; /* MT_CLEANUP why was this not done in big_init_bis? */
 
 	err = hci_le_big_create_sync(sync, big, param);
 	if (err) {

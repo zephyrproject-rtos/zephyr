@@ -118,6 +118,13 @@ struct ll_sync_iso_set {
 	struct ull_hdr ull;
 	struct lll_sync_iso lll;
 
+#if defined(CONFIG_BT_ISO_BIS_RECV_SEND)
+	uint32_t big_ref_point; /* Previously elapsed BIG reference point in
+				 * microseconds of the free running Controller
+				 * clock.
+				 */
+#endif /* CONFIG_BT_ISO_BIS_RECV_SEND */
+
 	/* Periodic Advertising Sync that contained the BIGInfo */
 	struct ll_sync_set *sync;
 
