@@ -371,6 +371,11 @@ Bluetooth Audio
 * ``BT_AUDIO_CONTEXT_TYPE_PROHIBITED`` has been renamed to
   :c:enumerator:`BT_AUDIO_CONTEXT_TYPE_NONE`. (:github:`89506`)
 
+* :c:func:`bt_bap_broadcast_assistant_discover` will now no longer perform reads of the remote BASS
+  receive states at the end of the procedure. Users will have to manually call
+  :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
+  prior to performing any operations.
+
 Bluetooth HCI
 =============
 
