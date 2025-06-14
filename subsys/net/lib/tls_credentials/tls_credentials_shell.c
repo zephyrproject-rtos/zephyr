@@ -152,10 +152,9 @@ static bool cred_buf_clear(void)
 }
 
 /* Parse a (possibly incomplete) chunk into the credential buffer */
-static int cred_buf_write(char *chunk)
+static int cred_buf_write(char *chunk, size_t chunk_len)
 {
 	char *writehead = cred_buf + cred_written;
-	size_t chunk_len = strlen(chunk);
 
 	/* Verify that there is room for the incoming chunk */
 	if ((writehead + chunk_len) >= (cred_buf + sizeof(cred_buf) - 1)) {
@@ -327,7 +326,8 @@ static void shell_clear_cred_buf(const struct shell *sh)
 /* Write data into the credential buffer, with shell feedback. */
 static int shell_write_cred_buf(const struct shell *sh, char *chunk)
 {
-	int res = cred_buf_write(chunk);
+	size_t chunk_len = strlen(chunk);
+	int res = cred_buf_write(chunk, chunk_len);
 
 	/* Report results. */
 
@@ -515,12 +515,50 @@ cleanup:
 	return err;
 }
 
+#define ASCII_CTRL_C 0x03
+
+static void tls_cred_cmd_load_bypass(const struct shell *sh, uint8_t *data, size_t len)
+{
+	bool escape = false;
+	int res;
+
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == ASCII_CTRL_C) {
+			len = i > 1 ? i - 1 : 0;
+			escape = true;
+			break;
+		}
+	}
+
+	res = cred_buf_write(data, len);
+	if (res == -ENOMEM) {
+		shell_set_bypass(sh, NULL);
+		shell_fprintf(sh, SHELL_ERROR, "Not enough room in credential buffer for "
+					       "provided data. Increase "
+					       "CONFIG_TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE.\n");
+		shell_clear_cred_buf(sh);
+		return;
+	}
+
+	if (escape) {
+		shell_set_bypass(sh, NULL);
+		shell_fprintf(sh, SHELL_NORMAL, "Stored %d bytes.\n", cred_written);
+	}
+}
+
 /* Buffers credential data into the credential buffer. */
 static int tls_cred_cmd_buf(const struct shell *sh, size_t argc, char *argv[])
 {
 	/* If the "clear" keyword is provided, clear the buffer rather than write to it. */
 	if (strcmp(argv[1], "clear") == 0) {
 		shell_clear_cred_buf(sh);
+		return 0;
+	}
+
+	if (strcmp(argv[1], "load") == 0) {
+		shell_clear_cred_buf(sh);
+
+		shell_set_bypass(sh, tls_cred_cmd_load_bypass);
 		return 0;
 	}
 
