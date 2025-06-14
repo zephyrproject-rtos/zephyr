@@ -434,6 +434,22 @@ void board_early_init_hook(void)
 				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
+	/*Make sure USDHC ram buffer has power up*/
+	POWER_DisablePD(kPDRUNCFG_APD_SDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_SDHC0_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
+	POWER_ApplyPD();
+
+	/* USDHC0 */
+	/* usdhc depend on 32K clock also */
+	CLOCK_AttachClk(kLPOSC_DIV32_to_32K_WAKE);
+	CLOCK_InitAudioPfd(kCLOCK_Pfd0, 24U); /* Target 400MHZ. */
+	CLOCK_AttachClk(kAUDIO_PLL_PFD0_to_SDIO0);
+	CLOCK_SetClkDiv(kCLOCK_DivSdio0Clk, 1);
+	RESET_ClearPeripheralReset(kUSDHC0_RST_SHIFT_RSTn);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_AttachClk(kLPOSC_to_WWDT0);
 #endif
