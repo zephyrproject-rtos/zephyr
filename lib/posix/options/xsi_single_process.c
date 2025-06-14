@@ -12,14 +12,15 @@
 #include <time.h>
 
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(xsi_single_process, CONFIG_XSI_SINGLE_PROCESS_LOG_LEVEL);
 
 extern int z_setenv(const char *name, const char *val, int overwrite);
-extern int z_clock_gettime(clockid_t clockid, struct timespec *tp);
 
 long gethostid(void)
 {
@@ -46,10 +47,11 @@ int gettimeofday(struct timeval *tv, void *tz)
 	 */
 	ARG_UNUSED(tz);
 
-	res = z_clock_gettime(CLOCK_REALTIME, &ts);
+	res = sys_clock_gettime(SYS_CLOCK_REALTIME, &ts);
 	if (res < 0) {
-		LOG_DBG("%s() failed: %d", "clock_gettime", res);
-		return res;
+		LOG_DBG("%s() failed: %d", "sys_clock_gettime", res);
+		errno = -res;
+		return -1;
 	}
 
 	tv->tv_sec = ts.tv_sec;
