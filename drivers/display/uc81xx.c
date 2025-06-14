@@ -517,7 +517,10 @@ static int uc81xx_controller_init(const struct device *dev)
 	const struct uc81xx_config *config = dev->config;
 	struct uc81xx_data *data = dev->data;
 
-	mipi_dbi_reset(config->mipi_dev, UC81XX_RESET_DELAY);
+	if (mipi_dbi_reset(config->mipi_dev, UC81XX_RESET_DELAY) < 0) {
+		return -EIO;
+	}
+
 	k_sleep(K_MSEC(UC81XX_RESET_DELAY));
 	uc81xx_busy_wait(dev);
 
