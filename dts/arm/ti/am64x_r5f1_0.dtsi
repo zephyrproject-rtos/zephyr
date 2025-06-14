@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/am64x_r5f_common.dtsi>
+
+/ {
+	systick_timer: timer@2460000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2460000 0x70>;
+		interrupts = <0 158 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "disabled";
+	};
+
+	mbox4: mailbox@29040000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29040000 0x200>;
+		interrupts = <0 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		usr-id = <0>;
+		#mbox-cells = <1>;
+		status = "okay";
+	};
+};
