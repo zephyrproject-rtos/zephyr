@@ -570,6 +570,7 @@ following map may be sent to force a reset:
 
     {
         (opt)"force"       : (int)
+        (opt)"boot_mode"   : (uint)
     }
 
 where:
@@ -577,9 +578,13 @@ where:
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | "force"               | Force reset if value > 0, optional if 0.          |
-    +-----------------------+---------------------------------------------------+
+    +-----------------------+-----------------------------------------------------------------+
+    | "force"               | Force reset if value > 0, optional if 0.                        |
+    +-----------------------+-----------------------------------------------------------------+
+    | "boot_mode"           | Specifies boot mode for image or application mode/selection,    |
+    |                       | requires :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE` |
+    |                       | to be enabled.                                                  |
+    +-----------------------+-----------------------------------------------------------------+
 
 
 System reset response
