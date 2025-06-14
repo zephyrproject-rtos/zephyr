@@ -75,4 +75,11 @@ config STM32_LTDC_DISABLE_FMC_BANK1
 	  Disable FMC bank1 if not used to prevent speculative read accesses.
 	  Refer to AN4861 "4.6 Special recommendations for Cortex-M7 (STM32F7/H7)".
 
+config STM32_LTDC_INTERMEDIATE_BUF_SIZE
+	int "Size of intermediate buffer used to copy new frame to old frame"
+	default 256
+	help
+	  When frame buffer is placed in SDRAM, an intermediate memory is used
+	  to copy new frame buffer to old, to speed up copying. Set to 0 to disable.
+
 endif # STM32_LTDC
