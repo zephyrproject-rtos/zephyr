@@ -2571,13 +2571,18 @@ static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_ext_adv_get_info(adv, &info);
 	if (err) {
-		shell_error(sh, "OOB data failed");
+		shell_error(sh, "Failed to get advertising set info: %d", err);
 		return err;
 	}
 
 	shell_print(sh, "Advertiser[%d] %p", selected_adv, adv);
 	shell_print(sh, "Id: %d, TX power: %d dBm", info.id, info.tx_power);
+	shell_print(sh, "Adv state: %d", info.ext_adv_state);
 	print_le_addr("Address", info.addr);
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV)) {
+		shell_print(sh, "Per Adv state: %d", info.per_adv_state);
+	}
 
 	return 0;
 }
