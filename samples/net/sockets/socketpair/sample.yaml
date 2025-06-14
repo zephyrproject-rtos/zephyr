@@ -8,10 +8,10 @@ common:
     - posix
   harness: net
   arch_exclude: posix
-  integration_platforms:
-    - qemu_x86
 tests:
   sample.net.sockets.socketpair:
+    integration_platforms:
+      - qemu_x86
     platform_exclude: s32k148_evb/s32k148
   sample.net.sockets.socketpair.s32k148_evb:
     extra_args: SHIELD=nxp_adtja1101
