@@ -6,6 +6,8 @@
  * Application overlay for spi devices
  */
 
+#include <zephyr/dt-bindings/sensor/iis3dwb.h>
+
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
  ***************************************/
@@ -438,4 +440,15 @@ test_spi_ad2s1210: ad2s1210@35 {
 	mode-gpios = <&test_gpio 1 (GPIO_ACTIVE_HIGH)>, <&test_gpio 2 (GPIO_ACTIVE_HIGH)>;
 	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
 	clock-frequency = <8192000>;
+};
+
+test_spi_iis3dwb: iis3dwb@36 {
+	compatible = "st,iis3dwb";
+	reg = <0x36>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <IIS3DWB_DT_FS_16G>;
+	odr = <IIS3DWB_DT_ODR_26k7Hz>;
+	filter = <IIS3DWB_DT_HP_ODR_DIV_800>;
 };
