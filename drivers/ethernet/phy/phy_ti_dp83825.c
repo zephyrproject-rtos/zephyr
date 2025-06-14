@@ -22,6 +22,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include "phy_common.h"
+
 #define PHY_TI_DP83825_PHYSCR_REG     0x11
 #define PHY_TI_DP83825_PHYSCR_REG_IE  BIT(1)
 #define PHY_TI_DP83825_PHYSCR_REG_IOE BIT(0)
@@ -43,6 +45,7 @@ struct ti_dp83825_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
 	enum dp83825_interface phy_iface;
+	enum phy_link_speed default_speeds;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -563,6 +566,9 @@ skip_int_gpio:
 	phy_ti_dp83825_monitor_work_handler(&data->phy_monitor_work.work);
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
+	/* Advertise default speeds */
+	phy_ti_dp83825_cfg_link(dev, config->default_speeds);
+
 	return 0;
 }
 
@@ -591,6 +597,7 @@ static DEVICE_API(ethphy, ti_dp83825_phy_api) = {
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
 		.phy_iface = DT_INST_ENUM_IDX(n, ti_interface_type),                               \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct ti_dp83825_data ti_dp83825_##n##_data;                                       \

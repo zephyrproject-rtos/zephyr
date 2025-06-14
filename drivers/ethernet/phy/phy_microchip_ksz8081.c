@@ -23,6 +23,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include "phy_common.h"
+
 #define PHY_MC_KSZ8081_OMSO_REG			0x16
 #define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK	BIT(15)
 #define PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK	BIT(5)
@@ -42,6 +44,7 @@ struct mc_ksz8081_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
 	enum ksz8081_interface phy_iface;
+	enum phy_link_speed default_speeds;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -513,6 +516,9 @@ skip_int_gpio:
 	k_work_init_delayable(&data->phy_monitor_work,
 				phy_mc_ksz8081_monitor_work_handler);
 
+	/* Advertise default speeds */
+	phy_mc_ksz8081_cfg_link(dev, config->default_speeds);
+
 	return 0;
 }
 
@@ -543,6 +549,7 @@ static DEVICE_API(ethphy, mc_ksz8081_phy_api) = {
 		.addr = DT_INST_REG_ADDR(n),					\
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
 		.phy_iface = DT_INST_ENUM_IDX(n, microchip_interface_type),	\
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),		\
 		RESET_GPIO(n)							\
 		INTERRUPT_GPIO(n)						\
 	};									\
