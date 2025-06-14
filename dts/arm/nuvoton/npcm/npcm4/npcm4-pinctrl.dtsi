@@ -1,0 +1,360 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/* Prebuild nodes for peripheral device's pin-muxing and pad properties */
+	/* Flash Interface Unit (FIU) */
+	/omit-if-no-ref/ fiu0_shd_cs_io0_io1_clk_gpio44_45_46_47: periph-fiu0-shd {
+		cs {
+			nuvoton,device-control = <NPCM_PINCTRL_DEVCNT_6_SHD_SPI_TRIS 0>;
+			pinmux = <GPIO44__SHD_CS 1>;
+		};
+		io0 {
+			pinmux = <GPIO45__SHD_DIO0 1>;
+		};
+		io1 {
+			pinmux = <GPIO46__SHD_DIO1 1>;
+		};
+		clk {
+			pinmux = <GPIO47__SHD_SCLK 1>;
+		};
+	};
+
+	/omit-if-no-ref/ fiu0_shd_quad_io2_io3_clk_gpio55_56: periph-fiu0-shd-quad {
+		io2 {
+			pinmux = <GPIO55__SHD_DIO2__WP_GPIO55 1>;
+		};
+		io3 {
+			pinmux = <GPIO56__SHD_DIO3 1>;
+		};
+	};
+
+	/* PSPI Intefaces */
+	/omit-if-no-ref/ pspi1_clk_gpio66_67_70_73_76_77: periph-pspi1 {
+		clk {
+			pinmux = <GPIO66__SPIP1_CLK 1>;
+		};
+		cs {
+			pinmux = <GPIO73__SPIP1_CS 1>;
+		};
+		io0 {
+			pinmux = <GPIO67__SPIP1_MOSI 1>;
+		};
+		io1 {
+			pinmux = <GPIO70__SPIP1_DIO1 1>;
+		};
+		io2 {
+			pinmux = <GPIO76__WP_GPIO76__SPIP1_DIO2 2>;
+		};
+		io3 {
+			pinmux = <GPIO77__SPIP1_DIO3 1>;
+		};
+	};
+
+	/* I2C peripheral interfaces */
+	/omit-if-no-ref/ i2c1a_scl_sda_gpio60_61: periph-i2c1a {
+		scl {
+			pinmux = <GPIO60__RSTOUT2__SCL1A 2>;
+		};
+		sda {
+			pinmux = <GPIO61__RSTOUT1__SDA1A 2>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c1b_scl_sda_gpio26_25: periph-i2c1b {
+		scl {
+			pinmux = <GPIO25__I3C3_SDA__PD6__LED_A__SDA1B 4>;
+		};
+		sda {
+			pinmux = <GPIO26__I3C3_SCL__PD5__LED_B__SCL1B 4>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c2a_scl_sda_gpio11_13: periph-i2c2a {
+		scl {
+			pinmux = <GPIO11__SCL2A__DRSA 1>;
+		};
+		sda {
+			pinmux = <GPIO13__SDA2A__DTRA 1>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c3a_scl_sda_gpioa7_a2: periph-i2c3a {
+		scl {
+			pinmux = <GPIOA2__SWDIO_2_CR_SOUT1__SDA3A 2>;
+		};
+		sda {
+			pinmux = <GPIOA7__SWCLK_2_CR_SIN1__SCL3A 2>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c4a_scl_sda_gpio36_37: periph-i2c4a {
+		scl {
+			pinmux = <GPIO36__ERR__VSBY_32KHZ_IN__PWM2__SCL4A 4>;
+		};
+		sda {
+			pinmux = <GPIO37__AFD__P1_DGH__TA2__SDA4A 4>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c4b_scl_sda_gpiof0_f1: periph-i2c4b {
+		scl {
+			pinmux = <GPIOF0__SCL4B 1>;
+		};
+		sda {
+			pinmux = <GPIOF1__SDA4B 1>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c5a_scl_sda_gpio34_35: periph-i2c5a {
+		scl {
+			pinmux = <GPIO34__SWDIO_1_CR_SOUT1__SLIN__SCL5A 3>;
+		};
+		sda {
+			pinmux = <GPIO35__SWCLK_1_CR_SIN1__INIT__P1_DGL__SDA5A 4>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c6a_scl_gpio96_97: periph-i2c6a {
+		scl {
+			pinmux = <GPIO96__I3C6_SCL__SCL6A 2>;
+		};
+		sda {
+			pinmux = <GPIO97__PECI__I3C6_SDA__SDA6A 3>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c6b_scl_sda_gpio16_17: periph-i2c6b {
+		scl {
+			pinmux = <GPIO16__DCDA__SCL6B 2>;
+		};
+		sda {
+			pinmux = <GPIO17__CLKOUT__RIA__SDA6B 3>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c7a_scl_sda_gpioc2_c3: periph-i2c7a {
+		scl {
+			pinmux = <GPIOC2__RTSC__SCL7A 2>;
+		};
+		sda {
+			pinmux = <GPIOC3__CTSC__SDA7A 2>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c8a_scl_sda_gpioc6_c7: periph-i2c8a {
+		scl {
+			pinmux = <GPIOC6__RTSD__SCL8A 2>;
+		};
+		sda {
+			pinmux = <GPIOC7__CTSD__SDA8A 2>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c9a_scl_sda_gpio32_33: periph-i2c9a {
+		scl {
+			pinmux = <GPIO32__RTSB__PD1__LED_F__SCL9A 4>;
+		};
+		sda {
+			pinmux = <GPIO33__CTSB__PD0__LED_G__SDA9A 4>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c10a_scl_sda_gpiod2_d3: periph-i2c10a {
+		scl {
+			pinmux = <GPIOD2__RTSE__SCL10A 2>;
+		};
+		sda {
+			pinmux = <GPIOD3__CTSE__SDA10A 2>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c11a_scl_sda_gpiod4_d5: periph-i2c11a {
+		scl {
+			pinmux = <GPIOD4__SINF__SCL11A 2>;
+		};
+		sda {
+			pinmux = <GPIOD5__SOUTF__SDA11A 2>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c12a_scl_sda_gpiod6_d7: periph-i2c12a {
+		scl {
+			pinmux = <GPIOD6__RTSF__SCL12A 2>;
+		};
+		sda {
+			pinmux = <GPIOD7__CTSF__SDA12A 2>;
+		};
+	};
+
+	/* I3C peripheral interfaces  */
+	/omit-if-no-ref/ i3c1_scl_sda_gpio21_22: periph-i3c1 {
+		scl {
+			pinmux = <GPIO21__BACK_CS__I3C1_SCL__DSRB__PE__CIRRX 2>;
+		};
+		sda {
+			pinmux = <GPIO22__I3C1_SDA__DTRB__BUSY__P2_DGL 1>;
+		};
+	};
+
+	/omit-if-no-ref/ i3c2_scl_sda_gpio23_24: periph-i3c2 {
+		scl {
+			pinmux = <GPIO23__PVT_CS__I3C2_SCL__DCDB__ACK 2>;
+		};
+		sda {
+			pinmux = <GPIO24__I3C2_SDA__RIB__PD7__P2_DGH 1>;
+		};
+	};
+
+	/omit-if-no-ref/ i3c3_scl_sda_gpio26_25: periph-i3c3 {
+		scl {
+			pinmux = <GPIO25__I3C3_SDA__PD6__LED_A__SDA1B 1>;
+		};
+		sda {
+			pinmux = <GPIO26__I3C3_SCL__PD5__LED_B__SCL1B 1>;
+		};
+	};
+
+	/omit-if-no-ref/ i3c4_scl_sda_gpiod0_d1: periph-i3c4 {
+		scl {
+			pinmux = <GPIOD0__I3C4_SCL__SINE 1>;
+		};
+		sda {
+			pinmux = <GPIOD1__I3C4_SDA__SOUTE 1>;
+		};
+	};
+
+	/omit-if-no-ref/ i3c5_scl_sda_gpio82_83: periph-i3c5 {
+		scl {
+			pinmux = <GPIO82__I3C5_SCL__PWM0 1>;
+		};
+		sda {
+			pinmux = <GPIO83__I3C5_SDA__TA0 1>;
+		};
+	};
+
+	/omit-if-no-ref/ i3c6_scl_sda_gpio96_97: periph-i3c6 {
+		scl {
+			pinmux = <GPIO96__I3C6_SCL__SCL6A 1>;
+		};
+		sda {
+			pinmux = <GPIO97__PECI__I3C6_SDA__SDA6A 2>;
+		};
+	};
+
+	/* UART peripheral interfaces */
+	/omit-if-no-ref/ cr_uart1_sin_sout_gpio14_15: periph-cr-uart1 {
+		sin {
+			pinmux = <GPIO14__SINA__CR_SIN1 2>;
+		};
+		sout {
+			pinmux = <GPIO15__SOUTA__CR_SOUT1__SOUTA_P80 2>;
+		};
+	};
+
+	/omit-if-no-ref/ cr_uart2_sin_sout_gpio30_31: periph-cr-uart2 {
+		sin {
+			pinmux = <GPIO30__SINB__CR_SIN2__PD3__LED_D 2>;
+		};
+		sout {
+			pinmux = <GPIO31__SOUTB__CR_SOUT2__PD2__LED_E 2>;
+		};
+	};
+
+	/* ADC peripheral interfaces */
+	/omit-if-no-ref/ adc_vin1_gpio93: periph-adc-vin1 {
+		vin {
+			pinmux = <GPIO93__THR1_VIN1_TD3P__DSADC_CLK 1>;
+		};
+	};
+
+	/omit-if-no-ref/ adc_vin2_gpio94: periph-adc-vin2 {
+		vin {
+			pinmux = <GPIO94__VIN2_THR2_TD4P 1>;
+		};
+	};
+
+	/omit-if-no-ref/ adc_vin3_gpio95: periph-adc-vin3 {
+		vin {
+			pinmux = <GPIO95__ATX5VSB__VIN3 2>;
+		};
+	};
+
+	/omit-if-no-ref/ adc_vin5_gpio87: periph-adc-vin5 {
+		vin {
+			pinmux = <GPIO87__VIN5 1>;
+		};
+	};
+
+	/omit-if-no-ref/ adc_vin7_gpio86: periph-adc-vin7 {
+		vin {
+			pinmux = <GPIO86__VIN7 1>;
+		};
+	};
+
+	/omit-if-no-ref/ adc_vin14_gpio92: periph-adc-vin14 {
+		vin {
+			pinmux = <GPIO92__THR14_VIN14_TD0P 1>;
+		};
+	};
+
+	/omit-if-no-ref/ adc_vin15_gpio91: periph-adc-vin15 {
+		vin {
+			pinmux = <GPIO91__THR15_VIN15_TD1P 1>;
+		};
+	};
+
+	/omit-if-no-ref/ adc_vin16_gpio91: periph-adc-vin16 {
+		vin {
+			pinmux = <GPIO90__THR16_VIN16_TD2P__DSMOUT 1>;
+		};
+	};
+
+	/* SGPIO peripheral interfaces */
+	/omit-if-no-ref/ iox1_ldsh_dout_din_sclk_gpio74_75_f2_f3: periph-siox1 {
+		ldsh {
+			pinmux = <GPIO74__IOX1_LDSH 1>;
+		};
+		dout {
+			pinmux = <GPIO75__IOX1_DOUT 1>;
+		};
+		din {
+			pinmux = <GPIOF2__IOX1_DIN 1>;
+		};
+		sclk {
+			pinmux = <GPIOF3__IOX1_SCLK 1>;
+		};
+	};
+
+	/omit-if-no-ref/ iox2_ldsh_dout_din_sclk_gpioa0_a1_a3_a4: periph-siox2 {
+		ldsh {
+			pinmux = <GPIOA0__PWM4__IOX2_LDSH 2>;
+		};
+		dout {
+			pinmux = <GPIOA1__TA4__IOX2_DOUT 2>;
+		};
+		din {
+			pinmux = <GPIOA3__PWM5__IOX2_DIN 2>;
+		};
+		sclk {
+			pinmux = <GPIOA4__TA5__IOX2_SCLK 2>;
+		};
+	};
+
+	/* PECI peripheral interfaces */
+	/omit-if-no-ref/ peci0_gpio97: periph-peci0 {
+		peci {
+			pinmux = <GPIO97__PECI__I3C6_SDA__SDA6A 1>;
+		};
+	};
+
+	/* USB peripheral interfaces */
+	/omit-if-no-ref/ usbdphy_en_clk_external: periph-usbd-phy {
+		clk {
+			pinmux = <GPIOA6__TA6__USB20 2>;
+		};
+	};
+};
