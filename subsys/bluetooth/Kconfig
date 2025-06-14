@@ -50,6 +50,7 @@ config BT_HCI_RAW
 
 config BT_HCI_RAW_H4
 	bool "RAW HCI H:4 transport"
+	select BT_DRV_RX_SUPPORT
 	help
 	  This option enables HCI RAW access to work over an H:4
 	  transport, note that it still need to be selected at runtime.
