@@ -37,4 +37,4 @@ static void producer_thread(void)
 	}
 }
 
-K_THREAD_DEFINE(producer_thread_id, 1024, producer_thread, NULL, NULL, NULL, 5, 0, 1000);
+K_THREAD_DEFINE(producer_thread_id, 2048, producer_thread, NULL, NULL, NULL, 5, 0, 1000);

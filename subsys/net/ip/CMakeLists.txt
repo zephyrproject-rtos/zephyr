@@ -63,7 +63,7 @@ endif()
 if(CONFIG_NET_PKT_ALLOC_STATS)
   zephyr_linker_sources(DATA_SECTIONS iterables_net_pkt_alloc_stats.ld)
   zephyr_iterable_section(NAME net_pkt_alloc_stats_slab GROUP DATA_REGION
-    ${XIP_ALIGN_WITH_INPUT} SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+    ${XIP_ALIGN_WITH_INPUT})
 endif()
 
 # To get private includes like net_shell.h
