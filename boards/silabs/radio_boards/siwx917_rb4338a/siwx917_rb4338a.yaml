@@ -22,4 +22,5 @@ supported:
   - adc
   - wifi
   - rtc
+  - counter
 vendor: silabs
