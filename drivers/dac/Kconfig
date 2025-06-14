@@ -67,4 +67,6 @@ source "drivers/dac/Kconfig.max22017"
 
 source "drivers/dac/Kconfig.renesas_ra"
 
+source "drivers/dac/Kconfig.samd5x"
+
 endif # DAC
