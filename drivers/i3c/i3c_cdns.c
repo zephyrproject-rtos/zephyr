@@ -34,7 +34,7 @@
 #define CONF_STATUS0_SUPPORTS_DDR         BIT(5)
 #define CONF_STATUS0_SEC_MASTER           BIT(4)
 /* And it was replaced with a Dev Role mask */
-#define CONF_STATUS0_DEV_ROLE(x)          ((x) & GENMASK(5, 4) >> 4)
+#define CONF_STATUS0_DEV_ROLE(x)          (((x) & GENMASK(5, 4)) >> 4)
 #define CONF_STATUS0_DEV_ROLE_MAIN_MASTER 0
 #define CONF_STATUS0_DEV_ROLE_SEC_MASTER  1
 #define CONF_STATUS0_DEV_ROLE_SLAVE       2
