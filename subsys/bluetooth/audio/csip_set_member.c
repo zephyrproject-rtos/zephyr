@@ -172,7 +172,7 @@ static int sirk_encrypt(struct bt_conn *conn, const struct bt_csip_sirk *sirk,
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static const uint8_t test_k[] = {
 			/* Sample data is in big-endian, we need it in little-endian. */
-+                       REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
+			REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
 				     0xd4, 0x48, 0x69, 0x6f,
 				     0x06, 0x1e, 0xc6, 0x22,
 				     0x3c, 0xe5, 0xce, 0xd9) };
