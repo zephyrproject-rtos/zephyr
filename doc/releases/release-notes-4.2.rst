@@ -501,6 +501,13 @@ New Boards
 
    * :zephyr:board:`ophelia4ev` (``ophelia4ev``)
 
+
+Devicetree
+**********
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
 New Drivers
 ***********
 
