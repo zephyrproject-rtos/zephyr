@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(counter_it8xxx2, CONFIG_COUNTER_LOG_LEVEL);
 /* ETnCTLR bit definitions (for n = 7 ~ 8) */
 #define ET_COMB BIT(3) /* only defined in ET7CTRL */
 #define ET_TC   BIT(2)
+#define ET_RST_EN (ET_RST | ET_EN)
 #define ET_RST  BIT(1)
 #define ET_EN   BIT(0)
 
@@ -35,8 +36,10 @@ struct counter_it8xxx2_config {
 	mm_reg_t base;
 	/* alarm timer irq */
 	int alarm_irq;
+	int alarm_flag;
 	/* top timer irq */
 	int top_irq;
+	int top_flag;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -89,7 +92,7 @@ static int counter_it8xxx2_start(const struct device *dev)
 {
 	LOG_DBG("starting top timer");
 
-	counter_it8xxx2_write8(dev, ET_EN | ET_RST, ET8CTRL);
+	counter_it8xxx2_write8(dev, ET_RST_EN, ET8CTRL);
 
 	return 0;
 }
@@ -141,16 +144,16 @@ static int counter_it8xxx2_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	irq_disable(config->alarm_irq);
 
+	counter_it8xxx2_write8(dev, counter_it8xxx2_read8(dev, ET7CTRL) & ~ET_EN, ET7CTRL);
+
 	counter_it8xxx2_write32(dev, alarm_cfg->ticks, ET7CNTLLR);
 
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
 
-	LOG_DBG("%p Counter alarm set to %u ticks", dev, alarm_cfg->ticks);
-
-	counter_it8xxx2_write8(dev, counter_it8xxx2_read8(dev, ET7CTRL) | ET_EN | ET_RST, ET7CTRL);
-
 	ite_intc_isr_clear(config->alarm_irq);
+
+	counter_it8xxx2_write8(dev, counter_it8xxx2_read8(dev, ET7CTRL) | ET_RST_EN, ET7CTRL);
 
 	irq_enable(config->alarm_irq);
 
@@ -212,13 +215,16 @@ static int counter_it8xxx2_set_top_value(const struct device *dev,
 
 	irq_disable(config->top_irq);
 
+	/* disable top timer */
+	counter_it8xxx2_write8(dev, counter_it8xxx2_read8(dev, ET8CTRL) & ~ET_EN, ET8CTRL);
+
 	/* set new top value */
 	counter_it8xxx2_write32(dev, top_cfg->ticks, ET8CNTLLR);
 
-	/* re-enable and reset timer */
-	counter_it8xxx2_write8(dev, counter_it8xxx2_read8(dev, ET8CTRL) | ET_EN | ET_RST, ET8CTRL);
-
 	ite_intc_isr_clear(config->top_irq);
+
+	/* re-enable and reset timer */
+	counter_it8xxx2_write8(dev, counter_it8xxx2_read8(dev, ET8CTRL) | ET_RST_EN, ET8CTRL);
 
 	irq_enable(config->top_irq);
 
@@ -273,17 +279,33 @@ static void counter_it8xxx2_top_isr(const struct device *dev)
 static int counter_it8xxx2_init(const struct device *dev)
 {
 	const struct counter_it8xxx2_config *config = dev->config;
+	uint8_t et7_ctrl = counter_it8xxx2_read8(dev, ET7CTRL);
+	uint8_t et8_ctrl = counter_it8xxx2_read8(dev, ET8CTRL);
 
 	LOG_DBG("max top value = 0x%08x", config->info.max_top_value);
 	LOG_DBG("frequency = %d", config->info.freq);
 	LOG_DBG("channels = %d", config->info.channels);
 
-	/* set the top value of top timer  */
-	counter_it8xxx2_write32(dev, config->info.max_top_value, ET8CNTLLR);
+	/* First time enable: enable and re-start timer -> disable timer */
+	counter_it8xxx2_write8(dev, et7_ctrl | ET_RST_EN, ET7CTRL);
+	counter_it8xxx2_write8(dev, et7_ctrl & ~ET_EN, ET7CTRL);
+	counter_it8xxx2_write8(dev, et8_ctrl | ET_RST_EN, ET8CTRL);
+	counter_it8xxx2_write8(dev, et8_ctrl & ~ET_EN, ET8CTRL);
 
-	/* set the frequencies of alarm timer and top timer */
+	/* Set rising edge trigger of alarm timer and top timer */
+	ite_intc_irq_polarity_set(config->alarm_irq, config->alarm_flag);
+	ite_intc_irq_polarity_set(config->top_irq, config->top_flag);
+
+	/* Clear interrupt status of alarm timer and top timer */
+	ite_intc_isr_clear(config->alarm_irq);
+	ite_intc_isr_clear(config->top_irq);
+
+	/* Select clock source of alarm timer and top timer */
 	counter_it8xxx2_write8(dev, ETnPSR_32768HZ, ET7PSR);
 	counter_it8xxx2_write8(dev, ETnPSR_32768HZ, ET8PSR);
+
+	/* Set top value ticks to top timer */
+	counter_it8xxx2_write32(dev, config->info.max_top_value, ET8CNTLLR);
 
 	config->irq_config_func(dev);
 
@@ -319,7 +341,9 @@ static DEVICE_API(counter, counter_it8xxx2_driver_api) = {
 			},                                                                         \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.alarm_irq = DT_INST_IRQN_BY_IDX(n, 0),                                            \
+		.alarm_flag = DT_INST_IRQ_BY_IDX(n, 0, flags),                                     \
 		.top_irq = DT_INST_IRQN_BY_IDX(n, 1),                                              \
+		.top_flag = DT_INST_IRQ_BY_IDX(n, 1, flags),                                       \
 		.irq_config_func = counter_it8xxx2_cfg_func_##n,                                   \
 	};                                                                                         \
                                                                                                    \
