@@ -22,6 +22,8 @@ if(CONFIG_MEMC_MCUX_FLEXSPI)
   endif()
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_BOOTLOADER_TEENSY bootloader_teensy.c)
+
 zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
