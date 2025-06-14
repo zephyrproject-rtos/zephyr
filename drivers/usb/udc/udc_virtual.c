@@ -89,11 +89,28 @@ static int vrt_ctrl_feed_dout(const struct device *dev,
 	return 0;
 }
 
+static void drop_control_transfers(const struct device *dev)
+{
+	struct net_buf *buf;
+
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+}
+
 static int vrt_handle_setup(const struct device *dev,
 			    struct uvb_packet *const pkt)
 {
 	struct net_buf *buf;
 	int err, ret;
+
+	drop_control_transfers(dev);
 
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 8);
 	if (buf == NULL) {
