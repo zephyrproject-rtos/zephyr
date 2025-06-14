@@ -1,0 +1,23 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ */
+
+&adc {
+	channel@0 {
+		zephyr,resolution = <8>;
+	};
+
+	channel@1 {
+		zephyr,resolution = <8>;
+	};
+
+	channel@2 {
+		zephyr,resolution = <8>;
+	};
+
+	channel@7 {
+		zephyr,resolution = <8>;
+	};
+};
