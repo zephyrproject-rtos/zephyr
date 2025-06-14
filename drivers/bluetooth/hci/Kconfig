@@ -245,6 +245,14 @@ config BT_DA1469X
 	  Bluetooth HCI driver for communication with CMAC core
 	  on DA1469x MCU.
 
+config BT_NRF53
+	bool "nRF53 HCI driver"
+	default y
+	depends on SOC_NRF5340_CPUAPP
+	help
+	  Bluetooth HCI driver for communication with the network
+	  core on the nRF53.
+
 config BT_NXP
 	bool
 	default y
