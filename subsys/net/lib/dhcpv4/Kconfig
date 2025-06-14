@@ -96,6 +96,23 @@ config NET_DHCPV4_OPTION_PRINT_IGNORED
 	  received and ignored. If this is not set, then we print these as unknown
 	  options.
 
+config NET_DHCPV4_DNS_SERVER_VIA_INTERFACE
+	bool "Make DNS servers specific to the network interface"
+	depends on NET_DHCPV4_OPTION_DNS_ADDRESS
+	default y
+	help
+	  If this is set, then if the system has multiple network interfaces
+	  and each has DHCP enabled, then assign DNS servers received from that
+	  network interface, to that specific interface.
+	  If this option is not set, then any interface can be used for all
+	  the configured DNS server addresses when doing DNS queries.
+	  Example: We receive DNS server 192.0.2.53 DHCPv4 option from Wi-Fi
+	  interface and DNS server 198.51.100.53 from Ethernet interface.
+	  When this option is set, the DNS resolver will use DNS server
+	  192.0.2.53 when sending DNS query to the Wi-Fi interface and DNS
+	  server 198.51.100.53 when sending DNS query to the Ethernet
+	  interface.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER

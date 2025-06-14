@@ -121,6 +121,19 @@ config DNS_SERVER5
 
 endif # DNS_SERVER_IP_ADDRESSES
 
+config DNS_RECONFIGURE_CLEANUP
+	bool "Cleanup old DNS server entries when reconfiguring"
+	help
+	  If calling dns_resolve_reconfigure() when new DNS servers
+	  are being set, for example if receiving new ones from DHCP server,
+	  remove the old entries before setting up the new ones.
+	  If you have only one network interface, then this can be enabled.
+	  If you have multiple network interfaces, then this should be disabled
+	  because the later configuration update would remove the entries
+	  set by the other network interface configuration.
+	  The previous default in Zephyr 4.1 or earlier was to have this enabled.
+	  The current default in Zephyr 4.2 is to disable this option.
+
 config DNS_NUM_CONCUR_QUERIES
 	int "Number of simultaneous DNS queries per one DNS context"
 	default 1

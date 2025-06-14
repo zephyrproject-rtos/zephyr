@@ -1412,7 +1412,25 @@ static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
 	}
 
 	ctx = dns_resolve_get_default();
-	status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+
+	if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
+		/* If we are using the interface to resolve DNS servers,
+		 * we need to save the interface index.
+		 */
+		int ifindex = net_if_get_by_iface(net_pkt_iface(pkt));
+		int interfaces[MAX_DNS_SERVERS];
+
+		for (uint8_t i = 0; i < server_count; i++) {
+			interfaces[i] = ifindex;
+		}
+
+		status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
+								 dns_servers,
+								 interfaces);
+	} else {
+		status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+	}
+
 	if (status < 0) {
 		NET_DBG("Failed to reconfigure DNS resolver from DHCPv6 "
 			"option: %d", status);
@@ -2199,6 +2217,16 @@ static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
 		NET_DBG("Interface %p going down", iface);
 		dhcpv6_set_timeout(iface, UINT64_MAX);
+
+		/* Remove DNS servers as interface is gone. We only need to
+		 * do this for this interface. If using global setting, the
+		 * DNS servers are removed automatically when the interface
+		 * comes back up.
+		 */
+		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
+			dns_resolve_remove(dns_resolve_get_default(),
+					   net_if_get_by_iface(iface));
+		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 		dhcpv6_enter_state(iface, NET_DHCPV6_INIT);

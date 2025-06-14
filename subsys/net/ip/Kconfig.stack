@@ -17,6 +17,7 @@ config NET_TX_STACK_SIZE
 
 config NET_RX_STACK_SIZE
 	int "RX thread stack size"
+	default 1792 if DNS_RESOLVER
 	default 1500
 	help
 	  Set the RX thread stack size in bytes. The RX thread is waiting

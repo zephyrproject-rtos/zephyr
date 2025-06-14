@@ -14,3 +14,6 @@ tests:
   net.dns.no_ipv4:
     extra_configs:
       - CONFIG_NET_IPV4=n
+  net.dns.addremove.reconfigure_cleanup:
+    extra_configs:
+      - CONFIG_DNS_RECONFIGURE_CLEANUP=y
