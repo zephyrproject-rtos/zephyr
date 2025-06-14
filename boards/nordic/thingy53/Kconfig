@@ -3,8 +3,5 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config THINGY53_INIT_PRIORITY
-	int "Init priority"
-	default 79
-	help
-	  Initialization priority of the Thingy:53.
+config BOARD_THINGY53
+	select BOARD_LATE_INIT_HOOK if SENSOR && !TRUSTED_EXECUTION_SECURE
