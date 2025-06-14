@@ -319,6 +319,15 @@ struct bt_dev_le {
 	 * Each element in this list contains a reference to its `conn` object.
 	 */
 	sys_slist_t		conn_ready;
+#if defined(CONFIG_BT_ISO)
+	/* Separate list of 'struct bt_conn' specific to ISO connections
+	 * that have either pending data to send, or something to process.
+	 * Having a separate list of ISO connections allows the
+	 * stack to prioritize sending data from pending ISO connections
+	 * before other connections.
+	 */
+	sys_slist_t		iso_conn_ready;
+#endif
 };
 
 #if defined(CONFIG_BT_CLASSIC)
