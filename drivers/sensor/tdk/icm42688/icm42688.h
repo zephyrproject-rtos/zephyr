@@ -14,6 +14,11 @@
 #include <zephyr/dt-bindings/sensor/icm42688.h>
 #include <stdlib.h>
 
+struct alignment {
+	int8_t index;
+	int8_t sign;
+};
+
 static inline uint8_t icm42688_accel_fs_to_reg(uint8_t g)
 {
 	if (g >= 16) {
@@ -308,7 +313,7 @@ struct icm42688_cfg {
 	bool interrupt1_drdy;
 	bool interrupt1_fifo_ths;
 	bool interrupt1_fifo_full;
-
+	struct alignment axis_align[3];
 	uint8_t pin9_function;
 	uint16_t rtc_freq;
 };

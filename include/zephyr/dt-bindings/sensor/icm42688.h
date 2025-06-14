@@ -5,6 +5,7 @@
  */
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_TDK_ICM42688P_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_TDK_ICM42688P_H_
+#include "sensor_axis_align.h"
 
 /**
  * @defgroup ICM42688 Invensense (TDK) ICM42688 DT Options
