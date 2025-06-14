@@ -27,5 +27,6 @@ config ADC_NRFX_SAADC
 	default y
 	depends on DT_HAS_NORDIC_NRF_SAADC_ENABLED
 	select ADC_CONFIGURABLE_INPUTS
+	select NRFX_SAADC
 	help
 	  Enable support for nrfx SAADC driver.
