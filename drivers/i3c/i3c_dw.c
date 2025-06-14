@@ -287,10 +287,9 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_IDLE_TIME_NS 1000000U
 #define BUS_I3C_IDLE_TIME(x) ((x) & GENMASK(19, 0))
 
-#define I3C_VER_ID          0xe0
-#define I3C_VER_TYPE        0xe4
-#define EXTENDED_CAPABILITY 0xe8
-#define SLAVE_CONFIG        0xec
+#define I3C_VER_ID         0xe0
+#define I3C_VER_TYPE       0xe4
+#define RELEASE_SDA_TIMING 0xec
 
 #define QUEUE_SIZE_CAPABILITY                        0xe8
 #define QUEUE_SIZE_CAPABILITY_IBI_BUF_DWORD_SIZE(x)  (2 << (((x) & GENMASK(19, 16)) >> 16))
@@ -554,10 +553,12 @@ static void dw_i3c_end_xfer(const struct device *dev)
 
 			for (j = 0; j < cmd->rx_len; j += 4) {
 				rx_data = sys_read32(config->regs + RX_TX_DATA_PORT);
-				/* Call write received cb for each remaining byte  */
-				for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
-					target_cb->write_received_cb(data->target_config,
-								    (rx_data >> (8 * k)) & 0xff);
+				if (target_cb != NULL && target_cb->write_received_cb != NULL) {
+					/* Call write received cb for each remaining byte  */
+					for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
+						target_cb->write_received_cb(data->target_config,
+								(rx_data >> (8 * k)) & 0xff);
+					}
 				}
 			}
 
@@ -1316,7 +1317,7 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 		return -ETIMEDOUT;
 	}
 
-	slv_ibi_resp = sys_read32(config->regs + SLV_INTR_REQ);
+	slv_ibi_resp = sys_read32(config->regs + SLV_IBI_RESP);
 	switch (SLV_IBI_RESP_IBI_STS(slv_ibi_resp)) {
 	case SLV_IBI_RESP_IBI_STS_ACK:
 		LOG_DBG("%s: Controller ACKed IBI TIR", dev->name);
@@ -1401,7 +1402,7 @@ static int i3c_dw_irq(const struct device *dev)
 		}
 		/* DA has been assigned, could happen after a IBI HJ request */
 		if (status & INTR_DYN_ADDR_ASSGN_STAT) {
-			/* TODO: handle IBI HJ with semaphore */
+			k_sem_give(&data->sem_hj);
 			sys_write32(INTR_DYN_ADDR_ASSGN_STAT, config->regs + INTR_STATUS);
 		}
 #endif /* CONFIG_I3C_USE_IBI */
@@ -2297,6 +2298,7 @@ static int dw_i3c_init(const struct device *dev)
 
 #ifdef CONFIG_I3C_USE_IBI
 	k_sem_init(&data->ibi_sts_sem, 0, 1);
+	k_sem_init(&data->sem_hj, 0, 1);
 #endif /* CONFIG_I3C_USE_IBI */
 	k_sem_init(&data->sem_xfer, 0, 1);
 	k_mutex_init(&data->mt);
