@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: rts5817_maa_evb
+  vendor: realtek
+  socs:
+    - name: rts5817

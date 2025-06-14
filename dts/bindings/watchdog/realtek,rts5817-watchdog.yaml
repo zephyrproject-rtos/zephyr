@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek RTS5817 Watchdog driver
+
+compatible: "realtek,rts5817-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
