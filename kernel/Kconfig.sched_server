@@ -1,0 +1,130 @@
+# config options for Scheduling Servers
+#
+# Copyright (c) 2024 Instituto Superior de Engenharia do Porto (ISEP)
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Constant Bandwidth Server (CBS)"
+
+config CBS
+	bool "Constant Bandwidth Server (CBS)"
+	depends on USE_SWITCH
+	select SCHED_DEADLINE
+	default n
+	help
+		Enables the Constant Bandwidth Server (CBS), an extension
+		of the Earliest Deadline First (EDF) scheduler that allows
+		tasks to execute with guaranteed bandwidth. Selecting
+		this option automatically enables the EDF scheduler
+		(CONFIG_SCHED_DEADLINE=y). The CBS is also currently
+		supported only in targets that use the _arch_switch
+		context switching primitive (CONFIG_USE_SWITCH=y).
+
+config CBS_LOG
+	bool "CBS event logging"
+	depends on CBS
+	select LOG
+	default n
+	help
+		Enables logging of Constant Bandwidth Server (CBS) events,
+		such as jobs being pushed to the server, budget consumpion
+		and CBS thread switching in/out of the CPU. This option
+		requires CONFIG_CBS to be included within the project.
+
+if CBS_LOG
+menu "CBS events to be logged"
+
+	config CBS_LOG_JOB_PUSH
+		bool "J_PUSH log"
+		default y
+		help
+			Enables logging of when
+			a job is pushed to a CBS.
+
+	config CBS_LOG_JOB_COMPLETE
+		bool "J_COMP log"
+		default y
+		help
+			Enables logging of when
+			a job is completed.
+
+	config CBS_LOG_BUDGET_CONDITION
+		bool "B_COND log"
+		default y
+		help
+			Enables logging of when
+			the CBS condition gets met,
+			causing the CBS deadline to
+			be updated and the budget to
+			be replenished.
+
+	config CBS_LOG_BUDGET_RAN_OUT
+		bool "B_ROUT log"
+		default y
+		help
+			Enables logging of when
+			the CBS budget runs out,
+			causing the CBS deadline to
+			be postponed and the budget to
+			be replenished.
+
+	config CBS_LOG_SWITCHED_IN
+		bool "SWT_TO log"
+		default y
+		help
+			Enables logging of when
+			the CBS thread enters the
+			CPU for execution of jobs.
+
+	config CBS_LOG_SWITCHED_OUT
+		bool "SWT_AY log"
+		default y
+		help
+			Enables logging of when
+			the CBS thread leaves the
+			CPU after completing a job
+			or being preempted by
+			another thread.
+
+endmenu
+endif
+
+if CBS
+menu "CBS constants"
+
+	config CBS_THREAD_STACK_SIZE
+		int "CBS thread memory"
+		default 2048
+		help
+			The amount of memory to be
+			allocated for the CBS thread.
+
+	config CBS_QUEUE_LENGTH
+		int "CBS job queue length"
+		default 16
+		help
+			The highest number of jobs that can
+			be pushed to a CBS job queue at once.
+
+	config CBS_INITIAL_DELAY
+		int "CBS thread initial delay"
+		default 0
+		help
+			Scheduling delay (in milliseconds) for the CBS thread.
+
+	if CBS_LOG
+	config CBS_THREAD_MAX_NAME_LEN
+		int "Max length of the CBS thread name"
+		default 20
+		help
+			CBS thread names are the same as the variables created with
+			K_CBS_DEFINE and get stored in the k_cbs struct. This option
+			indicates the maximum name length of the CBS server to be
+			displayed on log events, including the terminating NULL byte.
+			Reducing this value wil help conserving memory, but as a tradeoff
+			it might chop a portion the server name on the aforementioned logs.
+	endif
+
+endmenu
+endif
+
+endmenu # Constant Bandwidth Server (CBS)
