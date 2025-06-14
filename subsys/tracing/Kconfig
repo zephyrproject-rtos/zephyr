@@ -23,7 +23,7 @@ config TRACING_CORE
 	  Automatically selected by formats that require the core
 	  tracing infrastructure.
 
-choice
+choice TRACING_FORMAT_CHOICE
 	prompt "Tracing Format"
 	default TRACING_NONE
 
@@ -76,7 +76,7 @@ config TRACING_CTF_TIMESTAMP
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
 
-choice
+choice TRACING_METHOD_CHOICE
 	prompt "Tracing Method"
 	default TRACING_ASYNC
 
@@ -129,7 +129,7 @@ config TRACING_PACKET_MAX_SIZE
 	help
 	  Max size of one tracing packet.
 
-choice
+choice TRACING_BACKEND_CHOICE
 	prompt "Tracing Backend"
 	default TRACING_BACKEND_UART
 
