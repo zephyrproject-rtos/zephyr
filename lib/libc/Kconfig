@@ -84,6 +84,7 @@ config MINIMAL_LIBC
 	imply COMMON_LIBC_MALLOC
 	imply COMMON_LIBC_CALLOC
 	imply COMMON_LIBC_REALLOCARRAY
+	imply COMMON_LIBC_TIME
 	help
 	  Build with minimal C library.
 
@@ -96,6 +97,7 @@ config PICOLIBC
 	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	imply COMMON_LIBC_MALLOC
 	imply COMMON_LIBC_ABORT
+	imply COMMON_LIBC_TIME
 	depends on PICOLIBC_SUPPORTED
 	help
 	  Build with picolibc library. The picolibc library is built as
@@ -116,6 +118,7 @@ config NEWLIB_LIBC
 	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
 	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
 	imply POSIX_SIGNALS_ALIAS_KILL
+	imply COMMON_LIBC_TIME
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
@@ -137,7 +140,7 @@ config IAR_LIBC
 	depends on IAR_LIBC_SUPPORTED
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "iar"
 	select COMMON_LIBC_STRNLEN
-	select COMMON_LIBC_TIME if POSIX_TIMERS
+	select COMMON_LIBC_TIME
 	help
 	  Use the full IAR Compiler runtime libraries.
 	  A reduced Zephyr minimal libc will be used for library functionality
