@@ -6285,6 +6285,18 @@ West:
   labels:
     - "area: Rust"
 
+"West project: zephyr-xenlib":
+  status: maintained
+  maintainers:
+    - firscity
+  collaborators:
+    - lorc
+    - luca-fancellu
+    - soburi
+  files: []
+  labels:
+    - "area: Xen Platform"
+
 Wurth Elektronik Platforms:
   status: maintained
   maintainers:
