@@ -12,5 +12,6 @@ supported:
   - serial
   - timer
   - spi
+  - pwm
 ram: 48
 flash: 512
