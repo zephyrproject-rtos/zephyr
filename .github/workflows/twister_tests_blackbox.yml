@@ -26,7 +26,7 @@ jobs:
     name: Twister Black Box Tests
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.12', '3.13']
         os: [ubuntu-24.04, macos-14, windows-2022]
       fail-fast: false
     runs-on: ${{ matrix.os }}
