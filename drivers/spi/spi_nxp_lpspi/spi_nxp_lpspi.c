@@ -12,7 +12,6 @@ LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_nxp_lpspi_priv.h"
 
 struct lpspi_driver_data {
-	size_t fill_len;
 	uint8_t word_size_bytes;
 };
 
@@ -113,20 +112,19 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev, const uint8_t *b
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	uint8_t word_size = lpspi_data->word_size_bytes;
-	size_t buf_remaining_bytes = buf_len * word_size;
 	size_t offset = 0;
 	uint32_t next_word;
 	uint32_t next_word_bytes;
 
 	for (int word_count = 0; word_count < fill_len; word_count++) {
-		next_word_bytes = MIN(word_size, buf_remaining_bytes);
+		next_word_bytes = MIN(word_size, buf_len);
 		next_word = lpspi_next_tx_word(dev, buf, offset, next_word_bytes);
 		base->TDR = next_word;
 		offset += word_size;
-		buf_remaining_bytes -= word_size;
+		buf_len -= word_size;
 	}
 
-	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", lpspi_data->fill_len, offset);
+	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", fill_len, offset);
 }
 
 /* just fills TX fifo with the specified amount of NOPS */
@@ -145,13 +143,13 @@ static void lpspi_fill_tx_fifo_nop(const struct device *dev, size_t fill_len)
 static void lpspi_next_tx_fill(const struct device *dev)
 {
 	const struct lpspi_config *config = dev->config;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
-	size_t fill_len;
+	uint8_t left_in_fifo = tx_fifo_cur_len(base);
+	size_t fill_len = MIN(ctx->tx_len, config->tx_fifo_size - left_in_fifo);
 	size_t actual_filled = 0;
-
-	fill_len = MIN(ctx->tx_len, config->tx_fifo_size);
 
 	const struct spi_buf *current_buf = ctx->current_tx;
 	const uint8_t *cur_buf_pos = ctx->tx_buf;
@@ -187,20 +185,19 @@ static void lpspi_next_tx_fill(const struct device *dev)
 		actual_filled += next_buf_fill;
 	}
 
-	lpspi_data->fill_len = actual_filled;
+	spi_context_update_tx(ctx, lpspi_data->word_size_bytes, actual_filled);
 }
 
 static inline void lpspi_handle_tx_irq(const struct device *dev)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct lpspi_data *data = dev->data;
-	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 
 	base->SR = LPSPI_SR_TDF_MASK;
 
 	/* If we receive a TX interrupt but no more data is available,
-	 * we can be sure that all data has been written to the bus.
+	 * we can be sure that all data has been written to the fifo.
 	 * Disable the interrupt to signal that we are done.
 	 */
 	if (!spi_context_tx_on(ctx)) {
@@ -208,14 +205,7 @@ static inline void lpspi_handle_tx_irq(const struct device *dev)
 		return;
 	}
 
-	while (spi_context_tx_on(ctx) && lpspi_data->fill_len > 0) {
-		size_t this_buf_words_sent = MIN(lpspi_data->fill_len, ctx->tx_len);
-
-		spi_context_update_tx(ctx, lpspi_data->word_size_bytes, this_buf_words_sent);
-		lpspi_data->fill_len -= this_buf_words_sent;
-	}
-
-	lpspi_next_tx_fill(data->dev);
+	lpspi_next_tx_fill(dev);
 }
 
 static inline void lpspi_end_xfer(const struct device *dev)
@@ -262,21 +252,55 @@ static void lpspi_isr(const struct device *dev)
 		return;
 	}
 
+	/* the lpspi v1 has an errata where it doesn't clock the last bit
+	 * in continuous mode until you write the TCR
+	 */
+	bool likely_stalling_v1 = data->major_version < 2 &&
+		(DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1);
+
 	if (spi_context_rx_on(ctx)) {
+		/* capture these values because they could change during this code block */
 		size_t rx_fifo_len = rx_fifo_cur_len(base);
+		size_t tx_fifo_len = tx_fifo_cur_len(base);
+
+		/*
+		 * Goal here is to provide the number of TX NOPS to match the amount of RX
+		 * we have left to receive, so that we provide the correct number of
+		 * clocks to the bus, since the clocks only happen when TX data is being sent.
+		 *
+		 * The expected RX left is essentially what is left in the spi transfer
+		 * minus what we have just got in the fifo, but prevent underflow of this
+		 * subtraction since it is unsigned.
+		 */
 		size_t expected_rx_left = rx_fifo_len < ctx->rx_len ? ctx->rx_len - rx_fifo_len : 0;
-		size_t max_fill = MIN(expected_rx_left, config->rx_fifo_size);
-		size_t tx_current_fifo_len = tx_fifo_cur_len(base);
 
-		size_t fill_len = tx_current_fifo_len < ctx->rx_len ?
-					max_fill - tx_current_fifo_len : 0;
 
-		lpspi_fill_tx_fifo_nop(dev, fill_len);
-		lpspi_data->fill_len = fill_len;
+		/*
+		 * We know the expected amount of RX we have left but only fill up to the
+		 * max of the RX fifo size so that we don't have some overflow of the FIFO later.
+		 * Similarly, we shouldn't overfill the TX fifo with too many NOPs.
+		 */
+		size_t tx_fifo_space_left = config->tx_fifo_size - tx_fifo_len;
+		size_t rx_fifo_space_left = config->rx_fifo_size - rx_fifo_len;
+		size_t max_fifo_fill = MIN(tx_fifo_space_left, rx_fifo_space_left);
+		size_t max_fill = MIN(max_fifo_fill, expected_rx_left);
+
+		if (likely_stalling_v1 && max_fill > 0) {
+			max_fill -= 1;
+		}
+
+		/* If we already have some words in the tx fifo, we should count those */
+		if (max_fill > tx_fifo_len) {
+			max_fill -= tx_fifo_len;
+		} else {
+			max_fill = 0;
+		}
+
+		/* So now we want to fill the fifo with the max amount of NOPs */
+		lpspi_fill_tx_fifo_nop(dev, max_fill);
 	}
 
-	if ((DIV_ROUND_UP(spi_context_rx_len_left(ctx, word_size_bytes), word_size_bytes) == 1) &&
-	    (LPSPI_VERID_MAJOR(base->VERID) < 2)) {
+	if (likely_stalling_v1) {
 		/* Due to stalling behavior on older LPSPI,
 		 * need to end xfer in order to get last bit clocked out on bus.
 		 */
@@ -311,7 +335,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
 
-	ret = spi_mcux_configure(dev, spi_cfg);
+	ret = lpspi_configure(dev, spi_cfg);
 	if (ret) {
 		goto error;
 	}
@@ -337,7 +361,10 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		base->TCR |= LPSPI_TCR_CONT_MASK;
 	}
 	/* tcr is written to tx fifo */
-	lpspi_wait_tx_fifo_empty(dev);
+	ret = lpspi_wait_tx_fifo_empty(dev);
+	if (ret) {
+		return ret;
+	}
 
 	/* start the transfer sequence which are handled by irqs */
 	lpspi_next_tx_fill(dev);
@@ -424,7 +451,7 @@ static int lpspi_init(const struct device *dev)
 #define SPI_LPSPI_INIT_IF_DMA(n) IF_DISABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_INIT(n)))
 
 #define SPI_LPSPI_INIT(n)                                                                     \
-	COND_CODE_1(CONFIG_SPI_MCUX_LPSPI_DMA,				   \
+	COND_CODE_1(CONFIG_SPI_NXP_LPSPI_DMA,				   \
 						(SPI_LPSPI_INIT_IF_DMA(n)), (LPSPI_INIT(n)))
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_LPSPI_INIT)
