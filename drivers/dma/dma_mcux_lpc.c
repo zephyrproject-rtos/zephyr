@@ -13,6 +13,9 @@
 #include <zephyr/drivers/dma.h>
 #include <fsl_dma.h>
 #include <fsl_inputmux.h>
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && (FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET == 1)
+#include "fsl_memory.h"
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
@@ -206,6 +209,14 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 			 * is called from a reload function
 			 */
 			next_descriptor = data->curr_descriptor->linkToNextDesc;
+			/* The SDK converts next descriptor addresses to DMA's
+			 * address space when linking the descriptors, so
+			 * convert it back.
+			 */
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && (FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET == 1)
+			next_descriptor = (void *)MEMORY_ConvertMemoryMapAddress(
+				(uint32_t)next_descriptor, kMEMORY_DMA2Local);
+#endif
 		}
 
 		/* SPI TX transfers need to queue a DMA descriptor to
