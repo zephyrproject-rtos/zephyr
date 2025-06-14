@@ -214,7 +214,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 	num_buffers = strtoull(arg_nbufs, &arg_nbufs, 10);
 	if (*arg_nbufs != '\0') {
-		shell_error(sh, "Invalid integer '%s' for this type", arg_nbufs);
+		shell_error(sh, "Invalid integer '%s' for number of buffers", arg_nbufs);
 		return -EINVAL;
 	}
 
@@ -652,7 +652,7 @@ static int video_shell_get_ctrl_by_name(const struct device *dev, struct video_c
 			return -ENOENT;
 		}
 
-		video_shell_convert_ctrl_name(name, ctrl_name, sizeof(ctrl_name));
+		video_shell_convert_ctrl_name(cq->name, ctrl_name, sizeof(ctrl_name));
 		if (strcmp(ctrl_name, name) == 0) {
 			break;
 		}
