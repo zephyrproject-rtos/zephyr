@@ -245,6 +245,38 @@ Follow these steps to install the Zephyr SDK:
       cd <sdk download directory>
       tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64.tar.xz
 
+   .. note::
+      It is recommended to extract the Zephyr SDK bundle at one of the following locations:
+
+      * ``$HOME``
+      * ``$HOME/.local``
+      * ``$HOME/.local/opt``
+      * ``$HOME/bin``
+      * ``/opt``
+      * ``/usr/local``
+
+      The Zephyr SDK bundle archive contains the ``zephyr-sdk-<version>``
+      directory and, when extracted under ``$HOME``, the resulting installation
+      path will be ``$HOME/zephyr-sdk-<version>``.
+
+      If you install the Zephyr SDK outside any of these locations, you must
+      register the Zephyr SDK in the CMake package registry by running the setup
+      script, or set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to the Zephyr SDK
+      installation directory.
+
+      You can also use :envvar:`ZEPHYR_SDK_INSTALL_DIR` for pointing to a
+      directory containing multiple Zephyr SDKs, allowing for automatic toolchain
+      selection. For example, ``ZEPHYR_SDK_INSTALL_DIR=/company/tools``, where
+      the ``company/tools`` folder contains the following subfolders:
+
+      * ``/company/tools/zephyr-sdk-0.13.2``
+      * ``/company/tools/zephyr-sdk-a.b.c``
+      * ``/company/tools/zephyr-sdk-x.y.z``
+
+      This allows the Zephyr build system to choose the correct version of the
+      SDK, while allowing multiple Zephyr SDKs to be grouped together at a
+      specific path.
+
 #. Run the Zephyr SDK bundle setup script:
 
    .. parsed-literal::
@@ -255,40 +287,22 @@ Follow these steps to install the Zephyr SDK:
    If this fails, make sure Zephyr's dependencies were installed as described
    in `Install Requirements and Dependencies`_.
 
-If you want to uninstall the SDK, remove the directory where you installed it.
-If you relocate the SDK directory, you need to re-run the setup script.
+   .. note::
+      You only need to run the setup script once after extracting the Zephyr SDK bundle.
+
+      You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
+      the initial setup.
+
+#. Install `udev <https://en.wikipedia.org/wiki/Udev>`_ rules, which
+   allow you to flash most Zephyr boards as a regular user:
+
+   .. parsed-literal::
+
+      sudo cp ~/zephyr-sdk- |sdk-version-trim| /sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+      sudo udevadm control --reload
 
 .. note::
-   It is recommended to extract the Zephyr SDK bundle at one of the following locations:
-
-   * ``$HOME``
-   * ``$HOME/.local``
-   * ``$HOME/.local/opt``
-   * ``$HOME/bin``
-   * ``/opt``
-   * ``/usr/local``
-
-   The Zephyr SDK bundle archive contains the ``zephyr-sdk-<version>``
-   directory and, when extracted under ``$HOME``, the resulting installation
-   path will be ``$HOME/zephyr-sdk-<version>``.
-
-   If you install the Zephyr SDK outside any of these locations, you must
-   register the Zephyr SDK in the CMake package registry by running the setup
-   script, or set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to the Zephyr SDK
-   installation directory.
-
-   You can also use :envvar:`ZEPHYR_SDK_INSTALL_DIR` for pointing to a
-   directory containing multiple Zephyr SDKs, allowing for automatic toolchain
-   selection. For example, ``ZEPHYR_SDK_INSTALL_DIR=/company/tools``, where
-   the ``company/tools`` folder contains the following subfolders:
-
-   * ``/company/tools/zephyr-sdk-0.13.2``
-   * ``/company/tools/zephyr-sdk-a.b.c``
-   * ``/company/tools/zephyr-sdk-x.y.z``
-
-   This allows the Zephyr build system to choose the correct version of the
-   SDK, while allowing multiple Zephyr SDKs to be grouped together at a
-   specific path.
+   If you want to uninstall the SDK, you may simply remove the directory where you installed it.
 
 .. _sdkless_builds:
 
