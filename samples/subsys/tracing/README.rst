@@ -47,15 +47,6 @@ Build a USB-tracing image with:
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
 	:board: sam_e70_xplained/same70q21
-	:conf: "prj_usb.conf"
-	:goals: build
-	:compact:
-
-or:
-
-.. zephyr-app-commands::
-	:zephyr-app: samples/subsys/tracing
-	:board: sam_e70_xplained/same70q21
 	:conf: "prj_usb_ctf.conf"
 	:goals: build
 	:compact:
