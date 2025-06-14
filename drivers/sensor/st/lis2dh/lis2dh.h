@@ -17,6 +17,7 @@
 
 #define LIS2DH_REG_WAI			0x0f
 #define LIS2DH_CHIP_ID			0x33
+#define LIS2DH_POR_WAIT_MS		5
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
@@ -262,9 +263,7 @@ struct lis2dh_data {
 	struct sensor_value temperature;
 #endif
 
-#ifdef CONFIG_PM_DEVICE
 	uint8_t reg_ctrl1_active_val;
-#endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;
