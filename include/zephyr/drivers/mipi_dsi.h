@@ -116,6 +116,8 @@ struct mipi_dsi_msg {
 	size_t rx_len;
 	/** Reception buffer. */
 	void *rx_buf;
+	/** User data. */
+	void *user_data;
 };
 
 /** MIPI-DSI host driver API. */
