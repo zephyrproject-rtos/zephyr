@@ -53,7 +53,7 @@ struct modem_ubx_match {
 
 struct modem_ubx_script {
 	struct {
-		const struct ubx_frame *buf;
+		const uint8_t *buf;
 		uint16_t len;
 	} request;
 	struct {

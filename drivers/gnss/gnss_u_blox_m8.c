@@ -121,7 +121,7 @@ static int ubx_m8_msg_get(const struct device *dev, const struct ubx_frame *req,
 	data->script.inst.retry_count = 2;
 	data->script.inst.match.filter.class = req->class;
 	data->script.inst.match.filter.id = req->id;
-	data->script.inst.request.buf = req;
+	data->script.inst.request.buf = (const uint8_t *)req;
 	data->script.inst.request.len = len;
 
 	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
@@ -152,7 +152,7 @@ static int ubx_m8_msg_send(const struct device *dev, const struct ubx_frame *req
 	data->script.inst.retry_count = wait_for_ack ? 2 : 0;
 	data->script.inst.match.filter.class = wait_for_ack ? UBX_CLASS_ID_ACK : 0;
 	data->script.inst.match.filter.id = UBX_MSG_ID_ACK;
-	data->script.inst.request.buf = req;
+	data->script.inst.request.buf = (const uint8_t *)req;
 	data->script.inst.request.len = len;
 
 	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);

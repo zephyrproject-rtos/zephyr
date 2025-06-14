@@ -258,3 +258,7 @@ endif()
 if(CONFIG_GNSS_SATELLITES)
   zephyr_iterable_section(NAME gnss_satellites_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 endif()
+
+if(CONFIG_GNSS_RTK)
+  zephyr_iterable_section(NAME rtk_data_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
+endif()
