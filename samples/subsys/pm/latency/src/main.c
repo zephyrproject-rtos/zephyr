@@ -13,7 +13,7 @@
 
 LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 
-static void on_latency_changed(int32_t latency)
+static void on_latency_changed(uint32_t latency)
 {
 	if (latency == SYS_FOREVER_US) {
 		LOG_INF("Latency constraint changed: none");
