@@ -24,6 +24,40 @@
 LOG_MODULE_REGISTER(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #include "udc_dwc2_vendor_quirks.h"
 
+#define DT_DRV_COMPAT snps_dwc2
+
+#define UDC_DWC2_VENDOR_QUIRK_GET(n)						\
+	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
+		    (&dwc2_vendor_quirks_##n),					\
+		    (NULL))
+
+#define DWC2_QUIRK_FUNC_DEFINE(fname)						\
+static inline int dwc2_quirk_##fname(const struct device *dev)			\
+{										\
+	const struct udc_dwc2_config *const config = dev->config;		\
+	const struct dwc2_vendor_quirks *const quirks =				\
+		COND_CODE_1(IS_EQ(DT_NUM_INST_STATUS_OKAY(snps_dwc2), 1),	\
+			(UDC_DWC2_VENDOR_QUIRK_GET(0); ARG_UNUSED(config);),	\
+			(config->quirks;))					\
+										\
+	if (quirks != NULL && quirks->fname != NULL) {				\
+		return quirks->fname(dev);					\
+	}									\
+										\
+	return 0;								\
+}
+
+DWC2_QUIRK_FUNC_DEFINE(init)
+DWC2_QUIRK_FUNC_DEFINE(pre_enable)
+DWC2_QUIRK_FUNC_DEFINE(post_enable)
+DWC2_QUIRK_FUNC_DEFINE(disable)
+DWC2_QUIRK_FUNC_DEFINE(shutdown)
+DWC2_QUIRK_FUNC_DEFINE(irq_clear)
+DWC2_QUIRK_FUNC_DEFINE(caps)
+DWC2_QUIRK_FUNC_DEFINE(is_phy_clk_off)
+DWC2_QUIRK_FUNC_DEFINE(post_hibernation_entry)
+DWC2_QUIRK_FUNC_DEFINE(pre_hibernation_exit)
+
 enum dwc2_drv_event_type {
 	/* USB connection speed determined after bus reset */
 	DWC2_DRV_EVT_ENUM_DONE,
@@ -3195,13 +3229,6 @@ static const struct udc_api udc_dwc2_api = {
 	.ep_enqueue = udc_dwc2_ep_enqueue,
 	.ep_dequeue = udc_dwc2_ep_dequeue,
 };
-
-#define DT_DRV_COMPAT snps_dwc2
-
-#define UDC_DWC2_VENDOR_QUIRK_GET(n)						\
-	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
-		    (&dwc2_vendor_quirks_##n),					\
-		    (NULL))
 
 #define UDC_DWC2_DT_INST_REG_ADDR(n)						\
 	COND_CODE_1(DT_NUM_REGS(DT_DRV_INST(n)), (DT_INST_REG_ADDR(n)),		\
