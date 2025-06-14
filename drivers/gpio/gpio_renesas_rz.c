@@ -352,7 +352,7 @@ static int gpio_rz_int_enable(const struct device *gpio_int_dev, const struct de
 	/* Select interrupt source base on port and pin number. */
 	*tssr &= ~(0xFF << (int_num));
 	*tssr |= (GPIO_RZ_TSSR_VAL(gpio_config->port_num, pin)) << GPIO_RZ_TSSR_OFFSET(int_num);
-	/* Select TINT source(only for RZV2H) */
+	/* Select TINT source */
 	GPIO_RZ_TINT_SELECT_SOURCE_REG_CLEAR(int_num);
 	GPIO_RZ_TINT_SELECT_SOURCE_REG_SET(int_num);
 
