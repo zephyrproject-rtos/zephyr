@@ -282,7 +282,7 @@ class HardwareAdapter(DeviceAdapter):
                     raise TwisterHarnessException(msg)
 
             except subprocess.TimeoutExpired as exc:
-                terminate_process(proc)
+                terminate_process(proc, timeout)
                 proc.communicate(timeout=timeout)
                 msg = f'Timeout occurred ({timeout}s) during execution custom script: {script_path}'
                 logger.error(msg)
