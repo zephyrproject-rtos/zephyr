@@ -1,0 +1,26 @@
+# Copyright 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on the Raspberry Pi CSI 15pins Camera connector
+  Connector layout:
+
+    1   GND
+    2   CSI_D0_N
+    3   CSI_D0_P
+    4   GND
+    5   CSI_D1_N
+    6   CSI_D1_P
+    7   GND
+    8   CSI_CK_N
+    9   CSI_CK_P
+    10  GND
+    11  IO0
+    12  IO1
+    13  I2C_SCL
+    14  I2C_SDA
+    15  VCC (3v3)
+
+compatible: "raspberrypi,csi-15pins-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
