@@ -17,3 +17,7 @@ psutil>=5.6.6
 
 # used for CAN <=> host testing
 python-can>=4.3.0
+
+# for display test
+opencv-python>=4.9.0.80
+numpy>=1.26.4
