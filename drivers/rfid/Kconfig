@@ -15,21 +15,10 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config RFID_CR95HF
 	bool "Support for CR95HF RFID driver"
+	depends on DT_HAS_ST_CR95HF_ENABLED
 	depends on SPI || UART
 	help
 		Enable support for the CR95HF RFID driver.
-
-config RFID_USE_SPI
-	bool "Use SPI for communication"
-	depends on SPI
-	help
-		Enable to use SPI communication with the CR95HF RFID driver.
-
-config RFID_USE_UART
-	bool "Use UART for communication"
-	depends on UART
-	help
-		Enable to use UART communication with the CR95HF RFID driver.
 
 config RFID_INIT_PRIORITY
 	int "Init priority"

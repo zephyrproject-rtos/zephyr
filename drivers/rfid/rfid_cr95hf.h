@@ -27,6 +27,14 @@
 		leave_control_h, leave_control_l, wu_period, osc_start, dac_start, dac_data_h,    \
 		dac_data_l, swing_count, max_sleep }
 
+#define CR95HF_WFE_TAG_DETECTOR_ARRAY { 0, CR95HF_CMD_IDLE, 0xE, CR95HF_WU_SOURCE_TAG_DETECTION, \
+		CR95HF_ENTER_CTRL_DETECTION_H, CR95HF_ENTER_CTRL_DETECTION_L,                    \
+		CR95HF_WU_CTRL_DETECTION_H, CR95HF_WU_CTRL_DETECTION_L,                          \
+		CR95HF_LEAVE_CTRL_DETECTION_H, CR95HF_LEAVE_CTRL_DETECTION_L,                    \
+		CR95HF_DEFAULT_WU_PERIOD, CR95HF_DEFAULT_OSC_START, CR95HF_DEFAULT_DAC_START,    \
+		CR95HF_DEFAULT_DAC_DATA_H, CR95HF_DEFAULT_DAC_DATA_L, CR95HF_DEFAULT_SWING_COUNT,\
+		CR95HF_DEFAULT_MAX_SLEEP }
+
 #define CR95HF_CMD_IDNREQUEST              0x01   /* Requests short information about the CR95HF
 						   * and its revision
 						   */
@@ -102,5 +110,8 @@
 #define CR95HF_CREATE_SELECT_14443_A_ARRAY(transmission_rate, reception_rate) \
 	{ 0, 2, 4, 2, ((transmission_rate & 0x03) << 6) | ((reception_rate & 0x03) << 4), 1, 0x80 }
 
+#define CR95HF_SELECT_14443_A_ARRAY { 0, 2, 4, 2, \
+	((CR95HF_ISO_14443_106_KBPS & 0x03) << 6) | ((CR95HF_ISO_14443_106_KBPS & 0x03) << 4), \
+	1, 0x80 }
 
 #endif  /* RFID_CR95HF_H */
