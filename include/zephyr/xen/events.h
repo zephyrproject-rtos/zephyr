@@ -7,7 +7,7 @@
 #ifndef __XEN_EVENTS_H__
 #define __XEN_EVENTS_H__
 
-#include <zephyr/xen/public/event_channel.h>
+#include <xen/public/event_channel.h>
 
 #include <zephyr/kernel.h>
 
@@ -78,6 +78,9 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data);
  */
 int unbind_event_channel(evtchn_port_t port);
 int get_missed_events(evtchn_port_t port);
+
+int mask_event_channel(evtchn_port_t port);
+int unmask_event_channel(evtchn_port_t port);
 
 int xen_events_init(void);
 
