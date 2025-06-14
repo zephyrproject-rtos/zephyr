@@ -14,20 +14,16 @@
 
 #include "clock_control_lpc11u6x.h"
 
-static void syscon_power_up(struct lpc11u6x_syscon_regs *syscon,
-			    uint32_t bit, bool enable)
+static void syscon_power_up(struct lpc11u6x_syscon_regs *syscon, uint32_t bit, bool enable)
 {
 	if (enable) {
-		syscon->pd_run_cfg = (syscon->pd_run_cfg & ~bit)
-			| LPC11U6X_PDRUNCFG_MASK;
+		syscon->pd_run_cfg = (syscon->pd_run_cfg & ~bit) | LPC11U6X_PDRUNCFG_MASK;
 	} else {
-		syscon->pd_run_cfg = syscon->pd_run_cfg | bit
-			| LPC11U6X_PDRUNCFG_MASK;
+		syscon->pd_run_cfg = syscon->pd_run_cfg | bit | LPC11U6X_PDRUNCFG_MASK;
 	}
 }
 
-static void syscon_set_pll_src(struct lpc11u6x_syscon_regs *syscon,
-			       uint32_t src)
+static void syscon_set_pll_src(struct lpc11u6x_syscon_regs *syscon, uint32_t src)
 {
 	syscon->sys_pll_clk_sel = src;
 	syscon->sys_pll_clk_uen = 0;
@@ -36,18 +32,16 @@ static void syscon_set_pll_src(struct lpc11u6x_syscon_regs *syscon,
 
 static void set_flash_access_time(uint32_t nr_cycles)
 {
-	uint32_t *reg = (uint32_t *) LPC11U6X_FLASH_TIMING_REG;
+	uint32_t *reg = (uint32_t *)LPC11U6X_FLASH_TIMING_REG;
 
 	*reg = (*reg & (~LPC11U6X_FLASH_TIMING_MASK)) | nr_cycles;
 }
 
-static void syscon_setup_pll(struct lpc11u6x_syscon_regs *syscon,
-			     uint32_t msel, uint32_t psel)
+static void syscon_setup_pll(struct lpc11u6x_syscon_regs *syscon, uint32_t msel, uint32_t psel)
 {
 	uint32_t val = msel & LPC11U6X_SYS_PLL_CTRL_MSEL_MASK;
 
-	val |= (psel & LPC11U6X_SYS_PLL_CTRL_PSEL_MASK) <<
-		LPC11U6X_SYS_PLL_CTRL_PSEL_SHIFT;
+	val |= (psel & LPC11U6X_SYS_PLL_CTRL_PSEL_MASK) << LPC11U6X_SYS_PLL_CTRL_PSEL_SHIFT;
 	syscon->sys_pll_ctrl = val;
 }
 
@@ -56,16 +50,14 @@ static bool syscon_pll_locked(struct lpc11u6x_syscon_regs *syscon)
 	return (syscon->sys_pll_stat & 0x1) != 0;
 }
 
-static void syscon_set_main_clock_source(struct lpc11u6x_syscon_regs *syscon,
-					 uint32_t src)
+static void syscon_set_main_clock_source(struct lpc11u6x_syscon_regs *syscon, uint32_t src)
 {
 	syscon->main_clk_sel = src;
 	syscon->main_clk_uen = 0;
 	syscon->main_clk_uen = 1;
 }
 
-static void syscon_ahb_clock_enable(struct lpc11u6x_syscon_regs *syscon,
-				    uint32_t mask, bool enable)
+static void syscon_ahb_clock_enable(struct lpc11u6x_syscon_regs *syscon, uint32_t mask, bool enable)
 {
 	if (enable) {
 		syscon->sys_ahb_clk_ctrl |= mask;
@@ -74,8 +66,7 @@ static void syscon_ahb_clock_enable(struct lpc11u6x_syscon_regs *syscon,
 	}
 }
 
-static void syscon_peripheral_reset(struct lpc11u6x_syscon_regs *syscon,
-				    uint32_t mask, bool reset)
+static void syscon_peripheral_reset(struct lpc11u6x_syscon_regs *syscon, uint32_t mask, bool reset)
 {
 	if (reset) {
 		syscon->p_reset_ctrl &= ~mask;
@@ -95,8 +86,8 @@ static void syscon_frg_init(struct lpc11u6x_syscon_regs *syscon)
 
 	syscon_peripheral_reset(syscon, LPC11U6X_PRESET_CTRL_FRG, false);
 	syscon->uart_frg_div = 0xFF;
-	syscon->uart_frg_mult = ((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / div)
-				 * 256) / LPC11U6X_USART_CLOCK_RATE;
+	syscon->uart_frg_mult =
+		((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / div) * 256) / LPC11U6X_USART_CLOCK_RATE;
 }
 
 static void syscon_frg_deinit(struct lpc11u6x_syscon_regs *syscon)
@@ -105,8 +96,7 @@ static void syscon_frg_deinit(struct lpc11u6x_syscon_regs *syscon)
 	syscon_peripheral_reset(syscon, LPC11U6X_PRESET_CTRL_FRG, true);
 }
 
-static int lpc11u6x_clock_control_on(const struct device *dev,
-				     clock_control_subsys_t sub_system)
+static int lpc11u6x_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	const struct lpc11u6x_syscon_config *cfg = dev->config;
 	struct lpc11u6x_syscon_data *data = dev->data;
@@ -115,7 +105,7 @@ static int lpc11u6x_clock_control_on(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	switch ((int) sub_system) {
+	switch ((int)sub_system) {
 	case LPC11U6X_CLOCK_I2C0:
 		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_I2C0;
 		reset_mask = LPC11U6X_PRESET_CTRL_I2C0;
@@ -125,8 +115,13 @@ static int lpc11u6x_clock_control_on(const struct device *dev,
 		reset_mask = LPC11U6X_PRESET_CTRL_I2C1;
 		break;
 	case LPC11U6X_CLOCK_GPIO:
-		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_GPIO |
-			LPC11U6X_SYS_AHB_CLK_CTRL_PINT;
+		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_GPIO | LPC11U6X_SYS_AHB_CLK_CTRL_PINT;
+		break;
+	case LPC11U6X_CLOCK_CT32B0:
+		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_CT32B0;
+		break;
+	case LPC11U6X_CLOCK_CT32B1:
+		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_CT32B1;
 		break;
 	case LPC11U6X_CLOCK_USART0:
 		cfg->syscon->usart0_clk_div = 1;
@@ -177,8 +172,7 @@ static int lpc11u6x_clock_control_on(const struct device *dev,
 	return ret;
 }
 
-static int lpc11u6x_clock_control_off(const struct device *dev,
-				      clock_control_subsys_t sub_system)
+static int lpc11u6x_clock_control_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	const struct lpc11u6x_syscon_config *cfg = dev->config;
 	struct lpc11u6x_syscon_data *data = dev->data;
@@ -187,7 +181,7 @@ static int lpc11u6x_clock_control_off(const struct device *dev,
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	switch ((int) sub_system) {
+	switch ((int)sub_system) {
 	case LPC11U6X_CLOCK_I2C0:
 		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_I2C0;
 		reset_mask = LPC11U6X_PRESET_CTRL_I2C0;
@@ -197,8 +191,13 @@ static int lpc11u6x_clock_control_off(const struct device *dev,
 		reset_mask = LPC11U6X_PRESET_CTRL_I2C1;
 		break;
 	case LPC11U6X_CLOCK_GPIO:
-		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_GPIO |
-			LPC11U6X_SYS_AHB_CLK_CTRL_PINT;
+		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_GPIO | LPC11U6X_SYS_AHB_CLK_CTRL_PINT;
+		break;
+	case LPC11U6X_CLOCK_CT32B0:
+		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_CT32B0;
+		break;
+	case LPC11U6X_CLOCK_CT32B1:
+		clk_mask = LPC11U6X_SYS_AHB_CLK_CTRL_CT32B1;
 		break;
 	case LPC11U6X_CLOCK_USART0:
 		cfg->syscon->usart0_clk_div = 0;
@@ -248,14 +247,12 @@ static int lpc11u6x_clock_control_off(const struct device *dev,
 	syscon_peripheral_reset(cfg->syscon, reset_mask, true);
 	k_mutex_unlock(&data->mutex);
 	return ret;
-
 }
 
 static int lpc11u6x_clock_control_get_rate(const struct device *dev,
-					   clock_control_subsys_t sub_system,
-					   uint32_t *rate)
+					   clock_control_subsys_t sub_system, uint32_t *rate)
 {
-	switch ((int) sub_system) {
+	switch ((int)sub_system) {
 	case LPC11U6X_CLOCK_I2C0:
 	case LPC11U6X_CLOCK_I2C1:
 	case LPC11U6X_CLOCK_GPIO:
@@ -344,19 +341,14 @@ static DEVICE_API(clock_control, lpc11u6x_clock_control_api) = {
 	.get_rate = lpc11u6x_clock_control_get_rate,
 };
 
-
 PINCTRL_DT_INST_DEFINE(0);
 
 static const struct lpc11u6x_syscon_config syscon_config = {
-	.syscon = (struct lpc11u6x_syscon_regs *) DT_INST_REG_ADDR(0),
+	.syscon = (struct lpc11u6x_syscon_regs *)DT_INST_REG_ADDR(0),
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
 static struct lpc11u6x_syscon_data syscon_data;
 
-DEVICE_DT_INST_DEFINE(0,
-		    lpc11u6x_syscon_init,
-		    NULL,
-		    &syscon_data, &syscon_config,
-		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &lpc11u6x_clock_control_api);
+DEVICE_DT_INST_DEFINE(0, lpc11u6x_syscon_init, NULL, &syscon_data, &syscon_config, PRE_KERNEL_1,
+		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &lpc11u6x_clock_control_api);
