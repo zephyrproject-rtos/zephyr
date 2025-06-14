@@ -932,11 +932,11 @@ int hawkbit_init(void)
 	return ret;
 }
 
-static void response_json_cb(struct http_response *rsp, enum http_final_call final_data,
-			     struct hawkbit_context *hb_context)
+static int response_json_cb(struct http_response *rsp, enum http_final_call final_data,
+			    struct hawkbit_context *hb_context)
 {
 	size_t body_len;
-	int ret;
+	int ret = 0;
 	uint8_t *body_data = NULL, *rsp_tmp = NULL;
 
 	if (hb_context->dl.http_content_size == 0) {
@@ -956,7 +956,7 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 			if (rsp_tmp == NULL) {
 				LOG_ERR("Failed to realloc memory");
 				hb_context->code_status = HAWKBIT_ALLOC_ERROR;
-				return;
+				return -ENOMEM;
 			}
 
 			hb_context->response_data = rsp_tmp;
@@ -972,7 +972,7 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 				hb_context->dl.http_content_size,
 				hb_context->dl.downloaded_size);
 			hb_context->code_status = HAWKBIT_METADATA_ERROR;
-			return;
+			return -EINVAL;
 		}
 
 		hb_context->response_data[hb_context->dl.downloaded_size] = '\0';
@@ -997,13 +997,16 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 			}
 		}
 	}
+
+	return ret;
 }
 
-static void response_download_cb(struct http_response *rsp, enum http_final_call final_data,
-				 struct hawkbit_context *hb_context)
+static int response_download_cb(struct http_response *rsp, enum http_final_call final_data,
+				struct hawkbit_context *hb_context)
 {
 	size_t body_len;
-	int ret, downloaded;
+	int ret = 0;
+	int downloaded;
 	uint8_t *body_data = NULL;
 	static uint8_t download_progress;
 
@@ -1016,7 +1019,7 @@ static void response_download_cb(struct http_response *rsp, enum http_final_call
 	}
 
 	if (!rsp->body_found) {
-		return;
+		return 0;
 	}
 
 	body_data = rsp->body_frag_start;
@@ -1027,7 +1030,7 @@ static void response_download_cb(struct http_response *rsp, enum http_final_call
 	if (ret < 0) {
 		LOG_ERR("Failed to write flash: %d", ret);
 		hb_context->code_status = HAWKBIT_DOWNLOAD_ERROR;
-		return;
+		return ret;
 	}
 
 #if defined CONFIG_HAWKBIT_SAVE_PROGRESS && IS_EQ(CONFIG_HAWKBIT_SAVE_PROGRESS_INTERVAL, 0)
@@ -1054,6 +1057,8 @@ static void response_download_cb(struct http_response *rsp, enum http_final_call
 	if (final_data == HTTP_DATA_FINAL) {
 		hb_context->final_data_received = true;
 	}
+
+	return 0;
 }
 
 static int response_cb(struct http_response *rsp, enum http_final_call final_data, void *userdata)
@@ -1067,18 +1072,16 @@ static int response_cb(struct http_response *rsp, enum http_final_call final_dat
 		} else {
 			hb_context->code_status = HAWKBIT_METADATA_ERROR;
 		}
-		return 0;
+		return -EACCES;
 	}
 
 	switch (hb_context->type) {
 	case HAWKBIT_PROBE:
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
-		response_json_cb(rsp, final_data, hb_context);
-		break;
+		return response_json_cb(rsp, final_data, hb_context);
 
 	case HAWKBIT_DOWNLOAD:
-		response_download_cb(rsp, final_data, hb_context);
-		break;
+		return response_download_cb(rsp, final_data, hb_context);
 
 	default:
 		break;
@@ -1197,13 +1200,17 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 	}
 
 	ret = http_client_req(hb_context->sock, &http_req, HAWKBIT_RECV_TIMEOUT, hb_context);
-	if (ret < 0) {
-		LOG_ERR("Failed to send request: %d", ret);
-		hb_context->code_status = HAWKBIT_NETWORKING_ERROR;
+
+	/* check if there was a error durring the callback, before checking the return value, so it
+	 * won't be overwritten.
+	 */
+	if (IN_RANGE(hb_context->code_status, HAWKBIT_NETWORKING_ERROR, HAWKBIT_ALLOC_ERROR)) {
 		return false;
 	}
 
-	if (IN_RANGE(hb_context->code_status, HAWKBIT_NETWORKING_ERROR, HAWKBIT_ALLOC_ERROR)) {
+	if (ret < 0) {
+		LOG_ERR("Failed to send request: %d", ret);
+		hb_context->code_status = HAWKBIT_NETWORKING_ERROR;
 		return false;
 	}
 
