@@ -317,7 +317,7 @@ static int cmd_w1_configure(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
-	if (type > W1_SETINGS_TYPE_COUNT) {
+	if (type >= W1_SETINGS_TYPE_COUNT) {
 		shell_error(sh, "invalid type %u", type);
 		return -EINVAL;
 	}
