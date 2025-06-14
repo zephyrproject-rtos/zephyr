@@ -28,4 +28,10 @@ config SWDP_BITBANG_DRIVER
 	help
 	  Serial Wire Debug Port bit-bang driver.
 
+config SWDP_MAINTAIN_RESET_DEASSERTED
+	bool "Serial Wire Debug Port keeps RESET deasserted even when inactive"
+	depends on SWDP_BITBANG_DRIVER
+	help
+	  Serial Wire Debug Port keeps RESET deasserted even when inactive
+
 endif # DP_DRIVER
