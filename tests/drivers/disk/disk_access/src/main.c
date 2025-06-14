@@ -99,6 +99,15 @@ static void setup_loopback_backing(void)
 }
 #endif
 
+static void disk_driver_teardown(void *fixture)
+{
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+	int rc = loopback_disk_access_unregister(&lo_access);
+
+	zassert_equal(rc, 0, "Loopback disk access unregistration failed");
+#endif
+}
+
 /* Sets up test by initializing disk */
 static void test_setup(void)
 {
@@ -285,4 +294,4 @@ static void *disk_driver_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, NULL);
+ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, disk_driver_teardown);
