@@ -1086,8 +1086,15 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 #if defined(CONFIG_BT_PERIPHERAL)
-	struct lll_adv *lll = curr;
+	struct lll_adv *lll;
 	struct pdu_adv *pdu;
+
+	/* Prepare being cancelled (no resume for directed adv) */
+	if (!next) {
+		return -ECANCELED;
+	}
+
+	lll = curr;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 	/* TODO: prio check */

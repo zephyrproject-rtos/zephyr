@@ -21,6 +21,8 @@
 #include "util/mem.h"
 #include "util/memq.h"
 
+#include "ticker/ticker.h"
+
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
 #include "pdu.h"
@@ -132,66 +134,14 @@ static int init_reset(void)
 
 static int create_prepare_cb(struct lll_prepare_param *p)
 {
-	int err;
-
-	err = prepare_cb_common(p);
-	if (err) {
-		DEBUG_RADIO_START_O(1);
-		return 0;
-	}
-
-	radio_isr_set(isr_rx_estab, p->param);
-
-	DEBUG_RADIO_START_O(1);
-	return 0;
-}
-
-static int prepare_cb(struct lll_prepare_param *p)
-{
-	int err;
-
-	err = prepare_cb_common(p);
-	if (err) {
-		DEBUG_RADIO_START_O(1);
-		return 0;
-	}
-
-	radio_isr_set(isr_rx, p->param);
-
-	DEBUG_RADIO_START_O(1);
-	return 0;
-}
-
-static int prepare_cb_common(struct lll_prepare_param *p)
-{
-	struct lll_sync_iso_stream *stream;
-	struct node_rx_pdu *node_rx;
 	struct lll_sync_iso *lll;
-	uint32_t ticks_at_event;
-	uint32_t ticks_at_start;
-	uint16_t stream_handle;
-	uint16_t event_counter;
-	uint8_t access_addr[4];
-	uint16_t data_chan_id;
-	uint8_t data_chan_use;
-	uint32_t remainder_us;
-	uint8_t crc_init[3];
-	struct ull_hdr *ull;
-	uint32_t remainder;
-	uint32_t hcto;
-	uint32_t ret;
-	uint8_t phy;
-
-	DEBUG_RADIO_START_O(1);
+	int err;
 
 	lll = p->param;
 
 	/* Calculate the current event latency */
 	lll->lazy_prepare = p->lazy;
 	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
-
-	/* Calculate the current event counter value */
-	event_counter = (lll->payload_count / lll->bn) + lll->latency_event;
 
 	/* Update BIS packet counter to next value */
 	lll->payload_count += (lll->latency_event + 1U) * lll->bn;
@@ -213,11 +163,110 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
 
-	/* Initialize trx chain count */
+	/* Initialize trx chain count, retained across resume. */
 	trx_cnt = 0U;
 
 	/* Initialize anchor point CRC ok flag */
 	crc_ok_anchor = 0U;
+
+	/* Initialise resume subevent flag */
+	lll->is_lll_resume = 0U;
+
+	err = prepare_cb_common(p);
+	if (err) {
+		DEBUG_RADIO_START_O(1);
+		return err;
+	}
+
+	radio_isr_set(isr_rx_estab, p->param);
+
+	DEBUG_RADIO_START_O(1);
+
+	return 0;
+}
+
+static int prepare_cb(struct lll_prepare_param *p)
+{
+	struct lll_sync_iso *lll;
+	int err;
+
+	lll = p->param;
+
+	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
+
+	/* Update BIS packet counter to next value */
+	lll->payload_count += (lll->latency_event + 1U) * lll->bn;
+
+	/* Reset accumulated latencies */
+	lll->latency_prepare = 0U;
+
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (lll->lazy_prepare + 1U);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
+
+	/* Current window widening */
+	lll->window_widening_event_us += lll->window_widening_prepare_us;
+	lll->window_widening_prepare_us = 0U;
+	if (lll->window_widening_event_us > lll->window_widening_max_us) {
+		lll->window_widening_event_us =	lll->window_widening_max_us;
+	}
+
+	/* Initialize trx chain count, retained across resume. */
+	trx_cnt = 0U;
+
+	/* Initialize anchor point CRC ok flag */
+	crc_ok_anchor = 0U;
+
+	/* Initialise resume subevent flag */
+	lll->is_lll_resume = 0U;
+
+	err = prepare_cb_common(p);
+	if (err) {
+		DEBUG_RADIO_START_O(1);
+		return err;
+	}
+
+	radio_isr_set(isr_rx, p->param);
+
+	DEBUG_RADIO_START_O(1);
+
+	return 0;
+}
+
+static int prepare_cb_common(struct lll_prepare_param *p)
+{
+	struct lll_sync_iso_stream *stream;
+	struct node_rx_pdu *node_rx;
+	struct lll_sync_iso *lll;
+	uint32_t ticks_at_event;
+	uint32_t ticks_at_start;
+	uint16_t stream_handle;
+	uint64_t payload_count;
+	uint16_t event_counter;
+	uint8_t access_addr[4];
+	uint16_t data_chan_id;
+	uint8_t data_chan_use;
+	uint32_t remainder_us;
+	uint8_t crc_init[3];
+	struct ull_hdr *ull;
+	uint32_t remainder;
+	uint32_t hcto;
+	uint32_t ret;
+	uint8_t phy;
+
+	DEBUG_RADIO_START_O(1);
+
+	lll = p->param;
+
+	payload_count = lll->payload_count - (lll->latency_event + 1U) * lll->bn;
+
+	/* Calculate the current event counter value */
+	event_counter = (payload_count / lll->bn) + lll->latency_event;
 
 	/* Initialize to mandatory parameter values */
 	lll->bis_curr = 1U;
@@ -244,8 +293,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Initialize stream current */
 	lll->stream_curr = 0U;
 
-	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
-
 	/* Skip subevents until first selected BIS */
 	stream_handle = lll->stream_handle[lll->stream_curr];
 	stream = ull_sync_iso_lll_stream_get(stream_handle);
@@ -253,7 +300,62 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	    (stream->bis_index <= lll->num_bis)) {
 		/* First selected BIS */
 		lll->bis_curr = stream->bis_index;
+	}
 
+	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint8_t skipped = 0U;
+
+	if (p->ticks_drift) {
+		uint8_t skipped_bis;
+		uint32_t drift_us;
+
+		drift_us = HAL_TICKER_TICKS_TO_US(p->ticks_drift);
+
+		/* FIXME: Add implementation to support interleaved packing */
+		LL_ASSERT(is_sequential_packing);
+
+		/* Skipped subevents in sequential packing since anchor point */
+		skipped = DIV_ROUND_UP(drift_us, lll->sub_interval);
+		skipped_bis = skipped / lll->nse;
+		if (skipped_bis > 0U) {
+			lll->stream_curr += skipped_bis;
+			if (lll->stream_curr >= lll->stream_count) {
+				if (trx_cnt == 0U || !lll->is_lll_resume) {
+					radio_isr_set(lll_isr_early_abort, lll);
+				} else {
+					radio_tmr_ready_save(lll->ready_us);
+					radio_tmr_aa_save(lll->aa_us);
+
+					radio_isr_set(isr_done, lll);
+				}
+
+				radio_disable();
+
+				return -EOVERFLOW;
+			}
+
+			lll->bis_curr += skipped_bis;
+			LL_ASSERT(lll->bis_curr <= lll->num_bis);
+
+			lll->bn_curr = 1U;
+			lll->irc_curr = 1U;
+			lll->ptc_curr = 0U;
+		}
+
+		skipped %= lll->nse;
+
+		/* Calculate the remainder drift for the current BIS subevent */
+		drift_us %= lll->sub_interval;
+
+		/* Calculate the offset to next BIS subevent for reception */
+		drift_us = lll->sub_interval - drift_us;
+		p->ticks_at_expire += HAL_TICKER_US_TO_TICKS(drift_us);
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+	if (lll->bis_curr != 1U) {
 		/* Calculate the Access Address for the current BIS */
 		util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr,
 				 access_addr);
@@ -292,6 +394,26 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		}
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	if (skipped) {
+		uint8_t irc_prev;
+
+		/* Skipped subevents since last subevent reception */
+		irc_prev = lll->irc_curr;
+		lll->irc_curr = skipped + 1U;
+		skipped = lll->irc_curr - irc_prev;
+
+		/* Calculate the radio channel to use for subevent */
+		while (skipped--) {
+			data_chan_use = lll_chan_iso_subevent(data_chan_id,
+						lll->data_chan_map,
+						lll->data_chan_count,
+						&lll->data_chan.prn_s,
+						&lll->data_chan.remap_idx);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	/* Calculate the CRC init value for the BIS event,
 	 * preset with the BaseCRCInit value from the BIGInfo data the most
 	 * significant 2 octets and the BIS_Number for the specific BIS in the
@@ -318,7 +440,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Encryption */
 	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
 	    lll->enc) {
-		uint64_t payload_count;
 		uint8_t pkt_flags;
 
 		payload_count = lll->payload_count - lll->bn;
@@ -358,8 +479,14 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0U, ticks_at_start, remainder);
 
-	radio_tmr_ready_save(remainder_us);
-	radio_tmr_aa_save(0U);
+	if (trx_cnt == 0U) {
+		radio_tmr_ready_save(remainder_us);
+		radio_tmr_aa_save(0U);
+	} else if (lll->is_lll_resume) {
+		radio_tmr_ready_save(lll->ready_us);
+		radio_tmr_aa_save(lll->aa_us);
+	}
+
 	radio_tmr_aa_capture();
 
 	hcto = remainder_us +
@@ -428,15 +555,86 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+static int drift_prepare_cb(struct lll_prepare_param *p)
+{
+	uint32_t ticks_at_expire;
+	struct ull_hdr *ull;
+
+	ticks_at_expire = p->ticks_at_expire;
+
+	ull = HDR_LLL2ULL(p->param);
+	p->ticks_at_expire = ticker_ticks_diff_get(ticker_ticks_now_get(),
+						   lll_event_offset_get(ull));
+	p->ticks_drift += ticker_ticks_diff_get(p->ticks_at_expire,
+						ticks_at_expire);
+	p->remainder = 0U;
+	p->lazy = 0U;
+
+	return prepare_cb(p);
+}
+
+static int resume_prepare_cb(struct lll_prepare_param *p)
+{
+	uint32_t ticks_at_expire;
+	struct ull_hdr *ull;
+	int err;
+
+	ticks_at_expire = p->ticks_at_expire;
+
+	ull = HDR_LLL2ULL(p->param);
+	p->ticks_at_expire = ticker_ticks_diff_get(ticker_ticks_now_get(),
+						   lll_event_offset_get(ull));
+	p->ticks_drift += ticker_ticks_diff_get(p->ticks_at_expire,
+						ticks_at_expire);
+	p->remainder = 0U;
+	p->lazy = 0U;
+
+	err = prepare_cb_common(p);
+
+	if (!err) {
+		radio_isr_set(isr_rx, p->param);
+	} else if (err == -EOVERFLOW) {
+		err = 0;
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
-	if (next != curr) {
-		struct lll_sync_iso *lll;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	if (!next) {
+		/* This role was is the ready (next) event, it did not preempt current event; this
+		 * event can return 0 to preempt the current event as final decision. Or return
+		 * -EAGAIN so that this ready event is placed as resume event.
+		 */
 
-		lll = curr;
+		*resume_cb = drift_prepare_cb;
+
+		return -EAGAIN;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+	if (next != curr) {
+		struct lll_sync_iso *lll = curr;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		*resume_cb = resume_prepare_cb;
+
+		lll->ready_us = radio_tmr_ready_restore();
+		lll->aa_us = radio_tmr_aa_restore();
+
+		lll->is_lll_resume = 1U;
+
+		return -EINPROGRESS;
+
+#else /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 		if (lll->bn_curr <= lll->bn) {
 			return 0;
 		}
+#endif /* !CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 	}
 
 	return -ECANCELED;
@@ -450,15 +648,23 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
-		radio_isr_set(isr_done, param);
+		lll = param;
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER) && lll->is_lll_resume) {
+			/* Retain HF clock */
+			err = lll_hfclock_on();
+			LL_ASSERT(err >= 0);
+
+			radio_isr_set(lll_isr_abort, param);
+
+		} else {
+			radio_isr_set(isr_done, param);
+		}
+
 		radio_disable();
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)) {
-			lll = param;
-
-			if (lll->enc) {
-				radio_ccm_disable();
-			}
+		if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && lll->enc) {
+			radio_ccm_disable();
 		}
 
 		return;
