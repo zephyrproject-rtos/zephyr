@@ -55,3 +55,5 @@ scripts/make_bugs_pickle.py
 scripts/set_assignees.py
 scripts/gitlint/zephyr_commit_rules.py
 scripts/west_commands/runners/canopen_program.py
+scripts/ci/check_maintainer_changes.py
+.github/workflows/maintainer_check.yml
