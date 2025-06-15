@@ -10,7 +10,7 @@
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
 
-typedef enum {
+enum rfid_mode {
 	UNINITIALIZED = 0,
 	POWER_UP = 1,
 	READY = 2,
@@ -19,15 +19,22 @@ typedef enum {
 	TAG_DETECTOR = 5,
 	READER = 6,
 	INVALID = 7
-} rfid_mode_t;
+};
 
-typedef enum {
+enum rfid_protocol {
 	FIELD_OFF = 0,
 	ISO_15693 = 1,
 	ISO_14443A = 2,
 	ISO_14443B = 3,
 	ISO_18092 = 4,
-} rfid_protocol_t;
+};
+
+struct transceive_data {
+	uint8_t *tx;
+	size_t tx_len;
+	uint8_t *rx;
+	size_t rx_len;
+};
 
 /**
  * @brief RFID Driver API
@@ -47,17 +54,17 @@ extern "C" {
  * @param req_mode Requested Mode
  * @return 0 on success, negative on error
  */
-typedef int (*rfid_api_select_mode)(const struct device *dev, rfid_mode_t req_mode);
+typedef int (*rfid_api_select_mode)(const struct device *dev, enum rfid_mode req_mode);
 
 /**
  * @typedef rfid_api_protocol_select()
- * @brief API for selecting the communication protocol of the CR95HF RFID device
+ * @brief API for selecting the communication protocol of the RFID device
  *
  * @param dev RFID device
  * @param proto Communication protocol to be selected
  * @return 0 on success, negative on error
  */
-typedef int (*rfid_api_protocol_select)(const struct device *dev, rfid_protocol_t proto);
+typedef int (*rfid_api_protocol_select)(const struct device *dev, enum rfid_protocol proto);
 
 /**
  * @typedef rfid_api_get_uid()
@@ -81,8 +88,7 @@ typedef int (*rfid_api_get_uid)(const struct device *dev, uint8_t *uid, size_t *
  * @param rx_len Length of the tx buffer
  * @return 0 on success, negative on error
  */
-typedef int (*rfid_api_transceive)(const struct device *dev, const uint8_t *tx, size_t *tx_len,
-					uint8_t *rx, size_t *rx_len);
+typedef int (*rfid_api_transceive)(const struct device *dev, struct transceive_data data);
 
 /**
  * @brief RFID driver API
@@ -94,7 +100,7 @@ struct rfid_driver_api {
 	rfid_api_transceive transceive;
 };
 
-static inline int rfid_select_mode(const struct device *dev, rfid_mode_t req_mode)
+static inline int rfid_select_mode(const struct device *dev, enum rfid_mode req_mode)
 {
 	const struct rfid_driver_api *api = dev->api;
 
@@ -105,7 +111,7 @@ static inline int rfid_select_mode(const struct device *dev, rfid_mode_t req_mod
 	return api->select_mode(dev, req_mode);
 }
 
-static inline int rfid_protocol_select(const struct device *dev, rfid_protocol_t proto)
+static inline int rfid_protocol_select(const struct device *dev, enum rfid_protocol proto)
 {
 	const struct rfid_driver_api *api = dev->api;
 
@@ -127,8 +133,7 @@ static inline int rfid_get_uid(const struct device *dev, uint8_t *uid, size_t *u
 	return api->get_uid(dev, uid, uid_len);
 }
 
-static inline int rfid_transceive(const struct device *dev, const uint8_t *tx, size_t *tx_len,
-									uint8_t *rx, size_t *rx_len)
+static inline int rfid_transceive(const struct device *dev, struct transceive_data data)
 {
 	const struct rfid_driver_api *api = dev->api;
 
@@ -136,7 +141,7 @@ static inline int rfid_transceive(const struct device *dev, const uint8_t *tx, s
 		return -ENOSYS;
 	}
 
-	return api->transceive(dev, tx, tx_len, rx, rx_len);
+	return api->transceive(dev, data);
 }
 
 

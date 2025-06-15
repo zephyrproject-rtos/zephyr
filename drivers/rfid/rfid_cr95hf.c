@@ -26,17 +26,17 @@ struct rfid_cr95hf_spi_config {
 };
 
 struct rfid_cr95hf_data {
-	rfid_mode_t current_mode;           /* Current operating mode of the RFID reader */
-	uint64_t cm_timestamp;              /* Timestamp for the current mode */
-	struct gpio_callback irq_callback;  /* GPIO callback structure for interrupts */
-	struct spi_buf spi_snd_buffer;      /* Buffer for SPI send operations */
-	struct spi_buf spi_rcv_buffer;      /* Buffer for SPI receive operations */
-	struct spi_buf_set spi_snd_buffer_arr; /* Set of SPI send buffers */
-	struct spi_buf_set spi_rcv_buffer_arr; /* Set of SPI receive buffers */
-	uint8_t rcv_buffer[CR95HF_RCV_BUF_SIZE]; /* Buffer for received data */
-	uint8_t snd_buffer[CR95HF_SND_BUF_SIZE]; /* Buffer for data to send */
-	struct k_sem irq_out_sem;            /* Semaphore to wait for IRQ_OUT to be low */
-	gpio_callback_handler_t cb_handler;  /* Handler for the GPIO callback */
+	enum rfid_mode current_mode;
+	uint64_t cm_timestamp;
+	struct gpio_callback irq_callback;
+	struct spi_buf spi_snd_buffer;
+	struct spi_buf spi_rcv_buffer;
+	struct spi_buf_set spi_snd_buffer_arr;
+	struct spi_buf_set spi_rcv_buffer_arr;
+	uint8_t rcv_buffer[CR95HF_RCV_BUF_SIZE];
+	uint8_t snd_buffer[CR95HF_SND_BUF_SIZE];
+	struct k_sem irq_out_sem;
+	gpio_callback_handler_t cb_handler;
 };
 #endif
 
@@ -48,7 +48,7 @@ struct rfid_cr95hf_data {
  * @param data Pointer to the RFID data structure.
  * @param mode The new operating mode to set.
  */
-static inline void rfid_cr95hf_setmode(struct rfid_cr95hf_data *data, rfid_mode_t mode)
+static inline void rfid_cr95hf_setmode(struct rfid_cr95hf_data *data, enum rfid_mode mode)
 {
 	data->current_mode = mode;
 	data->cm_timestamp = k_uptime_get();
@@ -158,10 +158,11 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 		err = gpio_pin_configure_dt(cs, GPIO_OUTPUT_INACTIVE);
 		if (err) {
 			LOG_ERR("Cannot configure GPIO (err %d)", err);
+			return err;
 		}
 	} else {
 		LOG_ERR("%s: GPIO device not ready", dev->name);
-		err = -ENODEV;
+		return -ENODEV;
 	}
 
 	const struct gpio_dt_spec *irq_in = &config->irq_in;
@@ -170,10 +171,11 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 		err = gpio_pin_configure_dt(irq_in, GPIO_OUTPUT_INACTIVE);
 		if (err) {
 			LOG_ERR("Cannot configure GPIO (err %d)", err);
+			return err;
 		}
 	} else {
 		LOG_ERR("%s: GPIO device not ready", dev->name);
-		err = -ENODEV;
+		return -ENODEV;
 	}
 
 	if (config->irq_out.port) {
@@ -192,10 +194,10 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 
 		k_sem_init(&data->irq_out_sem, 0, 1);
 
-		gpio_init_callback((struct gpio_callback *)&data->irq_callback, data->cb_handler,
+		gpio_init_callback(&data->irq_callback, data->cb_handler,
 				   BIT(irq_out->pin));
 
-		err = gpio_add_callback_dt(irq_out, (struct gpio_callback *)&data->irq_callback);
+		err = gpio_add_callback_dt(irq_out, &data->irq_callback);
 		if (err) {
 			LOG_ERR("Failed to add GPIO callback (err %d)", err);
 			return err;
@@ -203,8 +205,6 @@ static int rfid_cr95hf_init_spi(const struct device *dev)
 	}
 
 	rfid_cr95hf_IRQ_IN_pulse(irq_in);
-	spi_release_dt(&config->spi);
-	k_sleep(K_MSEC(1));
 
 	uint8_t tries = 5;
 
@@ -276,7 +276,6 @@ static int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool r
 {
 	struct rfid_cr95hf_data *data = dev->data;
 	int err;
-	uint8_t *flags;
 
 	data->snd_buffer[0] = 0x03; /* SPI control Byte: Poll */
 	data->spi_snd_buffer.len = 1;
@@ -291,21 +290,23 @@ static int rfid_cr95hf_polling(const struct device *dev, bool ready_read, bool r
 	/* Read Flags */
 	data->spi_snd_buffer.len = 0;
 	data->spi_rcv_buffer.len = 1;
-	flags = &data->rcv_buffer[0];
+
 	while (1) {
-		*flags = 0;
+		data->rcv_buffer[0] = 0;
 		err = rfid_cr95hf_transceive(dev, true);
 		if (err) {
 			LOG_ERR("Failed to read data (err %d)", err);
 			return err;
 		}
-		LOG_DBG("Polling: Flags received: %d", *flags);
+		LOG_DBG("Polling: Flags received: %02X", data->rcv_buffer[0]);
+
 		/* Check if read flag is requested and set */
-		if (ready_read && (*flags & (0x8))) {
+		if (ready_read && (data->rcv_buffer[0] & (CR95HF_READY_TO_READ))) {
 			return 0;
 		}
+
 		/* Check if send flag is requested and set */
-		if (ready_send && (*flags & (0x4))) {
+		if (ready_send && (data->rcv_buffer[0] & (CR95HF_READY_TO_WRITE))) {
 			return 0;
 		}
 	}
@@ -402,12 +403,12 @@ static int rfid_cr95hf_response(const struct device *dev)
  * @param req_mode The requested mode to switch to.
  * @return 0 on success or a negative error code on failure.
  */
-int rfid_cr95hf_select_mode(const struct device *dev, rfid_mode_t req_mode)
+int rfid_cr95hf_select_mode(const struct device *dev, enum rfid_mode req_mode)
 {
 	struct rfid_cr95hf_data *data = dev->data;
 	const struct rfid_cr95hf_spi_config *config = dev->config;
 	const struct gpio_dt_spec *irq_in = &config->irq_in;
-	rfid_mode_t current_mode = data->current_mode;
+	enum rfid_mode current_mode = data->current_mode;
 	int err;
 
 	if (req_mode == current_mode) {
@@ -737,7 +738,7 @@ int rfid_cr95hf_iso14443A_get_uid(const struct device *dev, uint8_t *uid, size_t
  * such as ISO_14443A. It sends the necessary command to the device and waits
  * for a response to acknowledge the protocol switch.
  */
-int rfid_cr95hf_protocol_select(const struct device *dev, rfid_protocol_t proto)
+int rfid_cr95hf_protocol_select(const struct device *dev, enum rfid_protocol proto)
 {
 	struct rfid_cr95hf_data *data = dev->data;
 	int err;
@@ -776,11 +777,10 @@ int rfid_cr95hf_protocol_select(const struct device *dev, rfid_protocol_t proto)
 /**
  * @brief Transmits data to the RFID device and receives a response.
  *
- * This function is responsible for sending a buffer of data (`tx`) to the RFID device and receiving
- * a response buffer (`rx`) back. It also manages the lengths of the transmitted and received data.
+ * This function is responsible for sending a buffer of data to the RFID device and receiving
+ * a response buffer back. It also manages the lengths of the transmitted and received data.
  */
-int rfid_cr95hf_transceive_api(const struct device *dev, const uint8_t *tx, size_t *tx_len,
-								uint8_t *rx, size_t *rx_len)
+int rfid_cr95hf_transceive_api(const struct device *dev, struct transceive_data data)
 {
 	LOG_ERR("Function not implemented");
 	return -EPERM;

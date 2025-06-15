@@ -13,17 +13,12 @@ module = RFID
 module-str = rfid
 source "subsys/logging/Kconfig.template.log_config"
 
-config RFID_CR95HF
-	bool "Support for CR95HF RFID driver"
-	depends on DT_HAS_ST_CR95HF_ENABLED
-	depends on SPI || UART
-	help
-		Enable support for the CR95HF RFID driver.
-
 config RFID_INIT_PRIORITY
 	int "Init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 		Device driver initialization priority.
+
+source "drivers/rfid/Kconfig.cr95hf"
 
 endif # RFID
