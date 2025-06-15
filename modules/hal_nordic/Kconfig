@@ -183,7 +183,7 @@ config NRF_802154_CCA_CORR_LIMIT
 
 config NRF_802154_RX_BUFFERS
 	int "nRF 802.15.4 receive buffers"
-	default 16
+	default 20
 	help
 	  Number of buffers in nRF 802.15.4 driver serialization host's receive queue.
 	  If this value is modified, its remote counterpart must be set to the exact same value.
