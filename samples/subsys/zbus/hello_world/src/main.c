@@ -35,10 +35,10 @@ ZBUS_CHAN_DEFINE(version_chan,       /* Name */
 ZBUS_CHAN_DEFINE(acc_data_chan,  /* Name */
 		 struct acc_msg, /* Message type */
 
-		 NULL,                                 /* Validator */
-		 NULL,                                 /* User data */
-		 ZBUS_OBSERVERS(foo_lis, bar_sub),     /* observers */
-		 ZBUS_MSG_INIT(.x = 0, .y = 0, .z = 0) /* Initial value */
+		 NULL,                                            /* Validator */
+		 NULL,                                            /* User data */
+		 ZBUS_OBSERVERS(foo_lis, bar_sub, baz_async_lis), /* observers */
+		 ZBUS_MSG_INIT(.x = 0, .y = 0, .z = 0)            /* Initial value */
 );
 
 static bool simple_chan_validator(const void *msg, size_t msg_size)
@@ -71,6 +71,15 @@ static void listener_callback_example(const struct zbus_channel *chan)
 }
 
 ZBUS_LISTENER_DEFINE(foo_lis, listener_callback_example);
+
+static void async_listener_callback_example(const struct zbus_channel *chan, const void *message)
+{
+	const struct acc_msg *acc = message;
+
+	LOG_INF("From async listener -> Acc x=%d, y=%d, z=%d", acc->x, acc->y, acc->z);
+}
+
+ZBUS_ASYNC_LISTENER_DEFINE(baz_async_lis, async_listener_callback_example);
 
 ZBUS_SUBSCRIBER_DEFINE(bar_sub, 4);
 
