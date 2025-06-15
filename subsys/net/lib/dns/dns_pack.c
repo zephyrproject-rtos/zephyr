@@ -462,7 +462,7 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id)
 		return -EINVAL;
 	}
 
-	if (dns_header_opcode(dns_header) != 0) {
+	if (dns_header_z(dns_header) != 0) {
 		return -EINVAL;
 	}
 
