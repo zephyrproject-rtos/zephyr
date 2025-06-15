@@ -72,6 +72,11 @@
 		max-bitrate = <5000000>;
 		#phy-cells = <0>;
 	};
+
+	zephyr,user {
+		i3c-pullup-gpios = <&ioport5 8 GPIO_ACTIVE_LOW>,
+				   <&ioport5 9 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &xtal {
@@ -95,6 +100,12 @@
 &canfdclk {
 	clocks = <&pll>;
 	div = <2>;
+	status = "okay";
+};
+
+&i3cclk {
+	clocks = <&pll>;
+	div = <1>;
 	status = "okay";
 };
 
@@ -132,6 +143,16 @@
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c0 {
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	pinctrl-0 = <&i3c0_default>;
+	pinctrl-names = "default";
+	interrupts = <32 1>, <33 1>, <34 1>, <35 1>, <36 1>, <37 1>;
+	interrupt-names = "resp", "rx", "tx", "rcv", "ibi", "eei";
 	status = "okay";
 };
 
