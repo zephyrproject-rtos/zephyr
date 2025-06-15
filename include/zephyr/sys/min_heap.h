@@ -212,6 +212,8 @@ void *min_heap_find(struct min_heap *heap, min_heap_eq_t eq,
 static inline void *min_heap_get_element(const struct min_heap *heap,
 					  size_t index)
 {
+	__ASSERT_NO_MSG(heap != NULL);
+
 	return (void *)((uintptr_t)heap->storage + index * heap->elem_size);
 }
 
