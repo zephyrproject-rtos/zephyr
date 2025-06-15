@@ -560,6 +560,7 @@ harness: <string>
     - gtest
     - robot
     - ctest
+    - cpputest
     - shell
     - power
 
@@ -773,8 +774,8 @@ Most everyday users will run with no arguments.
 Harnesses
 *********
 
-Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
-output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
+Harnesses ``ztest``, ``gtest``, ``console`` and ``cpputest`` are based on parsing of the
+output and matching certain phrases. ``ztest``, ``gtest`` and ``cpputest`` harnesses look
 for pass/fail/etc. frames defined in those frameworks.
 
 Some widely used harnesses that are not supported yet:
@@ -819,6 +820,25 @@ Gtest
 
 Use ``gtest`` harness if you've already got tests written in the gTest
 framework and do not wish to update them to zTest.
+
+Cpputest
+========
+
+``cpputest`` does not output information for each test case result by default. As this
+harness is based on parsing the output it is necessry to enable verbose within ``cpputest``:
+
+  .. code-block:: cpp
+
+    #include <CppUTest/CommandLineTestRunner.h>
+    #include <posix_board_if.h>
+    int main(void)
+    {
+      const char *cppu_test_args[] = {__FILE__, "-v"};
+      int num_args = std::size(cppu_test_args);
+      int test_Res = CommandLineTestRunner::RunAllTests(num_args, cppu_test_args);
+      posix_exit(test_Res);
+      return 0;
+    }
 
 Pytest
 ======
