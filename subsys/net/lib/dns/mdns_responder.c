@@ -1089,7 +1089,7 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 			}
 
 			ret = k_work_reschedule_for_queue(&mdns_work_q,
-							  &v4_ctx[i].probe_timer,
+							  &v6_ctx[i].probe_timer,
 							  K_MSEC(probe_delay));
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv6", ret);
