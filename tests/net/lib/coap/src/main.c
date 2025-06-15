@@ -1628,6 +1628,30 @@ ZTEST(coap, test_remove_non_existent_coap_option)
 	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 4, expected_original_msg, 18, 17);
 }
 
+ZTEST(coap, test_coap_packet_options_with_large_values)
+{
+	int r;
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	static const char token[] = "token";
+
+	memset(data_buf[0], 0, ARRAY_SIZE(data_buf[0]));
+
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1, COAP_TYPE_CON,
+			     strlen(token), token, COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Could not initialize packet");
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_MAX_AGE, 3600);
+	zassert_equal(r, 0, "Could not append option");
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_SIZE1, 1048576);
+	zassert_equal(r, 0, "Could not append option");
+
+	static const uint8_t expected_0[] = {0x45, 0x02, 0x12, 0x34, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
+					     0xd2, 0x01, 0x0e, 0x10, 0xd3, 0x21, 0x10, 0x00, 0x00};
+	ASSERT_OPTIONS_AND_PAYLOAD(cpkt, 9, expected_0, 18, 60);
+}
+
 static void assert_coap_packet_set_path_query_options(const char *path,
 						      const char * const *expected,
 						      size_t expected_len, uint16_t code)
