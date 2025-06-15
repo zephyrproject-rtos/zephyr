@@ -134,6 +134,11 @@ config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
 	default 608 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
 	default 512
 
+config OPENTHREAD_RADIO_WORKQUEUE_PRIORITY
+	int "OpenThread radio transmit workqueue priority"
+	default 0 if OPENTHREAD_THREAD_PREEMPTIVE
+	default 7
+
 endmenu # "Zephyr optimizations"
 
 config OPENTHREAD_SHELL
