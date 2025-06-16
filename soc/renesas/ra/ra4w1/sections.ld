@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-.code_in_ram :
-{
-	. = ALIGN(4);
-	__Code_In_RAM_Start = .;
-	KEEP(*(.code_in_ram*))
-	__Code_In_RAM_End = .;
-} > RAMABLE_REGION
-
 SECTION_DATA_PROLOGUE(.fsp_dtc_vector_table,(NOLOAD),)
 {
 	/* If DTC is used, put the DTC vector table at the start of SRAM.
