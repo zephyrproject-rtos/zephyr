@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 STMicroelectronics
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +15,7 @@
 extern "C" {
 #endif
 
-#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0) || defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE)
 
 #define VDEV_ID                 0xFF
 #define VRING0_ID               CONFIG_OPENAMP_RSC_TABLE_IPM_RX_ID /* (host to remote) */
@@ -108,7 +109,7 @@ struct fw_resource_table {
 
 void rsc_table_get(void **table_ptr, int *length);
 
-#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
+#if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0) || defined(CONFIG_OPENAMP_VENDOR_RSC_TABLE)
 struct fw_rsc_vdev *rsc_table_to_vdev(void *rsc_table);
 struct fw_rsc_vdev_vring *rsc_table_get_vring0(void *rsc_table);
 struct fw_rsc_vdev_vring *rsc_table_get_vring1(void *rsc_table);
