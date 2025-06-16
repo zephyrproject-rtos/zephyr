@@ -405,6 +405,7 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 	case IMX_CCM_CAM_PIX_CLK:
 		return common_clock_set_freq(clock_name, (uint32_t)clock_rate);
 #endif
+
 	default:
 		/* Silence unused variable warning */
 		ARG_UNUSED(clock_rate);
