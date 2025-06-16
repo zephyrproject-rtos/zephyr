@@ -66,17 +66,21 @@ struct min_heap {
 };
 
 /**
- * @brief Define and initialize a heap instance at runtime.
+ * @brief Define a min-heap instance.
  *
- * @param name Name of the heap variable.
- * @param storage Pointer to the preallocated storage.
+ * @param name Base name for the heap instance.
  * @param cap Capacity (number of elements).
- * @param size Size of each element.
- * @param cmp_func Comparator function for the heap.
+ * @param elem_sz Size in bytes of each element.
+ * @param align Required alignment of each element.
+ * @param cmp_func Comparator function used by the heap
  */
-#define MIN_HEAP_DEFINE(name, storage, cap, size, cmp_func) \
-	struct min_heap name; \
-	min_heap_init(&name, storage, cap, size, cmp_func)
+#define MIN_HEAP_DEFINE(name, cap, elem_sz, align, cmp_func)                                       \
+	static uint8_t name##_storage[(cap) * (elem_sz)] __aligned(align);                         \
+	struct min_heap name = {.storage = name##_storage,                                         \
+				.capacity = (cap),                                                 \
+				.elem_size = (elem_sz),                                            \
+				.size = 0,                                                         \
+				.cmp = (cmp_func)}
 
 /**
  * @brief Define a statically allocated and aligned min-heap instance.
