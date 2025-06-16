@@ -1,0 +1,12 @@
+# NCT RTC Driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_NCT
+	bool "Nuvoton NCT RTC driver"
+	depends on DT_HAS_NUVOTON_NCT_RTC_ENABLED
+	help
+	  This option enables the RTC driver for Nuvoton NCT family of
+	  processors.
+	  Say y if you wish to enable NCT RTC.

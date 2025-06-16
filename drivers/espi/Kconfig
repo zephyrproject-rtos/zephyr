@@ -16,6 +16,8 @@ source "drivers/espi/Kconfig.npcx"
 
 source "drivers/espi/Kconfig.npcm"
 
+source "drivers/espi/Kconfig.nct"
+
 source "drivers/espi/Kconfig.espi_emul"
 
 source "drivers/espi/Kconfig.it8xxx2"

@@ -5,4 +5,5 @@
 add_subdirectory_ifdef(CONFIG_ADC_CMP_NPCX nuvoton_adc_cmp_npcx)
 add_subdirectory_ifdef(CONFIG_TACH_NPCX nuvoton_tach_npcx)
 add_subdirectory_ifdef(CONFIG_TACH_NPCM nuvoton_tach_npcm)
+add_subdirectory_ifdef(CONFIG_TACH_NCT nuvoton_tach_nct)
 # zephyr-keep-sorted-stop

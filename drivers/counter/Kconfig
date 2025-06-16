@@ -99,4 +99,6 @@ source "drivers/counter/Kconfig.rpi_pico"
 source "drivers/counter/Kconfig.nxp_mrt"
 
 source "drivers/counter/Kconfig.npcm_itim32"
+
+source "drivers/counter/Kconfig.nct_itim32"
 endif # COUNTER

@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NUVOTON NCT Ethernet controller
+
+compatible: "nuvoton,nct-ethernet"
+
+include: ["ethernet-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  interrupts:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true

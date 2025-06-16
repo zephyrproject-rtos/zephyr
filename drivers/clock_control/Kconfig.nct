@@ -1,0 +1,11 @@
+# NCT Clock controller driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NCT
+	bool "NCT clock controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_PCC_ENABLED
+	help
+	  Enable support for NCT clock controller driver.

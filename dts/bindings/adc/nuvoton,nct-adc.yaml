@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT-ADC node
+
+compatible: "nuvoton,nct-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  vref-mv:
+    type: int
+    required: true
+    description: ADC reference voltage (Unit:mV)
+  channel-count:
+    type: int
+    required: true
+    description: the number of ADC channels
+
+io-channel-cells:
+  - input

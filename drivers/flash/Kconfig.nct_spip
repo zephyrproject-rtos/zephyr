@@ -1,0 +1,19 @@
+# NCT SPIM Flash driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_NCT_SPIP_QSPI
+	bool "Nuvoton NCT SPIP QSPI Bus Flash driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_SPIP_QSPI_ENABLED
+	help
+	  This option enables the SPIP QSPI Bus Flash driver for NCT family
+	  of processors.
+
+config FLASH_NCT_SPIP_SUPP_DRA_4B_ADDR
+	bool "4 byte address support in Direct Read Access mode"
+	default y
+	help
+	  Selected if NCT series supports 4 byte address mode in Direct Read
+	  Access mode.

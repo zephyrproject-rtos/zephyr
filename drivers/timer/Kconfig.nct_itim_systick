@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config NCT_ITIM_SYSTICK
+	bool "Nuvoton NCT series SYSTICK that use internal timer"
+	default n
+	depends on DT_HAS_NUVOTON_NCT_ITIM_SYSTICK_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This module implements standard "system clock driver" interfaces that
+	  use Nuvoton NCT series internal timer.
+	  Due to its limited 32-bits hardware timer, tracking a separate cycle
+	  count in software to support 64-bits sys_clock_cycle_get_64().

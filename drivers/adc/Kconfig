@@ -130,4 +130,6 @@ source "drivers/adc/Kconfig.ene"
 
 source "drivers/adc/Kconfig.npcm"
 
+source "drivers/adc/Kconfig.nct"
+
 endif # ADC

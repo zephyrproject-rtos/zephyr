@@ -1,0 +1,330 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nuvoton/nct6694b.dtsi>
+#include <nuvoton/nct/nct6/nct6-pinctrl.dtsi>
+
+/ {
+	model = "Nuvoton NCT6694B evaluation board";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &uart1;
+		zephyr,console = &uart1;
+	};
+
+	aliases {
+		watchdog0 = &twd;
+		rtc = &rtc;
+		taf-flash = &ext_flash;
+	};
+
+	zephyr,user {
+		/* adjust channel number according to enum adc_channel_en in adc_nct.c */
+		/* Because VIN16, THR16, TD2P is the same pin, it must only select one type.
+		 * Because VIN15, THR15, TD0P is the same pin, it must only select one type.
+		 * Because VIN14, THR14, TD1P is the same pin, it must only select one type.
+		 * Because VIN1, THR1, TD3P is the same pin, it must only select one type.
+		 * Because VIN2, THR2, TD4P is the same pin, it must only select one type.
+		 * Exsample : if you select channel 6(VIN16),
+		 *            and you can't select channel 7(THR16) and channel 19(TD2P).
+		 */
+		io-channels = <&dsadc 17>, <&dsadc 18>;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&cr_uart1_sin_gp14 &cr_uart1_sout_gp15>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&cr_uart2_sin_gp30 &cr_uart2_sout_gp31>;
+	pinctrl-names = "default";
+};
+
+&dsadc {
+	status = "okay";
+	/* Pin D7 is shared by thermal signal VIN16, THR16, TD2P.
+	 * Pin C7 is shared by thermal signal VIN15, THR15, TD1P.
+	 * Pin A6 is shared by thermal signal VIN14, THR14, TD0P.
+	 * Pin B6 is shared by thermal signal VIN1, THR1, TD3P.
+	 * Pin C6 is shared by thermal signal VIN2, THR2, TD4P.
+	 */
+	pinctrl-0 = <&adc_vin7_gp86   /* VIN7 - C8 */
+		     &adc_vin5_gp87   /* VIN5 - F7 */
+		     &adc_vin16_gp91  /* VIN16/THR16/TD2P - D7 */
+		     &adc_vin15_gp91  /* VIN15/THR15/TD1P - C7 */
+		     &adc_vin14_gp92  /* VIN14/THR14/TD0P - A6 */
+		     &adc_vin1_gp93   /* VIN1/THR1/TD3P - B6 */
+		     &adc_vin2_gp94   /* VIN2/THR2/TD4P - C6 */
+		     &adc_vin3_gp95>; /* VIN3 - D6 */
+	pinctrl-names = "default";
+};
+
+&i2c1a {
+	status = "okay";
+	pinctrl-0 = <&i2c1a_scl_sda_gp60_61>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c2a {
+	status = "okay";
+	pinctrl-0 = <&i2c2a_scl_sda_gp11_13>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c3a {
+	status = "okay";
+	pinctrl-0 = <&i2c3a_scl_sda_gpa7_a2>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c4a {
+	status = "okay";
+	pinctrl-0 = <&i2c4a_scl_sda_gp36_37>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c5a {
+	status = "okay";
+	pinctrl-0 = <&i2c5a_scl_sda_gp34_35>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c6a {
+	status = "disabled";
+	pinctrl-0 = <&i2c6a_scl_gp96 &i2c6a_sda_gp97>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c7a {
+	status = "okay";
+	pinctrl-0 = <&i2c7a_scl_sda_gpc2_c3>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c8a {
+	status = "okay";
+	pinctrl-0 = <&i2c8a_scl_sda_gpc6_c7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c9a {
+	status = "okay";
+	pinctrl-0 = <&i2c9a_scl_sda_gp32_33>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c10a {
+	status = "okay";
+	pinctrl-0 = <&i2c10a_scl_sda_gpd2_d3>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c11a {
+	status = "okay";
+	pinctrl-0 = <&i2c11a_scl_sda_gpd4_d5>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c12a {
+	status = "okay";
+	pinctrl-0 = <&i2c12a_scl_sda_gpd6_d7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c1b {
+	status = "disabled";
+	pinctrl-0 = <&i2c1b_scl_sda_gp26_25>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c4b {
+	status = "disabled";
+	pinctrl-0 = <&i2c4b_scl_sda_gpf0_f1>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c6b {
+	status = "disabled";
+	pinctrl-0 = <&i2c6b_scl_sda_gp16_17>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&usbd20 {
+	status = "okay";
+	pinctrl-0 = <&usbdphy_en &usbdphy_clk_external>;
+	pinctrl-names = "default";
+};
+
+&usbh {
+    status = "okay";
+};
+
+&emac {
+	status = "okay";
+	pinctrl-0 = <&emac_rmii_en &emac_mdio_en &emac_phy>;
+	pinctrl-names = "default";
+};
+
+&spip1 {
+	pinctrl-0 = <&pspi1_clk_io0_io1_io2_io3_cs_gp66_67_70_73_76_77>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&qspi_fiu0 {
+	ext_flash: w25q256jv@0 {
+		compatible ="nuvoton,nct-nor";
+		size = <DT_SIZE_M(32 * 8)>;
+		reg = <0>;
+		enter-4byte-addr = <0x2>;
+		status = "okay";
+		quad-enable-requirements = "S2B1v1";
+		rd-mode = "NCT_RD_MODE_QUAD";
+		/* quad spi bus configuration of nor flash device */
+		qspi-flags = <NCT_QSPI_SW_CS1>;
+		mapped-addr = <0x70000000>;
+		pinctrl-0 = <&fiu0_shd_cs_io0_io1_clk_gp44_45_46_47
+&fiu0_shd_quad_io2_io3_clk_gp55_56>;
+		pinctrl-names = "default";
+	};
+};
+ 
+&qspi_spip {
+	ext_flash_spip: w25q256jv@1 {
+		compatible ="nuvoton,nct-nor";
+		size = <DT_SIZE_M(32 * 8)>;
+		reg = <0>;
+		enter-4byte-addr = <0x2>;
+		status = "okay";
+		rd-mode = "NCT_RD_MODE_NORMAL";
+ 
+		qspi-flags = <NCT_QSPI_SW_CS0>;
+		pinctrl-0 = < &pspi1_clk_io0_io1_io2_io3_cs_gp66_67_70_73_76_77 >;
+		pinctrl-names = "default";
+	};
+};
+ 
+&qspi_spim {
+	int_flash: w25q16@0 {
+		compatible ="nuvoton,nct-nor";
+		size = <DT_SIZE_M(2 * 8)>;
+		status = "okay";
+		quad-enable-requirements = "S2B1v1";
+		rd-mode = "NCT_RD_MODE_QUAD";
+		mapped-addr = <0x00080000>;
+		qspi-flags = <NCT_QSPI_SW_CS0>;
+   };
+};
+
+&timer2 {
+	prescaler = <2>;
+	status = "okay";
+};
+
+&pwm5 {
+	pinctrl-0 = <&pwm4_sl_gpa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tach1 {
+	pin-select = <NCT_TACH_PIN_SELECT_4>; /* Select tach pin 4 as input pin */
+	sample-clk = <NCT_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
+	pulses-per-round = <2>; /* number of pulses per round of encoder */
+	pinctrl-0 = <&ta4_sl_gpa1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c1 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c1_scl_sda_gp21_22>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c2 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c2_scl_sda_gp23_24>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c3 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c3_scl_lv_gp26 &i3c3_sda_lv_gp25
+			&i3c3_scl_sda_gp26_25>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c4 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c4_scl_sda_gpd0_d1>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c5 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c5_scl_sda_gp82_83>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c6 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&tri_state_gp96 &tri_state_gp97
+			&i3c6_scl_sda_gp96_97>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&c2h {
+	status = "okay";
+};
+
+&rtc {
+	alarms_count = <1>;
+	status = "okay";
+};

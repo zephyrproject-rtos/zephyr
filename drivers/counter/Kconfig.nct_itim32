@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NCT_ITIM32
+	bool "Nuvoton NCT series internal 32-bit timer"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_ITIM32_ENABLED
+	help
+	  This module implements a kernel device driver for the Nuvoton NCT
+	  series internal 32-bits counter/timer.

@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_NCT
+	bool "NUVOTON NCT serial driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for Nuvoton NCT
+	  family of processors.
+	  Say y to use serial port on Nuvoton MCU.

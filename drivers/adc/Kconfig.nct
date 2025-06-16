@@ -1,0 +1,13 @@
+# NCT ADC driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_NCT
+	bool "Nuvoton NCT ADC driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_ADC_ENABLED
+	help
+	  This option enables the ADC driver for NCT family of
+	  processors.
+	  Say y if you wish to use ADC channels on NCT MCU.

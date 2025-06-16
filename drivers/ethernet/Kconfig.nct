@@ -1,0 +1,73 @@
+# Nuvoton Ethernet driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NUVOTON_NCT_ETHERNET := nuvoton,nct-ethernet
+
+config ETH_NCT
+	bool "Nuvoton NCT Ethernet driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_ETHERNET_ENABLED
+	help
+	  This option enables the ethernet driver for NCT family of
+	  processors.
+	  Say y if you wish to use ethernet on NCT MCU.
+
+config ETH_NCT_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 4096
+	help
+	  RX thread stack size
+
+config ETH_NCT_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 3
+	help
+	  RX thread priority
+
+config ETH_NCT_PHY_ADDRESS
+	int "Phy address"
+	default 1
+	help
+	  The phy address to use.
+
+config ETH_NCT_RANDOM_MAC
+	bool "Random MAC address"
+	depends on ENTROPY_GENERATOR
+	default y
+	help
+	  Generate a random MAC address dynamically.
+
+if !ETH_NCT_RANDOM_MAC
+
+config ETH_NCT6XX_MAC3
+	hex "MAC Address Byte 3"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 3 of the MAC address.
+
+config ETH_NCT6XX_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 4 of the MAC address.
+
+config ETH_NCT6XX_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 5 of the MAC address.
+
+endif
+
+config ETH_NCT_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
+	int "Carrier check timeout period (ms)"
+	default 500
+	range 100 30000
+	help
+	  Set the RX idle timeout period in milliseconds after which the
+	  PHY's carrier status is re-evaluated.

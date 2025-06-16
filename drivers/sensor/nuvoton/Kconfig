@@ -5,4 +5,5 @@
 source "drivers/sensor/nuvoton/nuvoton_adc_cmp_npcx/Kconfig"
 source "drivers/sensor/nuvoton/nuvoton_tach_npcx/Kconfig"
 source "drivers/sensor/nuvoton/nuvoton_tach_npcm/Kconfig"
+source "drivers/sensor/nuvoton/nuvoton_tach_nct/Kconfig"
 # zephyr-keep-sorted-stop

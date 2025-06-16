@@ -72,6 +72,8 @@ source "drivers/pwm/Kconfig.npcx"
 
 source "drivers/pwm/Kconfig.npcm"
 
+source "drivers/pwm/Kconfig.nct"
+
 source "drivers/pwm/Kconfig.xlnx"
 
 source "drivers/pwm/Kconfig.mcux_pwt"

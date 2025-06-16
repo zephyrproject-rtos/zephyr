@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NCT-MIWU Wake-Up Unit Input (WUI) mapping child node
+
+compatible: "nuvoton,nct-miwu-wui-map"
+
+child-binding:
+  description: Child node to present the mapping between input of MIWU and its source device
+  properties:
+    miwus:
+      type: phandle-array
+      required: true

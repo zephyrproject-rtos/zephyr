@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT Internal 32-bit Timer(ITIM32) node
+
+compatible: "nuvoton,nct-itim32"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  prescaler:
+    type: int
+    default: 1
+    description: |
+      The prescaler value defines the factor by which the APB/LF clock will
+      be divided. The outcome of which serves as clock reference to the Timer
+      itself.
+
+      The allowed values for this property are in the range [1..256].
+      Values above that range will be 8-bit-masked.

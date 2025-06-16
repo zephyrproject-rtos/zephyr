@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/* Device tree declarations of nct soc family */
+#include <mem.h>
+#include "nct/nct6.dtsi"
+
+/ {
+	flash0: flash@80000 {
+		reg = <0x00080000 DT_SIZE_M(2)>;
+	};
+
+	sram0: memory@10008000 {
+		compatible = "mmio-sram";
+		reg = <0x10008000 DT_SIZE_K(764)>;
+	};
+
+	soc {
+	};
+};
+
+&qspi_spim {
+	zephyr,mutable;
+	
+	int_flash: w25q16@0 {
+		compatible ="nuvoton,nct-nor";
+		size = <DT_SIZE_M(2 * 8)>;
+		reg = <0>;
+		status = "okay";
+
+		/* quad spi bus configuration of nor flash device */
+		qspi-flags = <NCT_QSPI_SW_CS0>;
+		rd-mode = "NCT_RD_MODE_QUAD";
+		mapped-addr = <0x80000>;
+        };
+};
+
+&tach3 {
+	pin-static;
+	pinctrl-0 = <&ta3_sl_gp81>;
+	pinctrl-names = "default";
+};

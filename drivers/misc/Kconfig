@@ -14,5 +14,6 @@ source "drivers/misc/devmux/Kconfig"
 source "drivers/misc/nordic_vpr_launcher/Kconfig"
 source "drivers/misc/mcux_flexio/Kconfig"
 source "drivers/misc/c2h_npcm/Kconfig"
+source "drivers/misc/c2h_nct/Kconfig"
 
 endmenu

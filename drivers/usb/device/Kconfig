@@ -229,6 +229,14 @@ config USB_DC_NPCM
 	help
 	  This option enables the USB device driver for NPCM family of processors.
 	  Say y if you wish to use USB device on NPCM.
+	  
+config USB_DC_NCT
+	bool "Nuvoton NCT USB Device Controller Driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_USBD_ENABLED
+	help
+	  This option enables the USB device driver for NCT family of processors.
+	  Say y if you wish to use USB device on NCT.
 
 config USB_NATIVE_POSIX
 	bool "Native Posix USB Device Controller Driver"

@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NCT6694B_EVB
+	bool "Nuvoton NCT6694B EVB Development board"
+	select SOC_NCT6694B

@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT-eSPI node
+
+compatible: "nuvoton,nct-espi"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+    reg:
+      description: mmio register space
+      required: true
+
+    clocks:
+        required: true
+        description: configurations of device source clock controller
+
+    espi-rst-wui:
+        type: phandle
+        required: true
+        description: |
+            Mapping table between Wake-Up Input (WUI) and ESPI_RST signal.
+
+            For example the WUI mapping on NCT would be
+               espi-rst-wui = <&wui_espi_rst>;
+
+    rx-plsize:
+        type: int
+        required: true
+        description: The maximum receive channel payload size.
+
+    tx-plsize:
+        type: int
+        required: true
+        description: The maximum transmit channel payload size.

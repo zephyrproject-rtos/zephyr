@@ -1,0 +1,41 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT-Tachometer node
+
+compatible: "nuvoton,nct-tach"
+
+include: [tach.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  tach-channel:
+    type: int
+    description: |
+      A index to indicate TACH module that received transition signal.
+      Please don't overwrite it in the board-level DT driver.
+  sample-clk:
+    required: true
+    type: int
+    description: |
+      sampling clock frequency of tachometer. Please notice that it must be
+      fixed to 32768 if bus in clocks property is NCT_CLOCK_BUS_LFCLK.
+  pin-select:
+    type: int
+    description: selected pin of tachometer.
+  pin-static:
+    type: boolean
+    description: |
+        tachometer doesn't support select I/O pin. (pin-select)
+        Please don't overwrite it in the board-level DT driver.
+  pulses-per-round:
+    required: true
+    type: int
+    description: number of pulses (holes) per round of tachometer's input (encoder)

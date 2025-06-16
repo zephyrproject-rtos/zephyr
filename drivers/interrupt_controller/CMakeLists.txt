@@ -22,6 +22,7 @@ zephyr_library_sources_ifdef(CONFIG_LOAPIC                  intc_loapic.c intc_s
 zephyr_library_sources_ifdef(CONFIG_LOAPIC_SPURIOUS_VECTOR  intc_loapic_spurious.S)
 zephyr_library_sources_ifdef(CONFIG_MCHP_ECIA_XEC           intc_mchp_ecia_xec.c)
 zephyr_library_sources_ifdef(CONFIG_NPCM_MIWU               intc_npcm_miwu.c)
+zephyr_library_sources_ifdef(CONFIG_NCT_MIWU                intc_nct_miwu.c)
 zephyr_library_sources_ifdef(CONFIG_NPCX_MIWU               intc_miwu.c)
 zephyr_library_sources_ifdef(CONFIG_PLIC                    intc_plic.c)
 zephyr_library_sources_ifdef(CONFIG_RV32M1_INTMUX           intc_rv32m1_intmux.c)

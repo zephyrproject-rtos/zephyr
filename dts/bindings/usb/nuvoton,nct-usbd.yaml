@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nuvoton, NCT-USBD node
+
+compatible: "nuvoton,nct-usbd"
+
+include: [base.yaml, pinctrl-device.yaml, usb-ep.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  usbd-ram-size:
+    type: int
+    required: true
+    description: Configurable RAM used as endpoint buffer (including EP0)

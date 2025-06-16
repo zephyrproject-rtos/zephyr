@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_NCT
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_NCT

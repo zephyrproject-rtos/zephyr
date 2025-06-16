@@ -1,0 +1,109 @@
+# NCT eSPI driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_NCT
+	bool "Nuvoton NCT ESPI driver"
+	depends on SOC_FAMILY_NCT
+	help
+	  This option enables the Intel Enhanced Serial Peripheral Interface
+	  (eSPI) for NCT family of processors.
+
+config ESPI_NCT_PERIPHERAL_ACPI_SHD_MEM_SIZE
+	int "Host I/O peripheral port size for shared memory in nct series"
+	depends on ESPI_NCT || ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 256
+	help
+	  This is the port size used by the Host and NCT to communicate over
+	  the shared memory region to return the ACPI response data. Please
+	  notice the valid value in nct for this option is 8/16/32/
+	  64/128/256/512/1024/2048/4096 bytes.
+
+config ESPI_NCT_PERIPHERAL_HOST_CMD_PARAM_SIZE
+	int "Host I/O peripheral port size for host command in nct series"
+	depends on ESPI_NCT || ESPI_PERIPHERAL_EC_HOST_CMD
+	default 256
+	help
+	  This is the port size used by the Host and nct to communicate over
+	  the shared memory region to return the host command parameter data.
+	  Please notice the valid value in nct for this option is
+	  8/16/32/64/128/256/512/1024/2048/4096 bytes.
+
+config ESPI_TAF_NCT
+	bool "Nuvoton NCT ESPI TAF driver"
+	depends on SOC_SERIES_NCT6
+	depends on FLASH
+	help
+	  This option enables the Intel Enhanced Serial Peripheral Interface
+	  Target Attached Flash (eSPI TAF) for NCT6 family of processors.
+
+choice ESPI_NCT_TAF_ACCESS_MODE_CHOICE
+	prompt "eSPI TAF Read Access Mode"
+	default ESPI_NCT_TAF_AUTO_MODE
+
+config ESPI_NCT_TAF_AUTO_MODE
+	bool "eSPI TAF Automatic Mode"
+	help
+	  This is the setting to use auto mode for eSPI TAF read.
+
+config ESPI_NCT_TAF_MANUAL_MODE
+	bool "eSPI TAF Manual Mode"
+	help
+	  This is the setting to use manual mode for eSPI TAF read.
+
+endchoice
+
+config ESPI_TAF_PR_NUM
+	int "Sets of protection region settings"
+	default 16
+	help
+	  This size is display how many group of slave attached flash protection
+	  region.
+
+# The default value 'y' for the existing options if ESPI_NCT is selected.
+if ESPI_NCT
+
+config ESPI_FLASH_CHANNEL
+	default  y
+
+config ESPI_OOB_CHANNEL
+	default  y
+
+config ESPI_PERIPHERAL_8042_KBC
+	default n
+
+config ESPI_PERIPHERAL_HOST_IO
+	default n
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	default n
+
+config ESPI_PERIPHERAL_EC_HOST_CMD
+	default n
+
+config ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default y
+
+config ESPI_PERIPHERAL_CUSTOM_OPCODE
+	default n
+
+config ESPI_PERIPHERAL_PMCH3
+	bool "NCT PMCH3 Support"
+	default n
+	help
+	  Enables PM channel 3 for eSPI peripheral channel.
+
+config ESPI_PERIPHERAL_PMCH4
+	bool "NCT PMCH4 Support"
+	default n
+	help
+	  Enables PM channel 4 for eSPI peripheral channel.
+
+config ESPI_NCT_SUPP_VW_GPIO
+	bool "Indicates that the eSPI hardware supports virtual wire GPIOs"
+	default n
+	help
+	  Supports virtual wire GPIOs in eSPI module.
+
+endif #ESPI_NCT

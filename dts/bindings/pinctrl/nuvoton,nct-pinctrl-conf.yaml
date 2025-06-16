@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NCT Pin-Mux Configuration
+  Configuration map from Nuvoton NCT GPIO to pinmux controller
+  (SCFG) driver instances.
+
+compatible: "nuvoton,nct-pinctrl-conf"
+child-binding:
+  description: NCT Pinmux configuration child node
+  properties:
+    alts:
+      type: phandle-array
+      required: true
+      description: A SCFG ALT (Alternative controllers) specifier for pinmuxing of nct esio

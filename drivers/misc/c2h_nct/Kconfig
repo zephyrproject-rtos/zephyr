@@ -1,0 +1,14 @@
+# NCT misc. driver options
+
+# Copyright (c) 2024 Nuvoton
+# SPDX-License-Identifier: Apache-2.0
+
+
+config C2H_NCT
+	bool "NCT core access to host modules driver"
+	depends on DT_HAS_NUVOTON_NCT_C2H_ENABLED
+	help
+	  This option enables the c2h driver for NCT
+	  SoCs.
+	  Say y if you wish to access host modules
+	  on NCT SMC.

@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Properties defining the NCT Quad-SPI peripheral of Synchronous serial Interface Controller (SPIM).
+    A nct quad-spim-spi dt node would typically looks like:
+
+        &qspi_spim0 {
+            status = "okay";
+
+            int_flash: w25q400@0 {
+                status = "okay";
+                reg = <0>;
+                ...
+            };
+
+            ext_flash: w25q256@1 {
+                status = "okay";
+                reg = <1>;
+                ...
+            };
+        };
+
+    `int_flash` and `ext_flash` are the devices accessed by this peripheral.
+
+compatible: "nuvoton,nct-spim-qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  zephyr,mutable:
+    type: boolean
+    description: Place this device in RAM instead of flash

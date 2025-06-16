@@ -128,6 +128,14 @@ source "drivers/flash/Kconfig.npcm_spim"
 
 source "drivers/flash/Kconfig.npcm_spip"
 
+source "drivers/flash/Kconfig.nct_nor"
+
+source "drivers/flash/Kconfig.nct_fiu"
+
+source "drivers/flash/Kconfig.nct_spim"
+
+source "drivers/flash/Kconfig.nct_spip"
+
 source "drivers/flash/Kconfig.gecko"
 
 source "drivers/flash/Kconfig.nor"

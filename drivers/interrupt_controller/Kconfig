@@ -80,6 +80,8 @@ source "drivers/interrupt_controller/Kconfig.gic"
 
 source "drivers/interrupt_controller/Kconfig.npcm"
 
+source "drivers/interrupt_controller/Kconfig.nct"
+
 source "drivers/interrupt_controller/Kconfig.npcx"
 
 source "drivers/interrupt_controller/Kconfig.intel_vtd"

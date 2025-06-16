@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT Core to Host module
+
+compatible: "nuvoton,nct-c2h"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

@@ -78,6 +78,8 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 
 zephyr_library_sources_ifdef(CONFIG_I2C_NPCM		i2c_npcm.c)
 
+zephyr_library_sources_ifdef(CONFIG_I2C_NCT		i2c_nct.c)
+
 zephyr_library_sources_ifdef(CONFIG_I2C_TEST		i2c_test.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		i2c_handlers.c)

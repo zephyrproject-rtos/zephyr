@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT series SYSTICK that use internal timer(ITIM) node
+
+compatible: "nuvoton,nct-itim-systick"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

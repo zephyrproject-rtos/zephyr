@@ -52,3 +52,5 @@ zephyr_library_sources_ifdef(CONFIG_ADC_NUMAKER         adc_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_ENE_KB1200	adc_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_MCUX_GAU	adc_mcux_gau_adc.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_NPCM		adc_npcm.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_NCT		adc_nct.c)
+

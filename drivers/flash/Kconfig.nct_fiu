@@ -1,0 +1,19 @@
+# NCT FIU Flash driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_NCT_FIU_QSPI
+	bool "Nuvoton NCT FIU QSPI Bus Flash driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_FIU_QSPI_ENABLED
+	help
+	  This option enables the FIU QSPI Bus Flash driver for NCT family
+	  of processors.
+
+config FLASH_NCT_FIU_SUPP_DRA_4B_ADDR
+	bool "4 byte address support in Direct Read Access mode"
+	default y
+	help
+	  Selected if NCT series supports 4 byte address mode in Direct Read
+	  Access mode.

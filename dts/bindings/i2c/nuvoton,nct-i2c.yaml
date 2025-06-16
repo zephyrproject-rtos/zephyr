@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT-I2C controller node
+
+compatible: "nuvoton,nct-i2c"
+
+include: [base.yaml, i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  clock-frequency:
+    required: true

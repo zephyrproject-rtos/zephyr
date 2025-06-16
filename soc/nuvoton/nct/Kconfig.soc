@@ -1,0 +1,12 @@
+# Nuvoton Cortex-M4 Embedded Controller
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_NCT
+	bool
+
+config SOC_FAMILY
+	default "nuvoton_nct" if SOC_FAMILY_NCT
+
+rsource "*/Kconfig.soc"

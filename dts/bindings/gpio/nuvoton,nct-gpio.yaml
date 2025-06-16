@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NCT-GPIO node
+
+compatible: "nuvoton,nct-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  index:
+    type: int
+    required: true
+    description: index of gpio device
+
+  wui-maps:
+    type: phandles
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and 8 IOs belong to this device.
+        Please notice not all IOs connect to WUIs.
+        In this case, it will be presented by wui_none.
+
+        For example the WUI mapping on NCT6 GPIO8 would be
+           wui-maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
+                       &wui_none &wui_none &wui_io86 &wui_io87>;
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

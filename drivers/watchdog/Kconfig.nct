@@ -1,0 +1,23 @@
+# NCT WDT driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NCT
+	bool "Nuvoton NCT enhanced Super I/O controller (eSIO) Watchdog Timer driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_WATCHDOG_ENABLED
+	help
+	  This option enables the Watchdog Timer driver for NCT family of
+	  processors.
+	  Say y if you wish to use watchdog on NCT MCU.
+
+config WDT_NCT_DELAY_CYCLES
+	int "Number of delay cycles before generating watchdog event/signal"
+	depends on WDT_NCT
+	range 1 255
+	default 10
+	help
+	  This option defines the window in which a watchdog event must be
+	  handled, in units of 31ms. After this time window, the watchdog reset
+	  triggers immediately.

@@ -1,0 +1,13 @@
+# NPCX GPIO driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NCT
+	bool "Nuvoton NCT enhance Super I/O (eSIO) gpio driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_GPIO_ENABLED
+	help
+	  This option enables the GPIO driver for NCT family of
+	  processors.
+	  Say y if you wish to use serial port on NCT MCU.

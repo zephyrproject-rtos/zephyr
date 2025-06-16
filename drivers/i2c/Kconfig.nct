@@ -1,0 +1,13 @@
+# NCT I2C driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_NCT
+	bool "Nuvoton NCT I2C driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_I2C_ENABLED
+	help
+	  This option enables the I2C driver for NCT family of
+	  processors.
+	  Say y to use I2C modules on NCT MCU.

@@ -1,0 +1,26 @@
+# NCT SPI-NOR driver configuration options
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_NCT_NOR
+	bool "Nuvoton NCT Enhanced Super I/O (eSIO) SPI-NOR Flash driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_NOR_ENABLED
+	depends on FLASH_NCT_FIU_QSPI || FLASH_NCT_SPIM_QSPI || FLASH_NCT_SPIP_QSPI
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_JESD216
+	select FLASH_HAS_EX_OP
+	help
+	  This option enables the SPI-NOR Flash driver for NCT family of
+	  processors.
+
+config FLASH_NCT_NOR_INIT
+	bool "SPI-NOR flash feature during driver initialization"
+	default y
+	depends on FLASH_NCT_NOR
+	help
+	  This option enables the SPI-NOR Flash features such as Quad-Enable,
+	  4-byte address support and so on during driver initialization. Disable
+	  it if SPI-NOR devices are not ready during driver initialization.

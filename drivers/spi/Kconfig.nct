@@ -1,0 +1,11 @@
+# Nuvoton NCT SPI Driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NCT_SPIP
+	bool "Nuvoton NCT Enhanced Super I/O (eSIO) SPI driver"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_SPIP_ENABLED
+	help
+	  Enable the SPI peripherals on NCT MCU.

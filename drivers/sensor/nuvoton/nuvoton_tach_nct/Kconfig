@@ -1,0 +1,12 @@
+# NCT tachometer sensor configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_NCT
+	bool "Nuvoton NCT Tachometer sensor"
+	default y
+	depends on DT_HAS_NUVOTON_NCT_TACH_ENABLED
+	depends on SOC_FAMILY_NCT
+	help
+	  Enable the "Nuvoton NCT tachometer sensor.
