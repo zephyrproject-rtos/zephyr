@@ -5,11 +5,10 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/atomic.h>
 
 #include <hal/nrf_gpio.h>
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
 
 BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_DOWN == NRF_GPIO_PIN_PULLDOWN) &&
@@ -112,13 +111,131 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 #define NRF_PSEL_TDM(reg, line) ((NRF_TDM_Type *)reg)->PSEL.line
 #endif
 
+#define PORT_PD_EXISTS(node_id)									\
+	COND_CODE_1(										\
+		DT_NODE_EXISTS(node_id),							\
+		(DT_NODE_HAS_PROP(node_id, power_domains)),					\
+		(0)										\
+	)
+
+#define PORT_PD_DEV_GET_OR_NULL(node_id)							\
+	COND_CODE_1(										\
+		DT_NODE_EXISTS(node_id),							\
+		(DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, power_domains))),			\
+		(NULL)										\
+	)
+
+#define PORTS_HAVE_PD										\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio0)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio1)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio2)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio3)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio4)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio5)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio6)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio7)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio8)) ||							\
+	PORT_PD_EXISTS(DT_NODELABEL(gpio9))
+
+#if PORTS_HAVE_PD
+
+static const struct device *const port_pd_devs[] = {
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio0)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio1)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio2)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio3)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio4)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio5)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio6)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio7)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio8)),
+	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio9)),
+};
+
+static atomic_t port_pd_masks[ARRAY_SIZE(port_pd_devs)];
+
+static int port_pd_request_pin(uint16_t pin_number)
+{
+	uint8_t port_number = NRF_GET_PORT(pin_number);
+	uint16_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
+	const struct device *port_pd_dev = port_pd_devs[port_number];
+	atomic_t *port_pd_mask = &port_pd_masks[port_number];
+
+	if (atomic_test_and_set_bit(port_pd_mask, port_pin_number)) {
+		/* already requested */
+		return 0;
+	}
+
+	if (pm_device_runtime_get(port_pd_dev)) {
+		atomic_clear_bit(port_pd_mask, port_pin_number);
+		return -EIO;
+	}
+
+	/* power domain now active, retain can be disabled */
+	nrf_gpio_pin_retain_disable(pin_number);
+	return 0;
+}
+
+static int port_pd_release_pin(uint16_t pin_number)
+{
+	uint8_t port_number = NRF_GET_PORT(pin_number);
+	uint16_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
+	const struct device *port_pd_dev = port_pd_devs[port_number];
+	atomic_t *port_pd_mask = &port_pd_masks[port_number];
+
+	if (!atomic_test_and_clear_bit(port_pd_mask, port_pin_number)) {
+		/* already released */
+		return 0;
+	}
+
+	/* power domain may become inactive, retain shall be enabled */
+	nrf_gpio_pin_retain_enable(pin_number);
+
+	if (pm_device_runtime_put(port_pd_dev)) {
+		nrf_gpio_pin_retain_disable(pin_number);
+		atomic_set_bit(port_pd_mask, port_pin_number);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+#else
+
+static int port_pd_request_pin(uint16_t pin_number)
+{
+	ARG_UNUSED(pin_number);
+	return 0;
+}
+
+static int port_pd_release_pin(uint16_t pin_number)
+{
+	ARG_UNUSED(pin_number);
+	return 0;
+}
+
+#endif
+
+#if NRF_GPIO_HAS_CLOCKPIN
+
+static void port_pin_clock_set(uint16_t pin_number, bool enable)
+{
+	nrf_gpio_pin_clock_set(pin_number, enable);
+}
+
+#else
+
+static void port_pin_clock_set(uint16_t pin_number, bool enable)
+{
+	ARG_UNUSED(pin_number);
+	ARG_UNUSED(enable);
+}
+
+#endif
+
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	bool gpd_requested = false;
-#endif
-
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		nrf_gpio_pin_drive_t drive;
 		uint8_t drive_idx = NRF_GET_DRIVE(pins[i]);
@@ -472,21 +589,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		if (psel != PSEL_DISCONNECTED) {
 			uint32_t pin = psel;
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				if (!gpd_requested) {
-					int ret;
-
-					ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
-					if (ret < 0) {
-						return ret;
-					}
-					gpd_requested = true;
-				}
-
-				nrf_gpio_pin_retain_disable(pin);
-			}
-#endif /* CONFIG_SOC_NRF54H20_GPD */
+			/* enable pin */
+			port_pd_request_pin(pin);
+			port_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 
 			if (write != NO_WRITE) {
 				nrf_gpio_pin_write(pin, write);
@@ -498,29 +603,17 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 				input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 			}
 
+			/* configure pin */
 			nrf_gpio_cfg(pin, dir, input, NRF_GET_PULL(pins[i]),
 				     drive, NRF_GPIO_PIN_NOSENSE);
-#if NRF_GPIO_HAS_CLOCKPIN
-			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
-#endif
-#ifdef CONFIG_SOC_NRF54H20_GPD
-			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				nrf_gpio_pin_retain_enable(pin);
+
+			if (NRF_GET_LP(pins[i]) == NRF_LP_ENABLE) {
+				/* disable pin */
+				port_pd_release_pin(pin);
+				port_pin_clock_set(pin, false);
 			}
-#endif /* CONFIG_SOC_NRF54H20_GPD */
 		}
 	}
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	if (gpd_requested) {
-		int ret;
-
-		ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-#endif
 
 	return 0;
 }
