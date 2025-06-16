@@ -38,6 +38,7 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 	LL_I2C_DisableIT_RX(i2c);
 	LL_I2C_DisableIT_EVT(i2c);
 	LL_I2C_DisableIT_BUF(i2c);
+	LL_I2C_DisableIT_ERR(i2c);
 }
 
 static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
