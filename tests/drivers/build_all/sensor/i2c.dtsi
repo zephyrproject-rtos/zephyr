@@ -1331,3 +1331,9 @@ test_i2c_bh1730: bh1730@b4 {
 	compatible = "rohm,bh1730";
 	reg = <0xb4>;
 };
+
+test_i2c_mb7040: mb7040@b5 {
+	compatible = "maxbotix,mb7040";
+	reg = <0xb5>;
+	status-gpios = <&test_gpio 0 0>;
+};
