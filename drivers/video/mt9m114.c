@@ -85,10 +85,10 @@ struct mt9m114_reg {
 struct mt9m114_resolution_config {
 	uint16_t width;
 	uint16_t height;
-	struct mt9m114_reg *params;
+	const struct mt9m114_reg *params;
 };
 
-static struct mt9m114_reg mt9m114_init_config[] = {
+static const struct mt9m114_reg mt9m114_init_config[] = {
 	{0x098E, 2, 0x1000},    /* LOGICAL_ADDRESS_ACCESS */
 	{0xC97E, 1, 0x01},      /* CAM_SYSCTL_PLL_ENABLE */
 	{0xC980, 2, 0x0120},    /* CAM_SYSCTL_PLL_DIVIDER_M_N = 288 */
@@ -126,7 +126,7 @@ static struct mt9m114_reg mt9m114_init_config[] = {
 	{0xC984, 2, 0x8000}, /* CAM_PORT_OUTPUT_CONTROL, for MIPI CSI-2 interface : 0x8000 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_reg mt9m114_480_272[] = {
+static const struct mt9m114_reg mt9m114_480_272[] = {
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x00D4},     /* 212 */
 	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x00A4},     /* 164 */
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x02FB},       /* 763 */
@@ -142,7 +142,7 @@ static struct mt9m114_reg mt9m114_480_272[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x0035}, /* 53 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_reg mt9m114_640_480[] = {
+static const struct mt9m114_reg mt9m114_640_480[] = {
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x0000},     /* 0 */
 	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x0000},     /* 0 */
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x03CD},       /* 973 */
@@ -158,7 +158,7 @@ static struct mt9m114_reg mt9m114_640_480[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x005F}, /* 95 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_reg mt9m114_1280_720[] = {
+static const struct mt9m114_reg mt9m114_1280_720[] = {
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_START, 2, 0x007C},     /* 124 */
 	{MT9M114_CAM_SENSOR_CFG_X_ADDR_START, 2, 0x0004},     /* 4 */
 	{MT9M114_CAM_SENSOR_CFG_Y_ADDR_END, 2, 0x0353},       /* 851 */
@@ -174,7 +174,7 @@ static struct mt9m114_reg mt9m114_1280_720[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x008F}, /* 143 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_resolution_config resolution_configs[] = {
+static const struct mt9m114_resolution_config resolution_configs[] = {
 	{.width = 480, .height = 272, .params = mt9m114_480_272},
 	{.width = 640, .height = 480, .params = mt9m114_640_480},
 	{.width = 1280, .height = 720, .params = mt9m114_1280_720},
@@ -225,16 +225,17 @@ static inline int i2c_burst_write16_dt(const struct i2c_dt_spec *spec, uint16_t 
 }
 
 static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr, uint8_t reg_size,
-			     void *value)
+			     const void *value)
 {
 	const struct mt9m114_config *cfg = dev->config;
+	uint32_t val;
 
 	switch (reg_size) {
 	case 2:
-		*(uint16_t *)value = sys_cpu_to_be16(*(uint16_t *)value);
+		val = sys_cpu_to_be16(*(const uint16_t *)value);
 		break;
 	case 4:
-		*(uint32_t *)value = sys_cpu_to_be32(*(uint32_t *)value);
+		val = sys_cpu_to_be32(*(const uint32_t *)value);
 		break;
 	case 1:
 		break;
@@ -242,7 +243,7 @@ static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr, uint8_
 		return -ENOTSUP;
 	}
 
-	return i2c_burst_write16_dt(&cfg->i2c, reg_addr, value, reg_size);
+	return i2c_burst_write16_dt(&cfg->i2c, reg_addr, (const uint8_t *)&val, reg_size);
 }
 
 static int mt9m114_read_reg(const struct device *dev, uint16_t reg_addr, uint8_t reg_size,
@@ -293,7 +294,7 @@ static int mt9m114_modify_reg(const struct device *dev, const uint16_t addr,
 	return mt9m114_write_reg(dev, addr, reg_size, &newVal);
 }
 
-static int mt9m114_write_all(const struct device *dev, struct mt9m114_reg *reg)
+static int mt9m114_write_all(const struct device *dev, const struct mt9m114_reg *reg)
 {
 	int i = 0;
 
