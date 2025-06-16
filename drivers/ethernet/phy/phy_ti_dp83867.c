@@ -20,6 +20,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
+#include "phy_mii.h"
+
 #define PHY_TI_DP83867_PHYSTS                 0x11
 #define PHY_TI_DP83867_PHYSTS_LINKSTATUS_MASK BIT(10)
 #define PHY_TI_DP83867_PHYSTS_LINKDUPLEX_MASK BIT(13)
@@ -309,7 +311,7 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 	const struct ti_dp83867_config *config = dev->config;
 	struct ti_dp83867_data *data = dev->data;
 	int ret;
-	uint32_t anar, cfg1, val;
+	uint32_t val;
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
@@ -356,60 +358,15 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 	k_work_cancel_delayable(&data->phy_monitor_work);
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
-	/* Read ANAR register to write back */
-	ret = phy_ti_dp83867_read(dev, MII_ANAR, &anar);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
+	ret = phy_mii_set_anar_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
+		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 
-	/* Read CFG1 register to write back */
-	ret = phy_ti_dp83867_read(dev, MII_1KTCR, &cfg1);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) 1000Base-T control register", config->addr);
-		goto done;
-	}
-
-	/* Setup advertising register */
-	if (speeds & LINK_FULL_100BASE) {
-		anar |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_100_FULL;
-	}
-	if (speeds & LINK_HALF_100BASE) {
-		anar |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_100_HALF;
-	}
-	if (speeds & LINK_FULL_10BASE) {
-		anar |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_10_FULL;
-	}
-	if (speeds & LINK_HALF_10BASE) {
-		anar |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	/* Setup 1000Base-T control register */
-	if (speeds & LINK_FULL_1000BASE) {
-		cfg1 |= MII_ADVERTISE_1000_FULL;
-	} else {
-		cfg1 &= ~MII_ADVERTISE_1000_FULL;
-	}
-
-	/* Write capabilities to advertising register */
-	ret = phy_ti_dp83867_write(dev, MII_ANAR, anar);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) advertising register", config->addr);
-		goto done;
-	}
-
-	/* Write capabilities to 1000Base-T control register */
-	ret = phy_ti_dp83867_write(dev, MII_1KTCR, cfg1);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) 1000Base-T control register", config->addr);
+	ret = phy_mii_set_c1kt_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
+		LOG_ERR("Error setting C1KT register for phy (%d)", config->addr);
 		goto done;
 	}
 
