@@ -7,6 +7,7 @@ common:
     - mps3/corstone300/an547
     - mps3/corstone300/fvp
     - mps3/corstone310/fvp
+    - mps4/corstone315/fvp
     - mps4/corstone320/fvp
 tests:
   # To verify that region marked with PXN attribute can be executed from unprivileged code
