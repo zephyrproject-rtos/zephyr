@@ -474,7 +474,7 @@ static int esp_send(struct net_pkt *pkt,
 
 #define CIPRECVDATA_CMD_MIN_LEN (sizeof("+CIPRECVDATA,L:") - 1)
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL,\"255.255.255.255\",65535:") - 1)
 #else
 #define CIPRECVDATA_CMD_MAX_LEN (sizeof("+CIPRECVDATA,LLLL:") - 1)
@@ -501,7 +501,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 
 	*data_len = strtol(&cmd_buf[len], &endptr, 10);
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	char *strstart = endptr + 1;
 	char *strend = strchr(strstart, ',');
 
@@ -557,7 +557,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 		return -ENOTCONN;
 	}
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
 	int port = 0;
 
@@ -575,7 +575,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 		goto socket_unref;
 	}
 
-#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
+#if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 	struct sockaddr_in *recv_addr =
 			(struct sockaddr_in *) &sock->context->remote;
 
