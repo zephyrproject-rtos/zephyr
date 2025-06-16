@@ -610,27 +610,6 @@
 			status = "disabled";
 		};
 
-		option_setting_ofs: option_setting_ofs@300a100 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0300a100 0x18>;
-			zephyr,memory-region = "OPTION_SETTING_OFS";
-			status = "okay";
-		};
-
-		option_setting_sas: option_setting_sas@300a134 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0300a134 0xcc>;
-			zephyr,memory-region = "OPTION_SETTING_SAS";
-			status = "okay";
-		};
-
-		option_setting_s: option_setting_s@300a200 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0300a200 0x100>;
-			zephyr,memory-region = "OPTION_SETTING_S";
-			status = "okay";
-		};
-
 		agt0: agt@40221000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
@@ -947,6 +926,75 @@
 			clocks = <&pclkb MSTPC 7>;
 			clock-names = "pclk";
 			status = "disabled";
+		};
+
+		option_setting_ofs_cf_sec: option-setting-ofs-cf-sec@300a100 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0300a100 0x200>;
+			zephyr,memory-region = "OFS_CF_SEC_MEMORY";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			option_setting_ofs0: option-setting-ofs0@300a100 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a100 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs2: option-setting-ofs2@300a104 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a104 0x4>;
+				status = "okay";
+			};
+
+			option_setting_dualsel: option-setting-dualsel@300a110 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a110 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sec: option-setting-ofs1-sec@300a200 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a200 0x4>;
+				status = "okay";
+			};
+
+			option_setting_banksel_sec: option-setting-banksel-sec@300a210 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a210 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sec: option-setting-bps-sec@300a240 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a240 0x10>;
+				status = "okay";
+			};
+
+			option_setting_pbps_sec: option-setting-pbps-sec@300a260 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a260 0x10>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sel: option-setting-ofs1-sel@300a280 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a280 0x4>;
+				status = "okay";
+			};
+
+			option_setting_banksel_sel: option-setting-banksel-sel@300a290 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a290 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sel: option-setting-bps-sel@300a2c0 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x0300a2c0 0x10>;
+				status = "okay";
+			};
 		};
 
 	};
