@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_mii, CONFIG_PHY_LOG_LEVEL);
 
+#include "phy_mii.h"
+
 #define ANY_DYNAMIC_LINK UTIL_NOT(DT_ALL_INST_HAS_PROP_STATUS_OKAY(fixed_link))
 #define ANY_FIXED_LINK   DT_ANY_INST_HAS_PROP_STATUS_OKAY(fixed_link)
 
@@ -350,11 +352,7 @@ static int phy_mii_cfg_link(const struct device *dev,
 {
 	struct phy_mii_dev_data *const data = dev->data;
 	const struct phy_mii_dev_config *const cfg = dev->config;
-	uint16_t anar_reg;
-	uint16_t anar_reg_old;
 	uint16_t bmcr_reg;
-	uint16_t c1kt_reg;
-	uint16_t c1kt_reg_old;
 	int ret = 0;
 
 	/* if there is no mdio (fixed-link) it is not supported to configure link */
@@ -368,79 +366,30 @@ static int phy_mii_cfg_link(const struct device *dev,
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
-		ret = -EIO;
-		goto cfg_link_end;
-	}
-	anar_reg_old = anar_reg;
-
 	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		ret = -EIO;
 		goto cfg_link_end;
 	}
 
 	if (data->gigabit_supported) {
-		if (phy_mii_reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
-			ret = -EIO;
+		ret = phy_mii_set_c1kt_reg(dev, adv_speeds);
+		if (ret == -EALREADY) {
+			/* If the C1KT register is already set, we don't need to do anything */
+			ret = 0;
+		} else if (ret < 0) {
 			goto cfg_link_end;
-		}
-	}
-
-	if (adv_speeds & LINK_FULL_10BASE) {
-		anar_reg |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_10BASE) {
-		anar_reg |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	if (adv_speeds & LINK_FULL_100BASE) {
-		anar_reg |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_FULL;
-	}
-
-	if (adv_speeds & LINK_HALF_100BASE) {
-		anar_reg |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar_reg &= ~MII_ADVERTISE_100_HALF;
-	}
-
-	if (data->gigabit_supported) {
-		c1kt_reg_old = c1kt_reg;
-
-		if (adv_speeds & LINK_FULL_1000BASE) {
-			c1kt_reg |= MII_ADVERTISE_1000_FULL;
 		} else {
-			c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
-		}
-
-		if (adv_speeds & LINK_HALF_1000BASE) {
-			c1kt_reg |= MII_ADVERTISE_1000_HALF;
-		} else {
-			c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
-		}
-
-		if (c1kt_reg != c1kt_reg_old) {
-			if (phy_mii_reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
-				ret = -EIO;
-				goto cfg_link_end;
-			}
-
 			data->restart_autoneg = true;
 		}
 	}
 
-	if (anar_reg != anar_reg_old) {
-		if (phy_mii_reg_write(dev, MII_ANAR, anar_reg) < 0) {
-			ret = -EIO;
-			goto cfg_link_end;
-		}
-
+	ret = phy_mii_set_anar_reg(dev, adv_speeds);
+	if (ret == -EALREADY) {
+		/* If the ANAR register is already set, we don't need to do anything */
+		ret = 0;
+	} else if (ret < 0) {
+		goto cfg_link_end;
+	} else {
 		data->restart_autoneg = true;
 	}
 
