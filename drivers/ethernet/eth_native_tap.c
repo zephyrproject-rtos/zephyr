@@ -638,7 +638,7 @@ LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_PTP_DEVICE, (;), _);
 
 static void add_native_tap_options(void)
 {
-	static struct args_struct_t eth_native_tap_options[] = {
+	static const struct args_struct_t eth_native_tap_options[] = {
 		{
 			.is_mandatory = false,
 			.option = "eth-if",
