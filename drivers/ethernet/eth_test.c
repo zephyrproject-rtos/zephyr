@@ -14,7 +14,7 @@
 #define DT_DRV_COMPAT vnd_ethernet
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-struct net_stats_eth *vnd_ethernet_get_stats(const struct device *dev);
+struct net_stats_eth *vnd_ethernet_get_stats(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
