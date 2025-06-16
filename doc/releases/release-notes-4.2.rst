@@ -132,6 +132,7 @@ New APIs and options
  * :c:func:`timespec_normalize`
  * :c:func:`timespec_from_timeout`
  * :c:func:`timespec_to_timeout`
+ * :c:func:`k_heap_array_get`
 
 * I2C
 
