@@ -1039,6 +1039,78 @@
 			reg = <0x40252400 0x0400>;
 			status = "disabled";
 		};
+
+		option_setting_ofs_conf_sec: option-setting-ofs-conf-sec@2c9f040 {
+			compatible = "zephyr,memory-region";
+			reg = <0x02c9f040 0x3c0>;
+			zephyr,memory-region = "OFS_CONF_SEC_MEMORY";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			option_setting_ofs0: option-setting-ofs0@2c9f040 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f040 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs2: option-setting-ofs2@2c9f044 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f044 0x4>;
+				status = "okay";
+			};
+
+			option_setting_sas: option-setting-sas@2c9f074 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f074 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sec: option-setting-ofs1-sec@2c9f0c0 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f0c0 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs3_sec: option-setting-ofs3-sec@2c9f0c4 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f0c4 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs1_sel: option-setting-ofs1-sel@2c9f120 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f120 0x4>;
+				status = "okay";
+			};
+
+			option_setting_ofs3_sel: option-setting-ofs3-sel@2c9f124 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f124 0x4>;
+				status = "okay";
+			};
+
+			option_setting_bps_sec: option-setting-bps-sec@2c9f200 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02c9f200 0x200>;
+				status = "okay";
+			};
+		};
+
+		option_setting_ofs_otp_sec: option-setting-ofs-otp-sec@2e07400 {
+			compatible = "zephyr,memory-region";
+			reg = <0x02e07400 0x120a30>;
+			zephyr,memory-region = "OFS_OTP_SEC_MEMORY";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			option_setting_otp_pbps_sec: option-setting-otp-pbps-sec@2e17700 {
+				compatible = "renesas,ofs-memory";
+				reg = <0x02e17700 0x80>;
+				status = "okay";
+			};
+		};
 	};
 };
 
