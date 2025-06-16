@@ -279,10 +279,10 @@ static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
 
 /* Forward declarations */
 static int stm32_sdmmc_pwr_on(struct stm32_sdmmc_priv *priv);
-static int stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv);
+static void stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv);
 static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv);
 static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv);
-static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv);
+static void stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv);
 
 static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
@@ -676,16 +676,16 @@ remove_callback:
 	return err;
 }
 
-static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv)
+static void stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv)
 {
 	if (!priv->cd.port) {
-		return 0;
+		return;
 	}
 
 	gpio_pin_interrupt_configure_dt(&priv->cd, GPIO_INT_MODE_DISABLED);
 	gpio_pin_configure_dt(&priv->cd, GPIO_DISCONNECTED);
 	gpio_remove_callback(priv->cd.port, &priv->cd_cb);
-	return 0;
+	return;
 }
 #endif /* !CONFIG_SDMMC_STM32_EMMC */
 
@@ -711,12 +711,12 @@ static int stm32_sdmmc_pwr_on(struct stm32_sdmmc_priv *priv)
 	return 0;
 }
 
-static int stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv)
+static void stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv)
 {
 	int err;
 
 	if (!priv->pe.port) {
-		return 0;
+		return;
 	}
 
 	/* PINCTRL sleep mode when powered down */
@@ -725,7 +725,7 @@ static int stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv)
 		LOG_WRN("Failed to apply pin sleep states");
 	}
 	gpio_pin_configure_dt(&priv->pe, GPIO_OUTPUT_INACTIVE);
-	return 0;
+	return;
 }
 
 static int disk_stm32_sdmmc_init(const struct device *dev)
