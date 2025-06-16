@@ -41,7 +41,6 @@ struct phy_mii_dev_data {
 #if ANY_DYNAMIC_LINK
 	struct k_work_delayable monitor_work;
 	bool gigabit_supported;
-	bool restart_autoneg;
 	bool autoneg_in_progress;
 	k_timepoint_t autoneg_timeout;
 #endif
@@ -179,32 +178,27 @@ static int update_link_state(const struct device *dev)
 
 	link_up = (bmsr_reg & MII_BMSR_LINK_STATUS) != 0U;
 
-	/* If there is no change in link state don't proceed. */
-	if ((link_up == data->state.is_up) && !data->restart_autoneg) {
-		return -EAGAIN;
-	}
-
-	data->state.is_up = link_up;
-
-	if (!data->state.is_up) {
+	/* If link is down, we can stop here. */
+	if (!link_up) {
 		data->state.speed = 0;
-		LOG_INF("PHY (%d) is down", cfg->phy_addr);
-		/* If not restarting auto-negotiation, just return */
-		if (!data->restart_autoneg) {
+		if (link_up != data->state.is_up) {
+			data->state.is_up = false;
+			LOG_INF("PHY (%d) is down", cfg->phy_addr);
 			return 0;
 		}
+		return -EAGAIN;
 	}
 
 	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
 
-	if (!(bmcr_reg & MII_BMCR_AUTONEG_ENABLE)) {
+	/* If auto-negotiation is not enabled, we only need to check the link speed */
+	if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
 		enum phy_link_speed new_speed = phy_mii_get_link_speed_bmcr_reg(dev, bmcr_reg);
 
-		data->restart_autoneg = false;
-
-		if ((data->state.speed != new_speed) && data->state.is_up) {
+		if ((data->state.speed != new_speed) || !data->state.is_up) {
+			data->state.is_up = true;
 			data->state.speed = new_speed;
 
 			LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
@@ -218,22 +212,18 @@ static int update_link_state(const struct device *dev)
 		return -EAGAIN;
 	}
 
-	/**
-	 * Perform auto-negotiation sequence.
+	/* If auto-negotiation is enabled and the link was already up last time we checked,
+	 * we can return immediately, as the link state has not changed.
+	 * If the link was down, we will start the auto-negotiation sequence.
 	 */
-	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
-
-	bmcr_reg |= MII_BMCR_AUTONEG_RESTART;
-	bmcr_reg &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
-
-	/* Configure and start auto-negotiation process */
-	if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
-		return -EIO;
+	if (data->state.is_up) {
+		return -EAGAIN;
 	}
 
-	data->restart_autoneg = false;
+	data->state.is_up = true;
 
-	/* We have to wait for the auto-negotiation process to complete */
+	LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
+
 	data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
 	return -EINPROGRESS;
 }
@@ -249,10 +239,6 @@ static int check_autonegotiation_completion(const struct device *dev)
 	uint16_t c1kt_reg = 0;
 	uint16_t s1kt_reg = 0;
 
-	if (data->restart_autoneg) {
-		return -EAGAIN;
-	}
-
 	/* On some PHY chips, the BMSR bits are latched, so the first read may
 	 * show incorrect status. A second read ensures correct values.
 	 */
@@ -267,7 +253,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 
 	if ((bmsr_reg & MII_BMSR_AUTONEG_COMPLETE) == 0U) {
 		if (sys_timepoint_expired(data->autoneg_timeout)) {
-			LOG_DBG("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
+			LOG_DBG("PHY (%d) auto-negotiate timeout", cfg->phy_addr);
 			return -ETIMEDOUT;
 		}
 		return -EINPROGRESS;
@@ -371,7 +357,6 @@ static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_sp
 {
 	struct phy_mii_dev_data *const data = dev->data;
 	const struct phy_mii_dev_config *const cfg = dev->config;
-	uint16_t bmcr_reg;
 	int ret = 0;
 
 	/* if there is no mdio (fixed-link) it is not supported to configure link */
@@ -397,52 +382,24 @@ static int phy_mii_cfg_link(const struct device *dev, enum phy_link_speed adv_sp
 		}
 
 		ret = phy_mii_set_bmcr_reg_autoneg_disabled(dev, adv_speeds);
-		if (ret == -EALREADY) {
-			/* If the BMCR register is already set, we don't need to do anything */
-			ret = 0;
-		} else if (ret < 0) {
-			goto cfg_link_end;
-		} else {
-			data->restart_autoneg = true;
+		if (ret >= 0) {
+			data->autoneg_in_progress = false;
+			k_work_reschedule(&data->monitor_work, K_NO_WAIT);
 		}
 	} else {
-		ret = phy_mii_set_anar_reg(dev, adv_speeds);
-		if (ret == -EALREADY) {
-			/* If the ANAR register is already set, we don't need to do anything */
-			ret = 0;
-		} else if (ret < 0) {
-			goto cfg_link_end;
-		} else {
-			data->restart_autoneg = true;
-		}
-
-		if (data->gigabit_supported) {
-			ret = phy_mii_set_c1kt_reg(dev, adv_speeds);
-			if (ret == -EALREADY) {
-				/* If the C1KT register is already set, we don't need to do anything */
-				ret = 0;
-			} else if (ret < 0) {
-				goto cfg_link_end;
-			} else {
-				data->restart_autoneg = true;
-			}
-		}
-
-		if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
-			ret = -EIO;
-			goto cfg_link_end;
-		}
-
-		if ((bmcr_reg & MII_BMCR_AUTONEG_ENABLE) == 0U) {
-			if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg | MII_BMCR_AUTONEG_ENABLE) < 0) {
-				ret = -EIO;
-				goto cfg_link_end;
-			}
+		ret = phy_mii_cfg_link_autoneg(dev, adv_speeds, data->gigabit_supported);
+		if (ret >= 0) {
+			LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
+			data->autoneg_in_progress = true;
+			data->autoneg_timeout =
+				sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
+			k_work_reschedule(&data->monitor_work,
+					  K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS));
 		}
 	}
 
-	if (data->restart_autoneg && data->state.is_up) {
-		k_work_reschedule(&data->monitor_work, K_NO_WAIT);
+	if (ret == -EALREADY) {
+		LOG_DBG("PHY (%d) Link already configured", cfg->phy_addr);
 	}
 
 cfg_link_end:
@@ -461,11 +418,11 @@ static int phy_mii_get_link_state(const struct device *dev,
 
 	memcpy(state, &data->state, sizeof(struct phy_link_state));
 
-	if (data->state.speed == 0) {
+	if (state->speed == 0) {
 		/* If speed is 0, then link is also down, happens when autonegotiation is in
 		 * progress
 		 */
-		data->state.is_up = false;
+		state->is_up = false;
 	}
 
 	k_sem_give(&data->sem);
@@ -573,7 +530,8 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 	/* Advertise default speeds */
 	phy_mii_cfg_link(dev, cfg->default_speeds, 0);
 
-	monitor_work_handler(&data->monitor_work.work);
+	/* This will schedule the monitor work, if not already scheduled by phy_mii_cfg_link(). */
+	k_work_schedule(&data->monitor_work, K_NO_WAIT);
 
 	return 0;
 }
