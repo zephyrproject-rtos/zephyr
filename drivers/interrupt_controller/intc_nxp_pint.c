@@ -69,7 +69,7 @@ int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger, bool wake)
 {
 	uint8_t slot = 0U;
 
-	if (pin > ARRAY_SIZE(pin_pint_id)) {
+	if (pin >= ARRAY_SIZE(pin_pint_id)) {
 		/* Invalid pin ID */
 		return -EINVAL;
 	}
