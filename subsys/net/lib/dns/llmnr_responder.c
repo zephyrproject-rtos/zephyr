@@ -53,7 +53,6 @@ static struct net_mgmt_event_callback mgmt_cb;
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 /* This value is recommended by RFC 1035 */
-#define DNS_RESOLVER_MAX_BUF_SIZE	512
 #define DNS_RESOLVER_MIN_BUF		2
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_LLMNR_RESOLVER_ADDITIONAL_BUF_CTR)
