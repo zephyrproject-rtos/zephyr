@@ -1168,9 +1168,9 @@ static int emmc_get_host_props(const struct device *dev, struct sdhc_host_props 
 	props->host_caps.sdr104_support = (bool)(cap & BIT(33u));
 	props->host_caps.sdr50_support = (bool)(cap & BIT(32u));
 	props->host_caps.bus_8_bit_support = true;
-	props->host_caps.bus_4_bit_support = true;
-	props->host_caps.hs200_support = (bool)config->hs200_mode;
-	props->host_caps.hs400_support = (bool)config->hs400_mode;
+	props->bus_4_bit_support = true;
+	props->hs200_support = (bool)config->hs200_mode;
+	props->hs400_support = (bool)config->hs400_mode;
 
 	emmc->props = *props;
 
