@@ -4459,6 +4459,18 @@ Panasonic Platforms:
   labels:
     - "platform: Panasonic"
 
+Wurth Elektronik Platforms:
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+    - wm-eisos
+  files:
+    - boards/we/
+  labels:
+    - "platform: WE"
+  description: >-
+    dts files of Wurth Elektronik radio modules and development boards.
+
 RTIO:
   status: maintained
   maintainers:
@@ -5288,6 +5300,7 @@ West:
   status: maintained
   maintainers:
     - mah-eiSmart
+    - wm-eisos
   files:
     - modules/Kconfig.wurthelektronik
 
@@ -5690,6 +5703,20 @@ West:
     - "area: Wi-Fi"
   tests:
     - net.wifi
+
+"Drivers: Wurth Elektronik Sensors":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+    - wm-eisos
+  files:
+    - drivers/sensor/wsen/
+  labels:
+    - "area: Sensors"
+  tests:
+    - drivers.sensors
+  description: >-
+    Drivers of Wurth Elektronik sensors.
 
 Xtensa arch:
   status: maintained
