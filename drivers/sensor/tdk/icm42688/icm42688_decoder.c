@@ -286,7 +286,7 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 	return 0;
 }
 
-static uint32_t accel_period_ns[] = {
+static const uint32_t accel_period_ns[] = {
 	[ICM42688_DT_ACCEL_ODR_1_5625] = UINT32_C(10000000000000) / 15625,
 	[ICM42688_DT_ACCEL_ODR_3_125] = UINT32_C(10000000000000) / 31250,
 	[ICM42688_DT_ACCEL_ODR_6_25] = UINT32_C(10000000000000) / 62500,
@@ -304,7 +304,7 @@ static uint32_t accel_period_ns[] = {
 	[ICM42688_DT_ACCEL_ODR_32000] = UINT32_C(1000000) / 32,
 };
 
-static uint32_t gyro_period_ns[] = {
+static const uint32_t gyro_period_ns[] = {
 	[ICM42688_DT_GYRO_ODR_12_5] = UINT32_C(10000000000000) / 125000,
 	[ICM42688_DT_GYRO_ODR_25] = UINT32_C(1000000000) / 25,
 	[ICM42688_DT_GYRO_ODR_50] = UINT32_C(1000000000) / 50,
