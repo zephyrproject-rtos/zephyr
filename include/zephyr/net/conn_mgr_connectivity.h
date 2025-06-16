@@ -298,6 +298,19 @@ int conn_mgr_if_get_idle_timeout(struct net_if *iface);
  */
 int conn_mgr_if_set_idle_timeout(struct net_if *iface, int timeout);
 
+#if defined(CONFIG_NET_CONNECTION_MANAGER) || defined(__DOXYGEN__)
+/**
+ * @brief Notify connection manager that interface was just used
+ *
+ * @note Typically called from network drivers, not application software.
+ *
+ * @param iface iface that was just used
+ */
+void conn_mgr_if_used(struct net_if *iface);
+#else
+#define conn_mgr_if_used(iface) (void)(iface)
+#endif /* defined(CONFIG_NET_CONNECTION_MANAGER) || defined(__DOXYGEN__) */
+
 /**
  * @}
  */

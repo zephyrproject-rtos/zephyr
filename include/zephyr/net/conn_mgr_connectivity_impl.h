@@ -206,6 +206,9 @@ struct conn_mgr_conn_binding {
 	/** @} */
 
 /** @cond INTERNAL_HIDDEN */
+	/* Internal-use work item for tracking interface idle timeouts */
+	struct k_work_delayable idle_worker;
+
 	/* Internal-use mutex for protecting access to the binding and API functions. */
 	struct k_mutex *mutex;
 /** @endcond */
