@@ -18,6 +18,7 @@
 		flash0: flash@c0000000 {
 			compatible = "soc-nv-flash";
 			reg = <0xc0000000 DT_SIZE_M(32)>;
+			status = "disabled";
 		};
 
 		sram0: memory@0 {
