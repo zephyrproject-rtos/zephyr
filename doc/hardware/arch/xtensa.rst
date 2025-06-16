@@ -50,12 +50,28 @@ Shared HiFi registers mode
 
 This mode is used when the application has two or more threads that use HiFi
 registers. When enabled, the kernel automatically allows all threads to use the
-HiFi registers. During each thread context switch, the kernel saves the outgoing
-thread's HiFi registers and loads the incoming thread's HiFi registers,
-regardless of whether the thread utilizes them or not.
+HiFi registers. Conceptually, it can be sub-divided into two sub-modes--eager
+mode and lazy mode. They will both save and restore the HiFi registers, but
+they differ in when the registers are saved and restored, as well as to where
+they are saved and from where they are restored.
 
+In the eager sharing model, the HiFi registers are saved and restored during
+every thread context switch, regardless of whether the thread used them or not.
 Additional stack space may be required for each thread to account for the extra
-registers that must be saved.
+registers that must be saved. This is default of the two models.
+
+In the lazy sharing model, the kernel tracks the thread that 'owns' the
+coprocessor. If the 'owning' thread is switched out, the HiFi registers will
+not be saved until a new thread attempts to use the HiFi, after which that
+new thread becomes the new owner and its HiFi registers are loaded.
+
+.. note::
+    If an SMP system detects that the owner-to-be is still an owner on another
+    CPU, an IPI will be sent to that CPU to initiate the saving of its HiFi
+    registers to memory. The current processor will then spin until the HiFi
+    registers are saved. This spinning may result in sporadically longer
+    delays. For the best performance, it is recommended that a thread
+    using HiFi be pinned to a single CPU.
 
 Configuration Options
 =====================
@@ -71,3 +87,10 @@ configuration options :kconfig:option:`CONFIG_XTENSA_HIFI3` and/or
 :kconfig:option:`CONFIG_XTENSA_HIFI4`. Threads must have sufficient
 stack space for saving the HiFi register values during context switches
 as described above.
+
+Both eager and lazy HiFi sharing modes require the configuration option
+:kconfig:option:`CONFIG_XTENSA_HIFI_SHARING` to be enabled. Although eager
+HiFi sharing is the default, it can be explicitly selected by enabling the
+configuration option :kconfig:option:`CONFIG_XTENSA_EAGER_HIFI_SHARING`. To
+select lazy HiFi sharing instead, enable the configuration option
+:kconfig:option:`CONFIG_XTENSA_LAZY_HIFI_SHARING`.
