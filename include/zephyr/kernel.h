@@ -5854,6 +5854,17 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 #define K_HEAP_DEFINE_NOCACHE(name, bytes)			\
 	Z_HEAP_DEFINE_IN_SECT(name, bytes, __nocache)
 
+/** @brief Get the array of statically defined heaps
+ *
+ * Returns the pointer to the start of the static heap array.
+ * Static heaps are those declared through one of the `K_HEAP_DEFINE`
+ * macros.
+ *
+ * @param heap Pointer to location where heap array address is written
+ * @return Number of static heaps
+ */
+int k_heap_array_get(struct k_heap **heap);
+
 /**
  * @}
  */
