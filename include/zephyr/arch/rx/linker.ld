@@ -68,6 +68,7 @@ SECTIONS
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,ROM_START,)
 	{
+		. = ALIGN(4);
 		_image_text_start = .;
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -207,8 +208,6 @@ SECTIONS
 		} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 	#endif
 
-#include <zephyr/linker/common-noinit.ld>
-
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		__data_region_start = .;
@@ -252,6 +251,7 @@ SECTIONS
 		_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+#include <zephyr/linker/common-noinit.ld>
 	_ebss = . ;
 
 	_image_ram_end = .;
