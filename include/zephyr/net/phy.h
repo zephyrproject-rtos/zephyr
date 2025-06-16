@@ -228,6 +228,7 @@ __subsystem struct ethphy_driver_api {
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  * @retval -ENOTSUP If not supported.
+ * @retval -EALREADY If already configured with the same speeds and flags.
  */
 static inline int phy_configure_link(const struct device *dev, enum phy_link_speed speeds,
 				     enum phy_cfg_link_flag flags)
