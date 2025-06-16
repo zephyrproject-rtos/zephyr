@@ -61,6 +61,50 @@ static inline int phy_mii_set_c1kt_reg(const struct device *dev, enum phy_link_s
 	return 0;
 }
 
+static inline int phy_mii_cfg_link_autoneg(const struct device *dev, enum phy_link_speed adv_speeds,
+					   bool gigabit_supported)
+{
+	uint32_t bmcr_reg = 0U;
+	uint32_t bmcr_reg_old;
+	int ret = 0;
+
+	if (phy_read(dev, MII_BMCR, &bmcr_reg) < 0) {
+		return -EIO;
+	}
+	bmcr_reg_old = bmcr_reg;
+
+	/* Disable isolation */
+	bmcr_reg &= ~MII_BMCR_ISOLATE;
+	/* Enable auto-negotiation */
+	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE;
+
+	ret = phy_mii_set_anar_reg(dev, adv_speeds);
+	if (ret >= 0) {
+		bmcr_reg |= MII_BMCR_AUTONEG_RESTART;
+	} else if (ret != -EALREADY) {
+		return ret;
+	}
+
+	if (gigabit_supported) {
+		ret = phy_mii_set_c1kt_reg(dev, adv_speeds);
+		if (ret >= 0) {
+			bmcr_reg |= MII_BMCR_AUTONEG_RESTART;
+		} else if (ret != -EALREADY) {
+			return ret;
+		}
+	}
+
+	if (bmcr_reg != bmcr_reg_old) {
+		if (phy_write(dev, MII_BMCR, bmcr_reg) < 0) {
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	return -EALREADY;
+}
+
 static inline int phy_mii_set_bmcr_reg_autoneg_disabled(const struct device *dev,
 							enum phy_link_speed adv_speeds)
 {
