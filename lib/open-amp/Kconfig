@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2020, STMicroelectronics
+# Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -10,6 +11,13 @@ config OPENAMP_RSC_TABLE
 	help
 	  add the resource table in the generated binary. This table is
 	  compatible with linux remote proc framework and OpenAMP library.
+
+config OPENAMP_VENDOR_RSC_TABLE
+	bool "Vendor specific resource table"
+	depends on OPENAMP_RSC_TABLE
+	help
+	  Enable vendor-specific resource table with features
+	  supported by remote processor.
 
 config OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF
 	int "Resource table number of rpmsg buffers"
@@ -47,3 +55,11 @@ config OPENAMP_COPY_RSC_TABLE
 
 	  This is not needed if the remote loads this firmware and has control
 	  over the placement of the .resource_table section such as remoteproc.
+
+config OPENAMP_VENDOR_RSC_TABLE_FILE
+	string "Source file containing vendor-specific resource table"
+	default "resource_table.c"
+	depends on OPENAMP_VENDOR_RSC_TABLE
+	help
+	  Name of a source file containing vendor-specific
+	  resource table.
