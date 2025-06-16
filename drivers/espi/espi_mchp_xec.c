@@ -555,7 +555,7 @@ static int espi_xec_receive_oob(const struct device *dev,
 	uint8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR |
 			MCHP_ESPI_OOB_RX_STS_OVRUN;
 
-	if (ESPI_OOB_REGS->TX_STS & err_mask) {
+	if (ESPI_OOB_REGS->RX_STS & err_mask) {
 		return -EIO;
 	}
 
