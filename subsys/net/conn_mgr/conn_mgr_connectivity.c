@@ -197,7 +197,7 @@ int conn_mgr_if_get_timeout(struct net_if *iface)
 	int value;
 
 	if (binding == NULL) {
-		return false;
+		return CONN_MGR_IF_NO_TIMEOUT;
 	}
 
 	conn_mgr_binding_lock(binding);
@@ -220,6 +220,41 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout)
 	conn_mgr_binding_lock(binding);
 
 	binding->timeout = timeout;
+
+	conn_mgr_binding_unlock(binding);
+
+	return 0;
+}
+
+int conn_mgr_if_get_idle_timeout(struct net_if *iface)
+{
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+	int value;
+
+	if (binding == NULL) {
+		return CONN_MGR_IF_NO_TIMEOUT;
+	}
+
+	conn_mgr_binding_lock(binding);
+
+	value = binding->idle_timeout;
+
+	conn_mgr_binding_unlock(binding);
+
+	return value;
+}
+
+int conn_mgr_if_set_idle_timeout(struct net_if *iface, int timeout)
+{
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+
+	if (binding == NULL) {
+		return -ENOTSUP;
+	}
+
+	conn_mgr_binding_lock(binding);
+
+	binding->idle_timeout = timeout;
 
 	conn_mgr_binding_unlock(binding);
 
@@ -375,6 +410,7 @@ void conn_mgr_conn_init(void)
 			/* Set initial default values for binding state */
 
 			binding->timeout = CONN_MGR_IF_NO_TIMEOUT;
+			binding->idle_timeout = CONN_MGR_IF_NO_TIMEOUT;
 
 			/* Call binding initializer */
 
