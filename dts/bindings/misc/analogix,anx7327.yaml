@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Applied Materials
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analogix ANX7327 USB-PD v3.0 port controller
+
+compatible: "analogix,anx7327"
+
+include: i2c-device.yaml
+
+properties:
+  int-pin-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to video interrupt pin of anx7533.
+  i2c-addr-2:
+    type: int
+    description: |
+      second i2c address of the device
+

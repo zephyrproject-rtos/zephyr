@@ -1,0 +1,25 @@
+# Copyright (c) 2025, Applied Materials
+# SPDX-License-Identifier: Apache-2.0
+
+config ANX7327
+	bool "Analogix 7327 USB power delivery Controller"
+	help
+	  USB Type-C™ Power Delivery v3.0 Controller with De-Mux
+
+if ANX7327
+
+config ANX7327_SHELL
+	bool "Shell commands"
+	depends on SHELL
+
+config ANX7327_INIT_PRIORITY
+	int "anx7327 init priority"
+	default 55
+	help
+	  Init priority for the anx7327 driver.
+
+module = ANX7327
+module-str = ANX7327 USB PD Controller
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
