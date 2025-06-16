@@ -1,4 +1,5 @@
 # Copyright (c) 2024 TOKITA Hiroshi
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
@@ -8,7 +9,6 @@ zephyr_sources(
 )
 
 zephyr_linker_sources(SECTIONS sections.ld)
-zephyr_linker_sources(DATA_SECTIONS data_sections.ld)
 zephyr_linker_sources(RAM_SECTIONS ram_sections.ld)
 zephyr_linker_sources(ROM_START rom_start.ld)
 
