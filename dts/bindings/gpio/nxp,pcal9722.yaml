@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Michael Estes
+# SPDX-License-Identifier: Apache-2.0
+
+description: PCA9722 series SPI-based GPIO expander
+
+compatible: "nxp,pcal9722"
+
+include: [gpio-controller.yaml, spi-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: Interrupt GPIO pin (active-low open-drain)
+
+  addr:
+    required: true
+    type: int
+    enum: [0x40, 0x42]
+    default: 0x40
+    description:
+      Address used to address device on the SPI bus. Two PCAL9722 devices can be connected to the
+      same SPI chip select by pulling the ADDR pin high or low. If pulled low, the address should
+      be 0x40. If pulled high, the address should be 0x42.
+
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    required: true
+    const: 22
+
+gpio-cells:
+  - pin
+  - flags
