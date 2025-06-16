@@ -852,7 +852,7 @@ err:
 
 #ifndef CONFIG_NRF70_RADIO_TEST
 #ifdef CONFIG_NET_L2_WIFI_MGMT
-static struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
+static const struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.scan = nrf_wifi_disp_scan_zep,
 #ifdef CONFIG_NET_STATISTICS_WIFI
 	.get_stats = nrf_wifi_stats_get,
@@ -881,7 +881,7 @@ static struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 
 
 #ifdef CONFIG_NRF70_STA_MODE
-static struct zep_wpa_supp_dev_ops wpa_supp_ops = {
+static const struct zep_wpa_supp_dev_ops wpa_supp_ops = {
 	.init = nrf_wifi_wpa_supp_dev_init,
 	.deinit = nrf_wifi_wpa_supp_dev_deinit,
 	.scan2 = nrf_wifi_wpa_supp_scan2,
