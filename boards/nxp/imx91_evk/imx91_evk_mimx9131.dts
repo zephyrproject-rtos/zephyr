@@ -75,3 +75,17 @@
 &gpio2{
 	status = "okay";
 };
+
+&lpi2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c2 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
