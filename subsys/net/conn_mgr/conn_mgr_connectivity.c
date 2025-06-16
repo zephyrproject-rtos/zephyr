@@ -261,6 +261,21 @@ int conn_mgr_if_set_idle_timeout(struct net_if *iface, int timeout)
 	return 0;
 }
 
+void conn_mgr_if_used(struct net_if *iface)
+{
+	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
+
+	if (binding == NULL) {
+		return;
+	}
+	if (binding->idle_timeout == CONN_MGR_IF_NO_TIMEOUT) {
+		return;
+	}
+	if (binding->impl->api->used) {
+		binding->impl->api->used(binding);
+	}
+}
+
 /* Automated behavior handling */
 
 /**
