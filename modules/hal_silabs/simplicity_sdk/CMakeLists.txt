@@ -210,7 +210,6 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT     ${COMMON_DIR}/src/sl_slist.c)
 if(CONFIG_SOC_GECKO_CORE)
   zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE
-    ${EMLIB_DIR}/src/em_core.c
     ${COMMON_DIR}/src/sl_core_cortexm.c
   )
   zephyr_compile_definitions(
