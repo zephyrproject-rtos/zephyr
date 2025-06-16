@@ -10,9 +10,14 @@ config SOC_SERIES_MPS4
 config SOC_SERIES
 	default "mps4" if SOC_SERIES_MPS4
 
+config SOC_MPS4_CORSTONE315
+	bool
+	select SOC_SERIES_MPS4
+
 config SOC_MPS4_CORSTONE320
 	bool
 	select SOC_SERIES_MPS4
 
 config SOC
+	default "corstone315" if SOC_MPS4_CORSTONE315
 	default "corstone320" if SOC_MPS4_CORSTONE320
