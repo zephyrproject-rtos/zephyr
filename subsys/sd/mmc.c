@@ -375,7 +375,7 @@ static int mmc_set_bus_width(struct sd_card *card)
 	if (card->host_props.host_caps.bus_8_bit_support && card->bus_width == 8) {
 		cmd.arg = MMC_SWITCH_8_BIT_BUS_ARG;
 		card->bus_io.bus_width = SDHC_BUS_WIDTH8BIT;
-	} else if (card->host_props.host_caps.bus_4_bit_support && card->bus_width >= 4) {
+	} else if (card->host_props.bus_4_bit_support && card->bus_width >= 4) {
 		cmd.arg = MMC_SWITCH_4_BIT_BUS_ARG;
 		card->bus_io.bus_width = SDHC_BUS_WIDTH4BIT;
 	} else {
@@ -454,7 +454,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 
 	/* Timing depends on EXT_CSD register information */
 	if ((ext->device_type.MMC_HS200_SDR_1200MV || ext->device_type.MMC_HS200_SDR_1800MV) &&
-	    (card->host_props.host_caps.hs200_support) &&
+	    (card->host_props.hs200_support) &&
 	    (card->bus_io.signal_voltage == SD_VOL_1_8_V) &&
 	    (card->bus_io.bus_width >= SDHC_BUS_WIDTH4BIT)) {
 		ret = mmc_set_hs_timing(card);
@@ -513,7 +513,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 
 	/* Switch to HS400 if applicable */
 	if ((ext->device_type.MMC_HS400_DDR_1200MV || ext->device_type.MMC_HS400_DDR_1800MV) &&
-	    (card->host_props.host_caps.hs400_support) &&
+	    (card->host_props.hs400_support) &&
 	    (card->bus_io.bus_width == SDHC_BUS_WIDTH8BIT)) {
 		/* Switch back to regular HS timing */
 		ret = mmc_set_hs_timing(card);
