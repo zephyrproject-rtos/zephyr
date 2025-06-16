@@ -56,7 +56,11 @@ enum dns_query_type {
 #define DNS_BUF_TIMEOUT K_MSEC(500) /* ms */
 
 /* This value is recommended by RFC 1035 */
-#define DNS_RESOLVER_MAX_BUF_SIZE	512
+#if defined(CONFIG_DNS_RESOLVER_MAX_ANSWER_SIZE)
+#define DNS_RESOLVER_MAX_BUF_SIZE CONFIG_DNS_RESOLVER_MAX_ANSWER_SIZE
+#else
+#define DNS_RESOLVER_MAX_BUF_SIZE 512
+#endif /* CONFIG_DNS_RESOLVER_MAX_ANSWER_SIZE */
 
 /* Make sure that we can compile things even if CONFIG_DNS_RESOLVER
  * is not enabled.
