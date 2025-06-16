@@ -413,29 +413,36 @@ static int lsm9ds1_sample_fetch_temp(const struct device *dev)
 
 static int lsm9ds1_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+	int ret = 0;
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		lsm9ds1_sample_fetch_accel(dev);
+		ret = lsm9ds1_sample_fetch_accel(dev);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		lsm9ds1_sample_fetch_gyro(dev);
+		ret = lsm9ds1_sample_fetch_gyro(dev);
 		break;
 #if IS_ENABLED(CONFIG_LSM9DS1_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		lsm9ds1_sample_fetch_temp(dev);
+		ret = lsm9ds1_sample_fetch_temp(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		lsm9ds1_sample_fetch_accel(dev);
-		lsm9ds1_sample_fetch_gyro(dev);
+		ret = lsm9ds1_sample_fetch_accel(dev);
+		if (ret) {
+			return ret;
+		}
+		ret = lsm9ds1_sample_fetch_gyro(dev);
 #if IS_ENABLED(CONFIG_LSM9DS1_ENABLE_TEMP)
-		lsm9ds1_sample_fetch_temp(dev);
+		if (ret) {
+			return ret;
+		}
+		ret = lsm9ds1_sample_fetch_temp(dev);
 #endif
 		break;
 	default:
 		return -ENOTSUP;
 	}
-	return 0;
+	return ret;
 }
 
 static inline void lsm9ds1_accel_convert(struct sensor_value *val, int raw_val,
