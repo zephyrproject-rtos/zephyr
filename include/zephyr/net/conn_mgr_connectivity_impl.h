@@ -193,6 +193,16 @@ struct conn_mgr_conn_binding {
 	 */
 	int timeout;
 
+	/**
+	 * Usage timeout (seconds)
+	 *
+	 * Indicates to the connectivity implementation how long the interface can be idle
+	 * for before automatically taking the interface down.
+	 *
+	 * Set to @ref CONN_MGR_IF_NO_TIMEOUT to indicate that no idle timeout should be used.
+	 */
+	int idle_timeout;
+
 	/** @} */
 
 /** @cond INTERNAL_HIDDEN */
