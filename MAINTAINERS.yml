@@ -2501,6 +2501,20 @@ Documentation Infrastructure:
   labels:
     - "area: Wi-Fi"
 
+"Drivers: Wurth Elektronik Sensors":
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+    - wm-eisos
+  files:
+    - drivers/sensor/wsen/
+  labels:
+    - "area: Sensors"
+  tests:
+    - drivers.sensors
+  description: >-
+    Drivers of Wurth Elektronik sensors.
+
 "Drivers: bbram":
   status: maintained
   maintainers:
@@ -5444,6 +5458,7 @@ West:
   status: maintained
   maintainers:
     - mah-eiSmart
+    - wm-eisos
   files:
     - modules/Kconfig.wurthelektronik
 
@@ -5834,6 +5849,19 @@ West:
   maintainers:
     - microbuilder
   files: []
+
+Wurth Elektronik Platforms:
+  status: maintained
+  maintainers:
+    - mah-eiSmart
+    - wm-eisos
+  files:
+    - boards/we/
+    - dts/arm/we/
+  labels:
+    - "platform: WE"
+  description: >-
+    Wurth Elektronik radio modules, development boards, and SoCs.
 
 Xen Platform:
   status: maintained
