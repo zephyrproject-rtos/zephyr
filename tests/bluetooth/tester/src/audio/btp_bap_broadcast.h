@@ -47,6 +47,8 @@ struct btp_bap_broadcast_remote_source {
 	/* BIS Index bitfield read from sync request */
 	uint32_t requested_bis_sync;
 	bool assistant_request;
+	bool biginfo_received;
+	bool broadcast_code_received;
 	uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	const struct bt_bap_scan_delegator_recv_state *sink_recv_state;
 };
