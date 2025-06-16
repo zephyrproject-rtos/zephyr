@@ -139,14 +139,15 @@
 			&ltdc_b4_ph14 &ltdc_b5_pe0 &ltdc_b6_pb6 &ltdc_b7_pf1
 			&ltdc_de_ph9 &ltdc_clk_pd9 &ltdc_hsync_pc6 &ltdc_vsync_pg4>;
 	pinctrl-names = "default";
-	disp-on-gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
-
-	status = "okay";
-
-	width = <480>;
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+	disp-on-gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
 	height = <272>;
+	width = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -161,8 +162,4 @@
 		hfront-porch = <32>;
 		vfront-porch = <2>;
 	};
-
-	def-back-color-red = <0xFF>;
-	def-back-color-green = <0xFF>;
-	def-back-color-blue = <0xFF>;
 };
