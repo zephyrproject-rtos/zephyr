@@ -12,8 +12,9 @@ config STM32_LTDC_FB_NUM
 config LV_Z_DOUBLE_VDB
 	default y
 
-config LV_Z_FULL_REFRESH
-	default y
+choice LV_Z_RENDERING_MODE
+	default LV_Z_FULL_REFRESH
+endchoice
 
 endchoice
 
