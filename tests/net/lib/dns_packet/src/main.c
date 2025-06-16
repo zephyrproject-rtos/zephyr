@@ -1144,7 +1144,6 @@ static void run_dns_valid_response(const char *test_case,
 		      test_case, ret);
 }
 
-#define DNS_RESOLVER_MAX_BUF_SIZE	512
 #define DNS_RESOLVER_MIN_BUF	1
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + 1)
 #define DNS_MAX_NAME_LEN	255
