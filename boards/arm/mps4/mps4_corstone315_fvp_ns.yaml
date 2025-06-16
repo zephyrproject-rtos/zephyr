@@ -1,0 +1,15 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mps4/corstone315/fvp/ns
+name: Arm MPS4-Corstone315-FVP_ns
+type: mcu
+arch: arm
+ram: 1024
+flash: 512
+toolchain:
+  - gnuarmemb
+  - zephyr
+testing:
+  only_tags:
+    - trusted-firmware-m
