@@ -36,7 +36,7 @@ ZTEST(intel_adsp, test_clock_calibrate)
 	printk("CLOCK: %lld Hz\n", (1000000ULL * (cyc1 - cyc0)) / host_dt);
 
 	/* Make sure we're within 1% of spec */
-	diff = abs(hz - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	diff = abs((int32_t)(hz - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC));
 	zassert_true((hz / MIN(1, diff)) > 100, "clock rate wrong");
 }
 
