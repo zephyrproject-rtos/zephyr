@@ -902,14 +902,14 @@ static int dma_iproc_pax_configure(const struct device *dev, uint32_t channel,
 
 #ifdef CONFIG_DMA_IPROC_PAX_DEBUG
 	if (xfer_sz > PAX_DMA_MAX_SIZE) {
-		LOG_ERR("Unsupported size: %d\n", xfer_size);
+		LOG_ERR("Unsupported size: %d\n", xfer_sz);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
 	}
 
 	if (xfer_sz % PAX_DMA_MIN_SIZE) {
-		LOG_ERR("Unaligned size 0x%x\n", xfer_size);
+		LOG_ERR("Unaligned size 0x%x\n", xfer_sz);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
