@@ -299,7 +299,7 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 * interrupt here to protect the below content.
 	 */
 	csr_clear(mie, MIP_MEIP);
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 #ifdef CONFIG_ESPI
 	/*
 	 * H2RAM feature requires RAM clock to be active. Since the below doze

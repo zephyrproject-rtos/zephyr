@@ -61,7 +61,7 @@ void z_arm_cpu_idle_init(void)
 void arch_cpu_idle(void)
 {
 #if defined(CONFIG_TRACING)
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 #endif
 
 #if CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
@@ -99,7 +99,7 @@ void arch_cpu_idle(void)
 	SLEEP_IF_ALLOWED(__WFI);
 
 #if defined(CONFIG_TRACING)
-	sys_trace_idle_exit();
+	SYS_PORT_TRACING_FUNC(idle, exit);
 #endif
 	__enable_irq();
 	__ISB();
@@ -110,7 +110,7 @@ void arch_cpu_idle(void)
 void arch_cpu_atomic_idle(unsigned int key)
 {
 #if defined(CONFIG_TRACING)
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 #endif
 
 #if CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
@@ -141,7 +141,7 @@ void arch_cpu_atomic_idle(unsigned int key)
 	SLEEP_IF_ALLOWED(__WFE);
 
 #if defined(CONFIG_TRACING)
-	sys_trace_idle_exit();
+	SYS_PORT_TRACING_FUNC(idle, exit);
 #endif
 
 	arch_irq_unlock(key);

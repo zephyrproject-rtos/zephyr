@@ -11,7 +11,7 @@
 __pinned_func
 void arch_cpu_idle(void)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 	__asm__ volatile (
 	    "sti\n\t"
 	    "hlt\n\t");
@@ -22,7 +22,7 @@ void arch_cpu_idle(void)
 __pinned_func
 void arch_cpu_atomic_idle(unsigned int key)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 
 	__asm__ volatile (
 	    "sti\n\t"

@@ -10,9 +10,9 @@
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 	__asm__ volatile("wfi");
-	sys_trace_idle_exit();
+	SYS_PORT_TRACING_FUNC(idle, exit);
 	irq_unlock(MSTATUS_IEN);
 }
 #endif
@@ -20,9 +20,9 @@ void arch_cpu_idle(void)
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 	__asm__ volatile("wfi");
-	sys_trace_idle_exit();
+	SYS_PORT_TRACING_FUNC(idle, exit);
 	irq_unlock(key);
 }
 #endif

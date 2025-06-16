@@ -208,7 +208,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 __no_optimization
 void arch_cpu_idle(void)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 
 	/* Just spin forever with interrupts unmasked, for platforms
 	 * where WAITI can't be used or where its behavior is

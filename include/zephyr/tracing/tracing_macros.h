@@ -197,6 +197,10 @@
 	#define sys_port_trace_type_mask_net(trace_call)
 #endif
 
+#ifndef CONFIG_TRACING_IDLE
+	#define sys_port_trace_idle_is_disabled 1
+#endif
+
 /*
  * We cannot positively enumerate all traced APIs, as applications may trace
  * arbitrary custom APIs we know nothing about. Therefore we demand that tracing
