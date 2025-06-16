@@ -1207,6 +1207,80 @@ done:
 	return err;
 }
 
+void role_changed(struct bt_conn *conn, uint8_t status)
+{
+	struct bt_conn_info info;
+	int err;
+
+	bt_shell_print("Role changed (HCI status 0x%02x)", status);
+
+	err = bt_conn_get_info(conn, &info);
+	if (err) {
+		bt_shell_print("Failed to get info");
+		return;
+	}
+
+	bt_shell_print("Current role is: %s", get_conn_role_str(info.role));
+}
+
+static int cmd_switch_role(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	const char *action;
+	uint8_t role;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	action = argv[1];
+
+	if (!strcmp(action, "central")) {
+		role = BT_HCI_ROLE_CENTRAL;
+	} else if (!strcmp(action, "peripheral")) {
+		role = BT_HCI_ROLE_PERIPHERAL;
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_br_switch_role(default_conn, role);
+
+	if (err) {
+		shell_error(sh, "fail to change role (err %d)", err);
+	}
+
+	return 0;
+}
+
+static int cmd_set_role_switchable(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	bool enable;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	enable = shell_strtobool(argv[1], 10, &err);
+	if (err) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_br_set_role_switch_enable(default_conn, enable);
+
+	if (err) {
+		shell_error(sh, "fail to set role switchable (err %d)", err);
+	} else {
+		shell_print(sh, "success");
+	}
+
+	return 0;
+}
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -1270,6 +1344,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG, HFPHF>", cmd_sdp_find_record, 2, 0),
+	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),
+	SHELL_CMD_ARG(set-role-switchable, NULL, "<value: enable, disable>",
+		      cmd_set_role_switchable, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
