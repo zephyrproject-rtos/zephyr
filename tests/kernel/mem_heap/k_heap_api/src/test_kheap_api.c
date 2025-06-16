@@ -291,3 +291,31 @@ ZTEST(k_heap_api, test_k_heap_calloc)
 
 	k_heap_free(&k_heap_test, p);
 }
+
+/**
+ * @brief Test to demonstrate k_heap_array_get()
+ *
+ * @ingroup kernel_kheap_api_tests
+ *
+ * @details The test ensures that valid values are returned
+ *
+ * @see k_heap_array_get()
+ */
+ZTEST(k_heap_api, test_k_heap_array_get)
+{
+	struct k_heap *ha = NULL;
+	bool test_heap_found = false;
+	int n;
+
+	n = k_heap_array_get(&ha);
+	zassert_not_equal(0, n, "No heaps returned");
+	zassert_not_null(ha, "Heap array pointer not populated");
+
+	/* Ensure that k_heap_test exists in the array */
+	for (int i = 0; i < n; i++) {
+		if (&k_heap_test == &ha[i]) {
+			test_heap_found = true;
+		}
+	}
+	zassert_true(test_heap_found);
+}
