@@ -1,0 +1,14 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: s32k5xxcvb/s32k566/m7
+name: NXP S32K5XXCVB M7
+type: mcu
+arch: arm
+ram: 512
+flash: 32768
+toolchain:
+  - zephyr
+supported:
+  - gpio
+vendor: nxp
