@@ -7,7 +7,7 @@ description: |
 
 compatible: "microchip,mec5-ktimer"
 
-include: base.yaml
+include: ["base.yaml", "microchip,dmec-ecia-girq.yaml"]
 
 properties:
   reg:
