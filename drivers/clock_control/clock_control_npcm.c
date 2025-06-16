@@ -240,7 +240,7 @@ static inline int npcm_clock_control_off(const struct device *dev,
 
 	/* Set related PD (Power-Down) bit of module to turn off clock */
 	NPCM_PWDWN_CTL(pmc_base, NPCM_CLOCK_REG_OFFSET(priv->clock_id)) |=
-		~(BIT(NPCM_CLOCK_REG_BIT_OFFSET(priv->clock_id)));
+		(BIT(NPCM_CLOCK_REG_BIT_OFFSET(priv->clock_id)));
 	return 0;
 }
 
