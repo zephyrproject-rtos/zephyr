@@ -587,14 +587,14 @@ static int xlnx_sdhc_host_props(const struct device *dev, struct sdhc_host_props
 			XLNX_SDHC_SLOT_TYPE_GET);
 	props->host_caps.bus_8_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
 			XLNX_SDHC_8BIT_SUPPORT);
-	props->host_caps.bus_4_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
+	props->bus_4_bit_support = XLNX_SDHC_GET_HOST_PROP_BIT(cap,
 			XLNX_SDHC_4BIT_SUPPORT);
 
 	if ((cap & CHECK_BITS(XLNX_SDHC_SDR400_SUPPORT)) != 0U) {
-		props->host_caps.hs400_support = (uint8_t)config->hs400_mode;
+		props->hs400_support = config->hs400_mode;
 		dev_data->has_phy = true;
 	}
-	props->host_caps.hs200_support = (uint8_t)config->hs200_mode;
+	props->hs200_support = config->hs200_mode;
 
 	dev_data->props = *props;
 
