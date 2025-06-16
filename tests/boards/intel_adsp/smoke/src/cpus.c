@@ -159,16 +159,7 @@ static void halt_and_restart(int cpu)
 {
 	printk("halt/restart core %d...\n", cpu);
 	static bool alive_flag;
-	uint32_t all_cpus = BIT(arch_num_cpus()) - 1;
 	int ret;
-
-	/* On older hardware we need to get the host to turn the core
-	 * off. Construct an ADSPCS with only this core disabled
-	 */
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ADSPCS,
-				     (all_cpus & ~BIT(cpu)) << 16);
-	}
 
 	ret = soc_adsp_halt_cpu(cpu);
 	zassert_ok(ret, "Couldn't halt CPU");
@@ -177,17 +168,6 @@ static void halt_and_restart(int cpu)
 	run_on_cpu(cpu, alive_fn, &alive_flag, false);
 	k_msleep(100);
 	zassert_false(alive_flag, "cpu didn't halt");
-
-	if (!IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V25)) {
-		/* Likewise need to ask the host to turn it back on,
-		 * and give it some time to spin up before we hit it.
-		 * We don't have a return message wired to be notified
-		 * of completion.
-		 */
-		intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_ADSPCS,
-				     all_cpus << 16);
-		k_msleep(50);
-	}
 
 	k_smp_cpu_start(cpu, NULL, NULL);
 
