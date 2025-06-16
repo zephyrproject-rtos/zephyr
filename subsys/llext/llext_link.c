@@ -409,6 +409,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 	elf_rela_t rel = {0};
 	elf_word rel_cnt = 0;
 	const char *name;
+	int link_err = 0;
 	int i, ret;
 
 	for (i = 0; i < ext->sect_cnt; ++i) {
@@ -510,50 +511,50 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				return ret;
 			}
 
-#ifdef CONFIG_LLEXT_LOG_LEVEL
-			if (CONFIG_LLEXT_LOG_LEVEL >= LOG_LEVEL_INF) {
-				uintptr_t link_addr;
-				uintptr_t op_loc =
-					llext_get_reloc_instruction_location(ldr, ext,
-									     shdr->sh_info,
-									     &rel);
-				elf_sym_t sym;
+#if CONFIG_LLEXT_LOG_LEVEL > LOG_LEVEL_INF /* also gets skipped without CONFIG_LOG */
+			uintptr_t link_addr;
+			uintptr_t op_loc = llext_get_reloc_instruction_location(ldr, ext,
+										shdr->sh_info,
+										&rel);
+			elf_sym_t sym;
+			const char *inv_str = "";
 
-				ret = llext_read_symbol(ldr, ext, &rel, &sym);
-
-				if (ret != 0) {
-					return ret;
-				}
-
+			ret = llext_read_symbol(ldr, ext, &rel, &sym);
+			if (ret == 0) {
 				name = llext_symbol_name(ldr, ext, &sym);
-
-				ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym, name,
-							  shdr);
-
-				if (ret != 0) {
-					LOG_ERR("Could not find symbol %s!", name);
-					return ret;
-				}
-
-				LOG_DBG("relocation %d:%d info %#zx (type %zd, sym %zd) offset %zd"
-					" sym_name %s sym_type %d sym_bind %d sym_ndx %d",
-					i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
-					(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
-					name, ELF_ST_TYPE(sym.st_info),
-					ELF_ST_BIND(sym.st_info), sym.st_shndx);
-
-				LOG_DBG("writing relocation type %d at %#lx with symbol %s (%#lx)",
-					(int)ELF_R_TYPE(rel.r_info), op_loc, name, link_addr);
+				ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym,
+							  name, shdr);
+			} else {
+				name = "<unknown>";
 			}
-#endif /* CONFIG_LLEXT_LOG_LEVEL */
 
-
-			/* relocation */
-			ret = arch_elf_relocate(ldr, ext, &rel, shdr);
 			if (ret != 0) {
-				return ret;
+				inv_str = "(invalid) ";
+				memset(&sym, 0, sizeof(sym));
+				link_addr = 0;
+			}
+
+			LOG_DBG("%srelocation %d:%d info %#zx (type %zd, sym %zd) offset %zd"
+				" sym_name %s sym_type %d sym_bind %d sym_ndx %d",
+				inv_str, i, j, (size_t)rel.r_info, (size_t)ELF_R_TYPE(rel.r_info),
+				(size_t)ELF_R_SYM(rel.r_info), (size_t)rel.r_offset,
+				name, ELF_ST_TYPE(sym.st_info),
+				ELF_ST_BIND(sym.st_info), sym.st_shndx);
+
+			LOG_DBG("%swriting relocation type %d at %#lx with symbol %s (%#lx)",
+				inv_str, (int)ELF_R_TYPE(rel.r_info), op_loc, name, link_addr);
+#endif /* CONFIG_LLEXT_LOG_LEVEL > LOG_LEVEL_INF */
+
+			/* relocation, collect first error */
+			ret = arch_elf_relocate(ldr, ext, &rel, shdr);
+			if (link_err == 0) {
+				link_err = ret;
 			}
 		}
+	}
+
+	if (link_err != 0) {
+		return link_err;
 	}
 
 #ifdef CONFIG_CACHE_MANAGEMENT
