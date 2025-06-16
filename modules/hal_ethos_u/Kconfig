@@ -14,7 +14,8 @@ menu "Arm Ethos-U NPU configuration"
 choice  ARM_ETHOS_U_NPU_CONFIG
 	prompt "Arm Ethos-U NPU configuration"
 	default ARM_ETHOS_U55_128 if SOC_SERIES_MPS3
-	default ARM_ETHOS_U85_256 if SOC_SERIES_MPS4
+	default ARM_ETHOS_U65_256 if SOC_MPS4_CORSTONE315
+	default ARM_ETHOS_U85_256 if SOC_MPS4_CORSTONE320
 config ARM_ETHOS_U55_64
 	bool "using Ethos-U55 with 64 macs"
 config ARM_ETHOS_U55_128
