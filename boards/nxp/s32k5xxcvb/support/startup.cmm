@@ -1,0 +1,138 @@
+;*******************************************************************************
+;   Copyright 2025 NXP                                                         *
+;   SPDX-License-Identifier: Apache-2.0                                        *
+;                                                                              *
+;   Lauterbach Trace32 start-up script for s32k5xxcvb                          *
+;                                                                              *
+;   Parameters:                                                                *
+;   - command     operation to execute                                         *
+;                 valid values: flash, debug                                   *
+;                 default: debug                                               *
+;   - elfFile     filepath of ELF to load                                      *
+;   - coreType    type of the application core                                 *
+;                 valid values: m7, r52                                        *
+;   - core        core index                                                   *
+;                 valid values: 0 to 3                                         *
+;                 default: 0                                                   *
+;   - loadTo      if "mram", the application will be downloaded to SoC         *
+;                 MRAM by a flash programming routine; if "sram" it            *
+;                 will be downloaded to SoC SRAM.                              *
+;                 valid values: mram, sram                                     *
+;                                                                              *
+;*******************************************************************************
+
+ENTRY %LINE &args
+LOCAL &coreId &cpuId
+
+&command=STRing.SCANAndExtract("&args","command=","debug")
+&elfFile=STRing.SCANAndExtract("&args","elfFile=","")
+&coreType=STRing.SCANAndExtract("&args","coreType=","")
+&core=STRing.SCANAndExtract("&args","core=","0")
+&loadTo=STRing.SCANAndExtract("&args","loadTo=","")
+
+IF ("&elfFile"=="")
+(
+  PRINT %ERROR "Missing ELF file path"
+  PLIST
+  STOP
+  ENDDO
+)
+
+IF ("&coreType"!="m7"&&"&coreType"!="r52")
+(
+  PRINT %ERROR "Invalid core type: &coreType"
+  PLIST
+  STOP
+  ENDDO
+)
+
+IF (&core<0||&core>3)
+(
+  PRINT %ERROR "Invalid core number: &core"
+  PLIST
+  STOP
+  ENDDO
+)
+
+RESet
+SYStem.CPU S32K566-M7
+CORE.ASSIGN 1.
+SYStem.CONFIG.CORE 1. 1.
+SYStem.CONFIG.DEBUGPORTTYPE SWD
+SYStem.MemAccess DAP
+SYStem.JtagClock 10MHz
+Trace.DISable
+SYStem.Mode.Prepare
+
+; Trace32 indexes are offset by 1
+&coreId=&core+1
+
+IF ("&coreType"=="m7")
+(
+  DO ~~/demo/arm/hardware/s32k5/misc/s32k5_init_sram.cmm CM7
+
+  ; CM7-0 is already enabled after reset
+  IF (&core>0)
+  (
+    DO ~~/demo/arm/hardware/s32k5/misc/s32k5_enable.cmm CORE=CM7-&(core) ENABLE
+    SYStem.Down
+    SYStem.CPU S32K566-M7
+    SYStem.CONFIG.CORE &coreId 1
+    CORE.ASSIGN &coreId
+  )
+)
+ELSE
+(
+  DO ~~/demo/arm/hardware/s32k5/misc/s32k5_init_sram.cmm CPE
+  DO ~~/demo/arm/hardware/s32k5/misc/s32k5_enable.cmm CORE=CPE ENABLE
+  SYStem.Down
+  SYStem.CPU S32K566-R52-CPE
+  CORE.ASSIGN &coreId
+)
+
+SYStem.Attach
+Break
+
+IF ("&loadTo"=="mram")
+(
+  Data.LOAD.Elf &elfFile /NoCODE
+  &image_start = ADDRESS.OFFSET(__start)
+  &image_size = ADDRESS.OFFSET(_flash_used)
+
+  ; Only declares flash, does not execute flash programming
+  DO ~~/demo/arm/flash/s32k5.cmm PREPAREONLY
+  FLASH.ReProgram ALL
+  Data.Set &image_start++&image_size %Long 0x00
+  Data.LOAD.Elf &elfFile /GLOBTYPES
+  FLASH.Program OFF
+
+  ; Reset the processor
+  SYStem.Up
+)
+ELSE
+(
+  Data.LOAD.Elf &elfFile
+)
+
+Register.Set PC __start
+
+IF ("&command"=="flash")
+(
+  ; Execute the application and quit
+  Go
+  QUIT
+)
+ELSE
+(
+  ; Setup minimal debug environment
+  WinCLEAR
+  SETUP.Var.%SpotLight
+  WinPOS 0. 0. 120. 30.
+  List.auto
+  WinPOS 125. 0. 80. 10.
+  Frame.view
+  WinPOS 125. 18.
+  Register.view /SpotLight
+)
+
+ENDDO
