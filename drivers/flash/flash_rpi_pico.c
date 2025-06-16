@@ -20,10 +20,10 @@ LOG_MODULE_REGISTER(flash_rpi_pico, CONFIG_FLASH_LOG_LEVEL);
 
 #define DT_DRV_COMPAT raspberrypi_pico_flash_controller
 
-#define PAGE_SIZE 256
+#define PAGE_SIZE   256
 #define SECTOR_SIZE DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
 #define ERASE_VALUE 0xff
-#define FLASH_SIZE KB(CONFIG_FLASH_SIZE)
+#define FLASH_SIZE  KB(CONFIG_FLASH_SIZE)
 
 static const struct flash_parameters flash_rpi_parameters = {
 	.write_block_size = 1,
@@ -39,6 +39,8 @@ static bool is_valid_range(off_t offset, uint32_t size)
 
 static int flash_rpi_read(const struct device *dev, off_t offset, void *data, size_t size)
 {
+	ARG_UNUSED(dev);
+
 	if (size == 0) {
 		return 0;
 	}
@@ -59,13 +61,15 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 	size_t bytes_to_write;
 	uint8_t *data_pointer = (uint8_t *)data;
 
+	ARG_UNUSED(dev);
+
 	if (size == 0) {
 		return 0;
 	}
 
 	if (!is_valid_range(offset, size)) {
-		LOG_ERR("Write range exceeds the flash boundaries. Offset=%#lx, Size=%u",
-				offset, size);
+		LOG_ERR("Write range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
+			size);
 		return -EINVAL;
 	}
 
@@ -108,14 +112,14 @@ static int flash_rpi_erase(const struct device *dev, off_t offset, size_t size)
 	}
 
 	if (!is_valid_range(offset, size)) {
-		LOG_ERR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u",
-				offset, size);
+		LOG_ERR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
+			size);
 		return -EINVAL;
 	}
 
 	if ((offset % SECTOR_SIZE) || (size % SECTOR_SIZE)) {
 		LOG_ERR("Erase range is not a multiple of the sector size. Offset=%#lx, Size=%u",
-				offset, size);
+			offset, size);
 		return -EINVAL;
 	}
 
@@ -143,7 +147,7 @@ static const struct flash_pages_layout flash_rpi_pages_layout = {
 };
 
 void flash_rpi_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
-				size_t *layout_size)
+			   size_t *layout_size)
 {
 	*layout = &flash_rpi_pages_layout;
 	*layout_size = 1;
@@ -161,5 +165,5 @@ static DEVICE_API(flash, flash_rpi_driver_api) = {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_rpi_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
+		      &flash_rpi_driver_api);
