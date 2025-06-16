@@ -329,7 +329,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 	LDMA_TransferCfg_t *xfer_config = &chan_conf->xfer_config;
 	int ret;
 
-	if (channel > data->dma_ctx.dma_channels) {
+	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
