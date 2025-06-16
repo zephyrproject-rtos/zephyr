@@ -158,46 +158,57 @@ enum sd_voltage {
  * @brief SD host controller capabilities
  *
  * SD host controller capability flags. These flags should be set by the SDHC
- * driver, using the @ref sdhc_get_host_props api.
+ * driver, using the @ref sdhc_get_host_props api. These are packed to fit the capabilities register
+ * in the standard specification by the SD Association.
  */
 struct sdhc_host_caps {
-	unsigned int timeout_clk_freq: 6;		/**< Timeout clock frequency */
-	unsigned int _rsvd_6: 1;			/**< Reserved */
-	unsigned int timeout_clk_unit: 1;		/**< Timeout clock unit */
-	unsigned int sd_base_clk: 8;			/**< SD base clock frequency */
-	unsigned int max_blk_len: 2;			/**< Max block length */
-	unsigned int bus_8_bit_support: 1;		/**< 8-bit Support for embedded device */
-	unsigned int bus_4_bit_support: 1;		/**< 4 bit bus support */
-	unsigned int adma_2_support: 1;			/**< ADMA2 support */
-	unsigned int _rsvd_20: 1;			/**< Reserved */
-	unsigned int high_spd_support: 1;		/**< High speed support */
-	unsigned int sdma_support: 1;			/**< SDMA support */
-	unsigned int suspend_res_support: 1;		/**< Suspend/Resume support */
-	unsigned int vol_330_support: 1;		/**< Voltage support 3.3V */
-	unsigned int vol_300_support: 1;		/**< Voltage support 3.0V */
-	unsigned int vol_180_support: 1;		/**< Voltage support 1.8V */
-	unsigned int address_64_bit_support_v4: 1;	/**< 64-bit system address support for V4 */
-	unsigned int address_64_bit_support_v3: 1;	/**< 64-bit system address support for V3 */
-	unsigned int sdio_async_interrupt_support: 1;	/**< Asynchronous interrupt support */
-	unsigned int slot_type: 2;			/**< Slot type */
-	unsigned int sdr50_support: 1;			/**< SDR50 support */
-	unsigned int sdr104_support: 1;			/**< SDR104 support */
-	unsigned int ddr50_support: 1;			/**< DDR50 support */
-	unsigned int uhs_2_support: 1;			/**< UHS-II support */
-	unsigned int drv_type_a_support: 1;		/**< Driver type A support */
-	unsigned int drv_type_c_support: 1;		/**< Driver type C support */
-	unsigned int drv_type_d_support: 1;		/**< Driver type D support */
-	unsigned int _rsvd_39: 1;			/**< Reserved */
-	unsigned int retune_timer_count: 4;		/**< Timer count for re-tuning */
-	unsigned int sdr50_needs_tuning: 1;		/**< Use tuning for SDR50 */
-	unsigned int retuning_mode: 2;			/**< Re-tuning mode */
-	unsigned int clk_multiplier: 8;			/**< Clock multiplier */
-	unsigned int _rsvd_56: 3;			/**< Reserved */
-	unsigned int adma3_support: 1;			/**< ADMA3 support */
-	unsigned int vdd2_180_support: 1;		/**< 1.8V VDD2 support */
-	unsigned int _rsvd_61: 3;			/**< Reserved */
-	unsigned int hs200_support: 1;			/**< HS200 support */
-	unsigned int hs400_support: 1;			/**< HS400 support */
+	unsigned int timeout_clk_freq: 6;             /**< Timeout clock frequency */
+	unsigned int _rsvd_6: 1;                      /**< Reserved */
+	unsigned int timeout_clk_unit: 1;             /**< Timeout clock unit */
+	unsigned int sd_base_clk: 8;                  /**< SD base clock frequency */
+	unsigned int max_blk_len: 2;                  /**< Max block length */
+	unsigned int bus_8_bit_support: 1;            /**< 8-bit Support for embedded device */
+	unsigned int adma_2_support: 1;               /**< ADMA2 support */
+	unsigned int _rsvd_20: 1;                     /**< Reserved */
+	unsigned int high_spd_support: 1;             /**< High speed support */
+	unsigned int sdma_support: 1;                 /**< SDMA support */
+	unsigned int suspend_res_support: 1;          /**< Suspend/Resume support */
+	unsigned int vol_330_support: 1;              /**< Voltage support 3.3V */
+	unsigned int vol_300_support: 1;              /**< Voltage support 3.0V */
+	unsigned int vol_180_support: 1;              /**< Voltage support 1.8V */
+	unsigned int address_64_bit_support_v4: 1;    /**< 64-bit system address support for V4 */
+	unsigned int address_64_bit_support_v3: 1;    /**< 64-bit system address support for V3 */
+	unsigned int sdio_async_interrupt_support: 1; /**< Asynchronous interrupt support */
+	unsigned int slot_type: 2;                    /**< Slot type */
+	unsigned int sdr50_support: 1;                /**< SDR50 support */
+	unsigned int sdr104_support: 1;               /**< SDR104 support */
+	unsigned int ddr50_support: 1;                /**< DDR50 support */
+	unsigned int uhs_2_support: 1;                /**< UHS-II support */
+	unsigned int drv_type_a_support: 1;           /**< Driver type A support */
+	unsigned int drv_type_c_support: 1;           /**< Driver type C support */
+	unsigned int drv_type_d_support: 1;           /**< Driver type D support */
+	unsigned int _rsvd_39: 1;                     /**< Reserved */
+	unsigned int retune_timer_count: 4;           /**< Timer count for re-tuning */
+	unsigned int _rsvd_44: 1;                     /**< Reserved */
+	unsigned int sdr50_needs_tuning: 1;           /**< Use tuning for SDR50 */
+	unsigned int retuning_mode: 2;                /**< Re-tuning mode */
+	unsigned int clk_multiplier: 8;               /**< Clock multiplier */
+	unsigned int _rsvd_56: 3;                     /**< Reserved */
+	unsigned int adma3_support: 1;                /**< ADMA3 support */
+	unsigned int vdd2_180_support: 1;             /**< 1.8V VDD2 support */
+	unsigned int _rsvd_61: 3;                     /**< Reserved */
+};
+
+/**
+ * @brief Extra SD host controller capabilities
+ *
+ * ExtraSD host controller capability flags. These are not present in the capabilities register as
+ * per the standard specification by the SD association.
+ */
+struct sdhc_host_caps_extra {
+	unsigned int bus_4_bit_support: 1; /**< 4 bit bus support */
+	unsigned int hs200_support: 1;     /**< HS200 support */
+	unsigned int hs400_support: 1;     /**< HS400 support */
 };
 
 /**
@@ -227,6 +238,7 @@ struct sdhc_host_props {
 	unsigned int f_min; /*!< Min bus frequency */
 	unsigned int power_delay; /*!< Delay to allow SD to power up or down (in ms) */
 	struct sdhc_host_caps host_caps; /*!< Host capability bitfield */
+	struct sdhc_host_caps_extra host_caps_extra; /*!< Extra Host capability bitfield */
 	uint32_t max_current_330; /*!< Max current (in mA) at 3.3V */
 	uint32_t max_current_300; /*!< Max current (in mA) at 3.0V */
 	uint32_t max_current_180; /*!< Max current (in mA) at 1.8V */

@@ -694,31 +694,42 @@ static DEVICE_API(sdhc, sdhc_api) = {
 				.p_extend = NULL,                                                  \
 				.p_lower_lvl_transfer = &sdhc_ra_priv_##index.transfer,            \
 			},                                                                         \
-		.props = {.is_spi = false,                                                         \
-			  .f_max = DT_INST_PROP(index, max_bus_freq),                              \
-			  .f_min = DT_INST_PROP(index, min_bus_freq),                              \
-			  .max_current_330 = DT_INST_PROP(index, max_current_330),                 \
-			  .max_current_180 = DT_INST_PROP(index, max_current_180),                 \
-			  .power_delay = DT_INST_PROP_OR(index, power_delay_ms, 0),                \
-			  .host_caps = {.vol_180_support = false,                                  \
-					.vol_300_support = false,                                  \
-					.vol_330_support = true,                                   \
-					.suspend_res_support = false,                              \
-					.sdma_support = true,                                      \
-					.high_spd_support = (DT_INST_PROP(index, bus_width) == 4)  \
-								    ? true                         \
-								    : false,                       \
-					.adma_2_support = false,                                   \
-					.max_blk_len = 0,                                          \
-					.ddr50_support = false,                                    \
-					.sdr104_support = false,                                   \
-					.sdr50_support = false,                                    \
-					.bus_8_bit_support = false,                                \
-					.bus_4_bit_support = (DT_INST_PROP(index, bus_width) == 4) \
-								     ? true                        \
-								     : false,                      \
-					.hs200_support = false,                                    \
-					.hs400_support = false}},                                  \
+		.props =                                                                           \
+			{                                                                          \
+				.is_spi = false,                                                   \
+				.f_max = DT_INST_PROP(index, max_bus_freq),                        \
+				.f_min = DT_INST_PROP(index, min_bus_freq),                        \
+				.max_current_330 = DT_INST_PROP(index, max_current_330),           \
+				.max_current_180 = DT_INST_PROP(index, max_current_180),           \
+				.power_delay = DT_INST_PROP_OR(index, power_delay_ms, 0),          \
+				.host_caps =                                                       \
+					{                                                          \
+						.vol_180_support = false,                          \
+						.vol_300_support = false,                          \
+						.vol_330_support = true,                           \
+						.suspend_res_support = false,                      \
+						.sdma_support = true,                              \
+						.high_spd_support =                                \
+							(DT_INST_PROP(index, bus_width) == 4)      \
+								? true                             \
+								: false,                           \
+						.adma_2_support = false,                           \
+						.max_blk_len = 0,                                  \
+						.ddr50_support = false,                            \
+						.sdr104_support = false,                           \
+						.sdr50_support = false,                            \
+						.bus_8_bit_support = false,                        \
+					},                                                         \
+				.host_caps_extra =                                                 \
+					{                                                          \
+						.bus_4_bit_support =                               \
+							(DT_INST_PROP(index, bus_width) == 4)      \
+								? true                             \
+								: false,                           \
+						.hs200_support = false,                            \
+						.hs400_support = false,                            \
+					},                                                         \
+			},                                                                         \
 		RA_SDHI_EN(index),                                                                 \
 		RA_SDMMC_DTC_STRUCT_INIT(index)};                                                  \
                                                                                                    \

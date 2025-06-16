@@ -1426,13 +1426,16 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.d1_pin = DT_INST_PROP_OR(n, d1_pin, GPIO_NUM_NC),                                 \
 		.d2_pin = DT_INST_PROP_OR(n, d2_pin, GPIO_NUM_NC),                                 \
 		.d3_pin = DT_INST_PROP_OR(n, d3_pin, GPIO_NUM_NC),                                 \
-		.props = {.is_spi = false,                                                         \
-			  .f_max = DT_INST_PROP(n, max_bus_freq),                                  \
-			  .f_min = DT_INST_PROP(n, min_bus_freq),                                  \
-			  .max_current_330 = DT_INST_PROP(n, max_current_330),                     \
-			  .max_current_180 = DT_INST_PROP(n, max_current_180),                     \
-			  .power_delay = DT_INST_PROP_OR(n, power_delay_ms, 0),                    \
-			  .host_caps = {.vol_180_support = false,                                  \
+		.props = {                                                                         \
+			.is_spi = false,                                                           \
+			.f_max = DT_INST_PROP(n, max_bus_freq),                                    \
+			.f_min = DT_INST_PROP(n, min_bus_freq),                                    \
+			.max_current_330 = DT_INST_PROP(n, max_current_330),                       \
+			.max_current_180 = DT_INST_PROP(n, max_current_180),                       \
+			.power_delay = DT_INST_PROP_OR(n, power_delay_ms, 0),                      \
+			.host_caps =                                                               \
+				{                                                                  \
+					.vol_180_support = false,                                  \
 					.vol_300_support = false,                                  \
 					.vol_330_support = true,                                   \
 					.suspend_res_support = false,                              \
@@ -1445,10 +1448,16 @@ static DEVICE_API(sdhc, sdhc_api) = {
 					.sdr104_support = false,                                   \
 					.sdr50_support = false,                                    \
 					.bus_8_bit_support = false,                                \
+				},                                                                 \
+			.host_caps_extra =                                                         \
+				{                                                                  \
 					.bus_4_bit_support =                                       \
 						(DT_INST_PROP(n, bus_width) == 4) ? true : false,  \
 					.hs200_support = false,                                    \
-					.hs400_support = false}}};                                 \
+					.hs400_support = false,                                    \
+                                                                                                   \
+				},                                                                 \
+		}};                                                                                \
                                                                                                    \
 	static struct sdhc_esp32_data sdhc_esp32_##n##_data = {                                    \
 		.bus_width = SDMMC_SLOT_WIDTH_DEFAULT,                                             \
