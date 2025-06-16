@@ -312,8 +312,8 @@ static int mspi_cadence_init(const struct device *dev)
 	return 0;
 }
 
-static int mspi_cadence_small_transfer(const struct device *controller, const struct mspi_xfer *req,
-				       uint32_t index, const uint64_t start_time)
+static int mspi_cadence_stig(const struct device *controller, const struct mspi_xfer *req,
+			     uint32_t index, const uint64_t start_time)
 {
 	const mem_addr_t base_address = DEVICE_MMIO_GET(controller);
 	const struct mspi_xfer_packet *packet = &req->packets[index];
@@ -537,7 +537,7 @@ static int mspi_cadence_transceive(const struct device *controller,
 		/* the FLASH_CMD_REGISTER is good for small transfers with only very little/no data
 		 */
 		if (packet->num_bytes <= 8) {
-			ret = mspi_cadence_small_transfer(controller, req, i, start_time);
+			ret = mspi_cadence_stig(controller, req, i, start_time);
 			if (ret < 0) {
 				goto exit;
 			}
