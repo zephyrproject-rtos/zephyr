@@ -336,6 +336,7 @@
 				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
+				status = "disabled";
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(256)>;
 				nordic,ficrs =
