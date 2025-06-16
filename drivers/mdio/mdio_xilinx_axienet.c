@@ -93,6 +93,7 @@ static void enable_mdio_bus(const struct mdio_xilinx_axienet_config *config,
 	if ((xilinx_axienet_read_mdio_register(config, XILINX_AXIENET_MDIO_SETUP_REG_OFFSET) &
 	     XILINX_AXIENET_MDIO_SETUP_REG_MDIO_ENABLE_MASK) == 0) {
 		int err;
+		int count = 0;
 
 		xilinx_axienet_mdio_write_register(config, XILINX_AXIENET_MDIO_SETUP_REG_OFFSET,
 						   XILINX_AXIENET_MDIO_SETUP_REG_MDIO_ENABLE_MASK |
@@ -103,7 +104,7 @@ static void enable_mdio_bus(const struct mdio_xilinx_axienet_config *config,
 						   XILINX_AXIENET_MDIO_INTERRUPT_MASK);
 
 		if (config->have_irq) {
-			LOG_DBG("Waiting for bus enable!");
+			LOG_DBG("Waiting for bus enable IRQ");
 			err = k_sem_take(&data->irq_sema,
 					 K_MSEC(XILINX_AXIENET_MDIO_INTERRUPT_TIMEOUT_MS));
 
@@ -115,7 +116,12 @@ static void enable_mdio_bus(const struct mdio_xilinx_axienet_config *config,
 		while ((xilinx_axienet_read_mdio_register(config,
 							  XILINX_AXIENET_MDIO_SETUP_REG_OFFSET) &
 			XILINX_AXIENET_MDIO_SETUP_REG_MDIO_ENABLE_MASK) == 0) {
-			LOG_DBG("Waiting for bus enable!");
+			LOG_DBG("Waiting for bus enable flag");
+			k_busy_wait(1);
+			if (count++ > 1000) {
+				LOG_ERR("MDIO bus enable timeout");
+				return;
+			}
 		}
 
 	} else {
@@ -164,6 +170,7 @@ static int mdio_xilinx_axienet_read(const struct device *dev, uint8_t prtad, uin
 	const struct mdio_xilinx_axienet_config *config = dev->config;
 	struct mdio_xilinx_axienet_data *dev_data = dev->data;
 	int err;
+	int count = 0;
 
 	if (k_is_in_isr()) {
 		LOG_ERR("Called MDIO read in ISR!");
@@ -201,6 +208,11 @@ static int mdio_xilinx_axienet_read(const struct device *dev, uint8_t prtad, uin
 	while ((xilinx_axienet_read_mdio_register(config, XILINX_AXIENET_MDIO_CONTROL_REG_OFFSET) &
 		XILINX_AXIENET_MDIO_CONTROL_REG_MASK_READY) == 0x0) {
 		LOG_DBG("Transfer is not yet ready!");
+		k_busy_wait(1);
+		if (count++ > 1000) {
+			LOG_ERR("MDIO read timeout");
+			return -ETIMEDOUT;
+		}
 	}
 
 	LOG_DBG("IRQ from MDIO received - read complete!");
@@ -220,6 +232,7 @@ static int mdio_xilinx_axienet_write(const struct device *dev, uint8_t prtad, ui
 	const struct mdio_xilinx_axienet_config *config = dev->config;
 	struct mdio_xilinx_axienet_data *dev_data = dev->data;
 	int err;
+	int count = 0;
 
 	if (k_is_in_isr()) {
 		LOG_ERR("Called MDIO write in ISR!");
@@ -257,6 +270,11 @@ static int mdio_xilinx_axienet_write(const struct device *dev, uint8_t prtad, ui
 	while ((xilinx_axienet_read_mdio_register(config, XILINX_AXIENET_MDIO_CONTROL_REG_OFFSET) &
 		XILINX_AXIENET_MDIO_CONTROL_REG_MASK_READY) == 0x0) {
 		LOG_DBG("IRQ from MDIO received but transfer is not yet ready!");
+		k_busy_wait(1);
+		if (count++ > 1000) {
+			LOG_ERR("MDIO write timeout");
+			return -ETIMEDOUT;
+		}
 	}
 
 	LOG_DBG("IRQ from MDIO received - write complete!");
