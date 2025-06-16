@@ -32,6 +32,18 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+.. zephyr-keep-sorted-start re(^\w)
+
+SD Host Controller
+==================
+
+* Moved extra fields ``bus_4_bit_support``, ``hs200_support`` and ``hs400_support`` from
+  :c:struct:`sdhc_host_caps` to :c:struct:`sdhc_host_props` as per the
+  `SD Host Controller Specification <https://www.sdcard.org/downloads/pls/pdf/?p=PartA2_SD%20Host_Controller_Simplified_Specification_Ver4.20.jpg>`_.
+  (:github:`91701`)
+
+.. zephyr-keep-sorted-stop
+
 Bluetooth
 *********
 
