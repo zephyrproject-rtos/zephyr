@@ -1,0 +1,76 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "s32k5xxcvb_s32k566-pinctrl.dtsi"
+
+/ {
+	aliases {
+		led0 = &user_led_red;
+		led1 = &user_led_green;
+		led2 = &user_led_blue;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led_red: user_led_red {
+			gpios = <&gpiop 1 GPIO_ACTIVE_HIGH>;
+			label = "RGBLED0_RED";
+		};
+
+		user_led_green: user_led_green {
+			gpios = <&gpioo 2 GPIO_ACTIVE_HIGH>;
+			label = "RGBLED0_GREEN";
+		};
+
+		user_led_blue: user_led_blue {
+			gpios = <&gpion 10 GPIO_ACTIVE_HIGH>;
+			label = "RGBLED0_BLUE";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_0: button_0 {
+			label = "USERSW0";
+			gpios = <&gpiof 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_button_1: button_1 {
+			label = "USERSW1";
+			gpios = <&gpiof 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpion {
+	status = "okay";
+};
+
+&gpioo {
+	status = "okay";
+};
+
+&gpiop {
+	status = "okay";
+};
+
+&eirq1 {
+	pinctrl-0 = <&eirq1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

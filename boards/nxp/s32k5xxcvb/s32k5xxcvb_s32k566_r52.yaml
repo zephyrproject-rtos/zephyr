@@ -1,0 +1,14 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: s32k5xxcvb/s32k566/r52
+name: NXP S32K5XXCVB R52
+type: mcu
+arch: arm
+ram: 1024
+flash: 32768
+toolchain:
+  - zephyr
+supported:
+  - gpio
+vendor: nxp
