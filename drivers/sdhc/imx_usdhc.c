@@ -273,9 +273,9 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 	props->host_caps.sdr104_support = (bool)(caps.flags & kUSDHC_SupportSDR104Flag);
 	props->host_caps.sdr50_support = (bool)(caps.flags & kUSDHC_SupportSDR50Flag);
 	props->host_caps.bus_8_bit_support = (bool)(caps.flags & kUSDHC_Support8BitFlag);
-	props->host_caps.bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
-	props->host_caps.hs200_support = (bool)(cfg->mmc_hs200_1_8v);
-	props->host_caps.hs400_support = (bool)(cfg->mmc_hs400_1_8v);
+	props->bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
+	props->hs200_support = (bool)(cfg->mmc_hs200_1_8v);
+	props->hs400_support = (bool)(cfg->mmc_hs400_1_8v);
 }
 
 /*
