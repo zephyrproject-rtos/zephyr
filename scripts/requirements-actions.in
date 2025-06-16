@@ -30,6 +30,7 @@ python-magic; sys_platform != "win32"
 pyyaml
 ruff==0.11.11
 setuptools>=70.2.0
+spdx-tools
 sphinx-lint
 tabulate
 tomli>=1.1.0
