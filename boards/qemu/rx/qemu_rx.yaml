@@ -12,5 +12,10 @@ toolchain:
   - zephyr
 supported:
   - serial
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
 ram: 96
 flash: 512
