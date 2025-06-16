@@ -995,7 +995,7 @@ static int sam_sdmmc_get_host_props(const struct device *dev, struct sdhc_host_p
 		props->host_caps.bus_8_bit_support = true;
 	}
 	if (config->bus_width != 1) {
-		props->host_caps.bus_4_bit_support = true;
+		props->bus_4_bit_support = true;
 	}
 	props->host_caps.adma_2_support      = (bool)(cap0 & SDMMC_CA0R_ADMA2SUP_Msk);
 	props->host_caps.high_spd_support    = (bool)(cap0 & SDMMC_CA0R_HSSUP_Msk);
@@ -1031,10 +1031,10 @@ static int sam_sdmmc_get_host_props(const struct device *dev, struct sdhc_host_p
 	props->host_caps.vdd2_180_support = false;
 	if (!config->no_18v) {
 		if (config->mmc_hs400_18v || config->mmc_hs200_18v) {
-			props->host_caps.hs200_support = true;
+			props->hs200_support = true;
 		}
 		if (config->mmc_hs400_18v) {
-			props->host_caps.hs400_support = true;
+			props->hs400_support = true;
 		}
 	}
 
