@@ -547,6 +547,11 @@ config NRFX_SPIM00
 	depends on $(dt_nodelabel_exists,spi00)
 	select NRFX_SPIM
 
+config NRFX_SPIM01
+	bool "SPIM01 driver instance"
+	depends on $(dt_nodelabel_exists,spi01)
+	select NRFX_SPIM
+
 config NRFX_SPIM20
 	bool "SPIM20 driver instance"
 	depends on $(dt_nodelabel_exists,spi20)
@@ -653,6 +658,11 @@ config NRFX_SPIS3
 config NRFX_SPIS00
 	bool "SPIS00 driver instance"
 	depends on $(dt_nodelabel_exists,spi00)
+	select NRFX_SPIS
+
+config NRFX_SPIS01
+	bool "SPIS01 driver instance"
+	depends on $(dt_nodelabel_exists,spi01)
 	select NRFX_SPIS
 
 config NRFX_SPIS20
