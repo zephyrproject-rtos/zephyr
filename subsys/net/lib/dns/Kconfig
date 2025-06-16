@@ -61,6 +61,14 @@ config DNS_RESOLVER_MAX_SERVERS
 	  DNS server is enough. Each connection to DNS server will use one
 	  network context.
 
+config DNS_RESOLVER_MAX_ANSWER_SIZE
+	int "Max length of a DNS answer"
+	range 1 $(UINT16_MAX)
+	default 512
+	help
+	  Max length of the returned DNS answer we can process.
+	  Recommended value by RFC 1035 is 512 bytes.
+
 config DNS_RESOLVER_MAX_QUERY_LEN
 	int "Max length of a DNS query"
 	range 1 $(UINT8_MAX)
