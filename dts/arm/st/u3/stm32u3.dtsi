@@ -282,6 +282,17 @@
 			interrupts = <94 0>;
 			status = "disabled";
 		};
+
+		fdcan1: can@4000a400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <39 0>, <40 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
 	};
 };
 
