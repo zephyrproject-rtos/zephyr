@@ -17,5 +17,6 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+    - can
 ram: 96
 flash: 512
