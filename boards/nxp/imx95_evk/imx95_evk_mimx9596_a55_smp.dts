@@ -13,6 +13,10 @@
 	model = "NXP i.MX95 A55";
 	compatible = "fsl,mimx95";
 
+	aliases {
+		counter0 = &tpm2;
+	};
+
 	chosen {
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
@@ -46,4 +50,8 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+};
+
+&tpm2 {
+	status = "okay";
 };
