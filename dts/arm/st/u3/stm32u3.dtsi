@@ -333,6 +333,36 @@
 			dma-offset = <0>;
 			status = "disabled";
 		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			interrupts = <59 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
+
+		spi3: spi@40002000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8)>;
+			interrupts = <99 0>;
+			status = "disabled";
+		};
 	};
 };
 
