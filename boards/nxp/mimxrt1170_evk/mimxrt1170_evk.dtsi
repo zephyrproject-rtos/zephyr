@@ -51,6 +51,11 @@
 	};
 
 	arduino_header: connector {
+		/* NOTE:
+		 * The CM7 has no interrupt numbers for gpio9/gpio11/gpio12, so it isn't possible
+		 * to use input interrupts with A0-A5 or D0-D15.
+		 * The CM4 does support input interrupts.
+		 */
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
