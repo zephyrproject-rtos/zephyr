@@ -3,7 +3,7 @@
 Overview
 ********
 
-The `SCDZ`_ CH32V307EVT hardware provides support for QingKe V4F 32-bit RISC-V
+The SCDZ CH32V307EVT hardware provides support for QingKe V4F 32-bit RISC-V
 processor.
 
 The `WCH webpage on CH32V307`_ contains
