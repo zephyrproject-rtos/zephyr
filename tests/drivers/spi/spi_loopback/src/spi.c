@@ -609,12 +609,12 @@ ZTEST(spi_loopback, test_spi_write_back)
 ZTEST(spi_loopback, test_spi_same_buf_cmd)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 2,
 							      buffer_rx, 1,
 							      NULL, BUF_SIZE - 1);
-	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
 							      NULL, BUF_SIZE - 1,
-							      buffer_rx+(BUF_SIZE - 1), 1);
+							      buffer_rx + (BUF_SIZE - 1), 1);
 
 	memcpy(buffer_rx, tx_data, sizeof(tx_data));
 
