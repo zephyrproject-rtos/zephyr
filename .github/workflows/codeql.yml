@@ -7,7 +7,7 @@ on:
       - v*-branch
       - collab-*
   schedule:
-    - cron: '34 16 * * 3'
+    - cron: '34 16 * * 6'
   pull_request:
     branches:
       - main
