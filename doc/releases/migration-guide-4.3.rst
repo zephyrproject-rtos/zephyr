@@ -43,6 +43,13 @@ Bluetooth
 
 .. zephyr-keep-sorted-stop
 
+Ethernet
+========
+
+* The :dtcompatible:`microchip,vsc8541` PHY driver now expects the reset-gpios entry to specify
+  the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
+  nature was hard-coded into the driver. (:github:`91726`).
+
 Networking
 **********
 
