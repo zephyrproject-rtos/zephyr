@@ -219,21 +219,37 @@ static const struct ov7670_reg ov7670_init_regtbl[] = {
 	{OV7670_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
 	/* configure the output timing */
-	/* Free running PCLK, default VSYNC, HSYNC and PCLK */
-	{OV7670_COM10, 0x00}, /* COM10 */
+	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
+	{OV7670_COM10, 0x20}, /* COM10 */
 	{OV7670_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
 
 	/* Internal clock pre-scalar,F(internal clock) = F(input clock)/(Bit[5:0]+1) */
-	{OV7670_CLKRC, 0x80}, /* Clock Div, Input/(n+1), bit6 set to 1 to disable divider */
+	{OV7670_CLKRC, 0x81}, /* Clock Div, Input/(n+1), bit6 set to 1 to disable divider */
+
+	/* SCALING_PCLK_DIV */
+	/* 0: Enable clock divider, 010: Divided by 4 */
+	{OV7670_SCALING_PCLK_DIV, 0xF1},
+	/* Common Control 14, Bit[4]: DCW and scaling PCLK enable, Bit[3]: Manual scaling */
+	{OV7670_COM14, 0x19},
+	/* Common Control 3, Bit[2]: DCW enable, Bit[3]: Scale enable */
+	{OV7670_COM3, 0x04},
 
 	/* DBLV,Bit[7:6]: PLL control */
 	/* 0:Bypass PLL, 40: Input clock x4  , 80: Input clock x6  ,C0: Input clock x8 */
-	{OV7670_DBLV, 0x00},
+	{OV7670_DBLV, 0x40},
+
+	/* test pattern, useful in some case */
+	{OV7670_SCALING_XSC, 0x3A},
+	{OV7670_SCALING_YSC, 0x35},
+
+	/* DCW Control */
+	{OV7670_SCALING_DCWCTR, 0x11},
 
 	/* Output Drive Capability */
 	{OV7670_COM2, 0x00}, /* Common Control 2, Output Drive Capability: 1x */
+	{OV7670_SCALING_PCLK_DELAY, 0x02},
 	{OV7670_BD50MAX, 0x05},
 	{OV7670_BD60MAX, 0x07},
 	{OV7670_HAECC7, 0x94},
@@ -265,13 +281,13 @@ static const struct ov7670_reg ov7670_init_regtbl[] = {
 
 	/* display , need retain */
 	{OV7670_COM15, 0xD0}, /* Common Control 15 */
-	{OV7670_TSLB, 0x04},  /* Reserved */
+	{OV7670_TSLB, 0x0C},  /* Line Buffer Test Option */
 	{OV7670_COM13, 0x80}, /* Common Control 13 */
 	{OV7670_MANU, 0x11},  /* Manual U Value */
 	{OV7670_MANV, 0xFF},  /* Manual V Value */
 	/* config the output window data, this can be configed later */
-	{OV7670_HSTART, 0x16}, /*  HSTART */
-	{OV7670_HSTOP, 0x04},  /*  HSTOP */
+	{OV7670_HSTART, 0x15}, /*  HSTART */
+	{OV7670_HSTOP, 0x03},  /*  HSTOP */
 	{OV7670_VSTRT, 0x02},  /*  VSTRT */
 	{OV7670_VSTOP, 0x7a},  /*  VSTOP */
 	{OV7670_HREF, 0x80},   /*  HREF */
