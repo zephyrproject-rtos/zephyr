@@ -111,14 +111,14 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 #define NRF_PSEL_TDM(reg, line) ((NRF_TDM_Type *)reg)->PSEL.line
 #endif
 
-#define PORT_PD_EXISTS(node_id)									\
+#define PAD_PD_EXISTS(node_id)									\
 	COND_CODE_1(										\
 		DT_NODE_EXISTS(node_id),							\
 		(DT_NODE_HAS_PROP(node_id, power_domains)),					\
 		(0)										\
 	)
 
-#define PORT_PD_DEV_GET_OR_NULL(node_id)							\
+#define PAD_PD_DEV_GET_OR_NULL(node_id)								\
 	COND_CODE_1(										\
 		DT_NODE_EXISTS(node_id),							\
 		(DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, power_domains))),			\
@@ -126,48 +126,48 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 	)
 
 #define PORTS_HAVE_PD										\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio0)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio1)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio2)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio3)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio4)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio5)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio6)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio7)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio8)) ||							\
-	PORT_PD_EXISTS(DT_NODELABEL(gpio9))
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p0)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p1)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p2)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p3)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p4)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p5)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p6)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p7)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p8)) ||						\
+	PAD_PD_EXISTS(DT_NODELABEL(pad_group_p9))
 
 #if PORTS_HAVE_PD
 
-static const struct device *const port_pd_devs[] = {
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio0)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio1)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio2)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio3)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio4)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio5)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio6)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio7)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio8)),
-	PORT_PD_DEV_GET_OR_NULL(DT_NODELABEL(gpio9)),
+static const struct device *const pad_pd_devs[] = {
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p0)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p1)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p2)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p3)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p4)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p5)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p6)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p7)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p8)),
+	PAD_PD_DEV_GET_OR_NULL(DT_NODELABEL(pad_group_p9)),
 };
 
-static atomic_t port_pd_masks[ARRAY_SIZE(port_pd_devs)];
+static atomic_t pad_pd_masks[ARRAY_SIZE(pad_pd_devs)];
 
-static int port_pd_request_pin(uint16_t pin_number)
+static int pad_pd_request_pin(uint16_t pin_number)
 {
 	uint8_t port_number = NRF_GET_PORT(pin_number);
 	uint16_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
-	const struct device *port_pd_dev = port_pd_devs[port_number];
-	atomic_t *port_pd_mask = &port_pd_masks[port_number];
+	const struct device *pad_pd_dev = pad_pd_devs[port_number];
+	atomic_t *pad_pd_mask = &pad_pd_masks[port_number];
 
-	if (atomic_test_and_set_bit(port_pd_mask, port_pin_number)) {
+	if (atomic_test_and_set_bit(pad_pd_mask, port_pin_number)) {
 		/* already requested */
 		return 0;
 	}
 
-	if (pm_device_runtime_get(port_pd_dev)) {
-		atomic_clear_bit(port_pd_mask, port_pin_number);
+	if (pm_device_runtime_get(pad_pd_dev)) {
+		atomic_clear_bit(pad_pd_mask, port_pin_number);
 		return -EIO;
 	}
 
@@ -176,14 +176,14 @@ static int port_pd_request_pin(uint16_t pin_number)
 	return 0;
 }
 
-static int port_pd_release_pin(uint16_t pin_number)
+static int pad_pd_release_pin(uint16_t pin_number)
 {
 	uint8_t port_number = NRF_GET_PORT(pin_number);
 	uint16_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
-	const struct device *port_pd_dev = port_pd_devs[port_number];
-	atomic_t *port_pd_mask = &port_pd_masks[port_number];
+	const struct device *pad_pd_dev = pad_pd_devs[port_number];
+	atomic_t *pad_pd_mask = &pad_pd_masks[port_number];
 
-	if (!atomic_test_and_clear_bit(port_pd_mask, port_pin_number)) {
+	if (!atomic_test_and_clear_bit(pad_pd_mask, port_pin_number)) {
 		/* already released */
 		return 0;
 	}
@@ -191,9 +191,9 @@ static int port_pd_release_pin(uint16_t pin_number)
 	/* power domain may become inactive, retain shall be enabled */
 	nrf_gpio_pin_retain_enable(pin_number);
 
-	if (pm_device_runtime_put(port_pd_dev)) {
+	if (pm_device_runtime_put(pad_pd_dev)) {
 		nrf_gpio_pin_retain_disable(pin_number);
-		atomic_set_bit(port_pd_mask, port_pin_number);
+		atomic_set_bit(pad_pd_mask, port_pin_number);
 		return -EIO;
 	}
 
@@ -202,13 +202,13 @@ static int port_pd_release_pin(uint16_t pin_number)
 
 #else
 
-static int port_pd_request_pin(uint16_t pin_number)
+static int pad_pd_request_pin(uint16_t pin_number)
 {
 	ARG_UNUSED(pin_number);
 	return 0;
 }
 
-static int port_pd_release_pin(uint16_t pin_number)
+static int pad_pd_release_pin(uint16_t pin_number)
 {
 	ARG_UNUSED(pin_number);
 	return 0;
@@ -590,7 +590,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			uint32_t pin = psel;
 
 			/* enable pin */
-			port_pd_request_pin(pin);
+			pad_pd_request_pin(pin);
 			port_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 
 			if (write != NO_WRITE) {
@@ -609,7 +609,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 			if (NRF_GET_LP(pins[i]) == NRF_LP_ENABLE) {
 				/* disable pin */
-				port_pd_release_pin(pin);
+				pad_pd_release_pin(pin);
 				port_pin_clock_set(pin, false);
 			}
 		}
