@@ -263,9 +263,7 @@ int spim_init(struct qspi_config *config)
 
 int spim_deinit(void)
 {
-	LOG_DBG("TODO : %s", __func__);
-
-	return 0;
+	return spi_release_dt(&spi_spec);
 }
 
 static void spim_addr_check(unsigned int addr, const void *data, unsigned int len)
