@@ -6,6 +6,7 @@
 
 #include <skeleton.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/reset/mchp_mss_reset.h>
 
 / {
 	#address-cells = <1>;
@@ -147,6 +148,13 @@
 			interrupt-parent = <&plic>;
 			interrupts = <96 1>;
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		reset: reset-controller@20002000 {
+			compatible = "microchip,mpfs-reset";
+			reg = <0x20002000 0x300>;
+			#reset-cells = <1>;
 			status = "disabled";
 		};
 
