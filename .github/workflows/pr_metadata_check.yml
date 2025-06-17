@@ -33,6 +33,8 @@ jobs:
           pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: Run the check script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./scripts/ci/do_not_merge.py -p "${{ github.event.pull_request.number }}"
 
