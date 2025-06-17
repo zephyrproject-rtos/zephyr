@@ -836,11 +836,27 @@ config NXP_WIFI_RECOVERY
 	help
 	  This option is used to enable wifi recovery support.
 
+if NXP_RW610 || NXP_IW610
+
+config NXP_WIFI_NET_MONITOR
+	bool "Networking monitor"
+	default y
+	help
+	  This option is used to set/get network monitor configuration.
+
+config NXP_WIFI_HOST_TXRX_MGMT_FRAME
+	bool "Host send management and data frame in monitor mode"
+	default y
+	help
+	  This option is used to send management and data frame in monitor mode.
+
 config NXP_WIFI_MMSF
 	bool "11AX density config"
-	default y if NXP_RW610 || NXP_IW610
+	default y
 	help
 	  This option is used to specify/get 11ax density config in the Wi-Fi driver.
+
+endif # NXP_RW610 || NXP_IW610
 
 if NXP_RW610
 
@@ -855,18 +871,6 @@ config NXP_WIFI_AUTO_NULL_TX
 	default y
 	help
 	  This option is to support sending null frame in period for CSI.
-
-config NXP_WIFI_NET_MONITOR
-	bool "Networking monitor"
-	default y
-	help
-	  This option is used to set/get network monitor configuration.
-
-config NXP_WIFI_HOST_TXRX_MGMT_FRAME
-	bool "Host send management and data frame in monitor mode"
-	default y
-	help
-	  This option is used to send management and data frame in monitor mode.
 
 config NXP_WIFI_CAU_TEMPERATURE
 	bool "Cau temperature"
