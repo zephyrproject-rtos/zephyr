@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Beechwoods Software Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Raspberry Pi Pico W
+  LED Port
+
+compatible: "raspberrypi,pico_w"
+
+child-binding:
+  description: Pico W LED
+  properties:
+    gpios:
+      type: phandle-array
+      required: true
