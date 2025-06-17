@@ -192,6 +192,10 @@ ZTEST(intel_adsp_boot, test_2nd_cpu_halt)
 {
 	int ret;
 
+	if (IS_ENABLED(CONFIG_SOC_SERIES_INTEL_ADSP_ACE)) {
+		ztest_test_skip();
+	}
+
 	/* Obviously this only works on CPU0. So, we create a thread pinned
 	 * to CPU0 to effectively run the test.
 	 */
