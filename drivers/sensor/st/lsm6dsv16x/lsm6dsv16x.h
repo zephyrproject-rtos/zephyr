@@ -17,6 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lsm6dsv16x_reg.h"
+#include <zephyr/rtio/regmap.h>
 
 #define DT_DRV_COMPAT_LSM6DSV16X st_lsm6dsv16x
 #define DT_DRV_COMPAT_LSM6DSV32X st_lsm6dsv32x
@@ -171,9 +172,9 @@ struct lsm6dsv16x_data {
 	uint16_t accel_batch_odr : 4;
 	uint16_t gyro_batch_odr : 4;
 	uint16_t temp_batch_odr : 2;
-	uint16_t bus_type : 2; /* I2C is 0, SPI is 1, I3C is 2 */
 	uint16_t sflp_batch_odr : 3;
-	uint16_t reserved : 1;
+	uint16_t reserved : 3;
+	rtio_bus_type bus_type;
 	int32_t gbias_x_udps;
 	int32_t gbias_y_udps;
 	int32_t gbias_z_udps;
@@ -206,13 +207,9 @@ struct lsm6dsv16x_data {
 };
 
 #ifdef CONFIG_LSM6DSV16X_STREAM
-#define BUS_I2C 0
-#define BUS_SPI 1
-#define BUS_I3C 2
-
-static inline uint8_t lsm6dsv16x_bus_reg(struct lsm6dsv16x_data *data, uint8_t x)
+static inline uint8_t lsm6dsv16x_bus_reg(rtio_bus_type bus, uint8_t addr)
 {
-	return (data->bus_type == BUS_SPI) ? x | 0x80 : x;
+	return (rtio_is_spi(bus)) ? addr | 0x80 : addr;
 }
 
 #define LSM6DSV16X_FIFO_ITEM_LEN 7
