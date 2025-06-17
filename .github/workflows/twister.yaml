@@ -210,6 +210,10 @@ jobs:
           echo "github.base_ref: ${{ github.base_ref }}"
           echo "github.ref_name: ${{ github.ref_name }}"
 
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: Set up ccache
         run: |
           mkdir -p ${CCACHE_DIR}
