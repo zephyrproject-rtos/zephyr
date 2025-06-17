@@ -427,7 +427,8 @@ static int flash_stm32_check_status(const struct device *dev)
 
 int flash_stm32_wait_flash_idle(const struct device *dev)
 {
-	int64_t timeout_time = k_uptime_get() + STM32H7_FLASH_TIMEOUT;
+	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(STM32H7_FLASH_TIMEOUT));
+	bool expired = false;
 	int rc;
 
 	rc = flash_stm32_check_status(dev);
@@ -441,10 +442,16 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 	while (FLASH_STM32_REGS(dev)->SR1 & FLASH_SR_QW)
 #endif
 	{
-		if (k_uptime_get() > timeout_time) {
-			LOG_ERR("Timeout! val: %d", STM32H7_FLASH_TIMEOUT);
+		if (expired) {
+			LOG_ERR("Timeout! val: %d ms", STM32H7_FLASH_TIMEOUT);
 			return -EIO;
 		}
+
+		/* Check if expired, but always read status register one more time.
+		 * If the calling thread is pre-emptive we may have been scheduled out after reading
+		 * the status register, and scheduled back after timeout has expired.
+		 */
+		expired = sys_timepoint_expired(timeout);
 	}
 
 	return 0;
