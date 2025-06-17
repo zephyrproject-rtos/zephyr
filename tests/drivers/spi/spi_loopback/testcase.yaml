@@ -312,3 +312,10 @@ tests:
     filter: CONFIG_SOC_FAMILY_SILABS_SIWX91X
     platform_allow:
       - siwx917_rb4338a
+  drivers.spi.cc23x0.loopback.dma.no_async:
+    filter: CONFIG_SOC_FAMILY_TI_SIMPLELINK
+    platform_allow:
+      - lp_em_cc2340r5
+    extra_configs:
+      - CONFIG_SPI_CC23X0_DMA_DRIVEN=y
+      - CONFIG_SPI_ASYNC=n
