@@ -4090,7 +4090,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		 "[-c --channel]: Channel that needs to be scanned for connection. "
 		 "0:any channel.\n"
 		 "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
-		 "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
+		 "[-p, --passphrase]: Passphrase (valid only for secure SSIDs)\n"
 		 "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		 "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		 "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
