@@ -51,19 +51,15 @@ static int sckc_get_rate(const struct device *dev,
 			 uint32_t *rate)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
 
+	bool sel_xtal = (sckc_reg->SCKC_CR & SCKC_CR_TD_OSCSEL_Msk) ==
+			SCKC_CR_TD_OSCSEL(SCKC_CR_TD_OSCSEL_XTAL_Val);
 	int ret = 0;
 
-	const struct sam_sckc_config *cfg = sys;
+	LOG_DBG("%s Oscillator", sel_xtal ? "Crystal" : "RC");
 
-	if (cfg == NULL) {
-		LOG_ERR("The SCKC config can not be NULL.");
-		return -ENXIO;
-	}
-
-	LOG_DBG("%s Oscillator", cfg->crystal_osc ? "Crystal" : "RC");
-
-	if (cfg->crystal_osc) {
+	if (sel_xtal) {
 		ret = clock_control_get_rate(SAM_DT_SLOW_XTAL, NULL, rate);
 	} else {
 		*rate = KHZ(64);
@@ -77,30 +73,9 @@ static enum clock_control_status sckc_get_status(const struct device *dev,
 						 clock_control_subsys_t sys)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
 
-	const struct sam_sckc_config *cfg = sys;
-	enum clock_control_status status = CLOCK_CONTROL_STATUS_OFF;
-
-	if (cfg == NULL) {
-		LOG_ERR("The SCKC config can not be NULL.");
-		return -ENXIO;
-	}
-
-	LOG_DBG("%s Oscillator", cfg->crystal_osc ? "Crystal" : "RC");
-
-	if (cfg->crystal_osc) {
-		if ((sckc_reg->SCKC_CR & SCKC_CR_Msk) ==
-			SCKC_CR_TD_OSCSEL(SCKC_CR_TD_OSCSEL_XTAL_Val)) {
-			status = CLOCK_CONTROL_STATUS_ON;
-		}
-	} else {
-		if ((sckc_reg->SCKC_CR & SCKC_CR_Msk) ==
-			SCKC_CR_TD_OSCSEL(SCKC_CR_TD_OSCSEL_RC_Val)) {
-			status = CLOCK_CONTROL_STATUS_ON;
-		}
-	}
-
-	return status;
+	return CLOCK_CONTROL_STATUS_ON;
 }
 
 static DEVICE_API(clock_control, sckc_api) = {
