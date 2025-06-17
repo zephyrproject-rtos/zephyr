@@ -1,4 +1,4 @@
-identifier: esp32s3_s3/esp32s3/procpu
+identifier: esp32s3_zero/esp32s3/procpu
 name: ESP32-S3-Zero PROCPU
 type: mcu
 arch: xtensa
