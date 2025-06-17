@@ -68,6 +68,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Logging
+
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
