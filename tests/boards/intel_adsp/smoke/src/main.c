@@ -1,44 +1,12 @@
-/* Copyright (c) 2022 Intel Corporation
+/*
+ * Copyright (c) 2022, 2025 Intel Corporation
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <stdlib.h>
-#include "tests.h"
-
-static bool clock_msg(const struct device *dev, void *arg,
-		      uint32_t data, uint32_t ext_data)
-{
-	*(uint32_t *)arg = data;
-	return true;
-}
-
-ZTEST(intel_adsp, test_clock_calibrate)
-{
-	static volatile uint32_t host_dt;
-	uint32_t cyc0, cyc1, hz, diff;
-
-	/* Prime the host script's timestamp */
-	cyc0 = k_cycle_get_32();
-	intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_TIMESTAMP, 0);
-
-	k_msleep(1000);
-	host_dt = 0;
-	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, clock_msg, (void *)&host_dt);
-
-	/* Now do it again, but with a handler to catch the result */
-	cyc1 = k_cycle_get_32();
-	intel_adsp_ipc_send_message(INTEL_ADSP_IPC_HOST_DEV, IPCCMD_TIMESTAMP, 0);
-	AWAIT(host_dt != 0);
-	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, NULL, NULL);
-
-	hz = 1000000ULL * (cyc1 - cyc0) / host_dt;
-	printk("CLOCK: %lld Hz\n", (1000000ULL * (cyc1 - cyc0)) / host_dt);
-
-	/* Make sure we're within 1% of spec */
-	diff = abs((int32_t)(hz - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC));
-	zassert_true((hz / MIN(1, diff)) > 100, "clock rate wrong");
-}
 
 #if XCHAL_HAVE_VECBASE
 ZTEST(intel_adsp, test_vecbase_lock)
