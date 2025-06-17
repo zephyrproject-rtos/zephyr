@@ -510,7 +510,7 @@ static inline bool shell_help_is_structured(const char *help)
  * @brief Define ending subcommands set.
  *
  */
-#define SHELL_SUBCMD_SET_END {NULL}
+#define SHELL_SUBCMD_SET_END {0}
 
 /**
  * @brief Macro for creating a dynamic entry.
