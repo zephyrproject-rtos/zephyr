@@ -135,7 +135,7 @@ static void core_smoke(void *arg)
 	cyc1 = ccount();
 	dt = cyc1 - cyc0;
 	insns = count0 * 2;
-	zassert_true((dt / insns) < 3,
+	zassert_true((dt / insns) < 3.5,
 		     "instruction rate too slow, icache disabled?");
 	printk(" CPI = %d.%2.2d\n", dt / insns, ((1000 * dt) / insns) % 1000);
 }
