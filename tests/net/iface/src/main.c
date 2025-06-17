@@ -328,6 +328,7 @@ static void *iface_setup(void)
 	struct net_if_mcast_addr *maddr;
 	struct net_if_addr *ifaddr;
 	const struct device *dev;
+	int64_t oper_state_change_time = -1LL, later_time = -1LL;
 	bool status;
 	int idx, ret;
 
@@ -335,6 +336,12 @@ static void *iface_setup(void)
 	k_sem_init(&wait_data, 0, UINT_MAX);
 
 	net_if_foreach(iface_cb, NULL);
+
+	/* Make sure the operational state change time is set properly */
+	ret = net_if_oper_state_change_time(iface1, &oper_state_change_time);
+	zassert_equal(ret, 0, "Cannot get oper state change time");
+	zassert_equal(oper_state_change_time, 0,
+		      "Invalid oper state change time");
 
 	idx = net_if_get_by_iface(iface1);
 	((struct net_if_test *)
@@ -380,6 +387,11 @@ static void *iface_setup(void)
 	/* Mark the device ready and take the interface up */
 	dev->state->init_res = 0;
 	device_ok = true;
+
+	/* We need to sleep a bit to let the interface
+	 * operational state change time to be set.
+	 */
+	k_sleep(K_MSEC(10));
 
 	ret = net_if_up(iface1);
 	zassert_equal(ret, 0, "Interface 1 is not up (%d)", ret);
@@ -462,6 +474,14 @@ static void *iface_setup(void)
 	net_if_up(iface2);
 	net_if_up(iface3);
 	net_if_up(iface4);
+
+	ret = net_if_oper_state_change_time(iface1, &later_time);
+	zassert_equal(ret, 0, "Cannot get oper state change time");
+	zassert_not_equal(later_time, 0,
+			  "Invalid oper state change time");
+	zassert_true(later_time >= oper_state_change_time,
+		      "Invalid oper state change time %" PRId64 " vs %" PRId64,
+		      later_time, oper_state_change_time);
 
 	/* The interface might receive data which might fail the checks
 	 * in the iface sending function, so we need to reset the failure
