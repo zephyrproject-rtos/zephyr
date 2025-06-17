@@ -10,8 +10,6 @@
  */
 /delete-node/ &slot0_partition;
 /delete-node/ &slot1_partition;
-/delete-node/ &slot0_ns_partition;
-/delete-node/ &slot1_ns_partition;
 /delete-node/ &storage_partition;
 
 &cpuapp_rram {
