@@ -29,7 +29,11 @@ description: |
 
 compatible: "espressif,esp32-adc"
 
-include: [adc-controller.yaml]
+include:
+  - name: adc-controller.yaml
+    child-binding:
+      property-blocklist:
+        - zephyr,reference
 
 properties:
 
@@ -46,6 +50,15 @@ properties:
 
   "#io-channel-cells":
     const: 1
-
+child-binding:
+  properties:
+    zephyr,reference:
+      type: string
+      required: true
+      description: |
+        Reference selection:
+        - ADC_REF_INTERNAL:  Internal
+      enum:
+        - "ADC_REF_INTERNAL"
 io-channel-cells:
   - input
