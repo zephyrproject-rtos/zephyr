@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,15 +17,48 @@ extern "C" {
 #include "../jesd216.h"
 #include "../spi_nor.h"
 
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 #define WITH_RESET_GPIO 1
 #endif
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+#define FLASH_PAGE_LAYOUT_DEFINE(page_size, flash_size)                         \
+	.layout = {                                                             \
+		.pages_size = page_size,                                        \
+		.pages_count = flash_size / page_size,                          \
+	},
+#else
+#define FLASH_PAGE_LAYOUT_DEFINE(page_size, flash_size)
+#endif
+
+/*
+ * Per device configuration. Stored in ROM unless
+ * CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE is enabled.
+ */
+struct flash_mspi_device_data {
+	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
+	uint8_t dw15_qer;
+	uint32_t flash_size;
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	struct flash_pages_layout layout;
+#endif
+};
+
+/*
+ * Per mode configuration. Stored in ROM unless
+ * CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE is enabled.
+ */
+struct flash_mspi_mode_data{
+	const struct flash_mspi_nor_cmds *jedec_cmds;
+	const struct flash_mspi_nor_quirks *quirks;
+	const struct flash_mspi_device_data *flash_data;
+	struct mspi_dev_cfg dev_cfg;
+};
+
 struct flash_mspi_nor_config {
 	const struct device *bus;
-	uint32_t flash_size;
 	struct mspi_dev_id mspi_id;
-	struct mspi_dev_cfg mspi_nor_cfg;
 	struct mspi_dev_cfg mspi_nor_init_cfg;
 	enum mspi_dev_cfg_mask mspi_nor_cfg_mask;
 #if defined(CONFIG_MSPI_XIP)
@@ -36,14 +70,11 @@ struct flash_mspi_nor_config {
 	uint32_t reset_recovery_us;
 #endif
 	uint32_t transfer_timeout;
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	struct flash_pages_layout layout;
-#endif
-	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
-	const struct flash_mspi_nor_cmds *jedec_cmds;
-	struct flash_mspi_nor_quirks *quirks;
-	uint8_t dw15_qer;
+	const struct flash_mspi_mode_data *mode_data;
 };
+
+#define FLASH_MODE_DATA(dev) (((const struct flash_mspi_nor_config *)(dev->config))->mode_data)
+#define FLASH_DATA(dev) (((const struct flash_mspi_nor_config *)(dev->config))->mode_data->flash_data)
 
 struct flash_mspi_nor_data {
 	struct k_sem acquired;
