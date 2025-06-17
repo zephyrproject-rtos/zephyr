@@ -135,6 +135,8 @@ static int clk_generated_get_rate(const struct device *dev,
 		LOG_ERR("get parent clock rate failed.");
 		return ret;
 	}
+
+	gck->gckdiv = FIELD_GET(PMC_PCR_GCLKDIV_Msk, status);
 	*rate /= (gck->gckdiv + 1);
 
 	return 0;
