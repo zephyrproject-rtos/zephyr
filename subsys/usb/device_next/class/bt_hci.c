@@ -635,7 +635,7 @@ const static struct usb_desc_header *bt_hci_fs_desc_##n[] = {			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.nil_desc,			\
 };										\
 										\
-const static struct usb_desc_header *bt_hci_hs_desc_##n[] = {			\
+const static __maybe_unused struct usb_desc_header *bt_hci_hs_desc_##n[] = {	\
 	(struct usb_desc_header *) &bt_hci_desc_##n.iad,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_int_ep,			\
@@ -655,7 +655,8 @@ const static struct usb_desc_header *bt_hci_hs_desc_##n[] = {			\
 		.sync_sem = Z_SEM_INITIALIZER(bt_hci_data_##n.sync_sem, 0, 1),	\
 		.desc = &bt_hci_desc_##n,					\
 		.fs_desc = bt_hci_fs_desc_##n,					\
-		.hs_desc = bt_hci_hs_desc_##n,					\
+		.hs_desc = COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED,		\
+				       (bt_hci_hs_desc_##n), (NULL)),		\
 	};									\
 										\
 	USBD_DEFINE_CLASS(bt_hci_##n, &bt_hci_api,				\
