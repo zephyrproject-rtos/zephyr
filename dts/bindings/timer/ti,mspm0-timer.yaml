@@ -14,14 +14,14 @@ properties:
   interrupts:
     required: true
 
-  clk-prescaler:
+  ti,clk-prescaler:
     type: int
     required: true
     description: |
       TIMCLK clock source prescaler value.
       Valid range [0 ... 255].
 
-  clk-div:
+  ti,clk-div:
     type: int
     required: true
     default: 1
