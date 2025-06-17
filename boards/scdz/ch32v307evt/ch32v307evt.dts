@@ -37,11 +37,10 @@
 	};
 	buttons {
 		compatible = "gpio-keys";
-
 		user_button0: sw0 {
-            label = "User SW0";
-			gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			zephyr,code = <INPUT_KEY_0>;
+                label = "User SW0";
+		gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
