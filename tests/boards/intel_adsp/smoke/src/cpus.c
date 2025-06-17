@@ -1,6 +1,9 @@
-/* Copyright (c) 2022 Intel Corporation
+/*
+ * Copyright (c) 2022, 2025 Intel Corporation
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/smp.h>
