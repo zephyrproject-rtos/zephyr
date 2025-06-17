@@ -168,7 +168,7 @@ the files and view their ROM, RAM, and stack usage.
 Before you can use this
 target, install the puncover Python module::
 
-    pip3 install git+https://github.com/HBehrens/puncover --user
+    pip3 install --user puncover
 
 .. warning::
 
