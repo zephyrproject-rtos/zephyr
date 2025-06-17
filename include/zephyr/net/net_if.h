@@ -3495,6 +3495,16 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 
 /* Network device initialization macros */
 
+/**
+ * @brief Forward declaration of a network interface
+ *
+ * Enables to use of `NET_IF_GET` above the instantiation macro.
+ *
+ * @param dev_id Device ID provided to `NET_IF_INIT` or `NET_IF_OFFLOAD_INIT`
+ */
+#define NET_IF_DECLARE(dev_id, inst) \
+	static struct net_if NET_IF_GET_NAME(dev_id, inst)[NET_IF_MAX_CONFIGS]
+
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
 				   init_fn, pm, data, config, prio,	\
 				   api, l2, l2_ctx_type, mtu)		\
