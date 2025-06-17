@@ -233,6 +233,13 @@ New APIs and options
     * :kconfig:option:`CONFIG_ZPERF_SESSION_PER_THREAD`
     * :c:member:`zperf_upload_params.data_loader`
 
+* RTIO
+
+  * :c:func:`rtio_is_spi`
+  * :c:func:`rtio_is_cspi`
+  * :c:func:`rtio_is_i3c`
+  * :c:func:`rtio_read_regs_async`
+
 * Sensor
 
   * :c:func:`sensor_value_to_deci`
