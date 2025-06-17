@@ -4,9 +4,10 @@ tests:
   sample.drivers.i2s.dmic_i2s:
     tags: i2s
     platform_allow:
-      - apollo510_evb/apollo510/cm55
+      - apollo510_evb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
       regex:
-        - "PDM to I2S streaming"
+        - "DMIC I2S sample"
+        - "Streams stopped"

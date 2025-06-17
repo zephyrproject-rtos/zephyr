@@ -1,15 +1,7 @@
-# Copyright (c) 2024 NXP
+# Copyright (c) 2025 Ambiq Micro Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 source "Kconfig.zephyr"
-
-config I2S_INIT_BUFFERS
-	int "Initial count of audio data blocks"
-	default 2
-	help
-	  Controls the initial count of audio data blocks, which are (optionally)
-	  filled by data from the DMIC peripheral and played back by the I2S
-	  output perihperal.
 
 config SAMPLE_FREQ
 	int "Sample rate"
@@ -17,15 +9,24 @@ config SAMPLE_FREQ
 	help
 	  Sample frequency of the system.
 
-config USE_DMIC
+config I2S_DMIC_INPUT
 	bool "Use DMIC as an audio input"
+	default n
 
-if USE_DMIC
+config I2S_LOOPBACK
+	bool "Use I2S loopback mode"
+	default n
+
+if I2S_DMIC_INPUT
 
 config DMIC_CHANNELS
 	int "Number of DMIC channels"
-	default 1
+	default 2
 	help
-	  Count of DMIC channels to capture and process.
+	  Count of DMIC & I2S channels to capture and streaming.
 
 endif
+
+config I2S_ONLY_CHANNELS
+	int "Number of I2S only mode output channels"
+	default 2
