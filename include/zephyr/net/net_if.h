@@ -703,6 +703,17 @@ struct net_if_dev {
 
 	/** RFC 2863 operational status */
 	enum net_if_oper_state oper_state;
+
+	/** Last time the operational state was changed.
+	 * This is used to determine how long the interface has been in the
+	 * current operational state.
+	 *
+	 * This value is set to 0 when the interface is created, and then
+	 * updated whenever the operational state changes.
+	 *
+	 * The value is in milliseconds since boot.
+	 */
+	int64_t oper_state_change_time;
 };
 
 /**
@@ -906,6 +917,12 @@ static inline enum net_if_oper_state net_if_oper_state_set(
 		iface->if_dev->oper_state = oper_state;
 	}
 
+	net_if_lock(iface);
+
+	iface->if_dev->oper_state_change_time = k_uptime_get();
+
+	net_if_unlock(iface);
+
 	return iface->if_dev->oper_state;
 }
 
@@ -923,6 +940,34 @@ static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
 	}
 
 	return iface->if_dev->oper_state;
+}
+
+/**
+ * @brief Get an operational state change time of an interface
+ *
+ * @param iface Pointer to network interface
+ * @param change_time Pointer to store the change time. Time the operational
+ *        state of an interface was last changed, in milliseconds since boot.
+ *        If the interface operational state has not been changed yet,
+ *        then the value is 0.
+ *
+ * @return 0 if ok, -EINVAL if operational state change time could not be
+ *         retrieved (for example if iface or change_time is NULL).
+ */
+static inline int net_if_oper_state_change_time(struct net_if *iface,
+						int64_t *change_time)
+{
+	if (iface == NULL || iface->if_dev == NULL || change_time == NULL) {
+		return -EINVAL;
+	}
+
+	net_if_lock(iface);
+
+	*change_time = iface->if_dev->oper_state_change_time;
+
+	net_if_unlock(iface);
+
+	return 0;
 }
 
 /**
