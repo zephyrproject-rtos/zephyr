@@ -290,8 +290,12 @@ Connection Manager requires that all connectivity implementations support the fo
 These features describe how ifaces should behave during connect and disconnect events.
 You can individually set them for each iface.
 
+The Connection Manager also implements the following optional feature:
+
+* :ref:`Interface idle timeouts <conn_mgr_control_idle_timeout>`
+
 .. note::
-   It is left to connectivity implementations to successfully and accurately implement these two features as described below.
+   It is left to connectivity implementations to successfully and accurately implement these three features as described below.
    See :ref:`conn_mgr_impl_timeout_persistence` for more details from the connectivity implementation perspective.
 
 .. _conn_mgr_control_timeouts:
@@ -305,6 +309,16 @@ The connection attempt continues indefinitely until it succeeds, unless a timeou
 
 In that case, the connection attempt will be abandoned if the timeout elapses before it succeeds.
 If this happens, the :ref:`timeout event<conn_mgr_control_events_timeout>` is raised.
+
+.. _conn_mgr_control_idle_timeout:
+
+Interface Idle Timeout
+----------------------
+
+The connection manager enables users to apply an inactivity timeout on an interface (:c:func:`conn_mgr_if_set_idle_timeout`).
+Once connected, if the interface goes for the configured number of seconds without any activity, the interface is automatically disconnected.
+If this happens, the :ref:`idle timeout event<conn_mgr_control_events_idle_timeout>` is raised.
+An idle timeout is considered an unintentional connection loss for the purposes of :ref:`Connection persistence <conn_mgr_control_persistence>`.
 
 .. _conn_mgr_control_persistence:
 
@@ -354,6 +368,15 @@ Timeout
 -------
 
 The :c:macro:`NET_EVENT_CONN_IF_TIMEOUT` event is raised when an :ref:`iface association <conn_mgr_control_operation_connecting>` attempt :ref:`times out <conn_mgr_control_timeouts>`.
+
+Handlers of this event will be passed a pointer to the iface that timed out attempting to associate.
+
+.. _conn_mgr_control_events_idle_timeout:
+
+Idle Timeout
+------------
+
+The :c:macro:`NET_EVENT_CONN_IF_IDLE_TIMEOUT` event is raised when an interface is considered :ref:`inactive <conn_mgr_control_idle_timeout>`.
 
 Handlers of this event will be passed a pointer to the iface that timed out attempting to associate.
 
