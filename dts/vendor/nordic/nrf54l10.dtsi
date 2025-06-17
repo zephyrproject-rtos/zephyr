@@ -25,14 +25,14 @@
 };
 
 &cpuapp_rram {
-	reg = <0x0 DT_SIZE_K(960)>;
+	reg = <0x0 DT_SIZE_K(950)>;
 };
 
-/* 960 + 62 = 1022KB */
+/* 950 + 62 = 1012KB */
 &rram_controller {
-	cpuflpr_rram: rram@f0000 {
+	cpuflpr_rram: rram@ed800 {
 		compatible = "soc-nv-flash";
-		reg = <0xf0000 DT_SIZE_K(62)>;
+		reg = <0xed800 DT_SIZE_K(62)>;
 		erase-block-size = <4096>;
 		write-block-size = <16>;
 	};
