@@ -5955,6 +5955,7 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xtensa.info
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
