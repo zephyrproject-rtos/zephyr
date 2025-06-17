@@ -302,6 +302,27 @@
 				si-index = <2>;
 				status = "disabled";
 			};
+
+			netc_ptp_clock0: ptp_clock@4cd80000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cd80000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock1: ptp_clock@4cda0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cda0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
+
+			netc_ptp_clock2: ptp_clock@4cdc0000 {
+				compatible = "nxp,netc-ptp-clock";
+				reg = <0x4cdc0000 0x10000>;
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				status = "disabled";
+			};
 		};
 	};
 };
