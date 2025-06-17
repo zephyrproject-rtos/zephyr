@@ -280,6 +280,7 @@ static inline int z_impl_stepper_disable(const struct device *dev)
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
+ * @retval -EINVAL If the requested resolution is invalid
  * @retval -ENOTSUP If the requested resolution is not supported
  * @retval 0 Success
  */
@@ -293,6 +294,10 @@ static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
 
 	if (api->set_micro_step_res == NULL) {
 		return -ENOSYS;
+	}
+
+	if (!VALID_MICRO_STEP_RES(resolution)) {
+		return -EINVAL;
 	}
 	return api->set_micro_step_res(dev, resolution);
 }
