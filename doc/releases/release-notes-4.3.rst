@@ -176,6 +176,8 @@ New APIs and options
 
 * Logging:
 
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
+
   * Added options to skip timestamp and level in log backends.
 
     * :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_TIMESTAMP`
