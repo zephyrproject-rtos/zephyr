@@ -21,7 +21,7 @@
 		};
 	};
 
-	/* conflicts with lpuart3 */
+	/* conflicts with lpuart3 and lpuart8 */
 	pinmux_csi: pinmux_csi {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_04_gpio1_io04>;
@@ -296,6 +296,33 @@
 				<&iomuxc_gpio_ad_b1_07_lpuart3_rx>,
 				<&iomuxc_gpio_ad_b1_04_lpuart3_cts_b>,
 				<&iomuxc_gpio_ad_b1_05_lpuart3_rts_b>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_lpuart8: pinmux_lpuart8 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_11_lpuart8_rx>,
+				<&iomuxc_gpio_ad_b1_10_lpuart8_tx>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_lpuart8_sleep: pinmux_lpuart8_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_11_gpio1_io27>;
+			drive-strength = "r0";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_b1_10_lpuart8_tx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
