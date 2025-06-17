@@ -7,9 +7,9 @@ compatible: "xen,virtio-mmio-backend"
 
 include: base.yaml
 
-properties:
-  reg:
-    required: true
-
-  interrupts:
-    required: true
+  #properties:
+  #  reg:
+  #    required: true
+  #
+  #  interrupts:
+  #    required: true

@@ -5,10 +5,13 @@
  */
 
 / {
-	virtio-mmio-backend@10004000 {
+	virtio-mmio-backend {
+		compatible = "xen,virtio-mmio-backend";
+/*
+@10004000 {
 		reg = <0x0 0x10004000 0x0 0x200>;
 		interrupts = <GIC_SPI 42 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
-		compatible = "xen,virtio-mmio-backend";
+*/
 	};
 
 };
