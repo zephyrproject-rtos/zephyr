@@ -88,11 +88,11 @@ static void stepper_before(void *f)
 
 ZTEST_SUITE(stepper, NULL, stepper_setup, stepper_before, NULL, NULL);
 
-ZTEST_F(stepper, test_set_micro_step_res_incorrect)
+ZTEST_F(stepper, test_set_micro_step_res_invalid)
 {
 	int ret = stepper_set_micro_step_res(fixture->dev, 127);
 
-	zassert_equal(ret, -ENOTSUP, "Incorrect micro step resolution should return -ENOTSUP");
+	zassert_equal(ret, -EINVAL, "Invalid micro step resolution should return -EINVAL");
 }
 
 ZTEST_F(stepper, test_get_micro_step_res)

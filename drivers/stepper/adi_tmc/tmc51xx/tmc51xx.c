@@ -406,11 +406,6 @@ int tmc51xx_stepper_set_max_velocity(const struct device *dev, uint32_t velocity
 static int tmc51xx_stepper_set_micro_step_res(const struct device *dev,
 					      enum stepper_micro_step_resolution res)
 {
-	if (!VALID_MICRO_STEP_RES(res)) {
-		LOG_ERR("Invalid micro step resolution %d", res);
-		return -ENOTSUP;
-	}
-
 	uint32_t reg_value;
 	int err;
 
