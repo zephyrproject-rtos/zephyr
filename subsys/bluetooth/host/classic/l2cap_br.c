@@ -4034,6 +4034,14 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 			opt_ret_fc->tx_windows_size = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
 		}
 
+		if (monitor_timeout == 0) {
+			monitor_timeout = CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT;
+		}
+
+		if (retransmission_timeout == 0) {
+			retransmission_timeout = CONFIG_BT_L2CAP_BR_RET_TIMEOUT;
+		}
+
 		opt_ret_fc->retransmission_timeout = sys_cpu_to_le16(retransmission_timeout);
 		opt_ret_fc->monitor_timeout = sys_cpu_to_le16(monitor_timeout);
 
