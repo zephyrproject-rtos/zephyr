@@ -1132,7 +1132,7 @@ class Ctest(Harness):
         elif suite.errors and suite.errors > 0:
             self.status = TwisterStatus.ERROR
             self.instance.reason = 'Error during ctest execution'
-        elif suite.skipped and suite.skipped > 0:
+        elif suite.skipped == suite.tests:
             self.status = TwisterStatus.SKIP
         else:
             self.status = TwisterStatus.PASS
@@ -1149,6 +1149,8 @@ class Ctest(Harness):
                 tc.output = case.system_out
             elif any(isinstance(r, junit.Skipped) for r in case.result):
                 tc.status = TwisterStatus.SKIP
+                tc.reason = next((r.message for r in case.result \
+                        if isinstance(r, junit.Skipped)), 'Ctest skip')
             else:
                 tc.status = TwisterStatus.PASS
 
