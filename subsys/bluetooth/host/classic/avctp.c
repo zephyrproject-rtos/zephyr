@@ -31,8 +31,10 @@
 LOG_MODULE_REGISTER(bt_avctp);
 
 #define AVCTP_CHAN(_ch) CONTAINER_OF(_ch, struct bt_avctp, br_chan.chan)
+#define AVCTP_BROW_CHAN(_ch) CONTAINER_OF(_ch, struct bt_avctp_browsing, br_chan.chan)
 
 static const struct bt_avctp_event_cb *event_cb;
+static const struct bt_avctp_browsing_event_cb *browsing_event_cb;
 
 static void avctp_l2cap_connected(struct bt_l2cap_chan *chan)
 {
@@ -254,4 +256,249 @@ int bt_avctp_init(void)
 	}
 
 	return err;
+}
+
+static void avctp_browsing_l2cap_connected(struct bt_l2cap_chan *chan)
+{
+	struct bt_avctp_browsing *session;
+
+	if (!chan) {
+		LOG_ERR("Invalid AVCTP chan");
+		return;
+	}
+
+	session = AVCTP_BROW_CHAN(chan);
+	LOG_DBG("chan %p session %p", chan, session);
+
+	if (session->ops && session->ops->connected) {
+		session->ops->connected(session);
+	}
+}
+
+static void avctp_browsing_l2cap_disconnected(struct bt_l2cap_chan *chan)
+{
+	struct bt_avctp_browsing *session;
+
+	if (!chan) {
+		LOG_ERR("Invalid AVCTP chan");
+		return;
+	}
+
+	session = AVCTP_BROW_CHAN(chan);
+	LOG_DBG("chan %p session %p", chan, session);
+	session->br_chan.chan.conn = NULL;
+
+	if (session->ops && session->ops->disconnected) {
+		session->ops->disconnected(session);
+	}
+}
+
+static void avctp_browsing_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, uint8_t status)
+{
+	LOG_DBG("");
+}
+
+static int avctp_browsing_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct net_buf *rsp;
+	struct bt_avctp_browsing *session = AVCTP_BROW_CHAN(chan);
+	struct bt_avctp_header *hdr = (void *)buf->data;
+	uint8_t tid;
+	bt_avctp_pkt_type_t pkt_type;
+	bt_avctp_cr_t cr;
+	int err;
+
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("invalid AVCTP header received");
+		return -EINVAL;
+	}
+
+	tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr);
+	pkt_type = BT_AVCTP_HDR_GET_PACKET_TYPE(hdr);
+	cr = BT_AVCTP_HDR_GET_CR(hdr);
+
+	switch (pkt_type) {
+	case BT_AVCTP_PKT_TYPE_SINGLE:
+		break;
+	case BT_AVCTP_PKT_TYPE_START:
+	case BT_AVCTP_PKT_TYPE_CONTINUE:
+	case BT_AVCTP_PKT_TYPE_END:
+	default:
+		LOG_ERR("fragmented AVCTP browsing message is not supported, pkt_type = %d", pkt_type);
+		return -EINVAL;
+	}
+
+	switch (hdr->pid) {
+#if defined(CONFIG_BT_AVRCP)
+	case sys_cpu_to_be16(BT_SDP_AV_REMOTE_SVCLASS):
+		break;
+#endif
+	default:
+		LOG_ERR("unsupported AVCTP browsing PID received: 0x%04x", sys_be16_to_cpu(hdr->pid));
+		if (cr == BT_AVCTP_CMD) {
+			rsp = bt_avctp_browsing_create_pdu(session, BT_AVCTP_RESPONSE,
+							   BT_AVCTP_PKT_TYPE_SINGLE,
+							   BT_AVCTP_IPID_INVALID,
+							   tid, hdr->pid);
+			if (!rsp) {
+				return -ENOMEM;
+			}
+
+			err = bt_avctp_browsing_send(session, rsp);
+			if (err < 0) {
+				net_buf_unref(rsp);
+				LOG_ERR("AVCTP browsing send fail, err = %d", err);
+				return err;
+			}
+		}
+		return 0; /* No need to report to the upper layer */
+	}
+
+	return session->ops->recv(session, buf);
+}
+
+static const struct bt_l2cap_chan_ops browsing_ops = {
+	.connected = avctp_browsing_l2cap_connected,
+	.disconnected = avctp_browsing_l2cap_disconnected,
+	.encrypt_change = avctp_browsing_l2cap_encrypt_changed,
+	.recv = avctp_browsing_l2cap_recv,
+};
+
+static void init_avctp_browsing_channel(struct bt_avctp_browsing *session)
+{
+	LOG_DBG("session %p", session);
+
+	session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
+	session->br_chan.chan.ops = &browsing_ops;
+	session->br_chan.required_sec_level = BT_SECURITY_L2;
+	session->br_chan.rx.optional = false;
+	session->br_chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+	session->br_chan.rx.max_transmit = 3;
+	session->br_chan.rx.mode = BT_L2CAP_BR_LINK_MODE_ERET;
+	session->br_chan.tx.monitor_timeout = CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT;
+}
+
+static int avctp_browsing_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+				       struct bt_l2cap_chan **chan)
+{
+	struct bt_avctp_browsing *session = NULL;
+	int err;
+
+	LOG_DBG("conn %p", conn);
+
+	if (!browsing_event_cb) {
+		LOG_WRN("AVCTP browsing server is unsupported");
+		return -ENOTSUP;
+	}
+
+	/* Get the AVCTP browsing session from upper layer */
+	err = browsing_event_cb->accept(conn, &session);
+	if (err < 0) {
+		LOG_ERR("Get the AVCTP browsing session failed %d", err);
+		return err;
+	}
+
+	init_avctp_browsing_channel(session);
+	*chan = &session->br_chan.chan;
+
+	return 0;
+}
+
+int bt_avctp_browsing_init(void)
+{
+	int err;
+	static struct bt_l2cap_server avctp_browsing_l2cap = {
+		.psm = BT_L2CAP_PSM_AVCTP_BROWSING,
+		.sec_level = BT_SECURITY_L2,
+		.accept = avctp_browsing_l2cap_accept,
+	};
+
+	LOG_DBG("");
+
+	/* Register AVCTP BROWSING PSM with L2CAP */
+	err = bt_l2cap_br_server_register(&avctp_browsing_l2cap);
+	if (err < 0) {
+		LOG_ERR("AVCTP L2CAP registration failed %d", err);
+	}
+
+	return err;
+}
+
+int bt_avctp_browsing_register(const struct bt_avctp_browsing_event_cb *cb)
+{
+	LOG_DBG("");
+
+	if (!cb) {
+		return -EINVAL;
+	}
+
+	if (browsing_event_cb) {
+		return -EALREADY;
+	}
+
+	browsing_event_cb = cb;
+
+	return 0;
+}
+
+int bt_avctp_browsing_connect(struct bt_conn *conn, struct bt_avctp_browsing *session,
+			      struct bt_avctp *control_session)
+{
+	if (conn == NULL || session == NULL || control_session == NULL) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("conn %p session %p", conn, session);
+
+	init_avctp_browsing_channel(session);
+	session->control_session = control_session;
+	return bt_l2cap_chan_connect(conn, &session->br_chan.chan, BT_L2CAP_PSM_AVCTP_BROWSING);
+}
+
+int bt_avctp_browsing_disconnect(struct bt_avctp_browsing *session)
+{
+	if (session == NULL || session->br_chan.chan.conn == NULL) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("session %p", session);
+
+	return bt_l2cap_chan_disconnect(&session->br_chan.chan);
+}
+
+struct net_buf *bt_avctp_browsing_create_pdu(struct bt_avctp_browsing *session, bt_avctp_cr_t cr,
+					     bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
+					     uint8_t tid, uint16_t pid)
+{
+	struct net_buf *buf;
+	struct bt_avctp_header *hdr;
+
+	LOG_DBG("");
+
+	buf = bt_l2cap_create_pdu(NULL, 0);
+	if (!buf) {
+		LOG_ERR("No buff available");
+		return buf;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	BT_AVCTP_HDR_SET_TRANSACTION_LABLE(hdr, tid);
+	BT_AVCTP_HDR_SET_PACKET_TYPE(hdr, pkt_type);
+	BT_AVCTP_HDR_SET_CR(hdr, cr);
+	BT_AVCTP_HDR_SET_IPID(hdr, ipid);
+	hdr->pid = pid;
+
+	LOG_DBG("cr:0x%lX, tid:0x%02lX", BT_AVCTP_HDR_GET_CR(hdr),
+		BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr));
+	return buf;
+}
+
+int bt_avctp_browsing_send(struct bt_avctp_browsing *session, struct net_buf *buf)
+{
+	if (session == NULL || session->br_chan.chan.conn == NULL) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("session %p", session);
+	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
 }
