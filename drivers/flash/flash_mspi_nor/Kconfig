@@ -6,6 +6,7 @@ menuconfig FLASH_MSPI_NOR
 	default y
 	depends on DT_HAS_JEDEC_MSPI_NOR_ENABLED
 	select FLASH_MSPI
+	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios)
@@ -21,5 +22,20 @@ config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
 	  API. By default the page size corresponds to the block size (65536).
 	  Other options include the 32K-byte erase size (32768), the sector
 	  size (4096), or any non-zero multiple of the sector size.
+
+config FLASH_MSPI_NOR_RUNTIME_PROBE
+	bool "Probe flash details at runtime"
+	help
+	  If enabled, the driver will probe the flash device's JEDEC ID at
+	  runtime, and used that to determine the command set and flash size.
+
+if FLASH_MSPI_NOR_RUNTIME_PROBE
+
+config FLASH_MSPI_NOR_MICRON
+	bool "Micron MSPI NOR flash support"
+	help
+	  Support Micron MSPI NOR flash devices during runtime probing.
+
+endif # FLASH_MSPI_NOR_RUNTIME_PROBE
 
 endif # FLASH_MSPI_NOR

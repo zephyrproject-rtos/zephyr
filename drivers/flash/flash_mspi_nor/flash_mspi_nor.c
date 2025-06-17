@@ -13,7 +13,6 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include "flash_mspi_nor.h"
-#include "flash_mspi_nor_quirks.h"
 
 LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
@@ -133,6 +132,15 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 		return rc;
 	}
 
+
+	if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+	    (FLASH_MODE_DATA(dev)->quirks->pre_read != NULL)) {
+		rc = FLASH_MODE_DATA(dev)->quirks->pre_read(dev, addr, dest, size);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
 	if (FLASH_MODE_DATA(dev)->jedec_cmds->read.force_single) {
 		rc = dev_cfg_apply(dev, &dev_config->mspi_nor_init_cfg);
 	} else {
@@ -151,12 +159,21 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
 			     &dev_data->xfer);
 
-	release(dev);
-
 	if (rc < 0) {
 		LOG_ERR("Read xfer failed: %d", rc);
 		return rc;
 	}
+
+	if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+	    (FLASH_MODE_DATA(dev)->quirks->post_read != NULL)) {
+		rc = FLASH_MODE_DATA(dev)->quirks->post_read(dev, addr, dest, size);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	release(dev);
+
 
 	return 0;
 }
@@ -264,6 +281,15 @@ static int api_write(const struct device *dev, off_t addr, const void *src,
 		uint16_t page_left = page_size - page_offset;
 		uint16_t to_write = (uint16_t)MIN(size, page_left);
 
+
+		if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+		    (FLASH_MODE_DATA(dev)->quirks->pre_write != NULL)) {
+			rc = FLASH_MODE_DATA(dev)->quirks->pre_write(dev, addr, src, to_write);
+			if (rc < 0) {
+				break;
+			}
+		}
+
 		if (write_enable(dev) < 0) {
 			LOG_ERR("Write enable xfer failed: %d", rc);
 			break;
@@ -297,6 +323,14 @@ static int api_write(const struct device *dev, off_t addr, const void *src,
 		rc = wait_until_ready(dev, K_MSEC(1));
 		if (rc < 0) {
 			break;
+		}
+
+		if ((FLASH_MODE_DATA(dev)->quirks != NULL) &&
+		    (FLASH_MODE_DATA(dev)->quirks->post_write != NULL)) {
+			rc = FLASH_MODE_DATA(dev)->quirks->post_write(dev, addr, src, to_write);
+			if (rc < 0) {
+				break;
+			}
 		}
 	}
 
@@ -362,7 +396,8 @@ static int api_erase(const struct device *dev, off_t addr, size_t size)
 				return rc;
 			}
 
-			flash_mspi_command_set(dev, &FLASH_MODE_DATA(dev)->jedec_cmds->sector_erase);
+			flash_mspi_command_set(dev,
+				&FLASH_MODE_DATA(dev)->jedec_cmds->sector_erase);
 			dev_data->packet.address = addr;
 			addr += SPI_NOR_SECTOR_SIZE;
 			size -= SPI_NOR_SECTOR_SIZE;
@@ -544,6 +579,9 @@ static int quad_enable_set(const struct device *dev, bool enable)
 			LOG_ERR("Failed to enable/disable quad mode: %d", rc);
 			return rc;
 		}
+		break;
+	case JESD216_DW15_QER_VAL_NONE:
+		return 0;
 	default:
 		/* TODO: handle all DW15 QER values */
 		return -ENOTSUP;
@@ -707,6 +745,16 @@ static int flash_chip_init(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE)
+	int i;
+
+	for (i = 0; i < vendor_count; i++) {
+		if (vendors[i]->probe_dev(dev, FLASH_MODE_DATA(dev),
+		    vendors[i]->vendor_devs, vendors[i]->dev_count) == 0) {
+			return 0;
+		}
+	}
+#else
 	/* Validate JEDEC ID */
 	if (memcmp(id, FLASH_DATA(dev)->jedec_id, sizeof(id)) != 0) {
 		LOG_ERR("JEDEC ID mismatch, read: %02x %02x %02x, "
@@ -717,6 +765,7 @@ static int flash_chip_init(const struct device *dev)
 			FLASH_DATA(dev)->jedec_id[2]);
 		return -ENODEV;
 	}
+#endif
 
 #if defined(CONFIG_MSPI_XIP)
 	/* Enable XIP access for this chip if specified so in DT. */
@@ -793,7 +842,7 @@ static DEVICE_API(flash, drv_api) = {
 	.dqs_enable = false,						\
 }
 
-#define FLASH_SIZE_INST(inst) (DT_INST_PROP(inst, size) / 8)
+#define FLASH_SIZE_INST(inst) (DT_INST_PROP_OR(inst, size, 0) / 8)
 
 /* Define copies of mspi_io_mode enum values, so they can be used inside
  * the COND_CODE_1 macros.
@@ -827,8 +876,6 @@ extern const struct flash_mspi_nor_cmds mspi_io_mode_not_supported;
 	)) \
 )
 
-#define FLASH_QUIRKS(inst) FLASH_MSPI_QUIRKS_GET(DT_DRV_INST(inst))
-
 #define FLASH_DW15_QER_VAL(inst) _CONCAT(JESD216_DW15_QER_VAL_, \
 	DT_INST_STRING_TOKEN(inst, quad_enable_requirements))
 #define FLASH_DW15_QER(inst) COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, quad_enable_requirements), \
@@ -844,12 +891,12 @@ BUILD_ASSERT((CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE % 4096) == 0,
 		.pages_count = FLASH_SIZE_INST(inst) \
 			     / CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
 	},
-#define FLASH_PAGE_LAYOUT_CHECK(inst) \
+#define _FLASH_PAGE_LAYOUT_CHECK(inst) \
 BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size, instance " #inst);
 #else
 #define _FLASH_PAGE_LAYOUT_DEFINE(inst)
-#define FLASH_PAGE_LAYOUT_CHECK(inst)
+#define _FLASH_PAGE_LAYOUT_CHECK(inst)
 #endif
 
 /* MSPI bus must be initialized before this device. */
@@ -859,22 +906,36 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 #define INIT_PRIORITY UTIL_INC(CONFIG_MSPI_INIT_PRIORITY)
 #endif
 
-#define FLASH_DEFINE(inst)                                                     \
+#define _FLASH_DATA_DEFINE(inst)						\
 	struct flash_mspi_device_data flash_dev_##inst = {                     \
 		.dw15_qer = FLASH_DW15_QER(inst),                              \
 		.flash_size = FLASH_SIZE_INST(inst),                           \
-		.jedec_id = DT_INST_PROP(inst, jedec_id),                      \
+		.jedec_id = DT_INST_PROP_OR(inst, jedec_id, {0}),		\
 		_FLASH_PAGE_LAYOUT_DEFINE(inst)                                \
 	};                                                                     \
 	struct flash_mspi_mode_data flash_dev_mode_##inst = {                  \
 		.jedec_cmds = FLASH_CMDS(inst),                                \
-		.quirks = FLASH_QUIRKS(inst),                                  \
 		.flash_data = &flash_dev_##inst,                               \
 		.dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		       \
 	};
 
+#define _FLASH_SUPPORT_MACRO(compat, io_mode)                                   \
+	DT_CAT4(FLASH_, compat, _, io_mode)
+
+#define FLASH_SUPPORT_MACRO(inst)                                               \
+	_FLASH_SUPPORT_MACRO(DT_INST_STRING_TOKEN_BY_IDX(inst, compatible, 0),  \
+		DT_INST_STRING_TOKEN(inst, mspi_io_mode))
+
+#define FLASH_DATA_DEFINE(inst, flash_macro)                                    \
+	COND_CODE_1(DT_CAT(flash_macro, _SUPPORTED),                            \
+	(), (_FLASH_DATA_DEFINE(inst)))
+
+#define FLASH_DATA_INIT(inst, flash_macro)                                      \
+	.mode_data = COND_CODE_1(DT_CAT(flash_macro, _SUPPORTED),               \
+		(&DT_CAT(flash_macro, _DATA)), (&flash_dev_mode_##inst))
+
 #define FLASH_MSPI_NOR_INST(inst)						\
-	FLASH_DEFINE(inst);                                                     \
+	FLASH_DATA_DEFINE(inst, FLASH_SUPPORT_MACRO(inst))                      \
 	BUILD_ASSERT((DT_INST_ENUM_IDX(inst, mspi_io_mode) ==			\
 		      MSPI_IO_MODE_SINGLE) ||					\
 		     (DT_INST_ENUM_IDX(inst, mspi_io_mode) ==			\
@@ -883,7 +944,6 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		      MSPI_IO_MODE_OCTAL),					\
 		"Only 1x, 1-4-4 and 8x I/O modes are supported for now");	\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
-	static struct flash_mspi_nor_data dev##inst##_data;			\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
@@ -901,9 +961,14 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
 				   / 1000,))					\
 		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),	\
-		.mode_data = &flash_dev_mode_##inst,                            \
+	COND_CODE_1(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE, (),			\
+		(FLASH_DATA_INIT(inst, FLASH_SUPPORT_MACRO(inst))))		\
 	};									\
-	FLASH_PAGE_LAYOUT_CHECK(inst)						\
+	static struct flash_mspi_nor_data dev##inst##_data = {			\
+	COND_CODE_1(CONFIG_FLASH_MSPI_NOR_RUNTIME_PROBE,			\
+		(FLASH_DATA_INIT(inst, FLASH_SUPPORT_MACRO(inst))), ())		\
+	};									\
+	_FLASH_PAGE_LAYOUT_CHECK(inst)						\
 	DEVICE_DT_INST_DEFINE(inst,						\
 		drv_init, PM_DEVICE_DT_INST_GET(inst),				\
 		&dev##inst##_data, &dev##inst##_config,				\
