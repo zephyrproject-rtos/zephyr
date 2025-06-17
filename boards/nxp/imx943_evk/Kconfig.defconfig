@@ -6,3 +6,26 @@ config INTC_INIT_PRIORITY
 
 config MBOX_INIT_PRIORITY
 	default 3
+
+if ETH_NXP_IMX_NETC
+
+config ETH_NXP_IMX_RX_RING_LEN
+	default 16
+
+config ETH_NXP_IMX_TX_RING_LEN
+	default 16
+
+config NET_IF_MAX_IPV4_COUNT
+	default 6
+
+config NET_IF_MAX_IPV6_COUNT
+	default 6
+
+endif # ETH_NXP_IMX_NETC
+
+if NET_GPTP
+
+config NET_GPTP_MONITOR_SYNC_STATUS
+	default y
+
+endif # NET_GPTP
