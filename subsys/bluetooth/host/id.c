@@ -1997,13 +1997,13 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			 * problem.
 			 */
 #if defined(CONFIG_BT_OBSERVER)
-			bool scan_enabled = false;
+			bool scan_disabled = false;
 
 			/* If active scan with NRPA is ongoing refresh NRPA */
 			if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
 			    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-				scan_enabled = true;
+				scan_disabled = true;
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
 			}
 #endif /* defined(CONFIG_BT_OBSERVER) */
@@ -2011,7 +2011,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
 #if defined(CONFIG_BT_OBSERVER)
-			if (scan_enabled) {
+			if (scan_disabled) {
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 			}
 #endif /* defined(CONFIG_BT_OBSERVER) */
