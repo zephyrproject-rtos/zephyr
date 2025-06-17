@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
     branches: [main]
   schedule:
-  # Run daily at 14:05
-  - cron: '5 14 * * *'
+  # Run daily at 00:05
+  - cron: '5 00 * * *'
 
 permissions:
   contents: read
