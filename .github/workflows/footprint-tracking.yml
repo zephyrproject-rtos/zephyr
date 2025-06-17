@@ -1,9 +1,8 @@
 name: Footprint Tracking
 
-# Run every 12 hours and on tags
 on:
   schedule:
-    - cron: '50 1/12 * * *'
+    - cron: '50 00 * * *'
   push:
     paths:
       - 'VERSION'
