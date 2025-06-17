@@ -58,6 +58,9 @@
 };
 
 &cpuapp_rram {
+	/* TODO: revert this hack when TF-M update is available that fixes partition sizes */
+	reg = <0x0 DT_SIZE_K(1022)>;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
