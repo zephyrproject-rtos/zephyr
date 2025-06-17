@@ -503,6 +503,13 @@ int rpu_disable(void)
 {
 	int ret;
 
+	#ifdef CONFIG_NRF70_SR_COEX_RF_SWITCH
+	ret = sr_gpio_remove();
+	if (ret) {
+		goto out;
+	}
+#endif
+
 	ret = rpu_pwroff();
 	if (ret) {
 		goto out;
@@ -512,12 +519,7 @@ int rpu_disable(void)
 		goto out;
 	}
 
-#ifdef CONFIG_NRF70_SR_COEX_RF_SWITCH
-	ret = sr_gpio_remove();
-	if (ret) {
-		goto out;
-	}
-#endif
+
 	qdev = NULL;
 	cfg = NULL;
 
