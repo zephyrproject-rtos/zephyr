@@ -91,12 +91,24 @@ void relocate_vector_table(void)
 	write_vbar(CONFIG_KERNEL_VM_BASE);
 }
 
+#define MCAN_CLK_INIT_DEFN(idx, n)								\
+		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mcan##n)),			\
+			   (PMC_REGS->PMC_PCR = PMC_PCR_PID(ID_MCAN##n);			\
+			    PMC_REGS->PMC_PCR = (PMC_REGS->PMC_PCR & PMC_PCR_MCKID_Msk) |	\
+						PMC_PCR_CMD_Msk |				\
+						PMC_PCR_GCLKEN_Msk | PMC_PCR_EN_Msk |		\
+						PMC_PCR_GCLKDIV(4) | PMC_PCR_GCLKCSS_SYSPLL |	\
+						PMC_PCR_PID(ID_MCAN##n);))
+
 void soc_early_init_hook(void)
 {
 	/* Enable Generic clock for PIT64B0 for system tick */
 	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
 			    PMC_PCR_GCLKDIV(40 - 1) | PMC_PCR_GCLKCSS_SYSPLL |
 			    PMC_PCR_PID(ID_PIT64B0);
+
+	/* Enable generic clock for MCANx, frequency SYSPLL / (4 + 1) = 80MHz */
+	FOR_EACH_IDX(MCAN_CLK_INIT_DEFN, (), 0, 1, 2, 3, 4, 5)
 
 	/* Enable Generic clock for SDMMC0, frequency is 200MHz */
 	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
