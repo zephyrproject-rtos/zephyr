@@ -39,7 +39,7 @@ struct mspi_cadence_data {
 	struct k_mutex lock;
 };
 
-/* helper function to easily modify parts of registers */
+/* Helper function to easily modify parts of registers */
 static void mspi_cadence_set_bits_shifted(const uint32_t value, const uint32_t num_bits,
 					  const uint32_t shift, const mem_addr_t address)
 {
@@ -213,7 +213,7 @@ static int mspi_cadence_init(const struct device *dev)
 		return ret;
 	}
 
-	/* disable MSPI */
+	/* Disable MSPI */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, ENABLE_SPI, base_addr);
 
 	ret = mspi_cadence_wait_for_idle(dev);
@@ -221,22 +221,22 @@ static int mspi_cadence_init(const struct device *dev)
 		return ret;
 	}
 
-	/* disable direct access the driver always uses indirect accesses */
+	/* Disable direct access the driver always uses indirect accesses */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, ENB_DIR_ACC_CTRL, base_addr);
 
-	/* disable DTR protocol */
+	/* Disable DTR protocol */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, ENABLE_DTR_PROTOCOL, base_addr);
 
-	/* leave XIP mode */
+	/* Leave XIP mode */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, ENTER_XIP_MODE, base_addr);
 
-	/* set how many FSS0 SRAM locations are allocated for read; the other ones
+	/* Set how many FSS0 SRAM locations are allocated for read; the other ones
 	 * are allocated for writes
 	 */
 	MSPI_CADENCE_REG_WRITE(config->sram_allocated_for_read, SRAM_PARTITION_CFG, ADDR,
 			       base_addr);
 
-	/* only allow one CS to be active */
+	/* Only allow one CS to be active */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, PERIPH_SEL_DEC, base_addr);
 
 	/* CS selection is based on "manual" pin selection */
@@ -248,65 +248,65 @@ static int mspi_cadence_init(const struct device *dev)
 	/* Set baud rate division to 32; formula: (n + 1) * 2 */
 	MSPI_CADENCE_REG_WRITE(15, CONFIG, MSTR_BAUD_DIV, base_addr);
 
-	/* disable dual byte opcodes */
+	/* Disable dual byte opcodes */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, DUAL_BYTE_OPCODE_EN, base_addr);
 
-	/* disable PHY pipeline mode */
+	/* Disable PHY pipeline mode */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, PIPELINE_PHY, base_addr);
 
-	/* disable PHY module generally */
+	/* Disable PHY module generally */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, PHY_MODE_ENABLE, base_addr);
 
-	/* disable CRC */
+	/* Disable CRC */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, CRC_ENABLE, base_addr);
 
-	/* disable DMA generally since it's not supported */
+	/* Disable DMA generally since it's not supported */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, ENB_DMA_IF, base_addr);
 
-	/* disable automatic write protection disablement of MSPI peripherals */
+	/* Disable automatic write protection disablement of MSPI peripherals */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, WR_PROT_FLASH, base_addr);
 
-	/* disable possible reset pin */
+	/* Disable possible reset pin */
 	MSPI_CADENCE_REG_WRITE(0, CONFIG, RESET_PIN, base_addr);
 
-	/* general clock cycle delays */
+	/* General clock cycle delays */
 	MSPI_CADENCE_REG_WRITE(timing_config->nss, DEV_DELAY, D_NSS, base_addr);
 	MSPI_CADENCE_REG_WRITE(timing_config->btwn, DEV_DELAY, D_BTWN, base_addr);
 	MSPI_CADENCE_REG_WRITE(timing_config->after, DEV_DELAY, D_AFTER, base_addr);
 	MSPI_CADENCE_REG_WRITE(timing_config->init, DEV_DELAY, D_INIT, base_addr);
 
-	/* set trigger reg address and range to 0 */
+	/* Set trigger reg address and range to 0 */
 	MSPI_CADENCE_REG_WRITE(0, IND_AHB_ADDR_TRIGGER, ADDR, base_addr);
 	MSPI_CADENCE_REG_WRITE(0, INDIRECT_TRIGGER_ADDR_RANGE, IND_RANGE_WIDTH, base_addr);
 
-	/* disable loop-back via DQS */
+	/* Disable loop-back via DQS */
 	MSPI_CADENCE_REG_WRITE(1, RD_DATA_CAPTURE, BYPASS, base_addr);
 
-	/* disable auto polling for write completion */
+	/* Disable auto polling for write completion */
 	MSPI_CADENCE_REG_WRITE(1, WRITE_COMPLETION_CTRL, DISABLE_POLLING, base_addr);
 
-	/* disable automatic write enable command before indirect write transactions */
+	/* Disable automatic write enable command before indirect write transactions */
 	MSPI_CADENCE_REG_WRITE(0, DEV_INSTR_WR_CONFIG, WEL_DIS, base_addr);
 
-	/* reset mode bit (hardware CRC checking on read, if supported) */
+	/* Reset mode bit (hardware CRC checking on read, if supported) */
 	MSPI_CADENCE_REG_WRITE(0, DEV_INSTR_RD_CONFIG, MODE_BIT_ENABLE, base_addr);
 
-	/* disable DDR mode */
+	/* Disable DDR mode */
 	MSPI_CADENCE_REG_WRITE(0, DEV_INSTR_RD_CONFIG, DDR_EN, base_addr);
 
 	uint32_t val;
 
-	/* disable all interrupts via masking */
+	/* Disable all interrupts via masking */
 	val = sys_read32(base_addr + CADENCE_MSPI_IRQ_MASK_REG);
 	val &= ~CADENCE_MSPI_IRQ_MASK_ALL;
 	sys_write32(val, base_addr + CADENCE_MSPI_IRQ_MASK_REG);
 
-	/* clear currently pending interrupts */
+	/* Clear currently pending interrupts */
 	val = sys_read32(base_addr + CADENCE_MSPI_IRQ_STATUS_REG);
 	val |= CADENCE_MSPI_IRQ_STATUS_ALL;
 	sys_write32(val, base_addr + CADENCE_MSPI_IRQ_STATUS_REG);
 
-	/* re-enable MSPI controller */
+	/* Re-enable MSPI controller */
 	MSPI_CADENCE_REG_WRITE(1, CONFIG, ENABLE_SPI, base_addr);
 
 	return 0;
@@ -319,7 +319,7 @@ static int mspi_cadence_stig(const struct device *controller, const struct mspi_
 	const struct mspi_xfer_packet *packet = &req->packets[index];
 	uint32_t dummy_cycles = 0;
 
-	/* reset previous command configuration completely */
+	/* Reset previous command configuration completely */
 	sys_write32(0, base_address + CADENCE_MSPI_FLASH_CMD_CTRL_REG);
 
 	if (packet->dir == MSPI_RX) {
@@ -359,7 +359,7 @@ static int mspi_cadence_stig(const struct device *controller, const struct mspi_
 		MSPI_CADENCE_REG_WRITE(packet->address, FLASH_CMD_ADDR, ADDR, base_address);
 	}
 
-	/* start transaction */
+	/* Start transaction */
 	MSPI_CADENCE_REG_WRITE(1, FLASH_CMD_CTRL, CMD_EXEC, base_address);
 
 	uint32_t exec_status =
@@ -429,7 +429,7 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 		}
 	}
 
-	/* wait until official indirect read completion */
+	/* Wait until official indirect read completion */
 	uint32_t done_status = MSPI_CADENCE_REG_READ_MASKED(INDIRECT_READ_XFER_CTRL,
 							    IND_OPS_DONE_STATUS, base_address);
 	while (done_status == 0 && k_uptime_get() - start_time < req->timeout) {
