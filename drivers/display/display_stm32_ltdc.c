@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022 Byte-Lab d.o.o. <dev@byte-lab.com>
  * Copyright 2023 NXP
- * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,8 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
+
+#include "display_stm32_ltdc.h"
 
 /* Horizontal synchronization pulse polarity */
 #define LTDC_HSPOL_ACTIVE_LOW     0x00000000
@@ -84,7 +86,7 @@ struct display_stm32_ltdc_config {
 	const struct device *display_controller;
 };
 
-static void stm32_ltdc_global_isr(const struct device *dev)
+void __weak stm32_ltdc_global_isr(const struct device *dev)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 
