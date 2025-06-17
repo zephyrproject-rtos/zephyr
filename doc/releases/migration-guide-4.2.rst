@@ -198,6 +198,9 @@ Ethernet
   together with :c:func:`net_eth_get_phy` should be used instead to configure the link
   (:github:`90652`).
 
+* :c:func:`phy_configure_link` got a ``flags`` parameter. Set it to ``0`` to preserve the old
+  behavior (:github:`91354`).
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
