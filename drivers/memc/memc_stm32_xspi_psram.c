@@ -389,12 +389,12 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 	.hxspi = {
 		.Instance = (XSPI_TypeDef *)DT_REG_ADDR(STM32_XSPI_NODE),
 		.Init = {
-			.FifoThresholdByte = 8U,
+			.FifoThresholdByte = 2U,
 			.MemoryMode = HAL_XSPI_SINGLE_MEM,
 			.MemoryType = (DT_INST_PROP(0, io_x16_mode) ?
 					HAL_XSPI_MEMTYPE_APMEM_16BITS :
 					HAL_XSPI_MEMTYPE_APMEM),
-			.ChipSelectHighTimeCycle = 1U,
+			.ChipSelectHighTimeCycle = 5U,
 			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
 			.ClockMode = HAL_XSPI_CLOCK_MODE_0,
 			.WrapSize = HAL_XSPI_WRAP_NOT_SUPPORTED,
