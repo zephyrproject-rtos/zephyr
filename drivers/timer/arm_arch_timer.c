@@ -236,10 +236,10 @@ static int sys_clock_driver_init(void)
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	cycles_max = CYCLES_MAX_5;
 #endif
-	arm_arch_timer_enable(true);
 	last_tick = arm_arch_timer_count() / CYC_PER_TICK;
 	last_cycle = last_tick * CYC_PER_TICK;
 	arm_arch_timer_set_compare(last_cycle + CYC_PER_TICK);
+	arm_arch_timer_enable(true);
 	irq_enable(ARM_ARCH_TIMER_IRQ);
 	arm_arch_timer_set_irq_mask(false);
 
