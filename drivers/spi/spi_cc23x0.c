@@ -232,6 +232,12 @@ static int spi_cc23x0_configure(const struct device *dev,
 			   protocol, SPI_MODE_CONTROLLER,
 			   config->frequency, SPI_CC23_DATA_WIDTH);
 
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
+		HWREG(cfg->base + SPI_O_CTL1) |= SPI_CTL1_LBM;
+	} else {
+		HWREG(cfg->base + SPI_O_CTL1) &= ~SPI_CTL1_LBM;
+	}
+
 	data->ctx.config = config;
 
 	/* Configure Rx FIFO level */
