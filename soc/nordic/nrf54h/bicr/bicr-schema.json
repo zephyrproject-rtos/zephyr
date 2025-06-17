@@ -11,8 +11,8 @@
           "title": "Power supply scheme",
           "enumNames": [
             "Unconfigured (system will not boot)",
-            "VDDH supplied with 2.1-5.5 V and VDD regulated by the chip (inductor present)",
-            "Both VDD and VDDH supplied with 1.8 V (inductor present)"
+            "Both VDD and VDDH supplied with 1.8 V (inductor present)",
+            "VDDH supplied with 2.1-5.5 V and VDD regulated by the chip (inductor present)"
           ],
           "enum": [
             "UNCONFIGURED",
