@@ -32,7 +32,7 @@
 		word-addressable;
 		cs-interval-unit = <1>;
 		cs-interval = <2>;
-		cs-hold-time = <0>;
+		cs-hold-time = <3>;
 		cs-setup-time = <3>;
 		data-valid-time = <1>;
 		column-space = <3>;
