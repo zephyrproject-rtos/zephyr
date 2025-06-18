@@ -33,7 +33,8 @@ bool pm_suspend_devices(void)
 
 	num_susp = 0;
 
-	for (const struct device *dev = devs + devc - 1; dev >= devs; dev--) {
+	for (size_t i = devc; i-- > 0;) {
+		const struct device *dev = &devs[i - 1];
 		int ret;
 
 		/*
