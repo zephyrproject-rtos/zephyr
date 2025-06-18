@@ -17,7 +17,7 @@ import yaml
 # bindings base
 BINDINGS_PATH = [Path("dts/bindings/")]
 BINDINGS_PROPERTIES_AL = None
-with open(Path(__file__).parent / 'bindings_properties_allowlist.yaml') as f:
+with open(Path(__file__).parents[1] / 'bindings_properties_allowlist.yaml') as f:
     allowlist = yaml.safe_load(f.read())
     if allowlist is not None:
         BINDINGS_PROPERTIES_AL = set(allowlist)
