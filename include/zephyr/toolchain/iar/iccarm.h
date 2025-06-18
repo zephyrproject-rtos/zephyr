@@ -243,9 +243,13 @@ do {                                                                    \
 #define __WARN1(s) __PRAGMA(message = #s)
 
 /* Generic message */
-#ifndef __DEPRECATED_MACRO
+#ifndef CONFIG_DEPRECATION_TEST
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
+#else
+#define __DEPRECATED_MACRO
 #endif
+
+
 
 /* These macros allow having ARM asm functions callable from thumb */
 
