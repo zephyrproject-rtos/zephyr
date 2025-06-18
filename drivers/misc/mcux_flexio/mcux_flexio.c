@@ -77,6 +77,10 @@ static void mcux_flexio_isr(const struct device *dev)
 	uint32_t shifter_status_flag = FLEXIO_GetShifterStatusFlags(base);
 	uint32_t shifter_error_flag = FLEXIO_GetShifterErrorFlags(base);
 
+	/* Not all shifter interrupt is enabled. Only handle those interrupt enabled. */
+	shifter_status_flag &= base->SHIFTSIEN;
+	shifter_error_flag &= base->SHIFTEIEN;
+
 	if (shifter_status_flag || shifter_error_flag) {
 		for (uint32_t idx = 0; idx < map_shifter_child_count; idx++) {
 			if (((shifter_status_flag | shifter_error_flag) & BIT(idx)) != 0) {
@@ -96,6 +100,9 @@ static void mcux_flexio_isr(const struct device *dev)
 	nxp_flexio_map_child_t *map_timer_child = data->map_timer_child;
 	uint32_t map_timer_child_count = data->map_timer_child_count;
 	uint32_t timer_status_flag = FLEXIO_GetTimerStatusFlags(base);
+
+	/* Not all timer interrupt is enabled. Only handle those interrupt enabled. */
+	timer_status_flag &= base->TIMIEN;
 
 	if (timer_status_flag) {
 		for (uint32_t idx = 0; idx < map_timer_child_count; idx++) {
