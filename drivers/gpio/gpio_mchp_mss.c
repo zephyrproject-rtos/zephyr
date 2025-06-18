@@ -15,6 +15,12 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+/* Is MSS GPIO module 'resets' line property defined */
+#define MSS_GPIO_RESET_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+
+#if MSS_GPIO_RESET_ENABLED
+#include <zephyr/drivers/reset.h>
+#endif
 
 #define MSS_GPIO_INPUT_MODE               0x02
 #define MSS_GPIO_OUTPUT_MODE              0x05
@@ -48,6 +54,9 @@ struct mss_gpio_config {
 	uintptr_t            gpio_base_addr;
 	uint32_t                gpio_irq_base;
 	mss_gpio_cfg_func_t    gpio_cfg_func;
+#if MSS_GPIO_RESET_ENABLED
+	struct reset_dt_spec reset_spec;
+#endif
 };
 
 struct mss_gpio_data {
@@ -209,10 +218,15 @@ static DEVICE_API(gpio, mss_gpio_driver) = {
 static int mss_gpio_init(const struct device *dev)
 {
 	volatile struct mss_gpio_t *gpio = DEV_GPIO(dev);
+	const struct mss_gpio_config *cfg = DEV_GPIO_CFG(dev);
+
+#if MSS_GPIO_RESET_ENABLED
+	if (cfg->reset_spec.dev != NULL) {
+		(void)reset_line_deassert_dt(&cfg->reset_spec);
+	}
+#endif
 
 	gpio->gpio_irq = 0xFFFFFFFFU;
-
-	const struct mss_gpio_config *cfg = DEV_GPIO_CFG(dev);
 	/* Configure GPIO device */
 	cfg->gpio_cfg_func();
 	return 0;
@@ -239,7 +253,9 @@ static void mss_gpio_irq_handler(const struct device *dev)
 		},	\
 		.gpio_base_addr = DT_INST_REG_ADDR(n),	\
 		.gpio_irq_base  = DT_INST_IRQN(n),	\
-		.gpio_cfg_func = gpio_mss_gpio_cfg_func_##n	\
+		.gpio_cfg_func = gpio_mss_gpio_cfg_func_##n,	\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),	\
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))	\
 	};	\
 	\
 	DEVICE_DT_INST_DEFINE(n,	\
