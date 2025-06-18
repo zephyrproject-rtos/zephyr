@@ -1,0 +1,14 @@
+# STM32 VENC driver configuration options
+
+# Copyright (c) 2025 Hugues Fruchet <hugues.fruchet@foss.st.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_STM32_VENC
+	bool "STM32 video encoder (VENC) driver"
+	default y
+	depends on DT_HAS_ST_STM32_VENC_ENABLED
+	select HAS_STM32LIB
+	select USE_STM32_LL_VENC
+	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
+	help
+	  Enable driver for STM32 video encoder peripheral.
