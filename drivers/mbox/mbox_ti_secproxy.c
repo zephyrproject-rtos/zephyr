@@ -201,7 +201,7 @@ static void secproxy_mailbox_isr(const struct device *dev)
 		rx_data->size = msg_len;
 		rx_data->seq = GET_MSG_SEQ(buf);
 		if (data->cb[i_channel]) {
-			data->cb[i_channel](dev, i_channel, NULL, NULL);
+			data->cb[i_channel](dev, i_channel, data->user_data[i_channel], NULL);
 		}
 	}
 }
