@@ -5,7 +5,7 @@ description: Microchip Polarfire SOC SPI controller
 
 compatible: "microchip,mpfs-spi"
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, reset-device.yaml]
 
 properties:
   reg:
