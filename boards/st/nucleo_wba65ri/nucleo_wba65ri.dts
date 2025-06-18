@@ -123,9 +123,9 @@
 	status = "okay";
 };
 
-&spi1 {
-	pinctrl-0 = <&spi1_nss_pa12 &spi1_sck_pb4
-		     &spi1_miso_pb3 &spi1_mosi_pa15>;
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pb10
+		     &spi2_miso_pa9 &spi2_mosi_pc3>;
 	pinctrl-names = "default";
 	status = "okay";
 };
