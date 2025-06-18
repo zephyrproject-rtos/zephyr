@@ -441,3 +441,12 @@ test_spi_ad2s1210: ad2s1210@35 {
 	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
 	clock-frequency = <8192000>;
 };
+
+test_spi_fxls8974: fxls8974@36 {
+	compatible = "nxp,fxls8974";
+	reg = <0x36>;
+	spi-max-frequency = <0>;
+	reset-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
