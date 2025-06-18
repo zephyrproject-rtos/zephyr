@@ -26,6 +26,7 @@ if ZVFS_EVENTFD
 
 config ZVFS_EVENTFD_MAX
 	int "Maximum number of ZVFS eventfd's"
+	default 8 if WIFI_NM_WPA_SUPPLICANT
 	default 1
 	range 1 4096
 	help
