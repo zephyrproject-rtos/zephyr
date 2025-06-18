@@ -64,6 +64,7 @@ struct mc_vsc8541_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
 	enum vsc8541_interface microchip_interface_type;
+	enum phy_link_speed default_speeds;
 	uint8_t rgmii_rx_clk_delay;
 	uint8_t rgmii_tx_clk_delay;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
@@ -316,6 +317,8 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 
 	k_thread_name_set(&data->link_monitor_thread, "phy-link-mon");
 
+	phy_mc_vsc8541_cfg_link(dev, cfg->default_speeds, 0);
+
 	return 0;
 }
 
@@ -546,6 +549,7 @@ static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 		.microchip_interface_type = DT_INST_ENUM_IDX(n, microchip_interface_type),         \
 		.rgmii_rx_clk_delay = DT_INST_PROP(n, microchip_rgmii_rx_clk_delay),               \
 		.rgmii_tx_clk_delay = DT_INST_PROP(n, microchip_rgmii_tx_clk_delay),               \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct mc_vsc8541_data mc_vsc8541_##n##_data;                                       \
