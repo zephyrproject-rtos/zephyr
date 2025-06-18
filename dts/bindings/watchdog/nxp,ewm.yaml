@@ -19,13 +19,13 @@ properties:
     description: Watchdog clock divider
     required: true
 
-  input_trigger_en:
+  input-trigger-en:
     type: boolean
     description: |
       When enabled the ewm_in signal can be used
       to assert the ewm.
 
-  input_trigger_active_high:
+  input-trigger-active-high:
     type: boolean
     description: |
       When enabled the ewm_in signal is active high.
