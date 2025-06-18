@@ -61,14 +61,14 @@ const mcglite_config_t mcgliteConfig_BOARD_BootClockRUN = {
 };
 
 const sim_clock_config_t simConfig_BOARD_BootClockRUN = {
-	.er32kSrc = DT_PROP_OR(DT_INST(0, nxp_kinetis_sim), er32k_select, 0),
+	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk)) |
 		   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk)),
 };
 
 const osc_config_t oscConfig_BOARD_BootClockRUN = {
 	.freq = DT_PROP(OSC_NODE, clock_frequency),
-	.capLoad = DT_PROP(OSC_NODE, load_capacitance_picofarads),
+	.capLoad = DT_PROP_OR(OSC_NODE, load_capacitance_picofarads, 0),
 #if DT_ENUM_HAS_VALUE(OSC_NODE, mode, external)
 	.workMode = kOSC_ModeExt,
 #elif DT_ENUM_HAS_VALUE(OSC_NODE, mode, low_power)
