@@ -266,7 +266,7 @@
 		};
 
 		pinctrl: pin-controller@56020000 {
-			compatible = "st,stm32-pinctrl";
+			compatible = "st,stm32n6-pinctrl", "st,stm32-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x56020000 0x2000>;
