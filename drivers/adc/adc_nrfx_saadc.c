@@ -113,6 +113,7 @@ struct driver_data {
 	bool enable_internal_timer;
 #endif
 	bool internal_timer_enabled;
+	bool correct_single_ended;
 };
 
 static struct driver_data m_data = {
@@ -126,6 +127,7 @@ static struct driver_data m_data = {
 	.enable_internal_timer = DT_INST_PROP(0, enable_internal_timer),
 #endif
 	.internal_timer_enabled = false,
+	.correct_single_ended = true,
 };
 
 /* Maximum value of the internal timer interval in microseconds. */
@@ -735,6 +737,20 @@ static int adc_nrfx_read(const struct device *dev,
 	int error;
 
 	adc_context_lock(&m_data.ctx, false, NULL);
+	m_data.correct_single_ended = true;
+	error = start_read(dev, sequence);
+	adc_context_release(&m_data.ctx, error);
+
+	return error;
+}
+
+int adc_nrf_read_single_ended_negative_results(const struct device *dev,
+					       const struct adc_sequence *sequence)
+{
+	int error;
+
+	adc_context_lock(&m_data.ctx, false, NULL);
+	m_data.correct_single_ended = false;
 	error = start_read(dev, sequence);
 	adc_context_release(&m_data.ctx, error);
 
@@ -750,6 +766,7 @@ static int adc_nrfx_read_async(const struct device *dev,
 	int error;
 
 	adc_context_lock(&m_data.ctx, true, async);
+	m_data.correct_single_ended = true;
 	error = start_read(dev, sequence);
 	adc_context_release(&m_data.ctx, error);
 
@@ -762,8 +779,11 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 	nrfx_err_t err;
 
 	if (event->type == NRFX_SAADC_EVT_DONE) {
-		if (has_single_ended(&m_data.ctx.sequence)) {
-			correct_single_ended(&m_data.ctx.sequence, event->data.done.p_buffer);
+		if (m_data.correct_single_ended) {
+			if (has_single_ended(&m_data.ctx.sequence)) {
+				correct_single_ended(&m_data.ctx.sequence,
+						     event->data.done.p_buffer);
+			}
 		}
 
 		dmm_buffer_in_release(
