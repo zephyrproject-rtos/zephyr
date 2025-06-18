@@ -6056,6 +6056,10 @@ void bt_l2cap_br_init(void)
 		bt_avctp_init();
 	}
 
+	if (IS_ENABLED(CONFIG_BT_AVCTP_BROWSING)) {
+		bt_avctp_browsing_init();
+	}
+
 	bt_sdp_init();
 
 	if (IS_ENABLED(CONFIG_BT_A2DP)) {
