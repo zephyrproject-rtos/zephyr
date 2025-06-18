@@ -192,6 +192,10 @@ __weak void clock_init(void)
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ewm0), nxp_ewm, okay)) {
 		CLOCK_EnableClock(kCLOCK_Ewm0);
 	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(edma), nxp_mcux_edma, okay)) {
+		CLOCK_EnableClock(kCLOCK_Dma0);
+	}
 }
 
 static void vbat_init(void)
