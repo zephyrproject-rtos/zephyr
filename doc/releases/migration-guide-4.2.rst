@@ -321,6 +321,10 @@ Timer
         reg-names = "mtime", "mtimecmp";
     };
 
+* It is now possible to use a ``timebase-frequency`` property in the cpus DTS group to provide
+  the value for :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` instead of
+  using a value: :github:`91296`
+
 Modem
 =====
 
