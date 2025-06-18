@@ -617,7 +617,7 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 
 	cp->override_parameters_length = override_parameters_length;
 
-	struct bt_hci_cmd_hdr *hdr = (struct bt_hci_cmd_hdr *)buf->data;
+	struct bt_hci_cmd_hdr *hdr = (struct bt_hci_cmd_hdr *)&buf->data[1];
 
 	hdr->param_len += override_parameters_length;
 
