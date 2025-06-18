@@ -85,6 +85,8 @@ tests:
       - platform:frdm_mcxn236/mcxn236:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
       - platform:frdm_mcxn947/mcxn947/cpu0:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
       - platform:frdm_mcxn947/mcxn947/cpu0/qspi:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
+      - platform:frdm_mcxw72/mcxw727c/cpu0:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
+      - platform:frdm_mcxw71/mcxw716c:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
   drivers.uart.async_api.lpuart.rt_nocache:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART and CONFIG_CPU_HAS_DCACHE
     harness: ztest
