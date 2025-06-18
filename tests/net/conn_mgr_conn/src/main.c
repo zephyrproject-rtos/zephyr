@@ -897,6 +897,91 @@ ZTEST(conn_mgr_conn, test_timeout_invalid)
 		"Getting timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnone");
 }
 
+/* Verify that interface usage calls propagate to implementations */
+ZTEST(conn_mgr_conn, test_if_used)
+{
+	struct test_conn_data *ifa_data = conn_mgr_if_get_data(ifa1);
+	struct test_conn_data *ifb_data = conn_mgr_if_get_data(ifb);
+
+	/* No faults */
+	conn_mgr_if_used(ifnull);
+	conn_mgr_if_used(ifnone);
+
+	/* In use with no timeouts */
+	conn_mgr_if_used(ifa1);
+	conn_mgr_if_used(ifb);
+	zassert_equal(0, ifa_data->call_cnt_a);
+	zassert_equal(0, ifb_data->call_cnt_b);
+
+	/* One interface with timeout */
+	conn_mgr_if_set_idle_timeout(ifa1, 10);
+	conn_mgr_if_used(ifa1);
+	conn_mgr_if_used(ifb);
+	zassert_equal(1, ifa_data->call_cnt_a);
+	zassert_equal(0, ifb_data->call_cnt_b);
+
+	/* Second interface with timeout */
+	conn_mgr_if_set_idle_timeout(ifb, 10);
+	conn_mgr_if_used(ifa1);
+	conn_mgr_if_used(ifb);
+	zassert_equal(2, ifa_data->call_cnt_a);
+	zassert_equal(1, ifb_data->call_cnt_b);
+
+	/* Revert to no timeouts */
+	conn_mgr_if_set_idle_timeout(ifa1, CONN_MGR_IF_NO_TIMEOUT);
+	conn_mgr_if_set_idle_timeout(ifb, CONN_MGR_IF_NO_TIMEOUT);
+	conn_mgr_if_used(ifa1);
+	conn_mgr_if_used(ifb);
+	zassert_equal(2, ifa_data->call_cnt_a);
+	zassert_equal(1, ifb_data->call_cnt_b);
+}
+
+/* Verify that idle timeout get/set functions operate correctly (A/B) */
+ZTEST(conn_mgr_conn, test_idle_timeout)
+{
+	struct conn_mgr_conn_binding *ifa1_binding = conn_mgr_if_get_binding(ifa1);
+
+	/* Try setting idle timeout */
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifa1, 99), 0,
+				"Setting idle timeout should succeed for ifa1");
+
+	/* Verify success */
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifa1), 99,
+				"Idle timeout should be set to 99 for ifa1");
+
+	/* Verify that the conn struct agrees, since this is what implementations may use */
+	zassert_equal(ifa1_binding->idle_timeout, 99,
+				"Idle timeout set should affect conn struct");
+
+	/* Try unsetting idle timeout */
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifa1, CONN_MGR_IF_NO_TIMEOUT), 0,
+				"Unsetting idle timeout should succeed for ifa1");
+
+	/* Verify success */
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifa1), CONN_MGR_IF_NO_TIMEOUT,
+				"Idle timeout should be unset for ifa1");
+
+	/* Verify that the conn struct agrees, since this is what implementations may use */
+	zassert_equal(ifa1_binding->idle_timeout, CONN_MGR_IF_NO_TIMEOUT,
+				"Idle timeout unset should affect conn struct");
+}
+
+/* Verify that idle timeout get/set fail and behave as expected respectively for invalid ifaces */
+ZTEST(conn_mgr_conn, test_idle_timeout_invalid)
+{
+	/* Verify set failure */
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifnull, 99), -ENOTSUP,
+		"Setting idle timeout should fail for ifnull");
+	zassert_equal(conn_mgr_if_set_idle_timeout(ifnone, 99), -ENOTSUP,
+		"Setting idle timeout should fail for ifnone");
+
+	/* Verify get graceful behavior */
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifnull), CONN_MGR_IF_NO_TIMEOUT,
+		"Getting idle timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnull");
+	zassert_equal(conn_mgr_if_get_idle_timeout(ifnone), CONN_MGR_IF_NO_TIMEOUT,
+		"Getting idle timeout should yield CONN_MGR_IF_NO_TIMEOUT for ifnone");
+}
+
 /* Verify that auto-connect works as expected. */
 ZTEST(conn_mgr_conn, test_auto_connect)
 {

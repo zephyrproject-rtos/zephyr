@@ -119,6 +119,13 @@ static int test_connect(struct conn_mgr_conn_binding *const binding, bool a)
 	return 0;
 }
 
+static void test_used(struct conn_mgr_conn_binding *const binding, bool a)
+{
+	struct test_conn_data *data = binding->ctx;
+
+	inc_call_count(data, a);
+}
+
 static int test_disconnect(struct conn_mgr_conn_binding *const binding, bool a)
 {
 	struct test_conn_data *data = binding->ctx;
@@ -233,6 +240,16 @@ static int test_connect_b(struct conn_mgr_conn_binding *const binding)
 	return test_connect(binding, false);
 }
 
+static void test_used_a(struct conn_mgr_conn_binding *const binding)
+{
+	test_used(binding, true);
+}
+
+static void test_used_b(struct conn_mgr_conn_binding *const binding)
+{
+	test_used(binding, false);
+}
+
 static int test_disconnect_a(struct conn_mgr_conn_binding *const binding)
 {
 	return test_disconnect(binding, true);
@@ -245,6 +262,7 @@ static int test_disconnect_b(struct conn_mgr_conn_binding *const binding)
 
 static struct conn_mgr_conn_api test_conn_api_a = {
 	.connect = test_connect_a,
+	.used = test_used_a,
 	.disconnect = test_disconnect_a,
 	.init = test_init_a,
 	.get_opt = test_get_opt_a,
@@ -253,6 +271,7 @@ static struct conn_mgr_conn_api test_conn_api_a = {
 
 static struct conn_mgr_conn_api test_conn_api_b = {
 	.connect = test_connect_b,
+	.used = test_used_b,
 	.disconnect = test_disconnect_b,
 	.init = test_init_b,
 };
