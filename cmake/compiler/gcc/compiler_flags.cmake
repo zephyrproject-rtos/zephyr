@@ -154,6 +154,10 @@ set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
 set_property(TARGET asm PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
 
+# Deprecation warning
+set_property(TARGET compiler PROPERTY no_deprecation_warning -Wno-deprecated-declarations)
+set_property(TARGET asm PROPERTY no_deprecation_warning -Wno-deprecated-declarations)
+
 # Disable exceptions flag in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions "-fno-exceptions")
 

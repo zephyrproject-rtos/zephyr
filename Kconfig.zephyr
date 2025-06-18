@@ -542,7 +542,6 @@ config LTO
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
-	depends on !DEPRECATION_TEST
 	help
 	  Turn on "warning as error" toolchain flags
 
