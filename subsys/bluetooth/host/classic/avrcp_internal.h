@@ -12,16 +12,30 @@
 #define AVCTP_VER_1_4 (0x0104u)
 #define AVRCP_VER_1_6 (0x0106u)
 
-#define AVRCP_CAT_1 BIT(0) /* Player/Recorder */
-#define AVRCP_CAT_2 BIT(1) /* Monitor/Amplifier */
-#define AVRCP_CAT_3 BIT(2) /* Tuner */
-#define AVRCP_CAT_4 BIT(3) /* Menu */
+#define AVRCP_CAT_1                       BIT(0) /* Player/Recorder */
+#define AVRCP_CAT_2                       BIT(1) /* Monitor/Amplifier */
+#define AVRCP_CAT_3                       BIT(2) /* Tuner */
+#define AVRCP_CAT_4                       BIT(3) /* Menu */
+#define AVRCP_PLAYER_APPLICATION_SETTINGS BIT(4) /* Bit 0 must also be set */
+#define AVRCP_GROUP_NAVIGATION            BIT(5) /* Bit 0 must also be set */
+#define AVRCP_BROWSING_SUPPORT            BIT(6)
+#define AVRCP_MULTIPLE_MEDIA_PLAYERS      BIT(7)
+#define AVRCP_COVER_ART_SUPPORT           BIT(8)
 
 #define AVRCP_SUBUNIT_PAGE              (0) /* Fixed value according to AVRCP */
 #define AVRCP_SUBUNIT_EXTENSION_CODE    (7) /* Fixed value according to TA Document 2001012 */
 #define BT_AVRCP_UNIT_INFO_CMD_SIZE     (5)
 #define BT_AVRCP_UNIT_INFO_RSP_SIZE     (5)
 #define BT_AVRCP_SUBUNIT_INFO_RSP_SIZE  (5)
+
+#define BT_L2CAP_PSM_AVRCP 0x0017
+#define BT_L2CAP_PSM_AVRCP_BROWSING 0x001b
+
+#if defined(CONFIG_BT_AVRCP_BROWSING)
+#define AVRCP_BROWSING_ENABLE AVRCP_BROWSING_SUPPORT
+#else
+#define AVRCP_BROWSING_ENABLE 0
+#endif /* CONFIG_BT_AVRCP_BROWSING */
 
 typedef enum __packed {
 	BT_AVRCP_SUBUNIT_ID_ZERO = 0x0,
@@ -118,6 +132,12 @@ struct bt_avrcp_header {
 struct bt_avrcp_avc_pdu {
 	uint8_t pdu_id;
 	uint8_t pkt_type; /**< [7:2]: Reserved, [1:0]: Packet Type */
+	uint16_t param_len;
+	uint8_t param[];
+} __packed;
+
+struct bt_avrcp_avc_brow_pdu {
+	uint8_t pdu_id;
 	uint16_t param_len;
 	uint8_t param[];
 } __packed;
