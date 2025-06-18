@@ -29,6 +29,7 @@ void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 
 		flush.desc.frame_incomplete = !lv_display_flush_is_last(flush.display);
 		display_write(data->display_dev, flush.x, flush.y, &flush.desc, flush.buf);
+		lv_display_flush_ready(flush.display);
 
 		k_sem_give(&flush_complete);
 	}
