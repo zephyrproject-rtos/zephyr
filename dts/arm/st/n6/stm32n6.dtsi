@@ -1299,6 +1299,15 @@
 			resets = <&rctl STM32_RESET(AHB5, 31)>;
 			status = "disabled";
 		};
+
+		venc: venc@58005000 {
+			compatible = "st,stm32-venc";
+			reg = <0x58005000 0x1000>;
+			interrupts = <62 0>;
+			clocks = <&rcc STM32_CLOCK(APB5, 5)>;
+			resets = <&rctl STM32_RESET(APB5, 5)>;
+			status = "disabled";
+		};
 	};
 };
 
