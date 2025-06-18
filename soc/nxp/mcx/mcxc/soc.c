@@ -61,7 +61,7 @@ const mcglite_config_t mcgliteConfig_BOARD_BootClockRUN = {
 };
 
 const sim_clock_config_t simConfig_BOARD_BootClockRUN = {
-	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
+	.er32kSrc = DT_PROP_OR(DT_INST(0, nxp_kinetis_sim), er32k_select, 0),
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk)) |
 		   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk)),
 };
