@@ -11,6 +11,10 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 zephyr_library_sources_ifdef(CONFIG_INTEL_ADSP_IPC ipc.c)
 
+zephyr_library_sources_ifdef(CONFIG_GDBSTUB
+    gdbstub_backend_sram.c
+    )
+
 zephyr_library_sources(
     rimage_modules.c
     boot.c
