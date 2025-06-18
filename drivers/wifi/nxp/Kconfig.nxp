@@ -1055,7 +1055,7 @@ config NXP_WIFI_OWE
 
 config NXP_WIFI_TC_RELOCATE
 	bool "Traffic api relocate to RAM"
-	default y
+	default y if NXP_RW610
 	help
 	  Relocate Wi-Fi transmit and receive api to RAM to increase
 	  traffic throughput.
