@@ -3896,7 +3896,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  "<rts_threshold: rts threshold/off>.\n"
 		  "[-i, --iface=<interface index>] : Interface index.\n",
 		  cmd_wifi_ap_set_rts_threshold,
-		  2,
+		  3,
 		  2),
 	SHELL_SUBCMD_SET_END);
 
