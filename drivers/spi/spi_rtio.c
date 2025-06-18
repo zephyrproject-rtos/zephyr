@@ -192,7 +192,7 @@ int spi_rtio_copy(struct rtio *r,
 		rx_len = rx_bufs->buffers[rx].len;
 	} else {
 		rx_buf = NULL;
-		rx_len = tx_bufs->buffers[tx].len;
+		rx_len = (tx_bufs != NULL && tx < tx_count) ? tx_bufs->buffers[tx].len : 0;
 	}
 
 
