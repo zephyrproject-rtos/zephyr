@@ -35,11 +35,34 @@
  * u32 res_id;
  * u32 type;
  * u32 vma;
+ *
+ * The descriptor layout is:
+ *
+ *	--------------------
+ *	| Desc0  - slot0   |
+ *	--------------------
+ *	| Desc1  - slot1   |
+ *	--------------------
+ *	| Desc2  - slot2   |
+ *	--------------------
+ *	|       ...        |
+ *	--------------------
+ *	| Desc13  - slot13 |
+ *	--------------------
+ *	| Desc14  - slot14 |
+ *	--------------------
+ *
+ * Additional descriptor to describe the function of the partial slot at page0:
+ *
+ *	--------------------------
+ *	| Desc15  - page0 + 1024 |
+ *	--------------------------
  */
 
 #define ADSP_DW_PAGE_SIZE		0x1000
 #define ADSP_DW_SLOT_SIZE		ADSP_DW_PAGE_SIZE
 #define ADSP_DW_SLOT_COUNT		15
+#define ADSP_DW_PAGE0_SLOT_OFFSET	1024
 #define ADSP_DW_DESC_COUNT		(ADSP_DW_SLOT_COUNT + 1)
 
 /* debug window slots usage, mutually exclusive options can reuse slots */
@@ -73,7 +96,9 @@ struct adsp_dw_desc {
 
 struct adsp_debug_window {
 	struct adsp_dw_desc descs[ADSP_DW_DESC_COUNT];
-	uint8_t reserved[ADSP_DW_SLOT_SIZE - ADSP_DW_DESC_COUNT * sizeof(struct adsp_dw_desc)];
+	uint8_t reserved[ADSP_DW_PAGE0_SLOT_OFFSET -
+			 ADSP_DW_DESC_COUNT * sizeof(struct adsp_dw_desc)];
+	uint8_t partial_page0[ADSP_DW_SLOT_SIZE - ADSP_DW_PAGE0_SLOT_OFFSET];
 	uint8_t slots[ADSP_DW_SLOT_COUNT][ADSP_DW_SLOT_SIZE];
 } __packed;
 
