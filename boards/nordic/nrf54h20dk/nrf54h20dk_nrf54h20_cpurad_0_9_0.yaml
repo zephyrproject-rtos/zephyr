@@ -10,7 +10,7 @@ toolchain:
   - zephyr
 sysbuild: true
 ram: 192
-flash: 256
+flash: 328
 supported:
   - counter
   - gpio
