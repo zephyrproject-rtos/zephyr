@@ -98,7 +98,7 @@ static int adc_rz_channel_setup(const struct device *dev, const struct adc_chann
 	}
 	data->fsp_channel_cfg.scan_mask |= (1U << channel_cfg->channel_id);
 	/** Enable channels. */
-	config->fsp_api->scanCfg(&data->fsp_ctrl, &data->fsp_channel_cfg);
+	fsp_err = config->fsp_api->scanCfg(&data->fsp_ctrl, &data->fsp_channel_cfg);
 
 	if (FSP_SUCCESS != fsp_err) {
 		return -ENOTSUP;
@@ -124,8 +124,8 @@ static void adc_rz_isr(const struct device *dev)
 		/** Get channel ids from scan mask "channels"  */
 		if ((channels & 0x01) != 0) {
 			/** Read converted data */
-			config->fsp_api->read(&data->fsp_ctrl, channel_id,
-					      &sample_buffer[data->buf_id]);
+			fsp_err = config->fsp_api->read(&data->fsp_ctrl, channel_id,
+							&sample_buffer[data->buf_id]);
 			if (FSP_SUCCESS != fsp_err) {
 				break;
 			}
@@ -288,7 +288,7 @@ static int adc_rz_init(const struct device *dev)
 	struct adc_rz_data *data = dev->data;
 	fsp_err_t fsp_err = FSP_SUCCESS;
 	/**Open the ADC module */
-	config->fsp_api->open(&data->fsp_ctrl, &data->fsp_cfg);
+	fsp_err = config->fsp_api->open(&data->fsp_ctrl, &data->fsp_cfg);
 
 	if (FSP_SUCCESS != fsp_err) {
 		return -EIO;
