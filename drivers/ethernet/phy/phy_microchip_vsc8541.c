@@ -277,12 +277,15 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				   enum phy_cfg_link_flag flags)
 {
+	int ret;
+
 	if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0U) {
-		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
-		return -ENOTSUP;
+		ret = phy_mii_set_bmcr_reg_autoneg_disabled(dev, adv_speeds);
+	} else {
+		ret = phy_mii_cfg_link_autoneg(dev, adv_speeds, true);
 	}
 
-	return phy_mii_cfg_link_autoneg(dev, adv_speeds, true);
+	return ret;
 }
 
 /**
