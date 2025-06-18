@@ -27,6 +27,11 @@ config VIDEO_CTRL_HFLIP
 	help
 	  If set, mirror the video frame horizontally
 
+config VIDEO_CTRL_VFLIP
+	bool "Mirror the video frame vertically"
+	help
+	  If set, mirror the video frame vertically
+
 endmenu
 
 source "Kconfig.zephyr"

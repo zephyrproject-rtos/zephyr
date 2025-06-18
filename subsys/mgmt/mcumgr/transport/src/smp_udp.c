@@ -280,7 +280,7 @@ static void smp_udp_open_iface(struct net_if *iface, void *user_data)
 	}
 }
 
-static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				      struct net_if *iface)
 {
 	ARG_UNUSED(cb);

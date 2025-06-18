@@ -14,12 +14,12 @@ if(CONFIG_NRFS)
 
     zephyr_include_directories(${INC_DIR})
     zephyr_include_directories(${INC_DIR}/services)
-    zephyr_include_directories(${HELPERS_DIR})
+    zephyr_include_directories_ifdef(CONFIG_NRFS_HAS_DVFS_SERVICE ${HELPERS_DIR})
     zephyr_include_directories(.)
     zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/backends)
     zephyr_include_directories_ifdef(CONFIG_NRFS_DVFS_LOCAL_DOMAIN ${CMAKE_CURRENT_SOURCE_DIR}/dvfs)
 
-    zephyr_library_sources(${HELPERS_DIR}/dvfs_oppoint.c)
+    zephyr_library_sources_ifdef(CONFIG_NRFS_HAS_DVFS_SERVICE ${HELPERS_DIR}/dvfs_oppoint.c)
 
     if(CONFIG_NRFS_LOCAL_DOMAIN)
         zephyr_library_sources_ifdef(CONFIG_NRFS_AUDIOPLL_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_audiopll.c)

@@ -42,7 +42,14 @@ struct wwdt_numaker_data {
 
 static int m_wwdt_numaker_clk_get_rate(const struct wwdt_numaker_config *cfg, uint32_t *rate)
 {
-
+#if defined(CONFIG_SOC_SERIES_M55M1X)
+	if (cfg->clk_src == CLK_WWDTSEL_WWDT0SEL_LIRC ||
+	    cfg->clk_src == CLK_WWDTSEL_WWDT1SEL_LIRC) {
+		*rate = __LIRC / (cfg->clk_div + 1);
+	} else {
+		*rate = __LXT / (cfg->clk_div + 1);
+	}
+#else
 	if (cfg->clk_src == CLK_CLKSEL1_WWDTSEL_LIRC) {
 		*rate = __LIRC / (cfg->clk_div + 1);
 	} else {
@@ -50,6 +57,7 @@ static int m_wwdt_numaker_clk_get_rate(const struct wwdt_numaker_config *cfg, ui
 		SystemCoreClockUpdate();
 		*rate = CLK_GetHCLKFreq() / 2048 / (cfg->clk_div + 1);
 	}
+#endif
 
 	return 0;
 }

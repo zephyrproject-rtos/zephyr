@@ -440,6 +440,8 @@ function(section_to_string)
   get_property(endalign GLOBAL PROPERTY ${STRING_SECTION}_ENDALIGN)
   get_property(vma      GLOBAL PROPERTY ${STRING_SECTION}_VMA)
   get_property(lma      GLOBAL PROPERTY ${STRING_SECTION}_LMA)
+  get_property(min_size GLOBAL PROPERTY ${STRING_SECTION}_MIN_SIZE)
+  get_property(max_size GLOBAL PROPERTY ${STRING_SECTION}_MAX_SIZE)
   get_property(noinput  GLOBAL PROPERTY ${STRING_SECTION}_NOINPUT)
   get_property(noinit   GLOBAL PROPERTY ${STRING_SECTION}_NOINIT)
 
@@ -543,6 +545,12 @@ function(section_to_string)
   if(endalign)
     set(TEMP "${TEMP}, end alignment=${endalign}")
   endif()
+  if(DEFINED min_size)
+    set(TEMP "${TEMP}, minimum size=${min_size}")
+  endif()
+  if(DEFINED max_size)
+    set(TEMP "${TEMP}, maximum size=${max_size}")
+  endif()
 
   set(TEMP "${TEMP}\n{")
 
@@ -597,6 +605,9 @@ function(section_to_string)
     get_property(flags    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_FLAGS)
     get_property(input    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_INPUT)
     get_property(symbols  GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_SYMBOLS)
+    get_property(i_min_size GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MIN_SIZE)
+    get_property(i_max_size GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MAX_SIZE)
+
     # Get the next offset and use that as this ones size!
     get_property(offset   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx_next}_OFFSET)
 
@@ -605,6 +616,15 @@ function(section_to_string)
       foreach(setting ${input})
         list(APPEND to_be_kept "section ${setting}")
       endforeach()
+    endif()
+    # In ilink if a block with min_size=X  does not match any input sections,
+    # its _init block may be discarded despite being needed for spacing with
+    # other _init blocks. To get around tihs, lets tag min_size blocks as keep.
+    if(CONFIG_IAR_ZEPHYR_INIT
+       AND DEFINED group_parent_vma AND DEFINED group_parent_lma
+       AND DEFINED i_min_size
+       AND NOT ${noinit})
+      list(APPEND to_be_kept "block ${name_clean}_${idx}_init")
     endif()
     if(DEFINED symbols)
       list(LENGTH symbols symbols_count)
@@ -672,6 +692,12 @@ function(section_to_string)
       # list(APPEND block_attr "alignment = input")
     else()
       list(APPEND block_attr "alignment=4")
+    endif()
+    if(DEFINED i_min_size AND NOT i_min_size EQUAL 0)
+      list(APPEND block_attr "minimum size = ${i_min_size}")
+    endif()
+    if(DEFINED i_max_size )
+      list(APPEND block_attr "maximum size = ${i_max_size}")
     endif()
 
     # LD
@@ -784,38 +810,39 @@ function(section_to_string)
     list(JOIN current_sections ", " SELECTORS)
     set(TEMP "${TEMP}\ndo not initialize {\n${SELECTORS}\n};")
   elseif(DEFINED group_parent_vma AND DEFINED group_parent_lma)
-    if(DEFINED current_sections)
-      if(CONFIG_IAR_DATA_INIT)
-        set(TEMP "${TEMP}\ninitialize by copy\n")
-        set(TEMP "${TEMP}{\n")
-        foreach(section ${current_sections})
-          set(TEMP "${TEMP}  ${section},\n")
-        endforeach()
-        set(TEMP "${TEMP}};")
+    if(CONFIG_IAR_DATA_INIT AND DEFINED current_sections)
+      set(TEMP "${TEMP}\ninitialize by copy\n")
+      set(TEMP "${TEMP}{\n")
+      foreach(section ${current_sections})
+        set(TEMP "${TEMP}  ${section},\n")
+      endforeach()
+      set(TEMP "${TEMP}};")
 
-        set(TEMP "${TEMP}\n\"${name}_init\": place in ${group_parent_lma} {\n")
-        foreach(section ${current_sections})
-          set(TEMP "${TEMP}  ${section}_init,\n")
-        endforeach()
-        set(TEMP "${TEMP}};")
-      elseif(CONFIG_IAR_ZEPHYR_INIT)
-        # Generate the _init block and the initialize manually statement.
-        # Note that we need to have the X_init block defined even if we have
-        # no sections, since there will come a "place in XXX" statement later.
+      set(TEMP "${TEMP}\n\"${name}_init\": place in ${group_parent_lma} {\n")
+      foreach(section ${current_sections})
+        set(TEMP "${TEMP}  ${section}_init,\n")
+      endforeach()
+      set(TEMP "${TEMP}};")
+    elseif(CONFIG_IAR_ZEPHYR_INIT)
+      # Generate the _init block and the initialize manually statement.
+      # Note that we need to have the X_init block defined even if we have
+      # no sections, since there will come a "place in XXX" statement later.
 
-        # "${TEMP}" is there too keep the ';' else it will be a list
-        string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
-        string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
-        string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)" "ro\\2\\3" INIT_TEMP "${INIT_TEMP}")
-        string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
-        string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
+      # "${TEMP}" is there too keep the ';' else it will be a list
+      string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
+      string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
+      string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)" "ro\\2\\3" INIT_TEMP "${INIT_TEMP}")
+      string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
+      string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
+      set(TEMP "${TEMP}\n${INIT_TEMP}\n")
 
-        # If any content is marked as keep, is has to be applied to the init block
-        # too, esp. for blocks that are not referenced (e.g. empty blocks wiht min_size)
-        if(to_be_kept)
-          list(APPEND to_be_kept "block ${name_clean}_init")
-        endif()
-        set(TEMP "${TEMP}\n${INIT_TEMP}\n")
+      # If any content is marked as keep, is has to be applied to the init block
+      # too, esp. for blocks that are not referenced (e.g. empty blocks with min_size)
+      if(to_be_kept)
+        list(APPEND to_be_kept "block ${name_clean}_init")
+      endif()
+
+      if(DEFINED current_sections)
         set(TEMP "${TEMP}\ninitialize manually with copy friendly\n")
         set(TEMP "${TEMP}{\n")
         foreach(section ${current_sections})
@@ -823,8 +850,8 @@ function(section_to_string)
         endforeach()
         set(TEMP "${TEMP}};")
       endif()
-      set(current_sections)
     endif()
+    set(current_sections)
   endif()
 
   # Finally, add the keeps.

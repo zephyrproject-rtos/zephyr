@@ -6,6 +6,7 @@
 
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra6/ra6-cm4-common.dtsi>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra6m1-elc.h>
 
 /delete-node/ &eth;
 /delete-node/ &mdio;

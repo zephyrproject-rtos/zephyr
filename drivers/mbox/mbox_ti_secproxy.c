@@ -46,7 +46,6 @@ LOG_MODULE_REGISTER(ti_secure_proxy);
 #define SEC_PROXY_DATA_END_OFFS   0x3c
 
 #define SEC_PROXY_TIMEOUT_US 1000000
-#define MAILBOX_MBOX_SIZE 60
 
 #define GET_MSG_SEQ(buffer) ((uint32_t *)buffer)[1]
 struct secproxy_thread {

@@ -13,13 +13,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/devicetree.h>
 
 #include "nwp.h"
 #include "sl_wifi_callback_framework.h"
 #ifdef CONFIG_BT_SILABS_SIWX91X
 #include "rsi_ble_common_config.h"
 #endif
+#include "sl_si91x_power_manager.h"
 
+#define NWP_NODE            DT_NODELABEL(nwp)
+#define SI91X_POWER_PROFILE DT_ENUM_IDX(NWP_NODE, power_profile)
 #define AP_MAX_NUM_STA 4
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
@@ -243,6 +247,8 @@ static int siwg917_nwp_init(void)
 {
 	sl_wifi_device_configuration_t network_config;
 	sl_status_t status;
+	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
+		.profile = SI91X_POWER_PROFILE};
 
 	siwx91x_get_nwp_config(&network_config, WIFI_STA_MODE, false, 0);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
@@ -253,6 +259,14 @@ static int siwg917_nwp_init(void)
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
+		status = sl_wifi_set_performance_profile(&performance_profile);
+		if (status != SL_STATUS_OK) {
+			return -EINVAL;
+		}
+		/* Remove the previously added PS4 power state requirement */
+		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+	}
 	return 0;
 }
 #if defined(CONFIG_MBEDTLS_INIT)

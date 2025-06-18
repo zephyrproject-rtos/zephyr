@@ -234,7 +234,7 @@ static int lldp_check_iface(struct net_if *iface)
 	return 0;
 }
 
-static int lldp_start(struct net_if *iface, uint32_t mgmt_event)
+static int lldp_start(struct net_if *iface, uint64_t mgmt_event)
 {
 	struct ethernet_context *ctx;
 	int ret, slot;
@@ -328,7 +328,7 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t recv_cb)
 }
 
 static void iface_event_handler(struct net_mgmt_event_callback *evt_cb,
-				uint32_t mgmt_event, struct net_if *iface)
+				uint64_t mgmt_event, struct net_if *iface)
 {
 	lldp_start(iface, mgmt_event);
 }

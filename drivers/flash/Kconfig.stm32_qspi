@@ -6,7 +6,7 @@
 
 DT_STM32_QUADSPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_QSPI),dmas)
 
-config FLASH_STM32_QSPI
+menuconfig FLASH_STM32_QSPI
 	bool "STM32 Quad SPI Flash driver"
 	default y
 	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
@@ -21,3 +21,22 @@ config FLASH_STM32_QSPI
 	select USE_STM32_HAL_DMA if $(DT_STM32_QUADSPI_HAS_DMA)
 	help
 	  Enable QSPI-NOR support on the STM32 family of processors.
+
+if FLASH_STM32_QSPI
+
+config FLASH_STM32_QSPI_GENERIC_READ
+	bool "Generic read command extended operation"
+	select FLASH_HAS_EX_OP
+	help
+	  Enables flash extended operation that can be used to transmit
+	  a custom command and read the result to a user-provided buffer.
+
+config FLASH_STM32_QSPI_GENERIC_WRITE
+	bool "Generic write command extended operation"
+	select FLASH_HAS_EX_OP
+	help
+	  Enables flash extended operation that can be used to transmit
+	  a custom command and write data taken from a user-provided
+	  buffer.
+
+endif # FLASH_STM32_QSPI

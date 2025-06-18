@@ -1,0 +1,87 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K148_LQFP176-pinctrl.h>
+
+&pinctrl {
+	lpuart0_default: lpuart0_default {
+		group0 {
+			pinmux = <LPUART0_RX_PTA2>, <LPUART0_TX_PTA3>;
+			drive-strength = "low";
+		};
+	};
+
+	lpuart1_default: lpuart1_default {
+		group0 {
+			pinmux = <LPUART1_RX_PTC6>, <LPUART1_TX_PTC7>;
+			drive-strength = "low";
+		};
+	};
+
+	lpi2c0_default: lpi2c0_default {
+		group1 {
+			pinmux = <LPI2C0_SDAS_PTB10>, <LPI2C0_SCLS_PTB9>;
+			drive-strength = "low";
+		};
+	};
+
+	lpspi0_default: lpspi0_default {
+		group0 {
+			pinmux = <LPSPI0_SCK_PTB2>,
+				<LPSPI0_SIN_PTB3>,
+				<LPSPI0_SOUT_PTB1>,
+				<LPSPI0_PCS0_PTB0>;
+			drive-strength = "low";
+		};
+	};
+
+	ftm4_default: ftm4_default {
+		group0 {
+			pinmux = <FTM4_CH1_PTE21>,
+				<FTM4_CH2_PTE22>,
+				<FTM4_CH3_PTE23>;
+			drive-strength = "low";
+		};
+	};
+
+	flexcan0_default: flexcan0_default {
+		group0 {
+			pinmux = <CAN0_RX_PTE4>, <CAN0_TX_PTE5>;
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_enet: pinmux_enet {
+		group1 {
+			pinmux = <MII_RMII_RX_ER_PTC16>,
+				<MII_RMII_RXD1_PTC0>,
+				<MII_RMII_RXD0_PTC1>,
+				<MII_RMII_RX_DV_PTC17>,
+				<MII_RMII_TX_EN_PTD12>,
+				<MII_RMII_TXD0_PTC2>,
+				<MII_RMII_TXD1_PTD7>,
+				<MII_RMII_TX_CLK_PTD11>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		group0 {
+			pinmux = <MII_RMII_MDIO_PTB4>;
+			drive-strength = "low";
+			drive-open-drain;
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <MII_RMII_MDC_PTB5>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+};

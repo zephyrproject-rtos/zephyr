@@ -156,7 +156,7 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 	uint8_t temp;
 	double it;
 
-	if ((chan != SENSOR_CHAN_IR) & (chan != SENSOR_CHAN_LIGHT)) {
+	if ((chan != SENSOR_CHAN_IR) && (chan != SENSOR_CHAN_LIGHT)) {
 		return -ENOTSUP;
 	}
 

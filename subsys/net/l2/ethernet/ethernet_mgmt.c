@@ -25,7 +25,7 @@ static inline bool is_hw_caps_supported(const struct device *dev,
 	return ((api->get_capabilities(dev) & caps) != 0);
 }
 
-static int ethernet_set_config(uint32_t mgmt_request,
+static int ethernet_set_config(uint64_t mgmt_request,
 			       struct net_if *iface,
 			       void *data, size_t len)
 {
@@ -207,7 +207,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_TXINJECTION_MODE,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_FILTER,
 				  ethernet_set_config);
 
-static int ethernet_get_config(uint32_t mgmt_request,
+static int ethernet_get_config(uint64_t mgmt_request,
 			       struct net_if *iface,
 			       void *data, size_t len)
 {

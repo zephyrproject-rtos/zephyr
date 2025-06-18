@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Expose the driver header include path, so that the shim driver can use them.
+# SDK driver headers are also used out of hal_nxp module, for example
+# <zephyr>/soc/nxp/imxrt/imxrt118x/soc.c includes fsl_clock.h, fsl_pmu.h.
+# So expose the driver header include path, make the shim driver can use them.
 get_target_property(MCUXSDK_INCLUDE_DIRS ${MCUX_SDK_PROJECT_NAME} INTERFACE_INCLUDE_DIRECTORIES)
 if(NOT MCUXSDK_INCLUDE_DIRS STREQUAL MCUXSDK_INCLUDE_DIRS-NOTFOUND)
   zephyr_include_directories(${MCUXSDK_INCLUDE_DIRS})

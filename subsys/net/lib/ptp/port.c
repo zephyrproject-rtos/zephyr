@@ -309,13 +309,13 @@ static int port_delay_req_msg_transmit(struct ptp_port *port)
 				     port->iface,
 				     port_delay_req_timestamp_cb);
 
+	sys_slist_append(&port->delay_req_list, &msg->node);
 	ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
 	if (ret < 0) {
+		sys_slist_find_and_remove(&port->delay_req_list, &msg->node);
 		ptp_msg_unref(msg);
 		return -EFAULT;
 	}
-
-	sys_slist_append(&port->delay_req_list, &msg->node);
 
 	LOG_DBG("Port %d sends Delay_Req message", port->port_ds.id.port_number);
 	return 0;
@@ -964,7 +964,7 @@ int port_state_update(struct ptp_port *port, enum ptp_port_event event, bool tt_
 }
 
 static void port_link_monitor(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event,
+			      uint64_t mgmt_event,
 			      struct net_if *iface)
 {
 	ARG_UNUSED(cb);

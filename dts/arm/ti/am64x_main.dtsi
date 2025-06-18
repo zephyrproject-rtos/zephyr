@@ -1,0 +1,271 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	pinctrl: pinctrl@f4000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0xf4000 0x2ac>;
+		status = "disabled";
+	};
+
+	timer0: timer@2400000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2400000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer1: timer@2410000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2410000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer2: timer@2420000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2420000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer3: timer@2430000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2430000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer4: timer@2440000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2440000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer5: timer@2450000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2450000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer6: timer@2460000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2460000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer7: timer@2470000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2470000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer8: timer@2480000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2480000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer9: timer@2490000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2490000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer10: timer@24a0000 {
+		compatible = "ti,am654-timer";
+		reg = <0x24a0000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	timer11: timer@24b0000 {
+		compatible = "ti,am654-timer";
+		reg = <0x24b0000 DT_SIZE_K(1)>;
+		status = "disabled";
+	};
+
+	uart0: uart@2800000 {
+		compatible = "ns16550";
+		reg = <0x02800000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart1: uart@2810000 {
+		compatible = "ns16550";
+		reg = <0x02810000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart2: uart@2820000 {
+		compatible = "ns16550";
+		reg = <0x02820000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart3: uart@2830000 {
+		compatible = "ns16550";
+		reg = <0x02830000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart4: uart@2840000 {
+		compatible = "ns16550";
+		reg = <0x02840000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart5: uart@2850000 {
+		compatible = "ns16550";
+		reg = <0x02850000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	uart6: uart@2860000 {
+		compatible = "ns16550";
+		reg = <0x02860000 0x200>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	i2c0: i2c0@20000000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20000000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c1: i2c0@20010000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20010000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c2: i2c0@20020000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20020000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	i2c3: i2c0@20030000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x20030000 0x100>;
+		clock-frequency = <DT_FREQ_K(100)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	gpio0: gpio@600000 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x600000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio1: gpio@601000 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x601000 0x100>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	adc0: adc@28001000 {
+		compatible = "ti,am335x-adc";
+		reg = <0x28001000 DT_SIZE_K(1)>;
+		status = "disabled";
+		#io-channel-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	/* users: r5f0_0, r5f0_1, r5f1_0, r5f1_1 */
+	mbox0: mailbox@29000000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29000000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* users: r5f0_0, r5f0_1, r5f1_0, r5f1_1 */
+	mbox1: mailbox@29010000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29010000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* users: r5f0_0, r5f0_1, a53 */
+	mbox2: mailbox@29020000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29020000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* users: r5f0_0, r5f0_1, a53 */
+	mbox3: mailbox@29030000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29030000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* users: r5f1_0, r5f1_1, a53 */
+	mbox4: mailbox@29040000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29040000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* users: r5f1_0, r5f1_1, a53 */
+	mbox5: mailbox@29050000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29050000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* users: r5f0_0, r5f0_1, a53, m4 */
+	mbox6: mailbox@29060000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29060000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	/* users: r5f1_0, r5f1_1, a53, m4 */
+	mbox7: mailbox@29070000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29070000 0x200>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+};

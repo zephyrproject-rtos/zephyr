@@ -364,24 +364,43 @@ end:
 #ifdef CONFIG_PM_DEVICE
 static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct spi_ambiq_config *cfg = dev->config;
 	struct spi_ambiq_data *data = dev->data;
-	uint32_t ret;
+	int err;
 	am_hal_sysctrl_power_state_e status;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_WAKE;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to
+			 * sleep,
+			 * "SPI pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return err;
+		}
 		status = AM_HAL_SYSCTRL_DEEPSLEEP;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	ret = am_hal_ios_power_ctrl(data->ios_handler, status, true);
-	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_ios_power_ctrl failed: %d", ret);
+	err = am_hal_ios_power_ctrl(data->ios_handler, status, true);
+	if (err != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("am_hal_ios_power_ctrl failed: %d", err);
 		return -EPERM;
 	} else {
 		return 0;

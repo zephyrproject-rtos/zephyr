@@ -1,0 +1,18 @@
+# STMicroelectronics STM32U3 MCU series
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32U3X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32u3x" if SOC_SERIES_STM32U3X
+
+config SOC_STM32U385XX
+	bool
+	select SOC_SERIES_STM32U3X
+
+config SOC
+	default "stm32u385xx" if SOC_STM32U385XX

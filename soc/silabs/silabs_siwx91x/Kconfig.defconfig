@@ -3,9 +3,6 @@
 
 if SOC_FAMILY_SILABS_SIWX91X
 
-configdefault SILABS_SLEEPTIMER_TIMER
-	default y if PM
-
 configdefault CORTEX_M_SYSTICK
 	default n if SILABS_SLEEPTIMER_TIMER
 

@@ -783,8 +783,18 @@ int ll_init(struct k_sem *sem_rx)
 
 int ll_deinit(void)
 {
+	int err;
+
 	ll_reset();
-	return lll_deinit();
+
+	err = lll_deinit();
+	if (err) {
+		return err;
+	}
+
+	err = ticker_deinit(TICKER_INSTANCE_ID_CTLR);
+
+	return err;
 }
 
 void ll_reset(void)

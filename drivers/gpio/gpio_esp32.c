@@ -93,7 +93,7 @@ static inline bool gpio_pin_is_output_capable(uint32_t pin)
 	return ((BIT(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
 }
 
-static int gpio_esp32_config(const struct device *dev,
+static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 			     gpio_pin_t pin,
 			     gpio_flags_t flags)
 {

@@ -14,7 +14,9 @@ config SOC_MIMX94398_M33
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
+	select CPU_HAS_DCACHE
 	select ARM_MPU
 	select ARMV8_M_DSP
 	select HAS_MCUX
 	select HAS_MCUX_XCACHE
+	select INIT_ARCH_HW_AT_BOOT

@@ -358,6 +358,11 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_X509_CSR_WRITE_C
 	select MBEDTLS_X509_CSR_PARSE_C
 
+config WIFI_NM_WPA_SUPPLICANT_11AC
+	bool "IEEE 802.11ac VHT support"
+	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
+	default y
+
 config WIFI_NM_WPA_SUPPLICANT_11AX
 	bool "IEEE 802.11ax HE support"
 	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
@@ -595,5 +600,26 @@ config WIFI_NM_WPA_CTRL_RESP_TIMEOUT_S
 	help
 	  Timeout for the control interface commands to get a response from the
 	  supplicant.
+
+config WIFI_NM_HOSTAPD_REGULATORY_REGION
+	string "Select Wi-Fi Regulatory Domain"
+	default "00"
+	depends on WIFI_NM_HOSTAPD_AP
+	help
+	  Region/Country code (ISO/IEC 3166-1).Used to set regulatory domain.
+	  Set as needed to indicate country in which device is operating.
+	  This can limit available channels and transmit power.
+	  These two octets are used as the first two octets of the Country String
+	  (dot11CountryString). "00" stands for World Wide mode.
+
+config WIFI_NM_HOSTAPD_REGULATORY_ENV
+	int "Select Wi-Fi Regulatory Environment"
+	default 32
+	depends on WIFI_NM_HOSTAPD_AP
+	help
+	  The third octet of the Country String (dot11CountryString)
+	  This parameter is used to set the third octet of the country string.
+	  All supported environments of current region can be used with
+	  default value of 0x20 or 32.
 
 endif # WIFI_NM_WPA_SUPPLICANT

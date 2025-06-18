@@ -73,10 +73,10 @@ struct i2c_stm32_data {
 	struct i2c_rtio *ctx;
 	uint32_t dev_config;
 	uint8_t *xfer_buf;
-	uint8_t xfer_len;
+	size_t xfer_len;
 	uint8_t xfer_flags;
 #ifdef CONFIG_I2C_STM32_V1
-	uint8_t msg_len;
+	size_t msg_len;
 	uint8_t is_restart;
 	uint16_t slave_address;
 #endif /* CONFIG_I2C_STM32_V1 */
@@ -197,9 +197,9 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)				\
 }
 
 #else /* CONFIG_I2C_STM32_INTERRUPT */
-#define STM32_I2C_IRQ_HANDLER_DECL(index)
-#define STM32_I2C_IRQ_HANDLER_FUNCTION(index)
-#define STM32_I2C_IRQ_HANDLER(index)
+#define I2C_STM32_IRQ_HANDLER_DECL(index)
+#define I2C_STM32_IRQ_HANDLER_FUNCTION(index)
+#define I2C_STM32_IRQ_HANDLER(index)
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */

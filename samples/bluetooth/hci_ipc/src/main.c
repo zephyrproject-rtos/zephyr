@@ -252,7 +252,7 @@ static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 			 * call to k_yield is against it.
 			 */
 			if (is_fatal_err) {
-				LOG_ERR("IPC service send error: %d", ret);
+				LOG_ERR("ipc_service_send error: %d", ret);
 			} else {
 				/* In the POSIX ARCH, code takes zero simulated time to execute,
 				 * so busy wait loops become infinite loops, unless we
@@ -267,7 +267,8 @@ static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 		}
 	} while (ret < 0);
 
-	LOG_INF("Sent message of %d bytes.", ret);
+	LOG_INF("ipc_service_send sent %d/%u bytes", ret, buf->len);
+	__ASSERT_NO_MSG(ret == buf->len);
 
 	net_buf_unref(buf);
 }

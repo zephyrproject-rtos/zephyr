@@ -5,7 +5,9 @@ common:
   tags:
     - drivers
     - display
-  harness: display
+  harness: ztest
+  harness_config:
+    fixture: display
 tests:
   drivers.display.read_write.sdl.argb8888:
     platform_allow:

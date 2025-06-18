@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,10 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 #include <ethernet/eth_stats.h>
 #include "../eth.h"
 #include "nxp_enet_qos_priv.h"
+
+/* Verify configuration */
+BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_NORMAL_FRAME_LEN,
+	"ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC is not large enough to receive a full frame");
 
 static const uint32_t rx_desc_refresh_flags =
 	OWN_FLAG | RX_INTERRUPT_ON_COMPLETE_FLAG | BUF1_ADDR_VALID_FLAG;
@@ -104,7 +108,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Setting up the descriptors  */
 	fragment = pkt->frags;
-	tx_desc_ptr->read.control2 |= FIRST_TX_DESCRIPTOR_FLAG;
+	tx_desc_ptr->read.control2 |= FIRST_DESCRIPTOR_FLAG;
 	for (int i = 0; i < frags_count; i++) {
 		net_pkt_frag_ref(fragment);
 
@@ -116,7 +120,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 		tx_desc_ptr++;
 	}
 	last_desc_ptr = tx_desc_ptr - 1;
-	last_desc_ptr->read.control2 |= LAST_TX_DESCRIPTOR_FLAG;
+	last_desc_ptr->read.control2 |= LAST_DESCRIPTOR_FLAG;
 	last_desc_ptr->read.control1 |= TX_INTERRUPT_ON_COMPLETE_FLAG;
 
 	LOG_DBG("Starting TX DMA on packet %p", pkt);
@@ -176,42 +180,71 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	volatile union nxp_enet_qos_rx_desc *desc;
-	struct net_pkt *pkt;
+	uint32_t desc_idx;
+	struct net_pkt *pkt = NULL;
 	struct net_buf *new_buf;
 	struct net_buf *buf;
 	size_t pkt_len;
+	size_t processed_len;
 
 	LOG_DBG("iteration work:%p, rx_data:%p, data:%p", work, rx_data, data);
 	/* We are going to find all of the descriptors we own and update them */
 	for (int i = 0; i < NUM_RX_BUFDESC; i++) {
-		desc = &desc_arr[i];
+		desc_idx = rx_data->next_desc_idx;
+		desc = &desc_arr[desc_idx];
 
 		if (desc->write.control3 & OWN_FLAG) {
-			/* The DMA owns the descriptor, we cannot touch it */
-			continue;
+			/* The DMA owns the descriptor, we have processed all */
+			break;
 		}
 
-		if ((desc->write.control3 & (FIRST_TX_DESCRIPTOR_FLAG | LAST_TX_DESCRIPTOR_FLAG)) !=
-		    (FIRST_TX_DESCRIPTOR_FLAG | LAST_TX_DESCRIPTOR_FLAG)) {
-			LOG_DBG("receive packet mask %X ", (desc->write.control3 >> 28) & 0x0f);
-			LOG_ERR("Rx pkt spans over multiple DMA bufs, not implemented, drop here");
-			desc->read.control = rx_desc_refresh_flags;
-			continue;
+		rx_data->next_desc_idx = (desc_idx + 1U) % NUM_RX_BUFDESC;
+
+		if (pkt == NULL) {
+			if ((desc->write.control3 & FIRST_DESCRIPTOR_FLAG) !=
+				FIRST_DESCRIPTOR_FLAG) {
+				LOG_DBG("receive packet mask %X ",
+					(desc->write.control3 >> 28) & 0x0f);
+				LOG_ERR("Rx descriptor does not have first descriptor flag, drop");
+				desc->read.control = rx_desc_refresh_flags;
+				/* Error statistics for this packet already updated earlier */
+				continue;
+			}
+
+			/* Otherwise, we found a packet that we need to process */
+			pkt = net_pkt_rx_alloc(K_NO_WAIT);
+
+			if (!pkt) {
+				LOG_ERR("Could not alloc new RX pkt");
+				/* error: no new buffer, reuse previous immediately */
+				desc->read.control = rx_desc_refresh_flags;
+				eth_stats_update_errors_rx(data->iface);
+				continue;
+			}
+
+			processed_len = 0U;
+
+			LOG_DBG("Created new RX pkt %u of %d: %p",
+				desc_idx + 1U, NUM_RX_BUFDESC, pkt);
 		}
 
-		/* Otherwise, we found a packet that we need to process */
-		pkt = net_pkt_rx_alloc(K_NO_WAIT);
-
-		if (!pkt) {
-			LOG_ERR("Could not alloc new RX pkt");
-			/* error: no new buffer, reuse previous immediately
-			 */
+		/* Read the cumulative length of data in this buffer and previous buffers (if any).
+		 * The complete length is in a descriptor with the last descriptor flag set
+		 * (note that it includes four byte FCS as well). This length will be validated
+		 * against processed_len to ensure it's within expected bounds.
+		 */
+		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
+		if ((pkt_len < processed_len) ||
+			((pkt_len - processed_len) > ENET_QOS_RX_BUFFER_SIZE)) {
+			LOG_ERR("Invalid packet length in descriptor: pkt_len=%u, processed_len=%u",
+				pkt_len, processed_len);
+			net_pkt_unref(pkt);
+			pkt = NULL;
 			desc->read.control = rx_desc_refresh_flags;
 			eth_stats_update_errors_rx(data->iface);
 			continue;
 		}
 
-		LOG_DBG("Created new RX pkt %d of %d: %p", i + 1, NUM_RX_BUFDESC, pkt);
 		/* We need to know if we can replace the reserved fragment in advance.
 		 * At no point can we allow the driver to have less the amount of reserved
 		 * buffers it needs to function, so we will not give up our previous buffer
@@ -226,47 +259,55 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			 */
 			LOG_ERR("No new RX buf available");
 			net_pkt_unref(pkt);
+			pkt = NULL;
 			desc->read.control = rx_desc_refresh_flags;
 			eth_stats_update_errors_rx(data->iface);
 			continue;
 		}
 
-		buf = data->rx.reserved_bufs[i];
-		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
+		/* Append buffer to a packet */
+		buf = data->rx.reserved_bufs[desc_idx];
+		net_buf_add(buf, pkt_len - processed_len);
+		net_pkt_frag_add(pkt, buf);
+		processed_len = pkt_len;
 
-		LOG_DBG("Receiving RX packet");
-		/* Finally, we have decided that it is time to wrap the buffer nicely
-		 * up within a packet, and try to send it. It's only one buffer,
-		 * thanks to ENET QOS hardware handing the fragmentation,
-		 * so the construction of the packet is very simple.
-		 */
-		net_buf_add(buf, pkt_len);
-		net_pkt_frag_insert(pkt, buf);
-		if (net_recv_data(data->iface, pkt)) {
-			LOG_ERR("RECV failed");
-			/* Quite a shame. */
-			/* error during processing, we continue with new allocated */
-			net_pkt_unref(pkt);
-			eth_stats_update_errors_rx(data->iface);
+		if ((desc->write.control3 & LAST_DESCRIPTOR_FLAG) == LAST_DESCRIPTOR_FLAG) {
+			/* Propagate completed packet to network stack */
+			LOG_DBG("Receiving RX packet");
+			if (net_recv_data(data->iface, pkt)) {
+				LOG_ERR("RECV failed");
+				/* Error during processing, we continue with new buffer */
+				net_pkt_unref(pkt);
+				eth_stats_update_errors_rx(data->iface);
+			} else {
+				/* Record successfully received packet */
+				eth_stats_update_pkts_rx(data->iface);
+			}
+			pkt = NULL;
 		}
 
 		LOG_DBG("Swap RX buf");
-		/* Fresh meat */
-		data->rx.reserved_bufs[i] = new_buf;
+		/* Allow receive into a new buffer */
+		data->rx.reserved_bufs[desc_idx] = new_buf;
 		desc->read.buf1_addr = (uint32_t)new_buf->data;
 		desc->read.control = rx_desc_refresh_flags;
+	}
 
-		/* Record our glorious victory */
-		eth_stats_update_pkts_rx(data->iface);
+	if (pkt != NULL) {
+		/* Looped through descriptors without reaching the final
+		 * fragment of the packet, deallocate the incomplete one
+		 */
+		LOG_DBG("Incomplete packet received, cleaning up");
+		net_pkt_unref(pkt);
+		pkt = NULL;
+		eth_stats_update_errors_rx(data->iface);
 	}
 
 	/* try to restart if halted */
 	const struct device *dev = net_if_get_device(data->iface);
-	atomic_val_t rbu_flag = atomic_get(&rx_data->rbu_flag);
 
-	if (rbu_flag) {
+	if (atomic_cas(&rx_data->rbu_flag, 1, 0)) {
 		LOG_DBG("handle RECEIVE BUFFER UNDERRUN in worker");
-		atomic_clear(&rx_data->rbu_flag);
 
 		/* When the DMA reaches the tail pointer, it suspends. Set to last descriptor */
 		const struct nxp_enet_qos_mac_config *config = dev->config;
@@ -530,6 +571,9 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 		rx->descriptors[i].read.control |= rx_desc_refresh_flags;
 	}
 
+	/* Set next descriptor where data will be received */
+	rx->next_desc_idx = 0U;
+
 	/* Set up RX descriptors on channel 0 */
 	base->DMA_CH[0].DMA_CHX_RXDESC_LIST_ADDR =
 		/* Start of tx descriptors buffer */
@@ -544,7 +588,7 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CONTROL2, RDRL, NUM_RX_BUFDESC - 1);
 	base->DMA_CH[0].DMA_CHX_RX_CTRL |=
 		/* Set DMA receive buffer size. The low 2 bits are not entered to this field. */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, RBSZ_13_Y, CONFIG_NET_BUF_DATA_SIZE >> 2);
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, RBSZ_13_Y, ENET_QOS_RX_BUFFER_SIZE >> 2);
 
 	return 0;
 }

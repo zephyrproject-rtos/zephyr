@@ -334,7 +334,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	cp->num_handles = sys_cpu_to_le16(1);
+	cp->num_handles = 1;
 
 	hc = net_buf_add(buf, sizeof(*hc));
 	hc->handle = sys_cpu_to_le16(handle);
@@ -3820,7 +3820,7 @@ const char *bt_hci_get_ver_str(uint8_t core_version)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0"
+		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0", "6.1"
 	};
 
 	if (core_version < ARRAY_SIZE(str)) {

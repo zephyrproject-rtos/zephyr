@@ -38,6 +38,7 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 	LL_I2C_DisableIT_RX(i2c);
 	LL_I2C_DisableIT_EVT(i2c);
 	LL_I2C_DisableIT_BUF(i2c);
+	LL_I2C_DisableIT_ERR(i2c);
 }
 
 static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
@@ -332,12 +333,6 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 	data->msg_len = buf_len;
 	data->is_restart = 0;
 	data->slave_address = i2c_addr;
-
-	/* TODO deal with larger than 255 byte transfers correctly */
-	if (buf_len > UINT8_MAX) {
-		/* TODO LL_I2C_EnableReloadMode(i2c); */
-		return -EINVAL;
-	}
 
 	LL_I2C_Enable(i2c);
 

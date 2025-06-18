@@ -144,12 +144,21 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(pwm_cmds,
-	SHELL_CMD_ARG(cycles, &dsub_device_name, "<device> <channel> <period in cycles> "
-		      "<pulse width in cycles> [flags]", cmd_cycles, 5, 1),
-	SHELL_CMD_ARG(usec, &dsub_device_name, "<device> <channel> <period in usec> "
-		      "<pulse width in usec> [flags]", cmd_usec, 5, 1),
-	SHELL_CMD_ARG(nsec, &dsub_device_name, "<device> <channel> <period in nsec> "
-		      "<pulse width in nsec> [flags]", cmd_nsec, 5, 1),
+	SHELL_CMD_ARG(
+		cycles, &dsub_device_name,
+		SHELL_HELP("Set PWM period and pulse width in cycles.",
+			   "<device> <channel> <period> <pulse width> [flags]"),
+		cmd_cycles, 5, 1),
+	SHELL_CMD_ARG(
+		usec, &dsub_device_name,
+		SHELL_HELP("Set PWM period and pulse width in microseconds.",
+			   "<device> <channel> <period> <pulse width> [flags]"),
+		cmd_usec, 5, 1),
+	SHELL_CMD_ARG(
+		nsec, &dsub_device_name,
+		SHELL_HELP("Set PWM period and pulse width in nanoseconds.",
+			   "<device> <channel> <period> <pulse width> [flags]"),
+		cmd_nsec, 5, 1),
 	SHELL_SUBCMD_SET_END
 );
 

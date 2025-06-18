@@ -160,7 +160,7 @@ static int ti_adc_sequencer_start(const struct device *dev)
 	while (FIELD_GET(TI_ADC_SEQ_STATUS_FSM, seq_status) != TI_ADC_SEQ_STATUS_FSM_IDLE &&
 	       FIELD_GET(TI_ADC_SEQ_STATUS_STEP, seq_status) != TI_ADC_SEQ_STATUS_STEP_IDLE) {
 		/* Timeout */
-		if (k_uptime_get() - timeout < (TI_ADC_IDLE_TIMEOUT_MS * data->chan_count)) {
+		if (k_uptime_get() - timeout > (TI_ADC_IDLE_TIMEOUT_MS * data->chan_count)) {
 			return -ETIMEDOUT;
 		}
 

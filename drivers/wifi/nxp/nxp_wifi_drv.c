@@ -76,6 +76,8 @@ extern const rtos_wpa_supp_dev_ops wpa_supp_ops;
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_NXP_RW610)
 extern int is_hs_handshake_done;
 extern int wlan_host_sleep_state;
+extern bool skip_hs_handshake;
+extern void wlan_hs_hanshake_cfg(bool skip);
 #endif
 
 static int nxp_wifi_recv(struct net_if *iface, struct net_pkt *pkt);
@@ -564,7 +566,11 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	case WIFI_FREQ_BANDWIDTH_20MHZ:
 	case WIFI_FREQ_BANDWIDTH_40MHZ:
 	case WIFI_FREQ_BANDWIDTH_80MHZ:
-		wlan_uap_set_bandwidth(params->bandwidth);
+		ret = wlan_uap_set_bandwidth(params->bandwidth);
+		if (ret != WM_SUCCESS) {
+			LOG_ERR("Bandwidth is not supported");
+			return -EAGAIN;
+		}
 		break;
 	default:
 		LOG_ERR("Invalid bandwidth");
@@ -670,7 +676,7 @@ static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_co
 			ret = wlan_uap_set_bandwidth(params->bandwidth);
 			if (ret != WM_SUCCESS) {
 				status = NXP_WIFI_RET_FAIL;
-				LOG_ERR("Failed to set Wi-Fi AP bandwidth");
+				LOG_ERR("Bandwidth is not supported");
 			} else {
 				LOG_INF("Set  Wi-Fi AP bandwidth: %d", params->bandwidth);
 			}
@@ -1727,6 +1733,13 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain 
 			LOG_ERR("Unable to set country code: %s", reg_domain->country_code);
 			return -EAGAIN;
 		}
+
+		ret = wlan_create_dnld_countryinfo();
+		if (ret != WM_SUCCESS) {
+			LOG_ERR("Unable to create and download countryinfo");
+			return -EAGAIN;
+		}
+
 	}
 	return 0;
 }
@@ -2091,16 +2104,33 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 		 * User can use this time to issue other commands.
 		 */
 		if (is_hs_handshake_done == WLAN_HOSTSLEEP_SUCCESS) {
-			ret = wlan_hs_send_event(HOST_SLEEP_EXIT, NULL);
-			if (ret != 0) {
-				return -EFAULT;
+			/* If we are not woken up by WLAN, skip posting host sleep exit event.
+			 * And skip host sleep handshake next time we are about to sleep.
+			 */
+			if (POWER_GetWakeupStatus(WL_MCI_WAKEUP0_IRQn)) {
+				ret = wlan_hs_send_event(HOST_SLEEP_EXIT, NULL);
+				if (ret != 0) {
+					return -EFAULT;
+				}
+				wlan_hs_hanshake_cfg(false);
+			} else {
+				wlan_hs_hanshake_cfg(true);
 			}
+
 			device_pm_dump_wakeup_source();
-			/* reset hs hanshake flag after waking up */
-			is_hs_handshake_done = 0;
 			if (wlan_host_sleep_state == HOST_SLEEP_ONESHOT) {
 				wlan_host_sleep_state = HOST_SLEEP_DISABLE;
+				wlan_hs_hanshake_cfg(false);
 			}
+#ifndef CONFIG_BT
+			if (skip_hs_handshake == true &&
+			    is_hs_handshake_done == WLAN_HOSTSLEEP_SUCCESS) {
+				ret = wlan_hs_send_event(HOST_SLEEP_HANDSHAKE_SKIP, NULL);
+				if (ret != 0) {
+					return -EFAULT;
+				}
+			}
+#endif
 		}
 		break;
 	default:
@@ -2176,6 +2206,7 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.sta_remove               = wifi_nxp_hostapd_sta_remove,
 	.sta_add                  = wifi_nxp_hostapd_sta_add,
 	.do_acs                   = wifi_nxp_hostapd_do_acs,
+	.get_inact_sec            = wifi_nxp_wpa_supp_sta_get_inact_sec,
 #endif
 	.dpp_listen               = wifi_nxp_wpa_dpp_listen,
 	.remain_on_channel        = wifi_nxp_wpa_supp_remain_on_channel,

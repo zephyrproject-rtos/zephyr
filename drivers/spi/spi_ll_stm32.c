@@ -1122,7 +1122,7 @@ static int transceive_dma(const struct device *dev,
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 		(rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
 		LOG_ERR("SPI DMA transfers not supported on cached memory");
-		return -EFAULT;
+		return -ENOTSUP;
 	}
 #endif /* CONFIG_DCACHE */
 
@@ -1185,6 +1185,13 @@ static int transceive_dma(const struct device *dev,
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
+
+	uint8_t word_size_bytes = bits2bytes(SPI_WORD_SIZE_GET(config->operation));
+
+	data->dma_rx.dma_cfg.source_data_size = word_size_bytes;
+	data->dma_rx.dma_cfg.dest_data_size = word_size_bytes;
+	data->dma_tx.dma_cfg.source_data_size = word_size_bytes;
+	data->dma_tx.dma_cfg.dest_data_size = word_size_bytes;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;

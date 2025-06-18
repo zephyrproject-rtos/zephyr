@@ -150,7 +150,7 @@ int icm42605_tap_fetch(const struct device *dev)
 					if (drv_data->double_tap_handler) {
 						LOG_DBG("Double Tap detected");
 						drv_data->double_tap_handler(dev
-						     , drv_data->tap_trigger);
+						     , drv_data->double_tap_trigger);
 					}
 				} else {
 					LOG_ERR("Trigger type is mismatched");

@@ -481,31 +481,41 @@ in the Git commit's ``Author:`` field.
 See the :ref:`contributor-expectations` for a more complete discussion of
 contributor and reviewer expectations.
 
-Adding links
+Adding Links
 ------------
 
 .. _GitHub references:
    https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls
 
-Do not include `GitHub references`_ in the commit message directly, as it can
-lose meaning in case the repository is forked, for example. Instead, if the
-change addresses a specific GitHub issue, include in the Pull Request message a
-line of the form:
+If your change addresses a specific GitHub issue, include a reference in the
+pull request description using the following format:
+
+.. code-block:: none
+
+   Fixes zephyrproject-rtos/zephyr#[issue number]
+
+For pull requests to the Zephyr project only, the short form can also be used,
+for example:
 
 .. code-block:: none
 
    Fixes #[issue number]
 
-Where ``[issue number]`` is the relevant GitHub issue's number. For
-example:
+Replace [issue number] with the relevant GitHub issue number. For example:
 
 .. code-block:: none
 
-   Fixes: #1234
+   Fixes zephyrproject-rtos/zephyr#1234
 
-You can point to other relevant information that can be found on the web using
-:code:`Link:` tags. This includes, for example: GitHub issues, datasheets,
-reference manuals, etc.
+This syntax ensures that the issue is automatically closed when the pull
+request is merged. Always specify the full repository path
+(zephyrproject-rtos/zephyr) to avoid ambiguity, especially when working across
+multiple repositories.
+
+The same format can also be used in commit messages.
+
+For linking to additional external resources—such as related issues,
+datasheets, or technical reference manuals—use the ``Link:`` tag:
 
 .. code-block:: none
 
@@ -914,7 +924,7 @@ Requirements for Treewide Changes
   pull requests that are treewide changes
 
 - The person proposing a treewide change must create an `RFC issue
-  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.md&title=>`_
+  <https://github.com/zephyrproject-rtos/zephyr/issues/new?assignees=&labels=RFC&template=003_rfc-proposal.yml>`_
   describing the change, its rationale and impact, etc. before any pull
   requests related to the change can be merged
 

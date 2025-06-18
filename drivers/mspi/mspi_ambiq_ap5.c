@@ -660,6 +660,12 @@ static int mspi_ambiq_pm_action(const struct device *controller, enum pm_device_
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		ret = pinctrl_apply_state(cfg->pcfg,
+					  PINCTRL_STATE_PRIV_START + data->dev_id->dev_idx);
+		if (ret < 0) {
+			return ret;
+		}
 		ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_WAKE, true);
 		if (ret) {
 			LOG_INST_ERR(cfg->log, "%u, fail to resume MSPI, code:%d.", __LINE__,
@@ -669,6 +675,19 @@ static int mspi_ambiq_pm_action(const struct device *controller, enum pm_device_
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if ((ret < 0) && (ret != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to
+			 * sleep,
+			 * "MSPI pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return ret;
+		}
 		ret = am_hal_mspi_power_control(data->mspiHandle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
 		if (ret) {
 			LOG_INST_ERR(cfg->log, "%u, fail to suspend MSPI, code:%d.", __LINE__,

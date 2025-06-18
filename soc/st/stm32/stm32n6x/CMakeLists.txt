@@ -26,7 +26,7 @@ else()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${SIGNING_TOOL}
     -in ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
-    -nk -t fsbl -hv 2.3
+    -nk -t fsbl -hv 2.3 --silent
     -o ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin
     -dump ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}

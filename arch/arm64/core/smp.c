@@ -37,7 +37,7 @@
 struct boot_params {
 	uint64_t mpid;
 	char *sp;
-	uint8_t voting[CONFIG_MP_MAX_NUM_CPUS];
+	uint8_t voting[DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus))];
 	arch_cpustart_t fn;
 	void *arg;
 	int cpu_num;
@@ -55,6 +55,8 @@ volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
 const uint64_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
 };
+
+BUILD_ASSERT(ARRAY_SIZE(cpu_node_list) == DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus)));
 
 /* cpu_map saves the maping of core id and mpid */
 static uint64_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {

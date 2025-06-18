@@ -86,6 +86,8 @@
 			compatible = "ti,cc23x0-aes";
 			reg = <0x400c0000 0x120>;
 			interrupts = <9 0>;
+			dmas = <&dma 4 3>, <&dma 5 4>;
+			dma-names = "cha", "chb";
 			status = "disabled";
 		};
 

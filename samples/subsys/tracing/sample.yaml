@@ -44,10 +44,6 @@ tests:
       - qemu_x86
     extra_args: CONF_FILE="prj_uart.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
-  sample.tracing.transport.usb:
-    platform_allow: sam_e70_xplained/same70q21
-    depends_on: usb_device
-    extra_args: CONF_FILE="prj_usb.conf"
   sample.tracing.transport.uart.ctf:
     platform_allow:
       - qemu_x86
@@ -57,8 +53,9 @@ tests:
     extra_args: CONF_FILE="prj_uart_ctf.conf"
     filter: dt_chosen_enabled("zephyr,tracing-uart")
   sample.tracing.transport.usb.ctf:
-    platform_allow: sam_e70_xplained/same70q21
-    depends_on: usb_device
+    integration_platforms:
+      - frdm_k64f
+    depends_on: usbd
     extra_args: CONF_FILE="prj_usb_ctf.conf"
   sample.tracing.transport.native:
     platform_allow:

@@ -106,7 +106,8 @@ struct lis2dux12_config {
 	uint8_t fifo_wtm;
 	uint8_t accel_batch : 3;
 	uint8_t ts_batch : 2;
-	uint8_t reserved : 3;
+	uint8_t fifo_mode_sel : 2;
+	uint8_t reserved : 1;
 #endif
 #ifdef CONFIG_LIS2DUX12_TRIGGER
 	const struct gpio_dt_spec int1_gpio;

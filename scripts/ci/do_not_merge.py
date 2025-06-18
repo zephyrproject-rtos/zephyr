@@ -12,6 +12,13 @@ import github
 DNM_LABELS = ["DNM", "DNM (manifest)", "TSC", "Architecture Review", "dev-review"]
 
 
+def print_rate_limit(gh, org):
+    response = gh.get_organization(org)
+    for header, value in response.raw_headers.items():
+        if header.startswith("x-ratelimit"):
+            print(f"{header}: {value}")
+
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -29,6 +36,9 @@ def main(argv):
 
     token = os.environ.get('GITHUB_TOKEN', None)
     gh = github.Github(token)
+
+    print_rate_limit(gh, "zephyrproject-rtos")
+
     repo = gh.get_repo("zephyrproject-rtos/zephyr")
     pr = repo.get_pull(args.pull_request)
 

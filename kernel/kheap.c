@@ -12,6 +12,17 @@
 #include <ksched.h>
 #include <wait_q.h>
 
+int k_heap_array_get(struct k_heap **heap)
+{
+	int num;
+
+	/* Pointer to the start of the heap array */
+	STRUCT_SECTION_GET(k_heap, 0, heap);
+	/* Number of statically defined heaps */
+	STRUCT_SECTION_COUNT(k_heap, &num);
+	return num;
+}
+
 void k_heap_init(struct k_heap *heap, void *mem, size_t bytes)
 {
 	z_waitq_init(&heap->wait_q);

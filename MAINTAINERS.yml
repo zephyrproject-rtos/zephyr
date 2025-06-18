@@ -1340,6 +1340,18 @@ Release Notes:
   labels:
     - "area: DAI"
 
+"Drivers: Debug":
+  status: maintained
+  maintainers:
+    - asmellby
+  collaborators:
+    - nordic-krch
+  files:
+    - drivers/debug/
+    - dts/bindings/debug/
+  labels:
+    - "area: Debugging"
+
 "Drivers: Devmux":
   status: maintained
   maintainers:
@@ -2126,6 +2138,7 @@ Release Notes:
     - tbursztyka
   collaborators:
     - teburd
+    - decsny
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
@@ -3679,6 +3692,7 @@ Silabs Platforms:
     - drivers/*/*/*silabs*
     - drivers/*/*/*siwx91x*
     - tests/boards/silabs/
+    - snippets/*silabs*/
   labels:
     - "platform: Silabs"
 
@@ -4397,7 +4411,8 @@ Infineon Platforms:
   maintainers:
     - ifyall
   collaborators:
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
     - talih0
   files:
     - boards/cypress/
@@ -4668,6 +4683,15 @@ Tracing:
     - "area: tracing"
   tests:
     - tracing
+
+u-blox Platforms:
+  status: maintained
+  maintainers:
+    - 3rang
+  files:
+    - boards/u-blox/
+  labels:
+    - "platform: u-blox"
 
 USB:
   status: maintained
@@ -5028,7 +5052,8 @@ West:
     - ifyall
   collaborators:
     - nashif
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
   files:
     - modules/Kconfig.cypress
   labels:
@@ -5077,7 +5102,8 @@ West:
   collaborators:
     - parthitce
     - talih0
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/

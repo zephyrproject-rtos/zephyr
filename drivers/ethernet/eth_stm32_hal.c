@@ -1128,12 +1128,15 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 
 	ARG_UNUSED(phy_dev);
 
+	/* The hal also needs to be stopped before changing the MAC config.
+	 * The speed can change without receiving a link down callback before.
+	 */
+	eth_stm32_hal_stop(dev);
 	if (state->is_up) {
 		set_mac_config(dev, state);
 		eth_stm32_hal_start(dev);
 		net_eth_carrier_on(dev_data->iface);
 	} else {
-		eth_stm32_hal_stop(dev);
 		net_eth_carrier_off(dev_data->iface);
 	}
 }

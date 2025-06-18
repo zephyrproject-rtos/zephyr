@@ -100,6 +100,7 @@ enum dns_rr_type {
 enum dns_response_type {
 	DNS_RESPONSE_INVALID = -EINVAL,
 	DNS_RESPONSE_IP,
+	DNS_RESPONSE_DATA,
 	DNS_RESPONSE_CNAME_WITH_IP,
 	DNS_RESPONSE_CNAME_NO_IP
 };
@@ -472,5 +473,8 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
  * @return Printable query type name.
  */
 const char *dns_qtype_to_str(enum dns_rr_type qtype);
+
+int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
+		    struct net_buf *buf, const uint8_t **eol);
 
 #endif

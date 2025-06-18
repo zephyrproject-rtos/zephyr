@@ -15,7 +15,7 @@
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint32_t addr = DT_INST_REG_ADDR(0);
-	ssize_t end = MIN(length, DT_INST_REG_ADDR(0) / 4 *
+	ssize_t end = MIN(length, DT_INST_REG_SIZE(0) / 4 *
 			CONFIG_LITEX_CSR_DATA_WIDTH / 8);
 	for (int i = 0; i < end; i++) {
 #if CONFIG_LITEX_CSR_DATA_WIDTH == 8

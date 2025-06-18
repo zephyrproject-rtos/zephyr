@@ -13,14 +13,14 @@ config HCI_NXP_ENABLE_AUTO_SLEEP
 	  message to the Controller as the Host will need to wake it up.
 
 config HCI_NXP_SET_CAL_DATA
-	bool "BLE Controller calibration data"
+	bool "Bluetooth Controller calibration data"
 	help
-	  If enabled, the Host will send calibration data to the BLE Controller during HCI init.
+	  If enabled, the Host will send calibration data to the Bluetooth Controller during HCI init.
 
 config HCI_NXP_SET_CAL_DATA_ANNEX100
-	bool "BLE Controller calibration data annex 100"
+	bool "Bluetooth Controller calibration data annex 100"
 	help
-	  If enabled, the Host will send calibration data annex 100 to the BLE Controller during HCI
+	  If enabled, the Host will send calibration data annex 100 to the Bluetooth Controller during HCI
 	  init.
 
 config HCI_NXP_RX_THREAD

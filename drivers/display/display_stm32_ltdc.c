@@ -124,6 +124,7 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_ARGB8888, 0);
 		data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 		data->current_pixel_size = 4u;
+		break;
 	default:
 		err = -ENOTSUP;
 		break;

@@ -326,6 +326,16 @@ config SHELL_CUSTOM_HEADER
 	  extension of the shell APIs at the macro level. Please use cautiously!
 	  The internal shell API may change in future releases.
 
+config SHELL_TX_TIMEOUT_MS
+	int "Shell TX timeout in milliseconds"
+	default 500 if SHELL_LOG_BACKEND
+	default 50
+	help
+	  The timeout in milliseconds for the shell TX mutex. This is used to
+	  prevent deadlocks when called from other than the shell's processing thread.
+	  When using the shell log backend, the timeout should be longer to avoid
+	  timeouts due to log processing. A value of 0 means no timeout.
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL

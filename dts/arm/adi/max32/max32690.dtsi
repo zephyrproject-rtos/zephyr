@@ -253,5 +253,21 @@
 			maximum-speed = "high-speed";
 			status = "disabled";
 		};
+
+		can0: can@40064000 {
+			compatible = "adi,max32-can";
+			reg = <0x40064000 0x1000>;
+			status = "disabled";
+			interrupts = <107 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 11>;
+		};
+
+		can1: can@40065000 {
+			compatible = "adi,max32-can";
+			reg = <0x40065000 0x1000>;
+			status = "disabled";
+			interrupts = <108 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 19>;
+		};
 	};
 };

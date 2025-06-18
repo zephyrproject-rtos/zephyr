@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024, NXP
+ * Copyright 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,12 @@
 #define DEV_CFG(_dev) \
 	((const struct mcux_rgpio_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct mcux_rgpio_data *)(_dev)->data)
+
+/*
+ * Default PAD config value for SCMI pinctrl:
+ * Pull down, Slight Fast Slew Rate, X4 driver strength.
+ */
+#define GPIO_PIN_DEFAUT_PAD_VAL 0x0000051e
 
 struct mcux_rgpio_config {
 	/* gpio_driver_config needs to be first */
@@ -50,6 +56,10 @@ static int mcux_rgpio_configure(const struct device *dev,
 	struct pinctrl_soc_pin pin_cfg;
 	int cfg_idx = pin, i;
 
+	if (flags == GPIO_DISCONNECTED) {
+		return -ENOTSUP;
+	}
+
 	/* Make sure pin is supported */
 	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
 		return -ENOTSUP;
@@ -68,10 +78,15 @@ static int mcux_rgpio_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(CONFIG_PINCTRL_IMX_SCMI)
+	/* For SCMI Pinctrl platform, set default PAD config value for SCMI pinctrl. */
+	uint32_t reg = GPIO_PIN_DEFAUT_PAD_VAL;
+#else
 	/* Set appropriate bits in pin configuration register */
 	volatile uint32_t *gpio_cfg_reg = (volatile uint32_t *)
 			((size_t)config->pin_muxes[cfg_idx].config_register);
 	uint32_t reg = *gpio_cfg_reg;
+#endif
 
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
 	/* PUE/PDRV types have the same ODE bit */
@@ -258,10 +273,12 @@ static int mcux_rgpio_manage_callback(const struct device *dev,
 static void mcux_rgpio_port_isr(const struct device *dev)
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct mcux_rgpio_config *config = dev->config;
 	struct mcux_rgpio_data *data = dev->data;
 	uint32_t int_flags;
 
 	int_flags = base->ISFR[0]; /* Notice: only irq0 is used for now */
+	int_flags &= config->common.port_pin_mask; /* don't handle unusable pin */
 	base->ISFR[0] = int_flags;
 
 	gpio_fire_callbacks(&data->callbacks, dev, int_flags);

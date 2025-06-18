@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <microchip/mec5_mec1753qlj.dtsi>
+#include <microchip/mec/mec5_mec1753qlj.dtsi>
 #include <microchip/mec5/mec1753qlj-a0-pinctrl.dtsi>
 
 / {

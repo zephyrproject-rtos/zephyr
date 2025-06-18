@@ -570,6 +570,13 @@ ZTEST(spi_loopback, test_spi_null_rx_buf_set)
 	spi_loopback_transceive(spec, &tx, NULL);
 }
 
+ZTEST(spi_loopback, test_spi_null_tx_rx_buf_set)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_transceive(spec, NULL, NULL);
+}
+
 ZTEST(spi_loopback, test_nop_nil_bufs)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
@@ -708,8 +715,8 @@ static struct k_thread thread[3];
 static K_SEM_DEFINE(thread_sem, 0, 3);
 static K_SEM_DEFINE(sync_sem, 0, 1);
 
-static uint8_t __aligned(32) tx_buffer[3][32];
-static uint8_t __aligned(32) rx_buffer[3][32];
+static uint8_t __aligned(32) tx_buffer[3][32] __NOCACHE;
+static uint8_t __aligned(32) rx_buffer[3][32] __NOCACHE;
 
 atomic_t thread_test_fails;
 

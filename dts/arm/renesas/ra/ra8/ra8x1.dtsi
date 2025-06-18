@@ -60,6 +60,14 @@
 			status = "okay";
 		};
 
+		elc: elc@40201000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40201000 0xf8>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40400800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40400800 0x3c0>;

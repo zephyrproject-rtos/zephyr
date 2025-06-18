@@ -1,6 +1,6 @@
 /* NXP ENET QOS Header
  *
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,15 +23,16 @@
 #define NXP_OUI_BYTE_1 0x9A
 #define NXP_OUI_BYTE_2 0x22
 
-#define FIRST_TX_DESCRIPTOR_FLAG BIT(29)
-#define LAST_TX_DESCRIPTOR_FLAG BIT(28)
+#define FIRST_DESCRIPTOR_FLAG BIT(29)
+#define LAST_DESCRIPTOR_FLAG BIT(28)
 #define OWN_FLAG BIT(31)
 #define RX_INTERRUPT_ON_COMPLETE_FLAG BIT(30)
 #define TX_INTERRUPT_ON_COMPLETE_FLAG BIT(31)
 #define BUF1_ADDR_VALID_FLAG BIT(24)
 #define DESC_RX_PKT_LEN GENMASK(14, 0)
 
-#define ENET_QOS_MAX_NORMAL_FRAME_LEN 1518
+#define ENET_QOS_RX_BUFFER_SIZE (CONFIG_NET_BUF_DATA_SIZE & 0xFFFFFFFC)
+#define ENET_QOS_MAX_NORMAL_FRAME_LEN 1518 /* Including FCS */
 
 #define NUM_SWR_WAIT_CHUNKS 5
 
@@ -113,6 +114,7 @@ struct nxp_enet_qos_tx_data {
 struct nxp_enet_qos_rx_data {
 	struct k_work rx_work;
 	atomic_t rbu_flag;
+	uint32_t next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc descriptors[NUM_RX_BUFDESC];
 	struct net_buf *reserved_bufs[NUM_RX_BUFDESC];
 };

@@ -1017,7 +1017,7 @@ static int eusart_init(const struct device *dev)
 	/* The peripheral and gpio clock are already enabled from soc and gpio driver */
 	/* Enable EUSART clock */
 	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
-	if (err < 0) {
+	if (err < 0 && err != -EALREADY) {
 		return err;
 	}
 

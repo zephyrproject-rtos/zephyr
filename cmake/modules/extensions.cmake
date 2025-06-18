@@ -5288,6 +5288,7 @@ function(zephyr_iterable_section)
   set(options     "ALIGN_WITH_INPUT;NUMERIC")
   set(single_args "GROUP;LMA;NAME;SUBALIGN;VMA")
   set(multi_args  "")
+  set(subalign "")
   set(align_input)
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
@@ -5297,10 +5298,8 @@ function(zephyr_iterable_section)
     )
   endif()
 
-  if(NOT DEFINED SECTION_SUBALIGN)
-    message(FATAL_ERROR "zephyr_iterable_section(${ARGV0} ...) missing "
-                        "required argument: SUBALIGN"
-    )
+  if(DEFINED SECTION_SUBALIGN)
+    set(subalign "SUBALIGN ${SECTION_SUBALIGN}")
   endif()
 
   if(SECTION_ALIGN_WITH_INPUT)
@@ -5321,7 +5320,7 @@ function(zephyr_iterable_section)
     NAME ${SECTION_NAME}_area
     GROUP "${SECTION_GROUP}"
     VMA "${SECTION_VMA}" LMA "${SECTION_LMA}"
-    NOINPUT ${align_input} SUBALIGN ${SECTION_SUBALIGN}
+    NOINPUT ${align_input} ${subalign}
   )
   zephyr_linker_section_configure(
     SECTION ${SECTION_NAME}_area

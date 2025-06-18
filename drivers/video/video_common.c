@@ -204,8 +204,9 @@ static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, s
 			LOG_HEXDUMP_ERR(buf_w, size_w, "failed to write-read to I2C register");
 			return ret;
 		}
-
-		k_sleep(K_MSEC(1));
+		if (CONFIG_VIDEO_I2C_RETRY_NUM > 0) {
+			k_sleep(K_MSEC(1));
+		}
 	}
 
 	return 0;
@@ -274,8 +275,9 @@ static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, 
 			LOG_HEXDUMP_ERR(buf_w, size, "failed to write to I2C register");
 			return ret;
 		}
-
-		k_sleep(K_MSEC(1));
+		if (CONFIG_VIDEO_I2C_RETRY_NUM > 0) {
+			k_sleep(K_MSEC(1));
+		}
 	}
 
 	return 0;
@@ -415,6 +417,10 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 
 	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
 		return -ERANGE;
+	}
+
+	if (ctrl_query.int_menu == NULL) {
+		return -EINVAL;
 	}
 
 	return (int64_t)ctrl_query.int_menu[ctrl.val];

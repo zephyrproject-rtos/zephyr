@@ -23,7 +23,7 @@ config TRACING_CORE
 	  Automatically selected by formats that require the core
 	  tracing infrastructure.
 
-choice
+choice TRACING_FORMAT_CHOICE
 	prompt "Tracing Format"
 	default TRACING_NONE
 
@@ -76,7 +76,7 @@ config TRACING_CTF_TIMESTAMP
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
 
-choice
+choice TRACING_METHOD_CHOICE
 	prompt "Tracing Method"
 	default TRACING_ASYNC
 
@@ -129,7 +129,7 @@ config TRACING_PACKET_MAX_SIZE
 	help
 	  Max size of one tracing packet.
 
-choice
+choice TRACING_BACKEND_CHOICE
 	prompt "Tracing Backend"
 	default TRACING_BACKEND_UART
 
@@ -142,7 +142,7 @@ config TRACING_BACKEND_UART
 
 config TRACING_BACKEND_USB
 	bool "USB backend"
-	depends on USB_DEVICE_STACK
+	depends on USB_DEVICE_STACK_NEXT
 	depends on TRACING_ASYNC
 	help
 	  Use USB to output tracing data.
@@ -170,6 +170,14 @@ config TRACING_BACKEND_ADSP_MEMORY_WINDOW
 
 endchoice
 
+config TRACING_BACKEND_NAME
+	string
+	default "tracing_backend_uart" if TRACING_BACKEND_UART
+	default "tracing_backend_usb" if TRACING_BACKEND_USB
+	default "tracing_backend_posix" if TRACING_BACKEND_POSIX
+	default "tracing_backend_ram" if TRACING_BACKEND_RAM
+	default "tracing_backend_adsp_memory_window" if TRACING_BACKEND_ADSP_MEMORY_WINDOW
+
 config RAM_TRACING_BUFFER_SIZE
 	int "Ram Tracing buffer size"
 	default 4096
@@ -177,13 +185,6 @@ config RAM_TRACING_BUFFER_SIZE
 	help
 	  Size of the RAM trace buffer. Trace will be discarded if the
 	  length is exceeded.
-
-config TRACING_USB_MPS
-	int "USB backend max packet size"
-	default 64
-	depends on TRACING_BACKEND_USB
-	help
-	  USB tracing backend max packet size(endpoint MPS).
 
 config TRACING_HANDLE_HOST_CMD
 	bool "Host command handle"

@@ -115,6 +115,54 @@ Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or 
 
     When using TLS credentials subsystem, by default the volatile backend i.e., :kconfig:option:`CONFIG_TLS_CREDENTIALS_BACKEND_VOLATILE` is chosen. When using the volatile backend, the certificates are stored in RAM and are lost on reboot, so the certificates need to be installed again after reboot. As an alternative, the PS (protected storage) backend i.e., :kconfig:option:`CONFIG_TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE` can be used to store the certificates in the non-volatile storage.
 
+How to Generate Test Certificates Using FreeRADIUS
+--------------------------------------------------
+
+The test certificates in ``samples/net/wifi/test_certs/rsa2k`` are generated using the `FreeRADIUS raddb/certs scripts <https://github.com/FreeRADIUS/freeradius-server/tree/master/raddb/certs>`_. You can generate your own certificates for testing as follows:
+
+1. **Prerequisites**
+   - Install OpenSSL and GNU Make.
+   - Download the `FreeRADIUS raddb/certs directory <https://github.com/FreeRADIUS/freeradius-server/tree/master/raddb/certs>`_.
+
+2. **Edit the Makefile**
+   In the ``raddb/certs`` directory, edit the ``Makefile`` to add ``-nodes`` to the OpenSSL commands for server and client keys. This ensures the private keys are not password-protected (Zephyr Wi-Fi shell does not support private key passwords):
+
+   ::
+
+     $(OPENSSL) req -new -out server.csr -keyout server.key -nodes -config ./server.cnf
+     $(OPENSSL) req -new -out client.csr -keyout client.key -nodes -config ./client.cnf
+
+3. **(Optional) Edit the .cnf files**
+   Customize ``server.cnf`` and ``client.cnf`` as needed for your environment.
+
+4. **Generate Certificates**
+   Run the following commands in the ``raddb/certs`` directory:
+
+   ::
+
+     make destroycerts
+     make server
+     make client
+
+5. **Rename Files for Zephyr**
+   Match the filenames used in Zephyr samples:
+
+   +-------------------+---------------------+
+   | FreeRADIUS Output | Zephyr Sample Name  |
+   +===================+=====================+
+   | ca.pem            | ca.pem              |
+   | server.key        | server-key.pem      |
+   | server.pem        | server.pem          |
+   | client.key        | client-key.pem      |
+   | client.pem        | client.pem          |
+   +-------------------+---------------------+
+
+6. **Copy the files**
+   Place the renamed files in your Zephyr project's certificate directory (e.g., ``samples/net/wifi/test_certs/rsa2k``).
+
+.. note::
+   These certificates are for testing only and should not be used in production.
+
 API Reference
 *************
 

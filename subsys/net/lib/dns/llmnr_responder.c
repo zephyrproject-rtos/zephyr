@@ -53,7 +53,6 @@ static struct net_mgmt_event_callback mgmt_cb;
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 /* This value is recommended by RFC 1035 */
-#define DNS_RESOLVER_MAX_BUF_SIZE	512
 #define DNS_RESOLVER_MIN_BUF		2
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_LLMNR_RESOLVER_ADDITIONAL_BUF_CTR)
@@ -117,7 +116,7 @@ static void create_ipv4_dst_addr(struct sockaddr_in *src_addr,
 #endif
 
 static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
-				      uint32_t mgmt_event, struct net_if *iface)
+				      uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)

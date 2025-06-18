@@ -48,9 +48,9 @@ void soc_early_init_hook(void)
 	/*
 	 * Set default temperature for spotmgr to room temperature
 	 */
-	am_hal_pwrctrl_temp_thresh_t dummy;
+	am_hal_pwrctrl_temp_thresh_t dummy[32];
 
-	am_hal_pwrctrl_temp_update(25.0f, &dummy);
+	am_hal_pwrctrl_temp_update(25.0f, dummy);
 
 	/* Enable Icache*/
 	sys_cache_instr_enable();

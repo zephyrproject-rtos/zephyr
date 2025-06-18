@@ -50,4 +50,12 @@
 			silabs,input-filter;
 		};
 	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PD4>, <PTI_DFRAME_PD5>;
+			drive-push-pull;
+			output-high;
+		};
+	};
 };

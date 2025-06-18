@@ -1,0 +1,56 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp2/stm32mp257_m33.dtsi>
+#include <st/mp2/stm32mp257faix-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32MP257F-EV1 board";
+	compatible = "st,stm32mp257f-ev1", "st,stm32mp25";
+
+	chosen {
+		zephyr,flash = &ddr_code;
+		zephyr,sram = &ddr_sys;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		orange_led_3: led_3 {
+			gpios = <&gpioj 6 GPIO_ACTIVE_HIGH>;
+			label = "LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_user2: button2 {
+			label = "User 2";
+			gpios = <&gpiog 8 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &orange_led_3;
+		sw0 = &button_user2;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&gpioj {
+	status = "okay";
+};

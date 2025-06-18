@@ -18,3 +18,12 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}_sci_b_i2c.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}_sci_b_i2c.conf"
+  drivers.i2c.stm32.interrupt_disabled:
+    depends_on:
+      - i2c
+      - arduino_i2c
+    filter: dt_nodelabel_enabled("arduino_i2c") and CONFIG_SOC_FAMILY_STM32
+    build_only: true
+    extra_args: "DTC_OVERLAY_FILE=boards/stm32_arduino.overlay"
+    extra_configs:
+      - CONFIG_I2C_STM32_INTERRUPT=n

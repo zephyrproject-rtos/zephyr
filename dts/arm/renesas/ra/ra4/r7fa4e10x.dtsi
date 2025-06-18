@@ -7,6 +7,7 @@
 #include <arm/renesas/ra/ra4/ra4-cm33-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4e1-elc.h>
 
 /delete-node/ &spi1;
 /delete-node/ &agt4;

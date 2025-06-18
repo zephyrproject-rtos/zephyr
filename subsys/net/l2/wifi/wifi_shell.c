@@ -798,7 +798,7 @@ static void handle_wifi_neighbor_rep_complete(struct net_mgmt_event_callback *cb
 #endif
 
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event, struct net_if *iface)
+				    uint64_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_CONNECT_RESULT:
@@ -836,7 +836,7 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static void wifi_mgmt_scan_event_handler(struct net_mgmt_event_callback *cb,
-				    uint32_t mgmt_event, struct net_if *iface)
+					 uint64_t mgmt_event, struct net_if *iface)
 {
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_SCAN_RESULT:
@@ -1146,6 +1146,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'g':
 			params->ignore_broadcast_ssid = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -1562,8 +1565,8 @@ static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
 	PR("Statistics for Wi-Fi interface %p [%d]\n", iface,
 	   net_if_get_by_iface(iface));
 
-	PR("Bytes received   : %u\n", data->bytes.received);
-	PR("Bytes sent       : %u\n", data->bytes.sent);
+	PR("Bytes received   : %llu\n", data->bytes.received);
+	PR("Bytes sent       : %llu\n", data->bytes.sent);
 	PR("Packets received : %u\n", data->pkts.rx);
 	PR("Packets sent     : %u\n", data->pkts.tx);
 	PR("Receive errors   : %u\n", data->errors.rx);
@@ -2142,6 +2145,10 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			params->setup.twt_mantissa = (uint16_t)value;
 			break;
 
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+
 		case 'h':
 			return -ENOEXEC;
 		}
@@ -2452,6 +2459,9 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			params->type |= WIFI_AP_CONFIG_PARAM_VHT_CAPAB;
 			break;
 #endif
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		case 'h':
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -2547,6 +2557,9 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			break;
 		case 'v':
 			verbose = true;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			return -ENOEXEC;
@@ -3254,6 +3267,9 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 		case 's':
 			strncpy(params->auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3291,6 +3307,9 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 		case 'f':
 			params->chirp.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3327,6 +3346,9 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'f':
 			params->listen.freq = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3373,6 +3395,9 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 		case 'a':
 			ret = net_bytes_from_str(params->bootstrap_gen.mac,
 						 WIFI_MAC_ADDR_LEN, state->optarg);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3432,6 +3457,9 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 			break;
 		case 's':
 			strncpy(params->configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3717,6 +3745,9 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 		case 'p':
 			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3959,7 +3990,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[-h --channel <channel>]\n"
 		      "[-a --mac <mac_addr>]\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_btstrap_gen, 1, 2),
+		      cmd_wifi_dpp_btstrap_gen, 1, 10),
 	SHELL_CMD_ARG(btstrap_get_uri, NULL,
 		      " Get DPP bootstrap uri by id:\n"
 		      "<bootstrap_id>\n"
@@ -3995,7 +4026,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      " AP Input QR code:\n"
 		      "<qr_code_string>\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_ap_qr_code, 3, 2),
+		      cmd_wifi_dpp_ap_qr_code, 2, 2),
 	SHELL_CMD_ARG(ap_auth_init, NULL,
 		      "AP DPP start auth request as enrollee:\n"
 		      "-p --peer <peer_bootstrap_id>\n"
@@ -4059,7 +4090,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		 "[-c --channel]: Channel that needs to be scanned for connection. "
 		 "0:any channel.\n"
 		 "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
-		 "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
+		 "[-p, --passphrase]: Passphrase (valid only for secure SSIDs)\n"
 		 "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		 "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		 "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"

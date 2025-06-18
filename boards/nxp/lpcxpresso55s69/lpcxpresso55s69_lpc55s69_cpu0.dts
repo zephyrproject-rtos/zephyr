@@ -165,7 +165,7 @@ zephyr_uhc1: &usbhhs {
 	pinctrl-0 = <&pinmux_usbhhs>;
 	pinctrl-names = "default";
 	status = "okay";
-	phy_handle = <&usbphy1>;
+	phy-handle = <&usbphy1>;
 };
 
 &usbphy1 {

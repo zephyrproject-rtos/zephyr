@@ -14,3 +14,22 @@ properties:
   int-gpios:
     type: phandle-array
     description: GPIO for interrupt signal indicating PHY state change.
+  ti,rx-internal-delay:
+    type: int
+    description:
+      RX internal delay setting for the PHY. Required only if interface
+      type is PHY_INTERFACE_MODE_RGMII_ID or PHY_INTERFACE_MODE_RGMII_RXID.
+  ti,tx-internal-delay:
+    type: int
+    description:
+      TX internal delay setting for the PHY. Required only if interface type is
+      PHY_INTERFACE_MODE_RGMII_ID or PHY_INTERFACE_MODE_RGMII_TXID.
+  ti,interface-type:
+    type: string
+    description: Which type of phy connection the phy is set up for
+    default: "rgmii"
+    enum:
+      - "rgmii"
+      - "rgmii-id"
+      - "rgmii-rxid"
+      - "rgmii-txid"

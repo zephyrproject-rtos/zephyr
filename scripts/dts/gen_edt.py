@@ -48,7 +48,7 @@ def main():
                          warn_reg_unit_address_mismatch=
                              "-Wno-simple_bus_reg" not in args.dtc_flags,
                          default_prop_types=True,
-                         infer_binding_for_paths=["/zephyr,user"],
+                         infer_binding_for_paths=["/zephyr,user", "/cpus"],
                          werror=args.edtlib_Werror,
                          vendor_prefixes=vendor_prefixes)
     except edtlib.EDTError as e:

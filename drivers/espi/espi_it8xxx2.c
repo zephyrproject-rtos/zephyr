@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <zephyr/drivers/espi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/interrupt_controller/wuc_ite_it51xxx.h>
 #include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
@@ -21,8 +22,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(espi, CONFIG_ESPI_LOG_LEVEL);
 
-#define ESPI_IT8XXX2_GET_GCTRL_BASE \
-	((struct gctrl_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(gctrl)))
+#define ESPI_ITE_GET_GCTRL_BASE ((struct gctrl_ite_ec_regs *)DT_REG_ADDR(DT_NODELABEL(gctrl)))
 
 #define IT8XXX2_ESPI_IRQ     DT_INST_IRQ_BY_IDX(0, 0, irq)
 #define IT8XXX2_ESPI_VW_IRQ  DT_INST_IRQ_BY_IDX(0, 1, irq)
@@ -827,9 +827,10 @@ static const struct ec2i_t smfi_settings[] = {
 static void smfi_it8xxx2_init(const struct device *dev)
 {
 	const struct espi_it8xxx2_config *const config = dev->config;
-	struct smfi_it8xxx2_regs *const smfi_reg =
-		(struct smfi_it8xxx2_regs *)config->base_smfi;
-	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
+	struct smfi_ite_ec_regs *const smfi_reg = (struct smfi_ite_ec_regs *)config->base_smfi;
+
+#ifdef CONFIG_SOC_SERIES_IT8XXX2
+	struct gctrl_ite_ec_regs *const gctrl = ESPI_ITE_GET_GCTRL_BASE;
 	uint8_t h2ram_offset;
 
 	/* Set the host to RAM cycle address offset */
@@ -838,6 +839,7 @@ static void smfi_it8xxx2_init(const struct device *dev)
 	gctrl->GCTRL_H2ROFSR =
 		(gctrl->GCTRL_H2ROFSR & ~IT8XXX2_ESPI_H2RAM_OFFSET_MASK) |
 		h2ram_offset;
+#endif
 
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	memset(&h2ram_pool[CONFIG_ESPI_PERIPHERAL_HOST_CMD_PARAM_PORT_NUM], 0,
@@ -929,12 +931,13 @@ static void pnpcfg_it8xxx2_configure(const struct device *dev,
 
 #define PNPCFG(_s)						\
 	pnpcfg_it8xxx2_configure(dev, _s##_settings, ARRAY_SIZE(_s##_settings))
+extern uint8_t _h2ram_pool_start[];
 
 static void pnpcfg_it8xxx2_init(const struct device *dev)
 {
 	const struct espi_it8xxx2_config *const config = dev->config;
 	struct ec2i_regs *const ec2i = (struct ec2i_regs *)config->base_ec2i;
-	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
+	struct gctrl_ite_ec_regs *const gctrl = ESPI_ITE_GET_GCTRL_BASE;
 
 	/* The register pair to access PNPCFG is 004Eh and 004Fh */
 	gctrl->GCTRL_BADRSEL = 0x1;
@@ -953,6 +956,15 @@ static void pnpcfg_it8xxx2_init(const struct device *dev)
 #if defined(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD) || \
 	defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 	PNPCFG(smfi);
+
+#ifdef CONFIG_SOC_SERIES_IT51XXX
+	uint8_t h2ram_pool_idx;
+
+	h2ram_pool_idx = ((uint32_t)_h2ram_pool_start & IT8XXX2_ESPI_H2RAM_BASEADDR_MASK) /
+			 IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX;
+	/* H2RAM 4K page select */
+	ec2i_it8xxx2_write(dev, HOST_INDEX_DSLDC13, h2ram_pool_idx);
+#endif
 #endif
 }
 
@@ -1086,7 +1098,7 @@ static void pmc1_it8xxx2_init(const struct device *dev)
 static void port80_it8xxx2_isr(const struct device *dev)
 {
 	struct espi_it8xxx2_data *const data = dev->data;
-	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
+	struct gctrl_ite_ec_regs *const gctrl = ESPI_ITE_GET_GCTRL_BASE;
 	struct espi_event evt = {
 		ESPI_BUS_PERIPHERAL_NOTIFICATION,
 		(ESPI_PERIPHERAL_INDEX_0 << 16) | ESPI_PERIPHERAL_DEBUG_PORT80,
@@ -1107,7 +1119,7 @@ static void port80_it8xxx2_isr(const struct device *dev)
 static void port80_it8xxx2_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
+	struct gctrl_ite_ec_regs *const gctrl = ESPI_ITE_GET_GCTRL_BASE;
 
 	/* Accept Port 80h (and 81h) Cycle */
 	if (IS_ENABLED(CONFIG_ESPI_IT8XXX2_PORT_81_CYCLE)) {
@@ -2395,7 +2407,11 @@ void espi_it8xxx2_enable_trans_irq(const struct device *dev, bool enable)
 	} else {
 		irq_disable(IT8XXX2_TRANS_IRQ);
 		/* Clear pending interrupt */
+#ifdef CONFIG_SOC_SERIES_IT51XXX
+		it51xxx_wuc_clear_status(config->wuc.wucs, config->wuc.mask);
+#else
 		it8xxx2_wuc_clear_status(config->wuc.wucs, config->wuc.mask);
+#endif
 	}
 }
 
@@ -2431,7 +2447,7 @@ void espi_it8xxx2_espi_reset_isr(const struct device *port,
 #define ESPI_IT8XXX2_ESPI_RESET_PIN  2
 static void espi_it8xxx2_enable_reset(void)
 {
-	struct gpio_it8xxx2_regs *const gpio_regs = GPIO_IT8XXX2_REG_BASE;
+	struct gpio_ite_ec_regs *const gpio_regs = GPIO_ITE_EC_REGS_BASE;
 	static struct gpio_callback espi_reset_cb;
 
 	/* eSPI reset is enabled on GPD2 */
@@ -2472,7 +2488,7 @@ static int espi_it8xxx2_init(const struct device *dev)
 		(struct espi_vw_regs *)config->base_espi_vw;
 	struct espi_slave_regs *const slave_reg =
 		(struct espi_slave_regs *)config->base_espi_slave;
-	struct gctrl_it8xxx2_regs *const gctrl = ESPI_IT8XXX2_GET_GCTRL_BASE;
+	struct gctrl_ite_ec_regs *const gctrl = ESPI_ITE_GET_GCTRL_BASE;
 
 	/* configure VCC detector */
 	gctrl->GCTRL_RSTS = (gctrl->GCTRL_RSTS &
@@ -2539,8 +2555,13 @@ static int espi_it8xxx2_init(const struct device *dev)
 	slave_reg->ESGCTRL2 |= IT8XXX2_ESPI_TO_WUC_ENABLE;
 
 	/* Enable WU42 of WUI */
+#ifdef CONFIG_SOC_SERIES_IT51XXX
+	it51xxx_wuc_clear_status(config->wuc.wucs, config->wuc.mask);
+	it51xxx_wuc_enable(config->wuc.wucs, config->wuc.mask);
+#else
 	it8xxx2_wuc_clear_status(config->wuc.wucs, config->wuc.mask);
 	it8xxx2_wuc_enable(config->wuc.wucs, config->wuc.mask);
+#endif
 	/*
 	 * Only register isr here, the interrupt only need to be enabled
 	 * before CPU and RAM clocks gated in the idle function.

@@ -85,6 +85,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		break;
 	case ESP_RST_PANIC:
 		*cause = RESET_CPU_LOCKUP;
+		break;
 	case ESP_RST_BROWNOUT:
 		*cause = RESET_BROWNOUT;
 		break;

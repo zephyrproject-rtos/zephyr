@@ -113,15 +113,13 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(dac_cmds,
 	SHELL_CMD_ARG(setup, &dsub_device_name,
-		      "Setup DAC channel\n"
-		      "Usage: setup <device> <channel> <resolution> [-b] [-i]\n"
-		      "-b Enable output buffer\n"
-		      "-i Connect internally",
+		      SHELL_HELP("Setup DAC channel", "<device> <channel> <resolution> [-b] [-i]\n"
+						      "-b Enable output buffer\n"
+						      "-i Connect internally"),
 		      cmd_setup, 4, 2),
 	SHELL_CMD_ARG(write_value, &dsub_device_name,
-		      "Write DAC value\n"
-		      "Usage: write <device> <channel> <value>",
-		      cmd_write_value, 4, 0),
+		      SHELL_HELP("Write DAC value", "<device> <channel> <value>"), cmd_write_value,
+		      4, 0),
 	SHELL_SUBCMD_SET_END
 );
 

@@ -14,3 +14,4 @@ add_subdirectory_ifdef(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT renesas_ra_external_
 add_subdirectory_ifdef(CONFIG_NXP_RTXXX_DSP_CTRL nxp_rtxxx_dsp_ctrl)
 
 add_subdirectory(coresight)
+add_subdirectory(interconn)

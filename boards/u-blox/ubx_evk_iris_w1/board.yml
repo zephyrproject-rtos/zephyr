@@ -1,0 +1,12 @@
+board:
+  name: ubx_evk_iris_w1
+  full_name: EVK-IRIS-W106-RW612
+  vendor: u-blox
+  revision:
+    format: custom
+    default: fidelex
+    revisions:
+      - name: "macronix"
+      - name: "fidelex"
+  socs:
+    - name: rw612

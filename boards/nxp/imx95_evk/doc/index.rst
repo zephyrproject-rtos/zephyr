@@ -115,10 +115,100 @@ Programming and Debugging (A55)
 
 .. zephyr:board-supported-runners::
 
+There are multiple methods to program and run Zephyr on the A55 core:
+
+Option 1. Boot Zephyr by Using SPSDK Runner
+===========================================
+
+SPSDK runner leverages SPSDK tools (https://spsdk.readthedocs.io), it builds an
+bootable flash image ``flash.bin`` which includes all necessary firmware components,
+such as ELE+V2X firmware, System Manager, TCM OEI, TF-A images etc. Using west flash
+command will download the boot image flash.bin to DDR memory, SD card or eMMC flash.
+By using flash.bin, as no U-Boot image is available, so TF-A will boot up Zephyr on
+the first Cortex-A55 Core directly.
+
+In order to use SPSDK runner, it requires fetching binary blobs, which can be achieved
+by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note::
+
+   It is recommended running the command above after :file:`west update`.
+
+SPSDK runner is enabled by configure item :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE`, currently
+it is not enabled by default for i.MX95 EVK board, so use this configuration to enable
+it, for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx95_evk/mimx9596/a55
+   :goals: build
+   :gen-args: -DCONFIG_BOARD_NXP_SPSDK_IMAGE=y
+
+If :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE` is available and enabled for the board variant,
+``flash.bin`` will be built automatically. The programming could be through below commands.
+Before that, switch SW7[1:4] should be configured to 0b1001 for usb download mode
+to boot, and USB1 and DBG ports should be connected to PC. There are 4 serial ports
+enumerated (115200 8n1), and we use the first for M7 and the fourth for M33 System Manager.
+(The flasher is spsdk which already installed via scripts/requirements.txt.
+On linux host, usb device permission should be configured per Installation Guide
+of https://spsdk.readthedocs.io)
+
+.. code-block:: none
+
+   # load and run without programming. for next flashing, execute 'reset' in the
+   # fourth serail port
+   $ west flash
+
+   # program to SD card, then set SW7[1:4]=0b1011 to reboot
+   $ west flash --bootdevice sd
+
+   # program to emmc card, then set SW7[1:4]=0b1010 to reboot
+   $ west flash --bootdevice=emmc
+
+
+Option 2. Boot Zephyr by Using U-Boot Command
+=============================================
+
+U-Boot "go" command can be used to start Zephyr on A55 core0 and U-Boot "cpu" command
+is used to load and kick Zephyr to the other A55 secondary Cores. Currently "cpu" command
+is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
+xxxx.xx is uboot version and y.y.y is Real-Time Edge Software version, for example
+"uboot_v2023.04-2.9.0" branch is U-Boot v2023.04 used in Real-Time Edge Software release
+v2.9.0), and pre-build images and user guide can be found at `Real-Time Edge Software`_.
+
+.. _Real-Time Edge U-Boot:
+   https://github.com/nxp-real-time-edge-sw/real-time-edge-uboot
+.. _Real-Time Edge Software:
+   https://www.nxp.com/rtedge
+
+Step 1: Download Zephyr Image into DDR Memory
+---------------------------------------------
+
+Firstly need to download Zephyr binary image into DDR memory, it can use tftp:
+
+.. code-block:: console
+
+    tftp 0xd0000000 zephyr.bin
+
+Or copy the Zephyr image ``zephyr.bin`` SD card and plug the card into the board, for example
+if copy to the FAT partition of the SD card, use the following U-Boot command to load the image
+into DDR memory (assuming the SD card is dev 1, fat partition ID is 1, they could be changed
+based on actual setup):
+
+.. code-block:: console
+
+    fatload mmc 1:1 0xd0000000 zephyr.bin;
+
+Step 2: Boot Zephyr
+-------------------
+
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
-
-1. Build and run the Non-SMP application
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
@@ -128,23 +218,17 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
 
 This will build an image (zephyr.bin) with the synchronization sample app.
 
-Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
-plug the SD card into the board. Power it up and stop the u-boot execution at
-prompt.
-
-Use U-Boot to load and kick zephyr.bin to Cortex-A55 Core1:
+Then use the following command to boot Zephyr on the core0:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; cpu 1 release 0xd0000000
+    dcache off; icache flush; go 0xd0000000;
 
-
-Or use the following command to kick zephyr.bin to Cortex-A55 Core0:
+Or use "cpu" command to boot from secondary Core, for example Core1:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; go 0xd0000000
-
+    dcache flush; icache flush; cpu 1 release 0xd0000000
 
 It will display the following console output:
 
@@ -157,46 +241,13 @@ It will display the following console output:
     thread_b: Hello World from cpu 0 on imx95_evk!
     thread_a: Hello World from cpu 0 on imx95_evk!
 
-2. Build and run the SMP application
+Option 3. Boot Zephyr by Using Remoteproc under Linux
+=====================================================
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/synchronization
-   :host-os: unix
-   :board: imx95_evk/mimx9596/a55/smp
-   :goals: build
+When running Linux on the A55 core, it can use the remoteproc framework to load and boot Zephyr,
+refer to Real-Time Edge user guide for more details. Pre-build images and user guide can be found
+at `Real-Time Edge Software`_.
 
-This will build an image (zephyr.bin) with the synchronization sample app.
-
-Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
-plug the SD card into the board. Power it up and stop the u-boot execution at
-prompt.
-
-Use the following command to kick zephyr.bin to Cortex-A55 Core0:
-
-.. code-block:: console
-
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; go 0xd0000000
-
-
-It will display the following console output:
-.. code-block:: console
-
-    *** Booting Zephyr OS build v3.7.0-rc3-15-g2f0beaea144a ***
-    Secondary CPU core 1 (MPID:0x100) is up
-    Secondary CPU core 2 (MPID:0x200) is up
-    Secondary CPU core 3 (MPID:0x300) is up
-    Secondary CPU core 4 (MPID:0x400) is up
-    Secondary CPU core 5 (MPID:0x500) is up
-    thread_a: Hello World from cpu 0 on imx95_evk!
-    thread_b: Hello World from cpu 4 on imx95_evk!
-    thread_a: Hello World from cpu 0 on imx95_evk!
-    thread_b: Hello World from cpu 3 on imx95_evk!
-    thread_a: Hello World from cpu 0 on imx95_evk!
-    thread_b: Hello World from cpu 1 on imx95_evk!
-    thread_a: Hello World from cpu 0 on imx95_evk!
-    thread_b: Hello World from cpu 5 on imx95_evk!
-    thread_a: Hello World from cpu 0 on imx95_evk!
-    thread_b: Hello World from cpu 2 on imx95_evk!
 
 Programming and Debugging (M7)
 ******************************
@@ -213,12 +264,46 @@ To program M7, an i.MX container image ``flash.bin`` must be made, which contain
 multiple elements required, like ELE+V2X firmware, System Manager, TCM OEI, Cortex-M7
 image and so on.
 
-The steps making flash.bin and programming should refer to ``Getting Started with
+SPSDK runner is used to build ``flash.bin``, and it requires fetching binary blobs, which
+can be achieved by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note::
+
+   It is recommended running the command above after :file:`west update`.
+
+Two methods to build and program ``flash.bin``.
+
+1. If :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE` is not available for the board variant,
+the steps making flash.bin and programming should refer to ``Getting Started with
 MCUXpresso SDK for IMX95LPD5EVK-19.pdf`` in i.MX95 `MCUX SDK release`_. Note that
 for the DDR variant, one should use the Makefile targets containing the ``ddr`` keyword.
-
 See ``4.2 Run an example application``, just rename ``zephyr.bin`` to ``m7_image.bin``
 to make flash.bin and program to SD/eMMC.
+
+2. If :kconfig:option:`CONFIG_BOARD_NXP_SPSDK_IMAGE` is available and enabled for the board variant,
+``flash.bin`` will be built automatically. The programming could be through below commands.
+Before that, switch SW7[1:4] should be configured to 0b1001 for usb download mode
+to boot, and USB1 and DBG ports should be connected to PC. There are 4 serial ports
+enumerated (115200 8n1), and we use the first for M7 and the fourth for M33 System Manager.
+(The flasher is spsdk which already installed via scripts/requirements.txt.
+On linux host, usb device permission should be configured per Installation Guide
+of https://spsdk.readthedocs.io)
+
+.. code-block:: none
+
+   # load and run without programming. for next flashing, execute 'reset' in the
+   # fourth serail port
+   $ west flash
+
+   # program to SD card, then set SW7[1:4]=0b1011 to reboot
+   $ west flash --bootdevice sd
+
+   # program to emmc card, then set SW7[1:4]=0b1010 to reboot
+   $ west flash --bootdevice=emmc
 
 Zephyr supports two M7-based i.MX95 boards: ``imx95_evk/mimx9596/m7`` and
 ``imx95_evk/mimx9596/m7/ddr``. The main difference between them is the memory

@@ -15,7 +15,7 @@
 K_SEM_DEFINE(l4_connected, 0, 1);
 K_SEM_DEFINE(l4_disconnected, 0, 1);
 
-static void l4_event_handler(struct net_mgmt_event_callback *cb, uint32_t event,
+static void l4_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 			     struct net_if *iface)
 {
 	switch (event) {

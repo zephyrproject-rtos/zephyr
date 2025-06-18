@@ -33,9 +33,14 @@ Sample Output
 
 .. code-block:: console
 
-    System heap sample
+   System heap sample
 
-    allocated 0, free 196, max allocated 0, heap size 256
-    allocated 156, free 36, max allocated 156, heap size 256
-    allocated 100, free 92, max allocated 156, heap size 256
-    allocated 0, free 196, max allocated 156, heap size 256
+   allocated 0, free 196, max allocated 0, heap size 256
+   allocated 156, free 36, max allocated 156, heap size 256
+   allocated 100, free 92, max allocated 156, heap size 256
+   allocated 0, free 196, max allocated 156, heap size 256
+   1 static heap(s) allocated:
+         0 - address 0x80552a8 allocated 12, free 180, max allocated 12, heap size 256
+   2 heap(s) allocated (including static):
+         0 - address 0x80552a8 allocated 12, free 180, max allocated 12, heap size 256
+         1 - address 0x805530c allocated 0, free 196, max allocated 156, heap size 256

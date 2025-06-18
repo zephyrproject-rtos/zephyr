@@ -76,7 +76,7 @@ static void validate_heap_order_gt(struct min_heap *h)
 
 	while (h->size > 0) {
 		ret = min_heap_pop(h, &temp);
-		zassert_true(ret == true, "pop failure");
+		zassert_true(ret, "pop failure");
 		memcpy(&result[idx++], &temp, sizeof(struct data));
 	}
 
@@ -97,7 +97,7 @@ static void validate_heap_order_ls(struct min_heap *h)
 
 	while (h->size > 0) {
 		ret = min_heap_pop(h, &temp);
-		zassert_true(ret == true, "pop failure");
+		zassert_true(ret, "pop failure");
 		memcpy(&result[idx++], &temp, sizeof(struct data));
 	}
 
@@ -125,6 +125,11 @@ ZTEST(min_heap_api, test_insert)
 		ret = min_heap_push(&my_heap_gt, &elements[i]);
 		zassert_ok(ret, "min_heap_push failed");
 	}
+
+	/* Try to push one more element to the now full heap */
+	ret = min_heap_push(&my_heap_gt, &elements[0]);
+	zassert_equal(ret, -ENOMEM, "push on full heap should return -ENOMEM");
+
 	validate_heap_order_gt(&my_heap_gt);
 }
 
@@ -149,9 +154,10 @@ ZTEST(min_heap_api, test_peek_and_pop)
 	peek_key = peek->key;
 	min_heap_pop(&runtime_heap, &pop);
 
-	zassert_true(peek_key == pop.key, "Peek/pop error");
-	zassert_true(pop.key == LOWEST_PRIORITY_LS, "heap error %d", pop.key);
+	zassert_equal(peek_key, pop.key, "Peek/pop error");
+	zassert_equal(pop.key, LOWEST_PRIORITY_LS, "heap error %d", pop.key);
 	validate_heap_order_ls(&runtime_heap);
+	zassert_is_null(min_heap_peek(&runtime_heap), "peek on empty heap should return NULL");
 }
 
 ZTEST(min_heap_api, test_find_and_remove)
@@ -165,15 +171,25 @@ ZTEST(min_heap_api, test_find_and_remove)
 	}
 
 	int target_key = 5;
+	int wrong_key = 100;
 	size_t index;
-	struct data removed, *found;
+	struct data removed, *found, *found_ignore_index, *not_found;
 
 	found = min_heap_find(&my_heap, match_key, &target_key, &index);
+	found_ignore_index = min_heap_find(&my_heap, match_key, &target_key, NULL);
+	not_found = min_heap_find(&my_heap, match_key, &wrong_key, &index);
 
-	zassert_true(found != NULL, "min_heap_find failure");
+	zassert_not_null(found, "min_heap_find failure");
+	zassert_not_null(found_ignore_index, "min_heap_find failure");
+	zassert_is_null(not_found, "min_heap_find failure");
+	zassert_equal(found->key, target_key, "Found wrong element");
 	min_heap_remove(&my_heap, index, &removed);
+	zassert_false(min_heap_is_empty(&my_heap), "Heap should not be empty");
+	min_heap_remove(&my_heap, HEAP_CAPACITY, &removed);
+	zassert_false(min_heap_remove(&my_heap, HEAP_CAPACITY, &removed),
+		      "remove with invalid index should return false");
 	validate_heap_order_ls(&my_heap);
-	zassert_true(min_heap_is_empty(&my_heap) != false, "Empty check fail");
+	zassert_true(min_heap_is_empty(&my_heap), "Empty check fail");
 }
 
 ZTEST_SUITE(min_heap_api, NULL, NULL, NULL, NULL, NULL);

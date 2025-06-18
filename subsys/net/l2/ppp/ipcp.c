@@ -327,6 +327,8 @@ static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
 		(struct sockaddr *) &dns2,
 		NULL
 	};
+	int ifindex = net_if_get_by_iface(ctx->iface);
+	int interfaces[2] = { ifindex, ifindex };
 	int ret;
 
 	if (!dns1.sin_addr.s_addr) {
@@ -338,7 +340,8 @@ static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
 	}
 
 	dnsctx = dns_resolve_get_default();
-	ret = dns_resolve_reconfigure(dnsctx, NULL, dns_servers);
+	ret = dns_resolve_reconfigure_with_interfaces(dnsctx, NULL, dns_servers,
+						      interfaces);
 	if (ret < 0) {
 		NET_ERR("Could not set DNS servers");
 		return;

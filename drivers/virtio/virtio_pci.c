@@ -271,30 +271,44 @@ static int virtio_pci_init_virtqueues(
 	}
 	data->virtqueue_count = queue_count;
 
+	int ret = 0;
+	int created_queues = 0;
+	int activated_queues = 0;
+
 	for (int i = 0; i < queue_count; i++) {
 		data->common_cfg->queue_select = sys_cpu_to_le16(i);
 		barrier_dmem_fence_full();
 
 		uint16_t queue_size = cb(i, sys_le16_to_cpu(data->common_cfg->queue_size), opaque);
 
-		int ret = virtq_create(&data->virtqueues[i], queue_size);
-
+		ret = virtq_create(&data->virtqueues[i], queue_size);
 		if (ret != 0) {
-			for (int j = 0; j < i; i++) {
-				virtq_free(&data->virtqueues[j]);
-			}
-			return ret;
+			goto fail;
 		}
+		created_queues++;
+
 		ret = virtio_pci_set_virtqueue(dev, i, &data->virtqueues[i]);
 		if (ret != 0) {
-			for (int j = 0; j < i; i++) {
-				virtq_free(&data->virtqueues[j]);
-			}
-			return ret;
+			goto fail;
 		}
+		activated_queues++;
 	}
 
 	return 0;
+
+fail:
+	for (int j = 0; j < activated_queues; j++) {
+		data->common_cfg->queue_select = sys_cpu_to_le16(j);
+		barrier_dmem_fence_full();
+		data->common_cfg->queue_enable = sys_cpu_to_le16(0);
+	}
+	for (int j = 0; j < created_queues; j++) {
+		virtq_free(&data->virtqueues[j]);
+	}
+	k_free(data->virtqueues);
+	data->virtqueue_count = 0;
+
+	return ret;
 }
 
 static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void **virt_ptr)

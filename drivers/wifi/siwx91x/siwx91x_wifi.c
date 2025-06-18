@@ -641,6 +641,9 @@ static int siwx91x_ap_disable(const struct device *dev)
 		return -EIO;
 	}
 
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
+		net_if_dormant_on(sidev->iface);
+	}
 	wifi_mgmt_raise_ap_disable_result_event(sidev->iface, WIFI_STATUS_AP_SUCCESS);
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	return ret;
@@ -847,6 +850,9 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 		LOG_ERR("Failed to enable AP mode: 0x%x", ret);
 		wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_FAIL);
 		return -EIO;
+	}
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
+		net_if_dormant_off(sidev->iface);
 	}
 
 	return 0;
@@ -1489,6 +1495,9 @@ static void siwx91x_iface_init(struct net_if *iface)
 	}
 	net_if_set_link_addr(iface, sidev->macaddr.octet, sizeof(sidev->macaddr.octet),
 			     NET_LINK_ETHERNET);
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
+		net_if_dormant_on(sidev->iface);
+	}
 	siwx91x_sock_init(iface);
 	siwx91x_ethernet_init(iface);
 

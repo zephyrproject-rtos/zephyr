@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Minimum vendor specific Rx payload buffer allocation */
+#define LL_VND_OCTETS_RX_MIN 0
+
 /* No vendor Data PDU struct octet3 */
 struct pdu_data_vnd_octet3 {
 	union {

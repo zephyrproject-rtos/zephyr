@@ -1171,7 +1171,25 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			for (uint8_t i = 0; i < dns_servers_cnt; i++) {
 				dnses[i].sin_family = AF_INET;
 			}
-			status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+
+			if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
+				/* If we are using the interface to resolve DNS servers,
+				 * we need to save the interface index.
+				 */
+				int ifindex = net_if_get_by_iface(iface);
+				int interfaces[MAX_DNS_SERVERS];
+
+				for (uint8_t i = 0; i < dns_servers_cnt; i++) {
+					interfaces[i] = ifindex;
+				}
+
+				status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
+										 dns_servers,
+										 interfaces);
+			} else {
+				status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+			}
+
 			if (status < 0) {
 				NET_DBG("options_dns, failed to set "
 					"resolve address: %d", status);
@@ -1617,7 +1635,7 @@ drop:
 }
 
 static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
-				       uint32_t mgmt_event, struct net_if *iface)
+				       uint64_t mgmt_event, struct net_if *iface)
 {
 	sys_snode_t *node = NULL;
 
@@ -1650,6 +1668,16 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 			if (!net_if_ipv4_addr_rm(iface, &iface->config.dhcpv4.requested_ip)) {
 				NET_DBG("Failed to remove addr from iface");
 			}
+
+			/* Remove DNS servers as interface is gone. We only need to
+			 * do this for this interface. If using global setting, the
+			 * DNS servers are removed automatically when the interface
+			 * comes back up.
+			 */
+			if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
+				dns_resolve_remove(dns_resolve_get_default(),
+						   net_if_get_by_iface(iface));
+			}
 		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
@@ -1668,7 +1696,7 @@ out:
 
 #if defined(CONFIG_NET_IPV4_ACD)
 static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
-				     uint32_t mgmt_event, struct net_if *iface)
+				     uint64_t mgmt_event, struct net_if *iface)
 {
 	sys_snode_t *node = NULL;
 	struct in_addr *addr;

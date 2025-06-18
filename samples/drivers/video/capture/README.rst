@@ -148,21 +148,21 @@ If using the shell, the capture would not start, and instead it is possible to a
 
 .. code-block:: console
 
-   uart:~$ video
+   uart:~$ video --help
    video - Video driver commands
    Subcommands:
      start    : Start a video device and its sources
-                Usage: video start <device>
+                Usage: start <device>
      stop     : Stop a video device and its sources
-                Usage: video stop <device>
-     capture  : Capture a given number of frames from a device
-                Usage: video capture <device> <num-frames>
+                Usage: stop <device>
+     capture  : Capture a given number of buffers from a device
+                Usage: capture <device> <num-buffers>
      format   : Query or set the video format of a device
-                Usage: video format <device> <ep> [<fourcc> <width>x<height>]
+                Usage: format <device> <dir> [<fourcc> <width>x<height>]
      frmival  : Query or set the video frame rate/interval of a device
-                Usage: video frmival <device> <ep> [<n>fps|<n>ms|<n>us]
+                Usage: frmival <device> [<n>fps|<n>ms|<n>us]
      ctrl     : Query or set video controls of a device
-                Usage: video ctrl <device> [<ctrl> <value>]
+                Usage: ctrl <device> [<ctrl> <value>]
    uart:~$
 
 

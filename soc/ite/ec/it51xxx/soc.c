@@ -7,6 +7,8 @@
 #include <soc_common.h>
 #include <zephyr/kernel.h>
 
+#include "soc_espi.h"
+
 static mm_reg_t ecpm_base = DT_REG_ADDR(DT_NODELABEL(ecpm));
 /* it51xxx ECPM registers definition */
 /* 0x03: PLL Control */
@@ -57,12 +59,25 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	csr_clear(mie, MIP_MEIP);
 	sys_trace_idle();
 
+#ifdef CONFIG_ESPI
+	/*
+	 * H2RAM feature requires RAM clock to be active. Since the below doze
+	 * mode will disable CPU and RAM clocks, enable eSPI transaction
+	 * interrupt to restore clocks. With this interrupt, EC will not defer
+	 * eSPI bus while transaction is accepted.
+	 */
+	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, true);
+#endif
 	/* Chip doze after wfi instruction */
 	chip_pll_ctrl(mode);
 
 	/* Wait for interrupt */
 	__asm__ volatile("wfi");
 
+#ifdef CONFIG_ESPI
+	/* CPU has been woken up, the interrupt is no longer needed */
+	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, false);
+#endif
 	/*
 	 * Enable M-mode external interrupt
 	 * An interrupt can not be fired yet until we enable global interrupt

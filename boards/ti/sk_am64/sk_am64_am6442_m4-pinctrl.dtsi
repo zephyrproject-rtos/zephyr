@@ -7,7 +7,9 @@
 
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 
-&pinctrl {
+&mcu_pinctrl {
+	status = "okay";
+
 	mcu_uart0_rx_default: mcu_uart0_rx_default {
 		pinmux = <K3_PINMUX(0x028, PIN_INPUT, MUX_MODE_0)>; /* (A9) MCU_UART0_RXD */
 	};

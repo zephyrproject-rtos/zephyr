@@ -342,7 +342,7 @@ static int spi_silabs_usart_init(const struct device *dev)
 	/* Enable USART clock */
 #ifdef CONFIG_CLOCK_CONTROL
 	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
-	if (err < 0) {
+	if (err < 0 && err != -EALREADY) {
 		return err;
 	}
 #else

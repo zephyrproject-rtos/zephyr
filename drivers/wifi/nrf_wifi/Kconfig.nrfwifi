@@ -908,4 +908,9 @@ config NRF_WIFI_RX_STBC_HT
 	help
 	  Receive packets encoded with STBC (Space-Time Block Coding)
 	  in HT (Wi-Fi4) mode.
+
+config NRF_WIFI_DYNAMIC_BANDWIDTH_SIGNALLING
+	bool "Dynamic bandwidth signalling for Wi-Fi"
+	help
+	  This option enables support for dynamic bandwidth signalling.
 endif # WIFI_NRF70

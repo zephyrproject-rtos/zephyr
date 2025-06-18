@@ -355,6 +355,11 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	spi_context_cs_control(&data->ctx, true);
 
+	if ((!spi_context_tx_buf_on(&data->ctx)) && (!spi_context_rx_buf_on(&data->ctx))) {
+		/* If current buffer has no data, do nothing */
+		goto end;
+	}
+
 #ifdef CONFIG_SPI_INTERRUPT
 	if (data->ctx.rx_len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)

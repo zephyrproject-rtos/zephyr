@@ -1,0 +1,172 @@
+/* Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ti/am64x_r5.dtsi>
+#include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
+
+/ {
+	model = "TI AM243x EVM R5F Cluster 0 Core 0";
+	compatible = "ti,am243x-evm-r5f-cluster-0-core-0";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,sram1 = &atcm;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc-shm = &ipc_shm0;
+	};
+
+	aliases {
+		led0 = &ld26;
+		adc0 = &adc0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld26: led_0 {
+			gpios = <&mcu_gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	rsc_table: memory@a0100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa0100000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	ipc_shm0: memory@a5000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa5000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "IPC_SHM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox6 0>, <&mbox6 1>;
+		mbox-names = "rx", "tx";
+	};
+};
+
+/* system timer */
+&timer8 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_tx &uart0_rx>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&mcu_gpio0 {
+	pinctrl-0 = <&mcu_gpio0_led>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_scl &i2c0_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc0 {
+	ti,vrefp = <1800>;
+	ti,fifo = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+
+	channel@6 {
+		reg = <6>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+};
+
+&mbox6 {
+	usr-id = <0>;
+	status = "okay";
+};

@@ -1,0 +1,168 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "I2S Additional Test"
+
+source "Kconfig.zephyr"
+
+config I2S_TEST_USE_GPIO_LOOPBACK
+	bool "Use GPIO loopback"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  Use wiring between the data-out and data-in pins for looping back
+	  data. This option is intended to be used for devices that do not
+	  provide the internal loopback functionality.
+
+config I2S_TEST_ALLOWED_DATA_OFFSET
+	int "Allowed offset in received data"
+	default 2 if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	default 0
+	help
+	  Maximum allowed offset between sent and received samples. Non-zero
+	  value of this option may be needed when GPIO loopback is used.
+
+config I2S_TEST_WORD_SIZE_8_BIT_UNSUPPORTED
+	bool "8 bit word size is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_WORD_SIZE_16_BIT_UNSUPPORTED
+	bool "16 bit word size is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_WORD_SIZE_24_BIT_UNSUPPORTED
+	bool "24 bit word size is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_WORD_SIZE_32_BIT_UNSUPPORTED
+	bool "32 bit word size is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_WORD_SIZE_48_BIT_UNSUPPORTED
+	bool "48 bit word size is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_ONE_CHANNEL_UNSUPPORTED
+	bool "Single audio channel is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_FOUR_CHANNELS_UNSUPPORTED
+	bool "Four audio channels are not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_EIGHT_CHANNELS_UNSUPPORTED
+	bool "Eight audio channels are not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_DATA_FORMAT_I2S_UNSUPPORTED
+	bool "I2S_FMT_DATA_FORMAT_I2S is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_DATA_FORMAT_LEFT_JUSTIFIED_UNSUPPORTED
+	bool "I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_DATA_FORMAT_RIGHT_JUSTIFIED_UNSUPPORTED
+	bool "I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_DATA_FORMAT_PCM_LONG_UNSUPPORTED
+	bool "I2S_FMT_DATA_FORMAT_PCM_LONG is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_DATA_FORMAT_PCM_SHORT_UNSUPPORTED
+	bool "I2S_FMT_DATA_FORMAT_PCM_SHORT is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_DATA_ORDER_MSB_UNSUPPORTED
+	bool "I2S_FMT_DATA_ORDER_MSB is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_DATA_ORDER_LSB_UNSUPPORTED
+	bool "I2S_FMT_DATA_ORDER_LSB is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_BIT_CLK_INV_UNSUPPORTED
+	bool "I2S_FMT_BIT_CLK_INV is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_FRAME_CLK_INV_UNSUPPORTED
+	bool "I2S_FMT_FRAME_CLK_INV is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_BLOCK_SIZE_6_UNSUPPORTED
+	bool "Block_size of 6 is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_OPTIONS_BIT_CLK_CONT_UNSUPPORTED
+	bool "I2S_OPT_BIT_CLK_CONT is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_OPTIONS_BIT_CLK_GATED_UNSUPPORTED
+	bool "I2S_OPT_BIT_CLK_GATED is not supported by the driver"
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_OPTIONS_LOOPBACK_UNSUPPORTED
+	bool "I2S_OPT_LOOPBACK is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.
+
+config I2S_TEST_OPTIONS_PINGPONG_UNSUPPORTED
+	bool "I2S_OPT_PINGPONG is not supported by the driver"
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	help
+	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
+	  When set to 'n', test will do the transmission.

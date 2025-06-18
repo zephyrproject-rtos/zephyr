@@ -38,7 +38,7 @@ struct qdec_stm32_dev_cfg {
 
 /* Device run time data */
 struct qdec_stm32_dev_data {
-	int32_t position;
+	uint32_t position;
 };
 
 static int qdec_stm32_fetch(const struct device *dev, enum sensor_channel chan)
@@ -56,7 +56,9 @@ static int qdec_stm32_fetch(const struct device *dev, enum sensor_channel chan)
 	 * can be ignored
 	 */
 	counter_value = LL_TIM_GetCounter(dev_cfg->timer_inst) % dev_cfg->counts_per_revolution;
-	dev_data->position = (counter_value * 360) / dev_cfg->counts_per_revolution;
+
+	/* The angle calculated in the fixed-point format (Q26.6 format) */
+	dev_data->position = (counter_value * 23040) / dev_cfg->counts_per_revolution;
 
 	return 0;
 }
@@ -67,8 +69,8 @@ static int qdec_stm32_get(const struct device *dev, enum sensor_channel chan,
 	struct qdec_stm32_dev_data *const dev_data = dev->data;
 
 	if (chan == SENSOR_CHAN_ROTATION) {
-		val->val1 = dev_data->position;
-		val->val2 = 0;
+		val->val1 = dev_data->position >> 6;
+		val->val2 = (dev_data->position & 0x3F) * 15625;
 	} else {
 		return -ENOTSUP;
 	}
