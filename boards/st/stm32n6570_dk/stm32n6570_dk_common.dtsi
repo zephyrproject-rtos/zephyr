@@ -345,12 +345,13 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 /**
- * Board-specific configuration, required to ensure that
- * the Tx CLK and DAT signals arrive in sync at the PHY.
- * Without this, the Tx will be unreliable
+ * Per the RGMII specification, the Tx clock signal must be skewed
+ * from the Tx data signals by 1~2 ns. On this board, the SoC must
+ * be configured to add the required delay via pinctrl.
  */
 &eth1_rgmii_gtx_clk_pf0 {
-	slew-rate = "medium-speed";
+	st,io-delay-path = "output";
+	st,io-delay-ps = <2000>;
 };
 
 &mac {
