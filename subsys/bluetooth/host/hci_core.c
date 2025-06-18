@@ -351,8 +351,27 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
 
-	/* net_buf_alloc(K_FOREVER) can fail when run from the syswq */
-	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return NULL;
+	}
+
+	LOG_DBG("buf %p", buf);
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->opcode = sys_cpu_to_le16(opcode);
+	hdr->param_len = param_len;
+
+	net_buf_push_u8(buf, BT_HCI_H4_CMD);
+
+	return buf;
+}
+
+struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
+{
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&hci_cmd_pool, timeout);
 	if (!buf) {
 		LOG_DBG("Unable to allocate a command buffer");
 		return NULL;
@@ -360,29 +379,41 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 
 	LOG_DBG("buf %p", buf);
 
-	net_buf_add_u8(buf, BT_HCI_H4_CMD);
+	/* Reserve H:4 header and HCI command header */
+	net_buf_reserve(buf, sizeof(uint8_t) + sizeof(struct bt_hci_cmd_hdr));
 
-	cmd(buf)->opcode = opcode;
+	cmd(buf)->opcode = 0;
 	cmd(buf)->sync = NULL;
 	cmd(buf)->state = NULL;
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->opcode = sys_cpu_to_le16(opcode);
-	hdr->param_len = param_len;
 
 	return buf;
 }
 
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
+	struct bt_hci_cmd_hdr *hdr;
+
 	if (!buf) {
-		buf = bt_hci_cmd_create(opcode, 0);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
 	}
 
-	LOG_DBG("opcode 0x%04x len %u", opcode, buf->len);
+	LOG_DBG("opcode 0x%04x param_len %u", opcode, buf->len);
+
+	cmd(buf)->opcode = opcode;
+
+	/* TODO: Remove this condition when bt_hci_cmd_create() has been removed (after its
+	 * deprecation period)
+	 */
+	if (net_buf_headroom(buf) >= sizeof(uint8_t) + sizeof(*hdr)) {
+		hdr = net_buf_push(buf, sizeof(*hdr));
+		hdr->opcode = sys_cpu_to_le16(opcode);
+		hdr->param_len = buf->len - sizeof(*hdr);
+
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
+	}
 
 	/* Host Number of Completed Packets can ignore the ncmd value
 	 * and does not generate any cmd complete/status events.
@@ -414,7 +445,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	int err;
 
 	if (!buf) {
-		buf = bt_hci_cmd_create(opcode, 0);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -435,8 +466,11 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
-	k_fifo_put(&bt_dev.cmd_tx_queue, net_buf_ref(buf));
-	bt_tx_irq_raise();
+	err = bt_hci_cmd_send(opcode, net_buf_ref(buf));
+	if (err) {
+		net_buf_unref(buf);
+		return err;
+	}
 
 	/* TODO: disallow sending sync commands from syswq altogether */
 
