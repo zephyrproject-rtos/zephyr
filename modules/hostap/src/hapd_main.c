@@ -375,9 +375,11 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	bss->okc = 1;
 	conf->no_pri_sec_switch = 1;
 	conf->ht_op_mode_fixed  = 1;
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
 	conf->ieee80211ac       = 1;
 	conf->vht_oper_chwidth  = CHANWIDTH_USE_HT;
 	conf->vht_capab |= VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MAX;
+#endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
 	conf->ieee80211ax       = 1;
 	conf->he_oper_chwidth   = CHANWIDTH_USE_HT;
