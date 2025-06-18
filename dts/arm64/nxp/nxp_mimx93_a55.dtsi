@@ -140,6 +140,17 @@
 		status = "disabled";
 	};
 
+	lcdif: display-controller@4ae30000 {
+		compatible = "nxp,imx-lcdifv3";
+		reg = <0x4ae30000 0x10000>;
+		interrupts = <GIC_SPI 176 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
+			 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
+			 <&ccm IMX_CCM_MEDIA_APB_CLK 0 0>;
+		status = "disabled";
+	};
+
 	gpio1: gpio@47400000 {
 		compatible = "nxp,imx-rgpio";
 		reg = <0x47400000 DT_SIZE_K(64)>;
