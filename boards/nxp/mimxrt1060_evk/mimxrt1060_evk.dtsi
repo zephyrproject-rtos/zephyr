@@ -190,12 +190,12 @@ zephyr_udc0: &usb1 {
 
 zephyr_uhc0: &usbh1 {
 	status = "okay";
-	phy_handle = <&usbphy1>;
+	phy-handle = <&usbphy1>;
 };
 
 zephyr_uhc1: &usbh2 {
 	status = "okay";
-	phy_handle = <&usbphy2>;
+	phy-handle = <&usbphy2>;
 };
 
 &usbphy1 {

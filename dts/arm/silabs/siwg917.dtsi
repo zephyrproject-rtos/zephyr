@@ -326,7 +326,7 @@
 			interrupt-names = "pwm";
 			clocks = <&clock0 SIWX91X_CLK_PWM>;
 			#pwm-cells = <2>;
-			silabs,ch_prescaler = <64 64 64 64>;
+			silabs,ch-prescaler = <64 64 64 64>;
 			status = "disabled";
 		};
 

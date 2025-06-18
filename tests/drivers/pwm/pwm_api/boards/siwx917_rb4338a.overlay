@@ -26,6 +26,6 @@
 	pwm_channel1: pwm_channel1 {
 		pwms = <&pwm 0 1000000>;
 	};
-	silabs,pwm_polarity = <PWM_POLARITY_NORMAL>;
+	silabs,pwm-polarity = <PWM_POLARITY_NORMAL>;
 	status = "okay";
 };
