@@ -41,18 +41,7 @@ Supported Features
 The board configuration supports a console UART via the HAT header pins. Future
 versions will also support a console over RPmsg.
 
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| UART      | on-chip    | serial port-polling   |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-
-Other hardware features are currently not supported.
-
-The default configuration can be found in the defconfig file.
-
-Future configurations will add support for GPIO, I2C, SPI, etc.
+.. zephyr:board-supported-hw::
 
 Running Zephyr
 **************
