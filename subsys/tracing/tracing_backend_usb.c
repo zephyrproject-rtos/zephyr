@@ -235,7 +235,7 @@ const static __maybe_unused struct usb_desc_header *tracing_func_hs_desc[] = {
 static struct tracing_func_data func_data = {
 	.desc = &func_desc,
 	.fs_desc = tracing_func_fs_desc,
-	.hs_desc = COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED, (tracing_func_hs_desc), (NULL,))
+	.hs_desc = COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED, (tracing_func_hs_desc), (NULL)),
 	.sync_sem = Z_SEM_INITIALIZER(func_data.sync_sem, 0, 1),
 };
 
