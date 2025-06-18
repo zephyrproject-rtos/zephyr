@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EK_RA8P1
+
+if DISK_DRIVER_SDMMC
+
+config SD_CMD_TIMEOUT
+	default 1000
+
+endif # DISK_DRIVER_SDMMC
+
+endif # BOARD_EK_RA8P1

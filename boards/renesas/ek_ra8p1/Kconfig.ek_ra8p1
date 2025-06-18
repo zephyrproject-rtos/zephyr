@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EK_RA8P1
+	select SOC_R7KA8P1KFLCAC_CM85 if BOARD_EK_RA8P1_R7KA8P1KFLCAC_CM85
+	select SOC_R7KA8P1KFLCAC_CM33 if BOARD_EK_RA8P1_R7KA8P1KFLCAC_CM33
