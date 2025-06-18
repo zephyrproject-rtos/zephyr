@@ -66,8 +66,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	size_t bit_len = transfer_len_bytes << 3;
 	uint8_t *rx_temp = NULL;
 	uint8_t *tx_temp = NULL;
-	uint8_t dma_len_tx = MIN(ctx->tx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
-	uint8_t dma_len_rx = MIN(ctx->rx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
+	size_t dma_len_tx = MIN(ctx->tx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
+	size_t dma_len_rx = MIN(ctx->rx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
 
 	if (cfg->dma_enabled) {
 		/* bit_len needs to be at least one byte long when using DMA */
