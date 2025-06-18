@@ -31,14 +31,6 @@
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 #include DeviceFamily_constructPath(driverlib/systick.h)
 
-/* Configuring TI Power module to not use its policy function (we use Zephyr's
- * instead), and disable oscillator calibration functionality for now.
- */
-const PowerCC23X0_Config PowerCC23X0_config = {
-	.policyInitFxn = NULL,
-	.policyFxn = NULL,
-};
-
 #ifdef CONFIG_PM
 
 static void pm_cc23x0_enter_standby(void);
@@ -272,6 +264,12 @@ static int power_initialize(void)
 	ret = irq_lock();
 
 	Power_init();
+
+	/*
+	 * Explicitly disable any SimplelLink policy
+	 * since everything is handled by Zephyr
+	 */
+	Power_disablePolicy();
 
 	if (DT_HAS_COMPAT_STATUS_OKAY(ti_cc23x0_lf_xosc)) {
 		PowerLPF3_selectLFXT();
