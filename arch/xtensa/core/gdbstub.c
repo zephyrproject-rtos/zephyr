@@ -710,7 +710,9 @@ size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
 	int idx;
 	size_t ret;
 
-	ret = 0;
+	buf[0] = 'x';
+	buf[1] = 'x';
+	ret = 2;
 	for (idx = 0; idx < ctx->num_regs; idx++) {
 		reg = &ctx->regs[idx];
 
