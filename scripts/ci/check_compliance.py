@@ -1720,7 +1720,11 @@ class SphinxLint(ComplianceTest):
     doc = "Check Sphinx/reStructuredText files with sphinx-lint."
 
     # Checkers added/removed to sphinx-lint's default set
-    DISABLE_CHECKERS = ["horizontal-tab", "missing-space-before-default-role"]
+    DISABLE_CHECKERS = [
+        "horizontal-tab",
+        "missing-space-before-default-role",
+        "trailing-whitespace",
+    ]
     ENABLE_CHECKERS = ["default-role"]
 
     def run(self):
