@@ -8,11 +8,6 @@
  * about the use of that API.
  */
 #include <zephyr/toolchain.h>
-#undef __deprecated
-#define __deprecated
-#undef __DEPRECATED_MACRO
-#define __DEPRECATED_MACRO
-
 #include <zephyr/ztest.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
