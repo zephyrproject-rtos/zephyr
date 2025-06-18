@@ -289,6 +289,8 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 
 	data->active_page = -1;
 
+	k_mutex_init(&data->mutex);
+
 	/* Reset PHY */
 	ret = phy_mc_vsc8541_reset(dev);
 	if (ret < 0) {
@@ -366,8 +368,6 @@ static int phy_mc_vsc8541_link_cb_set(const struct device *dev, phy_callback_t c
 	data->cb = cb;
 	data->cb_data = user_data;
 
-	phy_mc_vsc8541_get_link(dev, &data->state);
-
 	data->cb(dev, &data->state, data->cb_data);
 
 	return 0;
@@ -427,22 +427,24 @@ static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint
 	/* mask out lower byte */
 	reg_addr &= 0x00ff;
 
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
 	/* select page, given by register upper byte */
 	if (dev_data->active_page != page) {
 		ret = mdio_write(cfg->mdio_dev, cfg->addr, PHY_REG_PAGE_SELECTOR, (uint16_t)page);
-		if (ret) {
-			return ret;
+		if (ret < 0) {
+			goto read_end;
 		}
 		dev_data->active_page = (int)page;
 	}
 
 	/* select register, given by register lower byte */
 	ret = mdio_read(cfg->mdio_dev, cfg->addr, reg_addr, (uint16_t *)data);
-	if (ret) {
-		return ret;
-	}
 
-	return 0;
+read_end:
+	k_mutex_unlock(&dev_data->mutex);
+
+	return ret;
 }
 
 /**
@@ -465,22 +467,24 @@ static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uin
 	/* mask out lower byte */
 	reg_addr &= 0x00ff;
 
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
 	/* select page, given by register upper byte */
 	if (dev_data->active_page != page) {
 		ret = mdio_write(cfg->mdio_dev, cfg->addr, PHY_REG_PAGE_SELECTOR, (uint16_t)page);
-		if (ret) {
-			return ret;
+		if (ret < 0) {
+			goto write_end;
 		}
 		dev_data->active_page = (int)page;
 	}
 
 	/* write register, given by lower byte */
 	ret = mdio_write(cfg->mdio_dev, cfg->addr, reg_addr, (uint16_t)data);
-	if (ret) {
-		return ret;
-	}
 
-	return 0;
+write_end:
+	k_mutex_unlock(&dev_data->mutex);
+
+	return ret;
 }
 
 static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
