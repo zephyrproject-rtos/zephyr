@@ -351,7 +351,10 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	bss->logger_stdout_level = HOSTAPD_LEVEL_INFO;
 	bss->logger_stdout       = 0xffff;
 	bss->nas_identifier      = os_strdup("ap.example.com");
-	os_memcpy(conf->country, "US ", 3);
+	/* Set regulatory domain */
+	os_memcpy(conf->country, CONFIG_WIFI_NM_HOSTAPD_REGULATORY_REGION, 2);
+	/* Set regulatory environment */
+	conf->country[2]     = CONFIG_WIFI_NM_HOSTAPD_REGULATORY_ENV;
 	conf->hw_mode        = HOSTAPD_MODE_IEEE80211G;
 	bss->wps_state       = WPS_STATE_CONFIGURED;
 	bss->eap_server      = 1;
