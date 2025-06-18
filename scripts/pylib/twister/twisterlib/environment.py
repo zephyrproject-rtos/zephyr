@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib import metadata
 from pathlib import Path
 
@@ -1107,7 +1107,7 @@ class TwisterEnv:
     def discover(self):
         self.check_zephyr_version()
         self.get_toolchain()
-        self.run_date = datetime.now(timezone.utc).isoformat(timespec='seconds')
+        self.run_date = datetime.now(UTC).isoformat(timespec='seconds')
 
     def check_zephyr_version(self):
         try:
