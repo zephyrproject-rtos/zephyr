@@ -695,3 +695,5 @@ Architectures
   :kconfig:option:`CONFIG_ARCH_HAS_VECTOR_TABLE_RELOCATION` and
   :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM` to support relocation
   of vector table in RAM.
+* Renamed :kconfig:option:`CONFIG_DEBUG_INFO` to :kconfig:option:`CONFIG_X86_DEBUG_INFO` to
+  better reflect its purpose. This option is now only available for x86 architecture.
