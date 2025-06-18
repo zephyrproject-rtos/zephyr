@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2020 Bose Corporation
  * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,10 +112,10 @@ struct tbs_inst {
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
 static struct tbs_inst gtbs_inst;
 
-#define READ_BUF_SIZE                                                                              \
-	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                              \
-	    (CONFIG_BT_TBS_MAX_CALLS * sizeof(struct bt_tbs_current_call_item) *                   \
-	     (1U + ARRAY_SIZE(svc_insts))))
+#define READ_BUF_SIZE                                                                             \
+	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                             \
+	    (CONFIG_BT_TBS_BEARER_COUNT * CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH +                  \
+	     CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH))
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, READ_BUF_SIZE);
 
 /* Used to notify app with held calls in case of join */
@@ -628,6 +629,35 @@ static void net_buf_put_current_calls(const struct tbs_inst *inst, struct net_bu
 	}
 }
 
+static void net_buf_put_uri_scheme_list(const struct tbs_inst *inst, struct net_buf_simple *buf)
+{
+	net_buf_simple_reset(buf);
+
+	/* For GTBS add all the URI scheme list the GTBS bearer has itself,
+	 * as well as all the other TBS bearers
+	 */
+
+	net_buf_simple_add_mem(buf, inst->uri_scheme_list, strlen(inst->uri_scheme_list));
+
+	if (inst_is_gtbs(inst)) {
+		for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+			const size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
+
+			if (buf->len + uri_len >= buf->size) {
+				LOG_WRN("Cannot fit all TBS instances in GTBS URI scheme list");
+				break;
+			}
+
+			net_buf_simple_add_mem(buf, svc_insts[i].uri_scheme_list, uri_len);
+		}
+
+		LOG_DBG("GTBS: URI scheme %.*s", buf->len, buf->data);
+	} else {
+		LOG_DBG("Index %u: URI scheme %.*s", inst_index(inst), buf->len,
+				buf->data);
+	}
+}
+
 static void set_call_state_changed_cb(struct tbs_flags *flags)
 {
 	if (flags->call_state_changed) {
@@ -793,8 +823,8 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 	if (flags->bearer_uri_schemes_supported_list_changed) {
 		LOG_DBG("Notifying Bearer URI schemes supported list: %s", inst->uri_scheme_list);
 
-		err = notify(conn, BT_UUID_TBS_URI_LIST, inst->attrs, &inst->uri_scheme_list,
-			     strlen(inst->uri_scheme_list));
+		net_buf_put_uri_scheme_list(inst, &read_buf);
+		err = notify(conn, BT_UUID_TBS_URI_LIST, inst->attrs, read_buf.data, read_buf.len);
 		if (err == 0) {
 			flags->bearer_uri_schemes_supported_list_changed = false;
 		} else {
@@ -1047,32 +1077,7 @@ static ssize_t read_uri_scheme_list(struct bt_conn *conn, const struct bt_gatt_a
 	} else {
 		flags->bearer_uri_schemes_supported_list_dirty = false;
 
-		net_buf_simple_reset(&read_buf);
-
-		net_buf_simple_add_mem(&read_buf, inst->uri_scheme_list,
-				       strlen(inst->uri_scheme_list));
-
-		if (inst_is_gtbs(inst)) {
-			/* TODO: Make uri schemes unique */
-			for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-				size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
-
-				if (read_buf.len + uri_len >= read_buf.size) {
-					LOG_WRN("Cannot fit all TBS instances in GTBS "
-						"URI scheme list");
-					break;
-				}
-
-				net_buf_simple_add_mem(&read_buf, svc_insts[i].uri_scheme_list,
-						       uri_len);
-			}
-
-			LOG_DBG("GTBS: URI scheme %.*s", read_buf.len, read_buf.data);
-		} else {
-			LOG_DBG("Index %u: URI scheme %.*s", inst_index(inst), read_buf.len,
-				read_buf.data);
-		}
-
+		net_buf_put_uri_scheme_list(inst, &read_buf);
 		ret = bt_gatt_attr_read(conn, attr, buf, len, offset, read_buf.data, read_buf.len);
 	}
 
@@ -2921,22 +2926,19 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 {
 	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
 	size_t len = 0;
-	struct tbs_inst *inst;
+	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	int err;
 
-	NET_BUF_SIMPLE_DEFINE(uri_scheme_buf, READ_BUF_SIZE);
-
-	if (bearer_index >= ARRAY_SIZE(svc_insts)) {
+	if (inst == NULL) {
+		LOG_DBG("Could not find TBS instance from index %u", bearer_index);
 		return -EINVAL;
 	}
 
-	inst = &svc_insts[bearer_index];
 	(void)memset(uri_scheme_list, 0, sizeof(uri_scheme_list));
 
 	for (int i = 0; i < uri_count; i++) {
-		if (len) {
-			len++;
-			if (len > sizeof(uri_scheme_list) - 1) {
+		if (strlen(uri_scheme_list) > 0) {
+			if ((len + 1) > sizeof(uri_scheme_list) - 1) {
 				return -ENOMEM;
 			}
 
@@ -2944,16 +2946,24 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		}
 
 		len += strlen(uri_list[i]);
+
 		if (len > sizeof(uri_scheme_list) - 1) {
 			return -ENOMEM;
-		}
+		} else {
+			if (strstr(inst->uri_scheme_list, uri_list[i]) != NULL) {
+				len -= strlen(uri_list[i]);
+			}
 
-		/* Store list in temp list in case something goes wrong */
-		strcat(uri_scheme_list, uri_list[i]);
+			/* Store list in temp list in case something goes wrong */
+			strcat(uri_scheme_list, uri_list[i]);
+		}
 	}
 
-	if (strcmp(inst->uri_scheme_list, uri_scheme_list) == 0) {
-		/* identical; don't update or notify */
+	LOG_DBG("request to set uri prefix list %s", uri_scheme_list);
+
+	if ((len == 0) && (strlen(inst->uri_scheme_list) == strlen(uri_scheme_list))) {
+		/* no new uri-scheme added; don't update or notify */
+		LOG_DBG("All requested uri prefix are already in TBS uri-scheme list");
 		return 0;
 	}
 
@@ -2964,7 +2974,8 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 	}
 
 	/* Store final result */
-	(void)utf8_lcpy(inst->uri_scheme_list, uri_scheme_list, sizeof(inst->uri_scheme_list));
+	(void)utf8_lcpy(inst->uri_scheme_list, uri_scheme_list,
+			sizeof(inst->uri_scheme_list));
 
 	LOG_DBG("TBS instance %u uri prefix list is now %s", bearer_index, inst->uri_scheme_list);
 
@@ -2972,26 +2983,7 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 			  BT_UUID_TBS_URI_LIST);
 
 	if (!inst_is_gtbs(inst)) {
-		/* If the instance is different than the GTBS notify on the GTBS instance as well */
-		net_buf_simple_add_mem(&uri_scheme_buf, gtbs_inst.uri_scheme_list,
-				       strlen(gtbs_inst.uri_scheme_list));
-
-		/* TODO: Make uri schemes unique */
-		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
-			const size_t uri_len = strlen(svc_insts[i].uri_scheme_list);
-
-			if (uri_scheme_buf.len + uri_len >= uri_scheme_buf.size) {
-				LOG_WRN("Cannot fit all TBS instances in GTBS "
-					"URI scheme list");
-				break;
-			}
-
-			net_buf_simple_add_mem(&uri_scheme_buf, svc_insts[i].uri_scheme_list,
-					       uri_len);
-		}
-
-		LOG_DBG("GTBS: URI scheme %.*s", uri_scheme_buf.len, uri_scheme_buf.data);
-
+		/* If the instance is different than GTBS notify on the GTBS instance as well */
 		set_value_changed(&gtbs_inst, set_bearer_uri_schemes_supported_list_changed_cb,
 				  BT_UUID_TBS_URI_LIST);
 	}
