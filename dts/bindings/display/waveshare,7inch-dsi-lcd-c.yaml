@@ -1,0 +1,33 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Waveshare 7INCH DSI LCD(C)
+
+compatible: "waveshare,7inch-dsi-lcd-c"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  data-lanes:
+    type: array
+    required: true
+    description:
+      Number of data lanes.
+
+  pixel-format:
+    type: int
+    required: true
+    description:
+      Pixel format. Available formats in dt-bindings/mipi_dsi/mipi_dsi.h.
+
+  mipi-dsi:
+    type: phandle
+    required: true
+    description:
+      Instance of the MIPI DSI peripheral.
