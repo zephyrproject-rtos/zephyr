@@ -3,7 +3,7 @@
 Overview
 ********
 
-The `WeActStudio`_ BluePill Plus CH32V203 hardware provides support for QingKe 32-bit RISC-V4B
+The `WeActStudio`_ BluePill Plus CH32V203 hardware provides support for QingKe V4B 32-bit RISC-V
 processor and the following devices:
 
 * CLOCK

@@ -78,6 +78,27 @@ ZTEST(util, test_sign_extend) {
 	zassert_equal(sign_extend(u32, 28), 0xfffffff);
 }
 
+ZTEST(util, test_arithmetic_shift_right)
+{
+	/* Test positive number */
+	zassert_equal(arithmetic_shift_right(0x8, 2), 0x2);
+	zassert_equal(arithmetic_shift_right(0x10, 3), 0x2);
+	zassert_equal(arithmetic_shift_right(0x20, 4), 0x2);
+
+	/* Test negative number */
+	zassert_equal(arithmetic_shift_right(-0x8, 2), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x10, 3), -0x2);
+	zassert_equal(arithmetic_shift_right(-0x20, 4), -0x2);
+
+	/* Test zero shift */
+	zassert_equal(arithmetic_shift_right(0x2A, 0), 0x2A);
+	zassert_equal(arithmetic_shift_right(-0x2A, 0), -0x2A);
+
+	/* Test large shifts */
+	zassert_equal(arithmetic_shift_right(0x7FFFFFFFFFFFFFFF, 63), 0x0);
+	zassert_equal(arithmetic_shift_right(0x8000000000000000, 63), -0x1);
+}
+
 ZTEST(util, test_sign_extend_64) {
 	uint8_t u8;
 	uint16_t u16;
@@ -697,6 +718,62 @@ skipped_c:
 	#undef test_IF_DISABLED_FLAG_B
 }
 
+ZTEST(util, test_bytecpy)
+{
+	/* Test basic byte-by-byte copying */
+	uint8_t src1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+			    0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+	uint8_t dst1[16] = {0};
+	uint8_t expected1[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+				 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+
+	bytecpy(dst1, src1, sizeof(src1));
+	zassert_mem_equal(dst1, expected1, sizeof(expected1), "Basic byte-by-byte copy failed");
+
+	/* Test copying with different sizes */
+	uint8_t src2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+	uint8_t dst2[8] = {0};
+	uint8_t expected2[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22};
+
+	bytecpy(dst2, src2, sizeof(src2));
+	zassert_mem_equal(dst2, expected2, sizeof(expected2), "Copy with different size failed");
+
+	/* Test copying with zero size */
+	uint8_t src3[4] = {0x11, 0x22, 0x33, 0x44};
+	uint8_t dst3[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+	uint8_t expected3[4] = {0xAA, 0xBB, 0xCC, 0xDD}; /* Should remain unchanged */
+
+	bytecpy(dst3, src3, 0);
+	zassert_mem_equal(dst3, expected3, sizeof(expected3),
+			  "Zero size copy should not modify destination");
+
+	/* Test copying with overlapping memory regions */
+	uint8_t buf[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+	uint8_t expected4[8] = {0x11, 0x22, 0x33, 0x44, 0x11, 0x22, 0x33, 0x44};
+
+	bytecpy(&buf[4], buf, 4); /* Copy first 4 bytes to last 4 bytes */
+	zassert_mem_equal(buf, expected4, sizeof(expected4), "Overlapping memory copy failed");
+}
+
+ZTEST(util, test_byteswp)
+{
+	uint8_t a1 = 0xAAU;
+	uint8_t b1 = 0x55U;
+	uint32_t a2 = 0x12345678U;
+	uint32_t b2 = 0xABCDEF00U;
+
+	byteswp(&a1, &b1, sizeof(a1));
+	zassert_equal(a1, 0x55U, "Failed to swap single bytes");
+	zassert_equal(b1, 0xAAU, "Failed to swap single bytes");
+	byteswp(&a1, &b1, 0);
+	zassert_equal(a1, 0x55U, "Zero size swap should not modify values");
+	zassert_equal(b1, 0xAAU, "Zero size swap should not modify values");
+
+	byteswp(&a2, &b2, sizeof(a2));
+	zassert_equal(a2, 0xABCDEF00U, "Failed to swap multiple bytes");
+	zassert_equal(b2, 0x12345678U, "Failed to swap multiple bytes");
+}
+
 ZTEST(util, test_mem_xor_n)
 {
 	const size_t max_len = 128;
@@ -821,30 +898,40 @@ ZTEST(util, test_SIZEOF_FIELD)
 
 ZTEST(util, test_utf8_trunc_truncated)
 {
-	char test_str[] = "€€€";
-	char expected_result[] = "€€";
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"ééé", "éé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎"},                 /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!"},   /* mixed UTF-8 characters */
+	};
 
-	/* Remove last byte from truncated_test_str and verify that it first is incorrectly
-	 * truncated, followed by a proper truncation and verification
-	 */
-	test_str[strlen(test_str) - 1] = '\0';
-	zassert(strcmp(test_str, "€€€") != 0, "Failed to do invalid truncation");
-	zassert(strcmp(test_str, expected_result) != 0, "Failed to do invalid truncation");
-
-	utf8_trunc(test_str);
-
-	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		tests[i].input[strlen(tests[i].input) - 1] = '\0';
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "Failed to truncate");
+	}
 }
 
 ZTEST(util, test_utf8_trunc_not_truncated)
 {
-	/* Attempt to truncate a valid UTF8 string and verify no changed */
-	char test_str[] = "€€€";
-	char expected_result[] = "€€€";
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"abc", "abc"},                    /* 1-byte ASCII characters */
+		{"ééé", "ééé"},                    /* 2-byte UTF-8 characters */
+		{"€€€", "€€€"},                    /* 3-byte UTF-8 characters */
+		{"𠜎𠜎𠜎", "𠜎𠜎𠜎"},                /* 4-byte UTF-8 characters */
+		{"Hello 世界!🌍", "Hello 世界!🌍"},  /* mixed UTF-8 characters */
+	};
 
-	utf8_trunc(test_str);
-
-	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "No-op truncation failed");
+	}
 }
 
 ZTEST(util, test_utf8_trunc_zero_length)

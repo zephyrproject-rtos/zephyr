@@ -783,8 +783,18 @@ int ll_init(struct k_sem *sem_rx)
 
 int ll_deinit(void)
 {
+	int err;
+
 	ll_reset();
-	return lll_deinit();
+
+	err = lll_deinit();
+	if (err) {
+		return err;
+	}
+
+	err = ticker_deinit(TICKER_INSTANCE_ID_CTLR);
+
+	return err;
 }
 
 void ll_reset(void)
@@ -1686,6 +1696,7 @@ void ll_rx_mem_release(void **node_rx)
 				memq_link_t *link;
 
 				conn = ll_conn_get(rx_free->hdr.handle);
+				LL_ASSERT(conn != NULL);
 
 				LL_ASSERT(!conn->lll.link_tx_free);
 				link = memq_deinit(&conn->lll.memq_tx.head,
@@ -2868,6 +2879,8 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		conn = ll_conn_get(rx->handle);
+		LL_ASSERT(conn != NULL);
+
 		if (ull_cp_cc_awaiting_established(conn)) {
 			ull_cp_cc_established(conn, BT_HCI_ERR_SUCCESS);
 		}

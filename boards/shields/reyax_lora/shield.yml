@@ -1,0 +1,6 @@
+shield:
+  name: reyax_lora
+  full_name: Reyax LoRa RYLR896 and RYLR915 Modules
+  vendor: reyax
+  supported_features:
+    - lora

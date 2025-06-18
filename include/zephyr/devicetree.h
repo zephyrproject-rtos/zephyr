@@ -690,7 +690,7 @@
  *         refer to the same node, and evaluates to 0 otherwise
  */
 #define DT_SAME_NODE(node_id1, node_id2) \
-	(DT_DEP_ORD(node_id1) == (DT_DEP_ORD(node_id2)))
+	IS_EQ(DT_DEP_ORD(node_id1), DT_DEP_ORD(node_id2))
 
 /**
  * @brief Get a devicetree node's node labels as an array of strings
@@ -1045,14 +1045,14 @@
 	IS_ENABLED(DT_CAT8(node_id, _P_, prop, _IDX_, idx, _ENUM_VAL_, value, _EXISTS))
 
 /**
- * @brief Equivalent to DT_ENUM_HAS_VALUE_BY_IDX(node_id, prop, 0, value).
+ * @brief Does a node enumeration property have a given value?
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
  * @param value lowercase-and-underscores enumeration value
  * @return 1 if the node property has the value @a value, 0 otherwise.
  */
 #define DT_ENUM_HAS_VALUE(node_id, prop, value) \
-	DT_ENUM_HAS_VALUE_BY_IDX(node_id, prop, 0, value)
+	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _ENUM_VAL_, value, _EXISTS))
 
 /**
  * @brief Get a string property's value as a token.
@@ -4817,8 +4817,56 @@
  *     DT_ANY_INST_HAS_PROP_STATUS_OKAY(baz) // 0
  * @endcode
  */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY(prop) \
-	COND_CODE_1(IS_EMPTY(DT_ANY_INST_HAS_PROP_STATUS_OKAY_(prop)), (0), (1))
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY(prop)							\
+	UTIL_NOT(IS_EMPTY(									\
+		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_PROP_STATUS_OKAY_, prop)))
+
+/**
+ * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
+ *        property. If all nodes are disabled, this will return 1.
+ *
+ * @param prop lowercase-and-underscores property name
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *         sensor0: sensor@0 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <0>;
+ *             foo = <1>;
+ *             bar = <2>;
+ *         };
+ *
+ *         sensor1: sensor@1 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <1>;
+ *             foo = <2>;
+ *         };
+ *
+ *         sensor2: sensor@2 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "disabled";
+ *             reg = <2>;
+ *             baz = <1>;
+ *         };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define DT_DRV_COMPAT vnd_some_sensor
+ *
+ *     DT_ALL_INST_HAS_PROP_STATUS_OKAY(foo) // 1
+ *     DT_ALL_INST_HAS_PROP_STATUS_OKAY(bar) // 0
+ *     DT_ALL_INST_HAS_PROP_STATUS_OKAY(baz) // 0
+ * @endcode
+ */
+#define DT_ALL_INST_HAS_PROP_STATUS_OKAY(prop) \
+	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_HAS_PROP_STATUS_OKAY_, prop))
 
 /**
  * @brief Check if any device node with status `okay` has a given
@@ -4914,8 +4962,57 @@
  *     DT_ANY_INST_HAS_BOOL_STATUS_OKAY(baz) // 0
  * @endcode
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY(prop) \
-	COND_CODE_1(IS_EMPTY(DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(prop)), (0), (1))
+#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY(prop)							\
+	UTIL_NOT(IS_EMPTY(									\
+		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_BOOL_STATUS_OKAY_, prop)))
+
+/**
+ * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
+ *        boolean property that exists. If all nodes are disabled, this
+ *        will return 1.
+ * *
+ * @param prop lowercase-and-underscores property name
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *         sensor0: sensor@0 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <0>;
+ *             foo;
+ *             bar;
+ *         };
+ *
+ *         sensor1: sensor@1 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "okay";
+ *             reg = <1>;
+ *             foo;
+ *         };
+ *
+ *         sensor2: sensor@2 {
+ *             compatible = "vnd,some-sensor";
+ *             status = "disabled";
+ *             reg = <2>;
+ *             baz;
+ *         };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define DT_DRV_COMPAT vnd_some_sensor
+ *
+ *     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(foo) // 1
+ *     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(bar) // 0
+ *     DT_ALL_INST_HAS_BOOL_STATUS_OKAY(baz) // 0
+ * @endcode
+ */
+#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY(prop) \
+	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_HAS_BOOL_STATUS_OKAY_, prop))
 
 /**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
@@ -5186,7 +5283,7 @@
 
 /** @cond INTERNAL_HIDDEN */
 
-/** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY_
+/** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
  * identified by index @p idx, if instance has property @p prop.
@@ -5197,24 +5294,10 @@
  * @return Macro evaluates to `1,` if instance has the property,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY__(idx, prop)	\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, prop), (1,), ())
-/** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY
- *
- * This macro uses DT_ANY_INST_HAS_PROP_STATUS_OKAY_ with
- * DT_INST_FOREACH_STATUS_OKAY_VARG to generate comma separated list of 1,
- * where each 1 on the list represents instance that has a property
- * @p prop; the list may be empty, and the upper bound on number of
- * list elements is number of device instances.
- *
- * @param prop property to check
- *
- * @return Evaluates to list of 1s (e.g: 1,1,1,) or nothing.
- */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(prop)	\
-	DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_PROP_STATUS_OKAY__, prop)
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
 
-/** @brief Helper for DT_ANY_INST_HAS_BOOL_STATUS_OKAY_
+/** @brief Helper for DT_ANY_INST_HAS_BOOL_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
  * identified by index @p idx, if instance has boolean property
@@ -5226,22 +5309,37 @@
  * @return Macro evaluates to `1,` if instance property value is 1,
  * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY__(idx, prop)	\
-	COND_CODE_1(DT_INST_PROP(idx, prop), (1,), ())
-/** @brief Helper for DT_ANY_INST_HAS_BOOL_STATUS_OKAY
+#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
+	IF_ENABLED(DT_INST_PROP(idx, prop), (1,))
+
+/** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
  *
- * This macro uses DT_ANY_INST_HAS_BOOL_STATUS_OKAY_ with
- * DT_INST_FOREACH_STATUS_OKAY_VARG to generate comma separated list of 1,
- * where each 1 on the list represents instance that has a property
- * @p prop of value 1; the list may be empty, and the upper bound on number of
- * list elements is number of device instances.
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p idx, if instance has no property @p prop.
  *
- * @param prop property to check
+ * @param idx instance number
+ * @param prop property to check for
  *
- * @return Evaluates to list of 1s (e.g: 1,1,1,) or nothing.
+ * @return Macro evaluates to `1,` if instance has the property,
+ * otherwise it evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(prop)	\
-	DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_BOOL_STATUS_OKAY__, prop)
+#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(idx, prop)	\
+	IF_DISABLED(DT_INST_NODE_HAS_PROP(idx, prop), (1,))
+
+/** @brief Helper for DT_ALL_INST_HAS_BOOL_STATUS_OKAY
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p idx, if instance has no boolean property
+ * @p prop with value 1.
+ *
+ * @param idx instance number
+ * @param prop property to check for
+ *
+ * @return Macro evaluates to `1,` if instance property value is 0,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(idx, prop)	\
+	IF_DISABLED(DT_INST_PROP(idx, prop), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))

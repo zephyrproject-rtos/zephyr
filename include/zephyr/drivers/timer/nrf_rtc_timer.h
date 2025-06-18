@@ -177,8 +177,7 @@ void z_nrf_rtc_timer_abort(int32_t chan);
 
 /** @brief Convert system clock time to RTC ticks.
  *
- * @p t can be absolute or relative. @p t cannot be further into the future
- * from now than the RTC range (e.g. 512 seconds if RTC is running at 32768 Hz).
+ * @p t can be absolute or relative.
  *
  * @retval Positive value represents @p t in RTC tick value.
  * @retval -EINVAL if @p t is out of range.

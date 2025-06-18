@@ -18,3 +18,9 @@ board_runner_args(openocd --gdb-init "mem 0x22020000 0x2203C000 rw")
 board_runner_args(openocd --gdb-init "mem 0x42020000 0x4203C000 rw")
 board_runner_args(openocd --gdb-init "mem 0x23000000 0x23400000 ro")
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+
+board_runner_args(bflb_mcu_tool --chipname bl602)
+board_runner_args(bflb_mcu_tool --dev-id /dev/ttyACM0)
+include(${ZEPHYR_BASE}/boards/common/bflb_mcu_tool.board.cmake)
+
+board_set_flasher(bflb_mcu_tool)

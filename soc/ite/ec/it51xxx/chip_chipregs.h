@@ -189,9 +189,6 @@ struct gpio_it51xxx_regs {
 /* 0x00: General Control */
 #define IT51XXX_GPIO_LPCRSTEN             (BIT(2) | BIT(1))
 #define ITE_EC_GPIO_LPCRSTEN              IT51XXX_GPIO_LPCRSTEN
-#define IT51XXX_GPIO_GCR_ESPI_RST_D2      0x2
-#define IT51XXX_GPIO_GCR_ESPI_RST_POS     1
-#define IT51XXX_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT51XXX_GPIO_GCR_ESPI_RST_POS)
 /* 0xF0: General Control 1 */
 #define IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN BIT(2)
 #define IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN BIT(0)
@@ -270,8 +267,16 @@ struct gctrl_it51xxx_regs {
 	volatile uint8_t reserved_1d_1f[3];
 	/* 0x20: Reset Control 5 */
 	volatile uint8_t GCTRL_RSTC5;
-	/* 0x21-0x37: reserved_21_37 */
-	volatile uint8_t reserved_21_37[23];
+	/* 0x21-0x2f: reserved_21_2f */
+	volatile uint8_t reserved_21_2f[15];
+	/* 0x30: Port 80h/81h Status Register */
+	volatile uint8_t GCTRL_P80H81HSR;
+	/* 0x31: Port 80h Data Register */
+	volatile uint8_t GCTRL_P80HDR;
+	/* 0x32: Port 81h Data Register */
+	volatile uint8_t GCTRL_P81HDR;
+	/* 0x33-0x37: reserved_33_37 */
+	volatile uint8_t reserved_33_37[5];
 	/* 0x38: Special Control 9 */
 	volatile uint8_t GCTRL_SPCTRL9;
 	/* 0x39-0x46: reserved_39_46 */

@@ -2,6 +2,23 @@
 
 zephyr_library()
 
+if(CONFIG_ARMV8_1_M_PACBTI_STANDARD)
+  zephyr_compile_options(-mbranch-protection=standard)
+elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET)
+  zephyr_compile_options(-mbranch-protection=pac-ret)
+elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF)
+  zephyr_compile_options(-mbranch-protection=pac-ret+leaf)
+elseif(CONFIG_ARMV8_1_M_PACBTI_BTI)
+  zephyr_compile_options(-mbranch-protection=bti)
+elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_BTI)
+  zephyr_compile_options(-mbranch-protection=pac-ret+bti)
+elseif(CONFIG_ARMV8_1_M_PACBTI_PACRET_LEAF_BTI)
+  zephyr_compile_options(-mbranch-protection=pac-ret+leaf+bti)
+elseif(CONFIG_ARMV8_1_M_PACBTI_NONE)
+  #TODO: Enable this after Zephyr SDK updates to GCC version >=14.2
+  # zephyr_compile_options(-mbranch-protection=none)
+endif()
+
 zephyr_library_sources(
   exc_exit.c
   fault.c

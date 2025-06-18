@@ -326,7 +326,12 @@ static uint16_t adc_ad7124_odr_to_fs(const struct device *dev, int16_t odr)
 		return -EINVAL;
 	}
 
-	odr_sel_bits = DIV_ROUND_CLOSEST(master_clk_freq, odr * 32);
+	if (odr <= 0) {
+		LOG_ERR("Invalid ODR value: %d", odr);
+		return -EINVAL;
+	}
+
+	odr_sel_bits = DIV_ROUND_CLOSEST(master_clk_freq, (uint32_t)odr * 32);
 
 	if (odr_sel_bits < ADC_ODR_SEL_BITS_MIN) {
 		odr_sel_bits = ADC_ODR_SEL_BITS_MIN;
@@ -1119,7 +1124,7 @@ static int adc_ad7124_get_read_chan_id(const struct device *dev, uint16_t *chan_
 
 static int adc_ad7124_perform_read(const struct device *dev)
 {
-	int ret;
+	int ret = 0;
 	struct adc_ad7124_data *data = dev->data;
 	uint16_t ch_idx = -1;
 	uint16_t prev_ch_idx = -1;

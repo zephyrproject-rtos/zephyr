@@ -62,16 +62,27 @@ enum npm1300_gpio_type {
 /* nPM1300 ship register offsets */
 #define SHIP_OFFSET_SHIP 0x02U
 
-#define BUCK1_ON_MASK 0x04U
-#define BUCK2_ON_MASK 0x40U
+#define BUCK1_ON_MASK          0x04U
+#define BUCK2_ON_MASK          0x40U
+#define BUCK1_EN_PULLDOWN_MASK BIT(2)
+#define BUCK2_EN_PULLDOWN_MASK BIT(3)
 
 #define LDSW1_ON_MASK 0x03U
 #define LDSW2_ON_MASK 0x0CU
 
-#define LDSW1_SOFTSTART_MASK  0x0CU
-#define LDSW1_SOFTSTART_SHIFT 2U
-#define LDSW2_SOFTSTART_MASK  0x30U
-#define LDSW2_SOFTSTART_SHIFT 4U
+#define LDSW1_SOFTSTART_MASK        0x0CU
+#define LDSW1_SOFTSTART_SHIFT       2U
+#define LDSW1_ACTIVE_DISCHARGE_MASK BIT(6)
+#define LDSW2_SOFTSTART_MASK        0x30U
+#define LDSW2_SOFTSTART_SHIFT       4U
+#define LDSW2_ACTIVE_DISCHARGE_MASK BIT(7)
+
+#define NPM1300_GPIO_UNUSED UINT8_MAX
+
+struct npm1300_gpio_info {
+	uint8_t pin;
+	bool invert;
+};
 
 struct regulator_npm1300_pconfig {
 	const struct device *mfd;
@@ -83,10 +94,11 @@ struct regulator_npm1300_config {
 	const struct device *mfd;
 	uint8_t source;
 	int32_t retention_uv;
-	struct gpio_dt_spec enable_gpios;
-	struct gpio_dt_spec retention_gpios;
-	struct gpio_dt_spec pwm_gpios;
+	struct npm1300_gpio_info enable_gpios;
+	struct npm1300_gpio_info retention_gpios;
+	struct npm1300_gpio_info pwm_gpios;
 	uint8_t soft_start;
+	bool active_discharge;
 	bool ldo_disable_workaround;
 };
 
@@ -407,22 +419,24 @@ int regulator_npm1300_disable(const struct device *dev)
 	}
 }
 
-static int regulator_npm1300_set_buck_pin_ctrl(const struct device *dev, uint8_t chan, uint8_t pin,
-					       uint8_t inv, enum npm1300_gpio_type type)
+static int regulator_npm1300_set_buck_pin_ctrl(const struct device *dev, uint8_t chan,
+					       const struct npm1300_gpio_info *pin_info,
+					       enum npm1300_gpio_type type)
 {
 	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t inv = pin_info->invert ? 1 : 0;
 	uint8_t ctrl;
 	uint8_t mask;
 
 	switch (chan) {
 	case 0:
 		/* Invert control in bit 6, pin control in bits 2-0 */
-		ctrl = (inv << 6U) | (pin + 1U);
+		ctrl = (inv << 6U) | (pin_info->pin + 1U);
 		mask = BIT(6U) | BIT_MASK(3U);
 		break;
 	case 1:
 		/* Invert control in bit 7, pin control in bits 5-3 */
-		ctrl = (inv << 7U) | ((pin + 1U) << 3U);
+		ctrl = (inv << 7U) | ((pin_info->pin + 1U) << 3U);
 		mask = BIT(7U) | (BIT_MASK(3U) << 3U);
 		break;
 	default:
@@ -444,42 +458,41 @@ static int regulator_npm1300_set_buck_pin_ctrl(const struct device *dev, uint8_t
 	}
 }
 
-static int regulator_npm1300_set_ldsw_pin_ctrl(const struct device *dev, uint8_t chan, uint8_t pin,
-					       uint8_t inv, enum npm1300_gpio_type type)
+static int regulator_npm1300_set_ldsw_pin_ctrl(const struct device *dev, uint8_t chan,
+					       const struct npm1300_gpio_info *pin_info,
+					       enum npm1300_gpio_type type)
 {
 	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t inv = pin_info->invert ? 1 : 0;
 	uint8_t ctrl;
 
 	if (type != NPM1300_GPIO_TYPE_ENABLE) {
 		return -ENOTSUP;
 	}
 
-	ctrl = (pin + 1U) | (inv << 3U);
+	ctrl = (pin_info->pin + 1U) | (inv << 3U);
 
 	return mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_GPISEL + chan, ctrl);
 }
 
-int regulator_npm1300_set_pin_ctrl(const struct device *dev, const struct gpio_dt_spec *spec,
+int regulator_npm1300_set_pin_ctrl(const struct device *dev, const struct npm1300_gpio_info *info,
 				   enum npm1300_gpio_type type)
 {
 	const struct regulator_npm1300_config *config = dev->config;
-	uint8_t inv;
 
-	if (spec->port == NULL) {
+	if (info->pin == NPM1300_GPIO_UNUSED) {
 		return 0;
 	}
 
-	inv = (spec->dt_flags & GPIO_ACTIVE_LOW) != 0U;
-
 	switch (config->source) {
 	case NPM1300_SOURCE_BUCK1:
-		return regulator_npm1300_set_buck_pin_ctrl(dev, 0, spec->pin, inv, type);
+		return regulator_npm1300_set_buck_pin_ctrl(dev, 0, info, type);
 	case NPM1300_SOURCE_BUCK2:
-		return regulator_npm1300_set_buck_pin_ctrl(dev, 1, spec->pin, inv, type);
+		return regulator_npm1300_set_buck_pin_ctrl(dev, 1, info, type);
 	case NPM1300_SOURCE_LDO1:
-		return regulator_npm1300_set_ldsw_pin_ctrl(dev, 0, spec->pin, inv, type);
+		return regulator_npm1300_set_ldsw_pin_ctrl(dev, 0, info, type);
 	case NPM1300_SOURCE_LDO2:
-		return regulator_npm1300_set_ldsw_pin_ctrl(dev, 1, spec->pin, inv, type);
+		return regulator_npm1300_set_ldsw_pin_ctrl(dev, 1, info, type);
 	default:
 		return -ENODEV;
 	}
@@ -595,6 +608,32 @@ static int soft_start_set(const struct device *dev, uint8_t soft_start)
 	}
 }
 
+static int active_discharge_set(const struct device *dev, bool enabled)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+
+	switch (config->source) {
+	case NPM1300_SOURCE_BUCK1:
+		return mfd_npm1300_reg_update(config->mfd, BUCK_BASE, BUCK_OFFSET_CTRL0,
+					      enabled ? BUCK1_EN_PULLDOWN_MASK : 0,
+					      BUCK1_EN_PULLDOWN_MASK);
+	case NPM1300_SOURCE_BUCK2:
+		return mfd_npm1300_reg_update(config->mfd, BUCK_BASE, BUCK_OFFSET_CTRL0,
+					      enabled ? BUCK2_EN_PULLDOWN_MASK : 0,
+					      BUCK2_EN_PULLDOWN_MASK);
+	case NPM1300_SOURCE_LDO1:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      enabled ? LDSW1_ACTIVE_DISCHARGE_MASK : 0,
+					      LDSW1_ACTIVE_DISCHARGE_MASK);
+	case NPM1300_SOURCE_LDO2:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      enabled ? LDSW2_ACTIVE_DISCHARGE_MASK : 0,
+					      LDSW2_ACTIVE_DISCHARGE_MASK);
+	default:
+		return -ENODEV;
+	}
+}
+
 int regulator_npm1300_init(const struct device *dev)
 {
 	const struct regulator_npm1300_config *config = dev->config;
@@ -631,6 +670,12 @@ int regulator_npm1300_init(const struct device *dev)
 		}
 	}
 
+	/* Configure active discharge */
+	ret = active_discharge_set(dev, config->active_discharge);
+	if (ret != 0) {
+		return ret;
+	}
+
 	/* Configure GPIO pin control */
 	ret = regulator_npm1300_set_pin_ctrl(dev, &config->enable_gpios, NPM1300_GPIO_TYPE_ENABLE);
 	if (ret != 0) {
@@ -661,7 +706,16 @@ static DEVICE_API(regulator, api) = {
 	.set_mode = regulator_npm1300_set_mode,
 };
 
+#define GPIO_CONFIG_DEFINE(node_id, prop)                                                          \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),                                               \
+		    ({DT_PROP_BY_IDX(node_id, prop, 0),                                            \
+		      !!(DT_PROP_BY_IDX(node_id, prop, 1) & GPIO_ACTIVE_LOW)}),                    \
+		    ({NPM1300_GPIO_UNUSED, false}))
+
 #define REGULATOR_NPM1300_DEFINE(node_id, id, _source)                                             \
+	BUILD_ASSERT(DT_PROP_LEN_OR(node_id, enable_gpio_config, 2) == 2);                         \
+	BUILD_ASSERT(DT_PROP_LEN_OR(node_id, retention_gpio_config, 2) == 2);                      \
+	BUILD_ASSERT(DT_PROP_LEN_OR(node_id, pwm_gpio_config, 2) == 2);                            \
 	static struct regulator_npm1300_data data_##id;                                            \
                                                                                                    \
 	static const struct regulator_npm1300_config config_##id = {                               \
@@ -670,9 +724,10 @@ static DEVICE_API(regulator, api) = {
 		.source = _source,                                                                 \
 		.retention_uv = DT_PROP_OR(node_id, retention_microvolt, 0),                       \
 		.soft_start = DT_ENUM_IDX_OR(node_id, soft_start_microamp, UINT8_MAX),             \
-		.enable_gpios = GPIO_DT_SPEC_GET_OR(node_id, enable_gpios, {0}),                   \
-		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),             \
-		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0}),                         \
+		.enable_gpios = GPIO_CONFIG_DEFINE(node_id, enable_gpio_config),                   \
+		.retention_gpios = GPIO_CONFIG_DEFINE(node_id, retention_gpio_config),             \
+		.pwm_gpios = GPIO_CONFIG_DEFINE(node_id, pwm_gpio_config),                         \
+		.active_discharge = DT_PROP(node_id, active_discharge),                            \
 		.ldo_disable_workaround = DT_PROP(node_id, nordic_anomaly38_disable_workaround)};  \
                                                                                                    \
 	DEVICE_DT_DEFINE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id,          \

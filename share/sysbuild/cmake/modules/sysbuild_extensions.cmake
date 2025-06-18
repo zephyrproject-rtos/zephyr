@@ -261,7 +261,7 @@ function(ExternalZephyrProject_Add)
   set(sysbuild_image_conf_dir ${APP_DIR}/sysbuild)
   set(sysbuild_image_name_conf_dir ${APP_DIR}/sysbuild/${ZBUILD_APPLICATION})
   # User defined `-D<image>_CONF_FILE=<file.conf>` takes precedence over anything else.
-  if (NOT ${ZBUILD_APPLICATION}_CONF_FILE)
+  if(NOT ${ZBUILD_APPLICATION}_CONF_FILE)
     if(EXISTS ${sysbuild_image_name_conf_dir})
       set(${ZBUILD_APPLICATION}_APPLICATION_CONFIG_DIR ${sysbuild_image_name_conf_dir}
           CACHE INTERNAL "Application configuration dir controlled by sysbuild"
@@ -275,7 +275,7 @@ function(ExternalZephyrProject_Add)
                 NAMES ${ZBUILD_APPLICATION}.conf SUFFIX ${FILE_SUFFIX}
     )
 
-    if (NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
+    if(NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
         AND EXISTS ${sysbuild_image_conf_fragment}
     )
       set(${ZBUILD_APPLICATION}_EXTRA_CONF_FILE ${sysbuild_image_conf_fragment}
@@ -283,12 +283,23 @@ function(ExternalZephyrProject_Add)
       )
     endif()
 
-    # Check for overlay named <ZBUILD_APPLICATION>.overlay.
-    set(sysbuild_image_dts_overlay ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.overlay)
-    if (NOT ${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE AND EXISTS ${sysbuild_image_dts_overlay})
-      set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${sysbuild_image_dts_overlay}
-          CACHE INTERNAL "devicetree overlay file defined by main application"
-      )
+    if(NOT ${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE)
+      # Check for overlay named <ZBUILD_APPLICATION>.overlay.
+      set(sysbuild_image_dts_overlay_files ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.overlay)
+
+      # Check for overlay named <ZBUILD_APPLICATION>_<FILE_SUFFIX>.overlay.
+      if(FILE_SUFFIX)
+        list(PREPEND sysbuild_image_dts_overlay_files ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${FILE_SUFFIX}.overlay)
+      endif()
+
+      foreach(overlay_file ${sysbuild_image_dts_overlay_files})
+        if(EXISTS ${overlay_file})
+          set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${overlay_file}
+            CACHE INTERNAL "devicetree overlay file defined by main application"
+          )
+          break()
+        endif()
+      endforeach()
     endif()
   endif()
 
@@ -523,6 +534,7 @@ function(ExternalZephyrProject_Cmake)
   endif()
   load_cache(IMAGE ${ZCMAKE_APPLICATION} BINARY_DIR ${BINARY_DIR})
   import_kconfig(CONFIG_ ${BINARY_DIR}/zephyr/.config TARGET ${ZCMAKE_APPLICATION})
+  zephyr_dt_import(EDT_PICKLE_FILE ${BINARY_DIR}/zephyr/edt.pickle TARGET ${ZCMAKE_APPLICATION})
 
   # This custom target informs CMake how the BYPRODUCTS are generated if a target
   # depends directly on the BYPRODUCT instead of depending on the image target.

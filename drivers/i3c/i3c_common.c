@@ -772,7 +772,7 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 	struct i3c_ccc_mwl mwl = {0};
 	union i3c_ccc_getcaps caps = {0};
 	union i3c_ccc_getmxds mxds = {0};
-	int ret;
+	int ret = 0;
 
 	/* GETMRL */
 	if (i3c_ccc_do_getmrl(target, &mrl) != 0) {

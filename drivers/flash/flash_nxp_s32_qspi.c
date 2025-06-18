@@ -59,6 +59,10 @@ int nxp_s32_qspi_read(const struct device *dev, off_t offset, void *dest, size_t
 	Qspi_Ip_StatusType status;
 	int ret = 0;
 
+	if (size == 0) {
+		return 0;
+	}
+
 	if (!dest) {
 		return -EINVAL;
 	}

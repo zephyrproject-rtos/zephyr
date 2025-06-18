@@ -1,0 +1,44 @@
+# Copyright (c) 2024 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 SAI controller
+
+compatible: "st,stm32-sai"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
+    description: |
+      DMA channel name: "tx" or "rx", depending of expected device behavior.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  mclk-div-enable:
+    type: boolean
+    description: |
+      SAI NODIV property.
+      When property is not present, oversampling is enabled @ 256.
+
+  mclk-enable:
+    type: boolean
+    description: |
+      Master Clock Output function.
+      An mck pin must be listed within pinctrl-0 when enabling this property.
+
+  synchronous:
+    type: boolean
+    description: |
+      Synchronous mode.
+      When present, the SAI controller is configured to work in synchronous mode.

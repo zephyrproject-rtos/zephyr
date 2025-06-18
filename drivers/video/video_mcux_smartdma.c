@@ -220,10 +220,6 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 	const struct nxp_video_sdma_config *config = dev->config;
 	int ret;
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
-
 	if (!device_is_ready(config->sensor_dev)) {
 		LOG_ERR("Sensor device not ready");
 		return -ENODEV;
@@ -251,10 +247,6 @@ static int nxp_video_sdma_get_format(const struct device *dev, struct video_form
 {
 	const struct nxp_video_sdma_config *config = dev->config;
 	int ret;
-
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
 
 	if (!device_is_ready(config->sensor_dev)) {
 		LOG_ERR("Sensor device not ready");

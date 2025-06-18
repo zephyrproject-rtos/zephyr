@@ -809,12 +809,7 @@ static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *use
 	}
 
 	if (info.state == BT_CONN_STATE_CONNECTED) {
-		char addr_str[BT_ADDR_LE_STR_LEN];
-
 		default_conn = bt_conn_ref(conn);
-
-		bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
-		bt_shell_print("Selected conn is now: %s", addr_str);
 	}
 }
 
@@ -826,17 +821,33 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_shell_print("Disconnected: %s (reason 0x%02x)", addr, reason);
 
 	if (default_conn == conn) {
+		struct bt_conn_info info;
+		enum bt_conn_type conn_type = BT_CONN_TYPE_LE;
+
+		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+			conn_type |= BT_CONN_TYPE_BR;
+		}
+
+		bt_conn_get_info(conn, &info);
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
 		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconnected_set_new_default_conn_cb, NULL);
+		bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+		if (default_conn == NULL) {
+			bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
+		}
+
+		if (default_conn != NULL) {
+			conn_addr_str(default_conn, addr, sizeof(addr));
+			bt_shell_print("Selected conn is now: %s", addr);
+		}
 	}
 }
 
 static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	bt_shell_print("LE conn  param req: int (0x%04x, 0x%04x) lat %d to %d",
+	bt_shell_print("LE conn param req: int (0x%04x, 0x%04x) lat %d to %d",
 		       param->interval_min, param->interval_max,
 		       param->latency, param->timeout);
 
@@ -2560,13 +2571,18 @@ static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_ext_adv_get_info(adv, &info);
 	if (err) {
-		shell_error(sh, "OOB data failed");
+		shell_error(sh, "Failed to get advertising set info: %d", err);
 		return err;
 	}
 
 	shell_print(sh, "Advertiser[%d] %p", selected_adv, adv);
 	shell_print(sh, "Id: %d, TX power: %d dBm", info.id, info.tx_power);
+	shell_print(sh, "Adv state: %d", info.ext_adv_state);
 	print_le_addr("Address", info.addr);
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV)) {
+		shell_print(sh, "Per Adv state: %d", info.per_adv_state);
+	}
 
 	return 0;
 }
@@ -3847,7 +3863,7 @@ static int cmd_security(const struct shell *sh, size_t argc, char *argv[])
 	sec = *argv[1] - '0';
 
 	if ((info.type == BT_CONN_TYPE_BR &&
-	    (sec < BT_SECURITY_L0 || sec > BT_SECURITY_L3))) {
+	    (sec < BT_SECURITY_L0 || sec > BT_SECURITY_L4))) {
 		shell_error(sh, "Invalid BR/EDR security level (%d)", sec);
 		return -ENOEXEC;
 	}
@@ -3942,46 +3958,39 @@ static int cmd_bonds(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static const char *role_str(uint8_t role)
-{
-	switch (role) {
-	case BT_CONN_ROLE_CENTRAL:
-		return "Central";
-	case BT_CONN_ROLE_PERIPHERAL:
-		return "Peripheral";
-	}
-
-	return "Unknown";
-}
-
 static void connection_info(struct bt_conn *conn, void *user_data)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int *conn_count = user_data;
 	struct bt_conn_info info;
+	const char *selected;
+	const char *role_str;
 
 	if (bt_conn_get_info(conn, &info) < 0) {
 		bt_shell_error("Unable to get info: conn %p", conn);
 		return;
 	}
 
+	selected = conn == default_conn ? "*" : " ";
+	role_str = get_conn_role_str(info.role);
+
 	switch (info.type) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
-		bt_shell_print(" #%u [BR][%s] %s", info.id, role_str(info.role), addr);
+		bt_shell_print("%s#%u [BR][%s] %s", selected, info.id, role_str, addr);
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		bt_shell_print("%s#%u [LE][%s] %s: Interval %u latency %u timeout %u",
-			       conn == default_conn ? "*" : " ", info.id, role_str(info.role), addr,
-			       info.le.interval, info.le.latency, info.le.timeout);
+		bt_shell_print("%s#%u [LE][%s] %s: Interval %u latency %u timeout %u", selected,
+			       info.id, role_str, addr, info.le.interval, info.le.latency,
+			       info.le.timeout);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		bt_shell_print(" #%u [ISO][%s] %s", info.id, role_str(info.role), addr);
+		bt_shell_print(" #%u [ISO][%s] %s", info.id, role_str, addr);
 		break;
 #endif
 	default:
@@ -4224,12 +4233,16 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 enum bt_security_err pairing_accept(struct bt_conn *conn,
 				    const struct bt_conn_pairing_feat *const feat)
 {
-	bt_shell_print("Remote pairing features: "
-		       "IO: 0x%02x, OOB: %d, AUTH: 0x%02x, Key: %d, "
-		       "Init Kdist: 0x%02x, Resp Kdist: 0x%02x",
-		       feat->io_capability, feat->oob_data_flag,
-		       feat->auth_req, feat->max_enc_key_size,
-		       feat->init_key_dist, feat->resp_key_dist);
+	if (feat != NULL) {
+		bt_shell_print("Remote pairing features: "
+			       "IO: 0x%02x, OOB: %d, AUTH: 0x%02x, Key: %d, "
+			       "Init Kdist: 0x%02x, Resp Kdist: 0x%02x",
+			       feat->io_capability, feat->oob_data_flag,
+			       feat->auth_req, feat->max_enc_key_size,
+			       feat->init_key_dist, feat->resp_key_dist);
+	} else {
+		bt_shell_print("Remote pairing");
+	}
 
 	return BT_SECURITY_ERR_SUCCESS;
 }
@@ -5121,7 +5134,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(oob, NULL, HELP_NONE, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR_LE"]", cmd_clear, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
-	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 3, "
+	SHELL_CMD_ARG(security, NULL, "<security level BR/EDR: 0 - 4, "
 				      "LE: 1 - 4> [force-pair]",
 		      cmd_security, 1, 2),
 	SHELL_CMD_ARG(bondable, NULL, HELP_ONOFF, cmd_bondable,

@@ -35,6 +35,7 @@ advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
 aesc	Aesc Silicon
 aesop	AESOP Embedded Forum
+aithinker	Ai-Thinker Co., Ltd.
 al	Annapurna Labs
 alcatel	Alcatel
 alientek	Alientek
@@ -177,13 +178,14 @@ dfrobot	DFRobot
 dh	DH electronics GmbH
 difrnce	Shenzhen Yagu Electronic Technology Co., Ltd.
 digi	Digi International Inc.
-digilent	Diglent, Inc.
+digilent	Digilent, Inc.
 diodes	Diodes Incorporated
 dioo	Dioo Microcircuit Co., Ltd
 dlc	DLC Display Co., Ltd.
 dlg	Dialog Semiconductor
 dlink	D-Link Corporation
 dmo	Data Modul AG
+doiting	Doctors of Intelligence & Technology
 domintech	Domintech Co., Ltd.
 dongwoon	Dongwoon Anatech
 dptechnics	DPTechnics

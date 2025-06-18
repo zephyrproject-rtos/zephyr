@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #endif
 
-#if defined(PWM_NRFX_FAST_PRESENT) && CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
+#if defined(PWM_NRFX_FAST_PRESENT) && CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL
 #define PWM_NRFX_USE_CLOCK_CONTROL 1
 #endif
 
@@ -240,6 +240,9 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 		/* Constantly active (duty 100%). */
 		/* This value is always greater than or equal to COUNTERTOP. */
 		compare_value = PWM_NRFX_CH_COMPARE_MASK;
+		needs_pwm = pwm_is_fast(config) ||
+			(IS_ENABLED(NRF_PWM_HAS_IDLEOUT) &&
+			 IS_ENABLED(CONFIG_PWM_NRFX_NO_GLITCH_DUTY_100));
 	} else {
 		/* PWM generation needed. Check if the requested period matches
 		 * the one that is currently set, or the PWM peripheral can be
@@ -279,20 +282,8 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 			if (inverted) {
 				out_level ^= 1;
 			}
-			/* Output of fast PWM instance is directly connected to GPIO pads,
-			 * thus it cannot controlled by GPIO. Use regular 0%/100% duty cycle
-			 * playback instead.
-			 */
-#ifdef PWM_NRFX_FAST_PRESENT
-			if (pwm_is_fast(config)) {
-				nrfx_pwm_simple_playback(&config->pwm, &config->seq, 1,
-							 NRFX_PWM_FLAG_NO_EVT_FINISHED);
-			} else {
-#else
-			{
-#endif
-				nrf_gpio_pin_write(psel, out_level);
-			}
+
+			nrf_gpio_pin_write(psel, out_level);
 		}
 
 		data->pwm_needed &= ~BIT(channel);
@@ -493,11 +484,11 @@ static int pwm_nrfx_init(const struct device *dev)
  * must be initialized after that controller driver, hence the default PWM
  * initialization priority may be too early for them.
  */
-#if defined(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY) && \
-	CONFIG_PWM_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY
+#if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY) && \
+	CONFIG_PWM_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY
 #define PWM_INIT_PRIORITY(idx)								\
 	COND_CODE_1(PWM_NRFX_IS_FAST(_, /*empty*/, idx, _),				\
-		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_INIT_PRIORITY)),	\
+		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
 		    (CONFIG_PWM_INIT_PRIORITY))
 #else
 #define PWM_INIT_PRIORITY(idx) CONFIG_PWM_INIT_PRIORITY

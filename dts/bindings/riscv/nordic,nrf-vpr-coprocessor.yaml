@@ -25,3 +25,8 @@ properties:
     type: phandle
     description: |
       Memory area or partition from which the VPR code will be loaded.
+
+  enable-secure:
+    type: boolean
+    description: |
+      Enables setting VPR core's secure attribute to secure.

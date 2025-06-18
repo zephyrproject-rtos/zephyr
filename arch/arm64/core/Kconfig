@@ -357,4 +357,20 @@ config MAX_XLAT_TABLES
 
 endif # ARM_MMU
 
+config ARM64_DCACHE_ALL_OPS
+	bool "Provide data cache APIs to operate all data caches"
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Enable this option to provide the data cache APIs to flush or
+	  invalidate all data caches.
+
+config ARM64_BOOT_DISABLE_DCACHE
+	bool "Disable data cache before enable MMU when booting from EL2"
+	depends on ARM64_DCACHE_ALL_OPS
+	help
+	  To make it safe, if data cache is enabled in case of Zephyr is booting
+	  from EL2, enable this option, it will clean and invalidate all data
+	  cache and then disable data cache, it will will be re-enabled after
+	  MMU is configured and enabled.
+
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R

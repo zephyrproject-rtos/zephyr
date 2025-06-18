@@ -464,6 +464,7 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
+    - samples/bluetooth/classic/
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
@@ -567,6 +568,7 @@ Bluetooth Classic:
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
     - tests/bluetooth/classic/
+    - samples/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
     - "area: Bluetooth"
@@ -868,22 +870,15 @@ Debug:
     - scripts/coredump/
     - samples/subsys/debug/
     - doc/services/debugging/
-  labels:
-    - "area: Debugging"
-  tests:
-    - debug
-
-"Debug: Profiling: Perf":
-  status: odd fixes
-  files:
     - doc/services/profiling/perf.rst
     - samples/subsys/profiling/perf/
     - scripts/profiling/stackcollapse.py
     - subsys/profiling/perf/
   labels:
-    - "area: Profiling / Perf"
+    - "area: Debugging"
   tests:
-    - debug.profiling.perf
+    - debug
+
 
 "Debug: Symtab":
   status: maintained
@@ -1345,6 +1340,18 @@ Release Notes:
   labels:
     - "area: DAI"
 
+"Drivers: Debug":
+  status: maintained
+  maintainers:
+    - asmellby
+  collaborators:
+    - nordic-krch
+  files:
+    - drivers/debug/
+    - dts/bindings/debug/
+  labels:
+    - "area: Debugging"
+
 "Drivers: Devmux":
   status: maintained
   maintainers:
@@ -1465,6 +1472,7 @@ Release Notes:
     - tests/drivers/ethernet/
     - include/zephyr/drivers/ethernet/
     - include/zephyr/net/phy.h
+    - include/zephyr/net/mii.h
     - include/zephyr/net/ethernet.h
   labels:
     - "area: Ethernet"
@@ -1778,6 +1786,10 @@ Release Notes:
 
 "Interrupt Handling":
   status: odd fixes
+  collaborators:
+    - ycsin
+    - dcpleung
+    - nashif
   files:
     - drivers/interrupt_controller/
     - dts/bindings/interrupt-controller/
@@ -1995,7 +2007,9 @@ Release Notes:
     - sample.drivers.espi.ps2
 
 "Drivers: PTP Clock":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - yangbolu1991
   files:
     - drivers/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
@@ -2124,6 +2138,7 @@ Release Notes:
     - tbursztyka
   collaborators:
     - teburd
+    - decsny
   files:
     - drivers/spi/
     - include/zephyr/drivers/spi.h
@@ -2148,6 +2163,7 @@ Release Notes:
     - jbehrensnx
   files:
     - drivers/stepper/
+    - include/zephyr/drivers/stepper/
     - include/zephyr/drivers/stepper.h
     - dts/bindings/stepper/
     - doc/hardware/peripherals/stepper.rst
@@ -2174,11 +2190,12 @@ Release Notes:
     - "area: Timer"
 
 "Drivers: Video":
-  status: odd fixes
-  collaborators:
-    - loicpoulain
+  status: maintained
+  maintainers:
     - josuah
     - ngphibang
+  collaborators:
+    - loicpoulain
     - avolmat-st
   files:
     - drivers/video/
@@ -2192,6 +2209,20 @@ Release Notes:
     - "area: Video"
   tests:
     - drivers.video
+
+"Drivers: VIRTIO":
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - drivers/virtio/
+    - dts/bindings/virtio/
+    - include/zephyr/virtio/
+  labels:
+    - "area: VIRTIO"
 
 "Drivers: W1":
   status: maintained
@@ -3661,6 +3692,7 @@ Silabs Platforms:
     - drivers/*/*/*silabs*
     - drivers/*/*/*siwx91x*
     - tests/boards/silabs/
+    - snippets/*silabs*/
   labels:
     - "platform: Silabs"
 
@@ -3781,7 +3813,7 @@ Intel Platforms (Agilex):
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
-NXP Drivers:
+NXP Platform Drivers:
   status: maintained
   maintainers:
     - dleach02
@@ -3822,7 +3854,7 @@ NXP Drivers:
     - "platform: NXP Drivers"
   description: NXP Drivers
 
-NXP Wireless:
+NXP Platform Wireless:
   status: maintained
   maintainers:
     - dleach02
@@ -3831,14 +3863,23 @@ NXP Wireless:
     - axelnxp
     - George-Stefan
   files:
-    - drivers/wifi/nxp/
-    - drivers/bluetooth/hci/*nxp*
-    - drivers/ieee802154/ieee802154_kw41z.c
+    - boards/nxp/*mcxw*/
+    - boards/nxp/*rw*/
     - drivers/*/*mcxw*.c
+    - drivers/bluetooth/hci/*nxp*
+    - drivers/hdlc_rcp_if/*nxp*
+    - drivers/ieee802154/ieee802154_kw41z.c
+    - drivers/wifi/nxp/
+    - samples/bluetooth/**/*rw*
+    - samples/net/**/*mcxw*
+    - samples/net/**/*nxp*
+    - samples/net/**/*rw*
+    - soc/nxp/mcx/mcxw/
+    - soc/nxp/rw/
   labels:
     - "platform: NXP Drivers"
 
-NXP MCUX USB:
+NXP Platform MCUX USB:
   status: maintained
   maintainers:
     - mmahadevan108
@@ -3918,6 +3959,8 @@ NXP Platforms (MPU):
     - dleach02
     - dbaluta
     - iuliana-prodan
+    - yangbolu1991
+    - Zhiqiang-Hou
   files:
     - dts/arm64/nxp/
     - dts/arm/nxp/nxp_imx*
@@ -4263,14 +4306,17 @@ ITE Platforms:
     - Dino-Li
     - GTLin08
     - RuibinChang
+    - Chenhongren
   collaborators:
     - jackrosenthal
     - keith-zephyr
-    - brockus-zephyr
-    - sjg20
+    - fabiobaltieri
   files:
     - boards/ite/
     - drivers/sensor/ite/
+    - drivers/usb/udc/*it82xx2*.c
+    - drivers/usb/device/*it82xx2*.c
+    - drivers/*/*it51xxx*.c
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
     - dts/bindings/*/ite*
@@ -4306,7 +4352,7 @@ TI SimpleLink Platforms:
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
-    - dts/arm/ti/
+    - dts/arm/ti/cc*
     - dts/bindings/*/ti,*
     - soc/ti/simplelink/
     - dts/bindings/*/ti,*
@@ -4327,6 +4373,8 @@ TI K3 Platforms:
     - drivers/*/*davinci*
     - drivers/*/*omap*
     - drivers/*/*ti_k3*
+    - dts/arm/ti/am6*
+    - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
     - soc/ti/k3/
   labels:
@@ -4363,7 +4411,8 @@ Infineon Platforms:
   maintainers:
     - ifyall
   collaborators:
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
     - talih0
   files:
     - boards/cypress/
@@ -4634,6 +4683,15 @@ Tracing:
     - "area: tracing"
   tests:
     - tracing
+
+u-blox Platforms:
+  status: maintained
+  maintainers:
+    - 3rang
+  files:
+    - boards/u-blox/
+  labels:
+    - "platform: u-blox"
 
 USB:
   status: maintained
@@ -4944,6 +5002,18 @@ West:
   labels:
     - "platform: ADI"
 
+"West project: hal_afbr":
+  status: maintained
+  maintainers:
+    - ubieda
+    - bperseghetti
+  collaborators:
+    - PetervdPerk-NXP
+    - jgoppert
+  files: []
+  labels:
+    - "platform: Broadcom"
+
 "West project: hal_ambiq":
   status: odd fixes
   collaborators:
@@ -4982,7 +5052,8 @@ West:
     - ifyall
   collaborators:
     - nashif
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
   files:
     - modules/Kconfig.cypress
   labels:
@@ -5031,7 +5102,8 @@ West:
   collaborators:
     - parthitce
     - talih0
-    - npal-cy
+    - sreeramIfx
+    - mcatee-infineon
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
@@ -5314,6 +5386,7 @@ West:
     - modules/lvgl/
     - tests/lib/gui/lvgl/
     - include/zephyr/dt-bindings/lvgl/
+    - samples/modules/lvgl/
   labels:
     - "area: LVGL"
 
@@ -5671,6 +5744,7 @@ Continuous Integration:
     - kartben
   files:
     - .github/
+    - scripts/requirements-actions.*
     - scripts/ci/
     - scripts/make_bugs_pickle.py
     - .checkpatch.conf

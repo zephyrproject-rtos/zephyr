@@ -24,5 +24,6 @@ supported:
   - pwm
   - spi
   - uart
+  - usb_device
   - watchdog
 vendor: nxp

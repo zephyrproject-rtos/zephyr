@@ -1,21 +1,31 @@
 archs:
   - name: arc
     path: arc
+    full_name: Synopsys DesignWare ARC
   - name: arm
     path: arm
+    full_name: ARM
   - name: arm64
     path: arm64
+    full_name: ARM 64
   - name: mips
     path: mips
+    full_name: MIPS
   - name: posix
     path: posix
+    full_name: POSIX
   - name: riscv
     path: riscv
+    full_name: RISC-V
   - name: sparc
     path: sparc
+    full_name: SPARC
   - name: xtensa
     path: xtensa
+    full_name: Xtensa
   - name: x86
     path: x86
+    full_name: x86
   - name: rx
     path: rx
+    full_name: Renesas RX

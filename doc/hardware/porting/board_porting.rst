@@ -164,7 +164,7 @@ The board qualifiers ``nrf5340/cpuapp/ns`` can be read as:
 - ``cpuapp``: The CPU cluster ``cpuapp``, which consists of a single Cortex-M33
   CPU core. The number of cores in a CPU cluster cannot be determined from the
   board qualifiers.
-- ``ns``: a variant, in this case ``ns`` is a common variant name is
+- ``ns``: a variant, in this case ``ns`` is a common variant name in
   Zephyr denoting a non-secure build for boards supporting :ref:`tfm`.
 
 Not all SoCs define CPU clusters or variants. For example a simple board
@@ -591,13 +591,15 @@ files for a board named ``plank``:
   place the adjustments specific for a given SoC or board variant in the
   :file:`plank_<qualifiers>_defconfig`.
 
-  The ``_defconfig`` should contain mandatory settings for your system clock,
+  The ``_defconfig`` should contain mandatory settings for your UART,
   console, etc. The results are architecture-specific, but typically look
   something like this:
 
   .. code-block:: cfg
 
-     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
+     CONFIG_GPIO=y
+     CONFIG_CONSOLE=y
+     CONFIG_UART_CONSOLE=y
      CONFIG_SERIAL=y
 
 :file:`plank_x_y_z_defconfig` / :file:`plank_<qualifiers>_x_y_z_defconfig`

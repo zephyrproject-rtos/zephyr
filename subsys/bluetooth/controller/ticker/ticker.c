@@ -3476,6 +3476,30 @@ uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 }
 
 /**
+ * @brief Deinitialize ticker instance
+ *
+ * @param instance_index Index of ticker instance
+ */
+int ticker_deinit(uint8_t instance_index)
+{
+	struct ticker_instance *instance;
+
+	if (instance_index >= TICKER_INSTANCE_MAX) {
+		return -EINVAL;
+	}
+
+	instance = &_instance[instance_index];
+
+	if (instance->ticker_id_head != TICKER_NULL) {
+		return -EBUSY;
+	}
+
+	instance->count_node = 0U;
+
+	return 0;
+}
+
+/**
  * @brief Check if ticker instance is initialized
  *
  * @param instance_index Index of ticker instance

@@ -16,3 +16,40 @@ config SOC_SERIES_CYW20829
 	select BUILD_OUTPUT_HEX
 	select BUILD_OUTPUT_BIN
 	select SOC_EARLY_INIT_HOOK
+
+config INFINEON_SECURE_LCS
+	bool "Secure LCS stage support"
+	help
+	  Enable support of SECURE LCS stage. In this stage, the protection
+	  state is set to “secure”. A secured device will boot only when the
+	  authentication of its flash boot and application code succeeds.
+
+config INFINEON_SECURE_POLICY
+	string "Path to policy JSON file"
+	default "default_policy.json"
+	help
+	  Policy is a text file in JSON format that contains a set of properties
+	  for the device configuration (e.g., enabling/disabling debug access ports,
+	  SMIF configuration, keys information, etc).
+
+config INFINEON_SMIF_ENCRYPTION
+	bool "SMIF encryption support"
+	depends on INFINEON_SECURE_LCS
+	help
+	  Enables SMIF encryption.
+
+config CYW20829_FLASH_SAHB_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,flash_sahb)
+
+config CYW20829_FLASH_CBUS_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,flash_cbus)
+
+config CYW20829_SRAM_SAHB_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,sram_sahb)
+
+config CYW20829_SRAM_CBUS_ADDR
+	hex
+	default $(dt_nodelabel_reg_addr_hex,sram_cbus)

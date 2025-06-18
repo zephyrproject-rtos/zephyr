@@ -126,6 +126,28 @@
 			status = "disabled";
 		};
 
+		spi1: spi@40013000 {
+			compatible = "wch,spi";
+			reg = <0x40013000 0x24>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <51>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi2: spi@40003800 {
+			compatible = "wch,spi";
+			reg = <0x40003800 0x24>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <52>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		rcc: rcc@40021000 {
 			compatible = "wch,rcc";
 			reg = <0x40021000 16>;

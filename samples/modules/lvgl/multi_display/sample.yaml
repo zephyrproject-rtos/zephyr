@@ -4,7 +4,7 @@ sample:
 common:
   modules:
     - lvgl
-  filter: dt_comp_enabled("zephyr,displays")
+  filter: dt_compat_enabled("zephyr,displays")
   tags:
     - samples
     - display

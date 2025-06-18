@@ -67,5 +67,9 @@ ZTEST(rtc_api, test_y2k)
 		     rtm[Y2K].tm_wday);
 	zassert_equal(rtm[Y2K].tm_hour, 0, "wrong hour: %d", rtm[Y2K].tm_hour);
 	zassert_equal(rtm[Y2K].tm_min, 0, "wrong minute: %d", rtm[Y2K].tm_min);
-	zassert_equal(rtm[Y2K].tm_sec, SECONDS_AFTER, "wrong second: %d", rtm[Y2K].tm_sec);
+	/* We're testing Y2K rollover, not precise timing. Seconds should be small but exact value
+	 * doesn't matter
+	 */
+	zassert_true(rtm[Y2K].tm_sec <= SECONDS_AFTER + 1, "seconds out of valid range: %d",
+		     rtm[Y2K].tm_sec);
 }

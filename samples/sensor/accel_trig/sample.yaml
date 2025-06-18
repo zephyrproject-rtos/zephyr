@@ -42,6 +42,8 @@ tests:
     platform_allow:
       - apard32690/max32690/m4
   sample.sensor.accel_trig.shield-tap:
+    harness_config:
+      fixture: fixture_x_nucleo_iks01a3
     extra_args:
       - SHIELD=x_nucleo_iks01a3
       - EXTRA_DTC_OVERLAY_FILE=x_nucleo_iks01a3.overlay

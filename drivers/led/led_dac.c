@@ -43,7 +43,7 @@ static int led_dac_set_brightness(const struct device *dev, uint32_t led, uint8_
 	value = pct > 0 ? config->leds[led].dac_min_brightness +
 				  (uint64_t)(config->leds[led].dac_max_brightness -
 					     config->leds[led].dac_min_brightness) *
-					  pct / LED_BRIGTHNESS_MAX
+					  pct / LED_BRIGHTNESS_MAX
 			: 0;
 
 	return led_dac_set_raw(dev, led, value);

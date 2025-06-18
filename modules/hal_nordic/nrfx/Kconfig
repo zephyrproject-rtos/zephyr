@@ -562,6 +562,16 @@ config NRFX_SPIM22
 	depends on $(dt_nodelabel_exists,spi22)
 	select NRFX_SPIM
 
+config NRFX_SPIM23
+	bool "SPIM23 driver instance"
+	depends on $(dt_nodelabel_exists,spi23)
+	select NRFX_SPIM
+
+config NRFX_SPIM24
+	bool "SPIM24 driver instance"
+	depends on $(dt_nodelabel_exists,spi24)
+	select NRFX_SPIM
+
 config NRFX_SPIM30
 	bool "SPIM30 driver instance"
 	depends on $(dt_nodelabel_exists,spi30)
@@ -658,6 +668,16 @@ config NRFX_SPIS21
 config NRFX_SPIS22
 	bool "SPIS22 driver instance"
 	depends on $(dt_nodelabel_exists,spi22)
+	select NRFX_SPIS
+
+config NRFX_SPIS23
+	bool "SPIS23 driver instance"
+	depends on $(dt_nodelabel_exists,spi23)
+	select NRFX_SPIS
+
+config NRFX_SPIS24
+	bool "SPIS24 driver instance"
+	depends on $(dt_nodelabel_exists,spi24)
 	select NRFX_SPIS
 
 config NRFX_SPIS30
@@ -1083,6 +1103,16 @@ config NRFX_UARTE21
 config NRFX_UARTE22
 	bool "UARTE22 driver instance"
 	depends on $(dt_nodelabel_exists,uart22)
+	select NRFX_UARTE
+
+config NRFX_UARTE23
+	bool "UARTE23 driver instance"
+	depends on $(dt_nodelabel_exists,uart23)
+	select NRFX_UARTE
+
+config NRFX_UARTE24
+	bool "UARTE24 driver instance"
+	depends on $(dt_nodelabel_exists,uart24)
 	select NRFX_UARTE
 
 config NRFX_UARTE30

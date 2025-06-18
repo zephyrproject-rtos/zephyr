@@ -12,8 +12,8 @@ on:
       - v*-branch
       - collab-*
   schedule:
-    # Run at 17:00 UTC on every Saturday
-    - cron: '0 17 * * 6'
+    # Run at 02:00 UTC on every Sunday
+    - cron: '0 2 * * 0'
 
 permissions:
   contents: read
@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup Zephyr project
         if: github.event_name == 'pull_request'
-        uses: zephyrproject-rtos/action-zephyr-setup@f7b70269a8eb01f70c8e710891e4c94972a2f6b4 # v1.0.6
+        uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
         with:
           app-path: zephyr
           toolchains: all
@@ -127,7 +127,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.0.20250523
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -148,7 +148,7 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
-      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
     steps:
       - name: Print cloud service information
         run: |
@@ -356,7 +356,7 @@ jobs:
             junit.xml
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@afb2984f4d89672b2f9d9c13ae23d53779671984 # v2.19.0
+        uses: EnricoMi/publish-unit-test-result-action@3a74b2957438d0b6e2e61d67b05318aa25c9e6c6 # v2.20.0
         with:
           check_name: Unit Test Results
           files: "**/twister.xml"

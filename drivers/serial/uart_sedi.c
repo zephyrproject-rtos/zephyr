@@ -123,6 +123,7 @@ struct uart_sedi_drv_data {
 	uint8_t busy_count;
 };
 
+#ifndef CONFIG_PM_DEVICE_RUNTIME
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_busy_set(const struct device *dev)
 {
@@ -147,6 +148,7 @@ static void uart_busy_clear(const struct device *dev)
 		pm_device_busy_clear(dev);
 	}
 }
+#endif
 #endif
 
 #ifdef CONFIG_PM_DEVICE

@@ -448,9 +448,6 @@ static int ov7670_get_fmt(const struct device *dev, struct video_format *fmt)
 {
 	struct ov7670_data *data = dev->data;
 
-	if (fmt == NULL) {
-		return -EINVAL;
-	}
 	memcpy(fmt, &data->fmt, sizeof(data->fmt));
 	return 0;
 }
@@ -551,9 +548,9 @@ static int ov7670_init(const struct device *dev)
 	k_msleep(5);
 
 	/* Set default camera format (QVGA, YUYV) */
-	fmt.pixelformat = VIDEO_PIX_FMT_YUYV;
-	fmt.width = 640;
-	fmt.height = 480;
+	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
+	fmt.width = 320;
+	fmt.height = 240;
 	ret = ov7670_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		return ret;

@@ -137,12 +137,10 @@ ZTEST(clock, test_clock_cycle_32)
 	/*avoid cycle counter wrap around*/
 	if (c1 > c0) {
 		/* delta cycle should be greater than 1 milli-second*/
-		zassert_true((c1 - c0) >
-			     (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
-			     NULL);
+		zassert_true((c1 - c0) > (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC));
 		/* delta NS should be greater than 1 milli-second */
 		zassert_true((uint32_t)k_cyc_to_ns_floor64(c1 - c0) >
-			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
+			     (NSEC_PER_SEC / MSEC_PER_SEC));
 	}
 }
 

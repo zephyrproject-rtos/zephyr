@@ -11,7 +11,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
-#include "adi_tmc_spi.h"
+#include <adi_tmc_spi.h>
 #include "adi_tmc5xxx_common.h"
 
 #include <zephyr/logging/log.h>
@@ -105,6 +105,7 @@ static int tmc50xx_stepper_set_event_callback(const struct device *dev,
 
 static int read_vactual(const struct tmc50xx_stepper_config *config, int32_t *actual_velocity)
 {
+	__ASSERT(actual_velocity != NULL, "actual_velocity pointer must not be NULL");
 	int err;
 
 	err = tmc50xx_read(config->controller, TMC50XX_VACTUAL(config->index), actual_velocity);
@@ -276,6 +277,8 @@ static void rampstat_work_handler(struct k_work *work)
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
+		case TMC5XXX_POS_REACHED:
+		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", stepper_data->stepper->name);
 			execute_callback(stepper_data->stepper, STEPPER_EVENT_STEPS_COMPLETED);
 			break;

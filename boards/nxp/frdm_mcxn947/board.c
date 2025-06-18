@@ -99,6 +99,11 @@ void board_early_init_hook(void)
 	/* Configure Flash wait-states to support 1.2V voltage level and 150000000Hz frequency */
 	FMU0->FCTRL = (FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x3U));
 
+#ifdef CONFIG_FLASH
+	/* Enable clock for internal FMU flash */
+	CLOCK_SetupClockCtrl(SYSCON_CLOCK_CTRL_FRO12MHZ_ENA_MASK);
+#endif
+
 	/* Enable FRO HF(48MHz) output */
 	CLOCK_SetupFROHFClocking(48000000U);
 
@@ -293,6 +298,11 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 1U);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_SetClkDiv(kCLOCK_DivAdc1Clk, 1U);
+	CLOCK_AttachClk(kFRO_HF_to_ADC1);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)

@@ -182,12 +182,10 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	 * device power management is not enabled.
 	 **/
 	pm_device_state_get(device_a, &device_power_state);
-	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
-			NULL);
+	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE);
 
 	pm_device_state_get(device_c, &device_power_state);
-	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE,
-			NULL);
+	zassert_true(device_power_state == PM_DEVICE_STATE_ACTIVE);
 #else
 	/* If testing device order this function does not need to anything */
 	if (testing_device_order) {
@@ -197,7 +195,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	if (testing_force_state) {
 		/* if forced to given power state was called */
 		set_pm = true;
-		zassert_equal(state, forced_state, NULL);
+		zassert_equal(state, forced_state);
 		testing_force_state = false;
 
 		/* We have forced a state that does not trigger device power management.
@@ -458,7 +456,7 @@ ZTEST(power_management_1cpu, test_empty_states)
 	const struct pm_state_info *cpu_states;
 	uint8_t state = pm_state_cpu_get_all(1u, &cpu_states);
 
-	zassert_equal(state, 0, NULL);
+	zassert_equal(state, 0);
 }
 
 ZTEST(power_management_1cpu, test_force_state)

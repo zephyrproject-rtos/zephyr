@@ -356,7 +356,7 @@ static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api;
 
-	if (dev == NULL) {
+	if (dev == NULL || !net_if_is_wifi(iface)) {
 		return NULL;
 	}
 

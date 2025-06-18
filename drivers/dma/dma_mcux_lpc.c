@@ -13,6 +13,9 @@
 #include <zephyr/drivers/dma.h>
 #include <fsl_dma.h>
 #include <fsl_inputmux.h>
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && (FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET == 1)
+#include "fsl_memory.h"
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
@@ -206,6 +209,14 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 			 * is called from a reload function
 			 */
 			next_descriptor = data->curr_descriptor->linkToNextDesc;
+			/* The SDK converts next descriptor addresses to DMA's
+			 * address space when linking the descriptors, so
+			 * convert it back.
+			 */
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && (FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET == 1)
+			next_descriptor = (void *)MEMORY_ConvertMemoryMapAddress(
+				(uint32_t)next_descriptor, kMEMORY_DMA2Local);
+#endif
 		}
 
 		/* SPI TX transfers need to queue a DMA descriptor to
@@ -553,10 +564,12 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		DMA_EnableChannel(DEV_BASE(dev), config->linked_channel);
 
 		/* Link OTrig Muxes with passed-in channels */
+		INPUTMUX_Init(INPUTMUX);
 		INPUTMUX_AttachSignal(INPUTMUX, otrig_index,
 			dev_config->otrig_base_address + channel);
 		INPUTMUX_AttachSignal(INPUTMUX, config->linked_channel,
 				dev_config->itrig_base_address + otrig_index);
+		INPUTMUX_Deinit(INPUTMUX);
 
 		/* Otrig is now connected with linked channel */
 		dma_data->otrig_array[otrig_index].source_channel = channel;
@@ -857,7 +870,6 @@ static int dma_mcux_lpc_pm_action(const struct device *dev, enum pm_device_actio
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		DMA_Init(DEV_BASE(dev));
-		INPUTMUX_Init(INPUTMUX);
 		break;
 	default:
 		return -ENOTSUP;

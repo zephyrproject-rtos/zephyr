@@ -24,20 +24,21 @@
 		zephyr,console = &usart0;
 		zephyr,flash = &flash0;
 		zephyr,shell-uart = &usart0;
-		zephyr,uart-pipe = &usart0;
 		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		led_red: led_2_10 {
-			label = "Red LED (DS3)";
 			gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+			label = "Red LED (DS3)";
 		};
+
 		led_yellow: led_2_11 {
-			label = "Yellow LED (DS4)";
 			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED (DS4)";
 		};
 	};
 
@@ -45,13 +46,14 @@
 		compatible = "gpio-keys";
 
 		user_button_sw2: button_0 {
-			label = "Push button switch (SW2)";
 			gpios = <&gpio2 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch (SW2)";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_sw3: button_1 {
-			label = "Push button switch (SW3)";
 			gpios = <&gpio2 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch (SW3)";
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
@@ -77,9 +79,9 @@
 
 &usart0 {
 	current-speed = <115200>;
+	hw-flow-control;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
-	hw-flow-control;
 	status = "okay";
 };
 
@@ -100,20 +102,20 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x00000000 DT_SIZE_K(192)>;
+			label = "image-0";
 		};
 
 		storage_partition: partition@30000 {
-			label = "storage";
 			reg = <0x00030000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
 
 &dma {
-	status = "okay";
 	dma-channels = <8>; /* Crypto DMA channels have ID 5, 6, and 7 */
+	status = "okay";
 };
 
 &crypto {

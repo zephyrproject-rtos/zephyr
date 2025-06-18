@@ -12,6 +12,8 @@
 
 #if defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
+#elif defined(CONFIG_FLASH_RENESAS_RA_OSPI_B)
+#define TEST_AREA_DEV_NODE	DT_INST(0, renesas_ra_ospi_b_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
 #elif defined(CONFIG_FLASH_MSPI_NOR)
@@ -32,12 +34,18 @@
 #elif defined(TEST_AREA_DEV_NODE)
 
 #define TEST_AREA_DEVICE	DEVICE_DT_GET(TEST_AREA_DEV_NODE)
+#if defined CONFIG_FLASH_RENESAS_RA_OSPI_B
+#define TEST_AREA_OFFSET	0x40000
+#else
 #define TEST_AREA_OFFSET	0xff000
+#endif
 
 #if DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
 #define TEST_AREA_MAX DT_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
-#else
+#elif DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, size)
 #define TEST_AREA_MAX (DT_PROP(TEST_AREA_DEV_NODE, size) / 8)
+#else
+#define TEST_AREA_MAX DT_REG_SIZE(TEST_AREA_DEV_NODE)
 #endif
 
 #else
@@ -169,14 +177,14 @@ ZTEST(flash_driver, test_read_unaligned_address)
 						expected + ad_o,
 						len),
 					0, "Flash read failed at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 				/* check buffer guards */
 				zassert_equal(buf[buf_o - 1], canary,
 					"Buffer underflow at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 				zassert_equal(buf[buf_o + len], canary,
 					"Buffer overflow at len=%d, "
-					"ad_o=%d, buf_o=%d", len, ad_o, buf_o);
+					"ad_o=%d, buf_o=%d", (int)len, (int)ad_o, (int)buf_o);
 			}
 		}
 	}
@@ -408,7 +416,7 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 	actual_result = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
 	zassert_equal(actual_result, expected_result,
 		      "flash_copy(%p, %lx, %p, %lx, %zu, %p, %zu) failed: expected: %d actual: %d",
-		      src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size,
+		      src_dev, src_offset, dst_dev, dst_offset, (size_t)size, buf, buf_size,
 		      expected_result, actual_result);
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {

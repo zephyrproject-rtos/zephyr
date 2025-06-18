@@ -54,7 +54,7 @@ static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
 	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
 };
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#elif defined(NRF54LM20A_ENGA_XXAA)
 static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(31U, 1),
@@ -66,6 +66,19 @@ static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
 	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
 	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
+	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
+};
+#elif defined(NRF54LV10A_ENGA_XXAA)
+static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
+	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
+	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
+	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
+	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
+	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
+	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(10U, 1),
+	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
+	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
+	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
 	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
 };
 #endif
@@ -220,7 +233,9 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		.resistor_p     = NRF_SAADC_RESISTOR_DISABLED,
 		.resistor_n     = NRF_SAADC_RESISTOR_DISABLED,
 #endif
+#if NRF_SAADC_HAS_CH_BURST
 		.burst          = NRF_SAADC_BURST_DISABLED,
+#endif
 	};
 	uint8_t channel_id = channel_cfg->channel_id;
 	uint32_t input_negative = channel_cfg->input_negative;
@@ -229,6 +244,7 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+#if NRF_SAADC_HAS_CH_GAIN
 	switch (channel_cfg->gain) {
 #if defined(SAADC_CH_CONFIG_GAIN_Gain1_6)
 	case ADC_GAIN_1_6:
@@ -282,6 +298,9 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		break;
 #endif
 	default:
+#else
+	if (channel_cfg->gain != ADC_GAIN_1) {
+#endif /* defined(NRF_SAADC_HAS_CH_GAIN) */
 		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
@@ -530,6 +549,7 @@ static int start_read(const struct device *dev,
 	uint8_t resolution = sequence->resolution;
 	uint8_t active_channels;
 	uint8_t channel_id;
+	nrf_saadc_burst_t burst;
 
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -581,10 +601,13 @@ static int start_read(const struct device *dev,
 			 * is not used (hence, the multiple channel sampling is
 			 * possible), the burst mode have to be deactivated.
 			 */
-			nrf_saadc_burst_set(NRF_SAADC, channel_id,
-				(sequence->oversampling != 0U ?
-					NRF_SAADC_BURST_ENABLED :
-					NRF_SAADC_BURST_DISABLED));
+			burst = (sequence->oversampling != 0U ?
+				 NRF_SAADC_BURST_ENABLED : NRF_SAADC_BURST_DISABLED);
+#if NRF_SAADC_HAS_CH_BURST
+			nrf_saadc_channel_burst_set(NRF_SAADC, channel_id, burst);
+#else
+			nrf_saadc_burst_set(NRF_SAADC, burst);
+#endif
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
@@ -596,10 +619,12 @@ static int start_read(const struct device *dev,
 				);
 			++active_channels;
 		} else {
-			nrf_saadc_burst_set(
-				NRF_SAADC,
-				channel_id,
-				NRF_SAADC_BURST_DISABLED);
+			burst = NRF_SAADC_BURST_DISABLED;
+#if NRF_SAADC_HAS_CH_BURST
+			nrf_saadc_channel_burst_set(NRF_SAADC, channel_id, burst);
+#else
+			nrf_saadc_burst_set(NRF_SAADC, burst);
+#endif
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
@@ -729,7 +754,9 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_nrfx_read_async,
 #endif
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(NRF54LV10A_ENGA_XXAA)
+	.ref_internal  = 1300,
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	.ref_internal  = 900,
 #elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
 	.ref_internal  = 1024,

@@ -503,9 +503,9 @@ static int lmp90xxx_adc_start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (!lmp90xxx_has_channel(dev, find_msb_set(sequence->channels) - 1)) {
-		LOG_ERR("unsupported channels in mask: 0x%08x",
-			sequence->channels);
+	if (sequence->channels == 0 ||
+	    !lmp90xxx_has_channel(dev, find_msb_set(sequence->channels) - 1)) {
+		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 

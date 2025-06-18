@@ -94,18 +94,22 @@ void tc_unattached_snk_entry(void *obj)
 /**
  * @brief Unattached.SNK Run
  */
-void tc_unattached_snk_run(void *obj)
+enum smf_state_result tc_unattached_snk_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *vbus = data->vbus;
 
 	/*
 	 * Transition to AttachWait.SNK when the SNK.Rp state is present
 	 * on at least one of its CC pins.
 	 */
 	if (tcpc_is_cc_rp(tc->cc1) || tcpc_is_cc_rp(tc->cc2)) {
+		usbc_vbus_enable(vbus, true);
 		tc_set_state(dev, TC_ATTACH_WAIT_SNK_STATE);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**
@@ -129,7 +133,7 @@ void tc_attach_wait_snk_entry(void *obj)
 /**
  * @brief AttachWait.SNK Run
  */
-void tc_attach_wait_snk_run(void *obj)
+enum smf_state_result tc_attach_wait_snk_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
@@ -158,7 +162,7 @@ void tc_attach_wait_snk_run(void *obj)
 			usbc_bypass_next_sleep(tc->dev);
 		}
 
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	/* Transition to UnAttached.SNK if CC lines are open */
@@ -183,6 +187,7 @@ void tc_attach_wait_snk_run(void *obj)
 	 * from new state.
 	 */
 	usbc_bypass_next_sleep(tc->dev);
+	return SMF_EVENT_PROPAGATE;
 }
 
 void tc_attach_wait_snk_exit(void *obj)
@@ -231,7 +236,7 @@ void tc_attached_snk_entry(void *obj)
 /**
  * @brief Attached.SNK and DebugAccessory.SNK Run
  */
-void tc_attached_snk_run(void *obj)
+enum smf_state_result tc_attached_snk_run(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
@@ -240,14 +245,16 @@ void tc_attached_snk_run(void *obj)
 
 	/* Detach detection */
 	if (usbc_vbus_check_level(vbus, TC_VBUS_PRESENT) == false) {
+		usbc_vbus_enable(vbus, false);
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
-		return;
+		return SMF_EVENT_PROPAGATE;
 	}
 
 	/* Run Sink Power Sub-State if not in an explicit contract */
 	if (pe_is_explicit_contract(dev) == false) {
 		sink_power_sub_states(dev);
 	}
+	return SMF_EVENT_PROPAGATE;
 }
 
 /**

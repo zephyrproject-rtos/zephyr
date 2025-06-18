@@ -47,6 +47,17 @@ config HAWKBIT_SHELL
 	help
 	  Activate shell module that provides hawkBit commands.
 
+config HAWKBIT_SHELL_AUTOHANDLER_TIMEOUT
+	int "hawkBit shell autohandler timeout"
+	default 200
+	depends on HAWKBIT_SHELL
+	help
+	  Set the timeout in milliseconds for the hawkBit shell autohandler. During
+	  the timeout, the hawkBit shell autohandler blocks the shell and waits for
+	  the hawkBit autohandler to finish. During this time, log messages for the
+	  shell logger are not printed, so this timeout should be set to a value that
+	  is not too long, to not drop the logs.
+
 config HAWKBIT_TENANT
 	string "Tenant name for the hawkbit server"
 	default "default"
@@ -69,6 +80,22 @@ config HAWKBIT_SET_SETTINGS_RUNTIME
 	bool "Set hawkbit settings at runtime"
 	help
 	  Enable to set hawkbit settings at runtime.
+
+config HAWKBIT_USE_DOMAIN_NAME
+	bool "Use server_domain for domain name instead of server_addr"
+	depends on HAWKBIT_SET_SETTINGS_RUNTIME
+	help
+	  Enable to use the server_domain field for TLS and HTTP. If enabled,
+	  server_addr can accept an already resolved IP address, and the domain name
+	  can be provided via server_domain.
+
+config HAWKBIT_DOMAIN_NAME_MAX_LEN
+	int "The buffer size for storing the domain name string"
+	default DNS_RESOLVER_MAX_QUERY_LEN if DNS_RESOLVER
+	default 255
+	depends on HAWKBIT_USE_DOMAIN_NAME
+	help
+	  The size for the internal buffer used to hold the domain name string.
 
 choice HAWKBIT_DDI_SECURITY
 	prompt "hawkBit DDI API authentication modes"

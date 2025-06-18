@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
@@ -82,6 +83,8 @@ void video_buffer_release(struct video_buffer *vbuf)
 	struct mem_block *block = NULL;
 	int i;
 
+	__ASSERT_NO_MSG(vbuf != NULL);
+
 	/* vbuf to block */
 	for (i = 0; i < ARRAY_SIZE(video_block); i++) {
 		if (video_block[i].data == vbuf->buffer) {
@@ -99,6 +102,10 @@ void video_buffer_release(struct video_buffer *vbuf)
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
 			    size_t *idx)
 {
+	__ASSERT_NO_MSG(fmts != NULL);
+	__ASSERT_NO_MSG(fmt != NULL);
+	__ASSERT_NO_MSG(idx != NULL);
+
 	for (int i = 0; fmts[i].pixelformat != 0; i++) {
 		if (fmts[i].pixelformat == fmt->pixelformat &&
 		    IN_RANGE(fmt->width, fmts[i].width_min, fmts[i].width_max) &&
@@ -114,6 +121,10 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 				    const struct video_frmival *desired,
 				    struct video_frmival *match)
 {
+	__ASSERT_NO_MSG(stepwise != NULL);
+	__ASSERT_NO_MSG(desired != NULL);
+	__ASSERT_NO_MSG(match != NULL);
+
 	uint64_t min = stepwise->min.numerator;
 	uint64_t max = stepwise->max.numerator;
 	uint64_t step = stepwise->step.numerator;
@@ -136,6 +147,9 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
 {
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(match != NULL);
+
 	struct video_frmival desired = match->discrete;
 	struct video_frmival_enum fie = {.format = match->format};
 	uint64_t best_diff_nsec = INT32_MAX;
@@ -190,8 +204,9 @@ static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, s
 			LOG_HEXDUMP_ERR(buf_w, size_w, "failed to write-read to I2C register");
 			return ret;
 		}
-
-		k_sleep(K_MSEC(1));
+		if (CONFIG_VIDEO_I2C_RETRY_NUM > 0) {
+			k_sleep(K_MSEC(1));
+		}
 	}
 
 	return 0;
@@ -207,6 +222,8 @@ int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_
 	uint8_t *data_ptr;
 	int ret;
 
+	__ASSERT_NO_MSG(i2c != NULL);
+	__ASSERT_NO_MSG(reg_data != NULL);
 	__ASSERT(addr_size > 0, "The address must have a address size flag");
 	__ASSERT(data_size > 0, "The address must have a data size flag");
 
@@ -246,6 +263,9 @@ static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, 
 {
 	int ret;
 
+	__ASSERT_NO_MSG(i2c != NULL);
+	__ASSERT_NO_MSG(buf_w != NULL);
+
 	for (int i = 0;; i++) {
 		ret = i2c_write_dt(i2c, buf_w, size);
 		if (ret == 0) {
@@ -255,8 +275,9 @@ static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, 
 			LOG_HEXDUMP_ERR(buf_w, size, "failed to write to I2C register");
 			return ret;
 		}
-
-		k_sleep(K_MSEC(1));
+		if (CONFIG_VIDEO_I2C_RETRY_NUM > 0) {
+			k_sleep(K_MSEC(1));
+		}
 	}
 
 	return 0;
@@ -272,6 +293,7 @@ int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32
 	uint8_t *data_ptr;
 	int ret;
 
+	__ASSERT_NO_MSG(i2c != NULL);
 	__ASSERT(addr_size > 0, "The address must have a address size flag");
 	__ASSERT(data_size > 0, "The address must have a data size flag");
 
@@ -326,6 +348,8 @@ int video_write_cci_multiregs(const struct i2c_dt_spec *i2c, const struct video_
 {
 	int ret;
 
+	__ASSERT_NO_MSG(regs != NULL);
+
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr, regs[i].data);
 		if (ret < 0) {
@@ -340,6 +364,8 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 			       size_t num_regs)
 {
 	int ret;
+
+	__ASSERT_NO_MSG(regs != NULL);
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR8_DATA8, regs[i].data);
@@ -356,6 +382,8 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 {
 	int ret;
 
+	__ASSERT_NO_MSG(regs != NULL);
+
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR16_DATA8, regs[i].data);
 		if (ret < 0) {
@@ -364,4 +392,47 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 	}
 
 	return 0;
+}
+
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	struct video_control ctrl = {
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	struct video_ctrl_query ctrl_query = {
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	int ret;
+
+	/* Try to get the LINK_FREQ value from the source device */
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		goto fallback;
+	}
+
+	ret = video_query_ctrl(dev, &ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
+		return -ERANGE;
+	}
+
+	if (ctrl_query.int_menu == NULL) {
+		return -EINVAL;
+	}
+
+	return (int64_t)ctrl_query.int_menu[ctrl.val];
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ctrl.id = VIDEO_CID_PIXEL_RATE;
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
+	return ctrl.val64 * bpp / (2 * lane_nb);
 }

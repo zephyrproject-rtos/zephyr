@@ -1208,9 +1208,7 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-#ifdef CONFIG_NRF70_RAW_DATA_TX
 	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
-#endif /* CONFIG_NRF70_RAW_DATA_TX */
 	struct rpu_sys_op_stats stats;
 	int ret = -1;
 
@@ -1241,19 +1239,38 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 			__func__);
 		goto unlock;
 	}
-
-	memset(&stats, 0, sizeof(struct rpu_sys_op_stats));
-	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
-	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_stats_get failed", __func__);
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	if (!sys_dev_ctx) {
+		LOG_ERR("%s: sys_dev_ctx is NULL", __func__);
 		goto unlock;
 	}
 
+	memset(&stats, 0, sizeof(struct rpu_sys_op_stats));
+	/* Host statistics */
+	nrf_wifi_osal_mem_cpy(&stats.host,
+			      &sys_dev_ctx->host_stats,
+			      sizeof(sys_dev_ctx->host_stats));
 	zstats->pkts.tx = stats.host.total_tx_pkts;
 	zstats->pkts.rx = stats.host.total_rx_pkts;
 	zstats->errors.tx = stats.host.total_tx_drop_pkts;
 	zstats->errors.rx = stats.host.total_rx_drop_pkts +
 			stats.fw.umac.interface_data_stats.rx_checksum_error_count;
+	zstats->overrun_count = stats.host.total_tx_drop_pkts + stats.host.total_rx_drop_pkts;
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	zstats->errors.tx += sys_dev_ctx->raw_pkt_stats.raw_pkt_send_failure;
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+
+	/* FMAC statistics */
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_WRN("%s: nrf_wifi_fmac_stats_get failed", __func__);
+		/* Special value to indicate that
+		 * statistics are not available.
+		 */
+		memset(&stats.fw.umac.interface_data_stats, 0xAA,
+		       sizeof(stats.fw.umac.interface_data_stats));
+	}
+
 	zstats->bytes.received = stats.fw.umac.interface_data_stats.rx_bytes;
 	zstats->bytes.sent = stats.fw.umac.interface_data_stats.tx_bytes;
 	zstats->sta_mgmt.beacons_rx = stats.fw.umac.interface_data_stats.rx_beacon_success_count;
@@ -1264,12 +1281,7 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	zstats->multicast.tx = stats.fw.umac.interface_data_stats.tx_multicast_pkt_count;
 	zstats->unicast.rx   = stats.fw.umac.interface_data_stats.rx_unicast_pkt_count;
 	zstats->unicast.tx   = stats.fw.umac.interface_data_stats.tx_unicast_pkt_count;
-	zstats->overrun_count = stats.host.total_tx_drop_pkts + stats.host.total_rx_drop_pkts;
 
-#ifdef CONFIG_NRF70_RAW_DATA_TX
-	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
-	zstats->errors.tx += sys_dev_ctx->raw_pkt_stats.raw_pkt_send_failure;
-#endif /* CONFIG_NRF70_RAW_DATA_TX */
 	ret = 0;
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);

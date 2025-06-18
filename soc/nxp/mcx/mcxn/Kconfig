@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MCXN
@@ -76,6 +76,27 @@ config SECOND_CORE_MCUX_ACCESS_LEVEL
 	  Configures AHBSC MASTER_SEC_LEVEL register for the cpu1 before cpu1 is
 	  enabled.
 endif
+
+config NXP_FLEXSPI_BOOT_HEADER
+	bool "Boot header"
+	default y if FLASH_MCUX_FLEXSPI_XIP && !BOOTLOADER_MCUBOOT
+
+	help
+	  Enable data structures required by the boot ROM to boot the
+	  application from an external flash device.
+
+if NXP_FLEXSPI_BOOT_HEADER
+
+config FLEXSPI_CONFIG_BLOCK_OFFSET
+	hex "FlexSPI config block offset"
+	default 0x400
+	help
+	  FlexSPI configuration block consists of parameters regarding specific
+	  flash devices including read command sequence, quad mode enablement
+	  sequence (optional), etc. The boot ROM expects FlexSPI configuration
+	  parameter to be presented in serial nor flash.
+
+endif # NXP_FLEXSPI_BOOT_HEADER
 
 rsource "../../common/Kconfig.flexspi_xip"
 

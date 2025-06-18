@@ -11,7 +11,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
-#include <ch32fun.h>
+#include <hal_ch32fun.h>
 
 /* Each of the 4 channels uses 1 byte of CHCTLR{1,2} */
 #define CHCTLR_CHANNEL_MASK    0xFF
@@ -26,6 +26,19 @@
 #define CHCTLR_OCXM_EVEN_SHIFT 12
 /* Each of the 4 channels uses 1 nibble of CCER */
 #define CCER_MASK              (TIM_CC1P | TIM_CC1E)
+
+#ifdef TIM2_CTLR1_CEN
+/* ch32fun.h uses a different set of names for the CH32V00x series. Remap. */
+typedef GPTM_TypeDef TIM_TypeDef;
+#define TIM_CEN  TIM2_CTLR1_CEN
+#define TIM_OC1M TIM2_CHCTLR1_OC1M
+#define TIM_OC2M TIM2_CHCTLR1_OC2M
+#define TIM_OC3M TIM2_CHCTLR2_OC3M
+#define TIM_OC4M TIM2_CHCTLR2_OC4M
+#define TIM_CC1P TIM2_CCER_CC1P
+#define TIM_CC1E TIM2_CCER_CC1E
+#define TIM_ARPE TIM2_CTLR1_ARPE
+#endif
 
 struct pwm_wch_gptm_config {
 	TIM_TypeDef *regs;
@@ -80,7 +93,11 @@ static int pwm_wch_gptm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	if (period_cycles != 0) {
-		regs->ATRLR = period_cycles;
+		/*
+		 * Note that the period is ATRLR+1. The earlier checks handle the case where
+		 * pulse_cycles is zero or equal to period_cycles.
+		 */
+		regs->ATRLR = period_cycles - 1;
 	}
 
 	/* Set the polarity and enable */

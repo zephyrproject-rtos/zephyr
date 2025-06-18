@@ -1,0 +1,6 @@
+shield:
+  name: abrobot_sh1106_72x40
+  full_name: ABRobot ESP32C3 OLED Shield
+  vendor: others
+  supported_features:
+    - display

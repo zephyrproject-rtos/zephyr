@@ -44,13 +44,19 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 
 	const int bits = SPI_WORD_SIZE_GET(config->operation);
 
-	if (bits > 16) {
-		LOG_ERR("Word sizes > 16 bits not supported");
+	if (bits > 32) {
+		LOG_ERR("Word sizes > 32 bits not supported");
 		return -ENOTSUP;
 	}
 
 	data->bits = bits;
 	data->dfs = ((data->bits - 1) / 8) + 1;
+
+	/* As there is no uint24_t, it is assumed uint32_t will be used as the buffer base type. */
+	if (data->dfs == 3) {
+		data->dfs = 4;
+	}
+
 	if (config->frequency > 0) {
 		/* convert freq to period, the extra /2 is due to waiting
 		 * twice in each clock cycle. The '2000' is an upscale factor.
@@ -147,10 +153,14 @@ static int spi_bitbang_transceive(const struct device *dev,
 	const uint32_t wait_us = data->wait_us;
 
 	while (spi_context_tx_buf_on(ctx) || spi_context_rx_buf_on(ctx)) {
-		uint16_t w = 0;
+		uint32_t w = 0;
 
 		if (ctx->tx_len) {
 			switch (data->dfs) {
+			case 4:
+			case 3:
+				w = *(uint32_t *)(ctx->tx_buf);
+				break;
 			case 2:
 				w = *(uint16_t *)(ctx->tx_buf);
 				break;
@@ -160,7 +170,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 			}
 		}
 
-		uint16_t r = 0;
+		uint32_t r = 0;
 		uint8_t i = 0;
 		int b = 0;
 		bool do_read = false;
@@ -209,6 +219,10 @@ static int spi_bitbang_transceive(const struct device *dev,
 
 		if (spi_context_rx_buf_on(ctx)) {
 			switch (data->dfs) {
+			case 4:
+			case 3:
+				*(uint32_t *)(ctx->rx_buf) = r;
+				break;
 			case 2:
 				*(uint16_t *)(ctx->rx_buf) = r;
 				break;

@@ -9,7 +9,26 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#if defined(CONFIG_UART_RENESAS_RZ_SCI_B)
+#include "r_sci_b_uart.h"
+#else
 #include "r_sci_uart.h"
+#endif
+
+#if defined(CONFIG_UART_RENESAS_RZ_SCI_B)
+#define R_SCI0_Type                           R_SCI_B0_Type
+#define SCI_UART_CLOCK_INT                    SCI_B_UART_CLOCK_INT
+#define SCI_UART_RS485_DISABLE                SCI_B_UART_RS485_DISABLE
+#define SCI_UART_FLOW_CONTROL_RTS             SCI_B_UART_FLOW_CONTROL_RTS
+#define SCI_UART_RX_FIFO_TRIGGER_MAX          SCI_B_UART_RX_FIFO_TRIGGER_MAX
+#define SCI_UART_START_BIT_FALLING_EDGE       SCI_B_UART_START_BIT_FALLING_EDGE
+#define SCI_UART_RS485_DE_POLARITY_HIGH       SCI_B_UART_RS485_DE_POLARITY_HIGH
+#define SCI_UART_NOISE_CANCELLATION_ENABLE    SCI_B_UART_NOISE_CANCELLATION_ENABLE
+#define SCI_UART_FLOW_CONTROL_HARDWARE_CTSRTS SCI_B_UART_FLOW_CONTROL_HARDWARE_CTSRTS
+typedef sci_b_baud_setting_t sci_baud_setting_t;
+typedef sci_b_uart_extended_cfg_t sci_uart_extended_cfg_t;
+typedef sci_b_uart_instance_ctrl_t sci_uart_instance_ctrl_t;
+#endif
 
 LOG_MODULE_REGISTER(rz_sci_uart);
 
@@ -41,11 +60,26 @@ struct uart_rz_sci_data {
 #define SCI_UART_ERROR_RATE_x1000 (5000)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if defined(CONFIG_UART_RENESAS_RZ_SCI_B)
+void sci_b_uart_rxi_isr(void);
+void sci_b_uart_txi_isr(void);
+void sci_b_uart_tei_isr(void);
+void sci_b_uart_eri_isr(void);
+#define SCI_RXI_ISR sci_b_uart_rxi_isr
+#define SCI_TXI_ISR sci_b_uart_txi_isr
+#define SCI_TEI_ISR sci_b_uart_tei_isr
+#define SCI_ERI_ISR sci_b_uart_eri_isr
+#else
 void sci_uart_rxi_isr(void);
 void sci_uart_txi_isr(void);
 void sci_uart_tei_isr(void);
 void sci_uart_eri_isr(void);
-#endif
+#define SCI_RXI_ISR sci_uart_rxi_isr
+#define SCI_TXI_ISR sci_uart_txi_isr
+#define SCI_TEI_ISR sci_uart_tei_isr
+#define SCI_ERI_ISR sci_uart_eri_isr
+#endif /* CONFIG_UART_RENESAS_RZ_SCI_B */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int uart_rz_sci_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -111,6 +145,14 @@ static int uart_rz_sci_apply_config(const struct device *dev)
 	sci_uart_extended_cfg_t *fsp_config_extend = (sci_uart_extended_cfg_t *)fsp_cfg->p_extend;
 
 	fsp_err_t fsp_err;
+#if defined(CONFIG_UART_RENESAS_RZ_SCI_B)
+	uint32_t baud_rate = uart_config->baudrate;
+	bool enable_bitrate_modulation = false;
+	uint32_t error_rate_x_1000 = SCI_UART_ERROR_RATE_x1000;
+
+	fsp_err = R_SCI_B_UART_BaudCalculate(baud_rate, enable_bitrate_modulation,
+					     error_rate_x_1000, &baud_setting);
+#else
 	sci_uart_baud_calculation_t baud_target;
 
 	baud_target.baudrate = uart_config->baudrate;
@@ -119,6 +161,7 @@ static int uart_rz_sci_apply_config(const struct device *dev)
 
 	fsp_err = R_SCI_UART_BaudCalculate(&baud_target, fsp_config_extend->clock_source,
 					   &baud_setting);
+#endif /* CONFIG_UART_RENESAS_RZ_SCI_B */
 	if (fsp_err) {
 		return -EIO;
 	}
@@ -229,7 +272,7 @@ static int uart_rz_sci_fifo_fill(const struct device *dev, const uint8_t *tx_dat
 	fsp_ctrl->tx_src_bytes = size;
 	fsp_ctrl->p_tx_src = tx_data;
 
-	sci_uart_txi_isr();
+	SCI_TXI_ISR();
 
 	return (size - fsp_ctrl->tx_src_bytes);
 }
@@ -242,7 +285,7 @@ static int uart_rz_sci_fifo_read(const struct device *dev, uint8_t *rx_data, con
 	fsp_ctrl->rx_dest_bytes = size;
 	fsp_ctrl->p_rx_dest = rx_data;
 
-	sci_uart_rxi_isr();
+	SCI_RXI_ISR();
 
 	data->int_data.rx_fifo_busy = false;
 
@@ -320,6 +363,58 @@ static int uart_rz_sci_irq_update(const struct device *dev)
 	ARG_UNUSED(dev);
 	return 1;
 }
+
+static void uart_rz_sci_rxi_isr(const struct device *dev)
+{
+	struct uart_rz_sci_data *data = dev->data;
+
+	data->int_data.rx_fifo_busy = true;
+	if (data->callback) {
+		data->callback(dev, data->callback_data);
+	}
+}
+
+static void uart_rz_sci_txi_isr(const struct device *dev)
+{
+	struct uart_rz_sci_data *data = dev->data;
+
+	if (data->callback) {
+		data->callback(dev, data->callback_data);
+	}
+}
+
+static void uart_rz_sci_tei_isr(const struct device *dev)
+{
+	SCI_TEI_ISR();
+}
+
+static void uart_rz_sci_eri_isr(const struct device *dev)
+{
+	SCI_ERI_ISR();
+}
+
+static void uart_rz_sci_event_handler(uart_callback_args_t *p_args)
+{
+	const struct device *dev = (const struct device *)p_args->p_context;
+	struct uart_rz_sci_data *data = dev->data;
+
+	data->int_data.event = p_args->event;
+	switch (p_args->event) {
+	case UART_EVENT_RX_CHAR:
+		data->int_data.rx_byte = p_args->data;
+		break;
+	case UART_EVENT_RX_COMPLETE:
+		break;
+	case UART_EVENT_TX_DATA_EMPTY:
+		break;
+	case UART_EVENT_TX_COMPLETE:
+		data->fsp_ctrl->p_reg->CCR0_b.TE = 1;
+		break;
+	default:
+		break;
+	}
+}
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static DEVICE_API(uart, uart_rz_sci_driver_api) = {
@@ -367,62 +462,19 @@ static int uart_rz_init(const struct device *dev)
 	return 0;
 }
 
-static void uart_rz_sci_rxi_isr(const struct device *dev)
-{
-	struct uart_rz_sci_data *data = dev->data;
-
-	data->int_data.rx_fifo_busy = true;
-	if (data->callback) {
-		data->callback(dev, data->callback_data);
-	}
-}
-
-static void uart_rz_sci_txi_isr(const struct device *dev)
-{
-	struct uart_rz_sci_data *data = dev->data;
-
-	if (data->callback) {
-		data->callback(dev, data->callback_data);
-	}
-}
-
-static void uart_rz_sci_tei_isr(const struct device *dev)
-{
-	sci_uart_tei_isr();
-}
-
-static void uart_rz_sci_eri_isr(const struct device *dev)
-{
-	sci_uart_eri_isr();
-}
-
-static void uart_rz_sci_event_handler(uart_callback_args_t *p_args)
-{
-	const struct device *dev = (const struct device *)p_args->p_context;
-	struct uart_rz_sci_data *data = dev->data;
-
-	data->int_data.event = p_args->event;
-	switch (p_args->event) {
-	case UART_EVENT_RX_CHAR:
-		data->int_data.rx_byte = p_args->data;
-		break;
-	case UART_EVENT_RX_COMPLETE:
-		break;
-	case UART_EVENT_TX_DATA_EMPTY:
-		break;
-	case UART_EVENT_TX_COMPLETE:
-		break;
-	default:
-		break;
-	}
-}
-
 #define SCI_NODE(idx) DT_INST_PARENT(idx)
+
+#ifdef CONFIG_CPU_CORTEX_M
+#define GET_IRQ_FLAGS(index, irq_name) 0
+#else /* Cortex-A/R */
+#define GET_IRQ_FLAGS(index, irq_name) DT_IRQ_BY_NAME(index, irq_name, flags)
+#endif
+
 #define UART_RZ_IRQ_CONNECT(n, irq_name, isr)                                                      \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(SCI_NODE(n), irq_name, irq),                            \
 			    DT_IRQ_BY_NAME(SCI_NODE(n), irq_name, priority), isr,                  \
-			    DEVICE_DT_INST_GET(n), DT_IRQ_BY_NAME(SCI_NODE(n), irq_name, flags));  \
+			    DEVICE_DT_INST_GET(n), GET_IRQ_FLAGS(SCI_NODE(n), irq_name));          \
 		irq_enable(DT_IRQ_BY_NAME(SCI_NODE(n), irq_name, irq));                            \
 	} while (0)
 
@@ -440,7 +492,6 @@ static void uart_rz_sci_event_handler(uart_callback_args_t *p_args)
 		.noise_cancel = SCI_UART_NOISE_CANCELLATION_ENABLE,                                \
 		.rx_fifo_trigger = SCI_UART_RX_FIFO_TRIGGER_MAX,                                   \
 		.p_baud_setting = &g_uart##n##_baud_setting,                                       \
-		.clock_source = SCI_UART_CLOCK_SOURCE_SCI0ASYNCCLK,                                \
 		.flow_control = SCI_UART_FLOW_CONTROL_RTS,                                         \
 		.flow_control_pin = 0xFF,                                                          \
 		.rs485_setting =                                                                   \
@@ -450,7 +501,9 @@ static void uart_rz_sci_event_handler(uart_callback_args_t *p_args)
 				.assertion_time = 1,                                               \
 				.negation_time = 1,                                                \
 			},                                                                         \
-	};                                                                                         \
+		COND_CODE_1(CONFIG_UART_RENESAS_RZ_SCI_B,                                          \
+			(.half_data_setting = {.enable = 0}),                                   \
+			(.clock_source = SCI_UART_CLOCK_SOURCE_SCI0ASYNCCLK)) };                \
 	static uart_cfg_t g_uart##n##_cfg = {                                                      \
 		.channel = DT_PROP(SCI_NODE(n), channel),                                          \
 		.p_extend = &g_uart##n##_cfg_extend,                                               \
@@ -470,8 +523,9 @@ static void uart_rz_sci_event_handler(uart_callback_args_t *p_args)
 	PINCTRL_DT_DEFINE(SCI_NODE(n));                                                            \
 	static struct uart_rz_sci_config uart_rz_config_##n = {                                    \
 		.pin_config = PINCTRL_DT_DEV_CONFIG_GET(SCI_NODE(n)),                              \
-		.fsp_api = &g_uart_on_sci,                                                         \
-	};                                                                                         \
+		COND_CODE_1(CONFIG_UART_RENESAS_RZ_SCI_B,                      \
+			(.fsp_api = &g_uart_on_sci_b),                         \
+			(.fsp_api = &g_uart_on_sci)) };            \
 	static sci_uart_instance_ctrl_t g_uart##n##_ctrl;                                          \
 	static struct uart_rz_sci_data uart_rz_sci_data_##n = {                                    \
 		.fsp_ctrl = &g_uart##n##_ctrl,                                                     \
@@ -497,5 +551,10 @@ static void uart_rz_sci_event_handler(uart_callback_args_t *p_args)
 	DEVICE_DT_INST_DEFINE(n, &uart_rz_init_##n, NULL, &uart_rz_sci_data_##n,                   \
 			      &uart_rz_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
 			      &uart_rz_sci_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(UART_RZ_INIT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT renesas_rz_sci_b_uart
 
 DT_INST_FOREACH_STATUS_OKAY(UART_RZ_INIT)

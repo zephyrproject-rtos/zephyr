@@ -33,7 +33,7 @@ extern "C" {
 /**
  * @brief Maximum brightness level, range is 0 to 100.
  */
-#define LED_BRIGTHNESS_MAX 100u
+#define LED_BRIGHTNESS_MAX 100u
 
 /**
  * @brief LED information structure
@@ -117,13 +117,13 @@ typedef int (*led_api_write_channels)(const struct device *dev,
  * @brief LED driver API
  */
 __subsystem struct led_driver_api {
-	/* Mandatory callbacks. */
+	/* Mandatory callbacks, either on/off or set_brightness. */
 	led_api_on on;
 	led_api_off off;
+	led_api_set_brightness set_brightness;
 	/* Optional callbacks. */
 	led_api_blink blink;
 	led_api_get_info get_info;
-	led_api_set_brightness set_brightness;
 	led_api_set_color set_color;
 	led_api_write_channels write_channels;
 };
@@ -207,12 +207,13 @@ static inline int z_impl_led_set_brightness(const struct device *dev,
 	const struct led_driver_api *api =
 		(const struct led_driver_api *)dev->api;
 
-	if (api->set_brightness == NULL &&
-	    api->on == NULL && api->off == NULL) {
-		return -ENOSYS;
+	if (api->set_brightness == NULL) {
+		if (api->on == NULL || api->off == NULL) {
+			return -ENOSYS;
+		}
 	}
 
-	if (value > LED_BRIGTHNESS_MAX) {
+	if (value > LED_BRIGHTNESS_MAX) {
 		return -EINVAL;
 	}
 
@@ -336,7 +337,7 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
 	}
 
 	if (api->on == NULL) {
-		return api->set_brightness(dev, led, LED_BRIGTHNESS_MAX);
+		return api->set_brightness(dev, led, LED_BRIGHTNESS_MAX);
 	}
 
 	return api->on(dev, led);

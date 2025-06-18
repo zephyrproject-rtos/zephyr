@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/misc/renesas/ra-elc/ra4l1-elc.h>
 #include <freq.h>
 
 / {
@@ -37,6 +38,14 @@
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
 			status = "okay";
+		};
+
+		elc: elc@40082000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40082000 0x70>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
 		};
 
 		sram0: memory@20000000 {
@@ -516,6 +525,36 @@
 			reg = <0x40083400 0x200>;
 			clocks = <&pclkb 0 0>;
 			status = "disabled";
+		};
+
+		agt0: agtw@400e8000 {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x400e8000 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agtw@400e8100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x400e8100 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
 		};
 	};
 

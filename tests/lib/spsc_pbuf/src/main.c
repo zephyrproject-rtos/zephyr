@@ -38,7 +38,7 @@ static void test_spsc_pbuf_flags(uint32_t flags)
 
 	memset(memory_area, 0, sizeof(memory_area));
 	ib = spsc_pbuf_init(memory_area, sizeof(memory_area), flags);
-	zassert_equal_ptr(ib, memory_area, NULL);
+	zassert_equal_ptr(ib, memory_area);
 	zassert_equal(spsc_pbuf_capacity(ib), capacity);
 
 	/* Try writing invalid value. */
@@ -63,7 +63,7 @@ static void test_spsc_pbuf_flags(uint32_t flags)
 	zassert_equal(rlen, sizeof(message));
 
 	ib = spsc_pbuf_init(memory_area, sizeof(memory_area), flags);
-	zassert_equal_ptr(ib, memory_area, NULL);
+	zassert_equal_ptr(ib, memory_area);
 
 	int repeat = capacity / (sizeof(message) + sizeof(uint32_t));
 
@@ -140,7 +140,7 @@ static void packet_write(struct spsc_pbuf *pb,
 		return;
 	}
 	zassert_equal((uintptr_t)buf % sizeof(uint32_t), 0, "%d: Expected aligned buffer", line);
-	zassert_true(rv >= outlen, "%d: Unexpected rv (bigger than %d)", line, rv, outlen);
+	zassert_true(rv >= outlen, "%d: Unexpected rv %d (bigger than %d)", line, rv, outlen);
 
 	for (uint16_t i = 0; i < outlen; i++) {
 		buf[i] = id + i;

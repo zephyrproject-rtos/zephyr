@@ -35,8 +35,8 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	zassert_equal(select_nanosleep(selection, clock_id, flags, NULL, &rem), -1);
 	zassert_equal(errno, EFAULT);
 	/* Expect rem to be the same when function returns */
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", (int)rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", (int)rem.tv_nsec, 0);
 
 	/* negative times */
 	errno = 0;
@@ -75,8 +75,8 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	/* Sleep for 0.0 s. Expect req & rem to be the same when function returns */
 	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, &rem), 0);
 	zassert_equal(errno, 0);
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", (int)rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", (int)rem.tv_nsec, 0);
 
 	/*
 	 * req and rem point to the same timespec
@@ -87,8 +87,8 @@ static void common_errors(int selection, clockid_t clock_id, int flags)
 	req = (struct timespec){.tv_sec = 0, .tv_nsec = 1};
 	zassert_equal(select_nanosleep(selection, clock_id, flags, &req, &req), 0);
 	zassert_equal(errno, 0);
-	zassert_equal(req.tv_sec, 0, "actual: %d expected: %d", req.tv_sec, 0);
-	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d", req.tv_nsec, 0);
+	zassert_equal(req.tv_sec, 0, "actual: %d expected: %d", (int)req.tv_sec, 0);
+	zassert_equal(req.tv_nsec, 0, "actual: %d expected: %d", (int)req.tv_nsec, 0);
 }
 
 ZTEST(posix_timers, test_nanosleep_errors_errno)
@@ -106,14 +106,14 @@ ZTEST(posix_timers, test_clock_nanosleep_errors_errno)
 	/* Absolute timeout in the past. */
 	clock_gettime(CLOCK_MONOTONIC, &req);
 	zassert_equal(clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, &rem), 0);
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", (int)rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", (int)rem.tv_nsec, 0);
 
 	/* Absolute timeout in the past relative to the realtime clock. */
 	clock_gettime(CLOCK_REALTIME, &req);
 	zassert_equal(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &req, &rem), 0);
-	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", rem.tv_sec, 0);
-	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", rem.tv_nsec, 0);
+	zassert_equal(rem.tv_sec, 0, "actual: %d expected: %d", (int)rem.tv_sec, 0);
+	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", (int)rem.tv_nsec, 0);
 }
 
 ZTEST(posix_timers, test_nanosleep_execution)

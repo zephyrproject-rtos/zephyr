@@ -846,16 +846,6 @@ struct mdio_smsc_config {
 	const struct device *eth_dev;
 };
 
-static void mdio_smsc_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void mdio_smsc_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
 static int mdio_smsc_read(const struct device *dev, uint8_t prtad, uint8_t devad, uint16_t *data)
 {
 	const struct mdio_smsc_config *cfg = dev->config;
@@ -881,8 +871,6 @@ static int mdio_smsc_write(const struct device *dev, uint8_t prtad, uint8_t deva
 }
 
 static DEVICE_API(mdio, mdio_smsc_api) = {
-	.bus_disable = mdio_smsc_bus_disable,
-	.bus_enable = mdio_smsc_bus_enable,
 	.read = mdio_smsc_read,
 	.write = mdio_smsc_write,
 };

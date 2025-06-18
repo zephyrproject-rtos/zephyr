@@ -60,6 +60,14 @@
 			status = "okay";
 		};
 
+		elc: elc@40201000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40201000 0xf8>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40400800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40400800 0x3c0>;
@@ -580,6 +588,15 @@
 				compatible = "renesas,ra-ulpt-timer";
 				status = "disabled";
 			};
+		};
+
+		ospi0: ospi@40268000 {
+			compatible = "renesas,ra-ospi-b";
+			reg = <0x40268000 0x19c>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&octaspiclk MSTPB 16>;
+			status = "disabled";
 		};
 
 		option_setting_ofs: option_setting_ofs@300a100 {

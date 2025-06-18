@@ -1321,3 +1321,13 @@ test_i2c_rm3100: rm3100@b2 {
 	reg = <0xb2>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_bh1790: bh1790@b3 {
+	compatible = "rohm,bh1790";
+	reg = <0xb3>;
+};
+
+test_i2c_bh1730: bh1730@b4 {
+	compatible = "rohm,bh1730";
+	reg = <0xb4>;
+};

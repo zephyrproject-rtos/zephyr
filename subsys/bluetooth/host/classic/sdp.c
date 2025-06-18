@@ -63,7 +63,6 @@ LOG_MODULE_REGISTER(bt_sdp);
 
 struct bt_sdp {
 	struct bt_l2cap_br_chan chan;
-	struct k_fifo           partial_resp_queue;
 	/* TODO: Allow more than one pending request */
 };
 
@@ -165,11 +164,9 @@ static void bt_sdp_connected(struct bt_l2cap_chan *chan)
 						   struct bt_l2cap_br_chan,
 						   chan);
 
-	struct bt_sdp *sdp = CONTAINER_OF(ch, struct bt_sdp, chan);
+	struct bt_sdp *sdp __unused = CONTAINER_OF(ch, struct bt_sdp, chan);
 
 	LOG_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
-
-	k_fifo_init(&sdp->partial_resp_queue);
 }
 
 /** @brief Callback for SDP disconnection
@@ -186,11 +183,9 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
 						   struct bt_l2cap_br_chan,
 						   chan);
 
-	struct bt_sdp *sdp = CONTAINER_OF(ch, struct bt_sdp, chan);
+	struct bt_sdp *sdp __unused = CONTAINER_OF(ch, struct bt_sdp, chan);
 
 	LOG_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
-
-	(void)memset(sdp, 0, sizeof(*sdp));
 }
 
 /* @brief Creates an SDP PDU
@@ -1490,6 +1485,9 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 {
 	struct net_buf *buf;
 
+	/* Update context param directly. */
+	session->param = param;
+
 	buf = bt_sdp_create_pdu();
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
@@ -1517,6 +1515,7 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 		break;
 	default:
 		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		net_buf_unref(buf);
 		return -EINVAL;
 	}
 
@@ -1535,8 +1534,6 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
 	}
 
-	/* Update context param to the one being resolving now */
-	session->param = param;
 	session->tid++;
 
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_REQ, session->tid);
@@ -1547,6 +1544,9 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 				const struct bt_sdp_discover_params *param)
 {
 	struct net_buf *buf;
+
+	/* Update context param directly. */
+	session->param = param;
 
 	buf = bt_sdp_create_pdu();
 
@@ -1580,8 +1580,6 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 		net_buf_add_mem(buf, session->cstate.data, session->cstate.length);
 	}
 
-	/* Update context param to the one being resolving now */
-	session->param = param;
 	session->tid++;
 
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_ATTR_REQ, session->tid);
@@ -1592,6 +1590,9 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 				 const struct bt_sdp_discover_params *param)
 {
 	struct net_buf *buf;
+
+	/* Update context param directly. */
+	session->param = param;
 
 	buf = bt_sdp_create_pdu();
 
@@ -1620,6 +1621,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 		break;
 	default:
 		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		net_buf_unref(buf);
 		return -EINVAL;
 	}
 
@@ -1651,8 +1653,6 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 				session->cstate.length);
 	}
 
-	/* Update context param to the one being resolving now */
-	session->param = param;
 	session->tid++;
 
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_ATTR_REQ,

@@ -40,6 +40,14 @@
 /* Whether device is self power. 1U supported, 0U not supported */
 #define USB_DEVICE_CONFIG_SELF_POWER (1U)
 
+/*! @brief Whether the low power mode is enabled or not. */
+#define USB_DEVICE_CONFIG_LOW_POWER_MODE (1U)
+
+#ifdef CONFIG_USB_DEVICE_REMOTE_WAKEUP
+/*! @brief Whether device remote wakeup supported. 1U supported, 0U not supported */
+#define USB_DEVICE_CONFIG_REMOTE_WAKEUP (1U)
+#endif
+
 #define NUM_INSTS DT_NUM_INST_STATUS_OKAY(nxp_ehci) + DT_NUM_INST_STATUS_OKAY(nxp_lpcip3511)
 BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_lpcip3511)

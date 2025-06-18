@@ -26,6 +26,7 @@ def _import_runner_module(runner_name):
 
 _names = [
     # zephyr-keep-sorted-start
+    'bflb_mcu_tool',
     'blackmagicprobe',
     'bossac',
     'canopen_program',
@@ -57,6 +58,7 @@ _names = [
     'rfp',
     'silabs_commander',
     'spi_burn',
+    'spsdk',
     'stm32cubeprogrammer',
     'stm32flash',
     'sy1xx',

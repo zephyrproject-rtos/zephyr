@@ -436,6 +436,13 @@ void z_nrf_clock_bt_ctlr_hf_release(void)
 	irq_unlock(key);
 }
 
+#if DT_NODE_EXISTS(DT_NODELABEL(hfxo))
+uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void)
+{
+	return DT_PROP(DT_NODELABEL(hfxo), startup_time_us);
+}
+#endif
+
 static int stop(const struct device *dev, clock_control_subsys_t subsys,
 		uint32_t ctx)
 {
@@ -685,6 +692,10 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 	case NRFX_CLOCK_EVT_XO_TUNED:
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK);
 		break;
+	case NRFX_CLOCK_EVT_XO_TUNE_ERROR:
+	case NRFX_CLOCK_EVT_XO_TUNE_FAILED:
+		/* No processing needed. */
+		break;
 	case NRFX_CLOCK_EVT_HFCLK_STARTED:
 		/* HFCLK is stable after XOTUNED event.
 		 * HFCLK_STARTED means only that clock has been started.
@@ -736,15 +747,9 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 #endif
 #if NRF_CLOCK_HAS_PLL
 	case NRFX_CLOCK_EVT_PLL_STARTED:
-#endif
-#if NRF_CLOCK_HAS_XO_TUNE
-	case NRFX_CLOCK_EVT_XO_TUNE_ERROR:
-	case NRFX_CLOCK_EVT_XO_TUNE_FAILED:
-#endif
-	{
-		/* unhandled event */
+		/* No processing needed. */
 		break;
-	}
+#endif
 	default:
 		__ASSERT_NO_MSG(0);
 		break;

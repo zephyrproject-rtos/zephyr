@@ -23,6 +23,7 @@
 		zephyr,sram = &sram2;
 		zephyr,flash = &flash0;
 		zephyr,display = &st7735;
+		zephyr,canbus = &can0;
 	};
 
 	leds {
@@ -150,4 +151,10 @@
 	pinctrl-0 = <&spi1a_mosi_p0_8 &spi1a_sck_p0_17>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+};
+
+&can0 {
+	status = "okay";
+	pinctrl-0 = <&can0b_tx_p0_16 &can0b_rx_p0_15>;
+	pinctrl-names = "default";
 };

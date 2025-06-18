@@ -1263,7 +1263,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
 	struct bt_keys_link_key *key;
-	bool le_bonded;
+	struct bt_keys *le_keys;
 
 	if (!smp->chan.chan.conn) {
 		return false;
@@ -1273,7 +1273,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 
 	addr.type = BT_ADDR_LE_PUBLIC;
 	bt_addr_copy(&addr.a, &conn->br.dst);
-	le_bonded = bt_le_bond_exists(BT_ID_DEFAULT, &addr);
+	le_keys = bt_keys_find_addr(BT_ID_DEFAULT, &addr);
 
 	key = bt_keys_find_link_key(&conn->br.dst);
 	if (!key) {
@@ -1287,7 +1287,9 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 	 * or MITM protection, then neither device shall generate an LE LTK using cross-transport
 	 * key derivation from a BR/EDR link key.
 	 */
-	if (le_bonded && !(key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+	if ((le_keys != NULL) && ((le_keys->flags & BT_KEYS_AUTHENTICATED) != 0) &&
+	    ((key->flags & BT_LINK_KEY_AUTHENTICATED) == 0)) {
+		LOG_WRN("Stronger LTK (MITM) cannot be overwrote by weaker LK");
 		return false;
 	}
 
@@ -2553,22 +2555,35 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 static uint8_t legacy_pairing_random(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	uint8_t tmp[16];
+	uint8_t tmp[16], cfm_i[16];
 	int err;
 
 	LOG_DBG("");
 
-	/* calculate confirmation */
+	/* calculate LP_CONFIRM_R */
 	err = smp_c1(smp->tk, smp->rrnd, smp->preq, smp->prsp,
 		     &conn->le.init_addr, &conn->le.resp_addr, tmp);
 	if (err) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
-	LOG_DBG("cfm %s", bt_hex(tmp, 16));
+	/* calculate LP_CONFIRM_I */
+	err = smp_c1(smp->tk, smp->prnd, smp->preq, smp->prsp,
+		     &conn->le.init_addr, &conn->le.resp_addr, cfm_i);
+	if (err) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
 
-	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf))) {
+	LOG_DBG("pcnf %s", bt_hex(smp->pcnf, 16));
+	LOG_DBG("cfm (remote) %s", bt_hex(tmp, 16));
+	LOG_DBG("cfm (local) %s", bt_hex(cfm_i, 16));
+
+	/* Core Specification, Vol 3, Part H, section 2.3.5.5 (Errata ES-24491): If the computed
+	 * LP_CONFIRM_R value is not equal to the received LP_CONFIRM_R value, or the received
+	 * LP_CONFIRM_R value is equal to the LP_CONFIRM_I value, fail pairing.
+	 */
+	if (memcmp(smp->pcnf, tmp, sizeof(smp->pcnf)) ||
+	    !memcmp(smp->pcnf, cfm_i, sizeof(smp->pcnf))) {
 		return BT_SMP_ERR_CONFIRM_FAILED;
 	}
 
@@ -4476,7 +4491,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		}
 	} else if (!bt_pub_key_is_valid(smp->pkey)) {
 		LOG_WRN("Received invalid public key");
-		return BT_SMP_ERR_INVALID_PARAMS;
+		return BT_SMP_ERR_DHKEY_CHECK_FAILED;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&

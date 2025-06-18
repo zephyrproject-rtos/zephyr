@@ -376,7 +376,7 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 	buf = bt_l2cap_create_pdu(NULL, 0);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	cr = BT_RFCOMM_RESP_CR(session->role);
+	cr = BT_RFCOMM_CMD_CR(session->role);
 	hdr->address = BT_RFCOMM_SET_ADDR(dlci, cr);
 	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_DISC, BT_RFCOMM_PF_NON_UIH);
 	hdr->length = BT_RFCOMM_SET_LEN_8(0);

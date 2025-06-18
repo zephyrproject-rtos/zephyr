@@ -388,6 +388,8 @@ device.
      - Sets UART device used for the Bluetooth monitor logging
    * - zephyr,bt-hci
      - Selects the HCI device used by the Bluetooth host stack
+   * - zephyr,camera
+     - Video input device, typically a camera.
    * - zephyr,canbus
      - Sets the default CAN controller
    * - zephyr,ccm

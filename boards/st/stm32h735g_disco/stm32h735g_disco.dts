@@ -24,10 +24,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_1 {
 			gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -36,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
@@ -186,14 +189,14 @@
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       label = "nor";
-			       reg = <0x00000000 DT_SIZE_M(4)>;
-			   };
+			partition@0 {
+				label = "nor";
+				reg = <0x00000000 DT_SIZE_M(4)>;
+			};
 		};
 	};
 };

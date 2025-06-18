@@ -24,6 +24,20 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&pstate_ps4_standby &pstate_ps4_sleep>;
+		};
+
+		power-states {
+			pstate_ps4_standby: ps4_standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+			pstate_ps4_sleep: ps4_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000>;
+				exit-latency-us = <3000>;
+			};
 		};
 	};
 
@@ -58,14 +72,19 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
-	bt_hci0: bt_hci {
-		compatible = "silabs,siwx91x-bt-hci";
-		status = "disabled";
-	};
+	nwp: nwp {
+		compatible = "silabs,siwx91x-nwp";
+		power-profile = "high-performance";
 
-	wifi0: wifi {
-		compatible = "silabs,siwx91x-wifi";
-		status = "disabled";
+		bt_hci0: bt_hci {
+			compatible = "silabs,siwx91x-bt-hci";
+			status = "disabled";
+		};
+
+		wifi0: wifi {
+			compatible = "silabs,siwx91x-wifi";
+			status = "disabled";
+		};
 	};
 
 	soc {
@@ -97,7 +116,7 @@
 			};
 		};
 
-		psramctrl0: memory-controller@12040000 {
+		memc: memory-controller@12040000 {
 			compatible = "silabs,siwx91x-qspi-memory";
 			reg = <0x12040000 0x200>;
 			#address-cells = <1>;
@@ -376,6 +395,19 @@
 			silabs,max-channel-count = <1>;
 			clocks = <&clock0 SIWX91X_CLK_ULP_I2S>,
 				 <&clock0 SIWX91X_CLK_STATIC_ULP_I2S>;
+			status = "disabled";
+		};
+
+		adc0: adc@24043800 {
+			compatible = "silabs,siwx91x-adc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x24043800 0x214>;
+			interrupts = <11 0>;
+			interrupt-names = "adc0";
+			silabs,adc-sampling-rate = <100000>;
+			clocks = <&clock0 SIWX91X_ADC_CLK>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 	};

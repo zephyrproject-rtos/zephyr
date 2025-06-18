@@ -12,6 +12,7 @@ from pathlib import Path
 
 import list_boards
 import list_hardware
+import list_shields
 import yaml
 import zephyr_module
 from gen_devicetree_rest import VndLookup
@@ -21,11 +22,11 @@ ZEPHYR_BASE = Path(__file__).parents[2]
 ZEPHYR_BINDINGS = ZEPHYR_BASE / "dts/bindings"
 EDT_PICKLE_PATHS = [
     "zephyr/edt.pickle",
-    "hello_world/zephyr/edt.pickle"  # for board targets using sysbuild
+    "hello_world/zephyr/edt.pickle",  # for board targets using sysbuild
 ]
 RUNNERS_YAML_PATHS = [
     "zephyr/runners.yaml",
-    "hello_world/zephyr/runners.yaml"  # for board targets using sysbuild
+    "hello_world/zephyr/runners.yaml",  # for board targets using sysbuild
 ]
 
 logger = logging.getLogger(__name__)
@@ -72,8 +73,7 @@ class DeviceTreeUtils:
             The cached description for the node's compatible, creating it if needed.
         """
         return cls._compat_description_cache.setdefault(
-            node.matching_compat,
-            cls.get_first_sentence(node.description)
+            node.matching_compat, cls.get_first_sentence(node.description)
         )
 
 
@@ -175,9 +175,7 @@ def gather_board_build_info(twister_out_dir):
                 if runners_yaml_file:
                     with open(runners_yaml_file) as f:
                         runners_yaml = yaml.safe_load(f)
-                        board_runners.setdefault(board_name, {})[board_target] = (
-                            runners_yaml
-                        )
+                        board_runners.setdefault(board_name, {})[board_target] = runners_yaml
 
         except Exception as e:
             logger.error(f"Error processing build info file {build_info_file}: {e}")
@@ -195,12 +193,14 @@ def run_twister_cmake_only(outdir, vendor_filter):
     twister_cmd = [
         sys.executable,
         f"{ZEPHYR_BASE}/scripts/twister",
-        "-T", "samples/hello_world/",
+        "-T",
+        "samples/hello_world/",
         "-M",
         *[arg for path in EDT_PICKLE_PATHS for arg in ('--keep-artifacts', path)],
         *[arg for path in RUNNERS_YAML_PATHS for arg in ('--keep-artifacts', path)],
         "--cmake-only",
-        "--outdir", str(outdir),
+        "--outdir",
+        str(outdir),
     ]
 
     if vendor_filter:
@@ -213,7 +213,7 @@ def run_twister_cmake_only(outdir, vendor_filter):
         'PATH': os.environ.get('PATH', ''),
         'ZEPHYR_BASE': str(ZEPHYR_BASE),
         'HOME': os.environ.get('HOME', ''),
-        'PYTHONPATH': os.environ.get('PYTHONPATH', '')
+        'PYTHONPATH': os.environ.get('PYTHONPATH', ''),
     }
 
     try:
@@ -246,18 +246,24 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
             if root is not None:
                 module_settings[key].append(Path(module.project) / root)
 
-    Args = namedtuple("args", ["arch_roots", "board_roots", "soc_roots", "board_dir", "board"])
+    Args = namedtuple(
+        "args", ["arch_roots", "board_roots", "soc_roots", "board_dir", "board", "arch"]
+    )
     args_find_boards = Args(
         arch_roots=module_settings["arch_root"],
         board_roots=module_settings["board_root"],
         soc_roots=module_settings["soc_root"],
         board_dir=[],
         board=None,
+        arch=None,
     )
 
     boards = list_boards.find_v2_boards(args_find_boards)
+    shields = list_shields.find_shields(args_find_boards)
     systems = list_hardware.find_v2_systems(args_find_boards)
+    archs = list_hardware.find_v2_archs(args_find_boards)
     board_catalog = {}
+    shield_catalog = {}
     board_devicetrees = {}
     board_runners = {}
 
@@ -293,7 +299,6 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
                         binding_type = "misc"
                         is_custom_binding = True
 
-
                     if node.matching_compat is None:
                         continue
 
@@ -313,9 +318,7 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
                         else:
                             locations.add("soc")
 
-                    existing_feature = features.get(binding_type, {}).get(
-                        node.matching_compat
-                    )
+                    existing_feature = features.get(binding_type, {}).get(node.matching_compat)
 
                     node_info = {
                         "filename": str(filename),
@@ -356,13 +359,13 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
 
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.
-        archs = set()
+        board_archs = set()
         pattern = f"{board.name}*.yaml"
         for twister_file in board.dir.glob(pattern):
             try:
                 with open(twister_file) as f:
                     board_data = yaml.safe_load(f)
-                    archs.add(board_data.get("arch"))
+                    board_archs.add(board_data.get("arch"))
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
@@ -376,7 +379,7 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
             "full_name": full_name,
             "doc_page": doc_page_path,
             "vendor": vendor,
-            "archs": list(archs),
+            "archs": list(board_archs),
             "socs": list(socs),
             "revision_default": board.revision_default,
             "supported_features": supported_features,
@@ -400,9 +403,35 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
             "commands": runner.capabilities().commands,
         }
 
+    arch_catalog = {
+        arch['name']: {
+            "name": arch['name'],
+            "full_name": arch.get('full_name', arch['name']),
+        }
+        for arch in archs['archs']
+    }
+
+    for shield in shields:
+        doc_page = guess_doc_page(shield)
+        if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
+            doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()
+        else:
+            doc_page_path = None
+
+        shield_catalog[shield.name] = {
+            "name": shield.name,
+            "full_name": shield.full_name or shield.name,
+            "vendor": shield.vendor or "others",
+            "doc_page": doc_page_path,
+            "image": guess_image(shield),
+            "supported_features": shield.supported_features or [],
+        }
+
     return {
         "boards": board_catalog,
+        "shields": shield_catalog,
         "vendors": {**vnd_lookup.vnd2vendor, "others": "Other/Unknown"},
         "socs": socs_hierarchy,
+        "archs": arch_catalog,
         "runners": available_runners,
     }

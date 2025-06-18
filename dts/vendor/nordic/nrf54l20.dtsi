@@ -54,16 +54,23 @@
 			clock-frequency = <DT_FREQ_M(16)>;
 		};
 
+		pclk32m: pclk32m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
 		lfxo: lfxo {
-			compatible = "nordic,nrf-lfxo";
+			compatible = "nordic,nrf54l-lfxo";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
 		};
 
 		hfxo: hfxo {
-			compatible = "nordic,nrf-hfxo";
+			compatible = "nordic,nrf54l-hfxo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
+			startup-time-us = <1650>;
 		};
 
 		hfpll: hfpll {
@@ -140,6 +147,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				status = "disabled";
+				enable-secure;
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
@@ -480,6 +488,7 @@
 				reg = <0xd2000 0x1000>;
 				interrupts = <210 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm21: pwm@d3000 {
@@ -488,6 +497,7 @@
 				reg = <0xd3000 0x1000>;
 				interrupts = <211 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm22: pwm@d4000 {
@@ -496,6 +506,7 @@
 				reg = <0xd4000 0x1000>;
 				interrupts = <212 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			adc: adc@d5000 {
@@ -560,6 +571,17 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+			};
+
+			tdm: tdm@e8000 {
+				compatible = "nordic,nrf-tdm";
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0xe8000 0x1000>;
+				interrupts = <232 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				clocks = <&pclk32m>;
 			};
 
 			i2c23: i2c@ed000 {

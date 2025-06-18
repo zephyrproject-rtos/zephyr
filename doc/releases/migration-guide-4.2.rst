@@ -97,6 +97,14 @@ Devicetree
   superfamily. Therefore, any dts files for boards that use Series 2 SoCs will need to change their
   include from ``#include <silabs/some_soc.dtsi>`` to ``#include <silabs/xg2[1-9]/some_soc.dtsi>``.
 
+* The :c:macro:`DT_ENUM_HAS_VALUE` and :c:macro:`DT_INST_ENUM_HAS_VALUE` macros are now
+  checking all values, when used on an array, not just the first one.
+
+* Property names in devicetree and bindings use hyphens(``-``) as separators, and replacing
+  all previously used underscores(``_``). For local code, you can migrate property names in
+  bindings to use hyphens by running the ``scripts/migrate_bindings_style.py`` script.
+
+
 DAI
 ===
 
@@ -113,6 +121,17 @@ DMA
 
 * Renamed the devicetree property ``nxp,a_on`` to ``nxp,a-on``.
 * Renamed the devicetree property ``dma_channels`` to ``dma-channels``.
+* The binding files for Xilinx DMA controllers have been renamed to use the proper vendor prefix
+  (``xlnx`` instead of ``xilinx``) and to match their compatible string.
+
+Regulator
+=========
+
+* :dtcompatible:`nordic,npm1300-regulator` BUCK and LDO node GPIO properties are now specified as an
+  integer array without a GPIO controller, removing the requirement for a
+  :dtcompatible:`nordic,npm1300-gpio` node to be present and enabled for GPIO control of the output
+  rails. For example, ``enable-gpios = <&pmic_gpios 3 GPIO_ACTIVE_LOW>;`` is now specified as
+  ``enable-gpio-config = <3 GPIO_ACTIVE_LOW>;``.
 
 Counter
 =======
@@ -178,6 +197,15 @@ Ethernet
   :c:enumerator:`ETHERNET_LINK_1000BASE`, :c:enumerator:`ETHERNET_LINK_2500BASE` and
   :c:enumerator:`ETHERNET_LINK_5000BASE` respectively (:github:`87194`).
 
+* ``ETHERNET_CONFIG_TYPE_LINK``, ``ETHERNET_CONFIG_TYPE_DUPLEX``, ``ETHERNET_CONFIG_TYPE_AUTO_NEG``
+  and the related ``NET_REQUEST_ETHERNET_SET_LINK``, ``NET_REQUEST_ETHERNET_SET_DUPLEX``,
+  ``NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION`` have been removed. :c:func:`phy_configure_link`
+  together with :c:func:`net_eth_get_phy` should be used instead to configure the link
+  (:github:`90652`).
+
+* :c:func:`phy_configure_link` got a ``flags`` parameter. Set it to ``0`` to preserve the old
+  behavior (:github:`91354`).
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
@@ -241,6 +269,9 @@ Sensors
       };
     };
 
+* The binding file for :dtcompatible:`raspberrypi,pico-temp.yaml` has been renamed to have a name
+  matching the compatible string.
+
 Serial
 =======
 
@@ -267,6 +298,28 @@ Timer
 * ``native_posix_timer`` has been renamed ``native_sim_timer``, and so its kconfig option
   :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER` has been deprecated in favor of
   :kconfig:option:`CONFIG_NATIVE_SIM_TIMER`, (:github:`86612`).
+
+* :dtcompatible:`andestech,machine-timer`, :dtcompatible:`neorv32-machine-timer`,
+  :dtcompatible:`telink,machine-timer`, :dtcompatible:`lowrisc,machine-timer`,
+  :dtcompatible:`niosv-machine-timer`, and :dtcompatible:`scr,machine-timer` have
+  been unified under :dtcompatible:`riscv,machine-timer`.
+
+  The addresses of both ``MTIME`` and ``MTIMECMP`` registers must now be explicitly
+  specified using the ``reg`` and ``reg-names`` properties. The ``reg-names`` property
+  is now **required**, and must list names corresponding one-to-one with each entry
+  in ``reg``. (:github:`84175` and :github:`89847`)
+
+  Example:
+
+  .. code-block:: devicetree
+
+    mtimer: timer@d1000000 {
+        compatible = "riscv,machine-timer";
+        interrupts-extended = <&cpu0_intc 7>;
+        reg = <0xd1000000 0x8
+               0xd1000008 0x8>;
+        reg-names = "mtime", "mtimecmp";
+    };
 
 Modem
 =====
@@ -400,9 +453,9 @@ Networking
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
 
-* :kconfig:option:`NET_ZPERF` no longer includes server support by default. To use
-  the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
-  is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
+* :kconfig:option:`CONFIG_NET_ZPERF` no longer includes server support by default. To use
+  the server commands, enable :kconfig:option:`CONFIG_NET_ZPERF_SERVER`. If server support
+  is not needed, :kconfig:option:`CONFIG_ZVFS_POLL_MAX` can possibly be reduced.
 
 * The L2 Wi-Fi shell now supports interface option for most commands, to accommodate this
   change some of the existing options have been renamed. The following table
@@ -422,6 +475,12 @@ Networking
   | ``wifi channel``       |                     |                    |
   | ``wifi packet_filter`` |                     |                    |
   +------------------------+---------------------+--------------------+
+
+* The :c:type:`http_response_cb_t` HTTP client response callback signature has
+  changed. The callback function now returns ``int`` instead of ``void``. This
+  allows the application to abort the HTTP connection. Existing applications
+  need to update their response callback implementations. To retain current
+  behavior, simply return 0 from the callback.
 
 OpenThread
 ==========
@@ -525,6 +584,8 @@ SPI
 
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
+* The binding file for :dtcompatible:`andestech,atcspi200` has been renamed to have a name
+  matching the compatible string.
 
 xSPI
 ====
@@ -564,11 +625,49 @@ Video
   ``video_stream_start``
   ``video_stream_stop``
 
+Audio
+=====
+
+* The binding file for :dtcompatible:`cirrus,cs43l22` has been renamed to have a name
+  matching the compatible string.
+
 Other subsystems
 ****************
 
+hawkBit
+=======
+
+* When :kconfig:option:`CONFIG_HAWKBIT_CUSTOM_DEVICE_ID` is enabled, device_id will no longer
+  be prepended with :kconfig:option:`CONFIG_BOARD`. It is the user's responsibility to write a
+  callback that prepends the board name if needed.
+
+State Machine Framework
+=======================
+
+* :c:func:`smf_set_handled` has been removed.
+* State run actions now return an :c:enum:`smf_state_result` value instead of void. and the return
+  code determines if the event is propagated to parent run actions or has been handled. A run action
+  that handles the event completely should return :c:enum:`SMF_EVENT_HANDLED`, and run actions that
+  propagate handling to parent states should return :c:enum:`SMF_EVENT_PROPAGATE`.
+* Flat state machines ignore the return value; returning :c:enum:`SMF_EVENT_HANDLED`
+  would be the most technically accurate response.
+
 Modules
 *******
+
+CMSIS
+=====
+
+* Cortex-M boards/socs now require the ``CMSIS_6`` module to build properly (instead of ``cmsis``
+  which was CMSIS 5.9.0).
+  If trying to build a Cortex-M board, do a ``west update`` to make sure that ``CMSIS_6`` module is
+  available before running ``west build`` or other commands.
+
+  Boards or SOCs or modules using the older ``cmsis`` module either with a local copy or via the
+  :kconfig:option:`CONFIG_ZEPHYR_CMSIS_MODULE_DIR` are requested to move to the ``CMSIS_6`` module
+  which can be accessed via the :kconfig:option:`CONFIG_ZEPHYR_CMSIS_6_MODULE_DIR` configuration.
+
+  Note: Zephyr will continue using the older ``cmsis`` module for Cortex-A and Cortex-R targets.
 
 Architectures
 *************

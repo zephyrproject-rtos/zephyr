@@ -1147,6 +1147,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'g':
 			params->ignore_broadcast_ssid = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
@@ -1562,8 +1565,8 @@ static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
 	PR("Statistics for Wi-Fi interface %p [%d]\n", iface,
 	   net_if_get_by_iface(iface));
 
-	PR("Bytes received   : %u\n", data->bytes.received);
-	PR("Bytes sent       : %u\n", data->bytes.sent);
+	PR("Bytes received   : %llu\n", data->bytes.received);
+	PR("Bytes sent       : %llu\n", data->bytes.sent);
 	PR("Packets received : %u\n", data->pkts.rx);
 	PR("Packets sent     : %u\n", data->pkts.tx);
 	PR("Receive errors   : %u\n", data->errors.rx);
@@ -1918,33 +1921,74 @@ static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[]
 	struct net_if *iface = get_iface(IFACE_TYPE_SAP, argc, argv);
 	struct wifi_twt_params params = {0};
 	int idx = 1;
-	long value;
-	int ret = 0;
+	int err = 0;
 
 	context.sh = sh;
 
-	params.btwt.sub_id = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
-	params.btwt.nominal_wake = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
-	params.btwt.max_sta_support = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 0xFFFF)) {
+	params.btwt.btwt_sta_wait = (uint8_t)shell_strtol(argv[idx++], 10, &err);
+	if (err) {
+		PR_ERROR("Parse btwt sta_wait (err %d)\n", err);
 		return -EINVAL;
 	}
-	params.btwt.twt_mantissa = (uint16_t)value;
 
-	params.btwt.twt_offset = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_EXPONENT)) {
+	params.btwt.btwt_offset = (uint16_t)shell_strtol(argv[idx++], 10, &err);
+	if (err) {
+		PR_ERROR("Parse btwt offset (err %d)\n", err);
 		return -EINVAL;
 	}
-	params.btwt.twt_exponent = (uint8_t)value;
 
-	params.btwt.sp_gap = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
-
-	if (ret) {
-		PR_ERROR("Invalid argument (ret %d)\n", ret);
+	params.btwt.btwt_li = (uint8_t)shell_strtol(argv[idx++], 10, &err);
+	if (err) {
+		PR_ERROR("Parse btwt_li (err %d)\n", err);
 		return -EINVAL;
 	}
+
+	params.btwt.btwt_count = (uint8_t)shell_strtol(argv[idx++], 10, &err);
+	if (err) {
+		PR_ERROR("Parse btwt count (err %d)\n", err);
+		return -EINVAL;
+	}
+
+	if (params.btwt.btwt_count < 2 || params.btwt.btwt_count > 5) {
+		PR_ERROR("Invalid broadcast twt count. Count rang: 2-5.\n");
+		return -EINVAL;
+	}
+
+	if (argc != 5 + params.btwt.btwt_count * 4) {
+		PR_ERROR("Invalid number of broadcast parameters.\n");
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < params.btwt.btwt_count; i++) {
+		params.btwt.btwt_set_cfg[i].btwt_id
+			= (uint8_t)shell_strtol(argv[idx++], 10, &err);
+		if (err) {
+			PR_ERROR("Parse btwt [%d] id (err %d)\n", i, err);
+			return -EINVAL;
+		}
+
+		params.btwt.btwt_set_cfg[i].btwt_mantissa
+			= (uint16_t)shell_strtol(argv[idx++], 10, &err);
+		if (err) {
+			PR_ERROR("Parse btwt [%d] mantissa (err %d)\n", i, err);
+			return -EINVAL;
+		}
+
+		params.btwt.btwt_set_cfg[i].btwt_exponent
+			= (uint8_t)shell_strtol(argv[idx++], 10, &err);
+		if (err) {
+			PR_ERROR("Parse btwt [%d] exponent (err %d)\n", i, err);
+			return -EINVAL;
+		}
+
+		params.btwt.btwt_set_cfg[i].btwt_nominal_wake
+			= (uint8_t)shell_strtol(argv[idx++], 10, &err);
+		if (err) {
+			PR_ERROR("Parse btwt [%d] nominal_wake (err %d)\n", i, err);
+			return -EINVAL;
+		}
+	}
+
 
 	if (net_mgmt(NET_REQUEST_WIFI_BTWT, iface, &params, sizeof(params))) {
 		PR_WARNING("Failed reason : %s\n",
@@ -2099,6 +2143,10 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 				return -EINVAL;
 			}
 			params->setup.twt_mantissa = (uint16_t)value;
+			break;
+
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 
 		case 'h':
@@ -2411,6 +2459,9 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			params->type |= WIFI_AP_CONFIG_PARAM_VHT_CAPAB;
 			break;
 #endif
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		case 'h':
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -2506,6 +2557,9 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			break;
 		case 'v':
 			verbose = true;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			return -ENOEXEC;
@@ -2865,11 +2919,11 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 		{"monitor", no_argument, 0, 'm'},
 		{"ap", no_argument, 0, 'a'},
 		{"softap", no_argument, 0, 'k'},
-		{"get", no_argument, 0, 'g'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:smtpakgh",
+	mode->oper = WIFI_MGMT_GET;
+	while ((opt = getopt_long(argc, argv, "i:smtpakh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -2889,10 +2943,6 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			mode->mode |= WIFI_SOFTAP_MODE;
 			opt_num++;
 			break;
-		case 'g':
-			mode->oper = WIFI_MGMT_GET;
-			opt_num++;
-			break;
 		case 'i':
 			mode->if_index = (uint8_t)atoi(state->optarg);
 			/* Don't count iface as it's common for both get and set */
@@ -2908,7 +2958,7 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 		}
 	}
 
-	if (opt_num == 0) {
+	if (opt_num != 0) {
 		mode->oper = WIFI_MGMT_SET;
 	}
 }
@@ -3217,6 +3267,9 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 		case 's':
 			strncpy(params->auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3254,6 +3307,9 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 		case 'f':
 			params->chirp.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3290,6 +3346,9 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'f':
 			params->listen.freq = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3336,6 +3395,9 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 		case 'a':
 			ret = net_bytes_from_str(params->bootstrap_gen.mac,
 						 WIFI_MAC_ADDR_LEN, state->optarg);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3395,6 +3457,9 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 			break;
 		case 's':
 			strncpy(params->configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3680,6 +3745,9 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 		case 'p':
 			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3775,7 +3843,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Default no password for eap user.\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n"
 		      "-h --help (prints help)",
-		      cmd_wifi_ap_enable, 2, 7),
+		      cmd_wifi_ap_enable, 2, 47),
 	SHELL_CMD_ARG(stations, NULL, "List stations connected to the AP\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
 		      cmd_wifi_ap_stations, 1, 2),
@@ -3855,11 +3923,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD_ARG(
 		btwt_setup, NULL,
 		" Start a BTWT flow:\n"
-		"<sub_id: Broadcast TWT AP config> <nominal_wake: 64-255> <max_sta_support>"
-		"<twt_mantissa:0-sizeof(UINT16)> <twt_offset> <twt_exponent: 0-31> <sp_gap>.\n"
+		"<sta_wait> <offset> <twtli> <session_num>: 2-5\n"
+		"<id0> <mantissa0> <exponent0> <nominal_wake0>: 64-255\n"
+		"<id1> <mantissa1> <exponent1> <nominal_wake1>: 64-255\n"
+		"<idx> <mantissax> <exponentx> <nominal_wakex>: 64-255\n"
+		" The total number of '0, 1, ..., x' is session_num\n"
 		"[-i, --iface=<interface index>] : Interface index.\n",
 		cmd_wifi_btwt_setup,
-		8, 2),
+		13, 2),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
@@ -3919,7 +3990,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[-h --channel <channel>]\n"
 		      "[-a --mac <mac_addr>]\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_btstrap_gen, 1, 2),
+		      cmd_wifi_dpp_btstrap_gen, 1, 10),
 	SHELL_CMD_ARG(btstrap_get_uri, NULL,
 		      " Get DPP bootstrap uri by id:\n"
 		      "<bootstrap_id>\n"
@@ -3955,7 +4026,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      " AP Input QR code:\n"
 		      "<qr_code_string>\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_ap_qr_code, 3, 2),
+		      cmd_wifi_dpp_ap_qr_code, 2, 2),
 	SHELL_CMD_ARG(ap_auth_init, NULL,
 		      "AP DPP start auth request as enrollee:\n"
 		      "-p --peer <peer_bootstrap_id>\n"
@@ -4019,7 +4090,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		 "[-c --channel]: Channel that needs to be scanned for connection. "
 		 "0:any channel.\n"
 		 "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
-		 "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
+		 "[-p, --passphrase]: Passphrase (valid only for secure SSIDs)\n"
 		 "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		 "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		 "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
@@ -4064,9 +4135,8 @@ SHELL_SUBCMD_ADD((wifi), mode, NULL,
 		 "[-a, --ap] : AP mode\n"
 		 "[-k, --softap] : Softap mode\n"
 		 "[-h, --help] : Help\n"
-		 "[-g, --get] : Get current mode for a specific interface index\n"
 		 "Usage: Get operation example for interface index 1\n"
-		 "wifi mode -g -i1\n"
+		 "wifi mode -i1\n"
 		 "Set operation example for interface index 1 - set station+promiscuous\n"
 		 "wifi mode -i1 -sp.\n",
 		 cmd_wifi_mode,

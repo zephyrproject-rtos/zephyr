@@ -95,3 +95,14 @@
 &wdt0 {
 	status = "okay";
 };
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch0
+		     &adc0_ch2
+		     &adc0_ch3
+		     &adc0_ch4
+		     &adc0_ch6
+		     &adc0_ch8>;
+	pinctrl-names = "default";
+};

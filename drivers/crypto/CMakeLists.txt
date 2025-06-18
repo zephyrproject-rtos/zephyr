@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_CRYPTO_TINYCRYPT_SHIM	crypto_tc_shim.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_ATAES132A		crypto_ataes132a.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MBEDTLS_SHIM		crypto_mtls_shim.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_STM32			crypto_stm32.c)
@@ -16,4 +15,5 @@ zephyr_library_sources_ifdef(CONFIG_CRYPTO_IT8XXX2_SHA_V2	crypto_it8xxx2_sha_v2.
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCUX_DCP		crypto_mcux_dcp.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SI32 		crypto_si32.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_CC23X0		crypto_cc23x0.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_RTS5912_SHA		crypto_rts5912_sha.c)
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

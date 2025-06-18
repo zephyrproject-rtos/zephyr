@@ -18,9 +18,9 @@ ZTEST(syscon, test_size)
 	const size_t expected_size = DT_REG_SIZE(DT_NODELABEL(syscon));
 	size_t size;
 
-	zassert_not_null(dev, NULL);
+	zassert_not_null(dev);
 	zassert_ok(syscon_get_size(dev, &size));
-	zassert_equal(size, expected_size, "size(0x%x) != expected_size(0x%x)", size,
+	zassert_equal(size, expected_size, "size(%zu) != expected_size(%zu)", size,
 		      expected_size);
 }
 

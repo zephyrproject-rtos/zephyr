@@ -116,6 +116,7 @@ set_compiler_property(PROPERTY cstd -std=)
 if (NOT CONFIG_NEWLIB_LIBC AND
     NOT (CONFIG_PICOLIBC AND NOT CONFIG_PICOLIBC_USE_MODULE) AND
     NOT COMPILER STREQUAL "xcc" AND
+    NOT COMPILER STREQUAL "xt-clang" AND
     NOT CONFIG_HAS_ESPRESSIF_HAL AND
     NOT CONFIG_NATIVE_BUILD)
   set_compiler_property(PROPERTY nostdinc -nostdinc)
@@ -266,3 +267,9 @@ set_compiler_property(PROPERTY include_file -include)
 set_compiler_property(PROPERTY cmse -mcmse)
 
 set_property(TARGET asm PROPERTY cmse -mcmse)
+
+# Compiler flag for not placing functions in their own sections:
+set_compiler_property(PROPERTY no_function_sections "-fno-function-sections")
+
+# Compiler flag for not placing variables in their own sections:
+set_compiler_property(PROPERTY no_data_sections "-fno-data-sections")

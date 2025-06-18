@@ -91,9 +91,16 @@ For :ref:`native_sim`, build this sample application with the following commands
    :goals: build
    :compact:
 
-For testing purpose without the need of any real video capture and/or display hardwares,
+For testing purpose and without the need of any real video capture and/or display hardwares,
 a video software pattern generator is supported by the above build commands without
-specifying the shields.
+specifying the shields, and using :ref:`snippet-video-sw-generator`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: native_sim/native/64
+   :snippets: video-sw-generator
+   :goals: build
+   :compact:
 
 For controlling the camera device using shell commands instead of continuously capturing the data,
 append ``-DCONFIG_VIDEO_SHELL=y`` to the build command:
@@ -141,21 +148,21 @@ If using the shell, the capture would not start, and instead it is possible to a
 
 .. code-block:: console
 
-   uart:~$ video
+   uart:~$ video --help
    video - Video driver commands
    Subcommands:
      start    : Start a video device and its sources
-                Usage: video start <device>
+                Usage: start <device>
      stop     : Stop a video device and its sources
-                Usage: video stop <device>
-     capture  : Capture a given number of frames from a device
-                Usage: video capture <device> <num-frames>
+                Usage: stop <device>
+     capture  : Capture a given number of buffers from a device
+                Usage: capture <device> <num-buffers>
      format   : Query or set the video format of a device
-                Usage: video format <device> <ep> [<fourcc> <width>x<height>]
+                Usage: format <device> <dir> [<fourcc> <width>x<height>]
      frmival  : Query or set the video frame rate/interval of a device
-                Usage: video frmival <device> <ep> [<n>fps|<n>ms|<n>us]
+                Usage: frmival <device> [<n>fps|<n>ms|<n>us]
      ctrl     : Query or set video controls of a device
-                Usage: video ctrl <device> [<ctrl> <value>]
+                Usage: ctrl <device> [<ctrl> <value>]
    uart:~$
 
 

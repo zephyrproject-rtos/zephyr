@@ -13,13 +13,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/devicetree.h>
 
 #include "nwp.h"
 #include "sl_wifi_callback_framework.h"
 #ifdef CONFIG_BT_SILABS_SIWX91X
 #include "rsi_ble_common_config.h"
 #endif
+#include "sl_si91x_power_manager.h"
 
+#define NWP_NODE            DT_NODELABEL(nwp)
+#define SI91X_POWER_PROFILE DT_ENUM_IDX(NWP_NODE, power_profile)
 #define AP_MAX_NUM_STA 4
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
@@ -69,9 +73,11 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
 	boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
-	boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
 	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W |
 			SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
+		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
+	}
 #endif
 
 #ifdef CONFIG_BT_SILABS_SIWX91X
@@ -100,7 +106,10 @@ static void siwx91x_configure_ap_mode(sl_si91x_boot_configuration_t *boot_config
 {
 	boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
 	boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
-	boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+	}
 
 	if (hidden_ssid) {
 		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_AP_IN_HIDDEN_MODE;
@@ -176,8 +185,8 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
 
 	__ASSERT(get_config, "get_config cannot be NULL");
-	__ASSERT((hidden_ssid == true || max_num_sta != 0) && wifi_oper_mode != WIFI_SOFTAP_MODE,
-		 "hidden_ssid or max_num_sta requires SOFTAP mode");
+	__ASSERT((hidden_ssid == false && max_num_sta == 0) || wifi_oper_mode == WIFI_SOFTAP_MODE,
+		 "hidden_ssid or max_num_sta requires SOFT AP mode");
 
 	if (wifi_oper_mode == WIFI_SOFTAP_MODE && max_num_sta > AP_MAX_NUM_STA) {
 		LOG_ERR("Exceeded maximum supported stations (%d)", AP_MAX_NUM_STA);
@@ -198,6 +207,11 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 	}
 
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		if (!IS_ENABLED(CONFIG_PM)) {
+			boot_config->custom_feature_bit_map |=
+				SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+		}
+
 		siwx91x_configure_network_stack(boot_config, wifi_oper_mode);
 	}
 
@@ -233,6 +247,8 @@ static int siwg917_nwp_init(void)
 {
 	sl_wifi_device_configuration_t network_config;
 	sl_status_t status;
+	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
+		.profile = SI91X_POWER_PROFILE};
 
 	siwx91x_get_nwp_config(&network_config, WIFI_STA_MODE, false, 0);
 	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
@@ -243,6 +259,14 @@ static int siwg917_nwp_init(void)
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
+		status = sl_wifi_set_performance_profile(&performance_profile);
+		if (status != SL_STATUS_OK) {
+			return -EINVAL;
+		}
+		/* Remove the previously added PS4 power state requirement */
+		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+	}
 	return 0;
 }
 #if defined(CONFIG_MBEDTLS_INIT)

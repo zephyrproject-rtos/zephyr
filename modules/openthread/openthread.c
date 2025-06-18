@@ -17,9 +17,11 @@ LOG_MODULE_REGISTER(net_openthread_platform, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVE
 #include <zephyr/init.h>
 #include <zephyr/version.h>
 #include <zephyr/sys/check.h>
-#include <zephyr/net/openthread.h>
 
 #include "platform/platform-zephyr.h"
+
+#include <openthread.h>
+#include <openthread_utils.h>
 
 #include <openthread/child_supervision.h>
 #include <openthread/cli.h>
@@ -181,7 +183,10 @@ static bool ot_setup_default_configuration(void)
 		return false;
 	}
 
-	net_bytes_from_str(xpanid.m8, 8, (char *)OT_XPANID);
+	if (bytes_from_str(xpanid.m8, 8, (char *)OT_XPANID) != 0) {
+		LOG_ERR("Failed to parse extended PAN ID");
+		return false;
+	}
 	error = otThreadSetExtendedPanId(openthread_instance, &xpanid);
 	if (error != OT_ERROR_NONE) {
 		LOG_ERR("Failed to set %s [%d]", "ext PAN ID", error);
@@ -189,7 +194,11 @@ static bool ot_setup_default_configuration(void)
 	}
 
 	if (strlen(OT_NETWORKKEY)) {
-		net_bytes_from_str(networkKey.m8, OT_NETWORK_KEY_SIZE, (char *)OT_NETWORKKEY);
+		if (bytes_from_str(networkKey.m8, OT_NETWORK_KEY_SIZE, (char *)OT_NETWORKKEY) !=
+		    0) {
+			LOG_ERR("Failed to parse network key");
+			return false;
+		}
 		error = otThreadSetNetworkKey(openthread_instance, &networkKey);
 		if (error != OT_ERROR_NONE) {
 			LOG_ERR("Failed to set %s [%d]", "network key", error);
@@ -286,6 +295,11 @@ int openthread_init(void)
 		return 0;
 	}
 
+	/* Start work queue for the OpenThread module */
+	k_work_queue_start(&openthread_work_q, ot_stack_area,
+			   K_KERNEL_STACK_SIZEOF(ot_stack_area),
+			   OT_PRIORITY, &q_cfg);
+
 	openthread_mutex_lock();
 
 	otSysInit(0, NULL);
@@ -332,10 +346,6 @@ int openthread_init(void)
 	}
 
 	openthread_mutex_unlock();
-
-	/* Start work queue for the OpenThread module */
-	k_work_queue_start(&openthread_work_q, ot_stack_area, K_KERNEL_STACK_SIZEOF(ot_stack_area),
-			   OT_PRIORITY, &q_cfg);
 
 	(void)k_work_submit_to_queue(&openthread_work_q, &openthread_work);
 
@@ -484,5 +494,18 @@ void openthread_mutex_unlock(void)
 }
 
 #ifdef CONFIG_OPENTHREAD_SYS_INIT
-SYS_INIT(openthread_init, POST_KERNEL, CONFIG_OPENTHREAD_SYS_INIT_PRIORITY);
+static int openthread_sys_init(void)
+{
+	int error = openthread_init();
+
+	if (error == 0) {
+#ifndef CONFIG_OPENTHREAD_MANUAL_START
+		error = openthread_run();
+#endif
+	}
+
+	return error;
+}
+
+SYS_INIT(openthread_sys_init, POST_KERNEL, CONFIG_OPENTHREAD_SYS_INIT_PRIORITY);
 #endif /* CONFIG_OPENTHREAD_SYS_INIT */

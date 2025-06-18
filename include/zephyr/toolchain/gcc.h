@@ -209,8 +209,17 @@ do {                                                                    \
 #define __ramfunc
 #elif defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 #if defined(CONFIG_ARM)
+#if defined(__clang__)
+/* No long_call attribute for Clang.
+ * Rely on linker to place required veneers.
+ * https://github.com/llvm/llvm-project/issues/39969
+ */
+#define __ramfunc __attribute__((noinline)) __attribute__((section(".ramfunc")))
+#else
+/* GCC version */
 #define __ramfunc	__attribute__((noinline))			\
 			__attribute__((long_call, section(".ramfunc")))
+#endif
 #else
 #define __ramfunc	__attribute__((noinline))			\
 			__attribute__((section(".ramfunc")))

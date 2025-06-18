@@ -117,7 +117,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: d1b8b20b6278615b00e136374540eb1c00dcabe7
+      revision: 512cc7e895e8491696b61f7ba8066b4a182569b8
       path: modules/hal/cmsis
       groups:
         - hal
@@ -148,6 +148,11 @@ manifest:
       path: modules/hal/adi
       groups:
         - hal
+    - name: hal_afbr
+      revision: 4e1eea7ea283db9d9ce529b0e9f89c0b5c2660e3
+      path: modules/hal/afbr
+      groups:
+        - hal
     - name: hal_ambiq
       revision: 25d882b18dc373bb71c427416cdbea21fc0ec35c
       path: modules/hal/ambiq
@@ -164,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: fa60a7aaa1f834c66413bbaa771794cf8aa82946
+      revision: e74df076fabc5f944900e02c1884282aeb60dad1
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -180,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: e0a50ce02c7cee59b7ce6fe8a3e0e6625f0891a9
+      revision: 0fe4f3aee9c8f7002996a94d91299b2c28d6a8fa
       path: modules/hal/infineon
       groups:
         - hal
@@ -190,12 +195,12 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 15ca19705e4bff2d147a2a13d0198fcf8e4c8b4a
+      revision: 4b74f4081342423badcf758278bbc0582ca8735d
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: 243c6708278364516c6ca1dcccc00c5f721095fa
+      revision: 6e39d4f2b078afaebdb84875089486152fcacb9c
       path: modules/hal/nordic
       groups:
         - hal
@@ -205,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: fa2b503de28020a5c679920a4c0263920d161b2f
+      revision: 87233bcaabd2b65f8bc5f09325bbc52cf199c91e
       path: modules/hal/nxp
       groups:
         - hal
@@ -221,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 9d68ee711aaeab39b216a61101a2646c5a1b0fc0
+      revision: 9b99067e29a1b44b53192c2c797db330f5703462
       groups:
         - hal
     - name: hal_rpi_pico
@@ -230,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 389726f350880238b9a1034f575ffd46c4309827
+      revision: 95fb8af40b1fd6d9c9cb5ed99ef2f60930361b2b
       path: modules/hal/silabs
       groups:
         - hal
@@ -240,7 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 02d82ee3aa0daa29ab6f107f9969508b89bc6bf7
+      revision: 468e5ad450a75d4baa3eed80e4f77a7700b71203
       path: modules/hal/stm32
       groups:
         - hal
@@ -260,7 +265,7 @@ manifest:
       groups:
         - hal
     - name: hal_wch
-      revision: 1de9d3e406726702ce7cfc504509a02ecc463554
+      revision: 6dd313768b5f4cc69baeac4ce6e59f2038eb8ce5
       path: modules/hal/wch
       groups:
         - hal
@@ -284,7 +289,7 @@ manifest:
       revision: b97860e78998551af99931ece149eeffc538bdb1
       path: modules/lib/libmctp
     - name: libmetal
-      revision: 14f519529a1e4a46aaea6826f5a41d99a3347276
+      revision: 91d38634d1882f0a2151966f8c5c230ce1c0de7b
       path: modules/hal/libmetal
       groups:
         - hal
@@ -297,7 +302,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 1ed1ddd881c3784049a92bb9fe37c38c6c74d998
+      revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 5f889934359deccf421554c7045a8381ef75298f
@@ -320,13 +325,13 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: c6296f600a6851bd652f207ab4908d339e1ce705
+      revision: 9eb489fdcde23d4f69ded78bca872bfc31b5ee79
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: e0adc318539934e575b2f777b482b5536dbeb429
+      revision: 1c1a7003ce90e492590c4a8a604eb9881bc8c5c1
       path: modules/lib/nrf_wifi
     - name: open-amp
-      revision: f7f4d083c7909a39d86e217376c69b416ec4faf3
+      revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
       path: modules/lib/open-amp
     - name: openthread
       revision: 3ae741f95e7dfb391dec35c48742862049eb62e8

@@ -177,6 +177,7 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			open-loop-accuracy-ppm = <20000>;
+			open-loop-startup-time-us = <200>; /* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
@@ -199,6 +200,8 @@
 			status = "okay";
 			lfrc-accuracy-ppm = <500>;
 			lflprc-accuracy-ppm = <1000>;
+			lfrc-startup-time-us = <200>; /* To be measured */
+			lflprc-startup-time-us = <200>; /* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
@@ -366,6 +369,7 @@
 			dppic020: dppic@22000 {
 				compatible = "nordic,nrf-dppic-local";
 				reg = <0x22000 0x1000>;
+				channels = <32>;
 				status = "disabled";
 			};
 
@@ -653,6 +657,7 @@
 				clocks = <&hsfll120>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			spis120: spi@8e5000 {
@@ -917,7 +922,7 @@
 			};
 
 			nfct: nfct@985000 {
-				compatible = "nordic,nrf-nfct";
+				compatible = "nordic,nrf-nfct-v2";
 				reg = <0x985000 0x1000>;
 				status = "disabled";
 				interrupts = <389 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -1005,6 +1010,7 @@
 				clocks = <&fll16m>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c130: i2c@9a5000 {
@@ -1138,6 +1144,7 @@
 				clocks = <&fll16m>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			i2c132: i2c@9b5000 {
@@ -1271,6 +1278,7 @@
 				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				idleout-supported;
 			};
 
 			i2c134: i2c@9c5000 {
@@ -1404,6 +1412,7 @@
 				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				idleout-supported;
 			};
 
 			i2c136: i2c@9d5000 {
@@ -1496,6 +1505,34 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+			};
+
+			tdm130: tdm@992000 {
+				compatible = "nordic,nrf-tdm";
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x992000 0x1000>;
+				interrupts = <402 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				clocks = <&fll16m>;
+				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
+							 <NRF_FUN_TDM_MCK>;
+			};
+
+			tdm131: tdm@997000 {
+				compatible = "nordic,nrf-tdm";
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x997000 0x1000>;
+				interrupts = <407 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				clocks = <&fll16m>;
+				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
+							 <NRF_FUN_TDM_MCK>;
 			};
 		};
 	};

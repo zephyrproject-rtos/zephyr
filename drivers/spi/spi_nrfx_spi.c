@@ -278,7 +278,11 @@ static int transceive(const struct device *dev,
 			finish_transaction(dev, -ETIMEDOUT);
 
 			/* Clean up the driver state. */
+#ifdef CONFIG_MULTITHREADING
 			k_sem_reset(&dev_data->ctx.sync);
+#else
+			dev_data->ctx.ready = 0;
+#endif /* CONFIG_MULTITHREADING */
 		}
 
 		spi_context_cs_control(&dev_data->ctx, false);
@@ -432,8 +436,10 @@ static int spi_nrfx_init(const struct device *dev)
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \
 	}								       \
 	static struct spi_nrfx_data spi_##idx##_data = {		       \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),))       \
+		IF_ENABLED(CONFIG_MULTITHREADING,			       \
+			(SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),))       \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(SPI(idx), ctx)		       \
 		.dev  = DEVICE_DT_GET(SPI(idx)),			       \
 		.busy = false,						       \

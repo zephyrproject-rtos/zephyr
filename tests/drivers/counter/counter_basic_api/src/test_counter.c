@@ -103,10 +103,7 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
-	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
-#endif
-#ifdef CONFIG_COUNTER_TMR_RTC_ESP32
-	DEVS_FOR_DT_COMPAT(espressif_esp32_rtc_timer)
+	DEVS_FOR_DT_COMPAT(espressif_esp32_counter)
 #endif
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
 	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
@@ -129,11 +126,17 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
+#ifdef CONFIG_COUNTER_ITE_IT51XXX
+	DEVS_FOR_DT_COMPAT(ite_it51xxx_counter)
+#endif
 #ifdef CONFIG_COUNTER_ITE_IT8XXX2
 	DEVS_FOR_DT_COMPAT(ite_it8xxx2_counter)
 #endif
 #ifdef CONFIG_COUNTER_NEORV32_GPTMR
 	DEVS_FOR_DT_COMPAT(neorv32_gptmr)
+#endif
+#ifdef CONFIG_COUNTER_RA_AGT
+	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
 #endif
 };
 
@@ -389,7 +392,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 			"Unexpected distance between reported alarm value(%u) "
 			"and actual counter value (%u), top:%d (processing "
 			"time limit (%d us) might be exceeded?",
-			counter, now, top, processing_limit_us);
+			counter, now, top, (int)processing_limit_us);
 
 	if (user_data) {
 		zassert_true(&cntr_alarm_cfg == user_data,
@@ -814,7 +817,7 @@ static void test_late_alarm_instance(const struct device *dev)
 
 	k_busy_wait(2*tick_us);
 
-	alarm_cfg.ticks = 0;
+	alarm_cfg.ticks = counter_is_counting_up(dev) ? 0 : counter_get_top_value(dev);
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err, "%s: Unexpected error (%d)", dev->name, err);
 
@@ -865,7 +868,7 @@ static void test_late_alarm_error_instance(const struct device *dev)
 
 	k_busy_wait(2*tick_us);
 
-	alarm_cfg.ticks = 0;
+	alarm_cfg.ticks = counter_get_top_value(dev);
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err,
 			"%s: Failed to detect late setting (err: %d)",
@@ -1113,6 +1116,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_TMR_ESP32
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}

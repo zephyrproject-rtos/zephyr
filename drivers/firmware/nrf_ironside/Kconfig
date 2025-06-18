@@ -26,3 +26,45 @@ config NRF_IRONSIDE_CALL_INIT_PRIORITY
 	  but higher than the priority of any feature that selects NRF_IRONSIDE_CALL.
 
 endif # NRF_IRONSIDE_CALL
+
+menu "Nordic IRONside services"
+	depends on SOC_NRF54H20_IRON
+
+config NRF_IRONSIDE_CPUCONF_SERVICE
+	bool "IRONside CPUCONF service"
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to boot local domain cores.
+
+config NRF_IRONSIDE_UPDATE_SERVICE
+	bool "IRONside update service"
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to update the IRONside SE firmware.
+
+config NRF_IRONSIDE_BOOT_REPORT
+	bool "IRONside boot report"
+	depends on $(dt_nodelabel_exists,ironside_se_boot_report)
+	select NRF_IRONSIDE
+	help
+	  Support for parsing the Boot Report populated by Nordic IRONside firmware.
+
+config NRF_IRONSIDE_DVFS_SERVICE
+	bool "IRONside DVFS service"
+	depends on SOC_NRF54H20_CPUAPP
+	select NRF_IRONSIDE_CALL
+	help
+	  Service used to handle DVFS operating point requests.
+
+if NRF_IRONSIDE_DVFS_SERVICE
+
+config NRF_IRONSIDE_DVFS_OPPOINT_CHANGE_MUTEX_TIMEOUT_MS
+	int "IRONSside DVFS change oppoint mutex timeout"
+	default 100
+	help
+	  Maximum tiemout when waiting for DVFS oppoint change mutex lock.
+
+endif # NRF_IRONSIDE_DVFS_SERVICE
+
+endmenu

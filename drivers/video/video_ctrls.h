@@ -27,10 +27,12 @@ enum video_ctrl_type {
 	VIDEO_CTRL_TYPE_INTEGER = 2,
 	/** 64-bit integer type */
 	VIDEO_CTRL_TYPE_INTEGER64 = 3,
-	/** Menu type, standard or driver-defined menu */
+	/** Menu string type, standard or driver-defined menu */
 	VIDEO_CTRL_TYPE_MENU = 4,
 	/** String type */
 	VIDEO_CTRL_TYPE_STRING = 5,
+	/** Menu integer type, standard or driver-defined menu */
+	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
 };
 
 struct video_device;
@@ -54,7 +56,10 @@ struct video_ctrl {
 		int32_t val;
 		int64_t val64;
 	};
-	const char *const *menu;
+	union {
+		const char *const *menu;
+		const int64_t *int_menu;
+	};
 	sys_dnode_t node;
 };
 
@@ -63,6 +68,9 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 
 int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 			 uint8_t def, const char *const menu[]);
+
+int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
+			     uint8_t def, const int64_t menu[], size_t menu_len);
 
 void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
 

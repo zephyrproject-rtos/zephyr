@@ -99,8 +99,8 @@ struct http_service_desc {
 		.fd = &_name##_fd,                                                                 \
 		.detail = (void *)(_detail),                                                       \
 		.concurrent = (_concurrent),                                                       \
-		.data = &_name##_data,                                                             \
 		.backlog = (_backlog),                                                             \
+		.data = &_name##_data,                                                             \
 		.res_begin = (_res_begin),                                                         \
 		.res_end = (_res_end),                                                             \
 		.res_fallback = (_res_fallback),                                                   \

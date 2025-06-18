@@ -196,13 +196,13 @@ static void spi_loopback_transceive(struct spi_dt_spec *const spec,
 	spi_loopback_gpio_cs_loopback_prepare();
 	ret = spi_transceive_dt(spec, tx, rx);
 	if (ret == -EINVAL || ret == -ENOTSUP) {
-		TC_PRINT("Spi config invalid for this controller - skip\n");
-		goto out;
+		TC_PRINT("Spi config invalid for this controller\n");
+		zassert_ok(pm_device_runtime_put(spec->bus));
+		ztest_test_skip();
 	}
 	zassert_ok(ret, "SPI transceive failed, code %d", ret);
 	/* There should be two CS triggers during the transaction, start and end */
 	zassert_false(spi_loopback_gpio_cs_loopback_check(2));
-out:
 	zassert_ok(pm_device_runtime_put(spec->bus));
 }
 
@@ -289,12 +289,20 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 							      buffer2_rx, BUF2_SIZE);
 	uint32_t freq = spec->config.frequency;
 	uint32_t start_time, end_time, cycles_spent;
-	uint64_t time_spent_us, expected_transfer_time_us;
+	uint64_t time_spent_us, expected_transfer_time_us, latency_measurement;
+
+	/*
+	 * spi_loopback_transceive() does an inline pm_device_runtime_get(), but since we are
+	 * timing the transfer, we need to get the SPI controller before we start the measurement.
+	 */
+	zassert_ok(pm_device_runtime_get(spec->bus));
 
 	/* since this is a test program, there shouldn't be much to interfere with measurement */
 	start_time = k_cycle_get_32();
 	spi_loopback_transceive(spec, &tx, &rx);
 	end_time = k_cycle_get_32();
+
+	zassert_ok(pm_device_runtime_put(spec->bus));
 
 	if (end_time >= start_time) {
 		cycles_spent = end_time - start_time;
@@ -327,12 +335,19 @@ ZTEST(spi_loopback, test_spi_complete_multiple_timed)
 
 	/* Fail if transfer is faster than theoretically possible */
 	zassert_true(time_spent_us >= minimum_transfer_time_us,
-			"Transfer faster than theoretically possible");
+		     "Transfer faster than theoretically possible");
 
-	TC_PRINT("Latency measurement: %llu us\n", time_spent_us - expected_transfer_time_us);
+	/* handle overflow for print statement */
+	latency_measurement = time_spent_us - expected_transfer_time_us;
+	if (latency_measurement > time_spent_us) {
+		latency_measurement = 0;
+	}
+	TC_PRINT("Latency measurement: %llu us\n", latency_measurement);
 
 	/* Allow some overhead, but not too much */
-	zassert_true(time_spent_us <= expected_transfer_time_us * 8, "Very high latency");
+	zassert_true(time_spent_us <=
+			     expected_transfer_time_us * CONFIG_SPI_IDEAL_TRANSFER_DURATION_SCALING,
+		     "Very high latency");
 
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
 				  buffer_print_tx, buffer_print_rx);
@@ -550,9 +565,16 @@ ZTEST(spi_loopback, test_spi_null_rx_buf_set)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
-							      NULL, BUF_SIZE);
+							      buffer_tx, BUF_SIZE);
 
 	spi_loopback_transceive(spec, &tx, NULL);
+}
+
+ZTEST(spi_loopback, test_spi_null_tx_rx_buf_set)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+
+	spi_loopback_transceive(spec, NULL, NULL);
 }
 
 ZTEST(spi_loopback, test_nop_nil_bufs)
@@ -686,25 +708,27 @@ ZTEST(spi_loopback, test_spi_word_size_32)
 				    sizeof(buffer_tx_32), &spec_copies[4], 32);
 }
 
-static K_THREAD_STACK_DEFINE(thread_stack[3], 512);
+static K_THREAD_STACK_DEFINE(thread_stack[3], CONFIG_ZTEST_STACK_SIZE +
+					      CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread thread[3];
 
 static K_SEM_DEFINE(thread_sem, 0, 3);
 static K_SEM_DEFINE(sync_sem, 0, 1);
 
-static uint8_t __aligned(32) tx_buffer[3][32];
-static uint8_t __aligned(32) rx_buffer[3][32];
+static uint8_t __aligned(32) tx_buffer[3][32] __NOCACHE;
+static uint8_t __aligned(32) rx_buffer[3][32] __NOCACHE;
+
+atomic_t thread_test_fails;
 
 static void spi_transfer_thread(void *p1, void *p2, void *p3)
 {
 	struct spi_dt_spec *spec = (struct spi_dt_spec *)p1;
 	uint8_t *tx_buf_ptr = (uint8_t *)p2;
 	uint8_t *rx_buf_ptr = (uint8_t *)p3;
+	int ret = 0;
 
 	/* Wait for all threads to be ready */
 	k_sem_give(&thread_sem);
-	k_sem_take(&sync_sem, K_FOREVER);
-
 	/* Perform SPI transfer */
 	const struct spi_buf_set tx_bufs = {
 		.buffers = &(struct spi_buf) {
@@ -721,11 +745,19 @@ static void spi_transfer_thread(void *p1, void *p2, void *p3)
 		.count = 1,
 	};
 
-	zassert_equal(spi_transceive_dt(spec, &tx_bufs, &rx_bufs), 0,
-		      "SPI concurrent transfer failed");
+	k_sem_take(&sync_sem, K_FOREVER);
 
-	zassert_mem_equal(tx_buf_ptr, rx_buf_ptr, 32,
-			 "SPI concurrent transfer data mismatch");
+	ret = spi_transceive_dt(spec, &tx_bufs, &rx_bufs);
+	if (ret) {
+		TC_PRINT("SPI concurrent transfer failed, spec %p\n", spec);
+		atomic_inc(&thread_test_fails);
+	}
+
+	ret = memcmp(tx_buf_ptr, rx_buf_ptr, 32);
+	if (ret) {
+		TC_PRINT("SPI concurrent transfer data mismatch, spec %p\n", spec);
+		atomic_inc(&thread_test_fails);
+	}
 }
 
 /* Test case for concurrent SPI transfers */
@@ -747,6 +779,8 @@ static void test_spi_concurrent_transfer_helper(struct spi_dt_spec **specs)
 		k_sem_take(&thread_sem, K_FOREVER);
 	}
 
+	atomic_set(&thread_test_fails, 0);
+
 	/* Start all threads simultaneously */
 	for (int i = 0; i < 3; i++) {
 		k_sem_give(&sync_sem);
@@ -756,6 +790,8 @@ static void test_spi_concurrent_transfer_helper(struct spi_dt_spec **specs)
 	for (int i = 0; i < 3; i++) {
 		k_thread_join(&thread[i], K_FOREVER);
 	}
+
+	zassert_equal(atomic_get(&thread_test_fails), 0);
 }
 
 /* test for multiple threads accessing the driver / bus with the same spi_config */

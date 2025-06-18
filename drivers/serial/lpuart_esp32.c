@@ -144,7 +144,7 @@ static void lp_uart_esp32_set_pin(const struct device *dev)
 	lp_uart_esp32_config_io(cfg->tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, LP_U0TXD_MUX_FUNC);
 
 	/* Configure Rx Pin */
-	lp_uart_esp32_config_io(cfg->rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, LP_U0RXD_GPIO_NUM);
+	lp_uart_esp32_config_io(cfg->rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, LP_U0RXD_MUX_FUNC);
 
 	/* Configure RTS Pin */
 	lp_uart_esp32_config_io(cfg->rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, LP_U0RTS_MUX_FUNC);

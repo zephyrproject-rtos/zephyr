@@ -20,7 +20,7 @@
 #define DT_CPU_COMPAT espressif_riscv
 #endif
 
-static const struct device *const clk_dev = DEVICE_DT_GET_ONE(espressif_esp32_rtc);
+static const struct device *const clk_dev = DEVICE_DT_GET_ONE(espressif_esp32_clock);
 
 static void *rtc_clk_setup(void)
 {

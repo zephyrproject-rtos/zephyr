@@ -313,7 +313,7 @@ This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
 
-* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
 * :ref:`linkserver-debug-host-tools` (Supported by NXP)
 * :ref:`pyocd-debug-host-tools` (Not Supported by NXP)
 
@@ -438,7 +438,7 @@ Shield for M.2 Wi-Fi and BT Interface
 Rev C version is tested with :ref:`nxp_m2_wifi_bt` shield to attach any M.2 module
 with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
 HCI driver or SDIO driver to perform firmware-load and other setup configurations
-for NXP SoC IW416/IW612.
+for NXP SoC IW416/IW612/IW610.
 
 Troubleshooting
 ===============

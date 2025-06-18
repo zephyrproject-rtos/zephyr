@@ -175,4 +175,4 @@ pico_spi: &spi0 {};
 pico_i2c0: &i2c0 {};
 pico_i2c1: &i2c1 {};
 pico_serial: &uart0 {};
-stemma_qt_i2c: &i2c0 {};
+zephyr_i2c: &i2c0 {};

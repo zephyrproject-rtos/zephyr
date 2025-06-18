@@ -337,6 +337,19 @@ config OPENTHREAD_INTERFACE_EARLY_UP
 	  Otherwise, OpenThread interface will be marked operational UP only
 	  after the device joins a Thread network.
 
+config OPENTHREAD_PLATFORM_PKT_TXTIME
+	bool
+	default y if NET_PKT_TXTIME
+	help
+	  Enable packet TX time support. This is needed for when the application
+	  wants to set the exact time when the packet should be sent.
+
+config OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS
+	bool
+	default y if OPENTHREAD_DIAG && IEEE802154_CARRIER_FUNCTIONS
+	help
+	  Enable support for functions such as modulated carrier and continuous carrier.
+
 menu "OpenThread stack features"
 rsource "Kconfig.features"
 endmenu

@@ -11,6 +11,8 @@ board:
       cpucluster: cpuflpr
     - name: iron
       cpucluster: cpuapp
+    - name: iron
+      cpucluster: cpurad
   revision:
     format: major.minor.patch
     default: "0.9.0"

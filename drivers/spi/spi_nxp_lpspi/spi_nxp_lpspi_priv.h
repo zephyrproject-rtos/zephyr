@@ -23,7 +23,7 @@
 #define LPSPI_CHIP_SELECT_COUNT   4
 #define LPSPI_MIN_FRAME_SIZE_BITS 8
 
-#define LPSPI_INTERRUPT_BITS GENMASK(8, 13)
+#define LPSPI_INTERRUPT_BITS GENMASK(13, 8)
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct lpspi_config *)(_dev)->config)
@@ -93,12 +93,9 @@ void lpspi_wait_tx_fifo_empty(const struct device *dev);
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 		.irq_config_func = lpspi_config_func_##n,                                          \
-		.pcs_sck_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, pcs_sck_delay),                 \
-					  DT_INST_PROP(n, pcs_sck_delay)),                         \
-		.sck_pcs_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, sck_pcs_delay),                 \
-					  DT_INST_PROP(n, sck_pcs_delay)),                         \
-		.transfer_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, transfer_delay),               \
-					   DT_INST_PROP(n, transfer_delay)),                       \
+		.pcs_sck_delay = DT_INST_PROP_OR(n, pcs_sck_delay, 0),                             \
+		.sck_pcs_delay = DT_INST_PROP_OR(n, sck_pcs_delay, 0),                             \
+		.transfer_delay = DT_INST_PROP_OR(n, transfer_delay, 0),                           \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.data_pin_config = (uint8_t)DT_INST_ENUM_IDX(n, data_pin_config),                  \
 		.tristate_output = DT_INST_PROP(n, tristate_output),                               \

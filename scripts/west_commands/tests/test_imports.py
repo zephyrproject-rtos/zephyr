@@ -17,6 +17,7 @@ def test_runner_imports():
     expected = set((
         # zephyr-keep-sorted-start
         'arc-nsim',
+        'bflb_mcu_tool',
         'blackmagicprobe',
         'bossac',
         'canopen',
@@ -48,6 +49,7 @@ def test_runner_imports():
         'rfp',
         'silabs_commander',
         'spi_burn',
+        'spsdk',
         'stm32cubeprogrammer',
         'stm32flash',
         'sy1xx',

@@ -56,15 +56,16 @@
 		};
 
 		lfxo: lfxo {
-			compatible = "nordic,nrf-lfxo";
+			compatible = "nordic,nrf54l-lfxo";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
 		};
 
 		hfxo: hfxo {
-			compatible = "nordic,nrf-hfxo";
+			compatible = "nordic,nrf54l-hfxo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
+			startup-time-us = <1650>;
 		};
 
 		hfpll: hfpll {
@@ -164,6 +165,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				status = "disabled";
+				enable-secure;
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
@@ -475,6 +477,7 @@
 				reg = <0xd2000 0x1000>;
 				interrupts = <210 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm21: pwm@d3000 {
@@ -483,6 +486,7 @@
 				reg = <0xd3000 0x1000>;
 				interrupts = <211 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm22: pwm@d4000 {
@@ -491,6 +495,7 @@
 				reg = <0xd4000 0x1000>;
 				interrupts = <212 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			adc: adc@d5000 {
@@ -633,19 +638,19 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				gpregret1: gpregret1@51c {
+				gpregret1: gpregret1@500 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
-					reg = <0x51c 0x1>;
+					reg = <0x500 0x1>;
 					status = "disabled";
 				};
 
-				gpregret2: gpregret2@520 {
+				gpregret2: gpregret2@504 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
-					reg = <0x520 0x1>;
+					reg = <0x504 0x1>;
 					status = "disabled";
 				};
 			};

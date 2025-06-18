@@ -2,7 +2,7 @@
 
 # Copyright (c) 2019, 2020 Linaro Limited
 # Copyright (c) 2020, 2021 Nordic Semiconductor ASA
-# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
@@ -333,7 +333,7 @@ endchoice
 
 config TFM_ETHOS_DRIVER_PATH_LOCAL
 	string "Path to a locally available Ethos-U driver or an empty string"
-	depends on SOC_SERIES_MPS3
+	depends on SOC_SERIES_MPS3 || SOC_SERIES_MPS4
 	default "${ZEPHYR_HAL_ETHOS_U_MODULE_DIR}"
 	help
 	  Path to a locally available Ethos-U driver to be used for TF-M builds or

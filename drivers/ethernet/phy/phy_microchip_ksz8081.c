@@ -23,6 +23,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include "phy_mii.h"
+
 #define PHY_MC_KSZ8081_OMSO_REG			0x16
 #define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK	BIT(15)
 #define PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK	BIT(5)
@@ -332,14 +334,18 @@ done:
 	return ret;
 }
 
-static int phy_mc_ksz8081_cfg_link(const struct device *dev,
-					enum phy_link_speed speeds)
+static int phy_mc_ksz8081_cfg_link(const struct device *dev, enum phy_link_speed speeds,
+				   enum phy_cfg_link_flag flags)
 {
 	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
 	struct phy_link_state state = {};
 	int ret;
-	uint32_t anar;
+
+	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		return -ENOTSUP;
+	}
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
@@ -357,39 +363,9 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev,
 		goto done;
 	}
 
-	/* Read ANAR register to write back */
-	ret = phy_mc_ksz8081_read(dev, MII_ANAR, &anar);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
-		goto done;
-	}
-
-	/* Setup advertising register */
-	if (speeds & LINK_FULL_100BASE) {
-		anar |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_100_FULL;
-	}
-	if (speeds & LINK_HALF_100BASE) {
-		anar |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_100_HALF;
-	}
-	if (speeds & LINK_FULL_10BASE) {
-		anar |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_10_FULL;
-	}
-	if (speeds & LINK_HALF_10BASE) {
-		anar |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	/* Write capabilities to advertising register */
-	ret = phy_mc_ksz8081_write(dev, MII_ANAR, anar);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) advertising register", config->addr);
+	ret = phy_mii_set_anar_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
+		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 

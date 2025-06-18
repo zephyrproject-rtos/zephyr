@@ -38,14 +38,19 @@ config WIFI_NRF7000
 	bool
 	default y if DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED
 
+
+choice WIFI_USAGE_MODE
+	default WIFI_USAGE_MODE_SCAN_ONLY if WIFI_NRF7000
+endchoice
+
 config NRF70_QSPI_LOW_POWER
 	bool "low power mode in QSPI"
 	default y if NRF_WIFI_LOW_POWER
 
 choice NRF70_OPER_MODES
 	bool "nRF70 operating modes"
-	default NRF70_SYSTEM_MODE if !WIFI_NRF7000
-	default NRF70_SCAN_ONLY if WIFI_NRF7000
+	default NRF70_SYSTEM_MODE if !WIFI_USAGE_MODE_SCAN_ONLY
+	default NRF70_SCAN_ONLY
 	help
 	  Select the operating mode of the nRF70 driver
 
@@ -90,7 +95,7 @@ config NET_L2_ETHERNET
 if NRF70_SYSTEM_MODE
 config NRF70_STA_MODE
 	bool "nRF70 STA mode"
-	default y
+	default y if WIFI_USAGE_MODE_STA || WIFI_USAGE_MODE_STA_AP
 	depends on WIFI_NRF7002 || WIFI_NRF7001
 	select WIFI_NM_WPA_SUPPLICANT
 	select NRF70_DATA_TX
@@ -101,7 +106,7 @@ config NRF70_AP_MODE
 	depends on WIFI_NRF7002 || WIFI_NRF7001
 	select NRF70_DATA_TX
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
-	default y if WIFI_NM_WPA_SUPPLICANT_AP
+	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 
 config NRF70_P2P_MODE
 	bool "P2P support in driver"

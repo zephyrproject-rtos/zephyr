@@ -85,25 +85,25 @@ static inline void stats(struct net_if *iface)
 		}
 
 #if defined(CONFIG_NET_STATISTICS_IPV6)
-		NET_INFO("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
+		NET_INFO("IPv6 recv      %u\tsent\t%u\tdrop\t%u\tforwarded\t%u",
 			 GET_STAT(iface, ipv6.recv),
 			 GET_STAT(iface, ipv6.sent),
 			 GET_STAT(iface, ipv6.drop),
 			 GET_STAT(iface, ipv6.forwarded));
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
-		NET_INFO("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d",
+		NET_INFO("IPv6 ND recv   %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, ipv6_nd.recv),
 			 GET_STAT(iface, ipv6_nd.sent),
 			 GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
 #if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
-		NET_INFO("IPv6 PMTU recv %d\tsent\t%d\tdrop\t%d",
+		NET_INFO("IPv6 PMTU recv %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, ipv6_pmtu.recv),
 			 GET_STAT(iface, ipv6_pmtu.sent),
 			 GET_STAT(iface, ipv6_pmtu.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
 #if defined(CONFIG_NET_STATISTICS_MLD)
-		NET_INFO("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d",
+		NET_INFO("IPv6 MLD recv  %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, ipv6_mld.recv),
 			 GET_STAT(iface, ipv6_mld.sent),
 			 GET_STAT(iface, ipv6_mld.drop));
@@ -111,70 +111,70 @@ static inline void stats(struct net_if *iface)
 #endif /* CONFIG_NET_STATISTICS_IPV6 */
 
 #if defined(CONFIG_NET_STATISTICS_IPV4)
-		NET_INFO("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
+		NET_INFO("IPv4 recv      %u\tsent\t%u\tdrop\t%u\tforwarded\t%u",
 			 GET_STAT(iface, ipv4.recv),
 			 GET_STAT(iface, ipv4.sent),
 			 GET_STAT(iface, ipv4.drop),
 			 GET_STAT(iface, ipv4.forwarded));
 #endif /* CONFIG_NET_STATISTICS_IPV4 */
 
-		NET_INFO("IP vhlerr      %d\thblener\t%d\tlblener\t%d",
+		NET_INFO("IP vhlerr      %u\thblener\t%u\tlblener\t%u",
 			 GET_STAT(iface, ip_errors.vhlerr),
 			 GET_STAT(iface, ip_errors.hblenerr),
 			 GET_STAT(iface, ip_errors.lblenerr));
-		NET_INFO("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d",
+		NET_INFO("IP fragerr     %u\tchkerr\t%u\tprotoer\t%u",
 			 GET_STAT(iface, ip_errors.fragerr),
 			 GET_STAT(iface, ip_errors.chkerr),
 			 GET_STAT(iface, ip_errors.protoerr));
 
 #if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
-		NET_INFO("IPv4 PMTU recv %d\tsent\t%d\tdrop\t%d",
+		NET_INFO("IPv4 PMTU recv %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, ipv4_pmtu.recv),
 			 GET_STAT(iface, ipv4_pmtu.sent),
 			 GET_STAT(iface, ipv4_pmtu.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
 
-		NET_INFO("ICMP recv      %d\tsent\t%d\tdrop\t%d",
+		NET_INFO("ICMP recv      %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, icmp.recv),
 			 GET_STAT(iface, icmp.sent),
 			 GET_STAT(iface, icmp.drop));
-		NET_INFO("ICMP typeer    %d\tchkerr\t%d",
+		NET_INFO("ICMP typeer    %u\tchkerr\t%u",
 			 GET_STAT(iface, icmp.typeerr),
 			 GET_STAT(iface, icmp.chkerr));
 
 #if defined(CONFIG_NET_STATISTICS_UDP)
-		NET_INFO("UDP recv       %d\tsent\t%d\tdrop\t%d",
+		NET_INFO("UDP recv       %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, udp.recv),
 			 GET_STAT(iface, udp.sent),
 			 GET_STAT(iface, udp.drop));
-		NET_INFO("UDP chkerr     %d",
+		NET_INFO("UDP chkerr     %u",
 			 GET_STAT(iface, udp.chkerr));
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
-		NET_INFO("TCP bytes recv %u\tsent\t%d",
+		NET_INFO("TCP bytes recv %llu\tsent\t%llu",
 			 GET_STAT(iface, tcp.bytes.received),
 			 GET_STAT(iface, tcp.bytes.sent));
-		NET_INFO("TCP seg recv   %d\tsent\t%d\tdrop\t%d",
+		NET_INFO("TCP seg recv   %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, tcp.recv),
 			 GET_STAT(iface, tcp.sent),
 			 GET_STAT(iface, tcp.drop));
-		NET_INFO("TCP seg resent %d\tchkerr\t%d\tackerr\t%d",
+		NET_INFO("TCP seg resent %u\tchkerr\t%u\tackerr\t%u",
 			 GET_STAT(iface, tcp.resent),
 			 GET_STAT(iface, tcp.chkerr),
 			 GET_STAT(iface, tcp.ackerr));
-		NET_INFO("TCP seg rsterr %d\trst\t%d\tre-xmit\t%d",
+		NET_INFO("TCP seg rsterr %u\trst\t%u\tre-xmit\t%u",
 			 GET_STAT(iface, tcp.rsterr),
 			 GET_STAT(iface, tcp.rst),
 			 GET_STAT(iface, tcp.rexmit));
-		NET_INFO("TCP conn drop  %d\tconnrst\t%d",
+		NET_INFO("TCP conn drop  %u\tconnrst\t%u",
 			 GET_STAT(iface, tcp.conndrop),
 			 GET_STAT(iface, tcp.connrst));
 #endif
 
-		NET_INFO("Bytes received %u", GET_STAT(iface, bytes.received));
-		NET_INFO("Bytes sent     %u", GET_STAT(iface, bytes.sent));
-		NET_INFO("Processing err %d",
+		NET_INFO("Bytes received %llu", GET_STAT(iface, bytes.received));
+		NET_INFO("Bytes sent     %llu", GET_STAT(iface, bytes.sent));
+		NET_INFO("Processing err %u",
 			 GET_STAT(iface, processing_error));
 
 #if NET_TC_COUNT > 1
@@ -183,7 +183,7 @@ static inline void stats(struct net_if *iface)
 		NET_INFO("TC  Priority\tSent pkts\tbytes");
 
 		for (i = 0; i < NET_TC_TX_COUNT; i++) {
-			NET_INFO("[%d] %s (%d)\t%d\t\t%d", i,
+			NET_INFO("[%d] %s (%u)\t%u\t\t%llu", i,
 				 priority2str(GET_STAT(iface,
 						       tc.sent[i].priority)),
 				 GET_STAT(iface, tc.sent[i].priority),
@@ -197,7 +197,7 @@ static inline void stats(struct net_if *iface)
 		NET_INFO("TC  Priority\tRecv pkts\tbytes");
 
 		for (i = 0; i < NET_TC_RX_COUNT; i++) {
-			NET_INFO("[%d] %s (%d)\t%d\t\t%d", i,
+			NET_INFO("[%d] %s (%u)\t%u\t\t%llu", i,
 				 priority2str(GET_STAT(iface,
 						       tc.recv[i].priority)),
 				 GET_STAT(iface, tc.recv[i].priority),
@@ -213,7 +213,7 @@ static inline void stats(struct net_if *iface)
 		NET_INFO("Power management statistics:");
 		NET_INFO("Last suspend time: %u ms",
 			 GET_STAT(iface, pm.last_suspend_time));
-		NET_INFO("Got suspended %d times",
+		NET_INFO("Got suspended %u times",
 			 GET_STAT(iface, pm.suspend_count));
 		NET_INFO("Average suspend time: %u ms",
 			 (uint32_t)(GET_STAT(iface, pm.overall_suspend_time) /
