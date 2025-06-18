@@ -173,27 +173,11 @@ static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
 	return ret;
 }
 
-static void mdio_adin2111_bus_enable(const struct device *dev)
-{
-	const struct mdio_adin2111_config *const cfg = dev->config;
-
-	eth_adin2111_lock(cfg->adin, K_FOREVER);
-}
-
-static void mdio_adin2111_bus_disable(const struct device *dev)
-{
-	const struct mdio_adin2111_config *const cfg = dev->config;
-
-	eth_adin2111_unlock(cfg->adin);
-}
-
 static DEVICE_API(mdio, mdio_adin2111_api) = {
 	.read = mdio_adin2111_read,
 	.write = mdio_adin2111_write,
 	.read_c45 = mdio_adin2111_read_c45,
 	.write_c45 = mdio_adin2111_write_c45,
-	.bus_enable = mdio_adin2111_bus_enable,
-	.bus_disable = mdio_adin2111_bus_disable
 };
 
 #define ADIN2111_MDIO_INIT(n)							\
