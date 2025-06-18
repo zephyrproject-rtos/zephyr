@@ -41,9 +41,11 @@
 #define ADSP_DW_SLOT_SIZE		ADSP_DW_PAGE_SIZE
 #define ADSP_DW_SLOT_COUNT		15
 
-/* debug window slots usage */
-#define ADSP_DW_SLOT_NUM_TRACE		1
+/* debug window slots usage, mutually exclusive options can reuse slots */
 #define ADSP_DW_SLOT_NUM_SHELL		0
+#define ADSP_DW_SLOT_NUM_MTRACE		0
+#define ADSP_DW_SLOT_NUM_TRACE		1
+#define ADSP_DW_SLOT_NUM_TELEMETRY	1
 
 /* debug log slot types */
 #define ADSP_DW_SLOT_UNUSED		0x00000000
