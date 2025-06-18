@@ -970,20 +970,20 @@ flash_flexspi_nor_is25_clear_dummy_cycles(struct flash_flexspi_nor_data *data,
 	};
 
 	/*
-	 * Get Extended Read Parameters (Non-Volatile) command (RDERP, 81h)
+	 * Read AutoBoot Register command (RDABR, 14h)
 	 *
 	 * This is done to distinguish between an IS25LPXXX and IS25LPXXXD since
 	 * the former uses the read parameters (SRPV) to set drive strength and
 	 * dummy cycles, while IS25LPXXXD uses extended read parameters (SERPV)
 	 * for drive strength and read parameters (SRPV) for dummy cycles.
 	 */
-	uint32_t resp_data;
+	uint32_t resp_data = 0;
 
 	transfer.data = &resp_data;
 	transfer.cmdType = kFLEXSPI_Read;
 
 	flexspi_lut[SCRATCH_CMD][0] =
-		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x81,
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x14,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
 	ret = memc_flexspi_set_device_config(&data->controller, &config, (uint32_t *)flexspi_lut,
 					     FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
@@ -996,12 +996,12 @@ flash_flexspi_nor_is25_clear_dummy_cycles(struct flash_flexspi_nor_data *data,
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
 
 	/*
-	 * Check that EB[7:4] is not all zero and that EB[0] (WIP)
-	 * is not 1, which should catch a chip responding to an
-	 * unsupported 81h command with either 0x00 or 0xFF
+	 * IS25LPXXX -> 0xff
+	 * IS25WPXXX -> 0
+	 * IS25LPXXXD -> 0
+	 * IS25WPXXXD -> 0
 	 */
-	const int has_extended_read_reg = resp_data & 0xF0 && !(resp_data & 0x01);
-	uint32_t read_params = has_extended_read_reg ? 0 : 0xE0U;
+	uint32_t read_params = resp_data == 0xff ? 0xE0U : 0;
 
 	/* Switch over to writing read_params (SRPV, C0h) */
 	transfer.cmdType = kFLEXSPI_Write;
