@@ -68,6 +68,13 @@ Networking
 
 .. zephyr-keep-sorted-stop
 
+Display
+*******
+
+* The RGB565 and BGR565 pixel formats were used interchangeably in the display sample.
+  This has now been fixed. Boards and applications that were tested or developed based on the
+  previous sample may be affected by this change (see :github:`79996` for more information).
+
 Other subsystems
 ****************
 
