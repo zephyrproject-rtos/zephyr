@@ -9,6 +9,8 @@ zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
 
+zephyr_linker_sources_ifdef(CONFIG_BOOTLOADER_MCUBOOT SECTIONS ram_check.ld)
+
 if(NOT CONFIG_BOOTLOADER_MCUBOOT)
 
   if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)

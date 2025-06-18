@@ -8,11 +8,13 @@
 
 / {
 	axisram1: memory@34000000 {
-		/* 400 kB of FLEXRAM followed by 624 kB of AXISRAM1 */
-		reg = <0x34000000 (DT_SIZE_K(400) + DT_SIZE_K(624))>;
+		/* This section is the RAM available to the chainloaded application */
+		/* 400 kB of FLEXRAM followed by 624 kB of AXISRAM1 + AXISRAM2 */
+		reg = <0x34000000 (DT_SIZE_K(400) + DT_SIZE_K(624) + DT_SIZE_M(1))>;
 	};
 
 	axisram2: memory@34180400 {
+		/* This section is the RAM available to FSBL application */
 		reg = <0x34180400 DT_SIZE_K(511)>;
 	};
 };
