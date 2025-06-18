@@ -1613,7 +1613,7 @@ class ImageSize(ComplianceTest):
 
         for file in get_files(filter="d"):
             full_path = GIT_TOP / file
-            mime_type = magic.from_file(full_path, mime=True)
+            mime_type = magic.from_file(os.fspath(full_path), mime=True)
 
             if not mime_type.startswith("image/"):
                 continue
@@ -1797,7 +1797,7 @@ class KeepSorted(ComplianceTest):
         return -1
 
     def check_file(self, file, fp):
-        mime_type = magic.from_file(file, mime=True)
+        mime_type = magic.from_file(os.fspath(file), mime=True)
 
         if not mime_type.startswith("text/"):
             return
@@ -1969,7 +1969,7 @@ class TextEncoding(ComplianceTest):
 
         for file in get_files(filter="d"):
             full_path = GIT_TOP / file
-            mime_type = m.from_file(full_path)
+            mime_type = m.from_file(os.fspath(full_path))
 
             if not mime_type.startswith("text/"):
                 continue
