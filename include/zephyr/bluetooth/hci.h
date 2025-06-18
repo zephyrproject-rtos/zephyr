@@ -63,6 +63,20 @@ static inline const char *bt_hci_err_to_str(uint8_t hci_err)
   */
 struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 
+/** Allocate an HCI command buffer.
+ *
+ * This function allocates a new buffer for an HCI command. Upon successful
+ * return the buffer is ready to have the command parameters encoded into it.
+ * Sufficient headroom gets automatically reserved in the buffer, allowing
+ * the actual command and H:4 headers to be encoded later, as part of
+ * calling bt_hci_cmd_send() or bt_hci_cmd_send_sync().
+ *
+ * @param timeout Timeout for the allocation.
+ *
+ * @return Newly allocated buffer or NULL if allocation failed.
+ */
+struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
+
 /** Send a HCI command asynchronously.
   *
   * This function is used for sending a HCI command asynchronously. It can
