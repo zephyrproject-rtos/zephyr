@@ -54,32 +54,41 @@
 #define MII_ESTAT      0xf
 
 /* Basic Mode Control Register (BMCR) bit definitions */
+#define MII_BMCR_RESET_BIT           15
+#define MII_BMCR_LOOPBACK_BIT        14
+#define MII_BMCR_SPEED_LSB_BIT       13
+#define MII_BMCR_AUTONEG_ENABLE_BIT  12
+#define MII_BMCR_POWER_DOWN_BIT      11
+#define MII_BMCR_ISOLATE_BIT         10
+#define MII_BMCR_AUTONEG_RESTART_BIT 9
+#define MII_BMCR_DUPLEX_MODE_BIT     8
+#define MII_BMCR_SPEED_MSB_BIT       6
 /** PHY reset */
-#define MII_BMCR_RESET             BIT(15)
+#define MII_BMCR_RESET               BIT(MII_BMCR_RESET_BIT)
 /** enable loopback mode */
-#define MII_BMCR_LOOPBACK          BIT(14)
+#define MII_BMCR_LOOPBACK            BIT(MII_BMCR_LOOPBACK_BIT)
 /** 10=1000Mbps 01=100Mbps; 00=10Mbps */
-#define MII_BMCR_SPEED_LSB         BIT(13)
+#define MII_BMCR_SPEED_LSB           BIT(MII_BMCR_SPEED_LSB_BIT)
 /** Auto-Negotiation enable */
-#define MII_BMCR_AUTONEG_ENABLE    BIT(12)
+#define MII_BMCR_AUTONEG_ENABLE      BIT(MII_BMCR_AUTONEG_ENABLE_BIT)
 /** power down mode */
-#define MII_BMCR_POWER_DOWN        BIT(11)
+#define MII_BMCR_POWER_DOWN          BIT(MII_BMCR_POWER_DOWN_BIT)
 /** isolate electrically PHY from MII */
-#define MII_BMCR_ISOLATE           BIT(10)
+#define MII_BMCR_ISOLATE             BIT(MII_BMCR_ISOLATE_BIT)
 /** restart auto-negotiation */
-#define MII_BMCR_AUTONEG_RESTART   BIT(9)
+#define MII_BMCR_AUTONEG_RESTART     BIT(MII_BMCR_AUTONEG_RESTART_BIT)
 /** full duplex mode */
-#define MII_BMCR_DUPLEX_MODE       BIT(8)
+#define MII_BMCR_DUPLEX_MODE         BIT(MII_BMCR_DUPLEX_MODE_BIT)
 /** 10=1000Mbps 01=100Mbps; 00=10Mbps */
-#define MII_BMCR_SPEED_MSB         BIT(6)
+#define MII_BMCR_SPEED_MSB           BIT(MII_BMCR_SPEED_MSB_BIT)
 /** Link Speed Field */
-#define   MII_BMCR_SPEED_MASK      (BIT(6) | BIT(13))
+#define MII_BMCR_SPEED_MASK          (MII_BMCR_SPEED_MSB | MII_BMCR_SPEED_LSB)
 /** select speed 10 Mb/s */
-#define   MII_BMCR_SPEED_10        0
+#define MII_BMCR_SPEED_10            0
 /** select speed 100 Mb/s */
-#define   MII_BMCR_SPEED_100       BIT(13)
+#define MII_BMCR_SPEED_100           BIT(MII_BMCR_SPEED_LSB_BIT)
 /** select speed 1000 Mb/s */
-#define   MII_BMCR_SPEED_1000      BIT(6)
+#define MII_BMCR_SPEED_1000          BIT(MII_BMCR_SPEED_MSB_BIT)
 
 /* Basic Mode Status Register (BMSR) bit definitions */
 /** 100BASE-T4 capable */
@@ -115,36 +124,48 @@
 
 /* Auto-negotiation Advertisement Register (ANAR) bit definitions */
 /* Auto-negotiation Link Partner Ability Register (ANLPAR) bit definitions */
+#define MII_ADVERTISE_NEXT_PAGE_BIT    15
+#define MII_ADVERTISE_LPACK_BIT        14
+#define MII_ADVERTISE_REMOTE_FAULT_BIT 13
+#define MII_ADVERTISE_ASYM_PAUSE_BIT   11
+#define MII_ADVERTISE_PAUSE_BIT        10
+#define MII_ADVERTISE_100BASE_T4_BIT   9
+#define MII_ADVERTISE_100_FULL_BIT     8
+#define MII_ADVERTISE_100_HALF_BIT     7
+#define MII_ADVERTISE_10_FULL_BIT      6
+#define MII_ADVERTISE_10_HALF_BIT      5
 /** next page */
-#define MII_ADVERTISE_NEXT_PAGE    BIT(15)
+#define MII_ADVERTISE_NEXT_PAGE        BIT(MII_ADVERTISE_NEXT_PAGE_BIT)
 /** link partner acknowledge response */
-#define MII_ADVERTISE_LPACK        BIT(14)
+#define MII_ADVERTISE_LPACK            BIT(MII_ADVERTISE_LPACK_BIT)
 /** remote fault */
-#define MII_ADVERTISE_REMOTE_FAULT BIT(13)
+#define MII_ADVERTISE_REMOTE_FAULT     BIT(MII_ADVERTISE_REMOTE_FAULT_BIT)
 /** try for asymmetric pause */
-#define MII_ADVERTISE_ASYM_PAUSE   BIT(11)
+#define MII_ADVERTISE_ASYM_PAUSE       BIT(MII_ADVERTISE_ASYM_PAUSE_BIT)
 /** try for pause */
-#define MII_ADVERTISE_PAUSE        BIT(10)
+#define MII_ADVERTISE_PAUSE            BIT(MII_ADVERTISE_PAUSE_BIT)
 /** try for 100BASE-T4 support */
-#define MII_ADVERTISE_100BASE_T4   BIT(9)
+#define MII_ADVERTISE_100BASE_T4       BIT(MII_ADVERTISE_100BASE_T4_BIT)
 /** try for 100BASE-X full duplex support */
-#define MII_ADVERTISE_100_FULL     BIT(8)
+#define MII_ADVERTISE_100_FULL         BIT(MII_ADVERTISE_100_FULL_BIT)
 /** try for 100BASE-X support */
-#define MII_ADVERTISE_100_HALF     BIT(7)
+#define MII_ADVERTISE_100_HALF         BIT(MII_ADVERTISE_100_HALF_BIT)
 /** try for 10 Mb/s full duplex support */
-#define MII_ADVERTISE_10_FULL      BIT(6)
+#define MII_ADVERTISE_10_FULL          BIT(MII_ADVERTISE_10_FULL_BIT)
 /** try for 10 Mb/s half duplex support */
-#define MII_ADVERTISE_10_HALF      BIT(5)
+#define MII_ADVERTISE_10_HALF          BIT(MII_ADVERTISE_10_HALF_BIT)
 /** Selector Field Mask */
-#define MII_ADVERTISE_SEL_MASK     (0x1F << 0)
+#define MII_ADVERTISE_SEL_MASK         (0x1F << 0)
 /** Selector Field */
 #define MII_ADVERTISE_SEL_IEEE_802_3   0x01
 
 /* 1000BASE-T Control Register bit definitions */
+#define MII_ADVERTISE_1000_FULL_BIT 9
+#define MII_ADVERTISE_1000_HALF_BIT 8
 /** try for 1000BASE-T full duplex support */
-#define MII_ADVERTISE_1000_FULL    BIT(9)
+#define MII_ADVERTISE_1000_FULL     BIT(MII_ADVERTISE_1000_FULL_BIT)
 /** try for 1000BASE-T half duplex support */
-#define MII_ADVERTISE_1000_HALF    BIT(8)
+#define MII_ADVERTISE_1000_HALF     BIT(MII_ADVERTISE_1000_HALF_BIT)
 
 /** Advertise all speeds */
 #define MII_ADVERTISE_ALL (MII_ADVERTISE_10_HALF | MII_ADVERTISE_10_FULL |\

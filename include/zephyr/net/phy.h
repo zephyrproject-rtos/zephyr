@@ -24,6 +24,7 @@
  */
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util_macro.h>
 #include <errno.h>
 
 #ifdef __cplusplus
@@ -94,6 +95,12 @@ struct phy_link_state {
 	enum phy_link_speed speed;
 	/** When true the link is active and connected */
 	bool is_up;
+};
+
+/** @brief Ethernet configure link flags. */
+enum phy_cfg_link_flag {
+	/** Auto-negotiation disable */
+	PHY_FLAG_AUTO_NEGOTIATION_DISABLED = BIT(0),
 };
 
 /** @brief PLCA (Physical Layer Collision Avoidance) Reconciliation Sublayer configurations */
@@ -176,7 +183,8 @@ __subsystem struct ethphy_driver_api {
 	int (*get_link)(const struct device *dev, struct phy_link_state *state);
 
 	/** Configure link */
-	int (*cfg_link)(const struct device *dev, enum phy_link_speed adv_speeds);
+	int (*cfg_link)(const struct device *dev, enum phy_link_speed adv_speeds,
+			enum phy_cfg_link_flag flags);
 
 	/** Set callback to be invoked when link state changes. Driver has to invoke
 	 * callback once after setting it, even if link state has not changed.
@@ -215,12 +223,15 @@ __subsystem struct ethphy_driver_api {
  *
  * @param[in]  dev     PHY device structure
  * @param      speeds  OR'd link speeds to be advertised by the PHY
+ * @param      flags   OR'd flags to control the link configuration or 0.
  *
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  * @retval -ENOTSUP If not supported.
+ * @retval -EALREADY If already configured with the same speeds and flags.
  */
-static inline int phy_configure_link(const struct device *dev, enum phy_link_speed speeds)
+static inline int phy_configure_link(const struct device *dev, enum phy_link_speed speeds,
+				     enum phy_cfg_link_flag flags)
 {
 	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
 
@@ -228,7 +239,12 @@ static inline int phy_configure_link(const struct device *dev, enum phy_link_spe
 		return -ENOSYS;
 	}
 
-	return api->cfg_link(dev, speeds);
+	/* Check if only one speed is set, when auto-negotiation is disabled */
+	if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) && !IS_POWER_OF_TWO(speeds)) {
+		return -EINVAL;
+	}
+
+	return api->cfg_link(dev, speeds, flags);
 }
 
 /**

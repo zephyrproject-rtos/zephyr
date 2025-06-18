@@ -111,6 +111,13 @@ Deprecated APIs and options
   was deprecated since Zephyr 4.0, and users were advised to migrate to alternative
   crypto backends.
 
+Stable API changes in this release
+==================================
+
+* The API signature of ``net_mgmt`` event handler :c:type:`net_mgmt_event_handler_t`
+  and request handler :c:type:`net_mgmt_request_handler_t` has changed. The event value
+  type is changed from ``uint32_t`` to ``uint64_t``.
+
 New APIs and options
 ====================
 
@@ -132,6 +139,7 @@ New APIs and options
  * :c:func:`timespec_normalize`
  * :c:func:`timespec_from_timeout`
  * :c:func:`timespec_to_timeout`
+ * :c:func:`k_heap_array_get`
 
 * I2C
 

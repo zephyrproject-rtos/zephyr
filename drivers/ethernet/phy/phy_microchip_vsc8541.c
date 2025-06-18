@@ -400,16 +400,6 @@ static int phy_mc_vsc8541_get_link(const struct device *dev, struct phy_link_sta
 }
 
 /**
- * @brief Reconfigure the link speed; currently unused
- *
- */
-static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed speeds)
-{
-	/* the initial version does not support reconfiguration */
-	return -ENOTSUP;
-}
-
-/**
  * @brief Set callback which is used to announce link status changes
  *
  * @param dev device structure to phy device
@@ -542,7 +532,6 @@ static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uin
 
 static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 	.get_link = phy_mc_vsc8541_get_link,
-	.cfg_link = phy_mc_vsc8541_cfg_link,
 	.link_cb_set = phy_mc_vsc8541_link_cb_set,
 	.read = phy_mc_vsc8541_read,
 	.write = phy_mc_vsc8541_write,

@@ -20,6 +20,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
+#include "phy_mii.h"
+
 #define PHY_TI_DP83867_PHYSTS                 0x11
 #define PHY_TI_DP83867_PHYSTS_LINKSTATUS_MASK BIT(10)
 #define PHY_TI_DP83867_PHYSTS_LINKDUPLEX_MASK BIT(13)
@@ -39,9 +41,35 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define PHY_TI_DP83867_CFG3                    0x001e
 #define PHY_TI_DP83867_INT_EN                  BIT(7)
 
+#define DP83867_RGMIICTL1			0x32
+#define DP83867_RGMIIDCTL			0x86
+
+#define DP83867_RGMII_TX_CLK_DELAY_EN		BIT(1)
+#define DP83867_RGMII_RX_CLK_DELAY_EN		BIT(0)
+
+#define DP83867_RGMII_TX_CLK_DELAY_MAX		0xf
+#define DP83867_RGMII_TX_CLK_DELAY_SHIFT	4
+#define DP83867_RGMII_TX_CLK_DELAY_INV		(DP83867_RGMII_TX_CLK_DELAY_MAX + 1)
+
+#define DP83867_RGMII_RX_CLK_DELAY_MAX		0xf
+#define DP83867_RGMII_RX_CLK_DELAY_SHIFT	0
+#define DP83867_RGMII_RX_CLK_DELAY_INV		(DP83867_RGMII_RX_CLK_DELAY_MAX + 1)
+
+#define DP83867_RGMIIDCTL_DELAY_MASK		GENMASK(7, 0)
+
+enum dp83826_interface {
+	DP83826_RGMII,
+	DP83826_RGMII_ID,
+	DP83826_RGMII_RX_ID,
+	DP83826_RGMII_TX_ID
+};
+
 struct ti_dp83867_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
+	uint32_t ti_rx_internal_delay;
+	uint32_t ti_tx_internal_delay;
+	enum dp83826_interface phy_iface;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -278,12 +306,18 @@ done:
 	return ret;
 }
 
-static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed speeds)
+static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed speeds,
+				   enum phy_cfg_link_flag flags)
 {
 	const struct ti_dp83867_config *config = dev->config;
 	struct ti_dp83867_data *data = dev->data;
 	int ret;
-	uint32_t anar, cfg1, val;
+	uint32_t val;
+
+	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		return -ENOTSUP;
+	}
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
@@ -330,60 +364,15 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 	k_work_cancel_delayable(&data->phy_monitor_work);
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
-	/* Read ANAR register to write back */
-	ret = phy_ti_dp83867_read(dev, MII_ANAR, &anar);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
+	ret = phy_mii_set_anar_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
+		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 
-	/* Read CFG1 register to write back */
-	ret = phy_ti_dp83867_read(dev, MII_1KTCR, &cfg1);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) 1000Base-T control register", config->addr);
-		goto done;
-	}
-
-	/* Setup advertising register */
-	if (speeds & LINK_FULL_100BASE) {
-		anar |= MII_ADVERTISE_100_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_100_FULL;
-	}
-	if (speeds & LINK_HALF_100BASE) {
-		anar |= MII_ADVERTISE_100_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_100_HALF;
-	}
-	if (speeds & LINK_FULL_10BASE) {
-		anar |= MII_ADVERTISE_10_FULL;
-	} else {
-		anar &= ~MII_ADVERTISE_10_FULL;
-	}
-	if (speeds & LINK_HALF_10BASE) {
-		anar |= MII_ADVERTISE_10_HALF;
-	} else {
-		anar &= ~MII_ADVERTISE_10_HALF;
-	}
-
-	/* Setup 1000Base-T control register */
-	if (speeds & LINK_FULL_1000BASE) {
-		cfg1 |= MII_ADVERTISE_1000_FULL;
-	} else {
-		cfg1 &= ~MII_ADVERTISE_1000_FULL;
-	}
-
-	/* Write capabilities to advertising register */
-	ret = phy_ti_dp83867_write(dev, MII_ANAR, anar);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) advertising register", config->addr);
-		goto done;
-	}
-
-	/* Write capabilities to 1000Base-T control register */
-	ret = phy_ti_dp83867_write(dev, MII_1KTCR, cfg1);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) 1000Base-T control register", config->addr);
+	ret = phy_mii_set_c1kt_reg(dev, speeds);
+	if ((ret < 0) && (ret != -EALREADY)) {
+		LOG_ERR("Error setting C1KT register for phy (%d)", config->addr);
 		goto done;
 	}
 
@@ -466,6 +455,7 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	const struct ti_dp83867_config *config = dev->config;
 	struct ti_dp83867_data *data = dev->data;
 	int ret;
+	uint32_t rgmii_ctl_val = 0, rgmii_dctl_val = 0;
 
 	data->dev = dev;
 
@@ -489,6 +479,71 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	ret = phy_ti_dp83867_reset(dev);
 	if (ret) {
 		LOG_ERR("Failed to reset phy (%d)", config->addr);
+		return ret;
+	}
+
+	/* Read the RGMIICTL1 register to configure internal delay enable bits*/
+	ret = phy_ti_dp83867_read(dev, DP83867_RGMIICTL1, &rgmii_ctl_val);
+	if (ret) {
+		LOG_ERR("Error reading DP83867_RGMIICTL1");
+		return ret;
+	}
+
+	/* Clear any existing delay enable bits*/
+	rgmii_ctl_val &= ~(DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
+
+	/* Set delay enable bits based on PHY interface mode from devicetree*/
+	switch (config->phy_iface) {
+	case DP83826_RGMII_ID:
+		rgmii_ctl_val |= (DP83867_RGMII_TX_CLK_DELAY_EN | DP83867_RGMII_RX_CLK_DELAY_EN);
+		break;
+
+	case DP83826_RGMII_RX_ID:
+		rgmii_ctl_val |= DP83867_RGMII_RX_CLK_DELAY_EN;
+		break;
+
+	case DP83826_RGMII_TX_ID:
+		rgmii_ctl_val |= DP83867_RGMII_TX_CLK_DELAY_EN;
+		break;
+
+	case DP83826_RGMII:
+	default:
+		break;
+	}
+
+	/* write updated delay enable configuration to PHY(DP83867_RGMIICTL1)*/
+	ret = phy_ti_dp83867_write(dev, DP83867_RGMIICTL1, rgmii_ctl_val);
+	if (ret) {
+		LOG_ERR("Failed to write DP83867_RGMIICTL1");
+		return ret;
+	}
+
+	/* Read RGMIIDCTL the delay value control register*/
+	ret = phy_ti_dp83867_read(dev, DP83867_RGMIIDCTL, &rgmii_dctl_val);
+	if (ret) {
+		LOG_ERR("Error reading DP83867_RGMIIDCTL");
+		return ret;
+	}
+
+	/* Clear existing delay values*/
+	rgmii_dctl_val &= ~DP83867_RGMIIDCTL_DELAY_MASK;
+
+	/* Set TX delay if specified*/
+	if (config->ti_tx_internal_delay != DP83867_RGMII_TX_CLK_DELAY_INV) {
+		rgmii_dctl_val |= ((config->ti_tx_internal_delay & 0xF) <<
+					DP83867_RGMII_TX_CLK_DELAY_SHIFT);
+	}
+
+	/* Set RX delay if specified */
+	if (config->ti_rx_internal_delay != DP83867_RGMII_RX_CLK_DELAY_INV) {
+		rgmii_dctl_val |= ((config->ti_rx_internal_delay & 0xF) <<
+					DP83867_RGMII_RX_CLK_DELAY_SHIFT);
+	}
+
+	/* Write final delay values to PHY(DP83867_RGMIIDCTL) */
+	ret = phy_ti_dp83867_write(dev, DP83867_RGMIIDCTL, rgmii_dctl_val);
+	if (ret) {
+		LOG_ERR("Error writing DP83867_RGMIIDCTL");
 		return ret;
 	}
 
@@ -547,6 +602,11 @@ static DEVICE_API(ethphy, ti_dp83867_phy_api) = {
 	static const struct ti_dp83867_config ti_dp83867_##n##_config = {                          \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		.ti_rx_internal_delay = DT_INST_PROP_OR(n, ti_rx_internal_delay,                   \
+							 DP83867_RGMII_TX_CLK_DELAY_INV),          \
+		.ti_tx_internal_delay = DT_INST_PROP_OR(n, ti_tx_internal_delay,                   \
+							 DP83867_RGMII_RX_CLK_DELAY_INV),          \
+		.phy_iface = DT_INST_ENUM_IDX(n, ti_interface_type),                               \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct ti_dp83867_data ti_dp83867_##n##_data;                                       \

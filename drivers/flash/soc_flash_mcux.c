@@ -115,7 +115,7 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 
 	return 0;
 }
-#endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_LPC55S36 */
+#endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_SERIES_LPC55XXX */
 
 #define SOC_FLASH_NEED_CLEAR_CACHES 1
 #ifdef CONFIG_SOC_SERIES_MCXW

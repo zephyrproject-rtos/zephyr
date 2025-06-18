@@ -10,8 +10,6 @@
  */
 /delete-node/ &slot0_partition;
 /delete-node/ &slot1_partition;
-/delete-node/ &slot0_ns_partition;
-/delete-node/ &slot1_ns_partition;
 /delete-node/ &storage_partition;
 
 &cpuapp_rram {
@@ -23,6 +21,7 @@
 		slot0_partition: parition@10000 {
 			reg = <0x00010000 DT_SIZE_K(300)>;
 		};
+
 		slot1_partition: partition@5b000 {
 			reg = <0x0005b000 DT_SIZE_K(300)>;
 		};

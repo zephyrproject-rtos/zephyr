@@ -31,6 +31,23 @@ config NET_DHCPV6_OPTION_DNS_ADDRESS
 	  option from the server, and if available, use obtained information
 	  to configure DNS resolver.
 
+config NET_DHCPV6_DNS_SERVER_VIA_INTERFACE
+	bool "Make DNS servers specific to the network interface"
+	depends on NET_DHCPV6_OPTION_DNS_ADDRESS
+	default y
+	help
+	  If this is set, then if the system has multiple network interfaces
+	  and each has DHCP enabled, then assign DNS servers received from that
+	  network interface, to that specific interface.
+	  If this option is not set, then any interface can be used for all
+	  the configured DNS server addresses when doing DNS queries.
+	  Example: We receive DNS server 2001:db8::1:53 DHCPv6 option from Wi-Fi
+	  interface and DNS server 2001:db8::2:53 from Ethernet interface.
+	  When this option is set, the DNS resolver will use DNS server
+	  2001:db8::1:53 when sending DNS query to the Wi-Fi interface and DNS
+	  server 2001:db8::2:53 when sending DNS query to the Ethernet
+	  interface.
+
 if NET_DHCPV6
 module = NET_DHCPV6
 module-dep = NET_LOG

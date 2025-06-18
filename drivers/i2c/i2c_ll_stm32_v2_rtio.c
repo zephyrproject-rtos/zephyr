@@ -37,6 +37,7 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 	LL_I2C_DisableIT_STOP(i2c);
 	LL_I2C_DisableIT_NACK(i2c);
 	LL_I2C_DisableIT_TC(i2c);
+	LL_I2C_DisableIT_ERR(i2c);
 }
 
 static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
@@ -101,22 +102,29 @@ void i2c_stm32_event(const struct device *dev)
 		LL_I2C_ClearFlag_STOP(i2c);
 		LL_I2C_DisableReloadMode(i2c);
 		i2c_stm32_master_mode_end(dev);
+
+		if (i2c_rtio_complete(ctx, ret)) {
+			i2c_stm32_start(dev);
+			return;
+		}
 	}
 
-	/* TODO handle the reload separately from complete */
-	/* Transfer Complete or Transfer Complete Reload */
 	if (LL_I2C_IsActiveFlag_TC(i2c) ||
 	    LL_I2C_IsActiveFlag_TCR(i2c)) {
+
 		/* Issue stop condition if necessary */
-		/* TODO look at current sqe flags */
 		if ((data->xfer_flags & I2C_MSG_STOP) != 0) {
-			LL_I2C_GenerateStopCondition(i2c);
+			if (data->xfer_len == 0) {
+				LL_I2C_GenerateStopCondition(i2c);
+			} else {
+				LL_I2C_SetTransferSize(i2c, MIN(data->xfer_len, UINT8_MAX));
+			}
 		} else {
 			i2c_stm32_disable_transfer_interrupts(dev);
-		}
 
-		if ((data->xfer_len == 0) && i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
+			if ((data->xfer_len == 0) && i2c_rtio_complete(ctx, ret)) {
+				i2c_stm32_start(dev);
+			}
 		}
 	}
 }
@@ -162,12 +170,6 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 		transfer = LL_I2C_REQUEST_WRITE;
 	}
 
-	/* TODO deal with larger than 255 byte transfers correctly */
-	if (buf_len > UINT8_MAX) {
-		/* TODO LL_I2C_EnableReloadMode(i2c); */
-		return -EINVAL;
-	}
-
 	if ((I2C_MSG_ADDR_10_BITS & flags) != 0) {
 		LL_I2C_SetMasterAddressingMode(i2c,
 				LL_I2C_ADDRESSING_MODE_10BIT);
@@ -178,9 +180,15 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 		LL_I2C_SetSlaveAddr(i2c, (uint32_t) i2c_addr << 1);
 	}
 
+	if (buf_len > UINT8_MAX) {
+		LL_I2C_EnableReloadMode(i2c);
+	} else {
+		LL_I2C_DisableReloadMode(i2c);
+	}
+
 	LL_I2C_DisableAutoEndMode(i2c);
 	LL_I2C_SetTransferRequest(i2c, transfer);
-	LL_I2C_SetTransferSize(i2c, buf_len);
+	LL_I2C_SetTransferSize(i2c, MIN(buf_len, UINT8_MAX));
 
 	LL_I2C_Enable(i2c);
 

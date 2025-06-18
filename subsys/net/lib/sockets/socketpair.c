@@ -283,7 +283,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 	size_t i;
 	struct spair *obj[2] = {};
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, socketpair, family, type, proto, sv);
+	SYS_PORT_TRACING_FUNC_ENTER(socket, socketpair, family, type, proto, sv);
 
 	if (family != AF_UNIX) {
 		errno = EAFNOSUPPORT;
@@ -326,7 +326,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 		k_sem_give(&obj[0]->sem);
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, socketpair, sv[0], sv[1], 0);
+	SYS_PORT_TRACING_FUNC_EXIT(socket, socketpair, sv[0], sv[1], 0);
 
 	return 0;
 
@@ -336,7 +336,7 @@ cleanup:
 	}
 
 errout:
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, socketpair, -1, -1, -errno);
+	SYS_PORT_TRACING_FUNC_EXIT(socket, socketpair, -1, -1, -errno);
 
 	return res;
 }

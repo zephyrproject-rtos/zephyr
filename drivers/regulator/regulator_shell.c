@@ -541,73 +541,49 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_regulator_cmds,
-	SHELL_CMD_ARG(enable, &dsub_device_name,
-		      "Enable regulator\n"
-		      "Usage: enable <device>",
+	SHELL_CMD_ARG(enable, &dsub_device_name, SHELL_HELP("Enable the regulator", "<device>"),
 		      cmd_enable, 2, 0),
-	SHELL_CMD_ARG(disable, &dsub_device_name,
-		      "Disable regulator\n"
-		      "Usage: disable <device>",
+	SHELL_CMD_ARG(disable, &dsub_device_name, SHELL_HELP("Disable the regulator", "<device>"),
 		      cmd_disable, 2, 0),
-	SHELL_CMD_ARG(is_enabled, &dsub_device_name,
-		      "Report whether regulator is enabled or disabled\n"
-		      "Usage: is_enabled <device>",
+	SHELL_CMD_ARG(is_enabled, &dsub_device_name, SHELL_HELP("Get regulator status", "<device>"),
 		      cmd_is_enabled, 2, 0),
-	SHELL_CMD_ARG(vlist, &dsub_device_name,
-		      "List all supported voltages\n"
-		      "Usage: vlist <device>",
+	SHELL_CMD_ARG(vlist, &dsub_device_name, SHELL_HELP("List supported voltages", "<device>"),
 		      cmd_vlist, 2, 0),
 	SHELL_CMD_ARG(vset, &dsub_device_name,
-		      "Set voltage\n"
-		      "Input requires units, e.g. 200mv, 20.5mv, 10uv, 1v...\n"
-		      "Usage: vset <device> <minimum> [<maximum>]\n"
-		      "If maximum is not set, exact voltage will be requested",
+		      SHELL_HELP("Set voltage\n"
+				 "The input requires units, e.g. 200mv, 20.5mv, 10uv, 1v...",
+				 "<device> <minimum> [<maximum>]\n"
+				 "If maximum is not set, exact voltage will be requested"),
 		      cmd_vset, 3, 1),
-	SHELL_CMD_ARG(vget, &dsub_device_name,
-		      "Get voltage\n"
-		      "Usage: vget <device>",
-		      cmd_vget, 2, 0),
+	SHELL_CMD_ARG(vget, &dsub_device_name, SHELL_HELP("Get voltage", "<device>"), cmd_vget, 2,
+		      0),
 	SHELL_CMD_ARG(clist, &dsub_device_name,
-		      "List all supported current limits\n"
-		      "Usage: clist <device>",
-		      cmd_clist, 2, 0),
+		      SHELL_HELP("List supported current limits", "<device>"), cmd_clist, 2, 0),
 	SHELL_CMD_ARG(iset, &dsub_device_name,
-		      "Set current limit\n"
-		      "Input requires units, e.g. 200ma, 20.5ma, 10ua, 1a...\n"
-		      "Usage: iset <device> <minimum> [<maximum>]"
-		      "If maximum is not set, exact current will be requested",
+		      SHELL_HELP("Set current limit\n"
+				 "The input requires units, e.g. 200ma, 20.5ma, 10ua, 1a...",
+				 "<device> <minimum> [<maximum>]\n"
+				 "If maximum is not set, exact current will be requested"),
 		      cmd_iset, 3, 1),
-	SHELL_CMD_ARG(iget, &dsub_device_name,
-		      "Get current limit\n"
-		      "Usage: iget <device>",
+	SHELL_CMD_ARG(iget, &dsub_device_name, SHELL_HELP("Get current limit", "<device>"),
 		      cmd_iget, 2, 0),
 	SHELL_CMD_ARG(modeset, &dsub_device_name,
-		      "Set regulator mode\n"
-		      "Usage: modeset <device> <mode identifier>",
+		      SHELL_HELP("Set the mode of the regulator", "<device> <mode identifier>"),
 		      cmd_modeset, 3, 0),
 	SHELL_CMD_ARG(modeget, &dsub_device_name,
-		      "Get regulator mode\n"
-		      "Usage: modeget <device>",
-		      cmd_modeget, 2, 0),
+		      SHELL_HELP("Get the mode of the regulator", "<device>"), cmd_modeget, 2, 0),
 	SHELL_CMD_ARG(adset, NULL,
-		      "Set active discharge\n"
-		      "Usage: adset <device> <enable/disable>",
+		      SHELL_HELP("Set active discharge status", "<device> <enable|disable>"),
 		      cmd_adset, 3, 0),
-	SHELL_CMD_ARG(adget, NULL,
-		      "Get active discharge\n"
-		      "Usage: adget <device>",
-		      cmd_adget, 2, 0),
-	SHELL_CMD_ARG(errors, &dsub_device_name,
-		      "Get errors\n"
-		      "Usage: errors <device>",
+	SHELL_CMD_ARG(adget, NULL, SHELL_HELP("Get active discharge status", "<device>"), cmd_adget,
+		      2, 0),
+	SHELL_CMD_ARG(errors, &dsub_device_name, SHELL_HELP("Get active errors", "<device>"),
 		      cmd_errors, 2, 0),
 	SHELL_CMD_ARG(dvsset, &dsub_device_name,
-		      "Set regulator dynamic voltage scaling state\n"
-		      "Usage: dvsset <device> <state identifier>",
+		      SHELL_HELP("Set dynamic voltage scaling state",
+				 "<device> <state identifier>"),
 		      cmd_dvsset, 3, 0),
-	SHELL_CMD_ARG(shipmode, &dsub_device_name,
-		      "Enable regulator ship mode\n"
-		      "Usage: shipmode <device>",
+	SHELL_CMD_ARG(shipmode, &dsub_device_name, SHELL_HELP("Enable ship mode", "<device>"),
 		      cmd_shipmode, 2, 0),
 	SHELL_SUBCMD_SET_END);
 

@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_virtual_mgmt, CONFIG_NET_L2_VIRTUAL_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/virtual_mgmt.h>
 
-static int virtual_interface_set_config(uint32_t mgmt_request,
+static int virtual_interface_set_config(uint64_t mgmt_request,
 					struct net_if *iface,
 					void *data, size_t len)
 {
@@ -89,7 +89,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_VIRTUAL_INTERFACE_SET_LINK_TYPE,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_VIRTUAL_INTERFACE_SET_PRIVATE_KEY,
 				  virtual_interface_set_config);
 
-static int virtual_interface_get_config(uint32_t mgmt_request,
+static int virtual_interface_get_config(uint64_t mgmt_request,
 					struct net_if *iface,
 					void *data, size_t len)
 {

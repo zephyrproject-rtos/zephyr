@@ -64,6 +64,25 @@ enum stm32_ex_ops {
 	FLASH_STM32_EX_OP_OPTB_WRITE,
 };
 
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+enum stm32_qspi_ex_ops {
+	/*
+	 * QSPI generic read command.
+	 *
+	 * Transmit the custom command and read the result to the user-provided
+	 * buffer.
+	 */
+	FLASH_STM32_QSPI_EX_OP_GENERIC_READ,
+	/*
+	 * QSPI generic write command.
+	 *
+	 * Transmit the custom command and then write data taken from the
+	 * user-provided buffer.
+	 */
+	FLASH_STM32_QSPI_EX_OP_GENERIC_WRITE,
+};
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 struct flash_stm32_ex_op_sector_wp_in {
 	uint64_t enable_mask;

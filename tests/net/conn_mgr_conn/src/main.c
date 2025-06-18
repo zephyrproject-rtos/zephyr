@@ -95,7 +95,7 @@ static struct event_stats {
 struct net_mgmt_event_callback conn_mgr_conn_callback;
 
 static void conn_mgr_conn_handler(struct net_mgmt_event_callback *cb,
-				  uint32_t event, struct net_if *iface)
+				  uint64_t event, struct net_if *iface)
 {
 	k_mutex_lock(&event_mutex, K_FOREVER);
 

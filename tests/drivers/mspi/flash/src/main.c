@@ -21,50 +21,56 @@ static const struct device *mspi_devices[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(MSPI_BUS_NODE, DEVICE_DT_GET, (,))
 };
 
+#if CONFIG_DCACHE
+static uint8_t expected[MSPI_FLASH_TEST_SIZE]__aligned(CONFIG_DCACHE_LINE_SIZE);
+static uint8_t actual[MSPI_FLASH_TEST_SIZE]__aligned(CONFIG_DCACHE_LINE_SIZE);
+#else
 static uint8_t expected[MSPI_FLASH_TEST_SIZE];
 static uint8_t actual[MSPI_FLASH_TEST_SIZE];
+#endif
 
-static void prepare_test_pattern(uint32_t pattern_index, uint8_t *actualf, uint32_t len)
+
+static void prepare_test_pattern(uint32_t pattern_index, uint8_t *buff, uint32_t len)
 {
-	uint32_t *pui32TxPtr = (uint32_t *)actualf;
-	uint8_t *pui8TxPtr = (uint8_t *)actualf;
+	uint32_t *ui32ptr = (uint32_t *)buff;
+	uint8_t *ui8ptr = (uint8_t *)buff;
 
 	switch (pattern_index) {
 	case 0:
 		/* 0x5555AAAA */
 		for (uint32_t i = 0; i < len / 4; i++) {
-			pui32TxPtr[i] = (0x5555AAAA);
+			ui32ptr[i] = (0x5555AAAA);
 		}
 		break;
 	case 1:
 		/*  0xFFFF0000 */
 		for (uint32_t i = 0; i < len / 4; i++) {
-			pui32TxPtr[i] = (0xFFFF0000);
+			ui32ptr[i] = (0xFFFF0000);
 		}
 		break;
 	case 2:
 		/* walking */
 		for (uint32_t i = 0; i < len; i++) {
-			pui8TxPtr[i] = 0x01 << (i % 8);
+			ui8ptr[i] = 0x01 << (i % 8);
 		}
 		break;
 	case 3:
 		/* incremental from 1 */
 		for (uint32_t i = 0; i < len; i++) {
-			pui8TxPtr[i] = ((i + 1) & 0xFF);
+			ui8ptr[i] = ((i + 1) & 0xFF);
 		}
 		break;
 	case 4:
 		/* decremental from 0xff */
 		for (uint32_t i = 0; i < len; i++) {
 			/* decrement starting from 0xff */
-			pui8TxPtr[i] = (0xff - i) & 0xFF;
+			ui8ptr[i] = (0xff - i) & 0xFF;
 		}
 		break;
 	default:
 		/* incremental from 1 */
 		for (uint32_t i = 0; i < len; i++) {
-			pui8TxPtr[i] = ((i + 1) & 0xFF);
+			ui8ptr[i] = ((i + 1) & 0xFF);
 		}
 		break;
 	}

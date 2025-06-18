@@ -120,6 +120,85 @@
 	status = "okay";
 };
 
+&mspi0 {
+	pinctrl-0 = <&mspi0_default>;
+	pinctrl-1 = <&mspi0_sleep>;
+	pinctrl-2 = <&mspi0_psram>;
+	pinctrl-names = "default","sleep","psram";
+	status = "disabled";
+	zephyr,pm-device-runtime-auto;
+
+	ce-gpios = <&gpio192_223 7 GPIO_ACTIVE_LOW>;
+
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	ambiq,apmemory;
+
+	dqs-support;
+
+	aps51216ba: aps_z8@0 {
+		compatible = "ambiq,mspi-device", "mspi-aps-z8";
+		size = <DT_SIZE_M(512)>;
+		reg = <0>;
+		status = "disabled";
+		mspi-max-frequency = <125000000>;
+		mspi-io-mode = "MSPI_IO_MODE_HEX_8_8_16";
+		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
+		mspi-hardware-ce-num = <0>;
+		mspi-dqs-enable;
+		read-command = <0x20>;
+		write-command = <0xA0>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <7>;
+		tx-dummy = <8>;
+		xip-config = <1 0 DT_SIZE_M(64) 0>;
+		ce-break-config = <1024 4>;
+		ambiq,timing-config-mask = <0x62>;
+		ambiq,timing-config = <8 7 1 0 0 3 10>;
+		zephyr,pm-device-runtime-auto;
+	};
+};
+
+&mspi1 {
+	pinctrl-0 = <&mspi1_default>;
+	pinctrl-1 = <&mspi1_sleep>;
+	pinctrl-2 = <&mspi1_flash>;
+	pinctrl-names = "default","sleep","flash";
+	status = "okay";
+	zephyr,pm-device-runtime-auto;
+
+	ce-gpios = <&gpio32_63 21 GPIO_ACTIVE_LOW>;
+
+	cmdq-buffer-location = "SRAM_NO_CACHE";
+	cmdq-buffer-size = <256>;
+
+	dqs-support;
+
+	is25wx064: is25wx064@0 {
+		compatible = "ambiq,mspi-device", "mspi-is25xX0xx";
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		status = "disabled";
+		mspi-max-frequency = <96000000>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL_1_8_8";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-dqs-enable;
+		mspi-hardware-ce-num = <0>;
+		read-command = <0xCC>;
+		write-command = <0x8E>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE"; /* Avoid use of 3 byte address if Ambiq MSPI */
+		rx-dummy = <16>;
+		tx-dummy = <0>;
+		xip-config = <1 0 DT_SIZE_M(8) 0>;
+		ce-break-config = <0 0>;
+		ambiq,timing-config-mask = <0x62>;
+		ambiq,timing-config = <0 16 1 0 0 5 20>;
+	};
+};
+
 &gpio0_31 {
 	status = "okay";
 };

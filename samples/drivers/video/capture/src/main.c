@@ -196,6 +196,11 @@ int main(void)
 		video_set_ctrl(video_dev, &ctrl);
 	}
 
+	if (IS_ENABLED(CONFIG_VIDEO_CTRL_VFLIP)) {
+		ctrl.id = VIDEO_CID_VFLIP;
+		video_set_ctrl(video_dev, &ctrl);
+	}
+
 	if (IS_ENABLED(CONFIG_TEST)) {
 		ctrl.id = VIDEO_CID_TEST_PATTERN;
 		video_set_ctrl(video_dev, &ctrl);

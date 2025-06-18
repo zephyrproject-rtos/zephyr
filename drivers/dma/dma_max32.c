@@ -258,6 +258,11 @@ static void max32_dma_isr(const struct device *dev)
 			continue;
 		}
 
+		/* check if only enabled bit is set (interrupt is not there) and skip it */
+		if (flags == ADI_MAX32_DMA_STATUS_ST) {
+			continue;
+		}
+
 		/* Check for error interrupts */
 		if (flags & (ADI_MAX32_DMA_STATUS_BUS_ERR | ADI_MAX32_DMA_STATUS_TO_IF)) {
 			status = -EIO;

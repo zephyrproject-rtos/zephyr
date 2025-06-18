@@ -73,8 +73,12 @@ int input_report(const struct device *dev,
 
 #ifdef CONFIG_INPUT_MODE_THREAD
 
-static void input_thread(void)
+static void input_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct input_event evt;
 	int ret;
 

@@ -20,9 +20,15 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/gpio.h>
+
+#ifdef CONFIG_USERSPACE
+#include <zephyr/syscall.h>
+#include <zephyr/internal/syscall_handler.h>
+#endif
 
 #if DT_INST_NODE_HAS_PROP(0, spi_bus_width) && \
 	DT_INST_PROP(0, spi_bus_width) == 4
@@ -886,6 +892,81 @@ static void flash_stm32_qspi_pages_layout(const struct device *dev,
 }
 #endif
 
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+#if defined(CONFIG_FLASH_STM32_QSPI_GENERIC_READ)
+static int flash_stm32_qspi_generic_read(const struct device *dev, QSPI_CommandTypeDef *cmd,
+					 void *out)
+{
+	int ret;
+
+#ifdef CONFIG_USERSPACE
+	QSPI_CommandTypeDef cmd_copy;
+
+	bool syscall_trap = z_syscall_trap();
+
+	if (syscall_trap) {
+		K_OOPS(k_usermode_from_copy(&cmd_copy, cmd, sizeof(cmd_copy)));
+		cmd = &cmd_copy;
+
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(out, cmd->NbData));
+	}
+#endif
+	qspi_lock_thread(dev);
+
+	ret = qspi_read_access(dev, cmd, out, cmd->NbData);
+
+	qspi_unlock_thread(dev);
+
+	return ret;
+}
+#endif /* CONFIG_FLASH_STM32_QSPI_GENERIC_READ */
+
+#if defined(CONFIG_FLASH_STM32_QSPI_GENERIC_WRITE)
+static int flash_stm32_qspi_generic_write(const struct device *dev, QSPI_CommandTypeDef *cmd,
+					  void *in)
+{
+	int ret;
+
+#ifdef CONFIG_USERSPACE
+	QSPI_CommandTypeDef cmd_copy;
+
+	bool syscall_trap = z_syscall_trap();
+
+	if (syscall_trap) {
+		K_OOPS(k_usermode_from_copy(&cmd_copy, cmd, sizeof(cmd_copy)));
+		cmd = &cmd_copy;
+
+		K_OOPS(K_SYSCALL_MEMORY_READ(in, cmd->NbData));
+	}
+#endif
+	qspi_lock_thread(dev);
+
+	ret = qspi_write_access(dev, cmd, in, cmd->NbData);
+
+	qspi_unlock_thread(dev);
+
+	return ret;
+}
+#endif /* CONFIG_FLASH_STM32_QSPI_GENERIC_WRITE */
+
+static int flash_stm32_qspi_ex_op(const struct device *dev, uint16_t code, const uintptr_t cmd,
+				  void *data)
+{
+	switch (code) {
+#if defined(CONFIG_FLASH_STM32_QSPI_GENERIC_READ)
+	case FLASH_STM32_QSPI_EX_OP_GENERIC_READ:
+		return flash_stm32_qspi_generic_read(dev, (QSPI_CommandTypeDef *)cmd, data);
+#endif
+#if defined(CONFIG_FLASH_STM32_QSPI_GENERIC_WRITE)
+	case FLASH_STM32_QSPI_EX_OP_GENERIC_WRITE:
+		return flash_stm32_qspi_generic_write(dev, (QSPI_CommandTypeDef *)cmd, data);
+#endif
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+
 static DEVICE_API(flash, flash_stm32_qspi_driver_api) = {
 	.read = flash_stm32_qspi_read,
 	.write = flash_stm32_qspi_write,
@@ -899,6 +980,9 @@ static DEVICE_API(flash, flash_stm32_qspi_driver_api) = {
 	.sfdp_read = qspi_read_sfdp,
 	.read_jedec_id = qspi_read_jedec_id,
 #endif /* CONFIG_FLASH_JESD216_API */
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = flash_stm32_qspi_ex_op,
+#endif
 };
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)

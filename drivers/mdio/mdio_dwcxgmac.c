@@ -152,16 +152,6 @@ static int mdio_dwcxgmac_write(const struct device *dev, uint8_t prtad, uint8_t 
 	return mdio_transfer(dev, prtad, regad, MDIO_WRITE_CMD, data, NULL);
 }
 
-static void mdio_dwcxgmac_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void mdio_dwcxgmac_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
 static int mdio_dwcxgmac_initialize(const struct device *dev)
 {
 	struct mdio_dwcxgmac_dev_data *const data = (struct mdio_dwcxgmac_dev_data *)dev->data;
@@ -206,8 +196,6 @@ static int mdio_dwcxgmac_initialize(const struct device *dev)
 static DEVICE_API(mdio, mdio_dwcxgmac_driver_api) = {
 	.read = mdio_dwcxgmac_read,
 	.write = mdio_dwcxgmac_write,
-	.bus_enable = mdio_dwcxgmac_bus_enable,
-	.bus_disable = mdio_dwcxgmac_bus_disable,
 };
 
 #define XGMAC_SNPS_DESIGNWARE_RESET_SPEC_INIT(n) .reset = RESET_DT_SPEC_INST_GET(n),

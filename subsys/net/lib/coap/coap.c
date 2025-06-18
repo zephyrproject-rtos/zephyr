@@ -136,7 +136,7 @@ static inline bool insert_be16(struct coap_packet *cpkt, uint16_t data, size_t o
 
 	memmove(&cpkt->data[offset + 2], &cpkt->data[offset], cpkt->offset - offset);
 
-	encode_be16(cpkt, cpkt->offset, data);
+	encode_be16(cpkt, offset, data);
 
 	return true;
 }
@@ -1956,7 +1956,7 @@ void coap_observer_init(struct coap_observer *observer,
 
 static inline void coap_observer_raise_event(struct coap_resource *resource,
 					     struct coap_observer *observer,
-					     uint32_t mgmt_event)
+					     uint64_t mgmt_event)
 {
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	const struct net_event_coap_observer net_event = {

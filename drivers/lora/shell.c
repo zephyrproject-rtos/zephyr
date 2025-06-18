@@ -314,22 +314,20 @@ static int cmd_lora_test_cw(const struct shell *sh,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 	SHELL_CMD(config, NULL,
-		  "Configure the LoRa radio\n"
-		  " Usage: config [freq <Hz>] [tx-power <dBm>] [bw <kHz>] "
-		  "[sf <int>] [cr <int>] [pre-len <int>]\n",
+		  SHELL_HELP("Configure the LoRa radio",
+			     "[freq <Hz>] [tx-power <dBm>] [bw <kHz>] [sf <int>] [cr <int>] "
+			     "[pre-len <int>]"),
 		  cmd_lora_conf),
 	SHELL_CMD_ARG(send, NULL,
-		      "Send LoRa packet\n"
-		      " Usage: send <data>",
+		      SHELL_HELP("Send a LoRa packet", "<data>"),
 		      cmd_lora_send, 2, 0),
 	SHELL_CMD_ARG(recv, NULL,
-		      "Receive LoRa packet\n"
-		      " Usage: recv [timeout (ms)]",
+		      SHELL_HELP("Receive a LoRa packet", "[timeout (ms)]"),
 		      cmd_lora_recv, 1, 1),
 	SHELL_CMD_ARG(test_cw, NULL,
-		  "Send a continuous wave\n"
-		  " Usage: test_cw <freq (Hz)> <power (dBm)> <duration (s)>",
-		  cmd_lora_test_cw, 4, 0),
+		      SHELL_HELP("Send a continuous wave",
+				 "<freq (Hz)> <power (dBm)> <duration (s)>"),
+		      cmd_lora_test_cw, 4, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
