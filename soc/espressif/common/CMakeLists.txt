@@ -41,25 +41,23 @@ endif()
 
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
-# Select the image origin depending on the boot configuration
-if(CONFIG_SOC_ESP32_APPCPU OR CONFIG_SOC_ESP32S3_APPCPU)
-  dt_nodelabel(dts_partition_path NODELABEL "slot0_appcpu_partition")
-elseif(CONFIG_SOC_ESP32C6_LPCORE)
-  dt_nodelabel(dts_partition_path NODELABEL "slot0_lpcore_partition")
-elseif(CONFIG_MCUBOOT OR CONFIG_ESP_SIMPLE_BOOT)
-  dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
-else()
-  dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
+set(image_off ${CONFIG_FLASH_LOAD_OFFSET})
+
+# If CONFIG_BUILD_OUTPUT_ADJUST_LMA is defined, adjust the image offset
+# to account for the additional load memory address offset.
+# This is useful for cases where the image needs to be loaded at a specific
+# address in flash, such as when using MCUBoot and flashing secondary images.
+if(DEFINED CONFIG_BUILD_OUTPUT_ADJUST_LMA)
+  math(EXPR image_off "${CONFIG_FLASH_LOAD_OFFSET} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}")
 endif()
 
-dt_reg_addr(image_off PATH ${dts_partition_path})
 board_runner_args(esp32 "--esp-app-address=${image_off}")
 board_runner_args(esp32 "--esp-flash-size=${esptoolpy_flashsize}MB")
 board_runner_args(esp32 "--esp-flash-freq=${CONFIG_ESPTOOLPY_FLASHFREQ}")
 board_runner_args(esp32 "--esp-flash-mode=${CONFIG_ESPTOOLPY_FLASHMODE}")
 board_finalize_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
 
-message("-- Image partition ${dts_partition_path}")
+message(STATUS "Image partition address: ${image_off}")
 
 # Look for cross references between bootloader sections
 if(CONFIG_MCUBOOT)
