@@ -18,7 +18,6 @@ config REMOTE_BOARD
 	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
 	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
-	default "nrf54h20dk/nrf54h20/cpuapp" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpurad"
 	default "nrf54l09pdk/nrf54l09/cpuflpr" if $(BOARD) = "nrf54l09pdk"
 	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
 	default "nrf54lm20dk/nrf54lm20a/cpuflpr" if $(BOARD) = "nrf54lm20dk"
