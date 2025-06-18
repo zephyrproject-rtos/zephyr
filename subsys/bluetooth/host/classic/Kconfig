@@ -490,6 +490,14 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_BROWSING
+	bool "Bluetooth AVRCP Browsing channel support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_L2CAP_ENH_RET
+	help
+	  This option enables support for the AVRCP Browsing channel
+	  over Bluetooth BR/EDR.
+
 endif # BT_AVRCP
 
 config BT_PAGE_TIMEOUT
