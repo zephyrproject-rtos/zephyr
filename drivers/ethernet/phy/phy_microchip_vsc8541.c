@@ -230,14 +230,14 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 		return ret;
 	}
 
-	is_duplex = (aux_status & PHY_REG_PAGE0_EXT_DEV_AUX_DUPLEX) != 0;
+	is_duplex = (aux_status & PHY_REG_PAGE0_EXT_DEV_AUX_DUPLEX) != 0U;
 
 	ret = phy_mc_vsc8541_read(dev, PHY_REG_PAGE0_STAT1000_EXT2, &link1000_status);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if ((link1000_status & BIT(12))) {
+	if ((link1000_status & BIT(12)) != 0U) {
 		state->speed = is_duplex ? LINK_FULL_1000BASE : LINK_HALF_1000BASE;
 		return 0; /* no need to check lower speeds */
 	}
@@ -247,7 +247,7 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 		return ret;
 	}
 
-	if (link100_status & BIT(12)) {
+	if ((link100_status & BIT(12)) != 0U) {
 		state->speed = is_duplex ? LINK_FULL_100BASE : LINK_HALF_100BASE;
 		return 0; /* no need to check lower speeds */
 	}
@@ -257,7 +257,7 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 		return ret;
 	}
 
-	if (link10_status & BIT(6)) {
+	if ((link10_status & BIT(6)) != 0U) {
 		state->speed = is_duplex ? LINK_FULL_10BASE : LINK_HALF_10BASE;
 	} else {
 		state->speed = 0; /* no link */
@@ -269,7 +269,7 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				   enum phy_cfg_link_flag flags)
 {
-	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
+	if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0U) {
 		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
 		return -ENOTSUP;
 	}
@@ -284,7 +284,6 @@ static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed
 static int phy_mc_vsc8541_init(const struct device *dev)
 {
 	struct mc_vsc8541_data *data = dev->data;
-	struct mc_vsc8541_config *cfg = dev->config;
 	int ret;
 
 	data->active_page = -1;
@@ -335,7 +334,7 @@ static int phy_mc_vsc8541_get_link(const struct device *dev, struct phy_link_sta
 
 	hasLink = (reg_sr & MII_BMSR_LINK_STATUS) != 0;
 
-	if (reg_cr & MII_BMCR_AUTONEG_ENABLE) {
+	if ((reg_cr & MII_BMCR_AUTONEG_ENABLE) != 0U) {
 		/* auto negotiation active; update status */
 		auto_negotiation_finished = (reg_sr & MII_BMSR_AUTONEG_COMPLETE) != 0;
 	}
@@ -489,6 +488,7 @@ write_end:
 
 static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 	.get_link = phy_mc_vsc8541_get_link,
+	.cfg_link = phy_mc_vsc8541_cfg_link,
 	.link_cb_set = phy_mc_vsc8541_link_cb_set,
 	.read = phy_mc_vsc8541_read,
 	.write = phy_mc_vsc8541_write,
