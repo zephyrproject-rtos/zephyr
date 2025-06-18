@@ -4225,6 +4225,7 @@ STM32 Platforms:
     - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
+    - foobar
   files:
     - boards/st/
     - drivers/*/*stm32*.c
