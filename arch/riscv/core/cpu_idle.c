@@ -6,12 +6,19 @@
 
 #include <zephyr/irq.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/debug/cpu_load.h>
 
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
 	SYS_PORT_TRACING_FUNC(idle, enter);
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
 	__asm__ volatile("wfi");
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
 	SYS_PORT_TRACING_FUNC(idle, exit);
 	irq_unlock(MSTATUS_IEN);
 }
@@ -21,7 +28,13 @@ void arch_cpu_idle(void)
 void arch_cpu_atomic_idle(unsigned int key)
 {
 	SYS_PORT_TRACING_FUNC(idle, enter);
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
 	__asm__ volatile("wfi");
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
 	SYS_PORT_TRACING_FUNC(idle, exit);
 	irq_unlock(key);
 }

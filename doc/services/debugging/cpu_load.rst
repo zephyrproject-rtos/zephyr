@@ -3,7 +3,7 @@
 CPU load
 ########
 
-Module can be used to track how much time is spent in idle. It is using tracing hooks
+Module can be used to track how much time is spent in idle. It is using hooks
 which are called before and after CPU goes to idle. Compared to :ref:`thread_analyzer`
 it is more accurate since it takes into account time spent in the interrupt context as well.
 

@@ -11,6 +11,7 @@
  */
 #include <zephyr/kernel.h>
 #include <cmsis_core.h>
+#include <zephyr/debug/cpu_load.h>
 
 #if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE)
 #include <soc_cpu_idle.h>
@@ -63,6 +64,9 @@ void arch_cpu_idle(void)
 #if defined(CONFIG_TRACING)
 	SYS_PORT_TRACING_FUNC(idle, enter);
 #endif
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
 
 #if CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
 	z_arm_on_enter_cpu_idle_prepare();
@@ -98,6 +102,9 @@ void arch_cpu_idle(void)
 
 	SLEEP_IF_ALLOWED(__WFI);
 
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
 #if defined(CONFIG_TRACING)
 	SYS_PORT_TRACING_FUNC(idle, exit);
 #endif
@@ -112,6 +119,9 @@ void arch_cpu_atomic_idle(unsigned int key)
 #if defined(CONFIG_TRACING)
 	SYS_PORT_TRACING_FUNC(idle, enter);
 #endif
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_enter_idle();
+	}
 
 #if CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
 	z_arm_on_enter_cpu_idle_prepare();
@@ -140,6 +150,9 @@ void arch_cpu_atomic_idle(unsigned int key)
 
 	SLEEP_IF_ALLOWED(__WFE);
 
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		cpu_load_on_exit_idle();
+	}
 #if defined(CONFIG_TRACING)
 	SYS_PORT_TRACING_FUNC(idle, exit);
 #endif

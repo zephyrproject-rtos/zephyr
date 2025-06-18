@@ -144,18 +144,9 @@ void sys_trace_isr_exit(void)
 void sys_trace_idle(void)
 {
 	sys_trace_idle_user();
-
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
-		cpu_load_on_enter_idle();
-	}
 }
 
-void sys_trace_idle_exit(void)
-{
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
-		cpu_load_on_exit_idle();
-	}
-}
+void sys_trace_idle_exit(void) {}
 
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
 {

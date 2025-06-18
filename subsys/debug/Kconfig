@@ -359,7 +359,6 @@ config CS_TRACE_DEFMT
 	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
 
 config CPU_LOAD
-	select TRACING
 	depends on CPU_CORTEX_M || RISCV
 	depends on !SMP
 	bool "CPU load measurement"
