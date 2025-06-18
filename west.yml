@@ -245,8 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      remote: erwango
-      revision: n6_mcuboot
+      revision: pull/289/head
       path: modules/hal/stm32
       groups:
         - hal
