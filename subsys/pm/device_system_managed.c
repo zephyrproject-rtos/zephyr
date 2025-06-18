@@ -68,9 +68,9 @@ bool pm_suspend_devices(void)
 
 void pm_resume_devices(void)
 {
-	for (int i = (num_susp - 1); i >= 0; i--) {
-		pm_device_action_run(TYPE_SECTION_START(pm_device_slots)[i],
-				    PM_DEVICE_ACTION_RESUME);
+	for (size_t i = num_susp; i-- > 0;) {
+		pm_device_action_run(TYPE_SECTION_START(pm_device_slots)[i - 1],
+				     PM_DEVICE_ACTION_RESUME);
 	}
 
 	num_susp = 0;
