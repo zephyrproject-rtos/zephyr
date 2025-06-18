@@ -347,6 +347,12 @@ Flash
   and :dtcompatible:`renesas,ra-nv-data-flash.yaml`.
 
 
+LED
+===
+
+* Renamed the devicetree property ``log_scale_en`` to ``log-scale-en``.
+
+
 Stepper
 =======
 
