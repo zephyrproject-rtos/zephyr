@@ -23,6 +23,7 @@ Control Stepper
 - **Move to** a specific position also known as **absolute movement** using :c:func:`stepper_move_to`.
 - Run continuously with a **constant step interval** in a specific direction until
   a stop is detected using :c:func:`stepper_run`.
+- **Stop** the stepper using :c:func:`stepper_stop`.
 - Check if the stepper is **moving** using :c:func:`stepper_is_moving`.
 - Register an **event callback** using :c:func:`stepper_set_event_callback`.
 
