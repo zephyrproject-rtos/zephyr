@@ -114,14 +114,6 @@ struct i2c_stm32_data {
 		unsigned int len;
 		uint8_t *buf;
 	} current;
-#ifdef CONFIG_I2C_TARGET
-	bool master_active;
-	struct i2c_target_config *slave_cfg;
-#ifdef CONFIG_I2C_STM32_V2
-	struct i2c_target_config *slave2_cfg;
-#endif /* CONFIG_I2C_STM32_V2 */
-	bool slave_attached;
-#endif /* CONFIG_I2C_TARGET */
 	bool is_configured;
 	bool smbalert_active;
 	enum i2c_stm32_mode mode;
@@ -135,6 +127,15 @@ struct i2c_stm32_data {
 	struct dma_block_config dma_blk_cfg;
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 #endif /* CONFIG_I2C_RTIO */
+
+#ifdef CONFIG_I2C_TARGET
+	bool master_active;
+	bool slave_attached;
+	struct i2c_target_config *slave_cfg;
+#ifdef CONFIG_I2C_STM32_V2
+	struct i2c_target_config *slave2_cfg;
+#endif /* CONFIG_I2C_STM32_V2 */
+#endif /* CONFIG_I2C_TARGET */
 };
 
 #ifdef CONFIG_I2C_RTIO
@@ -145,13 +146,14 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 int i2c_stm32_transaction(const struct device *dev,
 			  struct i2c_msg msg, uint8_t *next_msg_flags,
 			  uint16_t periph);
+#endif /* CONFIG_I2C_RTIO */
+
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 
 #ifdef CONFIG_I2C_TARGET
 int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config);
 int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config);
 #endif /* CONFIG_I2C_TARGET */
-#endif /* CONFIG_I2C_RTIO */
 
 int i2c_stm32_activate(const struct device *dev);
 int i2c_stm32_configure_timing(const struct device *dev, uint32_t clk);
