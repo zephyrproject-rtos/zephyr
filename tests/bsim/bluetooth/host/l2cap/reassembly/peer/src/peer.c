@@ -57,7 +57,7 @@ static uint16_t conn_handle;
 static volatile uint16_t active_opcode = 0xFFFF;
 static struct net_buf *cmd_rsp;
 
-struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
+static struct net_buf *create_cmd(uint16_t opcode, uint8_t param_len)
 {
 	struct bt_hci_cmd_hdr *hdr;
 	struct net_buf *buf;
@@ -279,7 +279,7 @@ static void send_cmd(uint16_t opcode, struct net_buf *cmd, struct net_buf **rsp)
 	LOG_DBG("opcode %x", opcode);
 
 	if (!cmd) {
-		cmd = bt_hci_cmd_create(opcode, 0);
+		cmd = create_cmd(opcode, 0);
 	}
 
 	k_sem_take(&cmd_sem, K_FOREVER);
@@ -352,7 +352,7 @@ static void set_event_mask(uint16_t opcode)
 	uint64_t mask = 0U;
 
 	/* The two commands have the same length/params */
-	buf = bt_hci_cmd_create(opcode, sizeof(*cp_mask));
+	buf = create_cmd(opcode, sizeof(*cp_mask));
 	TEST_ASSERT_NO_MSG(buf);
 
 	/* Forward all events */
@@ -370,7 +370,7 @@ static void set_random_address(void)
 
 	LOG_DBG("%s", bt_addr_str(&addr.a));
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(addr.a));
+	buf = create_cmd(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(addr.a));
 	TEST_ASSERT_NO_MSG(buf);
 
 	net_buf_add_mem(buf, &addr.a, sizeof(addr.a));
@@ -392,7 +392,7 @@ static void start_adv(uint16_t interval, const char *name, size_t name_len)
 	data.data[1] = BT_DATA_NAME_COMPLETE;
 	memcpy(&data.data[2], name, name_len);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(data));
+	buf = create_cmd(BT_HCI_OP_LE_SET_ADV_DATA, sizeof(data));
 	__ASSERT_NO_MSG(buf);
 	net_buf_add_mem(buf, &data, sizeof(data));
 	send_cmd(BT_HCI_OP_LE_SET_ADV_DATA, buf, NULL);
@@ -405,13 +405,13 @@ static void start_adv(uint16_t interval, const char *name, size_t name_len)
 	set_param.type = BT_HCI_ADV_IND;
 	set_param.own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
+	buf = create_cmd(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
 	__ASSERT_NO_MSG(buf);
 	net_buf_add_mem(buf, &set_param, sizeof(set_param));
 
 	send_cmd(BT_HCI_OP_LE_SET_ADV_PARAM, buf, NULL);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
+	buf = create_cmd(BT_HCI_OP_LE_SET_ADV_ENABLE, 1);
 	__ASSERT_NO_MSG(buf);
 
 	net_buf_add_u8(buf, BT_HCI_LE_ADV_ENABLE);
@@ -427,7 +427,7 @@ static void disconnect(void)
 
 	LOG_INF("Disconnecting");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
+	buf = create_cmd(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
 	TEST_ASSERT(buf);
 
 	disconn = net_buf_add(buf, sizeof(*disconn));
