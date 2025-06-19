@@ -6,40 +6,36 @@
 
 import argparse
 import collections
-from itertools import takewhile
 import json
 import logging
 import os
-from pathlib import Path
 import platform
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
-import traceback
-import shlex
-import shutil
 import textwrap
+import traceback
+from itertools import takewhile
+from pathlib import Path
+
+import magic
 import unidiff
 import yaml
-
+from junitparser import Error, Failure, JUnitXml, Skipped, TestCase, TestSuite
+from west.manifest import Manifest, ManifestProject
 from yamllint import config, linter
 
-from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
-import magic
-
-from west.manifest import Manifest
-from west.manifest import ManifestProject
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from get_maintainer import Maintainers, MaintainersError
 import list_boards
 import list_hardware
+from get_maintainer import Maintainers, MaintainersError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]
                        / "scripts" / "dts" / "python-devicetree" / "src"))
 from devicetree import edtlib
-
 
 # Let the user run this script as ./scripts/ci/check_compliance.py without
 # making them set ZEPHYR_BASE.
