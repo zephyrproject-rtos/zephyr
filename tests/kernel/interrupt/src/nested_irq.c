@@ -72,6 +72,12 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
+#elif defined(CONFIG_SOC_NRF9280_CPUPPR)
+#define IRQ0_LINE	14
+#define IRQ1_LINE	15
+
+#define IRQ0_PRIO	1
+#define IRQ1_PRIO	2
 #else
 /*
  * For all the other platforms, use the last two available IRQ lines for
