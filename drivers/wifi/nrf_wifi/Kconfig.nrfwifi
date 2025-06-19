@@ -913,4 +913,10 @@ config NRF_WIFI_DYNAMIC_BANDWIDTH_SIGNALLING
 	bool "Dynamic bandwidth signalling for Wi-Fi"
 	help
 	  This option enables support for dynamic bandwidth signalling.
+
+config NRF_WIFI_DYNAMIC_ED
+	bool "Dynamic ED"
+	help
+	  This option enables support for proprietary algorithm to
+	  enhance performance in high-traffic channels.
 endif # WIFI_NRF70
