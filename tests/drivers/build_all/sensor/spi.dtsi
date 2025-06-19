@@ -450,3 +450,12 @@ test_spi_fxls8974: fxls8974@36 {
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_adxl366: adxl366@37 {
+	compatible = "adi,adxl366";
+	reg = <0x37>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	odr = <4>;
+	fifo-mode = <0>;
+};
