@@ -50,7 +50,7 @@ static int pin_code_neg_reply(const bt_addr_t *bdaddr)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -68,7 +68,7 @@ static int pin_code_reply(struct bt_conn *conn, const char *pin, uint8_t len)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_PIN_CODE_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -186,7 +186,7 @@ static int ssp_confirm_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -204,7 +204,7 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_CONFIRM_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -313,7 +313,7 @@ static int ssp_passkey_reply(struct bt_conn *conn, unsigned int passkey)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -332,7 +332,7 @@ static int ssp_passkey_neg_reply(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_USER_PASSKEY_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -351,7 +351,7 @@ static int conn_auth(struct bt_conn *conn)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_AUTH_REQUESTED, sizeof(*auth));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -539,7 +539,7 @@ void link_key_neg_reply(const bt_addr_t *bdaddr)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_NEG_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -557,7 +557,7 @@ void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LINK_KEY_REPLY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -613,8 +613,7 @@ void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 	struct bt_hci_cp_io_capability_neg_reply *cp;
 	struct net_buf *resp_buf;
 
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY,
-				     sizeof(*cp));
+	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!resp_buf) {
 		LOG_ERR("Out of command buffers");
 		return;
@@ -769,7 +768,7 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 
 	conn->br.local_auth = auth;
 
-	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY, sizeof(*cp));
+	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!resp_buf) {
 		LOG_ERR("Out of command buffers");
 		bt_conn_unref(conn);
@@ -865,7 +864,7 @@ static void link_encr(const uint16_t handle)
 
 	LOG_DBG("");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_SET_CONN_ENCRYPT, sizeof(*encr));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
 		return;
