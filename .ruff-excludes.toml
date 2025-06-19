@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 
 # This list is generated, it contains all python scripts that existed before ruff was introduced,
 # remove entries for files that pass CI compliance testing.
