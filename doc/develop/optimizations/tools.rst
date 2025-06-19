@@ -186,6 +186,9 @@ If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targe
     :board: reel_board
     :goals: puncover
 
+The ``puncover`` target will start a local web server on ``localhost:5000`` by default.
+The host IP and port the HTTP server runs on can be changed by setting the environment
+variables ``PUNCOVER_HOST`` and ``PUNCOVER_PORT``.
 
 To view worst-case stack usage analysis, build this with the
 :kconfig:option:`CONFIG_STACK_USAGE` enabled.
