@@ -73,6 +73,15 @@ static bool shim_nrf_twis_is_resumed(const struct device *dev)
 	(void)pm_device_state_get(dev, &state);
 	return state == PM_DEVICE_STATE_ACTIVE;
 }
+
+static bool shim_nrf_twis_is_suspended(const struct device *dev)
+{
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	return state == PM_DEVICE_STATE_SUSPENDED ||
+	       state == PM_DEVICE_STATE_OFF;
+}
 #else
 static bool shim_nrf_twis_is_resumed(const struct device *dev)
 {
@@ -199,7 +208,7 @@ static int shim_nrf_twis_pm_action_cb(const struct device *dev,
 
 #if CONFIG_PM_DEVICE
 	case PM_DEVICE_ACTION_SUSPEND:
-		shim_nrf_twis_disable();
+		shim_nrf_twis_disable(dev);
 		break;
 #endif
 
@@ -283,6 +292,35 @@ static int shim_nrf_twis_init(const struct device *dev)
 	return pm_device_driver_init(dev, shim_nrf_twis_pm_action_cb);
 }
 
+static int shim_nrf_twis_deinit(const struct device *dev)
+{
+	const struct shim_nrf_twis_config *dev_config = dev->config;
+	struct shim_nrf_twis_data *dev_data = dev->data;
+
+	if (dev_data->target_config != NULL) {
+		LOG_ERR("target registered");
+		return -EPERM;
+	}
+
+#if CONFIG_PM_DEVICE
+	/*
+	 * PM must have suspended the device before driver can
+	 * be deinitialized
+	 */
+	if (!shim_nrf_twis_is_suspended(dev)) {
+		LOG_ERR("device active");
+		return -EBUSY;
+	}
+#else
+	/* Suspend device */
+	shim_nrf_twis_disable(dev);
+#endif
+
+	/* Uninit device hardware */
+	nrfx_twis_uninit(&dev_config->twis);
+	return 0;
+}
+
 #define SHIM_NRF_TWIS_NAME(id, name) \
 	_CONCAT_4(shim_nrf_twis_, name, _, id)
 
@@ -323,9 +361,10 @@ static int shim_nrf_twis_init(const struct device *dev)
 		shim_nrf_twis_pm_action_cb,							\
 	);											\
 												\
-	DEVICE_DT_DEFINE(									\
+	DEVICE_DT_DEINIT_DEFINE(								\
 		SHIM_NRF_TWIS_NODE(id),								\
 		shim_nrf_twis_init,								\
+		shim_nrf_twis_deinit,								\
 		PM_DEVICE_DT_GET(SHIM_NRF_TWIS_NODE(id)),					\
 		&SHIM_NRF_TWIS_NAME(id, data),							\
 		&SHIM_NRF_TWIS_NAME(id, config),						\
