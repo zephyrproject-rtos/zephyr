@@ -20,3 +20,8 @@ properties:
     required: true
     type: int
     description: The SI index of this PSI.
+
+  nxp,ptp-clock:
+    type: phandle
+    description: |
+      Corresponding ptp clock device.
