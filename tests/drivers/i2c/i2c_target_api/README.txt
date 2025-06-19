@@ -39,3 +39,9 @@ Presence of this required hardware configuration is identified by the
 `i2c_bus_short` fixture.  If the buses are not connected as required,
 or the controller driver has bugs, the test will fail one or more I2C
 transactions.
+
+Transfer data size
+******************
+
+One can tune the number of data bytes echanged during the tests using
+configuration option ``CONFIG_I2C_TEST_DATA_MAX_SIZE``.
