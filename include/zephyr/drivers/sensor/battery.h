@@ -68,7 +68,7 @@ enum battery_chemistry {
  * @returns Battery state of charge in milliPercent
  */
 static inline int32_t battery_soc_lookup(const int32_t ocv_table[BATTERY_OCV_TABLE_LEN],
-					 uint32_t voltage_uv)
+					 int32_t voltage_uv)
 {
 	static const int32_t soc_axis[BATTERY_OCV_TABLE_LEN] = {
 		0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000};
