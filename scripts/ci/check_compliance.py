@@ -2354,6 +2354,116 @@ class SphinxLint(ComplianceTest):
                         )
 
 
+class ValeCheck(ComplianceTest):
+    """
+    Runs Vale on reStructuredText files and filters issues by changed hunks
+    """
+    name = "Vale"
+    doc = "Check reStructuredText files with Vale for writing style and consistency."
+
+    def run(self):
+        try:
+            subprocess.run(['vale', 'sync'], check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            self.skip("Vale not found. Please install Vale to run this check.")
+
+        rst_files = [f for f in get_files() if f.endswith('.rst')]
+        if not rst_files:
+            self.skip("No .rst files found in the commit range")
+
+        for file in rst_files:
+            try:
+                diff_output = git('diff', '-U0', '--no-color', COMMIT_RANGE, '--', file)
+                if not diff_output.strip():
+                    continue
+            except Exception as e:
+                logger.error(f"Failed to get diff for {file}: {e}")
+                continue
+
+            changed_lines = self.get_changed_lines(diff_output)
+            if not changed_lines:
+                continue
+
+            try:
+                result = subprocess.run(
+                    ['vale', '--output=JSON', file],
+                    capture_output=True,
+                    cwd=GIT_TOP,
+                    check=False
+                )
+            except Exception as e:
+                self.error(f"Failed to run Vale on {file}: {e}")
+
+            if result.stdout:
+                try:
+                    stdout_text = result.stdout.decode('utf-8')
+                    vale_results = json.loads(stdout_text)
+                except json.JSONDecodeError as e:
+                    self.error(f"Failed to parse Vale output for {file}: {e}. Raw output: \n---\n{result.stdout.decode('utf-8')}\n---\n")
+                    continue
+
+                if file in vale_results:
+                    for result_item in vale_results[file]:
+                        if 'Check' in result_item and 'Line' in result_item:
+                            line_num = result_item['Line']
+                            if self.is_line_in_changed_range(line_num, changed_lines):
+                                self.fmtd_failure(
+                                    severity=result_item.get('Severity', 'error').lower(),
+                                    title=f"Vale ({result_item.get('Check', 'unknown')})",
+                                    file=file,
+                                    line=line_num,
+                                    desc=result_item.get('Message', 'No message provided')
+                                )
+
+    def get_changed_lines(self, diff_output):
+        """
+        Parse git diff output to extract changed line ranges.
+
+        Args:
+            diff_output: String containing git diff output in unified diff format
+
+        Returns:
+            List of (start_line, end_line) tuples representing changed line ranges.
+            Line numbers are 1-indexed and inclusive.
+        """
+        changed_lines = []
+
+        try:
+            patchset = unidiff.PatchSet.from_string(diff_output)
+            for patch in patchset:
+                for hunk in patch:
+                    # For additions: use target_start and target_length
+                    # For deletions: use source_start and source_length
+                    # For modifications: use both ranges
+
+                    # Handle additions (new lines in target file)
+                    if hunk.target_length > 0:
+                        start_line = hunk.target_start
+                        end_line = hunk.target_start + hunk.target_length - 1
+                        changed_lines.append((start_line, end_line))
+
+                    # Handle deletions (lines removed from source file)
+                    if hunk.source_length > 0:
+                        start_line = hunk.source_start
+                        end_line = hunk.source_start + hunk.source_length - 1
+                        changed_lines.append((start_line, end_line))
+
+        except Exception as e:
+            logger.error(f"Failed to parse diff: {e}")
+            # Return empty list on parsing error to avoid skipping the file entirely
+
+        return changed_lines
+
+    def is_line_in_changed_range(self, line_num, changed_lines):
+        """
+        Check if a line number falls within any of the changed line ranges.
+        """
+        for start_line, end_line in changed_lines:
+            if start_line <= line_num <= end_line:
+                return True
+        return False
+
+
 class KeepSorted(ComplianceTest):
     """
     Check for blocks of code or config that should be kept sorted.

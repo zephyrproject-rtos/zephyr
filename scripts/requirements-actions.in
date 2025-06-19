@@ -36,6 +36,7 @@ tabulate
 tox
 tqdm>=4.67.1
 unidiff
+vale
 vermin
 west>=0.14.0
 xlsxwriter
