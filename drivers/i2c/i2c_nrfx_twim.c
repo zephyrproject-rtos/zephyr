@@ -224,6 +224,11 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	return i2c_nrfx_twim_common_init(dev);
 }
 
+static int i2c_nrfx_twim_deinit(const struct device *dev)
+{
+	return i2c_nrfx_twim_common_deinit(dev);
+}
+
 static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	.configure = i2c_nrfx_twim_configure,
 	.transfer = i2c_nrfx_twim_transfer,
@@ -280,8 +285,9 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action,                     \
 			PM_DEVICE_ISR_SAFE);                                   \
-	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
+	I2C_DEVICE_DT_DEINIT_DEFINE(I2C(idx),				       \
 		      i2c_nrfx_twim_init,				       \
+		      i2c_nrfx_twim_deinit,				       \
 		      PM_DEVICE_DT_GET(I2C(idx)),			       \
 		      &twim_##idx##_data,				       \
 		      &twim_##idx##z_config,				       \
