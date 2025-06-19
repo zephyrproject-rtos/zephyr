@@ -576,7 +576,7 @@ static int cmd_video_format(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_shell_parse_in_out(sh, arg_in_out, &type);
 	if (ret < 0) {
-		return -ret;
+		return ret;
 	}
 	fmt.type = caps.type = type;
 
