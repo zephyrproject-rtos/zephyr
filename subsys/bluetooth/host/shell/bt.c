@@ -1432,7 +1432,7 @@ static int cmd_hci_cmd(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), len);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
 			shell_error(sh, "Unable to allocate HCI buffer");
 			return -ENOMEM;
