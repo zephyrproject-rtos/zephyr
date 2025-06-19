@@ -29,6 +29,7 @@
 		zephyr,sram = &ddram;
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
+		zephyr,entropy = &trng;
 	};
 
 	clocks {
@@ -216,4 +217,8 @@
 		disk-name = "SD";
 		status = "okay";
 	};
+};
+
+&trng {
+	status = "okay";
 };
