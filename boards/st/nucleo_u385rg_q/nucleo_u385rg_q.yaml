@@ -6,7 +6,9 @@ toolchain:
   - zephyr
 supported:
   - arduino_gpio
+  - dma
   - gpio
+  - uart
   - usart
 ram: 256
 flash: 1024
