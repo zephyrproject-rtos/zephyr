@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Ishraq Ibne Ashraf <ishraq.i.ashraf@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_K32LX
+	bool
+	select SOC_FAMILY_KINETIS
+
+config SOC_SERIES
+	default "k32lx" if SOC_SERIES_K32LX
+
+config SOC_K32L2B31A
+	bool
+	select SOC_SERIES_K32LX
+
+config SOC
+	default "k32l2b31a" if SOC_K32L2B31A
+
+config SOC_PART_NUMBER_K32L2B31VLH0A
+	bool
+
+config SOC_PART_NUMBER
+	default "K32L2B31VLH0A" if SOC_PART_NUMBER_K32L2B31VLH0A
