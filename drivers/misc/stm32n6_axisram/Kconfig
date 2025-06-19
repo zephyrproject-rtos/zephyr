@@ -1,0 +1,7 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32N6_AXISRAM
+	bool
+	select USE_STM32_HAL_RAMCFG
+	default y if DT_HAS_ST_STM32N6_RAMCFG_ENABLED
