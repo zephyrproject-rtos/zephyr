@@ -19,6 +19,9 @@
 
 #include "pm_stats.h"
 #include "device_system_managed.h"
+#ifdef CONFIG_BT_STM32WBA
+#include "ll_sys.h"
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
@@ -148,6 +151,9 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	k_spinlock_key_t key;
 	int32_t ticks, events_ticks;
 	uint32_t exit_latency_ticks;
+#ifdef CONFIG_BT_STM32WBA
+	int32_t old_ticks;
+#endif
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
@@ -163,6 +169,17 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	events_ticks = pm_policy_next_event_ticks();
 	ticks = ticks_expiring_sooner(kernel_ticks, events_ticks);
 
+#ifdef CONFIG_BT_STM32WBA
+	{
+		uint32_t radio_remaining_time, cmd_status;
+		int32_t radio_ticks;
+		cmd_status =
+					ll_intf_le_get_remaining_time_for_next_event(&radio_remaining_time);
+		radio_ticks = (radio_remaining_time == LL_DP_SLP_NO_WAKEUP) ? K_TICKS_FOREVER : k_us_to_ticks_floor32(radio_remaining_time);
+		old_ticks = ticks;
+		ticks = ticks_expiring_sooner(radio_ticks, ticks);
+	}
+#endif
 	key = k_spin_lock(&pm_forced_state_lock);
 	if (z_cpus_pm_forced_state[id] != NULL) {
 		z_cpus_pm_state[id] = z_cpus_pm_forced_state[id];
@@ -192,6 +209,10 @@ bool pm_system_suspend(int32_t kernel_ticks)
 			}
 		}
 	}
+#endif
+
+#ifdef CONFIG_BT_STM32WBA
+	ticks = old_ticks;
 #endif
 
 	exit_latency_ticks = EXIT_LATENCY_US_TO_TICKS(z_cpus_pm_state[id]->exit_latency_us);

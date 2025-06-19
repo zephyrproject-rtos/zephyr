@@ -13,6 +13,12 @@
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#ifdef CONFIG_PM_DEVICE
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
+#include "linklayer_plat.h"
+#endif
 #include <linklayer_plat_local.h>
 
 #include <zephyr/sys/byteorder.h>
@@ -454,6 +460,52 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 }
 #endif /* CONFIG_BT_HCI_SETUP */
 
+#ifdef CONFIG_PM_DEVICE
+static int radio_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
+#if defined(CONFIG_PM_S2RAM)
+		if (LL_PWR_IsActiveFlag_SB() == 1U) {
+			/* Put the radio in active state */
+			link_layer_register_isr();
+		}
+#endif
+		LINKLAYER_PLAT_NotifyWFIExit();
+		ll_sys_dp_slp_exit();
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(CONFIG_PM_S2RAM)
+		uint32_t radio_remaining_time = 0;
+		enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
+		if (state == PM_STATE_SUSPEND_TO_RAM) {
+			/* */
+			uint32_t cmd_status =
+				ll_intf_le_get_remaining_time_for_next_event(&radio_remaining_time);
+			UNUSED(cmd_status);
+			assert_param(cmd_status == SUCCESS);
+
+			if (radio_remaining_time == LL_DP_SLP_NO_WAKEUP) {
+				/* No next radio event scheduled */
+				(void)ll_sys_dp_slp_enter(LL_DP_SLP_NO_WAKEUP);
+			} else /* if (radio_remaining_time > RADIO_DEEPSLEEP_WAKEUP_TIME_US) */ {
+				/* No event in a "near" futur */
+				(void)ll_sys_dp_slp_enter(radio_remaining_time -
+							  CFG_LPM_STDBY_WAKEUP_TIME);
+			}
+		}
+#endif
+		LINKLAYER_PLAT_NotifyWFIEnter();
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(bt_hci, drv) = {
 #if defined(CONFIG_BT_HCI_SETUP)
 	.setup          = bt_hci_stm32wba_setup,
@@ -462,11 +514,22 @@ static DEVICE_API(bt_hci, drv) = {
 	.send           = bt_hci_stm32wba_send,
 };
 
+
+#if defined (CONFIG_PM_DEVICE)
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
-	}; \
+	static struct hci_data hci_data_##inst = {}; \
+	PM_DEVICE_DT_INST_DEFINE(inst, radio_pm_action); \
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+
+/* Only one instance supported */
+HCI_DEVICE_INIT(0)
+#else
+#define HCI_DEVICE_INIT(inst) \
+	static struct hci_data hci_data_##inst = {}; \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)
+#endif
