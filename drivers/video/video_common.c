@@ -117,7 +117,7 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
 	return -ENOENT;
 }
 
-void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
 				    const struct video_frmival *desired,
 				    struct video_frmival *match)
 {
@@ -136,6 +136,11 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
 	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
 
+	/* Prevent division by zero */
+	if (step == 0U) {
+		return -EINVAL;
+	}
+
 	/* Saturate the desired value to the min/max supported */
 	goal = CLAMP(goal, min, max);
 
@@ -143,6 +148,7 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
 	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
 			     stepwise->step.denominator * desired->denominator;
+	return 0;
 }
 
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
