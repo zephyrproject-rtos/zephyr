@@ -65,4 +65,5 @@ API Reference
 .. doxygengroup:: semihost
 
 .. _ARM Github documentation: https://github.com/ARM-software/abi-aa/blob/main/semihosting/semihosting.rst
-.. _RISC-V Github documentation: https://github.com/riscv/riscv-semihosting-spec/blob/main/riscv-semihosting-spec.adoc
+.. _RISC-V Github documentation: https://github.com/riscv-non-isa/riscv-semihosting/blob/main/riscv-semihosting.adoc /*Please note that the RISC-V semihosting specification is in a frozen state, and no further changes are expected unless critical issues are identified during the public review cycle.
+*/
