@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 #define I2C_STM32_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-static int i2c_stm32_do_configure(const struct device *dev, uint32_t config)
+int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -121,7 +121,7 @@ bool i2c_stm32_start(const struct device *dev)
 		return i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf,
 					   sqe->tx.buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
-		res = i2c_stm32_do_configure(dev, sqe->i2c_config);
+		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
 		return i2c_rtio_complete(data->ctx, res);
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
@@ -214,6 +214,10 @@ static const struct i2c_driver_api api_funcs = {
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
 	.iodev_submit = i2c_stm32_submit,
+#if defined(CONFIG_I2C_TARGET)
+	.target_register = i2c_stm32_target_register,
+	.target_unregister = i2c_stm32_target_unregister,
+#endif
 };
 
 static int i2c_stm32_init(const struct device *dev)
@@ -259,7 +263,7 @@ static int i2c_stm32_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
-	ret = i2c_stm32_do_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
+	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
 		return ret;
