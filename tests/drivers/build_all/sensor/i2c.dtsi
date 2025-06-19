@@ -1331,3 +1331,11 @@ test_i2c_bh1730: bh1730@b4 {
 	compatible = "rohm,bh1730";
 	reg = <0xb4>;
 };
+
+test_i2c_adxl366: adxl366@b5 {
+	compatible = "adi,adxl366";
+	reg = <0xb5>;
+	int1-gpios = <&test_gpio 0 0>;
+	odr = <4>;
+	fifo-mode = <0>;
+};
