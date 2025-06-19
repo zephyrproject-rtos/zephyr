@@ -855,6 +855,9 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 		net_if_dormant_off(sidev->iface);
 	}
 
+	wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_SUCCESS);
+	sidev->state = WIFI_STATE_COMPLETED;
+
 	return 0;
 }
 
