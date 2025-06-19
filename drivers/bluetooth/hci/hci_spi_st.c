@@ -335,7 +335,7 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 	hdr.param_len = data_len;
 	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &hdr, sizeof(hdr));
 #else
-	buf = bt_hci_cmd_create(BLUENRG_ACI_WRITE_CONFIG_DATA, data_len);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 #endif /* CONFIG_BT_HCI_RAW */
 
 	if (!buf) {
