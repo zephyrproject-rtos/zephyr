@@ -358,7 +358,7 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 	}
 
 	/* Enable interruption */
-	enable_irq(data->fsp_cfg.cycle_end_irq, data->fsp_cfg.cycle_end_irq, &data->fsp_ctrl);
+	enable_irq(data->fsp_cfg.cycle_end_irq, data->fsp_cfg.cycle_end_ipl, &data->fsp_ctrl);
 	enable_irq(data->extend_cfg.capture_a_irq, data->extend_cfg.capture_a_ipl, &data->fsp_ctrl);
 
 	R_ICU->IELSR[data->fsp_cfg.cycle_end_irq] = (elc_event_t)data->overflow_event;
