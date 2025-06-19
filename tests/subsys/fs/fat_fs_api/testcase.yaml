@@ -20,6 +20,7 @@ tests:
     filter: dt_compat_enabled("zephyr,sdmmc-disk")
   filesystem.fat.ram.api:
     platform_allow:
+      - native_sim
       - frdm_mcxa156
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
