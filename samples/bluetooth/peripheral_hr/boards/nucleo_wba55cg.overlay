@@ -1,0 +1,29 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 STMicroelectronics
+ */
+
+/ {
+	/* Change min residency time to ease power consumption measurement */
+	cpus {
+		cpu0: cpu@0 {
+			cpu-power-states = <&stop0 &stop1 &standby>;
+		};
+
+		power-states {
+			standby: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <1>;
+				min-residency-us = <10000>;
+				exit-latency-us = <1000>;
+			};
+		};
+	};
+
+};
+
+&lptim1 {
+	status = "okay";
+};
