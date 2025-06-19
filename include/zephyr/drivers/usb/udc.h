@@ -291,6 +291,10 @@ struct udc_data {
 	struct net_buf *setup;
 	/** Driver private data */
 	void *priv;
+#if CONFIG_UDC_ENABLE_SOF
+	uint64_t sof_stamp;
+	uint16_t fnumber;
+#endif
 };
 
 /**
@@ -728,6 +732,46 @@ static inline const void *udc_get_event_ctx(const struct device *dev)
 
 	return data->event_ctx;
 }
+
+/**
+ * @brief Get SOF interrupt stamp in cycles
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ *
+ * @return SOF interrupt stamp in cycles
+ */
+#if defined(CONFIG_UDC_ENABLE_SOF)
+static inline const uint64_t udc_get_sof_stamp(const struct device *dev)
+{
+	struct udc_data *data = (struct udc_data *)dev->data;
+
+	return data->sof_stamp;
+}
+#else
+#define udc_get_sof_stamp(dev) (0)
+#endif
+
+/**
+ * @brief Get frame number
+ *
+ * @param[in] dev Pointer to device struct of the driver instance
+ *
+ * When the controller operates at high speed, the frame value contains a
+ * microframe number. When the  controller operates at full speed, this field
+ * contains a frame number.
+ *
+ * @return Frame or microframe number of the last SOF interrupt
+ */
+#if defined(CONFIG_UDC_ENABLE_SOF)
+static inline const uint16_t udc_get_frame_number(const struct device *dev)
+{
+	struct udc_data *data = (struct udc_data *)dev->data;
+
+	return data->fnumber;
+}
+#else
+#define udc_get_frame_number(dev) (0)
+#endif
 
 /**
  * @brief Get endpoint size from UDC endpoint configuration
