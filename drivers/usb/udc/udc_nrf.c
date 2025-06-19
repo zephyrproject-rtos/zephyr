@@ -436,6 +436,7 @@ static void ev_sof_handler(void)
 
 	m_ep_armed &= ~USBD_EPISO_BIT_MASK;
 
+	udc_update_sof_stamp(udc_nrf_dev, 0);
 	udc_submit_sof_event(udc_nrf_dev);
 }
 
