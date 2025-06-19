@@ -157,8 +157,10 @@ static int clk_mck_get_rate(const struct device *dev, clock_control_subsys_t sys
 
 	struct clk_master *master = to_clk_master(dev);
 	int retval = 0;
+	uint32_t mcr;
 
 	const struct device *parent;
+	k_spinlock_key_t key;
 	uint8_t i;
 
 	for (i = 0; ; i++) {
@@ -171,6 +173,12 @@ static int clk_mck_get_rate(const struct device *dev, clock_control_subsys_t sys
 			break;
 		}
 	}
+
+	key = k_spin_lock(master->lock);
+	master->pmc->PMC_MCR = master->id;
+	mcr = master->pmc->PMC_MCR;
+	master->div = FIELD_GET(PMC_MCR_DIV_Msk, mcr);
+	k_spin_unlock(master->lock, key);
 
 	retval = clock_control_get_rate(parent, NULL, rate);
 	if (retval) {
