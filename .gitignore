@@ -109,5 +109,6 @@ SysbuildKconfig.txt
 SysbuildKconfigBasic.txt
 SysbuildKconfigBasicNoModules.txt
 TextEncoding.txt
+Vale.txt
 YAMLLint.txt
 ZephyrModuleFile.txt

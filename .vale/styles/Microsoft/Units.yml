@@ -1,0 +1,16 @@
+extends: existence
+message: "Don't spell out the number in '%s'."
+link: https://docs.microsoft.com/en-us/style-guide/a-z-word-list-term-collections/term-collections/units-of-measure-terms
+level: error
+raw:
+  - '[a-zA-Z]+\s'
+tokens:
+  - '(?:centi|milli)?meters'
+  - '(?:kilo)?grams'
+  - '(?:kilo)?meters'
+  - '(?:mega)?pixels'
+  - cm
+  - inches
+  - lb
+  - miles
+  - pounds

@@ -1,0 +1,11 @@
+extends: existence
+message: "For a general audience, use 'address' rather than 'URL'."
+link: https://docs.microsoft.com/en-us/style-guide/urls-web-addresses
+level: warning
+action:
+  name: replace
+  params:
+    - URL
+    - address
+tokens:
+  - URL
