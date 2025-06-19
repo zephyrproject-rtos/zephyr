@@ -232,7 +232,7 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 
 		/* Only queueing of output buffers is supported for now */
 		buffers[i]->type = VIDEO_BUF_TYPE_OUTPUT;
-
+		buffers[i]->index = i;
 		ret = video_enqueue(dev, buffers[i]);
 		if (ret < 0) {
 			shell_error(sh, "Failed to enqueue buffer %u: %s", i, strerror(-ret));

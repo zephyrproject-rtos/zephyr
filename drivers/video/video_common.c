@@ -99,6 +99,22 @@ void video_buffer_release(struct video_buffer *vbuf)
 	}
 }
 
+int video_enqueue(const struct device *dev, struct video_buffer *buf)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
+	__ASSERT_NO_MSG(buf->buffer != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->enqueue == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enqueue(dev, &video_buf[buf->index]);
+}
+
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
 			    size_t *idx)
 {
