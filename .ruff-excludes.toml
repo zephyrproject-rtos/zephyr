@@ -314,7 +314,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM112",   # https://docs.astral.sh/ruff/rules/uncapitalized-environment-variables
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
