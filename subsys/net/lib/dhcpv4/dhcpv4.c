@@ -556,6 +556,10 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
 		goto fail;
 		break;
+	case NET_DHCPV4_INIT_REBOOT:
+		with_requested_ip = true;
+		timeout = dhcpv4_update_message_timeout(&iface->config.dhcpv4);
+		break;
 	case NET_DHCPV4_REQUESTING:
 		with_server_id = true;
 		with_requested_ip = true;
@@ -802,6 +806,7 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 	case NET_DHCPV4_SELECTING:
 		/* Failed to get OFFER message, send DISCOVER again */
 		return dhcpv4_send_discover(iface);
+	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_REQUESTING:
 		/* Maximum number of renewal attempts failed, so start
 		 * from the beginning.
@@ -1424,6 +1429,7 @@ static inline void dhcpv4_handle_msg_offer(struct net_if *iface,
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_REQUESTING:
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
@@ -1446,6 +1452,7 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
 		break;
+	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_REQUESTING:
 		NET_INFO("Received: %s",
 			 net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
@@ -1480,6 +1487,7 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
 		if (memcmp(&iface->config.dhcpv4.request_server_addr,
@@ -1665,7 +1673,9 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 
 		if (iface->config.dhcpv4.state == NET_DHCPV4_BOUND) {
 			iface->config.dhcpv4.attempts = 0U;
-			iface->config.dhcpv4.state = NET_DHCPV4_INIT;
+			iface->config.dhcpv4.state = IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT)
+						   ? NET_DHCPV4_INIT_REBOOT
+						   : NET_DHCPV4_INIT;
 			NET_DBG("enter state=%s", net_dhcpv4_state_name(
 					iface->config.dhcpv4.state));
 			/* Remove any bound address as interface is gone */
@@ -1753,6 +1763,7 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 	static const char * const name[] = {
 		"disabled",
 		"init",
+		"init-reboot",
 		"selecting",
 		"requesting",
 		"renewing",
@@ -1796,7 +1807,12 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
-		iface->config.dhcpv4.state = NET_DHCPV4_INIT;
+		if (IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT) &&
+		    iface->config.dhcpv4.requested_ip.s_addr != INADDR_ANY) {
+			iface->config.dhcpv4.state = NET_DHCPV4_INIT_REBOOT;
+		} else {
+			iface->config.dhcpv4.state = NET_DHCPV4_INIT;
+		}
 		NET_DBG("iface %p state=%s", iface,
 			net_dhcpv4_state_name(iface->config.dhcpv4.state));
 
@@ -1838,6 +1854,7 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 
 		break;
 	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
 	case NET_DHCPV4_RENEWING:
@@ -1938,6 +1955,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 
 		__fallthrough;
 	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
 	case NET_DHCPV4_REBINDING:
@@ -2028,11 +2046,18 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 	}
 
 	/* Only accept DHCPv4 packets during active query. */
-	if (iface->config.dhcpv4.state != NET_DHCPV4_SELECTING &&
-	    iface->config.dhcpv4.state != NET_DHCPV4_REQUESTING &&
-	    iface->config.dhcpv4.state != NET_DHCPV4_RENEWING &&
-	    iface->config.dhcpv4.state != NET_DHCPV4_REBINDING) {
+	switch (iface->config.dhcpv4.state) {
+	case NET_DHCPV4_DISABLED:
+	case NET_DHCPV4_INIT:
+	case NET_DHCPV4_BOUND:
+	case NET_DHCPV4_DECLINE:
 		return false;
+	case NET_DHCPV4_INIT_REBOOT:
+	case NET_DHCPV4_SELECTING:
+	case NET_DHCPV4_REQUESTING:
+	case NET_DHCPV4_RENEWING:
+	case NET_DHCPV4_REBINDING:
+		break;
 	}
 
 	net_pkt_cursor_backup(pkt, &backup);
