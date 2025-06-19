@@ -185,7 +185,7 @@ ZTEST(test_hci_codecs_info, test_read_codec_capabilities)
 	bt_enable(NULL);
 
 	/* Read Local Supported Codec Capabilities */
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_CODEC_CAPABILITIES, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	cp = net_buf_add(buf, sizeof(*cp));
 
 	cp->codec_id.coding_format = READ_CAPABS_CODING_FMT;
@@ -268,7 +268,7 @@ ZTEST(test_hci_codecs_info, test_read_ctlr_delay)
 	bt_enable(NULL);
 
 	/* Read Local Supported Controller Delay */
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_CTLR_DELAY, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	cp = net_buf_add(buf, sizeof(*cp) + sizeof(read_delay_codec_config));
 
 	cp->codec_id.coding_format = READ_DELAY_CODING_FMT;
