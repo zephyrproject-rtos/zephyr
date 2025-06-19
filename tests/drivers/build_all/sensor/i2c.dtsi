@@ -1360,3 +1360,12 @@ test_i2c_npm1304: npm1304@b6 {
 		current-microamp = <10000>;
 	};
 };
+
+test_i2c_ds3231: ds3231@b7 {
+	compatible = "maxim,ds3231-mfd";
+	reg = <0xb7>;
+
+	test_i2c_ds3231_sensor: ds3231_sensor {
+		compatible = "maxim,ds3231-sensor";
+	};
+};
