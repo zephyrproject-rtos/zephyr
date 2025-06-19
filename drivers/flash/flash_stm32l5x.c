@@ -21,7 +21,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32U5X) \
+	    || defined(CONFIG_SOC_SERIES_STM32U3X)
 /*
  * It is used to handle the 2 banks discontinuity case,
  * so define it to flash size to avoid the unexpected check.
