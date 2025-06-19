@@ -1,0 +1,61 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/mipi_dsi/mipi_dsi.h>
+
+/ {
+	chosen {
+		zephyr,display = &lcdif;
+	};
+
+	dram: memory@d0000000 {
+		reg = <0xd0000000 DT_SIZE_M(64)>;
+	};
+};
+
+&media_blk_ctrl {
+	status = "okay";
+};
+
+&lcdif {
+	width = <1024>;
+	height = <600>;
+	pixel-format = "argb-8888";
+	media-axi-clk-rate = <400000000>;
+	media-apb-clk-rate = <133333334>;
+	status = "okay";
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <100>;
+		hfront-porch = <100>;
+		hback-porch = <100>;
+		vsync-len = <10>;
+		vfront-porch = <10>;
+		vback-porch = <10>;
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <1>;
+		vsync-active = <1>;
+		clock-frequency = <50000000>;
+	};
+};
+
+&mipi_dsi {
+	dpi-color-coding = "24-bit";
+	dpi-video-mode = "non-burst-sync-pulse";
+	dphy-ref-frequency = <24000000>;
+	data-rate-clock = <600000000>;
+	status = "okay";
+};
+
+&display_i2c {
+	status = "okay";
+};
+
+&dsi_panel {
+	mipi-dsi = <&mipi_dsi>;
+};
