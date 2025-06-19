@@ -9,7 +9,7 @@
 
 /* List of fakes used by this unit tester */
 #define HCI_CORE_MOCKS_FFF_FAKES_LIST(FAKE)                                                        \
-	FAKE(bt_hci_cmd_create)                                                                    \
+	FAKE(bt_hci_cmd_alloc)                                                                     \
 	FAKE(bt_hci_cmd_send_sync)                                                                 \
 	FAKE(bt_hci_le_read_remote_features)                                                       \
 	FAKE(bt_hci_disconnect)                                                                    \
@@ -24,7 +24,7 @@
 	FAKE(bt_lookup_id_addr)                                                                    \
 	FAKE(bt_le_set_phy)
 
-DECLARE_FAKE_VALUE_FUNC(struct net_buf *, bt_hci_cmd_create, uint16_t, uint8_t);
+DECLARE_FAKE_VALUE_FUNC(struct net_buf *, bt_hci_cmd_alloc, k_timeout_t);
 DECLARE_FAKE_VALUE_FUNC(int, bt_hci_cmd_send_sync, uint16_t, struct net_buf *, struct net_buf **);
 DECLARE_FAKE_VALUE_FUNC(int, bt_hci_le_read_remote_features, struct bt_conn *);
 DECLARE_FAKE_VALUE_FUNC(int, bt_hci_disconnect, uint16_t, uint8_t);

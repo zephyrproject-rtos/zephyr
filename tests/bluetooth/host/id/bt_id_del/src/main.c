@@ -232,7 +232,7 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv)
 	keys.state |= BT_KEYS_ID_ADDED;
 
 	/* This makes addr_res_enable() succeeds and returns 0 */
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	bt_id_del(&keys);
@@ -284,7 +284,7 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv_privacy_en
 	keys.state |= BT_KEYS_ID_ADDED;
 
 	/* This makes addr_res_enable() succeeds and returns 0 */
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	bt_id_del(&keys);
@@ -333,7 +333,7 @@ ZTEST(bt_id_del, test_send_hci_id_del)
 
 	/* This makes hci_id_del() succeeds and returns 0 */
 	net_buf_simple_add_fake.return_val = &cp;
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	bt_id_del(&keys);
@@ -388,7 +388,7 @@ ZTEST(bt_id_del, test_scan_re_enabled_observer_enabled_ext_adv)
 
 	/* This makes hci_id_del() succeeds and returns 0 */
 	net_buf_simple_add_fake.return_val = &cp;
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	bt_id_del(&keys);

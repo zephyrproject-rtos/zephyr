@@ -218,7 +218,7 @@ ZTEST(bt_id_add, test_conn_lookup_returns_null_broadcaster_no_ext_adv)
 	bt_conn_lookup_state_le_fake.return_val = NULL;
 
 	/* This makes addr_res_enable() succeeds and returns 0 */
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	bt_id_add(&keys);
@@ -268,7 +268,7 @@ ZTEST(bt_id_add, test_conn_lookup_returns_null_no_ext_adv_no_resolving_entries)
 
 	/* This makes hci_id_add() succeeds and returns 0 */
 	net_buf_simple_add_fake.return_val = &cp;
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	bt_id_add(&keys);
@@ -326,7 +326,7 @@ ZTEST(bt_id_add, test_scan_re_enabled_observer_enabled_ext_adv)
 
 	/* This makes hci_id_add() succeeds and returns 0 */
 	net_buf_simple_add_fake.return_val = &cp;
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	bt_id_add(&keys);

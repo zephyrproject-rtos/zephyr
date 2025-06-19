@@ -110,7 +110,7 @@ ZTEST(bt_id_set_private_addr_invalid_cases, test_setting_address_set_random_addr
 	}
 
 	/* This will make set_random_address() returns a negative number error code */
-	bt_hci_cmd_create_fake.return_val = NULL;
+	bt_hci_cmd_alloc_fake.return_val = NULL;
 
 	err = bt_id_set_private_addr(BT_ID_DEFAULT);
 
