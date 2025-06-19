@@ -49,7 +49,6 @@ struct drv84xx_pin_states {
 struct drv84xx_data {
 	const struct step_dir_stepper_common_data common;
 	const struct device *dev;
-	bool enabled;
 	struct drv84xx_pin_states pin_states;
 	enum stepper_micro_step_resolution ustep_res;
 	struct gpio_callback fault_cb_data;
@@ -220,8 +219,6 @@ static int drv84xx_enable(const struct device *dev)
 		}
 	}
 
-	data->enabled = true;
-
 	return ret;
 }
 
@@ -254,10 +251,6 @@ static int drv84xx_disable(const struct device *dev)
 			return ret;
 		}
 	}
-
-	config->common.timing_source->stop(dev);
-
-	data->enabled = false;
 
 	return ret;
 }
@@ -351,42 +344,6 @@ static int drv84xx_get_micro_step_res(const struct device *dev,
 	return 0;
 }
 
-static int drv84xx_move_to(const struct device *dev, int32_t target)
-{
-	struct drv84xx_data *data = dev->data;
-
-	if (!data->enabled) {
-		LOG_ERR("Failed to move to target position, device is not enabled");
-		return -ECANCELED;
-	}
-
-	return step_dir_stepper_common_move_to(dev, target);
-}
-
-static int drv84xx_move_by(const struct device *dev, int32_t steps)
-{
-	struct drv84xx_data *data = dev->data;
-
-	if (!data->enabled) {
-		LOG_ERR("Failed to move by delta, device is not enabled");
-		return -ECANCELED;
-	}
-
-	return step_dir_stepper_common_move_by(dev, steps);
-}
-
-static int drv84xx_run(const struct device *dev, enum stepper_direction direction)
-{
-	struct drv84xx_data *data = dev->data;
-
-	if (!data->enabled) {
-		LOG_ERR("Failed to run stepper, device is not enabled");
-		return -ECANCELED;
-	}
-
-	return step_dir_stepper_common_run(dev, direction);
-}
-
 void fault_event(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct drv84xx_data *data = CONTAINER_OF(cb, struct drv84xx_data, fault_cb_data);
@@ -478,13 +435,13 @@ static int drv84xx_init(const struct device *dev)
 static DEVICE_API(stepper, drv84xx_stepper_api) = {
 	.enable = drv84xx_enable,
 	.disable = drv84xx_disable,
-	.move_by = drv84xx_move_by,
-	.move_to = drv84xx_move_to,
+	.move_by = step_dir_stepper_common_move_by,
+	.move_to = step_dir_stepper_common_move_to,
 	.is_moving = step_dir_stepper_common_is_moving,
 	.set_reference_position = step_dir_stepper_common_set_reference_position,
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
 	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
-	.run = drv84xx_run,
+	.run = step_dir_stepper_common_run,
 	.stop = step_dir_stepper_common_stop,
 	.set_micro_step_res = drv84xx_set_micro_step_res,
 	.get_micro_step_res = drv84xx_get_micro_step_res,
