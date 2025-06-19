@@ -136,6 +136,11 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
 	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
 
+	__ASSERT_NO_MSG(step != 0U);
+	/* Prevent division by zero */
+	if (step == 0U) {
+		return;
+	}
 	/* Saturate the desired value to the min/max supported */
 	goal = CLAMP(goal, min, max);
 
