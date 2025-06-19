@@ -30,6 +30,7 @@
 	chosen {
 		zephyr,sram = &ddram;
 		zephyr,console = &usart3;
+		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
 	};
 
@@ -248,4 +249,8 @@
 		disk-name = "SD";
 		status = "okay";
 	};
+};
+
+&trng {
+	status = "okay";
 };
