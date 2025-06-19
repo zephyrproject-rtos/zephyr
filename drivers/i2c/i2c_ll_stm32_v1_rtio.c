@@ -63,7 +63,7 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 	LL_I2C_GenerateStartCondition(i2c);
 }
 
-static void i2c_stm32_master_mode_end(const struct device *dev)
+static void i2c_stm32_master_mode_end(const struct device *dev, int status)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -72,7 +72,8 @@ static void i2c_stm32_master_mode_end(const struct device *dev)
 
 	i2c_stm32_disable_transfer_interrupts(dev);
 	LL_I2C_Disable(i2c);
-	if ((data->xfer_len == 0) && i2c_rtio_complete(ctx, 0)) {
+
+	if ((data->xfer_len == 0U) && i2c_rtio_complete(ctx, status)) {
 		i2c_stm32_start(dev);
 	}
 }
@@ -178,7 +179,7 @@ static void handle_txe(const struct device *dev)
 			/* Read DR to clear BTF flag */
 			LL_I2C_ReceiveData8(i2c);
 		}
-		i2c_stm32_master_mode_end(dev);
+		i2c_stm32_master_mode_end(dev, 0);
 	}
 }
 
@@ -193,7 +194,7 @@ static void handle_rxne(const struct device *dev)
 		if ((data->xfer_flags & I2C_MSG_STOP) != 0) {
 			LL_I2C_GenerateStopCondition(i2c);
 		}
-		i2c_stm32_master_mode_end(dev);
+		i2c_stm32_master_mode_end(dev, 0);
 		break;
 	case 1:
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
@@ -206,7 +207,7 @@ static void handle_rxne(const struct device *dev)
 		data->xfer_len--;
 		*data->xfer_buf = LL_I2C_ReceiveData8(i2c);
 		data->xfer_buf++;
-		i2c_stm32_master_mode_end(dev);
+		i2c_stm32_master_mode_end(dev, 0);
 		break;
 	case 2:
 		/*
@@ -261,7 +262,7 @@ static void handle_btf(const struct device *dev)
 				*data->xfer_buf = LL_I2C_ReceiveData8(i2c);
 				data->xfer_buf++;
 			}
-			i2c_stm32_master_mode_end(dev);
+			i2c_stm32_master_mode_end(dev, 0);
 			break;
 		case 3:
 			/* Set NACK before reading N-2 byte*/
@@ -305,19 +306,23 @@ int i2c_stm32_error(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_AF(i2c)) {
 		LL_I2C_ClearFlag_AF(i2c);
 		LL_I2C_GenerateStopCondition(i2c);
-		return -EIO;
+		goto error;
 	}
 	if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
 		LL_I2C_ClearFlag_ARLO(i2c);
-		return -EIO;
+		goto error;
 	}
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
-		return -EIO;
+		goto error;
 	}
 
 	return 0;
+error:
+	i2c_stm32_master_mode_end(dev, -EIO);
+	return -EIO;
+
 }
 
 int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
