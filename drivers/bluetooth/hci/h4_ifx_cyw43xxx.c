@@ -122,8 +122,7 @@ static int bt_update_controller_baudrate(const struct device *bt_uart_dev, uint3
 	/* Allocate buffer for update uart baudrate command.
 	 * It will be BT_HCI_OP_RESET with extra parameters.
 	 */
-	buf = bt_hci_cmd_create(BT_HCI_VND_OP_UPDATE_BAUDRATE,
-				HCI_VSC_UPDATE_BAUD_RATE_LENGTH);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
 		LOG_ERR("Unable to allocate command buffer");
 		return -ENOMEM;
@@ -172,7 +171,7 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 		uint16_t op_code = *(uint16_t *)data;
 
 		/* Allocate buffer for hci_write_ram/hci_launch_ram command. */
-		buf = bt_hci_cmd_create(op_code, data_length);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
 			LOG_ERR("Unable to allocate command buffer");
 			return err;
