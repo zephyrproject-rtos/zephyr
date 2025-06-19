@@ -127,11 +127,29 @@ static int i2c_stm32_configure(const struct device *dev,
 	return i2c_rtio_configure(ctx, dev_config_raw);
 }
 
+#define OPERATION(msg)	((msg)->flags & I2C_MSG_RW_MASK)
+
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 				   uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
+
+	/* Always set I2C_MSG_RESTART flag on first message in order to send start condition */
+	msgs[0].flags |= I2C_MSG_RESTART;
+
+	for (size_t n = 1; n < num_msgs; n++) {
+		if ((OPERATION(msgs + n - 1) != OPERATION(msgs + n)) &&
+		    ((msgs[n].flags & I2C_MSG_RESTART) == 0U)) {
+			LOG_ERR("Missing restart flag between message of different directions");
+			return -EINVAL;
+		}
+
+		if ((msgs[n - 1].flags & I2C_MSG_STOP) != 0U) {
+			LOG_ERR("Stop condition is only allowed on last message");
+			return -EINVAL;
+		}
+	}
 
 	return i2c_rtio_transfer(ctx, msgs, num_msgs, addr);
 }
@@ -149,6 +167,9 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
+
+	/* Always set I2C_MSG_RESTART flag on first message in order to send start condition */
+	iodev_sqe->sqe.iodev_flags |= RTIO_IODEV_I2C_RESTART;
 
 	if (i2c_rtio_submit(ctx, iodev_sqe)) {
 		i2c_stm32_start(dev);
