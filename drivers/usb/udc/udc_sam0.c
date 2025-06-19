@@ -588,6 +588,7 @@ static void sam0_isr_handler(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
 	    (intflag & USB_DEVICE_INTFLAG_SOF)) {
+		udc_update_sof_stamp(dev, 0);
 		udc_submit_sof_event(dev);
 	}
 

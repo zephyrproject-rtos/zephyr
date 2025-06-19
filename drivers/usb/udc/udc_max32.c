@@ -535,6 +535,9 @@ static int udc_max32_event_callback(maxusb_event_t event, void *cbdata)
 			udc_set_suspended(dev, false);
 			udc_submit_event(dev, UDC_EVT_RESUME, 0);
 		}
+
+		udc_update_sof_stamp(dev, 0);
+		udc_submit_sof_event(dev);
 		break;
 	case MAXUSB_EVENT_BRST:
 		LOG_DBG("BRST event occurred");
