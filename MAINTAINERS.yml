@@ -3530,6 +3530,19 @@ Bouffalolab Platforms:
   labels:
     - "platform: bouffalolab"
 
+realtek ameba Platforms:
+  status: maintained
+  maintainers:
+    - zjian-zhang
+  files:
+    - drivers/*/*ameba*
+    - boards/realtek/
+    - soc/realtek/
+    - dts/arm/realtek/
+    - dts/bindings/*/*ameba*
+  labels:
+    - "platform: ameba"
+
 Broadcom Platforms:
   status: odd fixes
   files:
@@ -4999,6 +5012,14 @@ West:
     - modules/hal_ambiq/
   labels:
     - "platform: Ambiq"
+
+"West project: hal_realtek":
+  status: maintained
+  maintainers:
+    - zjian-zhang
+  files: []
+  labels:
+    - "platform: ameba"
 
 "West project: hal_atmel":
   status: maintained
