@@ -1,0 +1,6 @@
+board:
+  name: weact_stm32f446_core
+  full_name: STM32F446 Core Board V1.1
+  vendor: weact
+  socs:
+    - name: stm32f446xx
