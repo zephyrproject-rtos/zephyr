@@ -22,7 +22,7 @@
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
-#include <zephyr/drivers/firmware/nrf_ironside/cpuconf.h>
+#include <nrf_ironside/cpuconf.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
