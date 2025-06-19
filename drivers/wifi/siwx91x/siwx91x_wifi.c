@@ -138,7 +138,6 @@ static sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event
 {
 	ARG_UNUSED(event);
 	ARG_UNUSED(result_length);
-	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_si91x_module_state_stats_response_t *notif = response;
 	uint8_t module_state = notif->state_code & 0xF0;
 	struct siwx91x_dev *sidev = arg;
@@ -154,11 +153,6 @@ static sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event
 		LOG_DBG("Better AP found while roaming");
 		break;
 	case STATE_ASSOCIATED:
-		if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_AP_INTERFACE) {
-			wifi_mgmt_raise_ap_enable_result_event(sidev->iface,
-							       WIFI_STATUS_AP_SUCCESS);
-		}
-
 		sidev->state = WIFI_STATE_COMPLETED;
 		break;
 	case STATE_UNASSOCIATED:
@@ -854,6 +848,9 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
 		net_if_dormant_off(sidev->iface);
 	}
+
+	wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_SUCCESS);
+	sidev->state = WIFI_STATE_COMPLETED;
 
 	return 0;
 }
