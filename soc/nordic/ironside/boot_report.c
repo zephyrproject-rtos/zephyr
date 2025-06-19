@@ -5,7 +5,7 @@
 
 #include <errno.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/firmware/nrf_ironside/boot_report.h>
+#include <nrf_ironside/boot_report.h>
 
 #define IRONSIDE_SE_BOOT_REPORT_ADDR DT_REG_ADDR(DT_NODELABEL(ironside_se_boot_report))
 
