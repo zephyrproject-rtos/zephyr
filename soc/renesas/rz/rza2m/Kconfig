@@ -4,3 +4,4 @@
 config SOC_SERIES_RZA2M
 	select ARM
 	select CPU_CORTEX_A9
+	select ATOMIC_OPERATIONS_C
