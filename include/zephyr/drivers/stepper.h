@@ -237,7 +237,7 @@ __subsystem struct stepper_driver_api {
 /**
  * @brief Enable stepper driver
  *
- * @details Enabling the driver will energize the coils, however not set the stepper in motion.
+ * @details Enabling the driver shall switch on the power stage and energize the coils.
  *
  * @param dev pointer to the stepper driver instance
  *
@@ -256,7 +256,9 @@ static inline int z_impl_stepper_enable(const struct device *dev)
 /**
  * @brief Disable stepper driver
  *
- * @details Disabling the driver shall cancel all active movements and de-energize the coils.
+ * @details Disabling the driver shall switch off the power stage and de-energize the coils.
+ * Disabling the stepper does not implicitly stop the stepper. If the motor shall not move after
+ * re-enabling the stepper than consider calling stepper_stop() before.
  *
  * @param dev pointer to the stepper driver instance
  *
@@ -477,7 +479,7 @@ static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t
  * @brief Run the stepper with a given step interval in a given direction
  *
  * @details The stepper shall be set into motion and run continuously until
- * stalled or stopped using some other command, for instance, stepper_enable(false). This
+ * stalled or stopped using some other command, for instance, stepper_stop(). This
  * function is non-blocking.
  *
  * @param dev pointer to the stepper driver instance
