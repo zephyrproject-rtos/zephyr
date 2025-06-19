@@ -295,7 +295,7 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p1_io15_pp15>;
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
-		 <&rcc STM32_SRC_IC3 XSPI1_SEL(2)>,
+		 <&rcc STM32_SRC_HCLK5 XSPI1_SEL(0)>,
 		 <&rcc STM32_CLOCK(AHB5, 13)>;
 	status = "okay";
 
