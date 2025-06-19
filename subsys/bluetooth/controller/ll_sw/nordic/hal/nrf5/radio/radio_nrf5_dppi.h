@@ -505,7 +505,6 @@ static inline void hal_radio_sw_switch_disable(void)
 	 * are subscribed to RADIO_END event, i.e on the same channel.
 	 * So we simply cancel the task subscription.
 	 */
-	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
@@ -539,7 +538,9 @@ static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
 
 static inline void hal_radio_sw_switch_cleanup(void)
 {
+	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	hal_radio_sw_switch_disable();
+
 	nrf_dppi_channels_disable(NRF_DPPIC, BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(0));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(1));
