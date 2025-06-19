@@ -169,6 +169,7 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_ok(video_stream_start(rx_dev, type));
 
 	vbuf->type = type;
+	vbuf->index = 0;
 
 	/* Enqueue a first buffer */
 	zexpect_ok(video_enqueue(rx_dev, vbuf));
@@ -176,6 +177,7 @@ ZTEST(video_common, test_video_vbuf)
 	/* Receive the completed buffer */
 	zexpect_ok(video_dequeue(rx_dev, &vbuf, K_FOREVER));
 	zexpect_not_null(vbuf);
+	zexpect_equal(vbuf->index, 0);
 	zexpect_equal(vbuf->bytesused, vbuf->size);
 
 	/* Enqueue back the same buffer */
@@ -187,6 +189,7 @@ ZTEST(video_common, test_video_vbuf)
 	/* Expect the buffer to immediately be available */
 	zexpect_ok(video_dequeue(rx_dev, &vbuf, K_FOREVER));
 	zexpect_not_null(vbuf);
+	zexpect_equal(vbuf->index, 0);
 	zexpect_equal(vbuf->bytesused, vbuf->size);
 
 	/* Nothing left in the queue, possible to stop */

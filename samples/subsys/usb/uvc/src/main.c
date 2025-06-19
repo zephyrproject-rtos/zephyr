@@ -94,8 +94,9 @@ int main(void)
 		}
 
 		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
+		vbuf->index = i;
 
-		ret = video_enqueue(video_dev, vbuf);
+		ret = video_dev, vbuf);
 		if (ret != 0) {
 			LOG_ERR("Could not enqueue video buffer");
 			return ret;
