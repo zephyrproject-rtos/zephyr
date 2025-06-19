@@ -535,5 +535,14 @@
 			assigned-clock-rates = <200000000>;
 			status = "disabled";
 		};
+
+		trng: rng@e2010000 {
+			compatible = "atmel,sam-trng";
+			reg = <0xe2010000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 97>;
+			status = "disabled";
+		};
 	};
 };
