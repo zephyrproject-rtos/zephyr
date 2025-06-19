@@ -24,6 +24,7 @@ static const uint8_t
 		{0u, 0u, 1u, 1u}, {0u, 0u, 0u, 1u}, {1u, 0u, 0u, 1u}, {1u, 0u, 0u, 0u}};
 
 struct gpio_stepper_config {
+	const struct gpio_dt_spec en_pin;
 	const struct gpio_dt_spec *control_pins;
 	bool invert_direction;
 };
@@ -39,7 +40,6 @@ struct gpio_stepper_data {
 	int32_t actual_position;
 	uint64_t delay_in_ns;
 	int32_t step_count;
-	bool is_enabled;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
 };
@@ -183,11 +183,6 @@ static int gpio_stepper_move_by(const struct device *dev, int32_t micro_steps)
 {
 	struct gpio_stepper_data *data = dev->data;
 
-	if (!data->is_enabled) {
-		LOG_ERR("Stepper motor is not enabled");
-		return -ECANCELED;
-	}
-
 	if (data->delay_in_ns == 0) {
 		LOG_ERR("Step interval not set or invalid step interval set");
 		return -EINVAL;
@@ -262,11 +257,6 @@ static int gpio_stepper_run(const struct device *dev, const enum stepper_directi
 {
 	struct gpio_stepper_data *data = dev->data;
 
-	if (!data->is_enabled) {
-		LOG_ERR("Stepper motor is not enabled");
-		return -ECANCELED;
-	}
-
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
 		data->direction = direction;
@@ -317,18 +307,16 @@ static int gpio_stepper_set_event_callback(const struct device *dev,
 
 static int gpio_stepper_enable(const struct device *dev)
 {
+	const struct gpio_stepper_config *config = dev->config;
 	struct gpio_stepper_data *data = dev->data;
 	int err;
 
-	if (data->is_enabled) {
-		LOG_WRN("Stepper motor is already enabled");
-		return 0;
-	}
-
 	K_SPINLOCK(&data->lock) {
-		err = energize_coils(dev, true);
-		if (err == 0) {
-			data->is_enabled = true;
+		if (config->en_pin.port != NULL) {
+			err = gpio_pin_set_dt(&config->en_pin, 1);
+		} else {
+			LOG_DBG("No en_pin detected");
+			err = -ENOTSUP;
 		}
 	}
 	return err;
@@ -336,14 +324,18 @@ static int gpio_stepper_enable(const struct device *dev)
 
 static int gpio_stepper_disable(const struct device *dev)
 {
+	const struct gpio_stepper_config *config = dev->config;
 	struct gpio_stepper_data *data = dev->data;
 	int err;
 
 	K_SPINLOCK(&data->lock) {
-		(void)k_work_cancel_delayable(&data->stepper_dwork);
-		err = energize_coils(dev, false);
-		if (err == 0) {
-			data->is_enabled = false;
+		(void)energize_coils(dev, false);
+		if (config->en_pin.port != NULL) {
+			err = gpio_pin_set_dt(&config->en_pin, 0);
+		} else {
+			LOG_DBG("No en_pin detected, power stages will not be turned off if "
+				"stepper is in motion");
+			err = -ENOTSUP;
 		}
 	}
 	return err;
