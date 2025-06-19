@@ -318,17 +318,16 @@ static int rzt2m_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		return -ENOTSUP;
 	}
 
-	uint8_t irq = rzt2m_gpio_get_pin_irq(dev, pin);
-	bool irq_used_by_other = rzt2m_gpio_is_irq_used_by_other_pin(dev, pin, irq);
-
+	int irq = rzt2m_gpio_get_pin_irq(dev, pin);
 	if (irq < 0) {
 		return -ENOTSUP;
 	}
-
 	/* secure range - currently not supported*/
 	if (irq >= NS_IRQ_COUNT) {
 		return -ENOSYS;
 	}
+
+	bool irq_used_by_other = rzt2m_gpio_is_irq_used_by_other_pin(dev, pin, irq);
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		rzt2m_gpio_unlock();
