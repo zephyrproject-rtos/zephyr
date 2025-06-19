@@ -503,7 +503,7 @@ struct net_if_dhcpv4 {
 	/** Timer start */
 	int64_t timer_start;
 
-	/** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
+	/** Time for INIT, INIT-REBOOT, DISCOVER, REQUESTING, RENEWAL */
 	uint32_t request_time;
 
 	uint32_t xid;
