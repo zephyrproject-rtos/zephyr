@@ -176,7 +176,6 @@ static void stallguard_work_handler(struct k_work *work)
 	}
 }
 
-
 static void execute_callback(const struct device *dev, const enum stepper_event event)
 {
 	struct tmc50xx_stepper_data *data = dev->data;
@@ -543,6 +542,25 @@ static int tmc50xx_stepper_run(const struct device *dev, const enum stepper_dire
 	return 0;
 }
 
+static int tmc50xx_stepper_stop(const struct device *dev)
+{
+	const struct tmc50xx_stepper_config *config = dev->config;
+	int err;
+
+	err = tmc50xx_write(config->controller, TMC50XX_RAMPMODE(config->index),
+			    TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	err = tmc50xx_write(config->controller, TMC50XX_VMAX(config->index), 0);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMP_GEN
 
 int tmc50xx_stepper_set_ramp(const struct device *dev,
@@ -704,6 +722,7 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 	.get_actual_position = tmc50xx_stepper_get_actual_position,
 	.move_to = tmc50xx_stepper_move_to,
 	.run = tmc50xx_stepper_run,
+	.stop = tmc50xx_stepper_stop,
 	.set_event_callback = tmc50xx_stepper_set_event_callback,
 };
 
