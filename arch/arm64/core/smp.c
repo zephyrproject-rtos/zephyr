@@ -72,11 +72,11 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	int cpu_count;
 	static int i;
 	uint64_t cpu_mpid = 0;
-	uint64_t master_core_mpid;
+	uint64_t primary_core_mpid;
 
-	/* Now it is on master core */
+	/* Now it is on primary core */
 	__ASSERT(arch_curr_cpu()->id == 0, "");
-	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
+	primary_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
 
@@ -94,7 +94,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	arm64_cpu_boot_params.cpu_num = cpu_num;
 
 	for (; i < cpu_count; i++) {
-		if (cpu_node_list[i] == master_core_mpid) {
+		if (cpu_node_list[i] == primary_core_mpid) {
 			continue;
 		}
 
