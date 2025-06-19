@@ -30,9 +30,7 @@ int cmd_mesh_adv(const struct shell *sh, size_t argc, char *argv[])
 	if (!strcmp(argv[1], "on")) {
 		struct bt_hci_cp_mesh_advertise *cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_VS_MESH,
-					sizeof(struct bt_hci_cp_mesh) +
-					sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
@@ -58,9 +56,7 @@ int cmd_mesh_adv(const struct shell *sh, size_t argc, char *argv[])
 	} else if (!strcmp(argv[1], "off")) {
 		struct bt_hci_cp_mesh_advertise_cancel *cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_VS_MESH,
-					sizeof(struct bt_hci_cp_mesh) +
-					sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
 		}
