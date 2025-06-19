@@ -1300,6 +1300,7 @@ static void numaker_udbd_isr(const struct device *dev)
 		base->INTSTS = USBD_INTSTS_SOFIF_Msk;
 
 		/* UDC stack would handle bottom-half processing */
+		udc_update_sof_stamp(dev, 0);
 		udc_submit_sof_event(dev);
 	}
 
