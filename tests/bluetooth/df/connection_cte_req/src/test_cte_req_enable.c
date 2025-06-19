@@ -63,7 +63,7 @@ int send_conn_cte_req_enable(uint16_t conn_handle,
 	struct bt_hci_cp_le_conn_cte_req_enable *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
