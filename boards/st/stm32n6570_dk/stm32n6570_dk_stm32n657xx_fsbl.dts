@@ -9,9 +9,5 @@
 
 / {
 	model = "STMicroelectronics STM32N6570 Discovery Kit board";
-	compatible = "st,stm32n6570-dk";
-
-	chosen {
-		zephyr,sram = &axisram1;
-	};
+	compatible = "st,stm32n6570-dk-fsbl";
 };
