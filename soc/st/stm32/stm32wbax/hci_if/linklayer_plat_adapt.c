@@ -10,7 +10,8 @@
 
 #include <stm32_backup_domain.h>
 
-#include "scm.h"
+#include <app_conf.h>
+#include <bsp.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(linklayer_plat_adapt);
@@ -245,8 +246,6 @@ void LINKLAYER_PLAT_StartRadioEvt(void)
 	__HAL_RCC_RADIO_CLK_SLEEP_ENABLE();
 
 	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z);
-
-	scm_notifyradiostate(SCM_RADIO_ACTIVE);
 }
 
 void LINKLAYER_PLAT_StopRadioEvt(void)
@@ -254,8 +253,6 @@ void LINKLAYER_PLAT_StopRadioEvt(void)
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 
 	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_LOW_Z);
-
-	scm_notifyradiostate(SCM_RADIO_NOT_ACTIVE);
 }
 
 /* Link Layer notification for RCO calibration start */
