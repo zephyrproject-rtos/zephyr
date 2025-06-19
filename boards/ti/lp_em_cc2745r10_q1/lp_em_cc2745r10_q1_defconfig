@@ -17,3 +17,9 @@ CONFIG_UART_CONSOLE=y
 
 CONFIG_DYNAMIC_THREAD_POOL_SIZE=2
 CONFIG_DYNAMIC_THREAD_STACK_SIZE=1500
+
+# Entropy source for random number generation is disabled by default.
+# Applications can enable it in their prj.conf file.
+CONFIG_ENTROPY_GENERATOR=n
+CONFIG_MBEDTLS=y
+CONFIG_CTR_DRBG_CSPRNG_GENERATOR=y
