@@ -267,6 +267,12 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state)
 		init_state->entry(ctx);
 	}
 #endif
+
+	/* entry action may have transitioned to new state, which must be
+	 * treated as initial state. Otherwise, the subsequent call to
+	 * smf_run_state() won't execute ancestor run actions.
+	 */
+	internal->new_state = false;
 }
 
 void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
