@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <nrf_ironside/call.h>
 #include <zephyr/cache.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/firmware/nrf_ironside/call.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/barrier.h>

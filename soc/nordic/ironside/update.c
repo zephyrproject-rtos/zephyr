@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/firmware/nrf_ironside/update.h>
-#include <zephyr/drivers/firmware/nrf_ironside/call.h>
+#include <nrf_ironside/update.h>
+#include <nrf_ironside/call.h>
 
 int ironside_update(const struct ironside_update_blob *update)
 {
