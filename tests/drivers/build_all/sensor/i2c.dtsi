@@ -1340,3 +1340,11 @@ test_i2c_ds3231: ds3231@b5 {
 			compatible = "maxim,ds3231-sensor";
 	};
 };
+
+test_i2c_adxl366: adxl366@b6 {
+	compatible = "adi,adxl366";
+	reg = <0xb6>;
+	int1-gpios = <&test_gpio 0 0>;
+	odr = <4>;
+	fifo-mode = <0>;
+};
