@@ -2037,7 +2037,7 @@ class EDT:
           A dict mapping vendor prefixes in compatible properties to their
           descriptions. If given, compatibles in the form "manufacturer,device"
           for which "manufacturer" is neither a key in the dict nor a specially
-          exempt set of grandfathered-in cases will cause warnings.
+          exempt set of legacy cases will cause warnings.
 
         werror (default: False):
           If True, some edtlib specific warnings become errors. This currently
