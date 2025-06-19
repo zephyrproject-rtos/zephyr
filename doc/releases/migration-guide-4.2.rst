@@ -432,6 +432,10 @@ Bluetooth HCI
   have been deprecated, but are still usable, with the exception that they can only be
   called once per buffer.
 
+* The :c:func:`bt_hci_cmd_create` function has been depracated and the new :c:func:`bt_hci_cmd_alloc`
+  function should be used instead. The new function takes no parameters because the command
+  sending functions have been updated to do the command header encoding.
+
 Bluetooth Host
 ==============
 
