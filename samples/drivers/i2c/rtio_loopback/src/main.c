@@ -94,6 +94,7 @@ static int sample_target_read_processed(struct i2c_target_config *target_config,
 	return 0;
 }
 
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 static void sample_target_buf_write_received(struct i2c_target_config *target_config,
 					     uint8_t *data,
 					     uint32_t size)
@@ -110,6 +111,7 @@ static int sample_target_buf_read_requested(struct i2c_target_config *target_con
 	*size = sizeof(sample_read_data);
 	return 0;
 }
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 
 static int sample_target_stop(struct i2c_target_config *config)
 {
@@ -122,8 +124,10 @@ static const struct i2c_target_callbacks sample_target_callbacks = {
 	.read_requested = sample_target_read_requested,
 	.write_received = sample_target_write_received,
 	.read_processed = sample_target_read_processed,
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 	.buf_write_received = sample_target_buf_write_received,
 	.buf_read_requested = sample_target_buf_read_requested,
+#endif
 	.stop = sample_target_stop,
 };
 
