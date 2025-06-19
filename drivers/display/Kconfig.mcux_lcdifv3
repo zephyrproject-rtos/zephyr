@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+config DISPLAY_MCUX_LCDIFV3
+	bool "MCUX LCDIFV3 driver"
+	default y
+	depends on DT_HAS_NXP_IMX_LCDIFV3_ENABLED
+	depends on CLOCK_CONTROL
+	select INIT_VIDEO_PLL
+	help
+	  Enable support for mcux LCDIFV3 driver.

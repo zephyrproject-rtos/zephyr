@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_ELCDIF	display_mcux_elcdif.c)
+zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_LCDIFV3	display_mcux_lcdifv3.c)
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_NRF_LED_MATRIX display_nrf_led_matrix.c)
 zephyr_library_sources_ifdef(CONFIG_DUMMY_DISPLAY	display_dummy.c)
 zephyr_library_sources_ifdef(CONFIG_INTEL_MULTIBOOTFB_DISPLAY	display_intel_multibootfb.c)
