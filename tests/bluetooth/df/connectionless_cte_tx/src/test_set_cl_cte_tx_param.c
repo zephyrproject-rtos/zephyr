@@ -54,8 +54,7 @@ int send_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 	struct bt_hci_cp_le_set_cl_cte_tx_params *cp;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS,
-				sizeof(*cp) + switch_pattern_len);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	zassert_not_null(buf, "Failed to create HCI cmd object");
 
 	cp = net_buf_add(buf, sizeof(*cp));

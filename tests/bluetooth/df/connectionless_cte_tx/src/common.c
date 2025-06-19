@@ -59,8 +59,7 @@ void common_set_cl_cte_tx_params(void)
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS,
-				sizeof(*cp) + ARRAY_SIZE(ant_ids));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	zassert_not_null(buf, "Failed to create HCI cmd object");
 
 	cp = net_buf_add(buf, sizeof(*cp));

@@ -202,7 +202,7 @@ ZTEST(bt_id_init_setup_static_random_identity, test_init_dev_identity_set_random
 			  rp->num_addrs * sizeof(struct bt_hci_vs_static_addr);
 
 	/* This will make set_random_address() returns a negative number error code */
-	bt_hci_cmd_create_fake.return_val = NULL;
+	bt_hci_cmd_alloc_fake.return_val = NULL;
 	bt_hci_cmd_send_sync_fake.custom_fake = bt_hci_cmd_send_sync_custom_fake;
 
 	err = bt_id_init();
