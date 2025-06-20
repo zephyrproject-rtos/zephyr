@@ -63,3 +63,17 @@ config OPENAMP_VENDOR_RSC_TABLE_FILE
 	help
 	  Name of a source file containing vendor-specific
 	  resource table.
+
+config OPENAMP_VENDOR_ADDR_TRANSLATION
+	bool "Address translation support for OpenAMP"
+	depends on OPENAMP_RSC_TABLE
+	help
+	  Enable support for address translation from remote driver to device
+
+config OPENAMP_VENDOR_ADDR_TRANSLATION_FILE
+	string "Header file containing vendor-specific address translation table"
+	default "addr_translation.h"
+	depends on OPENAMP_VENDOR_ADDR_TRANSLATION
+	help
+	  Name of a header file containing vendor-specific
+	  address translation table.
