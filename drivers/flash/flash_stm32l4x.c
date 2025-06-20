@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_system.h>
-#include <stm32l4xx_ll_cortex.h>
-#include <stm32l4xx_ll_pwr.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
 
 #include "flash_stm32.h"
 
@@ -312,6 +312,15 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
 	flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
 				       (uint32_t)level << FLASH_OPTR_RDP_Pos);
+
+	/*
+	 * POR needed to reload option bytes, done at runtime by entering standby mode
+	 * /!\ make sure a wakeup source is configured!
+	 */
+	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
+	LL_LPM_EnableDeepSleep();
+	/* enter SLEEP mode : WFE or WFI */
+	k_cpu_idle();
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
