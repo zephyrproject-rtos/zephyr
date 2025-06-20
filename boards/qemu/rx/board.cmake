@@ -11,7 +11,7 @@ set(QEMU_FLAGS_${ARCH}
 
 if(CONFIG_XIP)
   set(QEMU_KERNEL_OPTION
-  -bios ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
+  -device loader,file=${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.elf
   )
 endif()
 
