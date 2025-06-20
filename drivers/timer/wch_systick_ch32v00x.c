@@ -14,8 +14,6 @@
 
 #include <hal_ch32fun.h>
 
-#define STK_SWIE  BIT(31)
-#define STK_STRE  BIT(3)
 #define STK_STCLK BIT(2)
 #define STK_STIE  BIT(1)
 #define STK_STE   BIT(0)
@@ -27,20 +25,68 @@
 
 #define SYSTICK ((SysTick_Type *)(DT_INST_REG_ADDR(0)))
 
-static volatile uint32_t ch32v00x_systick_count;
+static uint64_t last_cycles_announced;
+
+static inline bool cycles_close_to_next_cmp(uint32_t cycles)
+{
+	return (cycles % CYCLES_PER_TICK) > (9 * CYCLES_PER_TICK / 10);
+}
 
 static void ch32v00x_systick_irq(const void *unused)
 {
+	uint64_t elapsed_cycles;
+	uint32_t ticks = 0;
+	uint64_t cnt = SYSTICK->CNT;
+
 	ARG_UNUSED(unused);
 
+	if (cnt < last_cycles_announced) {
+		elapsed_cycles = (UINT64_MAX - last_cycles_announced) + cnt;
+		ticks = elapsed_cycles / CYCLES_PER_TICK;
+
+		/* If we're too close to the next tick, announce that tick early now rather than
+		 * miss it
+		 */
+		if (cycles_close_to_next_cmp(elapsed_cycles % CYCLES_PER_TICK)) {
+			ticks++;
+			last_cycles_announced = (cnt % CYCLES_PER_TICK) + CYCLES_PER_TICK;
+		} else {
+			last_cycles_announced = cnt % CYCLES_PER_TICK;
+		}
+	} else {
+		ticks = (cnt - last_cycles_announced) / CYCLES_PER_TICK;
+
+		/* If we're too close to the next tick, announce that tick early now rather than
+		 * miss it
+		 */
+		if (cycles_close_to_next_cmp(cnt - last_cycles_announced)) {
+			ticks++;
+		}
+
+		last_cycles_announced += ticks * CYCLES_PER_TICK;
+	}
+
+
+	/* Ensure we trigger when CNT resets to zero */
+	if (UINT64_MAX - SYSTICK->CMP < CYCLES_PER_TICK) {
+		SYSTICK->CMP = SYSTICK->CMP % CYCLES_PER_TICK;
+	} else {
+		SYSTICK->CMP = (last_cycles_announced + CYCLES_PER_TICK);
+	}
+
 	SYSTICK->SR = 0;
-	ch32v00x_systick_count += CYCLES_PER_TICK; /* Track cycles. */
-	sys_clock_announce(1);                     /* Poke the scheduler. */
+
+	sys_clock_announce(ticks);
 }
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return ch32v00x_systick_count + SYSTICK->CNT;
+	return (uint32_t)SYSTICK->CNT;
+}
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return SYSTICK->CNT;
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -55,9 +101,10 @@ static int ch32v00x_systick_init(void)
 	SYSTICK->SR = 0;
 	SYSTICK->CMP = CYCLES_PER_TICK;
 	SYSTICK->CNT = 0;
-	SYSTICK->CTLR = STK_STRE | STK_STCLK | STK_STIE | STK_STE;
 
 	irq_enable(DT_INST_IRQN(0));
+
+	SYSTICK->CTLR = STK_STE | STK_STCLK | STK_STIE;
 
 	return 0;
 }
