@@ -18,6 +18,9 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/sys/barrier.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <stm32_ll_system.h>
+#include <stm32l4xx_ll_cortex.h>
+#include <stm32l4xx_ll_pwr.h>
 
 #include "flash_stm32.h"
 
@@ -270,14 +273,6 @@ int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
 
 	/* Make sure previous write is completed. */
 	barrier_dsync_fence_full();
-
-	rc = flash_stm32_wait_flash_idle(dev);
-	if (rc < 0) {
-		return rc;
-	}
-
-	/* Force the option byte loading */
-	regs->CR |= FLASH_CR_OBL_LAUNCH;
 
 	return flash_stm32_wait_flash_idle(dev);
 }

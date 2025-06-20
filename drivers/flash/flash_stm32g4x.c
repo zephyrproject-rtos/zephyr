@@ -280,14 +280,6 @@ int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
 	/* Make sure previous write is completed. */
 	barrier_dsync_fence_full();
 
-	rc = flash_stm32_wait_flash_idle(dev);
-	if (rc < 0) {
-		return rc;
-	}
-
-	/* Force the option byte loading */
-	regs->CR |= FLASH_CR_OBL_LAUNCH;
-
 	return flash_stm32_wait_flash_idle(dev);
 }
 

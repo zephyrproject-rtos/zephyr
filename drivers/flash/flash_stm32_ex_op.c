@@ -24,6 +24,13 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
+#if defined(FLASH_CR_OBL_LAUNCH)
+	/* Force the option byte loading before locking */
+	if (enable) {
+		regs->CR |= FLASH_CR_OBL_LAUNCH;
+	}
+#endif
+
 #if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 or H7 */
 	if (enable) {
 		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
