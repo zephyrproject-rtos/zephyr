@@ -192,6 +192,17 @@
 	channels = <6>;
 };
 
+&gmac {
+	status = "okay";
+	compatible = "microchip,gmac-u2005-eth";
+
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
+	mac-eeprom = <&eeprom>;
+	phy-handle = <&phy>;
+};
+
 &portb {
 	status = "okay";
 };
