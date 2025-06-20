@@ -1058,6 +1058,14 @@ void radio_switch_complete_and_disable(void)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
+void radio_switch_complete_end_capture_and_disable(void)
+{
+	hal_radio_end_time_capture_ppi_config();
+	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
+
+	radio_switch_complete_and_disable();
+}
+
 uint8_t radio_phy_flags_rx_get(void)
 {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
