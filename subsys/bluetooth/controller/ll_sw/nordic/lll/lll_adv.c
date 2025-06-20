@@ -1504,7 +1504,16 @@ static struct pdu_adv *chan_prepare(struct lll_adv *lll)
 		radio_switch_complete_and_rx(0);
 	} else {
 		radio_isr_set(isr_done, lll);
-		radio_switch_complete_and_disable();
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) &&
+		    IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+			/* Required under single time tIFS switching, to accumulate the packet
+			 * timer value at the time of clear on radio end.
+			 */
+			radio_switch_complete_end_capture_and_disable();
+		} else {
+			radio_switch_complete_and_disable();
+		}
 	}
 
 	return pdu;
