@@ -1828,6 +1828,8 @@ Release Notes:
   maintainers:
     - Mani-Sadhasivam
     - simonguinot
+  collaborators:
+    - jeppenodgaard
   files:
     - drivers/led/
     - include/zephyr/drivers/led/
@@ -1850,6 +1852,7 @@ Release Notes:
   collaborators:
     - soburi
     - thedjnK
+    - jeppenodgaard
   files:
     - drivers/led_strip/
     - dts/bindings/led_strip/
