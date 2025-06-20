@@ -338,7 +338,9 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 
 	LL_I2C_DisableBitPOS(i2c);
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
-	i2c_stm32_generate_start_condition(i2c);
+	if ((flags & I2C_MSG_RESTART) != 0U) {
+		i2c_stm32_generate_start_condition(i2c);
+	}
 
 	i2c_stm32_enable_transfer_interrupts(dev);
 	if (flags & I2C_MSG_READ) {
