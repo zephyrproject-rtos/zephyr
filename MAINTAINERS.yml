@@ -5216,6 +5216,7 @@ West:
     - wearyzen
   collaborators:
     - ithinuel
+    - ccli8
   files:
     - drivers/misc/ethos_u/
     - modules/hal_ethos_u/
