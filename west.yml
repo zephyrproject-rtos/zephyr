@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: croxel
+      url-base: https://github.com/croxel
 
   group-filter: [-babblesim, -optional]
 
@@ -144,7 +146,8 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: f8f65473168a4e9f71f20c0c5387f6b80fe54cf3
+      remote: croxel
+      revision: feature-adi-wrapper-for-i2s-tx-rx
       path: modules/hal/adi
       groups:
         - hal
