@@ -17,6 +17,14 @@
 
 LOG_MODULE_REGISTER(pwm_sam, CONFIG_PWM_LOG_LEVEL);
 
+/* SAMA7G5 uses a slightly different naming scheme in header file component/pmc.h */
+#ifdef _SAMA7G5_PWM_COMPONENT_H_
+#undef PWM_CMR_CPOL
+#define PWM_CMR_CPOL    PWM_CMR_CPOL_Msk
+#define PWMCHNUM_NUMBER PWM_CH_NUM_NUMBER
+typedef pwm_registers_t Pwm;
+#endif
+
 /* Some SoCs use a slightly different naming scheme */
 #if !defined(PWMCHNUM_NUMBER) && defined(PWMCH_NUM_NUMBER)
 #define PWMCHNUM_NUMBER PWMCH_NUM_NUMBER
@@ -44,8 +52,21 @@ static int sam_pwm_get_cycles_per_sec(const struct device *dev,
 	uint8_t prescaler = config->prescaler;
 	uint8_t divider = config->divider;
 
-	*cycles = SOC_ATMEL_SAM_MCK_FREQ_HZ /
-		  ((1 << prescaler) * divider);
+#ifdef SOC_ATMEL_SAM_MCK_FREQ_HZ
+	uint32_t rate = SOC_ATMEL_SAM_MCK_FREQ_HZ;
+#else
+	uint32_t rate;
+	int ret;
+
+	ret = clock_control_get_rate(SAM_DT_PMC_CONTROLLER,
+				     (clock_control_subsys_t)&config->clock_cfg,
+				     &rate);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
+	*cycles = rate / ((1 << prescaler) * divider);
 
 	return 0;
 }
