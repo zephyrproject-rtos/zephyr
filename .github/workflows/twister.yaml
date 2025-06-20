@@ -12,7 +12,6 @@ on:
       - v*-branch
       - collab-*
   schedule:
-    # Run at 02:00 UTC on every Sunday
     - cron: '0 2 * * 0'
 
 permissions:
