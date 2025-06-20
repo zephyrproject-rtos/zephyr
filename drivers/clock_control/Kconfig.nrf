@@ -206,7 +206,8 @@ config CLOCK_CONTROL_NRF_ACCURACY
 endif # CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF2_COMMON
-	bool "NRF2 clock control common framework"
+	bool
+	depends on HAS_NORDIC_DRIVERS
 	select ONOFF
 
 config CLOCK_CONTROL_NRF_HSFLL_GLOBAL
