@@ -6,6 +6,9 @@
 
 if BOARD_NRF52840DONGLE
 
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 # To let the nRF5 bootloader load an application, the application
 # must be linked after Nordic MBR, that is factory-programmed on the board.
 
