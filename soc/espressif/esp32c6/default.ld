@@ -7,6 +7,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
+#include <zephyr/linker/iterable_sections.h>
 
 #include "memory.h"
 
