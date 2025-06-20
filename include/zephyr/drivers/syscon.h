@@ -71,7 +71,8 @@ __subsystem struct syscon_driver_api {
  *
  * @param dev The device to get the register size for.
  * @param addr Where to write the base address.
- * @return 0 When addr was written to.
+ * @return 0 When @a addr was written to.
+ * @return -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_get_base(const struct device *dev, uintptr_t *addr);
 
@@ -79,8 +80,8 @@ static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *ad
 {
 	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
 
-	if (api == NULL) {
-		return -ENOTSUP;
+	if ((api == NULL) || (api->get_base == NULL)) {
+		return -ENOSYS;
 	}
 
 	return api->get_base(dev, addr);
@@ -96,7 +97,8 @@ static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *ad
  * @param reg The register offset
  * @param val The returned value read from the syscon register
  *
- * @return 0 on success, negative on error
+ * @return 0 on success.
+ * @return -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val);
 
@@ -104,8 +106,8 @@ static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg,
 {
 	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
 
-	if (api == NULL) {
-		return -ENOTSUP;
+	if ((api == NULL) || (api->read == NULL)) {
+		return -ENOSYS;
 	}
 
 	return api->read(dev, reg, val);
@@ -121,7 +123,8 @@ static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg,
  * @param reg The register offset
  * @param val The value to be written in the register
  *
- * @return 0 on success, negative on error
+ * @return 0 on success.
+ * @return -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
 
@@ -129,8 +132,8 @@ static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg
 {
 	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
 
-	if (api == NULL) {
-		return -ENOTSUP;
+	if ((api == NULL) || (api->write == NULL)) {
+		return -ENOSYS;
 	}
 
 	return api->write(dev, reg, val);
@@ -142,12 +145,17 @@ static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg
  * @param dev The device to get the register size for.
  * @param size Pointer to write the size to.
  * @return 0 for success.
+ * @return -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_get_size(const struct device *dev, size_t *size);
 
 static inline int z_impl_syscon_get_size(const struct device *dev, size_t *size)
 {
 	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;
+
+	if ((api == NULL) || (api->get_size == NULL)) {
+		return -ENOSYS;
+	}
 
 	return api->get_size(dev, size);
 }
