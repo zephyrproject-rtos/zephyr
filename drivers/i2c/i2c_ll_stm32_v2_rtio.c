@@ -63,6 +63,33 @@ static void i2c_stm32_master_mode_end(const struct device *dev)
 	}
 }
 
+static void i2c_stm32_reload_burst(const struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	__ASSERT_NO_MSG(LL_I2C_IsEnabledReloadMode(i2c));
+
+	if (data->xfer_len > UINT8_MAX) {
+		/* Not the last burst for this message, don't consider STOP and RESTART flags */
+		data->burst_len = UINT8_MAX;
+		data->burst_flags = data->xfer_flags & ~(I2C_MSG_STOP | I2C_MSG_RESTART);
+	} else {
+		/* Preserve possible STOP flag */
+		data->burst_len = data->xfer_len;
+		data->burst_flags = data->xfer_flags;
+	}
+
+	LL_I2C_SetTransferSize(i2c, data->burst_len);
+
+	/* If last burst in reload mode, disable the mode now that transfer size is loaded */
+	if ((data->burst_len == data->xfer_len) &&
+	    (data->burst_flags & I2C_MSG_STM32_USE_RELOAD_MODE) == 0) {
+		LL_I2C_DisableReloadMode(i2c);
+	}
+}
+
 void i2c_stm32_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -71,7 +98,7 @@ void i2c_stm32_event(const struct device *dev)
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
-	if (data->xfer_len != 0) {
+	if (data->burst_len != 0U) {
 		/* Send next byte */
 		if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
 			LL_I2C_TransmitData8(i2c, *data->xfer_buf);
@@ -84,6 +111,7 @@ void i2c_stm32_event(const struct device *dev)
 
 		data->xfer_buf++;
 		data->xfer_len--;
+		data->burst_len--;
 	}
 
 	/* NACK received */
@@ -111,18 +139,19 @@ void i2c_stm32_event(const struct device *dev)
 
 	if (LL_I2C_IsActiveFlag_TC(i2c) ||
 	    LL_I2C_IsActiveFlag_TCR(i2c)) {
+		__ASSERT_NO_MSG(data->burst_len == 0U);
+
+		if (data->xfer_len != 0U) {
+			i2c_stm32_reload_burst(dev);
+			return;
+		}
 
 		/* Issue stop condition if necessary */
-		if ((data->xfer_flags & I2C_MSG_STOP) != 0) {
-			if (data->xfer_len == 0) {
-				LL_I2C_GenerateStopCondition(i2c);
-			} else {
-				LL_I2C_SetTransferSize(i2c, MIN(data->xfer_len, UINT8_MAX));
-			}
+		if ((data->burst_flags & I2C_MSG_STOP) != 0) {
+			LL_I2C_GenerateStopCondition(i2c);
 		} else {
 			i2c_stm32_disable_transfer_interrupts(dev);
-
-			if ((data->xfer_len == 0) && i2c_rtio_complete(ctx, ret)) {
+			if (i2c_rtio_complete(ctx, ret)) {
 				i2c_stm32_start(dev);
 			}
 		}
@@ -164,6 +193,12 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 	data->xfer_len = buf_len;
 	data->xfer_flags = flags;
 
+	if (LL_I2C_IsEnabledReloadMode(i2c)) {
+		__ASSERT_NO_MSG((flags & I2C_MSG_RESTART) == 0U);
+		i2c_stm32_reload_burst(dev);
+		goto out;
+	}
+
 	if ((flags & I2C_MSG_READ) != 0) {
 		transfer = LL_I2C_REQUEST_READ;
 	} else {
@@ -181,19 +216,28 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 	}
 
 	if (buf_len > UINT8_MAX) {
+		data->burst_flags = flags & ~I2C_MSG_STOP;
+		data->burst_len = UINT8_MAX;
 		LL_I2C_EnableReloadMode(i2c);
 	} else {
-		LL_I2C_DisableReloadMode(i2c);
+		data->burst_flags = flags;
+		data->burst_len = buf_len;
+		if ((flags & I2C_MSG_STM32_USE_RELOAD_MODE) != 0) {
+			LL_I2C_EnableReloadMode(i2c);
+		} else {
+			LL_I2C_DisableReloadMode(i2c);
+		}
 	}
 
 	LL_I2C_DisableAutoEndMode(i2c);
 	LL_I2C_SetTransferRequest(i2c, transfer);
-	LL_I2C_SetTransferSize(i2c, MIN(buf_len, UINT8_MAX));
+	LL_I2C_SetTransferSize(i2c, data->burst_len);
 
 	LL_I2C_Enable(i2c);
 
 	LL_I2C_GenerateStartCondition(i2c);
 
+out:
 	i2c_stm32_enable_transfer_interrupts(dev);
 	if ((flags & I2C_MSG_READ) != 0) {
 		LL_I2C_EnableIT_RX(i2c);
