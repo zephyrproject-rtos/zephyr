@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/drivers/uart/uart_bridge.h>
+#include <zephyr/pm/device.h>
 
 #define DT_DRV_COMPAT zephyr_uart_bridge
 
@@ -193,22 +194,41 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 	}
 }
 
-static int uart_bridge_init(const struct device *dev)
+static int uart_bridge_pm_action(const struct device *dev,
+				 enum pm_device_action action)
 {
 	const struct uart_bridge_config *cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		uart_irq_rx_disable(cfg->peer_dev[0]);
+		uart_irq_rx_disable(cfg->peer_dev[1]);
+		uart_irq_callback_user_data_set(cfg->peer_dev[0], NULL, NULL);
+		uart_irq_callback_user_data_set(cfg->peer_dev[1], NULL, NULL);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		uart_irq_callback_user_data_set(cfg->peer_dev[0], interrupt_handler,
+						(void *)dev);
+		uart_irq_callback_user_data_set(cfg->peer_dev[1], interrupt_handler,
+						(void *)dev);
+		uart_irq_rx_enable(cfg->peer_dev[0]);
+		uart_irq_rx_enable(cfg->peer_dev[1]);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int uart_bridge_init(const struct device *dev)
+{
 	struct uart_bridge_data *data = dev->data;
 
 	ring_buf_init(&data->peer[0].rb, RING_BUF_SIZE, data->peer[0].buf);
 	ring_buf_init(&data->peer[1].rb, RING_BUF_SIZE, data->peer[1].buf);
 
-	uart_irq_callback_user_data_set(cfg->peer_dev[0], interrupt_handler,
-					(void *)dev);
-	uart_irq_callback_user_data_set(cfg->peer_dev[1], interrupt_handler,
-					(void *)dev);
-	uart_irq_rx_enable(cfg->peer_dev[0]);
-	uart_irq_rx_enable(cfg->peer_dev[1]);
-
-	return 0;
+	return pm_device_driver_init(dev, uart_bridge_pm_action);
 }
 
 #define UART_BRIDGE_INIT(n)							\
@@ -222,7 +242,9 @@ static int uart_bridge_init(const struct device *dev)
 										\
 	static struct uart_bridge_data uart_bridge_data_##n;			\
 										\
-	DEVICE_DT_INST_DEFINE(n, uart_bridge_init, NULL(n),			\
+	PM_DEVICE_DT_INST_DEFINE(n, uart_bridge_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(n, uart_bridge_init, PM_DEVICE_DT_INST_GET(n),	\
 			      &uart_bridge_data_##n, &uart_bridge_cfg_##n,	\
 			      POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY, NULL);
 
