@@ -50,7 +50,7 @@ config HAS_CC27XX_SDK
 
 config SIMPLELINK_F3_RADIO_DRIVER
 	bool "Build the RCL driver"
-	depends on HAS_CC23X0_SDK
+	depends on HAS_CC23X0_SDK || HAS_CC27XX_SDK
 	default y
 	help
 		Build the RCL driver
