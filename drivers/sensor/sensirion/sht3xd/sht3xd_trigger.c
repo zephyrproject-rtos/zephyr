@@ -233,7 +233,7 @@ int sht3xd_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	if (sht3xd_write_reg(dev, SHT3XD_CMD_WRITE_TH_LOW_SET, 0) < 0) {
+	if (sht3xd_write_reg(dev, SHT3XD_CMD_WRITE_TH_LOW_CLEAR, 0) < 0) {
 		LOG_DBG("Failed to write threshold low clear value!");
 		return -EIO;
 	}
