@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2024 Centro de Inovacao EDGE
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	aliases {
+		adc0 = &adc0;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * To use this sample:
+	 * - Connect VREFN_TARGET to GND, and VREFP_TARGET to 3v3
+	 *   (Resistors J8 and J9, should be populated by default)
+	 * LPADC0 CH0A and CH0B are set up in differential mode
+	 * - Connect LPADC0 CH0A signal to voltage between 0~3.3V (P19 pin 4)
+	 * - Connect LPADC0 CH0B signal to voltage between 0~3.3V (P19 pin 2)
+	 * LPADC0 CH4A is set up in single ended mode
+	 * - Connect LPADC0 CH4A signal to voltage between 0~3.3V (P17 pin 19)
+	 * LPADC0 CH4B is set up in single ended mode
+	 * - Connect LPADC0 CH4B signal to voltage between 0~3.3V (P18 pin 1)
+	 */
+
+	/*
+	 * Channel 0 is used for differential mode, with 13 bit resolution
+	 * CH0A (plus side) is routed to P19 pin 4
+	 * CH0B (minus side) is routed to P19 pin 2
+	 */
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
+		zephyr,input-negative = <MCUX_LPADC_CH0B>;
+	};
+
+	/*
+	 * Channel 1 is used in single ended mode, with 16 bit resolution
+	 * CH4A is routed to P17 pin 19
+	 */
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <MCUX_LPADC_CH4A>;
+	};
+
+	/*
+	 * Channel 2 is used in single ended mode, with 12 bit resolution
+	 * CH4B is routed to P18 pin 1
+	 */
+};

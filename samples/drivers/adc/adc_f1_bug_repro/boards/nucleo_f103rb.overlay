@@ -1,0 +1,31 @@
+// samples/drivers/adc/adc_f1_bug_repro/boards/nucleo_f103rb.overlay
+&adc1 {
+	pinctrl-0 = <&adc_pb1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	motor_current_channel: channel@9 {
+		reg = <0x9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <49159>;
+		zephyr,resolution = <12>;
+	};
+
+	vref_channel: channel@11 { /* 17 dezimal = 11 hex */
+		reg = <0x11>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <49159>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&pinctrl {
+	adc_pb1_pins: adc_pb1_pins {
+		pinmux = <STM32F1_PINMUX('B', 1, ANALOG, NO_REMAP)>;
+	};
+};

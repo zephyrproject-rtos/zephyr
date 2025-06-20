@@ -1,0 +1,146 @@
+/*
+ * Copyright (c) 2024 Pierrick Curt
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		adc0 = &adc_ad4114;
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	adc_ad4114: adc_ad4114@0 {
+		compatible = "adi,ad4114-adc";
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		status = "okay";
+		reg = <0>;
+		#io-channel-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* INPUTx mapping bits [9:0] for CH0 to CH15 */
+		map-inputs = <0x10 0x30 0x50 0x70 0x90 0xB0 0xD0 0xF0 0x110 \
+					0x130 0x150 0x170 0x190 0x1B0 0x1D0 0x1F0>;
+
+
+		channel@0 {
+			reg = <0x0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@1 {
+			reg = <1>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@2 {
+			reg = <2>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@3 {
+			reg = <3>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@4 {
+			reg = <4>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@5 {
+			reg = <5>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@6 {
+			reg = <6>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@7 {
+			reg = <7>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@8 {
+			reg = <8>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@9 {
+			reg = <9>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@a {
+			reg = <0xa>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@b {
+			reg = <0xb>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@c {
+			reg = <0xc>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@d {
+			reg = <0xd>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@e {
+			reg = <0xe>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+		channel@f {
+			reg = <0xf>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <8>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		};
+	};
+};
