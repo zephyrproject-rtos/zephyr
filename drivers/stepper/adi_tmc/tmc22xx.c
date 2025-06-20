@@ -60,13 +60,13 @@ static int tmc22xx_stepper_set_micro_step_res(const struct device *dev,
 
 		ret = gpio_pin_set_dt(&config->msx_pins[0], i & 0x01);
 		if (ret < 0) {
-			LOG_ERR("Failed to set MS1 pin: %d", ret);
+			LOG_ERR("Failed to %s: %s", "set MS1 pin", strerror(ret));
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&config->msx_pins[1], (i & 0x02) >> 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to set MS2 pin: %d", ret);
+			LOG_ERR("Failed to %s: %s", "set MS2 pin", strerror(ret));
 			return ret;
 		}
 
@@ -120,27 +120,27 @@ static int tmc22xx_stepper_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->enable_pin, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure enable pin: %d", ret);
+		LOG_DBG("Failed to %s: %s", "configure enable pin", strerror(ret));
 		return ret;
 	}
 
 	if (config->msx_pins) {
 		ret = tmc22xx_stepper_configure_msx_pins(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure MSX pins: %d", ret);
+			LOG_DBG("Failed to %s: %s", "configure MSX pins", strerror(ret));
 			return ret;
 		}
 
 		ret = tmc22xx_stepper_set_micro_step_res(dev, data->resolution);
 		if (ret < 0) {
-			LOG_ERR("Failed to set microstep resolution: %d", ret);
+			LOG_DBG("Failed to %s: %s", "set microstep resolution", strerror(ret));
 			return ret;
 		}
 	}
 
 	ret = step_dir_stepper_common_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to init step dir common stepper: %d", ret);
+		LOG_DBG("Failed to %s: %s", "init step dir common stepper", strerror(ret));
 		return ret;
 	}
 

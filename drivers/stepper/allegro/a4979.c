@@ -37,13 +37,15 @@ static int a4979_set_microstep_pin(const struct device *dev, const struct gpio_d
 	/* Reset microstep pin as it may have been disconnected. */
 	ret = gpio_pin_configure_dt(pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure microstep pin (error: %d)", ret);
+		LOG_ERR("%s: Failed to %s (error: %s)", dev->name, "configure microstep pin",
+			strerror(ret));
 		return ret;
 	}
 
 	ret = gpio_pin_set_dt(pin, value);
 	if (ret != 0) {
-		LOG_ERR("Failed to set microstep pin (error: %d)", ret);
+		LOG_ERR("%s: Failed to %s (error: %s)", dev->name, "set microstep pin",
+			strerror(ret));
 		return ret;
 	}
 
@@ -59,13 +61,14 @@ static int a4979_stepper_enable(const struct device *dev)
 
 	/* Check availability of enable pin, as it might be hardwired. */
 	if (!has_enable_pin) {
-		LOG_ERR("%s: Enable pin undefined.", dev->name);
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "set en_, enable pin undefined",
+			strerror(-ENOTSUP));
 		return -ENOTSUP;
 	}
 
 	ret = gpio_pin_set_dt(&config->en_pin, 1);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "set en_pin", strerror(ret));
 		return ret;
 	}
 
@@ -83,13 +86,14 @@ static int a4979_stepper_disable(const struct device *dev)
 
 	/* Check availability of enable pin, as it might be hardwired. */
 	if (!has_enable_pin) {
-		LOG_ERR("%s: Enable pin undefined.", dev->name);
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name,
+			"disable device, enable pin undefined", strerror(-ENOTSUP));
 		return -ENOTSUP;
 	}
 
 	ret = gpio_pin_set_dt(&config->en_pin, 0);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "set en_pin", strerror(ret));
 		return ret;
 	}
 
@@ -127,7 +131,8 @@ static int a4979_stepper_set_micro_step_res(const struct device *dev,
 		m1_value = 1;
 		break;
 	default:
-		LOG_ERR("Unsupported micro step resolution %d", micro_step_res);
+		LOG_ERR("%s: Failed to %s (error: %s)", dev->name,
+			"set unsupported micro step resolution", strerror(-ENOTSUP));
 		return -ENOTSUP;
 	}
 
@@ -158,7 +163,8 @@ static int a4979_move_to(const struct device *dev, int32_t target)
 	struct a4979_data *data = dev->data;
 
 	if (!data->enabled) {
-		LOG_ERR("Failed to move to target position, device is not enabled");
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "move to target position",
+			strerror(-ECANCELED));
 		return -ECANCELED;
 	}
 
@@ -170,7 +176,8 @@ static int a4979_stepper_move_by(const struct device *dev, const int32_t micro_s
 	struct a4979_data *data = dev->data;
 
 	if (!data->enabled) {
-		LOG_ERR("Failed to move by delta, device is not enabled");
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "move by delta",
+			strerror(-ECANCELED));
 		return -ECANCELED;
 	}
 
@@ -182,7 +189,8 @@ static int a4979_run(const struct device *dev, enum stepper_direction direction)
 	struct a4979_data *data = dev->data;
 
 	if (!data->enabled) {
-		LOG_ERR("Failed to run stepper, device is not enabled");
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "run stepper",
+			strerror(-ECANCELED));
 		return -ECANCELED;
 	}
 
@@ -203,13 +211,15 @@ static int a4979_init(const struct device *dev)
 	/* Configure reset pin if it is available */
 	if (has_reset_pin) {
 		if (!gpio_is_ready_dt(&config->reset_pin)) {
-			LOG_ERR("Enable Pin is not ready");
+			LOG_DBG("%s: Failed to %s (error: %s)", dev->name,
+				"use reset pin, not ready", strerror(-ENODEV));
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->reset_pin, GPIO_OUTPUT_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure reset_pin (error: %d)", dev->name, ret);
+			LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "configure reset_pin",
+				strerror(ret));
 			return ret;
 		}
 	}
@@ -217,36 +227,42 @@ static int a4979_init(const struct device *dev)
 	/* Configure enable pin if it is available */
 	if (has_enable_pin) {
 		if (!gpio_is_ready_dt(&config->en_pin)) {
-			LOG_ERR("Enable Pin is not ready");
+			LOG_DBG("%s: Failed to %s (error: %s)", dev->name,
+				"use enable pin, not ready", strerror(-ENODEV));
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->en_pin, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure en_pin (error: %d)", dev->name, ret);
+			LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "configure en_pin",
+				strerror(ret));
 			return ret;
 		}
 	}
 
 	/* Configure microstep pin 0 */
 	if (!gpio_is_ready_dt(&config->m0_pin)) {
-		LOG_ERR("m0 Pin is not ready");
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "use m0 pin, not ready",
+			strerror(-ENODEV));
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->m0_pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "configure m0_pin",
+			strerror(ret));
 		return ret;
 	}
 
 	/* Configure microstep pin 1 */
 	if (!gpio_is_ready_dt(&config->m1_pin)) {
-		LOG_ERR("m1 Pin is not ready");
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "use m1 pin, not ready",
+			strerror(-ENODEV));
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->m1_pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
+		LOG_DBG("%s: Failed to %s (error: %s)", dev->name, "configure m1_pin",
+			strerror(ret));
 		return ret;
 	}
 
