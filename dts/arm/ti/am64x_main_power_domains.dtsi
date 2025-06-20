@@ -1,0 +1,1024 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	power-domains {
+		adc0_pd:adc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <0>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		cmp_event_introuter0_pd:cmp_event_introuter0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <1>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dbgsuspendrouter0_pd:dbgsuspendrouter0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <2>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		main_gpiomux_introuter0_pd:main_gpiomux_introuter0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <3>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timesync_event_introuter0_pd:timesync_event_introuter0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <6>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		cpsw0_pd:cpsw0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <13>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		cpt2_aggr0_pd:cpt2_aggr0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <14>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		stm0_pd:stm0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <15>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dcc0_pd:dcc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <16>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dcc1_pd:dcc1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <17>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dcc2_pd:dcc2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <18>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dcc3_pd:dcc3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <19>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dcc4_pd:dcc4_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <20>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dcc5_pd:dcc5_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <21>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmsc0_pd:dmsc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <22>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		debugss_wrap0_pd:debugss_wrap0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <24>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmass0_pd:dmass0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <25>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmass0_bcdma_0_pd:dmass0_bcdma_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <26>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmass0_cbass_0_pd:dmass0_cbass_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <27>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmass0_intaggr_0_pd:dmass0_intaggr_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <28>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmass0_ipcss_0_pd:dmass0_ipcss_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <29>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmass0_pktdma_0_pd:dmass0_pktdma_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <30>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		dmass0_ringacc_0_pd:dmass0_ringacc_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <33>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer0_pd:timer0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <36>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer1_pd:timer1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <37>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer2_pd:timer2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <38>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer3_pd:timer3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <39>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer4_pd:timer4_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <40>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer5_pd:timer5_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <41>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer6_pd:timer6_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <42>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer7_pd:timer7_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <43>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer8_pd:timer8_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <44>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer9_pd:timer9_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <45>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer10_pd:timer10_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <46>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timer11_pd:timer11_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <47>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		ecap0_pd:ecap0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <51>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		ecap1_pd:ecap1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <52>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		ecap2_pd:ecap2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <53>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		elm0_pd:elm0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <54>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		emif_data_0_vd_pd:emif_data_0_vd_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <55>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mmcsd0_pd:mmcsd0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <57>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mmcsd1_pd:mmcsd1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <58>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		eqep0_pd:eqep0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <59>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		eqep1_pd:eqep1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <60>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		gtc0_pd:gtc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <61>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		eqep2_pd:eqep2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <62>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		esm0_pd:esm0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <63>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsirx0_pd:fsirx0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <65>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsirx1_pd:fsirx1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <66>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsirx2_pd:fsirx2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <67>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsirx3_pd:fsirx3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <68>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsirx4_pd:fsirx4_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <69>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsirx5_pd:fsirx5_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <70>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsitx0_pd:fsitx0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <71>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fsitx1_pd:fsitx1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <72>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fss0_pd:fss0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <73>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fss0_fsas_0_pd:fss0_fsas_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <74>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		fss0_ospi_0_pd:fss0_ospi_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <75>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		gicss0_pd:gicss0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <76>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		gpio0_pd:gpio0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <77>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		gpio1_pd:gpio1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <78>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		gpmc0_pd:gpmc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <80>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		pru_icssg0_pd:pru_icssg0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <81>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		pru_icssg1_pd:pru_icssg1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <82>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		led0_pd:led0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <83>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		cpts0_pd:cpts0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <84>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		ddpa0_pd:ddpa0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <85>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm0_pd:epwm0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <86>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm1_pd:epwm1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <87>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm2_pd:epwm2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <88>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm3_pd:epwm3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <89>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm4_pd:epwm4_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <90>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm5_pd:epwm5_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <91>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm6_pd:epwm6_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <92>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm7_pd:epwm7_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <93>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		epwm8_pd:epwm8_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <94>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		vtm0_pd:vtm0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <95>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mailbox0_pd:mailbox0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <96>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		main2mcu_vd_pd:main2mcu_vd_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <97>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcan0_pd:mcan0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <98>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcan1_pd:mcan1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <99>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c0_pd:i2c0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <102>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c1_pd:i2c1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <103>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c2_pd:i2c2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <104>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		i2c3_pd:i2c3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <105>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		pcie0_pd:pcie0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <114>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		r5fss0_pd:r5fss0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <119>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		r5fss1_pd:r5fss1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <120>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		r5fss0_core0_pd:r5fss0_core0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <121>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		r5fss0_core1_pd:r5fss0_core1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <122>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		r5fss1_core0_pd:r5fss1_core0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <123>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		r5fss1_core1_pd:r5fss1_core1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <124>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		rti0_pd:rti0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <125>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		rti1_pd:rti1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <126>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		rti8_pd:rti8_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <127>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		rti9_pd:rti9_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <128>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		rti10_pd:rti10_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <130>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		rti11_pd:rti11_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <131>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		sa2_ul0_pd:sa2_ul0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <133>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		compute_cluster0_pd:compute_cluster0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <134>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		a53ss0_core_0_pd:a53ss0_core_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <135>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		a53ss0_core_1_pd:a53ss0_core_1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <136>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		a53ss0_pd:a53ss0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <137>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		ddr16ss0_pd:ddr16ss0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <138>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		psc0_pd:psc0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <139>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcspi0_pd:mcspi0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <141>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcspi1_pd:mcspi1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <142>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcspi2_pd:mcspi2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <143>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcspi3_pd:mcspi3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <144>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		mcspi4_pd:mcspi4_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <145>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart0_pd:uart0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <146>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spinlock0_pd:spinlock0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <150>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		timermgr0_pd:timermgr0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <151>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart1_pd:uart1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <152>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart2_pd:uart2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <153>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart3_pd:uart3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <154>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart4_pd:uart4_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <155>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart5_pd:uart5_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <156>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		board0_pd:board0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <157>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		uart6_pd:uart6_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <158>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		usb0_pd:usb0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <161>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		serdes_10g0_pd:serdes_10g0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <162>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		pbist0_pd:pbist0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <163>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		pbist1_pd:pbist1_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <164>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		pbist2_pd:pbist2_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <165>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		pbist3_pd:pbist3_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <166>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		compute_cluster0_pbist_0_pd:compute_cluster0_pbist_0_pd {
+			compatible = "ti,sci-pm-domain";
+			tisci,device-id = <167>;
+			tisci,device-mode = "EXCLUSIVE";
+			#power-domain-cells = <0>;
+			zephyr,pm-device-runtime-auto;
+		};
+	};
+};
