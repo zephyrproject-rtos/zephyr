@@ -15,6 +15,11 @@
 					       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),),	\
 			())
 
+#define MMU_REGION_XDMAC_DEFN(idx, n)								\
+		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dma##n)),			\
+			   (MMU_REGION_FLAT_ENTRY("xdmac"#n, XDMAC##n##_BASE_ADDRESS, 0x4000,	\
+						  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
@@ -49,6 +54,8 @@ static const struct arm_mmu_region mmu_regions[] = {
 	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(trng)),
 		   (MMU_REGION_FLAT_ENTRY("trng", TRNG_BASE_ADDRESS, 0x100,
 					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
+	FOR_EACH_IDX(MMU_REGION_XDMAC_DEFN, (), 0, 1, 2)
 };
 
 const struct arm_mmu_config mmu_config = {
