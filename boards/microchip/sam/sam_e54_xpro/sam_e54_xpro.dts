@@ -203,6 +203,20 @@
 	phy-handle = <&phy>;
 };
 
+&mdio {
+	status = "okay";
+	compatible = "microchip,gmac-u2005-mdio";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
+
 &portb {
 	status = "okay";
 };

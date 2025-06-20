@@ -31,4 +31,10 @@
 				 <PA15L_GMAC_GRXER>;
 		};
 	};
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PC11L_GMAC_GMDC>,
+				 <PC12L_GMAC_GMDIO>;
+		};
+	};
 };
