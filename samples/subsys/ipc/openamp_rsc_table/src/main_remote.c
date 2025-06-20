@@ -17,6 +17,7 @@
 #include <metal/sys.h>
 #include <metal/io.h>
 #include <resource_table.h>
+#include <addr_translation.h>
 
 #ifdef CONFIG_SHELL_BACKEND_RPMSG
 #include <zephyr/shell/shell_rpmsg.h>
@@ -159,7 +160,7 @@ int platform_init(void)
 
 	/* declare shared memory region */
 	metal_io_init(shm_io, (void *)SHM_START_ADDR, &shm_physmap,
-		      SHM_SIZE, -1, 0, NULL);
+		      SHM_SIZE, -1, 0, addr_translation_get_ops(shm_physmap));
 
 	/* declare resource table region */
 	rsc_table_get(&rsc_table, &rsc_size);
