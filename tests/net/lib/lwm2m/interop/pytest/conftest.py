@@ -138,7 +138,7 @@ def endpoint_bootstrap(request, shell: Shell, dut: DeviceAdapter, leshan: Leshan
             passwd = ''.join(random.choice(string.ascii_lowercase) for i in range(16))
 
         logger.debug('Endpoint: %s', ep)
-        logger.debug('Boostrap PSK: %s', binascii.b2a_hex(bs_passwd.encode()).decode())
+        logger.debug('Bootstrap PSK: %s', binascii.b2a_hex(bs_passwd.encode()).decode())
         logger.debug('PSK: %s', binascii.b2a_hex(passwd.encode()).decode())
 
         # Create device entries in Leshan and Bootstrap server
