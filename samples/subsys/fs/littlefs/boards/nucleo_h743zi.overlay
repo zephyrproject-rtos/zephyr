@@ -42,9 +42,10 @@
 	flash-id = <2>;
 	status = "okay";
 
-	mx25l25645g: qspi-nor-flash@90000000 {
+	mx25l25645g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(32)>; /* 256 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
 		qspi-max-frequency = <50000000>;
 		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 		reset-gpios-duration = <1>;
