@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
 *.o
 *.a
 *.d
@@ -97,6 +100,7 @@ Kconfig.txt
 KconfigBasic.txt
 KconfigBasicNoModules.txt
 KconfigHWMv2.txt
+LicenseAndCopyrightCheck.txt
 KeepSorted.txt
 MaintainersFormat.txt
 ModulesMaintainers.txt
