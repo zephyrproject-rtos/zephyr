@@ -1,10 +1,5 @@
-&cpuapp_ram0x_region {
-	nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWXS>;
-};
-
 &xip_region {
 	status = "okay";
-	nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RX>;
 };
 
 &mx25uw63 {
