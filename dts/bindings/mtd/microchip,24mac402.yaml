@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip AT24 (or compatible) I2C EEPROM
+
+compatible: "microchip,at24mac402"
+
+include: [i2c-device.yaml]
