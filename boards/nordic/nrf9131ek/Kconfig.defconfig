@@ -3,6 +3,11 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_NRF9131EK
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
 if BOARD_NRF9131EK_NRF9131 || BOARD_NRF9131EK_NRF9131_NS
 
 # For the secure version of the board the firmware is linked at the beginning
@@ -33,3 +38,4 @@ config FLASH_LOAD_SIZE
 endif # BOARD_NRF9131EK_NRF9131_NS
 
 endif # BOARD_NRF9131EK_NRF9131 || BOARD_NRF9131EK_NRF9131_NS
+endif # BOARD_NRF9131EK
