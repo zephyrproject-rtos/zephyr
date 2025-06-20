@@ -12,6 +12,9 @@
 };
 
 &adc1 {
+	dmas = <&gpdma1 0 0 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
+	dma-names = "gpdma";
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -22,4 +25,8 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&gpdma1 {
+	status = "okay";
 };
