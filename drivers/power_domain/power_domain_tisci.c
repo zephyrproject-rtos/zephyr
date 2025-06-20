@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(tisci_pd);
 
 #define DT_DRV_COMPAT ti_sci_pm_domain
 
-const struct device *dmsc = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(dmsc));
+static const struct device *dmsc = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(dmsc));
 
 struct power_domain {
 	uint32_t devid;
