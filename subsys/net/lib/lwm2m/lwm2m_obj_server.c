@@ -355,7 +355,7 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 	default_min_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMIN;
 	default_max_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMAX;
 	disabled_timeout[index] = 86400U;
-	bootstrap_on_fail[index] = true;
+	bootstrap_on_fail[index] = IS_ENABLED(CONFIG_LWM2M_SERVER_BOOTSTRAP_ON_FAIL);
 
 	lwm2m_engine_get_binding(transport_binding[index]);
 
