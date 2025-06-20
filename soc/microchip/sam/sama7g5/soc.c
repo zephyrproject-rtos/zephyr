@@ -33,6 +33,10 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("pmc", PMC_BASE_ADDRESS, 0x200,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_pwm),
+		   (MMU_REGION_FLAT_ENTRY("pwm", PWM_BASE_ADDRESS, 0x500,
+					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
 	MMU_REGION_FLAT_ENTRY("sckc", SCKC_BASE_ADDRESS, 0x4,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
