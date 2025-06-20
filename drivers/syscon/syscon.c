@@ -29,26 +29,15 @@ struct syscon_generic_data {
 
 static int syscon_generic_get_base(const struct device *dev, uintptr_t *addr)
 {
-	if (!dev) {
-		return -ENODEV;
-	}
-
 	*addr = DEVICE_MMIO_GET(dev);
 	return 0;
 }
 
 static int syscon_generic_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
-	const struct syscon_generic_config *config;
-	struct syscon_generic_data *data;
+	const struct syscon_generic_config *config = dev->config;
+	struct syscon_generic_data *data = dev->data;
 	uintptr_t base_address;
-
-	if (!dev) {
-		return -ENODEV;
-	}
-
-	data = dev->data;
-	config = dev->config;
 
 	if (!val) {
 		return -EINVAL;
@@ -79,16 +68,9 @@ static int syscon_generic_read_reg(const struct device *dev, uint16_t reg, uint3
 
 static int syscon_generic_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 {
-	const struct syscon_generic_config *config;
-	struct syscon_generic_data *data;
+	const struct syscon_generic_config *config = dev->config;
+	struct syscon_generic_data *data = dev->data;
 	uintptr_t base_address;
-
-	if (!dev) {
-		return -ENODEV;
-	}
-
-	data = dev->data;
-	config = dev->config;
 
 	if (syscon_sanitize_reg(&reg, data->size, config->reg_width)) {
 		return -EINVAL;
