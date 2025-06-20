@@ -111,6 +111,7 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 void radio_switch_complete_and_b2b_tx_disable(void);
 void radio_switch_complete_and_b2b_rx_disable(void);
 void radio_switch_complete_and_disable(void);
+void radio_switch_complete_end_capture_and_disable(void);
 
 uint8_t radio_phy_flags_rx_get(void);
 
