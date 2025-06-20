@@ -88,28 +88,18 @@ static int wdt_ti_rti_disable(const struct device *dev)
 
 static int wdt_ti_rti_window_size(const struct wdt_window window)
 {
+	const int window_sizes[] = {RTIWWDSIZE_100P, RTIWWDSIZE_50P,  RTIWWDSIZE_25P,
+				    RTIWWDSIZE_12P5, RTIWWDSIZE_6P25, RTIWWDSIZE_3P125};
+
 	if (window.max < window.min || window.max == 0) {
 		return -EINVAL;
 	}
 
-	for (uint32_t idx = 0; idx <= 5; idx++) {
+	for (uint32_t idx = 0; idx < ARRAY_SIZE(window_sizes); idx++) {
 		uint32_t temp = (window.max - window.min) << idx;
 
 		if (temp == window.max) {
-			switch (idx) {
-			case 0:
-				return RTIWWDSIZE_100P;
-			case 1:
-				return RTIWWDSIZE_50P;
-			case 2:
-				return RTIWWDSIZE_25P;
-			case 3:
-				return RTIWWDSIZE_12P5;
-			case 4:
-				return RTIWWDSIZE_6P25;
-			case 5:
-				return RTIWWDSIZE_3P125;
-			}
+			return window_sizes[idx];
 		} else if (temp > window.max) {
 			break;
 		}
