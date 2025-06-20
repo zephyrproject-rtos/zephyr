@@ -22,12 +22,12 @@ static const struct device *sample_i2c_controller = I2C_CONTROLLER_DEVICE_GET;
 static const struct device *sample_i2c_controller_target = I2C_CONTROLLER_TARGET_DEVICE_GET;
 
 /* Data to write and buffer to store write in */
-static uint8_t sample_write_data[] = {0x0A, 0x0B};
+static uint8_t sample_write_data[CONFIG_I2C_RTIO_LOOPBACK_DATA_WRITE_MAX_SIZE];
 static uint8_t sample_write_buf[sizeof(sample_write_data)];
 static uint32_t sample_write_buf_pos;
 
 /* Data to read and buffer to store read in */
-static uint8_t sample_read_data[] = {0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5};
+static uint8_t sample_read_data[CONFIG_I2C_RTIO_LOOPBACK_DATA_READ_MAX_SIZE];
 static uint32_t sample_read_data_pos;
 static uint8_t sample_read_buf[sizeof(sample_read_data)];
 
@@ -176,16 +176,30 @@ static int sample_validate_write_read(void)
 	int ret;
 
 	if (sample_write_buf_pos != sizeof(sample_write_data)) {
+		printk("Posittion error: %zu != %zu\n",
+		       sample_write_buf_pos, sizeof(sample_write_data));
 		return -EIO;
 	}
 
 	ret = memcmp(sample_write_buf, sample_write_data, sizeof(sample_write_data));
 	if (ret) {
+		for (int n = 0; n < sizeof(sample_write_data); n++) {
+			if (sample_write_buf[n] != sample_write_data[n]) {
+				printk("Write at offset %u: %02x != %02x\n",
+				       n, sample_write_buf[n], sample_write_data[n]);
+			}
+		}
 		return -EIO;
 	}
 
 	ret = memcmp(sample_read_buf, sample_read_data, sizeof(sample_read_data));
 	if (ret) {
+		for (int n = 0; n < sizeof(sample_read_data); n++) {
+			if (sample_read_buf[n] != sample_read_data[n]) {
+				printk("Read at offset %u: %02x != %02x\n",
+				       n, sample_read_buf[n], sample_read_data[n]);
+			}
+		}
 		return -EIO;
 	}
 
@@ -360,7 +374,15 @@ static int sample_rtio_write_read_async(void)
 
 int main(void)
 {
-	int ret;
+	int ret, n;
+
+	for (n = 0; n < sizeof(sample_write_data); n++) {
+		sample_write_data[n] = (0xFF - n) % 0xFF;
+	}
+
+	for (n = 0; n < sizeof(sample_read_data); n++) {
+		sample_read_data[n] = n % 0xFF;
+	}
 
 	printk("%s %s\n", "init_i2c_target", "running");
 	ret = sample_init_i2c_target();
