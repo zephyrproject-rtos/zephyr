@@ -779,7 +779,7 @@ config NXP_WIFI_5GHz_SUPPORT
 
 config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
-	depends on NXP_RW610
+	depends on NXP_RW610 || NXP_WIFI_SDIO_MULTI_PORT_TX_AGGR
 	imply NET_IPV4_FRAGMENT
 	help
 	  This option enables the Zero memory copy of data packets in Wi-Fi driver data path.
