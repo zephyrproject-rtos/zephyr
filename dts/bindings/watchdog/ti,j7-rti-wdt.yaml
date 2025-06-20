@@ -1,0 +1,16 @@
+# Copyright (c) 2025, Ayush Singh BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: K3 Watchdog timer (RTI module) available in the K3 generation of processors.
+
+compatible: "ti,j7-rti-wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
