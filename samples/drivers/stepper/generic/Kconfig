@@ -15,6 +15,18 @@ config PING_PONG_N_REV
 	int "Change direction every N revolutions"
 	default 1
 
+config RAMP_ACCELERATION
+	int "Ramp acceleration micro-step/s²"
+	default 100
+
+config RAMP_MAX_VELOCITY
+	int "Ramp max velocity micro-steps/s"
+	default 1000
+
+config RAMP_DECELERATION
+	int "Ramp deceleration micro-step/s²"
+	default 100
+
 config MONITOR_THREAD_TIMEOUT_MS
 	int "Monitor thread timeout (ms)"
 	default 1000
