@@ -293,7 +293,7 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 	if (should_preempt(thread, preempt_ok)) {
 #ifdef CONFIG_TIMESLICING
 		if (thread != _current) {
-			z_reset_time_slice(thread);
+			z_reset_time_slice(0, thread);
 		}
 #endif /* CONFIG_TIMESLICING */
 		update_metairq_preempt(thread);
@@ -880,7 +880,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			set_current(new_thread);
 
 #ifdef CONFIG_TIMESLICING
-			z_reset_time_slice(new_thread);
+			z_reset_time_slice(cpu_id, new_thread);
 #endif /* CONFIG_TIMESLICING */
 
 #ifdef CONFIG_SPIN_VALIDATE
