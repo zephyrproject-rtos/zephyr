@@ -138,7 +138,6 @@ static sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event
 {
 	ARG_UNUSED(event);
 	ARG_UNUSED(result_length);
-	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_si91x_module_state_stats_response_t *notif = response;
 	uint8_t module_state = notif->state_code & 0xF0;
 	struct siwx91x_dev *sidev = arg;
@@ -154,11 +153,6 @@ static sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event
 		LOG_DBG("Better AP found while roaming");
 		break;
 	case STATE_ASSOCIATED:
-		if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_AP_INTERFACE) {
-			wifi_mgmt_raise_ap_enable_result_event(sidev->iface,
-							       WIFI_STATUS_AP_SUCCESS);
-		}
-
 		sidev->state = WIFI_STATE_COMPLETED;
 		break;
 	case STATE_UNASSOCIATED:
@@ -855,6 +849,9 @@ static int siwx91x_ap_enable(const struct device *dev, struct wifi_connect_req_p
 		net_if_dormant_off(sidev->iface);
 	}
 
+	wifi_mgmt_raise_ap_enable_result_event(sidev->iface, WIFI_STATUS_AP_SUCCESS);
+	sidev->state = WIFI_STATE_COMPLETED;
+
 	return 0;
 }
 
@@ -888,14 +885,15 @@ static sl_status_t siwx91x_on_ap_sta_connect(sl_wifi_event_t event, void *data,
 					     uint32_t data_length, void *arg)
 {
 	ARG_UNUSED(event);
+	ARG_UNUSED(data_length);
 	struct siwx91x_dev *sidev = arg;
 	struct wifi_ap_sta_info sta_info = { };
 
 	__ASSERT(data, "data cannot be NULL");
 	__ASSERT(arg, "arg cannot be NULL");
 
-	memcpy(sta_info.mac, data, data_length);
-	sta_info.mac_length = data_length;
+	memcpy(sta_info.mac, data, WIFI_MAC_ADDR_LEN);
+	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
 	sta_info.link_mode = WIFI_LINK_MODE_UNKNOWN;
 
 	wifi_mgmt_raise_ap_sta_connected_event(sidev->iface, &sta_info);
@@ -907,14 +905,15 @@ static sl_status_t siwx91x_on_ap_sta_disconnect(sl_wifi_event_t event, void *dat
 						uint32_t data_length, void *arg)
 {
 	ARG_UNUSED(event);
+	ARG_UNUSED(data_length);
 	struct siwx91x_dev *sidev = arg;
 	struct wifi_ap_sta_info sta_info = { };
 
 	__ASSERT(data, "data cannot be NULL");
 	__ASSERT(arg, "arg cannot be NULL");
 
-	memcpy(sta_info.mac, data, data_length);
-	sta_info.mac_length = data_length;
+	memcpy(sta_info.mac, data, WIFI_MAC_ADDR_LEN);
+	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
 	wifi_mgmt_raise_ap_sta_disconnected_event(sidev->iface, &sta_info);
 
 	return SL_STATUS_OK;
