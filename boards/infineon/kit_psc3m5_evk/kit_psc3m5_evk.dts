@@ -8,6 +8,7 @@
 #include <arm/infineon/cat1b/psc3/system_clocks.dtsi>
 #include <arm/infineon/cat1b/psc3/psc3_partition.dtsi>
 #include "kit_psc3m5_evk-common.dtsi"
+#include "kit_psc3m5_evk-pinctrl.dtsi"
 
 / {
 	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
@@ -20,13 +21,13 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &slot0_partition;
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
 	};
 };
 
-uart1: &scb3 {
-	compatible = "infineon,cat1-uart";
+uart3: &scb3 {
+	compatible = "infineon,cat1-uart-pdl";
 	status = "okay";
 	current-speed = <115200>;
 
@@ -36,12 +37,18 @@ uart1: &scb3 {
 	pinctrl-names = "default";
 };
 
+&peri0_group4_8bit_0 {
+	status = "okay";
+	scb-block = <3>;
+	div-value = <109>;
+};
+
 &path_mux0 {
 	status = "okay";
 };
 
 &path_mux1 {
-	status = "disabled";
+	status = "okay";
 };
 
 &path_mux2 {
@@ -57,12 +64,11 @@ uart1: &scb3 {
 };
 
 &clk_hf1 {
-	status = "disabled";
+	status = "okay";
 };
 
 &clk_hf2 {
 	status = "okay";
-	clocks = <&fll0>;
 };
 
 &clk_hf3 {
