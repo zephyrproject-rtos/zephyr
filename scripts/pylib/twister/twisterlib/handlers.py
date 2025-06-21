@@ -546,7 +546,10 @@ class DeviceHandler(Handler):
 
     def _create_command(self, runner, hardware):
         if (self.options.west_flash is not None) or runner:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+            command = ["west"]
+            if self.options.verbose > 0:
+                command.append(f"-{'v'*self.options.verbose}")
+            command += ["flash", "--skip-rebuild", "-d", self.build_dir]
             command_extra_args = []
 
             # There are three ways this option is used.
@@ -566,36 +569,40 @@ class DeviceHandler(Handler):
                 board_id = hardware.probe_id or hardware.id
                 product = hardware.product
                 if board_id is not None:
-                    if runner in ("pyocd", "nrfjprog", "nrfutil"):
-                        command_extra_args.append("--dev-id")
-                        command_extra_args.append(board_id)
-                    elif runner == "esp32":
-                        command_extra_args.append("--esp-device")
-                        command_extra_args.append(board_id)
-                    elif (
-                        runner == "openocd"
-                        and product == "STM32 STLink"
-                        or runner == "openocd"
-                        and product == "STLINK-V3"
-                    ):
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append(f"hla_serial {board_id}")
-                    elif runner == "openocd" and product == "EDBG CMSIS-DAP":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append(f"cmsis_dap_serial {board_id}")
-                    elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append(f"adapter serial {board_id}")
+                    runner_extra_args_config = {
+                        "pyocd": ("--dev-id", board_id),
+                        "nrfjprog": ("--dev-id", board_id),
+                        "nrfutil": ("--dev-id", board_id),
+                        "esp32": ("--esp-device", board_id),
+                    }
+
+                    # Handle openocd cases
+                    if runner == "openocd":
+                        cmd_mapping = {
+                            "STM32 STLink": f"hla_serial {board_id}",
+                            "STLINK-V3": f"hla_serial {board_id}",
+                            "EDBG CMSIS-DAP": f"cmsis_dap_serial {board_id}",
+                            "LPC-LINK2 CMSIS-DAP": f"adapter serial {board_id}"
+                        }
+                        if product in cmd_mapping:
+                            command_extra_args.extend(["--cmd-pre-init",
+                                cmd_mapping[product]])
+
+                    # Handle jlink specially
                     elif runner == "jlink":
-                        command.append("--dev-id")
-                        command.append(board_id)
+                        command.extend(["--dev-id", board_id])
+
+                    # Handle linkserver specially
                     elif runner == "linkserver":
-                        # for linkserver
-                        # --probe=#<number> select by probe index
-                        # --probe=<serial number> select by probe serial number
                         command.append(f"--probe={board_id}")
+
+                    # Handle stm32cubeprogrammer
                     elif runner == "stm32cubeprogrammer" and product != "BOOT-SERIAL":
                         command.append(f"--tool-opt=sn={board_id}")
+
+                    # Handle standard runners from the mapping
+                    elif runner in runner_extra_args_config:
+                        command_extra_args.extend(runner_extra_args_config[runner])
 
                     # Receive parameters from runner_params field.
                     if hardware.runner_params:
