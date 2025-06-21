@@ -32,6 +32,8 @@ uart1: &scb3 {
 	status = "okay";
 	current-speed = <115200>;
 
+	clocks = <&peri0_group4_8bit_0>;
+
 	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx &p6_1_scb3_uart_rts &p6_0_scb3_uart_cts>;
 	pinctrl-names = "default";
 
@@ -42,7 +44,7 @@ uart1: &scb3 {
 };
 
 &path_mux1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &path_mux2 {
@@ -55,15 +57,15 @@ uart1: &scb3 {
 
 &clk_hf0 {
 	status = "okay";
-	clocks = <&fll0>;
 };
 
 &clk_hf1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &clk_hf2 {
 	status = "okay";
+	clocks = <&fll0>;
 };
 
 &clk_hf3 {
