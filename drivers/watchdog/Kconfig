@@ -65,6 +65,15 @@ config WDT_COUNTER_CH_COUNT
 
 endif # WDT_COUNTER
 
+config WDT_EARLY_WARNING_INTERRUPT_SUPPORT
+	bool "Watchdog early warning interrupt support"
+	help
+	  Add support for the watchdog early warning interrupt. If the watchdog peripheral
+	  supports early warning interrupts, a callback can be set by the user to handle the
+	  cases when the watchdog window is opened. Certain devices have to be provisioned
+	  for when the minimum window time is reached, in order to notify the user that the
+	  window is opened.
+
 source "drivers/watchdog/Kconfig.stm32"
 
 source "drivers/watchdog/Kconfig.cmsdk_apb"
