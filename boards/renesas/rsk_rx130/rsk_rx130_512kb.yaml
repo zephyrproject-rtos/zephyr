@@ -12,5 +12,6 @@ supported:
   - serial
   - timer
   - spi
+  - adc
 ram: 48
 flash: 512
