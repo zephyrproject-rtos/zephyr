@@ -18,6 +18,12 @@ void soc_per_core_init_hook(void)
 #ifdef CONFIG_SOC_EARLY_INIT_HOOK
 void soc_early_init_hook(void)
 {
+#ifdef CONFIG_SOC_EGIS_ET171
+	/* Forward to et171_init.c */
+	extern int et171_soc_early_init_hook(void);
+
+	et171_soc_early_init_hook();
+#endif /* CONFIG_SOC_EGIS_ET171 */
 #ifdef CONFIG_SOC_ANDES_V5_PMA
 	pma_init();
 #endif /* CONFIG_SOC_ANDES_V5_PMA */

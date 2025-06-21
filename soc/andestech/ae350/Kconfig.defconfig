@@ -7,6 +7,7 @@ if SOC_SERIES_ANDES_AE350
 # SoC defaults should be parsed before SoC Series defaults, because SoCs usually
 # overrides SoC Series values.
 rsource "Kconfig.defconfig.ae*"
+rsource "Kconfig.defconfig.et171"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 60000000
