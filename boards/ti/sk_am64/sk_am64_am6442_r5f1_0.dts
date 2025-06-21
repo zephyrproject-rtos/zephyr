@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am64x_r5f1_0.dtsi>
+
+/ {
+	model = "TI AM64x STARTER KIT (SK) R5F";
+	compatible = "ti,am64x_sk_r5f1_0", "ti,am6442";
+
+	chosen {
+		zephyr,sram = &atcm;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc_shm = &ddr0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+	};
+
+	ddr0: memory@a2000000 {
+		compatible = "mmio-sram";
+		reg = <0xa2000000 DT_SIZE_M(1)>;
+	};
+
+	rsc_table: memory@a2100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa2100000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr1: memory@a2101000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa2101000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
+		zephyr,memory-region = "DRAM";
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox4 0>, <&mbox4 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&timer10 {
+	status = "okay";
+};
