@@ -2904,8 +2904,14 @@ def _interrupt_parent(start_node: dtlib_Node) -> dtlib_Node:
 
     while node:
         if "interrupt-parent" in node.props:
-            return node.props["interrupt-parent"].to_node()
+            iparent = node.props["interrupt-parent"].to_node()
+            assert "interrupt-controller" in iparent.props or "interrupt-map" in iparent.props
+            return iparent
         node = node.parent
+        if node is None:
+            _err(f"{start_node!r} no interrupt parent found")
+        if ("interrupt-controller" in node.props) or ("interrupt-map" in node.props):
+            return node
 
     _err(f"{start_node!r} has an 'interrupts' property, but neither the node "
          f"nor any of its parents has an 'interrupt-parent' property")
@@ -2961,11 +2967,11 @@ def _map_interrupt(
         # _address_cells(), because it's the #address-cells property on 'node'
         # itself that matters.
 
-        address_cells = node.props.get("#address-cells")
-        if not address_cells:
+        address_cells = _address_cells_self(node)
+        if address_cells is None:
             _err(f"missing #address-cells on {node!r} "
                  "(while handling interrupt-map)")
-        return address_cells.to_num()
+        return address_cells
 
     def spec_len_fn(node):
         # Can't use _address_cells() here, because it's the #address-cells
@@ -2973,7 +2979,7 @@ def _map_interrupt(
         return own_address_cells(node) + _interrupt_cells(node)
 
     parent, raw_spec = _map(
-        "interrupt", child, parent, _raw_unit_addr(child) + child_spec,
+        "interrupt", child, parent, _raw_unit_addr(child, parent) + child_spec,
         spec_len_fn, require_controller=True)
 
     # Strip the parent unit address part, if any
@@ -3137,22 +3143,42 @@ def _pass_thru(
     return res[-len(parent_spec):]
 
 
-def _raw_unit_addr(node: dtlib_Node) -> bytes:
+def _raw_unit_addr(node: dtlib_Node, parent: dtlib_Node) -> bytes:
     # _map_interrupt() helper. Returns the unit address (derived from 'reg' and
     # #address-cells) as a raw 'bytes'
+
+    iparent: Optional[dtlib_Node] = parent
+    iparent_addr_len = _address_cells_self(iparent)
+    parent_addr_len = _address_cells(node)
+
+    if iparent_addr_len is None:
+        iparent_addr_len =  2  # Default value per DT spec.
+
+    if parent_addr_len is None:
+        parent_addr_len =  2  # Default value per DT spec.
+
+    if iparent_addr_len == 0:
+        return b''
 
     if 'reg' not in node.props:
         _err(f"{node!r} lacks 'reg' property "
              "(needed for 'interrupt-map' unit address lookup)")
 
-    addr_len = 4*_address_cells(node)
+    iparent_addr_len *= 4
+    parent_addr_len *= 4
 
-    if len(node.props['reg'].value) < addr_len:
-        _err(f"{node!r} has too short 'reg' property "
+    prop_len = len(node.props['reg'].value)
+    if prop_len < iparent_addr_len or prop_len %4 != 0:
+        _err(f"{node!r} has too short or incorrectly defined 'reg' property "
              "(while doing 'interrupt-map' unit address lookup)")
 
-    return node.props['reg'].value[:addr_len]
+    address = b''
+    if parent_addr_len > iparent_addr_len:
+        address = node.props['reg'].value[iparent_addr_len - parent_addr_len:parent_addr_len]
+    else:
+        address = node.props['reg'].value[:iparent_addr_len]
 
+    return address
 
 def _and(b1: bytes, b2: bytes) -> bytes:
     # Returns the bitwise AND of the two 'bytes' objects b1 and b2. Pads
@@ -3232,15 +3258,24 @@ def _phandle_val_list(
     return res
 
 
-def _address_cells(node: dtlib_Node) -> int:
+def _address_cells_self(node: Optional[dtlib_Node]) -> Optional[int]:
     # Returns the #address-cells setting for 'node', giving the number of <u32>
+    # cells used to encode the address in the 'reg' property
+
+    if node is not None and "#address-cells" in node.props:
+        return node.props["#address-cells"].to_num()
+    return None
+
+def _address_cells(node: dtlib_Node) -> int:
+    # Returns the #address-cells setting for parent node of 'node', giving the number of <u32>
     # cells used to encode the address in the 'reg' property
     if TYPE_CHECKING:
         assert node.parent
 
-    if "#address-cells" in node.parent.props:
-        return node.parent.props["#address-cells"].to_num()
-    return 2  # Default value per DT spec.
+    ret = _address_cells_self(node.parent)
+    if ret is None:
+        return 2  # Default value per DT spec.
+    return int(ret)
 
 
 def _size_cells(node: dtlib_Node) -> int:
