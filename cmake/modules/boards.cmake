@@ -221,7 +221,7 @@ else()
   message("No board named '${BOARD}' found.\n\n"
           "Please choose one of the following boards:\n"
   )
-  execute_process(${list_boards_commands})
+  execute_process(${list_boards_commands} --sort-by-name)
   unset(CACHED_BOARD CACHE)
   message(FATAL_ERROR "Invalid BOARD; see above.")
 endif()
