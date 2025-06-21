@@ -56,12 +56,16 @@ struct rtc_sam_data {
 
 static void rtc_sam_disable_wp(void)
 {
+#ifdef REG_RTC_WPMR
 	REG_RTC_WPMR = RTC_SAM_WPMR_DISABLE;
+#endif
 }
 
 static void rtc_sam_enable_wp(void)
 {
+#ifdef REG_RTC_WPMR
 	REG_RTC_WPMR = RTC_SAM_WPMR_ENABLE;
+#endif
 }
 
 static uint32_t rtc_sam_timr_from_tm(const struct rtc_time *timeptr)
@@ -642,7 +646,11 @@ static int rtc_sam_init(const struct device *dev)
 	Rtc *regs = config->regs;
 
 	rtc_sam_disable_wp();
+#ifdef RTC_MR_PERSIAN
 	regs->RTC_MR &= ~(RTC_MR_HRMOD | RTC_MR_PERSIAN);
+#else
+	regs->RTC_MR &= ~RTC_MR_HRMOD;
+#endif
 	regs->RTC_CR = 0;
 	rtc_sam_enable_wp();
 	regs->RTC_IDR = (RTC_IDR_ACKDIS
