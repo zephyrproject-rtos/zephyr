@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: keithp
+      url-base: https://github.com/keith-packard
 
   group-filter: [-babblesim, -optional]
 
@@ -293,6 +295,11 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: libstdcxx
+      remote: keithp
+      repo-path: libstdcxx-module
+      revision: 9ac70a1eec3bec2bc158eb4b384cdc97631cdd77
+      path: modules/lib/libstdcxx
     - name: littlefs
       path: modules/fs/littlefs
       groups:
