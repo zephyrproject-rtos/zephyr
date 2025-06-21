@@ -547,9 +547,15 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 {
 	struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
 					    cmd_handler_data);
-	struct esp_socket *sock = dev->rx_sock;
+	struct esp_socket *sock;
 	int data_offset, data_len;
 	int err;
+
+	sock = esp_socket_ref(dev->rx_sock);
+	if (!sock) {
+		LOG_ERR("No rx_sock socket");
+		return -ENOTCONN;
+	}
 
 #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
 	char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
@@ -563,10 +569,10 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 #endif
 	if (err) {
 		if (err == -EAGAIN) {
-			return -EAGAIN;
+			goto socket_unref;
 		}
 
-		return err;
+		goto socket_unref;
 	}
 
 #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
@@ -591,12 +597,18 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	if (net_addr_pton(AF_INET, remote_ip_addr, &recv_addr->sin_addr) < 0) {
 		LOG_ERR("Invalid src addr %s", remote_ip_addr);
 		err = -EIO;
-		return err;
+		goto socket_unref;
 	}
 #endif
 	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
-	return data_offset + data_len;
+	err = data_offset + data_len;
+	goto socket_unref;
+
+socket_unref:
+	esp_socket_unref(sock);
+
+	return err;
 }
 
 void esp_recvdata_work(struct k_work *work)
