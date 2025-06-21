@@ -125,24 +125,19 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	__ASSERT_NO_MSG(desired != NULL);
 	__ASSERT_NO_MSG(match != NULL);
 
-	uint64_t min = stepwise->min.numerator;
-	uint64_t max = stepwise->max.numerator;
-	uint64_t step = stepwise->step.numerator;
-	uint64_t goal = desired->numerator;
+	uint64_t min_nsec = video_frmival_nsec(&stepwise->min);
+	uint64_t max_nsec = video_frmival_nsec(&stepwise->max);
+	uint64_t step_nsec = video_frmival_nsec(&stepwise->step);
+	uint64_t goal_nsec = video_frmival_nsec(desired);
 
-	/* Set a common denominator to all values */
-	min *= stepwise->max.denominator * stepwise->step.denominator * desired->denominator;
-	max *= stepwise->min.denominator * stepwise->step.denominator * desired->denominator;
-	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
-	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
+	goal_nsec = CLAMP(goal_nsec, min_nsec, max_nsec);
 
-	/* Saturate the desired value to the min/max supported */
-	goal = CLAMP(goal, min, max);
+	/* Compute everything as nanoseconds */
+	match->numerator =
+		min_nsec + DIV_ROUND_CLOSEST(goal_nsec - min_nsec, step_nsec) * step_nsec;
 
-	/* Compute a numerator and denominator */
-	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
-	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
-			     stepwise->step.denominator * desired->denominator;
+	/* Find the closest value following the step interval */
+	match->denominator = NSEC_PER_SEC;
 }
 
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
