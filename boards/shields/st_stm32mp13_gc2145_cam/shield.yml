@@ -1,0 +1,6 @@
+shield:
+  name: st_stm32mp13_gc2145_cam
+  full_name: ST STM32MP135F_DK GC2145-MB1897
+  vendor: st
+  supported_features:
+    - video
