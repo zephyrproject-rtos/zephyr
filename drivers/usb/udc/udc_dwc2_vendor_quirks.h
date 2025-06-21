@@ -94,7 +94,7 @@ static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
 		return stm32f4_fsotg_enable_clk(&stm32f4_clk_##n);		\
 	}									\
 										\
-	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
+	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
 		.pre_enable = stm32f4_fsotg_enable_clk_##n,			\
 		.post_enable = stm32f4_fsotg_enable_phy,			\
 		.disable = stm32f4_fsotg_disable_phy,				\
@@ -297,7 +297,7 @@ static inline int usbhs_pre_hibernation_exit(const struct device *dev)
 }
 
 #define QUIRK_NRF_USBHS_DEFINE(n)						\
-	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
+	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
 		.init = usbhs_enable_nrfs_service,				\
 		.pre_enable = usbhs_enable_core,				\
 		.disable = usbhs_disable_core,					\
