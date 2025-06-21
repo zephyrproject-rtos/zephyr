@@ -70,4 +70,12 @@ config NEWLIB_LIBC_CUSTOM_SBRK
 	  Allow user to define custom version of the _sbrk function. Some application
 	  may need to use the remaining RAM for also other purposes than heap.
 
+if ZVFS
+
+config ZVFS_LIBC_FILE_SIZE
+	default 184 if 64BIT
+	default 104
+
+endif # ZVFS
+
 endif # NEWLIB_LIBC
