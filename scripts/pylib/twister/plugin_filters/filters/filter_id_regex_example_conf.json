@@ -1,0 +1,17 @@
+[
+    {
+        "filter_file_path":"filter_id_regex",
+        "kwargs": {
+            "regex_pattern": ".*static",
+            "exclude_reason": "this filter selects only tests from the static group",
+            "include_reason": "this suite contains the keyword 'static'"
+        }
+    },
+    {
+        "filter_file_path":"filter_id_regox",
+        "kwargs": {
+            "regex_pattern": ".*stacks",
+            "exclude_reason": "this filter doesn't exist and should just trigger a warning"
+        }
+    }
+]
