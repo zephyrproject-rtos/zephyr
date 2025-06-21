@@ -28,6 +28,13 @@ config UART_NRFX_UARTE
 	imply NRFX_UARTE_CONFIG_SKIP_PSEL_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
 	imply NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG if !UART_NRFX_UARTE_LEGACY_SHIM
 
+config UART_NRFX_UARTE_USE_CLOCK_CONTROL
+	def_bool y
+	depends on UART_NRFX_UARTE
+	depends on $(dt_nodelabel_enabled,uart120)
+	depends on !SOC_NRF54H20_CPUFLPR && !SOC_NRF54H20_CPUPPR
+	select CLOCK_CONTROL
+
 config UART_NRFX_UARTE_NO_IRQ
 	bool "Polling without interrupt"
 	depends on UART_NRFX_UARTE
