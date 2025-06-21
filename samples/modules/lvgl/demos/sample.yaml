@@ -10,6 +10,7 @@ common:
     - platform:mimxrt1060_evk:SHIELD=rk043fn66hs_ctg
     - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
     - platform:mimxrt595_evk/mimxrt595s/cm33:SHIELD=rk055hdmipi4ma0
+    - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=g1120b0mipi
   tags:
     - samples
     - display
