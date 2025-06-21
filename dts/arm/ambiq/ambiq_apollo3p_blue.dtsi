@@ -142,15 +142,6 @@
 			status = "disabled";
 		};
 
-		counter3: counter@40008060 {
-			compatible = "ambiq,counter";
-			reg = <0x40008060 0x20>;
-			interrupts = <14 0>;
-			clock-frequency = <DT_FREQ_M(3)>;
-			clk-source = <2>;
-			status = "disabled";
-		};
-
 		counter4: counter@40008080 {
 			compatible = "ambiq,counter";
 			reg = <0x40008080 0x20>;

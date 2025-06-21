@@ -32,7 +32,7 @@
 
 	adc0_default: adc0_default{
 		group1 {
-			pinmux = <ADCSE4_P15>, <ADCSE7_P12>;
+			pinmux = <ADCSE5_P14>, <ADCSE6_P13>;
 			drive-strength = "0.1";
 		};
 	};

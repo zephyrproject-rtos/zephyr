@@ -11,6 +11,7 @@
 
 &adc0 {
 	status = "okay";
+	dma-mode;
 	#address-cells = <1>;
 	#size-cells = <0>;
 
