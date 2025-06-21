@@ -176,7 +176,10 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 
 	if (family == AF_INET6) {
 		addr6 = (struct in6_addr *)src;
+		/* This is safe here, as w is only accessed with UNALIGNED_GET */
+		TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER)
 		w = (uint16_t *)addr6->s6_addr16;
+		TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ADDRESS_OF_PACKED_MEMBER)
 		len = 8;
 
 		if (net_ipv6_addr_is_v4_mapped(addr6)) {
