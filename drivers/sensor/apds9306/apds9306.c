@@ -1,5 +1,5 @@
 /* Copyright (c) 2024 Daniel Kampert
- * Author: Daniel Kampert <DanielKampert@kampis-Elektroecke.de>
+ * Author: Daniel Kampert <DanielKampert@kampis-elektroecke.de>
  */
 
 #include <zephyr/device.h>
@@ -45,41 +45,30 @@
 
 LOG_MODULE_REGISTER(avago_apds9306, CONFIG_SENSOR_LOG_LEVEL);
 
+/* See datasheet for the values. Aligned with avago,apds9306.yaml */
+static const uint8_t avago_apds9306_gain[] = {1, 3, 6, 9, 18};
+
+/* See datasheet for the values. */
+static const double avago_apds9306_measurement_time[] = {400, 200, 100, 50, 25, 3.125};
+
 struct apds9306_data {
 	uint32_t light;
+	uint8_t frequency_idx;  /**< This field hold the index of the current sampling frequency. */
+	uint8_t gain_idx;       /**< This field hold the index of the current sampling gain. */
+	uint8_t resolution_idx; /**< This field hold the index of the current sampling resolution.*/
 };
 
 struct apds9306_config {
 	struct i2c_dt_spec i2c;
-	uint8_t resolution;
-	uint16_t frequency;
-	uint8_t gain;
+	uint8_t resolution_idx;
+	uint8_t frequency_idx;
+	uint8_t gain_idx;
 };
 
 struct apds9306_worker_item_t {
 	struct k_work_delayable dwork;
 	const struct device *dev;
 } apds9306_worker_item;
-
-static uint32_t apds9306_get_time_for_resolution(uint8_t value)
-{
-	switch (value) {
-	case 0:
-		return 400;
-	case 1:
-		return 200;
-	case 2:
-		return 100;
-	case 3:
-		return 50;
-	case 4:
-		return 25;
-	case 5:
-		return 4;
-	default:
-		return 100;
-	}
-}
 
 static int apds9306_enable(const struct device *dev)
 {
@@ -128,7 +117,18 @@ static void apds9306_worker(struct k_work *p_work)
 	}
 
 	data->light = sys_get_le24(buffer);
+	LOG_DBG("Last raw measurement: %u", data->light);
 
+	/* Based on
+	 * https://github.com/gmarti/AsyncAPDS9306/blob/master/AsyncAPDS9306.cpp#L39
+	 */
+	double gain = avago_apds9306_gain[data->gain_idx];
+	double integrationtime = avago_apds9306_measurement_time[data->resolution_idx];
+
+	data->light = ((double)data->light / gain) * ((double)100.0 / integrationtime);
+
+	LOG_DBG("Gain: %u", (uint32_t)gain);
+	LOG_DBG("Integration time: %u", (uint32_t)integrationtime);
 	LOG_DBG("Last measurement: %u", data->light);
 }
 
@@ -139,20 +139,30 @@ static int apds9306_attr_set(const struct device *dev, enum sensor_channel chann
 	uint8_t mask;
 	uint8_t temp;
 	const struct apds9306_config *config = dev->config;
+	struct apds9306_data *data = dev->data;
 
-	if (channel != SENSOR_CHAN_LIGHT) {
+	if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_LIGHT)) {
 		return -ENOTSUP;
 	}
 
 	if (attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+		if (value->val1 > 6) {
+			return -EINVAL;
+		}
 		reg = APDS9306_REGISTER_ALS_MEAS_RATE;
 		mask = GENMASK(2, 0);
 		temp = FIELD_PREP(0x07, value->val1);
 	} else if (attribute == SENSOR_ATTR_GAIN) {
+		if (value->val1 > 4) {
+			return -EINVAL;
+		}
 		reg = APDS9306_REGISTER_ALS_GAIN;
 		mask = GENMASK(2, 0);
 		temp = FIELD_PREP(0x07, value->val1);
 	} else if (attribute == SENSOR_ATTR_RESOLUTION) {
+		if (value->val1 > 5) {
+			return -EINVAL;
+		}
 		reg = APDS9306_REGISTER_ALS_MEAS_RATE;
 		mask = GENMASK(7, 4);
 		temp = FIELD_PREP(0x07, value->val1) << 0x04;
@@ -165,51 +175,44 @@ static int apds9306_attr_set(const struct device *dev, enum sensor_channel chann
 		return -EFAULT;
 	}
 
+	/* We only save the new values when no error occurs to prevent invalid settings. */
+	if (attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+		data->frequency_idx = value->val1;
+	} else if (attribute == SENSOR_ATTR_GAIN) {
+		data->gain_idx = value->val1;
+	} else if (attribute == SENSOR_ATTR_RESOLUTION) {
+		data->resolution_idx = value->val1;
+	}
+
 	return 0;
 }
 
 static int apds9306_attr_get(const struct device *dev, enum sensor_channel channel,
 			     enum sensor_attribute attribute, struct sensor_value *value)
 {
-	uint8_t mask;
-	uint8_t temp;
-	uint8_t reg;
-	const struct apds9306_config *config = dev->config;
+	struct apds9306_data *data = dev->data;
 
-	if (channel != SENSOR_CHAN_LIGHT) {
+	if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_LIGHT)) {
 		return -ENOTSUP;
 	}
 
 	if (attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-		reg = APDS9306_REGISTER_ALS_MEAS_RATE;
-		mask = 0x00;
+		value->val1 = data->frequency_idx;
 	} else if (attribute == SENSOR_ATTR_GAIN) {
-		reg = APDS9306_REGISTER_ALS_GAIN;
-		mask = 0x00;
+		value->val1 = data->gain_idx;
 	} else if (attribute == SENSOR_ATTR_RESOLUTION) {
-		reg = APDS9306_REGISTER_ALS_MEAS_RATE;
-		mask = 0x04;
+		value->val1 = data->resolution_idx;
 	} else {
 		return -ENOTSUP;
 	}
-
-	if (i2c_reg_read_byte_dt(&config->i2c, reg, &temp)) {
-		LOG_ERR("Failed to read sensor attribute!");
-		return -EFAULT;
-	}
-
-	value->val1 = (temp >> mask) & 0x07;
-	value->val2 = 0;
 
 	return 0;
 }
 
 static int apds9306_sample_fetch(const struct device *dev, enum sensor_channel channel)
 {
-	uint8_t buffer;
-	uint8_t resolution;
 	uint16_t delay;
-	const struct apds9306_config *config = dev->config;
+	struct apds9306_data *data = dev->data;
 
 	if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_LIGHT)) {
 		return -ENOTSUP;
@@ -221,16 +224,9 @@ static int apds9306_sample_fetch(const struct device *dev, enum sensor_channel c
 		return -EFAULT;
 	}
 
-	/* Get the measurement resolution. */
-	if (i2c_reg_read_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_MEAS_RATE, &buffer)) {
-		LOG_ERR("Failed reading resolution");
-		return -EFAULT;
-	}
-
 	/* Convert the resolution into a delay time and wait for the result. */
-	resolution = (buffer >> 4) & 0x07;
-	delay = apds9306_get_time_for_resolution(resolution);
-	LOG_DBG("Measurement resolution: %u", resolution);
+	delay = avago_apds9306_measurement_time[data->resolution_idx];
+	LOG_DBG("Measurement resolution: %u", data->resolution_idx);
 	LOG_DBG("Wait for %u ms", delay);
 
 	/* We add a bit more delay to cover the startup time etc. */
@@ -252,12 +248,14 @@ static int apds9306_channel_get(const struct device *dev, enum sensor_channel ch
 {
 	struct apds9306_data *data = dev->data;
 
-	if (channel != SENSOR_CHAN_LIGHT) {
+	switch (channel) {
+	case SENSOR_CHAN_LIGHT:
+		value->val1 = data->light;
+		value->val2 = 0;
+		break;
+	default:
 		return -ENOTSUP;
 	}
-
-	value->val1 = data->light;
-	value->val2 = 0;
 
 	return 0;
 }
@@ -316,6 +314,7 @@ static int apds9306_init(const struct device *dev)
 {
 	uint8_t value;
 	const struct apds9306_config *config = dev->config;
+	struct apds9306_data *data = dev->data;
 
 	LOG_DBG("Start to initialize APDS9306...");
 
@@ -329,16 +328,18 @@ static int apds9306_init(const struct device *dev)
 		return -EFAULT;
 	}
 
-	value = ((config->resolution & 0x07) << 4) | (config->frequency & 0x0F);
+	data->frequency_idx = config->frequency_idx;
+	data->resolution_idx = config->resolution_idx;
+	value = ((data->resolution_idx & 0x07) << 4) | (data->frequency_idx & 0x07);
 	LOG_DBG("Write configuration 0x%x to register 0x%x", value,
 		APDS9306_REGISTER_ALS_MEAS_RATE);
 	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_MEAS_RATE, value)) {
 		return -EFAULT;
 	}
 
-	value = config->gain;
+	data->gain_idx = config->gain_idx;
 	LOG_DBG("Write configuration 0x%x to register 0x%x", value, APDS9306_REGISTER_ALS_GAIN);
-	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_GAIN, value)) {
+	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_GAIN, data->gain_idx)) {
 		return -EFAULT;
 	}
 
@@ -358,9 +359,9 @@ static DEVICE_API(sensor, apds9306_driver_api) = {
 	static struct apds9306_data apds9306_data_##inst;                                          \
 	static const struct apds9306_config apds9306_config_##inst = {                             \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.resolution = DT_INST_PROP(inst, resolution),                                      \
-		.gain = DT_INST_PROP(inst, gain),                                                  \
-		.frequency = DT_INST_PROP(inst, frequency),                                        \
+		.resolution_idx = DT_INST_ENUM_IDX(inst, resolution),                              \
+		.gain_idx = DT_INST_ENUM_IDX(inst, gain),                                          \
+		.frequency_idx = DT_INST_ENUM_IDX(inst, frequency),                                \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, apds9306_init, NULL, &apds9306_data_##inst,             \
