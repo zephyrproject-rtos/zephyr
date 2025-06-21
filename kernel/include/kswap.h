@@ -124,6 +124,14 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_sched_usage_switch(new_thread);
 
 #ifdef CONFIG_SMP
+#if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+		/* HiFi owners should not be changing CPUs. */
+
+		__ASSERT((arch_curr_cpu()->arch.hifi_owner != new_thread) ||
+			 (new_thread->base.cpu == arch_curr_cpu()->id),
+			 "Thread %p changed from CPU%u to CPU%u\n",
+			 new_thread, new_thread->base.cpu, arch_curr_cpu()->id);
+#endif
 		new_thread->base.cpu = arch_curr_cpu()->id;
 
 		if (!is_spinlock) {

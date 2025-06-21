@@ -115,6 +115,12 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+int arch_coprocessors_disable(struct k_thread *thread)
+{
+	/* Posix does not support coprocessors */
+	return -ENOTSUP;
+}
+
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void z_impl_k_thread_abort(k_tid_t thread)
 {
