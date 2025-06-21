@@ -89,3 +89,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&tpm2 {
+	status = "okay";
+};
