@@ -1,0 +1,8 @@
+# Copyright 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 Timer used as sysclock
+
+compatible: "ti,mspm0-timer-sysclock"
+
+include: base.yaml
