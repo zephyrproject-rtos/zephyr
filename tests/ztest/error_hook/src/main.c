@@ -52,6 +52,15 @@ __no_optimization static void trigger_fault_illegal_instruction(void)
 
 	/* execute an illegal instruction */
 	((void(*)(void))&a)();
+#ifdef CONFIG_RX
+	/*
+	 * Intentionally execute an illegal instruction by calling a NULL pointer.
+	 * Optimization is disabled to avoid GCC internal error during DWARF frame generation.
+	 * __builtin_unreachable() hints to the compiler that control flow never returns here,
+	 * which prevents faulty CFA emission on RX targets.
+	 */
+	__builtin_unreachable();
+#endif
 }
 
 /*

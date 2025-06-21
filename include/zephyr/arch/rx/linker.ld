@@ -53,6 +53,10 @@ SECTIONS
 
 #include <zephyr/linker/rel-sections.ld>
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
 	GROUP_START(ROMABLE_REGION)
 	. = ROM_START;   /* for kernel logging */
 	PLACE_SYMBOL_HERE(__rodata_region_start);
@@ -64,16 +68,28 @@ SECTIONS
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,ROM_START,)
 	{
+		. = ALIGN(4);
 		_image_text_start = .;
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rom-start.ld>
 		*(.text)
 		*(.text.*)
 		*(P)
+		. = ALIGN(4);
 		etext = .;
+#include <zephyr/linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_text_end = .;
 
 	#include <zephyr/linker/common-rom.ld>
+
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 
 	SECTION_PROLOGUE(.rvectors,,)
 	{
@@ -105,13 +121,26 @@ SECTIONS
 		*(.got)
 		*(.got.plt)
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#include <zephyr/linker/thread-local-storage.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
+
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 		*(.rodata)
 		*(.rodata.*)
+		*(.gnu.linkonce.r)
+		*(.gnu.linkonce.r.*)
 		*(C_1)
 		*(C_2)
 		*(C)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rodata.ld>
+#include <zephyr/linker/kobject-rom.ld>
+
 		_erodata = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 	SECTION_PROLOGUE(eh_frame_hdr,,)
@@ -147,12 +176,27 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	PLACE_SYMBOL_HERE(__rodata_region_end);
-	_mdata = .;
 	GROUP_END(ROMABLE_REGION)
 
 	GROUP_START(RAMABLE_REGION)
 
 	_image_ram_start = .;
+
+#include <app_data_alignment.ld>
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
+
+#if defined(CONFIG_USERSPACE)
+#define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
+#define SMEM_PARTITION_ALIGN MPU_ALIGN
+
+#include <app_smem.ld>
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+#endif /* CONFIG_USERSPACE */
 
 	#if CONFIG_SRAM_BASE_ADDRESS == 0
 		/* RX memory starts at address 0 which can be confused with NULL. To prevent this, block
@@ -166,7 +210,8 @@ SECTIONS
 
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
-		_data = .;
+		__data_region_start = .;
+		__data_start = .;
 		*(.data)
 		*(.data.*)
 		*(D)
@@ -180,34 +225,47 @@ SECTIONS
 	/* the sections defined in common-ram.ld have to be initialized on
 	 * reset as well, to place them before _edata */
 #include <zephyr/linker/common-ram.ld>
+#include <zephyr/linker/kobject-data.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
-	_edata = .;
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-data-sections.ld>
+
+	__data_region_end = .;
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME,,)
 	{
 		_bss = .;
+		__bss_start = .;
 		*(.bss)
 		*(.bss.**)
 		*(COMMON)
 		*(B)
 		*(B_1)
 		*(B_2)
+		_ebss = .;
+		__bss_end = .;
+		. = ALIGN(128);
+		_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
-	_ebss = . ;
-
 #include <zephyr/linker/common-noinit.ld>
+	_ebss = . ;
 
 	_image_ram_end = .;
 	_end = .;
 	PROVIDE(__end = _end);
 
-	GROUP_END(RAMABLE_REGION)
-
 /* Located in generated directory. This file is populated by the
-* zephyr_linker_sources() CMake function.
-*/
+ * zephyr_linker_sources() Cmake function.
+ */
 #include <snippets-sections.ld>
+
+#include <zephyr/linker/ram-end.ld>
+
+	GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
 

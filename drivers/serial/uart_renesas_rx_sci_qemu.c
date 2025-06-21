@@ -51,6 +51,7 @@ LOG_MODULE_REGISTER(renesas_rx_uart_sci_qemu, CONFIG_UART_LOG_LEVEL);
 #define SSR_RDRF_LEN (1)
 #define SSR_TDRE_POS (7)
 #define SSR_TDRE_LEN (1)
+#define SCI_SCR_RE      (1 <<  4)
 
 struct uart_renesas_rx_sci_qemu_cfg {
 	mem_addr_t regs;
@@ -77,6 +78,7 @@ static void uart_renesas_rx_qemu_write_8(const struct device *dev, uint32_t offs
 
 static int uart_renesas_rx_sci_qemu_poll_in(const struct device *dev, unsigned char *c)
 {
+	uart_renesas_rx_qemu_write_8(dev, SCR, SCI_SCR_RE);
 	if ((uart_renesas_rx_qemu_read_8(dev, SSR) & REG_MASK(SSR_RDRF)) == 0) {
 		/* There are no characters available to read. */
 		return -1;
