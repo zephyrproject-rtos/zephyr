@@ -35,6 +35,7 @@ family:
           - name: r9a09g057h44gbg
             cpuclusters:
               - name: cm33
+              - name: cr8_0
       - name: rzv2n
         socs:
           - name: r9a09g056n48gbg

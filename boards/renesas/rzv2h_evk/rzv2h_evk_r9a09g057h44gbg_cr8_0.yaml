@@ -1,0 +1,11 @@
+identifier: rzv2h_evk/r9a09g057h44gbg/cr8_0
+name: Cortex-R8 for Renesas RZ/V2H EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+vendor: renesas
