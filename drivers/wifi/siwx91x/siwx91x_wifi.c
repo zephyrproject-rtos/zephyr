@@ -164,7 +164,7 @@ static sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event
 	case STATE_UNASSOCIATED:
 		wifi_mgmt_raise_disconnect_result_event(sidev->iface,
 							WIFI_REASON_DISCONN_SUCCESS);
-
+		sidev->ps_params.enabled = WIFI_PS_DISABLED;
 		sidev->state = WIFI_STATE_DISCONNECTED;
 		break;
 	default:
@@ -315,7 +315,7 @@ static int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 
 	if (sidev->ps_params.wakeup_mode == WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL &&
 	    !sidev->ps_params.listen_interval) {
-		LOG_INF("Disabling listen interval based wakeup until connection establishes");
+		LOG_INF("Disabling listen interval based wakeup until listen interval is set");
 	}
 	if (sidev->ps_params.wakeup_mode == WIFI_PS_WAKEUP_MODE_DTIM ||
 	    !sidev->ps_params.listen_interval) {
