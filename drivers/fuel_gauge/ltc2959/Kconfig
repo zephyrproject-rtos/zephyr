@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Nathan Winslow <natelostintimeandspace@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "LTC2959 Configuration"
+
+config FUEL_GAUGE_LTC2959
+
+	depends on DT_HAS_ADI_LTC2959_ENABLED
+	bool "LTC2959 Fuel Gauge"
+	default y
+	select I2C
+	help
+	  Enable the LTC2959 fuel gauge driver from Analog Devices.
+
+
+config FUEL_GAUGE_LTC2959_RSENSE_MOHMS
+
+	depends on FUEL_GAUGE_LTC2959
+	int "Sense resistor value in milliohms"
+	default 80
+	help
+	  Set the value of the RSENSE resistor in milliohms.
+	  This is used to calculate the current and charge resolution.
+
+endmenu
