@@ -29,6 +29,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "bap_common.h"
 #include "bap_stream_rx.h"
 #include "bstests.h"
 #include "common.h"
@@ -100,6 +101,7 @@ static void started_cb(struct bt_bap_stream *stream)
 	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
 	test_stream->rx_cnt = 0U;
 	test_stream->valid_rx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
 
 	printk("Stream %p started\n", stream);
 }
@@ -176,7 +178,6 @@ static int reset(void)
 	k_sem_reset(&sem_base_received);
 	k_sem_reset(&sem_syncable);
 	k_sem_reset(&sem_pa_sync_lost);
-	UNSET_FLAG(flag_audio_received);
 
 	broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	bis_index_bitfield = 0U;
@@ -325,6 +326,17 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 	}
 }
 
+static void wait_for_data(void)
+{
+	printk("Waiting for data\n");
+	ARRAY_FOR_EACH_PTR(test_streams, test_stream) {
+		if (audio_test_stream_is_streaming(test_stream)) {
+			WAIT_FOR_FLAG(test_stream->flag_audio_received);
+		}
+	}
+	printk("Data received\n");
+}
+
 static void test_main(void)
 {
 	int count = 0;
@@ -391,9 +403,7 @@ static void test_main(void)
 			break;
 		}
 
-		/* Wait for data */
-		printk("Waiting for data\n");
-		WAIT_FOR_FLAG(flag_audio_received);
+		wait_for_data();
 
 		printk("Sending signal to broadcaster to stop\n");
 		backchannel_sync_send_all(); /* let the broadcast source know it can stop */
