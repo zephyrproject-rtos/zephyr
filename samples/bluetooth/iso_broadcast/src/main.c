@@ -12,9 +12,22 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
+/*============================================================================*/
+/* Compile time config validation */
+#if CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX<CONFIG_BT_ISO_TX_MTU
+	#error "CONFIG_BT_CTLR_ADV_ISO_PDU_LEN_MAX must >= CONFIG_BT_ISO_TX_MTU"
+#endif
+#if CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE<(CONFIG_BT_ISO_TX_MTU+8)
+	#error "CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE must >= (CONFIG_BT_ISO_TX_MTU+8)"
+#endif
+#if CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX<CONFIG_BT_ISO_TX_MTU
+	#error "CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX must >= CONFIG_BT_ISO_TX_MTU"
+#endif
+/*============================================================================*/
+
 #define BIG_SDU_INTERVAL_US      (10000)
 #define BUF_ALLOC_TIMEOUT_US     (BIG_SDU_INTERVAL_US * 2U) /* milliseconds */
-#define BIG_TERMINATE_TIMEOUT_US (60 * USEC_PER_SEC) /* microseconds */
+#define BIG_TERMINATE_TIMEOUT_US (CONFIG_BIG_TERMINATE_TIMEOUT_SECONDS * USEC_PER_SEC) 
 
 #define BIS_ISO_CHAN_COUNT 2
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
@@ -29,6 +42,7 @@ static K_SEM_DEFINE(sem_iso_data, CONFIG_BT_ISO_TX_BUF_COUNT,
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
 static uint16_t seq_num;
+static uint32_t iso_send_count=0U;
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
@@ -41,6 +55,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
+	iso_send_count=0U;
 
 	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
 	if (err != 0) {
@@ -69,7 +84,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
-	.sdu = sizeof(uint32_t), /* bytes */
+	.sdu = CONFIG_BT_ISO_TX_MTU, /* bytes */
 	.rtn = 1,
 	.phy = BT_GAP_LE_PHY_2M,
 };
@@ -114,18 +129,34 @@ int main(void)
 	const uint16_t adv_interval_ms = 60U;
 	const uint16_t ext_adv_interval_ms = adv_interval_ms - 10U;
 	const struct bt_le_adv_param *ext_adv_param = BT_LE_ADV_PARAM(
-		BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(ext_adv_interval_ms),
-		BT_GAP_MS_TO_ADV_INTERVAL(ext_adv_interval_ms), NULL);
+		BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_USE_IDENTITY , 
+		BT_GAP_MS_TO_ADV_INTERVAL(ext_adv_interval_ms),
+		BT_GAP_MS_TO_ADV_INTERVAL(ext_adv_interval_ms), 
+		NULL);
 	const struct bt_le_per_adv_param *per_adv_param = BT_LE_PER_ADV_PARAM(
 		BT_GAP_MS_TO_PER_ADV_INTERVAL(adv_interval_ms),
 		BT_GAP_MS_TO_PER_ADV_INTERVAL(adv_interval_ms), BT_LE_PER_ADV_OPT_NONE);
+#if CONFIG_BIG_TERMINATE_TIMEOUT_SECONDS>0		
 	uint32_t timeout_counter = INITIAL_TIMEOUT_COUNTER;
+#endif /* CONFIG_BIG_TERMINATE_TIMEOUT_SECONDS>0 */
 	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
 	int err;
 
-	uint32_t iso_send_count = 0;
-	uint8_t iso_data[sizeof(iso_send_count)] = { 0 };
+	/*========================================================================*/
+	/* Validation of configs at run-time - if none of these are valid there is 
+	   no need to proceed any further 
+	*/
+	
+	if(iso_tx_qos.sdu != CONFIG_BT_ISO_TX_MTU){
+		printk("iso_tx_qos.sdu %u != CONFIG_BT_ISO_TX_MTU %u\n",
+		       iso_tx_qos.sdu, CONFIG_BT_ISO_TX_MTU);
+		return 0;
+	}
+
+	/*========================================================================*/
+
+	uint8_t iso_data[CONFIG_BT_ISO_TX_MTU] = { 0 };
 
 	printk("Starting ISO Broadcast Demo\n");
 
@@ -135,7 +166,7 @@ int main(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}
-
+   
 	/* Create a non-connectable advertising set */
 	err = bt_le_ext_adv_create(ext_adv_param, NULL, &adv);
 	if (err) {
@@ -189,45 +220,80 @@ int main(void)
 		printk("BIG create complete chan %u.\n", chan);
 	}
 
+#if CONFIG_BIG_TERMINATE_TIMEOUT_SECONDS==0
+	printk("BIG Terminate timeout disabled\n");
+#endif		
 	while (true) {
+		/* Send all appropriate BISes in the BIG */
+		uint32_t bis_tx_enabled=1;
 		for (uint8_t chan = 0U; chan < BIS_ISO_CHAN_COUNT; chan++) {
 			struct net_buf *buf;
 			int ret;
 
-			buf = net_buf_alloc(&bis_tx_pool, K_USEC(BUF_ALLOC_TIMEOUT_US));
-			if (!buf) {
-				printk("Data buffer allocate timeout on channel"
-				       " %u\n", chan);
-				return 0;
-			}
+			if(bis_tx_enabled & CONFIG_BIS_SEND_PAYLOAD_MASK){
+				buf = net_buf_alloc(&bis_tx_pool, K_USEC(BUF_ALLOC_TIMEOUT_US));
+				if (!buf) {
+					printk("Data buffer allocate timeout on channel"
+						" %u\n", chan);
+					return 0;
+				}
 
-			ret = k_sem_take(&sem_iso_data, K_USEC(BUF_ALLOC_TIMEOUT_US));
-			if (ret) {
-				printk("k_sem_take for ISO data sent failed\n");
-				net_buf_unref(buf);
-				return 0;
-			}
+				ret = k_sem_take(&sem_iso_data, K_USEC(BUF_ALLOC_TIMEOUT_US));
+				if (ret) {
+					printk("k_sem_take for ISO data sent failed\n");
+					net_buf_unref(buf);
+					return 0;
+				}
 
-			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-			sys_put_le32(iso_send_count, iso_data);
-			net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-			ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, seq_num);
-			if (ret < 0) {
-				printk("Unable to broadcast data on channel %u"
-				       " : %d", chan, ret);
-				net_buf_unref(buf);
-				return 0;
-			}
+				net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+				sys_put_le32(iso_send_count, &iso_data[0]);
+				iso_data[4] = 0x01; /* from BIG creator */
+				iso_data[5] = chan + 1; /* BIS index */
+				net_buf_add_mem(buf, iso_data, sizeof(iso_data));
+				ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, seq_num);
+				if (ret < 0) {
+					printk("Unable to broadcast data on channel %u"
+						" : %d", chan, ret);
+					net_buf_unref(buf);
+					return 0;
+				}
 
+	#if CONFIG_ISO_PRINT_INTERVAL>1			
+				/* 
+				Print the BIS payload content, ensuring if first bis then
+				a new line is started .
+				When all BISes are printed a single line will be shown as
+					B(2)>  1:[9375,1,1] 2:[9375,1,2]
+					where B(2) means there are 2 bis channels and
+					N[C,M,P] means 
+						N - BIS Index 1..N as received 
+						C - Packet count since BIG creation
+						M - Who sent the packet
+						P - BIS Index 1..N echoed in payload
+				*/
+				if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
+					if(chan==0){
+						printk("\nB(%u)>",BIS_ISO_CHAN_COUNT);
+					}
+					printk(" %u:[%u,1,%u]",(chan+1),iso_send_count,(chan+1));
+				}
+	#endif	
+			}
+			bis_tx_enabled = bis_tx_enabled << 1;
 		}
 
+#if CONFIG_ISO_PRINT_INTERVAL==0	
+		/* in this case just print the counter in one line per frame as all
+		   bis contain the same data */
 		if ((iso_send_count % CONFIG_ISO_PRINT_INTERVAL) == 0) {
 			printk("Sending value %u\n", iso_send_count);
 		}
+#endif			
 
 		iso_send_count++;
 		seq_num++;
 
+#if CONFIG_BIG_TERMINATE_TIMEOUT_SECONDS>0		
 		timeout_counter--;
 		if (!timeout_counter) {
 			timeout_counter = INITIAL_TIMEOUT_COUNTER;
@@ -273,5 +339,6 @@ int main(void)
 				printk("BIG create complete chan %u.\n", chan);
 			}
 		}
+#endif /* CONFIG_BIG_TERMINATE_TIMEOUT_SECONDS>0 */		
 	}
 }
