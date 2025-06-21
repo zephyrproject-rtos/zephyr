@@ -6,8 +6,8 @@
 #ifndef __XEN_HVM_H__
 #define __XEN_HVM_H__
 
-#include <zephyr/xen/public/hvm/hvm_op.h>
-#include <zephyr/xen/public/hvm/params.h>
+#include <xen/public/hvm/hvm_op.h>
+#include <xen/public/hvm/params.h>
 
 #include <zephyr/kernel.h>
 
