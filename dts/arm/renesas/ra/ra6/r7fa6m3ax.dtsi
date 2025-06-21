@@ -114,8 +114,14 @@
 			phys = <&usbhs_phy>;
 			phys-clock = <&uclk>;
 			status = "disabled";
+
 			udc {
 				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+
+			uhc {
+				compatible = "renesas,ra-uhc";
 				status = "disabled";
 			};
 		};
