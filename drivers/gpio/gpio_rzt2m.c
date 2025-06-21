@@ -318,7 +318,7 @@ static int rzt2m_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		return -ENOTSUP;
 	}
 
-	uint8_t irq = rzt2m_gpio_get_pin_irq(dev, pin);
+	int irq = rzt2m_gpio_get_pin_irq(dev, pin);
 	bool irq_used_by_other = rzt2m_gpio_is_irq_used_by_other_pin(dev, pin, irq);
 
 	if (irq < 0) {
