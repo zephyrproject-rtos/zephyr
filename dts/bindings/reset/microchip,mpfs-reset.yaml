@@ -1,0 +1,20 @@
+#
+# Copyright (C) 2025 embedded brains GmbH & Co. KG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip MPFS Reset Controller (SOFT_RESET_CR, SUBBLK_CLOCK_CR)
+
+compatible: "microchip,mpfs-reset"
+
+include: [base.yaml, reset-controller.yaml]
+
+properties:
+  reg:
+    required: true
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+- id

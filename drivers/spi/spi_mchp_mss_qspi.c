@@ -15,6 +15,14 @@
 #include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(mss_qspi, CONFIG_SPI_LOG_LEVEL);
+
+/* Is MSS QSPI module 'resets' line property defined */
+#define MSS_QSPI_RESET_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+
+#if MSS_QSPI_RESET_ENABLED
+#include <zephyr/drivers/reset.h>
+#endif
+
 #include "spi_context.h"
 
 /*MSS QSPI Register offsets */
@@ -101,6 +109,9 @@ struct mss_qspi_config {
 	void (*irq_config_func)(const struct device *dev);
 	int irq;
 	uint32_t clock_freq;
+#if MSS_QSPI_RESET_ENABLED
+	struct reset_dt_spec reset_spec;
+#endif
 };
 
 /* Device run time data */
@@ -555,6 +566,12 @@ static int mss_qspi_init(const struct device *dev)
 	unsigned int ret = 0;
 	uint32_t control = 0;
 
+#if MSS_QSPI_RESET_ENABLED
+	if (cfg->reset_spec.dev != NULL) {
+		(void)reset_line_deassert_dt(&cfg->reset_spec);
+	}
+#endif
+
 	cfg->irq_config_func(dev);
 
 	control &= ~(MSS_QSPI_CONTROL_SAMPLE_MSK);
@@ -587,6 +604,8 @@ static DEVICE_API(spi, mss_qspi_driver_api) = {
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.irq_config_func = mss_qspi_config_func_##n,                                       \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                                       \
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                                \
 	};                                                                                         \
                                                                                                    \
 	static struct mss_qspi_data mss_qspi_data_##n = {                                          \
