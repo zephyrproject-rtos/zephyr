@@ -10,6 +10,7 @@
  */
 
 #define BT_L2CAP_PSM_AVCTP 0x0017
+#define BT_L2CAP_PSM_AVCTP_BROWSING 0x001B
 
 typedef enum __packed {
 	BT_AVCTP_IPID_NONE = 0b0,
@@ -72,6 +73,7 @@ struct bt_avctp_header {
 	(hdr)->byte0 = (((hdr)->byte0) & ~BIT(0)) | FIELD_PREP(BIT(0), (ipid))
 
 struct bt_avctp;
+struct bt_avctp_browsing;
 
 struct bt_avctp_ops_cb {
 	void (*connected)(struct bt_avctp *session);
@@ -79,13 +81,29 @@ struct bt_avctp_ops_cb {
 	int (*recv)(struct bt_avctp *session, struct net_buf *buf);
 };
 
+struct bt_avctp_browsing_ops_cb {
+	void (*connected)(struct bt_avctp_browsing *session);
+	void (*disconnected)(struct bt_avctp_browsing *session);
+	int (*recv)(struct bt_avctp_browsing *session, struct net_buf *buf);
+};
+
 struct bt_avctp {
 	struct bt_l2cap_br_chan br_chan;
 	const struct bt_avctp_ops_cb *ops;
 };
 
+struct bt_avctp_browsing {
+	struct bt_l2cap_br_chan br_chan;
+	const struct bt_avctp_browsing_ops_cb *ops;
+	struct bt_avctp *control_session;
+};
+
 struct bt_avctp_event_cb {
 	int (*accept)(struct bt_conn *conn, struct bt_avctp **session);
+};
+
+struct bt_avctp_browsing_event_cb {
+	int (*accept)(struct bt_conn *conn, struct bt_avctp_browsing **session);
 };
 
 /* Initialize AVCTP layer*/
@@ -107,3 +125,24 @@ struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
 
 /* Send AVCTP PDU */
 int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf);
+
+/* Initialize AVCTP Browsing layer */
+int bt_avctp_browsing_init(void);
+
+/* Application register with AVCTP Browsing layer */
+int bt_avctp_browsing_register(const struct bt_avctp_browsing_event_cb *cb);
+
+/* AVCTP Browsing connect - requires an established control channel */
+int bt_avctp_browsing_connect(struct bt_conn *conn, struct bt_avctp_browsing *session,
+			      struct bt_avctp *control_session);
+
+/* AVCTP Browsing disconnect */
+int bt_avctp_browsing_disconnect(struct bt_avctp_browsing *session);
+
+ /* Create AVCTP Browsing PDU */
+struct net_buf *bt_avctp_browsing_create_pdu(struct bt_avctp_browsing *session, bt_avctp_cr_t cr,
+					     bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
+					     uint8_t tid, uint16_t pid);
+
+/* Send AVCTP Browsing PDU */
+int bt_avctp_browsing_send(struct bt_avctp_browsing *session, struct net_buf *buf);

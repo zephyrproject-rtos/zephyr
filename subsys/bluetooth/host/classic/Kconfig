@@ -471,6 +471,16 @@ config BT_AVCTP
 	help
 	  This option enables Bluetooth AVCTP support
 
+if BT_AVCTP
+config BT_AVCTP_BROWSING
+	bool "Bluetooth AVCTP Browsing channel support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables support for the AVCTP Browsing channel
+	  over Bluetooth BR/EDR.
+
+endif # BT_AVCTP
+
 config BT_AVRCP
 	bool "Bluetooth AVRCP Profile [EXPERIMENTAL]"
 	select BT_AVCTP
