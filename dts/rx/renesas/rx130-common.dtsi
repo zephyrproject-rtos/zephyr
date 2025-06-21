@@ -35,8 +35,11 @@
 		reg = <0x0087000 0xff>,
 		      <0x0087200 0x1f>,
 		      <0x0087300 0xff>,
-		      <0x00872f0 0x02>;
-		reg-names = "IR", "IER", "IPR", "FIR";
+		      <0x00872f0 0x02>,
+		      <0x0087500 0x0f>,
+		      <0x0087510 0x01>,
+		      <0x0087514 0x01>;
+		reg-names = "IR", "IER", "IPR", "FIR","IRQCR","IRQFLTE","IRQFLTC0";
 	};
 
 	soc {
@@ -143,6 +146,86 @@
 			status = "okay";
 		};
 
+		port_irq0: external-interrupt@87500 {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087500 0x1>;
+			interrupts = <64 12>;
+			channel = <0>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq1: external-interrupt@87501 {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087501 0x1>;
+			interrupts = <65 12>;
+			channel = <1>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq2: external-interrupt@87502 {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087502 0x1>;
+			interrupts = <66 12>;
+			channel = <2>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq3: external-interrupt@87503 {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087503 0x1>;
+			interrupts = <67 12>;
+			channel = <3>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq4: external-interrupt@87504 {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087504 0x1>;
+			interrupts = <68 12>;
+			channel = <4>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq5: external-interrupt@87505 {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087505 0x1>;
+			interrupts = <69 12>;
+			channel = <5>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq6: external-interrupt@87506 {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087506 0x1>;
+			interrupts = <70 12>;
+			channel = <6>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
+		port_irq7: external-interrupt@87507  {
+			compatible = "renesas,rx-external-interrupt";
+			reg = <0x00087507 0x1>;
+			interrupts = <71 12>;
+			channel = <7>;
+			renesas,sample-clock-div = <64>;
+			#port-irq-cells = <0>;
+			status = "disabled";
+		};
+
 		ioport0: gpio@8c000 {
 			compatible = "renesas,rx-gpio";
 			gpio-controller;
@@ -156,7 +239,7 @@
 			      <0x0008C0C0 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "PCR";
 			pinmux = <&pinmux0>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		ioport1: gpio@8c001 {
@@ -175,6 +258,20 @@
 			      <0x0008C0E1 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux1>;
+			port-irqs = <&port_irq2 &port_irq3 &port_irq4
+			&port_irq5 &port_irq6 &port_irq7>;
+			port-irq-names = "port-irq2",
+					 "port-irq3",
+					 "port-irq4",
+					 "port-irq5",
+					 "port-irq6",
+					 "port-irq7";
+			port-irq2-pins = <2>;
+			port-irq3-pins = <3>;
+			port-irq4-pins = <4>;
+			port-irq5-pins = <5>;
+			port-irq6-pins = <6>;
+			port-irq7-pins = <7>;
 			status = "disabled";
 		};
 
@@ -213,6 +310,17 @@
 			      <0x0008C0E3 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux3>;
+			port-irqs = <&port_irq0 &port_irq1 &port_irq2 &port_irq3 &port_irq4>;
+			port-irq-names = "port-irq0",
+					 "port-irq1",
+					 "port-irq2",
+					 "port-irq3",
+					 "port-irq4";
+			port-irq0-pins = <0>;
+			port-irq1-pins = <1>;
+			port-irq2-pins = <2>;
+			port-irq3-pins = <3>;
+			port-irq4-pins = <4>;
 			status = "disabled";
 		};
 
@@ -265,6 +373,11 @@
 			      <0x0008C0EA 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmuxa>;
+			port-irqs = <&port_irq5 &port_irq6>;
+			port-irq-names = "port-irq5",
+					 "port-irq6";
+			port-irq5-pins = <4>;
+			port-irq6-pins = <3>;
 			status = "disabled";
 		};
 
@@ -284,6 +397,9 @@
 			      <0x0008C0EB 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmuxb>;
+			port-irqs = <&port_irq4>;
+			port-irq-names = "port-irq4";
+			port-irq4-pins = <1>;
 			status = "disabled";
 		};
 
@@ -321,6 +437,25 @@
 			      <0x0008C0ED 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmuxd>;
+			port-irqs = <&port_irq0 &port_irq1 &port_irq2
+			&port_irq3 &port_irq4 &port_irq5
+			&port_irq6 &port_irq7>;
+			port-irq-names = "port-irq0",
+					 "port-irq1",
+					 "port-irq2",
+					 "port-irq3",
+					 "port-irq4",
+					 "port-irq5",
+					 "port-irq6",
+					 "port-irq7";
+			port-irq0-pins = <0>;
+			port-irq1-pins = <1>;
+			port-irq2-pins = <2>;
+			port-irq3-pins = <3>;
+			port-irq4-pins = <4>;
+			port-irq5-pins = <5>;
+			port-irq6-pins = <6>;
+			port-irq7-pins = <7>;
 			status = "okay";
 		};
 
@@ -339,6 +474,13 @@
 			      <0x0008C0EE 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmuxe>;
+			port-irqs = <&port_irq5 &port_irq6 &port_irq7>;
+			port-irq-names = "port-irq5",
+					 "port-irq6",
+					 "port-irq7";
+			port-irq5-pins = <5>;
+			port-irq6-pins = <6>;
+			port-irq7-pins = <2 7>;
 			status = "disabled";
 		};
 
@@ -356,6 +498,11 @@
 			      <0x0008C0F1 0x01>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "PCR", "DSCR";
 			pinmux = <&pinmuxh>;
+			port-irqs = <&port_irq0 &port_irq1>;
+			port-irq-names = "port-irq0",
+					 "port-irq1";
+			port-irq0-pins = <1>;
+			port-irq1-pins = <2>;
 			status = "disabled";
 		};
 

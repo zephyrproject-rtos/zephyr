@@ -17,6 +17,7 @@ source "drivers/misc/mcux_flexio/Kconfig"
 source "drivers/misc/coresight/Kconfig"
 source "drivers/misc/interconn/Kconfig"
 source "drivers/misc/renesas_ra_external_interrupt/Kconfig"
+source "drivers/misc/renesas_rx_external_interrupt/Kconfig"
 source "drivers/misc/nxp_rtxxx_dsp_ctrl/Kconfig"
 
 endmenu
