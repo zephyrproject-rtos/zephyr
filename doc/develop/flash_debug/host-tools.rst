@@ -525,6 +525,50 @@ to ``rfp-cli`` when flashing:
 
    west flash --rfp-cli ~/Downloads/RFP_CLI_Linux_V31800_x64/linux-x64/rfp-cli
 
+.. _stm32cubeclt-host-tools:
+.. _runner_stlink_gdbserver:
+
+STM32CubeCLT Flash & Debug Host Tools
+*************************************
+
+STMicroelectronics provides `STM32CubeCLT`_ as an official all-in-one toolset compatible with
+Linux |reg|, macOS |reg| and Windows |reg|, allowing the use of STMicroelectronics proprietary
+tools within third-party development environments.
+
+It notably provides a GDB debugging server (the *ST-LINK GDB Server*) that can be used to debug
+applications on STM32 boards thanks to on-board or external ST-LINK debug probes.
+
+It is compatible with the following debug probes:
+
+- :ref:`stlink-v21-onboard-debug-probe`
+- Standalone `ST-LINK-V2`_, `ST-LINK-V3`_, and `STLINK-V3PWR`_ probes
+
+Install STM32CubeCLT
+--------------------
+
+The easiest way to get the ST-LINK GDB Server is to install `STM32CubeCLT`_ from STMicroelectronics' website.
+A valid email address is needed to receive the downloading link.
+
+Basic usage
+-----------
+
+The ST-Link GDB Server can be used through the ``west attach``, ``west debug`` or ``west debugserver`` commands
+to debug Zephyr applications.
+
+.. code-block:: console
+
+   west debug --runner stlink_gdbserver
+
+.. note::
+
+   The `STM32CubeProgrammer`_ version contained in the `STM32CubeCLT`_ installation can also be used to flash
+   applications. To do so, the dedicated :ref:`STM32CubeProgrammer runner <runner_stm32cubeprogrammer>` should
+   be used instead of ``stlink_gdbserver``, as done in the following example:
+
+   .. code-block:: console
+
+      west flash --runner stm32cubeprogrammer
+
 .. _stm32cubeprog-flash-host-tools:
 .. _runner_stm32cubeprogrammer:
 
@@ -650,11 +694,11 @@ For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 .. _probe-rs Supported Devices:
    https://probe.rs/targets/
 
-.. _STM32CubeProgrammer:
-   https://www.st.com/en/development-tools/stm32cubeprog.html
-
 .. _STM32CubeCLT:
    https://www.st.com/en/development-tools/stm32cubeclt.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
 
 .. _STM32CubeProgrammer User Manual:
    https://www.st.com/resource/en/user_manual/um2237-stm32cubeprogrammer-software-description-stmicroelectronics.pdf
