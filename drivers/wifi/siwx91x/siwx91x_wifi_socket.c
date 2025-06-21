@@ -303,6 +303,7 @@ static int siwx91x_sock_accept(struct net_context *context,
 	SL_SI91X_FD_SET(ret, &sidev->fds_watch);
 	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
 			siwx91x_sock_on_recv);
+	net_context_set_state(newcontext, NET_CONTEXT_CONNECTED);
 	if (cb) {
 		cb(newcontext, &addr_le, sizeof(addr_le), 0, user_data);
 	}
