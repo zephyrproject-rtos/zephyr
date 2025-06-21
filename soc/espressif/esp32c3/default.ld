@@ -346,6 +346,8 @@ SECTIONS
     *libzephyr.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
     *libzephyr.a:systimer_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal_gpspi.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_flash_api.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:flash_mmap.*(.literal .literal.* .text .text.*)
 
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.literal .literal.* .text .text.*)
@@ -572,6 +574,8 @@ SECTIONS
     *libzephyr.a:wdt_hal_iram.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:systimer_hal.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal_gpspi.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:soc] */
     *libzephyr.a:lldesc.*(.rodata .rodata.* .srodata .srodata.*)
