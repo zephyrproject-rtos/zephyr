@@ -2320,6 +2320,186 @@ static inline int i3c_device_info_get(struct i3c_device_desc *target)
 bool i3c_bus_has_sec_controller(const struct device *dev);
 
 /**
+ * @brief Reset all devices on the bus and clear their dynamic addresses.
+ *
+ * Sends the RSTDAA (Reset Dynamic Address Assignment) CCC to all devices on the bus.
+ *
+ * @param dev Pointer to the controller device driver instance.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_rstdaa_all(const struct device *dev);
+
+/**
+ * @brief Assign a dynamic address to a device using its static address.
+ *
+ * Sends the SETDASA (Set Dynamic Address from Static Address) CCC to the target device.
+ *
+ * @param desc Pointer to the target device descriptor.
+ * @param dynamic_addr The dynamic address to assign to the device.
+ *
+ * @retval 0 If successful.
+ * @retval -EADDRNOTAVAIL If the address is not available.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr);
+
+/**
+ * @brief Assign a new dynamic address to a device.
+ *
+ * Sends the SETNEWDA (Set New Dynamic Address) CCC to the target device.
+ *
+ * @param desc Pointer to the target device descriptor.
+ * @param dynamic_addr The new dynamic address to assign to the device.
+ *
+ * @retval 0 If successful.
+ * @retval -EADDRNOTAVAIL If the address is not available.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr);
+
+/**
+ * @brief Assign static addresses as dynamic addresses for all devices on the bus.
+ *
+ * Sends the SETAASA (Set All Addresses to Static Address) CCC to all devices on the bus.
+ *
+ * @param dev Pointer to the controller device driver instance.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_setaasa(const struct device *dev);
+
+/**
+ * @brief Retrieve the Bus Characteristics Register (BCR) of a device.
+ *
+ * Sends the GETBCR CCC to the target device and updates its descriptor.
+ *
+ * @param desc Pointer to the target device descriptor.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_getbcr(struct i3c_device_desc *desc);
+
+/**
+ * @brief Retrieve the Device Characteristics Register (DCR) of a device.
+ *
+ * Sends the GETDCR CCC to the target device and updates its descriptor.
+ *
+ * @param desc Pointer to the target device descriptor.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_getdcr(struct i3c_device_desc *desc);
+
+/**
+ * @brief Retrieve the Provisional ID (PID) of a device.
+ *
+ * Sends the GETPID CCC to the target device and updates its descriptor.
+ *
+ * @param desc Pointer to the target device descriptor.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_getpid(struct i3c_device_desc *desc);
+
+/**
+ * @brief Retrieve the Maximum Read Length (MRL) of a device.
+ *
+ * Sends the GETMRL CCC to the target device and updates its descriptor.
+ *
+ * @param desc Pointer to the target device descriptor.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_getmrl(struct i3c_device_desc *desc);
+
+/**
+ * @brief Retrieve the Maximum Write Length (MWL) of a device.
+ *
+ * Sends the GETMWL CCC to the target device and updates its descriptor.
+ *
+ * @param desc Pointer to the target device descriptor.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_getmwl(struct i3c_device_desc *desc);
+
+/**
+ * @brief Set the Maximum Read Length (MRL) for a device.
+ *
+ * Sends the SETMRL CCC to the target device.
+ *
+ * @param desc Pointer to the target device descriptor.
+ * @param mrl Maximum read length to set.
+ * @param ibi_len Maximum IBI length to set.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len);
+
+/**
+ * @brief Set the Maximum Write Length (MWL) for a device.
+ *
+ * Sends the SETMWL CCC to the target device.
+ *
+ * @param desc Pointer to the target device descriptor.
+ * @param mwl Maximum write length to set.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_setmwl(struct i3c_device_desc *desc, uint16_t mwl);
+
+/**
+ * @brief Set the Maximum Read Length (MRL) for all devices on the bus.
+ *
+ * Sends the SETMRL CCC to all devices on the bus.
+ *
+ * @param dev Pointer to the controller device driver instance.
+ * @param mrl Maximum read length to set.
+ * @param ibi_len Maximum IBI length to set.
+ * @param has_ibi_size True if to transmit max ibi len
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_setmrl_all(const struct device *dev, uint16_t mrl, uint8_t ibi_len, bool has_ibi_size);
+
+/**
+ * @brief Set the Maximum Write Length (MWL) for all devices on the bus.
+ *
+ * Sends the SETMWL CCC to all devices on the bus.
+ *
+ * @param dev Pointer to the controller device driver instance.
+ * @param mwl Maximum write length to set.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_setmwl_all(const struct device *dev, uint16_t mwl);
+
+#if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
+/**
+ * @brief Retrieve the Active Controller's Dynamic Address (ACCCR).
+ *
+ * Sends the GETACCCR CCC to the target device and verifies the response.
+ *
+ * @param desc Pointer to the target device descriptor.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General Input/Output error.
+ */
+int i3c_bus_getacccr(struct i3c_device_desc *desc);
+
+/**
  * @brief Send the CCC DEFTGTS
  *
  * This builds the payload required for DEFTGTS and transmits it out
@@ -2331,6 +2511,7 @@ bool i3c_bus_has_sec_controller(const struct device *dev);
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_deftgts(const struct device *dev);
+#endif /* CONFIG_I3C_TARGET */
 
 /**
  * @brief Calculate odd parity
@@ -2357,7 +2538,7 @@ uint8_t i3c_odd_parity(uint8_t p);
  * @retval -EIO General Input/Output error.
  * @retval -EBUSY Target cannot accept Controller Handoff
  */
-int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested);
+int i3c_device_controller_handoff(struct i3c_device_desc *target, bool requested);
 #endif /* CONFIG_I3C_CONTROLLER */
 
 #if defined(CONFIG_I3C_USE_IBI) || defined(__DOXYGEN__)
