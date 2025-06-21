@@ -8,6 +8,7 @@ simulation:
   - name: qemu
 arch: rx
 toolchain:
+  - zephyr
   - cross-compile
 supported:
   - serial
