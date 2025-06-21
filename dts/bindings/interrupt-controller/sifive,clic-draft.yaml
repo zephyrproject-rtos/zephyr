@@ -1,0 +1,19 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdrive.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: RISC-V Core Local Interrupt Controller CLIC Pre-Standard v0.9
+
+compatible: "sifive,clic-draft"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
