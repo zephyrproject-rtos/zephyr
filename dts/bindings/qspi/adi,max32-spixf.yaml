@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    MAX32 SPIXF device representation. A node would typically looks to this:
+
+        &spixf {
+            pinctrl-0 = <&spixf_sdio0_p0_1 &spixf_sdio2_p0_2 &spixf_sck_p0_3
+                         &spixf_sdio3_p0_4 &spixf_sdio1_p0_5 &spixf_ss0_p0_6>;
+            pinctrl-names = "default";
+
+            status = "okay";
+        };
+
+compatible: "adi,max32-spixf"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
