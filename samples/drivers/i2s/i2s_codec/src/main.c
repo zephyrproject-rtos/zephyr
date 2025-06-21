@@ -171,16 +171,21 @@ int main(void)
 
 			for (i = 0; i < 2; i++) {
 #if CONFIG_USE_DMIC
+				/* If using DMIC, use a buffer (memory slab) from dmic_read */
 				ret = dmic_read(dmic_dev, 0, &mem_block, &block_size, TIMEOUT);
 				if (ret < 0) {
 					printk("read failed: %d", ret);
 					break;
 				}
+
+				ret = i2s_write(i2s_dev_codec, mem_block, block_size);
 #else
 				/* If not using DMIC, play a sine wave 440Hz */
 				mem_block = (void *)&__16kHz16bit_stereo_sine_pcm;
+				block_size = __16kHz16bit_stereo_sine_pcm_len;
+
+				ret = i2s_buf_write(i2s_dev_codec, mem_block, block_size);
 #endif
-				ret = i2s_write(i2s_dev_codec, mem_block, block_size);
 				if (ret < 0) {
 					printk("Failed to write data: %d\n", ret);
 					break;
