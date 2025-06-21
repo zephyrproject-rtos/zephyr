@@ -17,33 +17,29 @@ schema;patch-schema:
           required: true
           type: str
 
-        # The SHA-256 checksum of the patch file
-        # e.g. e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-        sha256sum:
-          required: true
-          type: str
-          pattern: "^[0-9a-f]{64}$"
-
         # The path of the module the patch is for, relative to the west workspace
         # e.g. zephyr, or bootloader/mcuboot
         module:
           required: true
           type: str
 
+        # The SHA-256 checksum of the patch file
+        # e.g. e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        sha256sum:
+          type: str
+          pattern: "^[0-9a-f]{64}$"
+
         # The name of the primary author of the patch, e.g. Kermit D. Frog
         author:
-          required: true
           type: str
 
         # The email address of the primary author of the patch, e.g. itsnoteasy@being.gr
         email:
-          required: true
           type: str
           pattern: ".+@.+"
 
         # The date the patch was created, in ISO 8601 date format YYYY-MM-DD
         date:
-          required: true
           type: date
           format: "%Y-%m-%d"
 
