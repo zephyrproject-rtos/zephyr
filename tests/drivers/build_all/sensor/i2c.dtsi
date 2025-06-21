@@ -1331,3 +1331,8 @@ test_i2c_bh1730: bh1730@b4 {
 	compatible = "rohm,bh1730";
 	reg = <0xb4>;
 };
+
+test_i2c_lsm9ds1_mag: lsm9ds1_mag@b5 {
+	compatible = "st,lsm9ds1_mag";
+	reg = <0xb5>;
+};
