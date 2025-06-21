@@ -212,7 +212,7 @@ class HardwareMap:
                                 True,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
-                                flash_before=False,
+                                flash_before=self.options.flash_before,
                                 )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT
@@ -275,7 +275,7 @@ class HardwareMap:
             serial_pty = dut.get('serial_pty')
             flash_before = dut.get('flash_before')
             if flash_before is None:
-                flash_before = self.options.flash_before and (not (flash_with_test or serial_pty))
+                flash_before = self.options.flash_before and (not flash_with_test)
             platform = dut.get('platform')
             if isinstance(platform, str):
                 platforms = platform.split()
