@@ -1143,6 +1143,7 @@ flagged.
         "BOARD_MPS2_AN521_CPUTEST", # Used for board and SoC extension feature tests
         "BOARD_NATIVE_SIM_NATIVE_64_TWO", # Used for board and SoC extension feature tests
         "BOARD_NATIVE_SIM_NATIVE_ONE", # Used for board and SoC extension feature tests
+        "BOARD_UNIT_TESTING",  # Used for tests/unit
         "BOOT_DIRECT_XIP", # Used in sysbuild for MCUboot configuration
         "BOOT_DIRECT_XIP_REVERT", # Used in sysbuild for MCUboot configuration
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
