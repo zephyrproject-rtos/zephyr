@@ -11,6 +11,7 @@
 #include <ti/mspm0/g/mspm0g1x0x_g3x0x-pinctrl.dtsi>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "TI LP_MSPM0G3507/MSPM0G3507";
@@ -18,6 +19,7 @@
 
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	chosen {
@@ -34,6 +36,14 @@
 		led0: led_0 {
 			gpios = <&gpiob 22 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED";
+		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&pwma0 0 PWM_MSEC(100) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -104,4 +114,14 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
+};
+
+&pwma0 {
+	status = "okay";
+
+	pinctrl-0 = <&tima0_ccp0_pa0>;
+	pinctrl-names = "default";
+	ti,cc-index = <0>;
+	ti,pwm-mode = "EDGE_ALIGN";
+	ti,period = <1000>;
 };
