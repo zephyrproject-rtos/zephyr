@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright (c) 2017,2019, NXP
+ * Copyright 2017, 2019, 2025, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,9 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/reset.h>
+
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
@@ -73,6 +76,8 @@ struct spi_mcux_data {
 	uint32_t last_word;
 #endif
 };
+
+static bool force_reconfig;
 
 static void spi_mcux_transfer_next_packet(const struct device *dev)
 {
@@ -177,8 +182,10 @@ static int spi_mcux_configure(const struct device *dev,
 	uint32_t clock_freq;
 	uint32_t word_size;
 
-	if (spi_context_configured(&data->ctx, spi_cfg)) {
+
+	if ((spi_context_configured(&data->ctx, spi_cfg)) && (!force_reconfig)) {
 		/* This configuration is already in use */
+		force_reconfig = false;
 		return 0;
 	}
 
@@ -719,6 +726,8 @@ static int transceive(const struct device *dev,
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
+	pm_policy_device_power_lock_get(dev);
+
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = spi_mcux_configure(dev, spi_cfg);
@@ -735,6 +744,8 @@ static int transceive(const struct device *dev,
 	ret = spi_context_wait_for_completion(&data->ctx);
 out:
 	spi_context_release(&data->ctx, ret);
+
+	pm_policy_device_power_lock_put(dev);
 
 	return ret;
 }
@@ -776,7 +787,7 @@ static int spi_mcux_release(const struct device *dev,
 	return 0;
 }
 
-static int spi_mcux_init(const struct device *dev)
+static int spi_mcux_init_common(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
@@ -822,6 +833,36 @@ static int spi_mcux_init(const struct device *dev)
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
+}
+
+static int spi_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	    /*This flag is used to prevent configuration optimiztions
+	     * after exiting PM3 on spi_mcux_configure()
+	     */
+		force_reconfig = true;
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		spi_mcux_init_common(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+static int spi_mcux_init(const struct device *dev)
+{
+	/* Rest of the init is done from the PM_DEVICE_TURN_ON action
+	 * which is invoked by pm_device_driver_init().
+	 */
+	return pm_device_driver_init(dev, spi_mcux_flexcomm_pm_action);
 }
 
 static DEVICE_API(spi, spi_mcux_driver_api) = {
@@ -901,9 +942,10 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)	\
 		SPI_DMA_CHANNELS(id)		\
 	};								\
+	PM_DEVICE_DT_INST_DEFINE(id, spi_mcux_flexcomm_pm_action);	\
 	SPI_DEVICE_DT_INST_DEFINE(id,					\
 			    spi_mcux_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(id),			\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\
