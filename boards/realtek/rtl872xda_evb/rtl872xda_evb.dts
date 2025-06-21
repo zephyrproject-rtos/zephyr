@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <realtek/amebadplus/amebadplus.dtsi>
+#include "rtl872xda_evb-pinctrl.dtsi"
+
+/ {
+	model = "RealTek AmebaDplus RTL872XDA EVB";
+	compatible = "realtek,rtl872xda_evb";
+
+	chosen {
+		zephyr,console = &loguart;
+		zephyr,shell-uart = &loguart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+/* 4MB flash */
+&flash0 {
+	reg = <0x0e000020 DT_SIZE_M(4)>;
+};
+
+&loguart {
+	status = "okay";
+};
