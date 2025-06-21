@@ -10,5 +10,6 @@ supported:
   - adc
   - gpio
   - usart
+  - watchdog
 ram: 256
 flash: 1024
