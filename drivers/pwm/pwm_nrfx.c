@@ -383,10 +383,6 @@ static int pwm_resume(const struct device *dev)
 
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(config->pcfg, false);
-#endif
-
 	for (size_t i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
 		uint32_t psel;
 
@@ -422,10 +418,6 @@ static int pwm_suspend(const struct device *dev)
 
 	while (!nrfx_pwm_stopped_check(&config->pwm)) {
 	}
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(config->pcfg, true);
-#endif
 
 	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);

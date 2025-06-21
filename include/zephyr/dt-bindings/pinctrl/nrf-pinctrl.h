@@ -11,8 +11,7 @@
  * organized as follows:
  *
  * - 31..24: Pin function.
- * - 19-23:  Reserved.
- * - 18:     Associated peripheral belongs to GD FAST ACTIVE1 (nRF54H only)
+ * - 18-23:  Reserved.
  * - 17:     Clockpin enable.
  * - 16:     Pin inversion mode.
  * - 15:     Pin low power mode.
@@ -30,10 +29,6 @@
 #define NRF_FUN_POS 24U
 /** Mask for the function field. */
 #define NRF_FUN_MSK 0xFFU
-/** Position of the GPD FAST ACTIVE1 */
-#define NRF_GPD_FAST_ACTIVE1_POS 18U
-/** Mask for the GPD FAST ACTIVE1 */
-#define NRF_GPD_FAST_ACTIVE1_MSK 0x1U
 /** Position of the clockpin enable field. */
 #define NRF_CLOCKPIN_ENABLE_POS 17U
 /** Mask for the clockpin enable field. */

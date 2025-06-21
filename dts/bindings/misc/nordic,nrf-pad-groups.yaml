@@ -1,0 +1,33 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF pad groups.
+
+  The pad groups describe groups of pads connected to
+  package pins of the SoC. A pad group will have a
+  combination of IO, VDD and GND pads. A pad group
+  will have a single supply and belong to a single
+  power domain.
+
+compatible: "nordic,nrf-pad-groups"
+
+child-binding:
+  description: Nordic nRF GPIO pad group.
+
+  properties:
+    power-domains:
+      type: phandle-array
+      description: Pad group's power domain.
+
+    data-pads-mask:
+      type: int
+      description: Mask of data pads.
+
+    clock-pads-mask:
+      type: int
+      description: Mask of clock pads.
+
+    fast-pads-mask:
+      type: int
+      description: Mask of fast pads.

@@ -187,13 +187,6 @@ static int can_nrf_init(const struct device *dev)
 	sys_write32(CAN_INTEN_CORE0_Msk | CAN_INTEN_CORE1_Msk, config->wrapper + CAN_INTEN);
 	sys_write32(1U, config->wrapper + CAN_TASKS_START);
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	ret = nrf_gpd_retain_pins_set(config->pcfg, false);
-	if (ret < 0) {
-		return ret;
-	}
-#endif
-
 	config->irq_configure();
 
 	ret = can_mcan_configure_mram(dev, config->mrba, config->mram);

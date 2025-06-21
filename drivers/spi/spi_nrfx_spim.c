@@ -682,10 +682,6 @@ static int spim_resume(const struct device *dev)
 		return -EAGAIN;
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
-#endif
-
 	return pm_device_runtime_is_enabled(dev) ? request_clock(dev) : 0;
 }
 
@@ -704,10 +700,6 @@ static void spim_suspend(const struct device *dev)
 	}
 
 	spi_context_cs_put_all(&dev_data->ctx);
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(dev_config->pcfg, true);
-#endif
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }

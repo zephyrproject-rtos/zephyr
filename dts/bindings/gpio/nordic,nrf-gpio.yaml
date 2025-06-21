@@ -37,6 +37,12 @@ properties:
 
         port = <1>;
 
+  pad-group:
+    type: phandle
+    description: |
+      The pad group this GPIO port can be muxed to. The pad group is
+      presumed to be "always on" if omitted.
+
 gpio-cells:
   - pin
   - flags
