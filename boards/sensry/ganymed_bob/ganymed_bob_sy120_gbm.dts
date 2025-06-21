@@ -30,7 +30,7 @@
 		reg = <0x0>;
 		status = "okay";
 
-		reset-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 
 		microchip,interface-type = "rgmii";
 	};
