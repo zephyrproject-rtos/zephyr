@@ -13,51 +13,69 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include "feather_connector.dtsi"
-#include "adafruit_feather_esp32s3_tft-pinctrl.dtsi"
+#include "adafruit_feather_esp32s3_tft_reverse-pinctrl.dtsi"
 
 / {
-	model = "Adafruit Feather ESP32S3 TFT PROCPU";
-	compatible = "adafruit,feather_esp32s3_tft", "espressif,esp32s3";
-
-	aliases {
-		i2c-0 = &i2c0;
-		watchdog0 = &wdt0;
-	};
+	model = "Adafruit Feather ESP32S3 TFT Reverse PROCPU";
+	compatible = "adafruit,feather_esp32s3_tft_reverse", "espressif,esp32s3";
 
 	chosen {
 		zephyr,sram = &sram1;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &st7789v_tft;
 	};
 
-	/* These aliases are provided for compatibility with samples */
 	aliases {
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
 		uart-0 = &uart0;
 		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
 		led0 = &led0;
 		led-strip = &led_strip;
 		backlight = &led1;
 	};
 
-	buttons {
+	gpio_keys {
 		compatible = "gpio-keys";
+		status = "okay";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "BOOT Button";
+			label = "D0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "D1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button2: button_2 {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "D2";
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	leds {
 		compatible = "gpio-leds";
+		status = "okay";
+
 		led0: led_0 {
+			label = "Red-LED";
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 		};
+
 		led1: led_1 {
+
+			label = "TFT Backlight";
 			gpios = <&gpio1 45 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -69,7 +87,7 @@
 	neopixel_pwr: neopixel_pwr {
 		compatible = "power-domain-gpio";
 		#power-domain-cells = <0>;
-		enable-gpios = <&gpio1 34 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 	};
 
 	/*
@@ -77,16 +95,17 @@
 	 * via the STEMMA QT connector.
 	 */
 	i2c_reg: i2c_reg {
+		label = "I2C Power";
 		compatible = "power-domain-gpio";
 		#power-domain-cells = <0>;
-		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 	};
 
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
 		spi-dev = <&spi2>;
-		dc-gpios = <&gpio1 39 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio1 40 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio1 40 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 41 GPIO_ACTIVE_LOW>;
 		write-only;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -125,7 +144,7 @@
 };
 
 &usb_serial {
-	status = "disabled";
+	status = "okay";
 };
 
 &uart0 {
@@ -194,7 +213,7 @@ zephyr_i2c: &i2c0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
-	pinctrl-0 = <&spim3_default>;
+	pinctrl-0 = <&spim3_ws2812_led>;
 	pinctrl-names = "default";
 
 	/* Workaround to support WS2812 driver */
@@ -204,11 +223,9 @@ zephyr_i2c: &i2c0 {
 		compatible = "worldsemi,ws2812-spi";
 		power-domains = <&neopixel_pwr>;
 
-		/* SPI */
+		/* WS2812 */
 		reg = <0>; /* ignored, but necessary for SPI bindings */
 		spi-max-frequency = <6400000>;
-
-		/* WS2812 */
 		chain-length = <1>;
 		spi-cpha;
 		spi-one-frame = <0xf0>;  /* 625 ns high and 625 ns low */

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
  * Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,11 +9,11 @@
 
 #include <espressif/esp32s3/esp32s3_wroom_n4r2.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
-#include "adafruit_feather_esp32s3_tft-pinctrl.dtsi"
+#include "adafruit_feather_esp32s3_tft_reverse-pinctrl.dtsi"
 
 / {
-	model = "Adafruit Feather ESP32S3 TFT APPCPU";
-	compatible = "adafruit,feather_esp32s3_tft", "espressif,esp32s3";
+	model = "Adafruit Feather ESP32S3 TFT Reverse APPCPU";
+	compatible = "adafruit,feather_esp32s3_tft_reverse", "espressif,esp32s3";
 
 	chosen {
 		zephyr,sram = &sram1;

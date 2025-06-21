@@ -1,15 +1,17 @@
-.. zephyr:board:: adafruit_feather_esp32s3_tft
+.. zephyr:board:: adafruit_feather_esp32s3_tft_reverse
 
 Overview
 ********
 
-The Adafruit Feather ESP32-S3 TFT is an ESP32-S3 development board in the
-Feather standard layout, sharing peripheral placement with other devices labeled
-as Feathers or FeatherWings. The board is equipped with an ESP32-S3 mini module,
-a LiPo battery charger, a fuel gauge, a USB-C and Qwiic/STEMMA-QT connector.
-Compared to the base model, this TFT variant additionally comes with a 240x135
-pixel IPS TFT color display. For more information, check
-`Adafruit Feather ESP32-S3 TFT`_.
+The Adafruit Feather ESP32S3 TFT Reverse is a development board in the
+Feather standard layout, sharing peripheral placement with other devices
+labeled as Feathers or FeatherWings. The board is equipped with an
+ESP32-S3 mini module, a fuel gauge, a USB-C and Qwiic/STEMMA-QT connector.
+This variant additionally comes with a 240x135 pixel IPS TFT color display
+on the backside of the boards and with 3 buttons.
+
+For more information, check
+`Adafruit ESP32-S3 Reverse TFT Feather`_.
 
 Hardware
 ********
@@ -20,10 +22,13 @@ Hardware
 - USB-C directly connected to the ESP32-S3 for USB/UART and JTAG debugging
 - LiPo connector and built-in battery charging when powered via USB-C
 - MAX17048 fuel gauge for battery voltage and state-of-charge reporting
-- Charging indicator LED, user LED, reset and boot buttons
+- Charging indicator LED, user LED, reset buttons
 - Built-in NeoPixel indicator RGB LED
 - STEMMA QT connector for I2C devices, with switchable power for low-power mode
 - 240x135 pixel IPS TFT color display with 1.14" diagonal and ST7789 chipset
+- Three User Tactile buttons - D0, D1, and D2. D0/BOOT0 is also used for entering ROM
+  bootloader mode if necessary.
+
 
 Asymmetric Multiprocessing (AMP)
 ================================
@@ -38,51 +43,12 @@ For more information, check the datasheet at `ESP32-S3 Datasheet`_.
 Supported Features
 ==================
 
-The current ``adafruit_feather_esp32s3_tft`` board supports the following
-hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| USB-JTAG   | on-chip    | hardware interface                  |
-+------------+------------+-------------------------------------+
-| SPI Master | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| TWAI/CAN   | on-chip    | can                                 |
-+------------+------------+-------------------------------------+
-| ADC        | on-chip    | adc                                 |
-+------------+------------+-------------------------------------+
-| Timers     | on-chip    | counter                             |
-+------------+------------+-------------------------------------+
-| Watchdog   | on-chip    | watchdog                            |
-+------------+------------+-------------------------------------+
-| TRNG       | on-chip    | entropy                             |
-+------------+------------+-------------------------------------+
-| LEDC       | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| MCPWM      | on-chip    | pwm                                 |
-+------------+------------+-------------------------------------+
-| PCNT       | on-chip    | qdec                                |
-+------------+------------+-------------------------------------+
-| GDMA       | on-chip    | dma                                 |
-+------------+------------+-------------------------------------+
-| USB-CDC    | on-chip    | serial                              |
-+------------+------------+-------------------------------------+
-| Wi-Fi      | on-chip    |                                     |
-+------------+------------+-------------------------------------+
-| Bluetooth  | on-chip    |                                     |
-+------------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
 
-The `Adafruit Feather ESP32-S3 TFT User Guide`_ has detailed information about
+The `Adafruit ESP32-S3 Reverse TFT Feather User Guide`_ has detailed information about
 the board including `pinouts`_ and the `schematic`_.
 
 Programming and Debugging
@@ -149,7 +115,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: adafruit_feather_esp32s3_tft/esp32s3/procpu
+   :board: adafruit_feather_esp32s3_tft_reverse/esp32s3/procpu
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -200,15 +166,15 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adafruit_feather_esp32s3_tft/esp32s3/procpu
+   :board:    :board: adafruit_feather_esp32s3_tft_reverse/esp32s3/procpu
    :goals: build
 
-The usual ``flash`` target will work with the ``adafruit_feather_esp32s3_tft``
+The usual ``flash`` target will work with the ``adafruit_feather_esp32s3_tft_reverse``
 board. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adafruit_feather_esp32s3_tft/esp32s3/procpu
+   :board: adafruit_feather_esp32s3_tft_reverse/esp32s3/procpu
    :goals: flash
 
 Open the serial monitor using the following command:
@@ -223,7 +189,7 @@ message in the monitor:
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! adafruit_feather_esp32s3_tft
+   Hello World! adafruit_feather_esp32s3_tft_reverse/esp32s3/procpu
 
 Debugging
 =========
@@ -242,7 +208,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adafruit_feather_esp32s3_tft/esp32s3/procpu
+   :board: adafruit_feather_esp32s3_tft_reverse/esp32s3/procpu
    :goals: build flash
 
 You can debug an application in the usual way. Here is an example for the
@@ -250,7 +216,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: adafruit_feather_esp32s3_tft/esp32s3/procpu
+   :board: adafruit_feather_esp32s3_tft_reverse/esp32s3/procpu
    :goals: debug
 
 References
@@ -258,8 +224,8 @@ References
 
 .. target-notes::
 
-.. _`Adafruit Feather ESP32-S3 TFT`:
-   https://www.adafruit.com/product/5483
+.. _`Adafruit ESP32-S3 Reverse TFT Feather`:
+   https://www.adafruit.com/product/5691
 
 .. _`OpenOCD`:
    https://github.com/openocd-org/openocd
@@ -267,14 +233,14 @@ References
 .. _`JTAG debugging for ESP32-S3`:
    https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
 
-.. _Adafruit Feather ESP32-S3 TFT User Guide:
-   https://learn.adafruit.com/adafruit-esp32-s3-tft-feather
+.. _Adafruit ESP32-S3 Reverse TFT Feather User Guide:
+   https://learn.adafruit.com/esp32-s3-reverse-tft-feather
 
 .. _pinouts:
-   https://learn.adafruit.com/adafruit-esp32-s3-tft-feather/pinouts
+   https://learn.adafruit.com/esp32-s3-reverse-tft-feather/pinouts
 
 .. _schematic:
-   https://learn.adafruit.com/adafruit-esp32-s3-tft-feather/downloads
+   https://learn.adafruit.com/esp32-s3-reverse-tft-feather/downloads
 
 .. _ESP32-S3 Datasheet:
    https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf
