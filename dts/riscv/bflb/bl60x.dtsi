@@ -7,8 +7,8 @@
 
 #include <freq.h>
 #include <mem.h>
-#include <dt-bindings/pinctrl/bl60x-pinctrl.h>
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
+#include <dt-bindings/pinctrl/bl60x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl60x_clock.h>
 
 / {
@@ -48,7 +48,7 @@
 		clk_bclk: clk-bclk {
 			#clock-cells = <0>;
 			compatible = "bflb,bclk";
-			divider = <2>;
+			divider = <4>;
 			status = "okay";
 		};
 	};
@@ -82,7 +82,7 @@
 		ranges;
 
 		clic: clic@2000000 {
-			compatible = "sifive,clint0";
+			compatible = "sifive,clic-draft";
 			reg = <0x2000000 0x10000>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
@@ -111,7 +111,7 @@
 			#size-cells = <1>;
 			status = "okay";
 
-			glb: gpio@40000000 {
+			gpio0: gpio@40000000 {
 				compatible = "bflb,gpio";
 				reg = <0x40000000 0x1000>;
 				#gpio-cells = <2>;
@@ -119,8 +119,8 @@
 				status = "disabled";
 
 				gpio-controller;
-				interrupts = <1 0>;
-				interrupt-parent = <&ictrl>;
+				interrupts = <60 0>;
+				interrupt-parent = <&clic>;
 			};
 		};
 
@@ -135,7 +135,6 @@
 			clock-names = "rc32m", "crystal", "root", "bclk",
 				"pll_192", "pll_160",
 				"pll_120", "pll_48";
-			zephyr,deferred-init;
 		};
 
 		efuse: efuse@40007000 {
@@ -148,18 +147,16 @@
 		uart0: uart@4000a000 {
 			compatible = "bflb,uart";
 			reg = <0x4000a000 0x100>;
-			peripheral-id = <0>;
-			interrupts = <29 0>;
-			interrupt-parent = <&ictrl>;
+			interrupts = <45 0>;
+			interrupt-parent = <&clic>;
 			status = "disabled";
 		};
 
 		uart1: uart@4000a100 {
 			compatible = "bflb,uart";
 			reg = <0x4000a100 0x100>;
-			peripheral-id = <1>;
-			interrupts = <30 0>;
-			interrupt-parent = <&ictrl>;
+			interrupts = <46 0>;
+			interrupt-parent = <&clic>;
 			status = "disabled";
 		};
 
@@ -170,21 +167,19 @@
 			#size-cells = <0>;
 			status = "disabled";
 
-			peripheral-id = <0>;
-			interrupts = <27 0>;
-			interrupt-parent = <&ictrl>;
+			interrupts = <43 0>;
+			interrupt-parent = <&clic>;
 		};
 
-		spi1: spi@4000b000 {
-			compatible = "bflb,qspi";
+		flashctrl: flash-controller@4000b000 {
+			compatible = "bflb,flash-controller";
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 
-			peripheral-id = <0>;
-			interrupts = <23 0>;
-			interrupt-parent = <&ictrl>;
+			interrupts = <39 0>;
+			interrupt-parent = <&clic>;
 		};
 
 		retram: memory@40010000 {
@@ -206,12 +201,7 @@
 
 		sram0: memory@42020000 {
 			compatible = "mmio-sram";
-			reg = <0x42020000 DT_SIZE_K(64)>;
-		};
-
-		sram1: memory@42030000 {
-			compatible = "mmio-sram";
-			reg = <0x42030000 DT_SIZE_K(112)>;
+			reg = <0x42020000 DT_SIZE_K(176)>;
 		};
 	};
 };
