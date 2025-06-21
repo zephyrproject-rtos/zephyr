@@ -136,7 +136,7 @@ static int apds9253_attr_set_gain(const struct device *dev, uint8_t gain)
 		APDS9253_LS_GAIN_RANGE_9, APDS9253_LS_GAIN_RANGE_18,
 	};
 
-	if (gain < APDS9253_LS_GAIN_RANGE_1 || gain > APDS9253_LS_GAIN_RANGE_18) {
+	if (gain > APDS9253_LS_GAIN_RANGE_18) {
 		return -EINVAL;
 	}
 	value = value_map[gain];
