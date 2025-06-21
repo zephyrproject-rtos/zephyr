@@ -21,13 +21,20 @@
 };
 
 &enetc_psi0 {
+	nxp,ptp-clock = <&netc_ptp_clock0>;
 	status = "okay";
 };
 
 &enetc_psi1 {
+	nxp,ptp-clock = <&netc_ptp_clock0>;
 	status = "okay";
 };
 
 &enetc_psi2 {
+	nxp,ptp-clock = <&netc_ptp_clock0>;
+	status = "okay";
+};
+
+&netc_ptp_clock0 {
 	status = "okay";
 };
