@@ -4,6 +4,7 @@
 
 config USBD_AUDIO2_CLASS
 	bool "USB Audio 2 class support [EXPERIMENTAL]"
+	select UDC_ENABLE_SOF
 	help
 	  USB Audio 2 device class support.
 
