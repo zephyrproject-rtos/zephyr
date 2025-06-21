@@ -4,3 +4,28 @@ board:
   vendor: espressif
   socs:
   - name: esp32s3
+    variants:
+    - name: n4r2
+      cpucluster: procpu
+    - name: n8
+      cpucluster: procpu
+    - name: n8r2
+      cpucluster: procpu
+    - name: n8r8
+      cpucluster: procpu
+    - name: n16r2
+      cpucluster: procpu
+    - name: n16r8
+      cpucluster: procpu
+    - name: n4r2
+      cpucluster: appcpu
+    - name: n8
+      cpucluster: appcpu
+    - name: n8r2
+      cpucluster: appcpu
+    - name: n8r8
+      cpucluster: appcpu
+    - name: n16r2
+      cpucluster: appcpu
+    - name: n16r8
+      cpucluster: appcpu
