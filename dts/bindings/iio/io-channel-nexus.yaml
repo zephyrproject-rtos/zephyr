@@ -1,0 +1,20 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for io-channel nexus
+
+properties:
+  io-channel-map:
+    type: compound
+    required: true
+
+  io-channel-map-mask:
+    type: array
+
+  io-channel-map-pass-thru:
+    type: array
+
+  "#io-channel-cells":
+    type: int
+    required: true
+    description: Number of items to expect in the io-channel specifier, such as ADC channels.
