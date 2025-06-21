@@ -69,14 +69,15 @@ uint8_t fcb_get_align(const struct fcb *fcbp);
 int fcb_erase_sector(const struct fcb *fcbp, const struct flash_sector *sector);
 
 int fcb_getnext_in_sector(struct fcb *fcbp, struct fcb_entry *loc);
-struct flash_sector *fcb_getnext_sector(struct fcb *fcbp, struct flash_sector *sector);
+const struct flash_sector *fcb_getnext_sector(struct fcb *fcbp, const struct flash_sector *sector);
 int fcb_getnext_nolock(struct fcb *fcbp, struct fcb_entry *loc);
 
 int fcb_elem_info(struct fcb *fcbp, struct fcb_entry *loc);
 int fcb_elem_endmarker(struct fcb *fcbp, struct fcb_entry *loc, uint8_t *crc8p);
 
-int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t id);
-int fcb_sector_hdr_read(struct fcb *fcbp, struct flash_sector *sector, struct fcb_disk_area *fdap);
+int fcb_sector_hdr_init(struct fcb *fcbp, const struct flash_sector *sector, uint16_t id);
+int fcb_sector_hdr_read(struct fcb *fcbp, const struct flash_sector *sector,
+			struct fcb_disk_area *fdap);
 
 #ifdef __cplusplus
 }
