@@ -659,7 +659,7 @@ config NXP_WIFI_CAPA
 	  This option enables uAP Wi-Fi Capability in the Wi-Fi driver.
 
 config NXP_WIFI_UAP_STA_MAC_ADDR_FILTER
-	bool "Wi-Fi SoftAP clients white/black list"
+	bool "Wi-Fi SoftAP clients allow/block list"
 	default y
 	help
 	  Allow/Block MAC addresses specified in the allowed list.
