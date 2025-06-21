@@ -88,9 +88,9 @@ static ALWAYS_INLINE void runq_remove(struct k_thread *thread)
 	_priq_run_remove(thread_runq(thread), thread);
 }
 
-static ALWAYS_INLINE void runq_yield(void)
+static ALWAYS_INLINE void runq_yield(struct k_thread *curr)
 {
-	_priq_run_yield(curr_cpu_runq());
+	_priq_run_yield(curr_cpu_runq(), curr);
 }
 
 static ALWAYS_INLINE struct k_thread *runq_best(void)
@@ -252,13 +252,10 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 #endif /* CONFIG_SMP */
 }
 
-void move_thread_to_end_of_prio_q(struct k_thread *thread)
+inline void z_yield(struct k_thread *curr)
 {
-	if (z_is_thread_queued(thread)) {
-		dequeue_thread(thread);
-	}
-	queue_thread(thread);
-	update_cache(thread == _current);
+	runq_yield(curr);
+	update_cache(1);
 }
 
 /* Track cooperative threads preempted by metairqs so we can return to
@@ -363,12 +360,14 @@ void z_ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
+#ifdef CONFIG_ZTEST
+void z_yield_testing_only(struct k_thread *curr)
 {
 	K_SPINLOCK(&_sched_spinlock) {
-		move_thread_to_end_of_prio_q(thread);
+		z_yield(curr);
 	}
 }
+#endif
 
 /* Spins in ISR context, waiting for a thread known to be running on
  * another CPU to catch the IPI we sent and halt.  Note that we check
@@ -1063,9 +1062,8 @@ void z_impl_k_yield(void)
 
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
-	runq_yield();
+	z_yield(_current);
 
-	update_cache(1);
 	z_swap(&_sched_spinlock, key);
 }
 
