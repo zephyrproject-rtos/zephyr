@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,13 +7,23 @@
 #define DT_DRV_COMPAT nxp_gau_dac
 
 #include <zephyr/drivers/dac.h>
-
 #include <fsl_dac.h>
-
-#define LOG_LEVEL CONFIG_DAC_LOG_LEVEL
+#include "fsl_clock.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
+
 LOG_MODULE_REGISTER(nxp_gau_dac);
+#define LOG_LEVEL CONFIG_DAC_LOG_LEVEL
+#define ZEPHYR_USER_NODE_RESTORE DT_PATH(zephyr_user)
+#if (DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac) && \
+DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac_channel_id) && \
+DT_NODE_HAS_PROP(ZEPHYR_USER_NODE_RESTORE, dac_resolution))
+#define DAC_NODE DT_PHANDLE(ZEPHYR_USER_NODE_RESTORE, dac)
+#define DAC_CHANNEL_ID_RESTORE DT_PROP(ZEPHYR_USER_NODE_RESTORE, dac_channel_id)
+#define DAC_RESOLUTION_RESTORE DT_PROP(ZEPHYR_USER_NODE_RESTORE, dac_resolution)
+#endif
 
 struct nxp_gau_dac_config {
 	DAC_Type *base;
@@ -39,6 +49,8 @@ static int nxp_gau_dac_channel_setup(const struct device *dev,
 	const struct nxp_gau_dac_config *config = dev->config;
 	dac_channel_config_t dac_channel_config = {0};
 	bool use_internal = true;
+
+	pm_policy_device_power_lock_get(dev);/*Lock the PM states*/
 
 	if (channel_cfg->resolution != 10) {
 		LOG_ERR("DAC only support 10 bit resolution");
@@ -101,8 +113,58 @@ static int nxp_gau_dac_init(const struct device *dev)
 	return 0;
 };
 
+static int nxp_gau_dac_init_common(const struct device *dev)
+{
+	const struct nxp_gau_dac_config *config = dev->config;
+	dac_config_t dac_cfg;
+
+	DAC_GetDefaultConfig(&dac_cfg);
+
+	dac_cfg.conversionRate = config->conversion_rate;
+	dac_cfg.refSource = config->voltage_ref;
+	dac_cfg.rangeSelect = config->output_range;
+
+	DAC_Init(config->base, &dac_cfg);
+
+	/* Attack clock for GAU and reset */
+	CLOCK_AttachClk(kMAIN_CLK_to_GAU_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivGauClk, 1U);
+	CLOCK_EnableClock(kCLOCK_Gau);
+	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
+
+	POWER_PowerOnGau();
+
+	return 0;
+};
+
+int nxp_gau_deinit(const struct device *dev)
+{
+	const struct nxp_gau_dac_config *config = dev->config;
+
+	DAC_Deinit(config->base);
+
+	pm_policy_device_power_lock_put(dev); /*Free the PM states*/
+
+	return 0;
+}
+
+static int dac_mcux_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		nxp_gau_dac_init_common(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
 #define NXP_GAU_DAC_INIT(inst)							\
-										\
 	const struct nxp_gau_dac_config nxp_gau_dac_##inst##_config = {		\
 		.base = (DAC_Type *) DT_INST_REG_ADDR(inst),			\
 		.voltage_ref = DT_INST_ENUM_IDX(inst, nxp_dac_reference),	\
@@ -110,10 +172,9 @@ static int nxp_gau_dac_init(const struct device *dev)
 		.output_range = DT_INST_ENUM_IDX(inst,				\
 						nxp_output_voltage_range),	\
 	};									\
-										\
-										\
-	DEVICE_DT_INST_DEFINE(inst, &nxp_gau_dac_init, NULL,			\
-				NULL,						\
+	PM_DEVICE_DT_INST_DEFINE(inst, dac_mcux_pm_action);									\
+	DEVICE_DT_INST_DEFINE(inst, &nxp_gau_dac_init, PM_DEVICE_DT_INST_GET(inst),			\
+				NULL,	\
 				&nxp_gau_dac_##inst##_config,			\
 				POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\
 				&nxp_gau_dac_driver_api);
