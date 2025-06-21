@@ -116,6 +116,21 @@ tests:
       regex:
         - "End of files"
         - "The device is put in USB mass storage mode."
+  sample.usb_device_next.mass_flash_fatfs.esp:
+    modules:
+      - fatfs
+    depends_on: usbd
+    filter: dt_compat_enabled("espressif,esp32-usb-otg")
+    platform_allow:
+      - esp32s3_devkitm/esp32s3/procpu
+    required_snippets:
+      - espressif-usb-mass
+    extra_args: CONF_FILE="usbd_next_prj.conf"
+    extra_configs:
+      - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
+    tags:
+      - msd
+      - usb
   sample.usb.mass_sdhc_fatfs:
     min_ram: 32
     filter: dt_compat_enabled("zephyr,sdmmc-disk")

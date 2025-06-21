@@ -1,0 +1,3 @@
+name: espressif-usb-mass
+append:
+  EXTRA_DTC_OVERLAY_FILE: espressif-usb-mass.overlay
