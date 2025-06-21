@@ -24,5 +24,6 @@
 	aliases {
 		watchdog0 = &tco_wdt;
 		rtc = &rtc;
+		bbram = &bbram;
 	};
 };
