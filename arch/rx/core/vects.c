@@ -8,10 +8,18 @@
 #include <zephyr/irq.h>
 #include <kswap.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/arch/rx/sw_nmi_table.h>
 
 typedef void (*fp)(void);
 extern void _start(void);
 extern void z_rx_irq_exit(void);
+extern void R_BSP_SoftwareReset(void);
+
+#define NMI_NMIST_MASK  0x01
+#define NMI_OSTST_MASK  0x02
+#define NMI_IWDTST_MASK 0x08
+#define NMI_LVD1ST_MASK 0x10
+#define NMI_LVD2ST_MASK 0x20
 
 /* this is mainly to give Visual Studio Code peace of mind */
 #ifndef CONFIG_GEN_IRQ_START_VECTOR
@@ -97,9 +105,9 @@ static void __ISR__ INT_Excep_FloatingPoint(void)
 static void __ISR__ INT_NonMaskableInterrupt(void)
 {
 	REGISTER_SAVE();
-	ISR_DIRECT_HEADER();
-	z_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
-	ISR_DIRECT_FOOTER(1);
+	int nmi_vector = get_nmi_request();
+
+	handle_nmi(nmi_vector);
 	REGISTER_RESTORE_EXIT();
 }
 
@@ -140,6 +148,64 @@ static void __ISR__ reserved_isr(void)
 
 /* wrapper for z_rx_context_switch_isr, defined in switch.S */
 extern void __ISR__ switch_isr_wrapper(void);
+
+void nmi_enable(uint8_t nmi_vector, nmi_callback_t callback, void *arg)
+{
+	if (nmi_vector >= NMI_TABLE_SIZE) {
+		return;
+	}
+
+	_nmi_vector_table[nmi_vector].callback = callback;
+	_nmi_vector_table[nmi_vector].arg = arg;
+}
+
+int get_nmi_request(void)
+{
+	uint32_t nmi_status = ICU.NMISR.BYTE;
+
+	if (nmi_status & NMI_NMIST_MASK) {
+		return 0;
+	} else if (nmi_status & NMI_OSTST_MASK) {
+		return 1;
+	} else if (nmi_status & NMI_IWDTST_MASK) {
+		return 2;
+	} else if (nmi_status & NMI_LVD1ST_MASK) {
+		return 3;
+	} else if (nmi_status & NMI_LVD2ST_MASK) {
+		return 4;
+	}
+
+	return NMI_TABLE_SIZE;
+}
+
+void handle_nmi(uint8_t nmi_vector)
+{
+	if (nmi_vector >= NMI_TABLE_SIZE) {
+		return;
+	}
+
+	_nmi_vector_table[nmi_vector].callback(_nmi_vector_table[nmi_vector].arg);
+
+	switch (nmi_vector) {
+	case 0:
+		ICU.NMICLR.BIT.NMICLR = 0x01;
+		break;
+	case 1:
+		ICU.NMICLR.BIT.OSTCLR = 0x01;
+		break;
+	case 2:
+		ICU.NMICLR.BIT.IWDTCLR = 0x01;
+		break;
+	case 3:
+		ICU.NMICLR.BIT.LVD1CLR = 0x01;
+		break;
+	case 4:
+		ICU.NMICLR.BIT.LVD2CLR = 0x01;
+		break;
+	default:
+		break;
+	}
+}
 
 /* this macro is used to define "demuxing" ISRs for all interrupts that are
  * handled through Zephyr's software isr table.
@@ -393,6 +459,15 @@ INT_DEMUX(252);
 INT_DEMUX(253);
 INT_DEMUX(254);
 INT_DEMUX(255);
+
+struct nmi_vector_entry _nmi_vector_table[NMI_TABLE_SIZE] = {
+	{(nmi_callback_t)0xFFFFFFFFU, (void *)0xFFFFFFFFU}, /* NMI Pin Interrupt */
+	{(nmi_callback_t)0xFFFFFFFFU,
+	 (void *)0xFFFFFFFFU}, /* Oscillation Stop Detection Interrupt */
+	{(nmi_callback_t)0xFFFFFFFFU, (void *)0xFFFFFFFFU}, /* IWDT Underflow/Refresh Error */
+	{(nmi_callback_t)0xFFFFFFFFU, (void *)0xFFFFFFFFU}, /* Voltage Monitoring 1 Interrupt */
+	{(nmi_callback_t)0xFFFFFFFFU, (void *)0xFFFFFFFFU}, /* Voltage Monitoring 2 Interrupt */
+};
 
 const void *FixedVectors[] FVECT_SECT = {
 	/* 0x00-0x4c: Reserved, must be 0xff (according to e2 studio example) */

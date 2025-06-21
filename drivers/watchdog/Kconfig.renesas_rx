@@ -1,0 +1,104 @@
+# Renesas RX Independent Watchdog (IWDT) configuration
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config IWDT_RENESAS_RX
+	bool "Renesas RX Series Independent Watchdog Driver"
+	default y
+	depends on DT_HAS_RENESAS_RX_IWDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	select USE_RX_RDP_IWDT
+	help
+	  Enable Renesas RX series watchdog driver.
+
+if IWDT_RENESAS_RX
+
+config IWDT_RX_NMI
+	bool "Non-maskable interrupt for IWDT"
+	default y
+	help
+	  Enable NMI for IWDT.
+
+choice
+	prompt "IWDT Start Mode"
+	default IWDT_RENESAS_RX_IWDT
+	help
+	  Select the IWDT start mode.
+	  - IWDT_RENESAS_RX_AUTO_START_MODE: Counting automatically starts after a reset
+	  (auto-start mode), controlled by option function select register 0 (OFS0).
+	  - IWDT_RENESAS_RX_IWDT: Counting is started by refreshing the counter.
+	  (controlled by the IWDT registers)
+
+config IWDT_RENESAS_RX_AUTO_START_MODE
+	bool "Start IWDT automatically on reset"
+
+config IWDT_RENESAS_RX_IWDT
+	bool "IWDT Start Mode Select"
+	select USE_RX_RDP_IWDT
+
+endchoice
+
+if IWDT_RENESAS_RX_AUTO_START_MODE
+
+config IWDT_RENESAS_RX_IWDTSTRT
+	int "IWDT OFS0 Start Mode Select"
+	default 0
+	help
+	  0: IWDT is automatically activated in auto-start mode after a reset
+	  1: IWDT is halted after a reset
+
+config IWDT_RENESAS_RX_OFS0_IWDTTOPS
+	int "IWDT Timeout Period Select"
+	default 3
+	help
+	  0: 128 cycles (007Fh)
+	  1: 512 cycles (01FFh)
+	  2: 1024 cycles (03FFh)
+	  3: 2048 cycles (07FFh)
+
+config IWDT_RENESAS_RX_OFS0_IWDTCKS
+	int "IWDT Clock Divide Ratio Select"
+	default 15
+	help
+	  0: No division
+	  2: Divide-by-16
+	  3: Divide-by-32
+	  4: Divide-by-64
+	  15: Divide-by-128
+	  5: Divide-by-256
+
+config IWDT_RENESAS_RX_OFS0_IWDTRPSS
+	int "IWDT Window Start Position Select"
+	default 3
+	help
+	  0: 25%
+	  1: 50%
+	  2: 75%
+	  3: 100% (window start position is not specified.)
+
+config IWDT_RENESAS_RX_OFS0_IWDTRPES
+	int "IWDT Window End Position Select"
+	default 3
+	help
+	  0: 75%
+	  1: 50%
+	  2: 25%
+	  3: 0% (window end position is not specified.)
+
+config IWDT_RENESAS_RX_OFS0_IWDTRSTIRQS
+	int "IWDT Reset Interrupt Request Select"
+	default 0
+	help
+	  0: Non-maskable interrupt request output is enabled.
+	  1: Reset output is enabled.
+
+config IWDT_RENESAS_RX_OFS0_IWDTSLCSTP
+	int "IWDT Sleep Mode Count Stop Control"
+	default 0
+	help
+	  0: Count stop is disabled.
+	  1: Count is stopped at a transition to sleep mode, software standby mode, or deep sleep mode.
+
+endif # IWDT_RENESAS_RX_AUTO_START_MODE
+endif # IWDT_RENESAS_RX
