@@ -1,0 +1,37 @@
+/ {
+	chosen {
+		zephyr,console = &board_cdc_acm_uart;
+	};
+};
+
+&zephyr_udc0 {
+	clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x6000000>,
+		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+	num-bidir-endpoints = < 4 >;
+	board_cdc_acm_uart: board_cdc_acm_uart {
+		status = "okay";
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+sdhc: &sdmmc2 {
+	compatible = "st,stm32-sdhc";
+	interrupts = <124 0>;
+	interrupt-names = "event";
+	hw-flow-control;
+	bus-width=<4>;
+	clk-div = <8>;
+	pinctrl-0 = <&sdmmc2_d0_pb14 &sdmmc2_d1_pb15
+			&sdmmc2_d2_pg11 &sdmmc2_d3_pb4
+			&sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
+	pinctrl-names = "default";
+	status= "okay";
+	sdhi-on-gpios = <&gpiog 4 GPIO_ACTIVE_HIGH>;
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios    = <&gpiog 4 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+	};
+};

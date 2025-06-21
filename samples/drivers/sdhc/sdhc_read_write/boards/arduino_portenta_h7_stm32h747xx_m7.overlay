@@ -1,0 +1,34 @@
+&boot_partition{
+	reg = <0x00000000 0x00020000>;
+};
+&scratch_partition {
+	reg = <0x00020000 0x00020000>;
+};
+&slot0_partition {
+	reg = <0x00040000 0x001C0000>;
+};
+&slot1_partition {
+	reg = <0x00200000  0x001C0000>;
+};
+
+sdhc: &sdmmc1 {
+	compatible = "st,stm32-sdhc";
+	hw-flow-control;
+	bus-width=<4>;
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	min-bus-freq = <25000000>;
+	max-bus-freq = <208000000>;
+	sdhi-on-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
+	interrupts = <49 0>;
+	interrupt-names = "event";
+	status= "okay";
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+		wifi-reg-on-gpios    = <&gpioj 1 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpioj 5 GPIO_ACTIVE_HIGH>;
+	};
+};
