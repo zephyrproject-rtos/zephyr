@@ -9,7 +9,7 @@ include:
     property-allowlist:
       - en-pwm-mode
       - test-mode
-  - name: stepper-controller.yaml
+  - name: stepper.yaml
   - name: adi,trinamic-ramp-generator.yaml
     property-allowlist:
       - vstart

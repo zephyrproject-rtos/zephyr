@@ -8,6 +8,7 @@
 / {
 	aliases {
 		stepper =  &allegro_a4979;
+		stepper-motion-control =  &zephyr_stepper_motion_control;
 	};
 };
 
@@ -22,6 +23,12 @@
 		en-gpios = <&gpio2 1 0>;
 		m0-gpios = <&gpio3 0 0>;
 		m1-gpios = <&gpio3 1 0>;
+	};
+
+	zephyr_stepper_motion_control: zephyr_stepper_motion_control {
+		compatible = "zephyr,stepper-motion-control";
+		status = "okay";
 		counter = <&counter0>;
+		stepper = <&allegro_a4979>;
 	};
 };

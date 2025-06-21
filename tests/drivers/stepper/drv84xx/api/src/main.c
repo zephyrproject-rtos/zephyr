@@ -44,7 +44,7 @@ static void drv84xx_api_print_event_callback(const struct device *dev, enum step
 static void *drv84xx_api_setup(void)
 {
 	static struct drv84xx_api_fixture fixture = {
-		.dev = DEVICE_DT_GET(DT_ALIAS(stepper)),
+		.dev = DEVICE_DT_GET(DT_ALIAS(stepper_motion_control)),
 		.callback = drv84xx_api_print_event_callback,
 	};
 

@@ -12,7 +12,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stepper, CONFIG_STEPPER_LOG_LEVEL);
 
-static const struct device *stepper = DEVICE_DT_GET(DT_ALIAS(stepper));
+static const struct device *stepper_motion_controller =
+	DEVICE_DT_GET(DT_ALIAS(stepper_motion_control));
 
 enum stepper_mode {
 	STEPPER_MODE_ENABLE,
@@ -65,47 +66,53 @@ INPUT_CALLBACK_DEFINE(NULL, button_pressed, NULL);
 int main(void)
 {
 	LOG_INF("Starting generic stepper sample\n");
-	if (!device_is_ready(stepper)) {
-		LOG_ERR("Device %s is not ready\n", stepper->name);
+	if (!device_is_ready(stepper_motion_controller)) {
+		LOG_ERR("Device %s is not ready\n", stepper_motion_controller->name);
 		return -ENODEV;
 	}
-	LOG_DBG("stepper is %p, name is %s\n", stepper, stepper->name);
+	LOG_DBG("stepper is %p, name is %s\n", stepper_motion_controller,
+		stepper_motion_controller->name);
 
-	stepper_set_event_callback(stepper, stepper_callback, NULL);
-	stepper_set_reference_position(stepper, 0);
-	stepper_set_microstep_interval(stepper, CONFIG_STEP_INTERVAL_NS);
+	if (!device_is_ready(stepper_motion_controller)) {
+		LOG_ERR("Device %s is not ready\n", stepper_motion_controller->name);
+		return -ENODEV;
+	}
+
+	stepper_set_event_callback(stepper_motion_controller, stepper_callback, NULL);
+	stepper_set_reference_position(stepper_motion_controller, 0);
+	stepper_set_microstep_interval(stepper_motion_controller, CONFIG_STEP_INTERVAL_NS);
 
 	for (;;) {
 		k_sem_take(&stepper_generic_sem, K_FOREVER);
 		switch (atomic_get(&stepper_mode)) {
 		case STEPPER_MODE_ENABLE:
-			stepper_enable(stepper);
+			stepper_enable(stepper_motion_controller);
 			LOG_INF("mode: enable\n");
 			break;
 		case STEPPER_MODE_STOP:
-			stepper_stop(stepper);
+			stepper_stop(stepper_motion_controller);
 			LOG_INF("mode: stop\n");
 			break;
 		case STEPPER_MODE_ROTATE_CW:
-			stepper_run(stepper, STEPPER_DIRECTION_POSITIVE);
+			stepper_run(stepper_motion_controller, STEPPER_DIRECTION_POSITIVE);
 			LOG_INF("mode: rotate cw\n");
 			break;
 		case STEPPER_MODE_ROTATE_CCW:
-			stepper_run(stepper, STEPPER_DIRECTION_NEGATIVE);
+			stepper_run(stepper_motion_controller, STEPPER_DIRECTION_NEGATIVE);
 			LOG_INF("mode: rotate ccw\n");
 			break;
 		case STEPPER_MODE_PING_PONG_RELATIVE:
 			ping_pong_target_position *= -1;
-			stepper_move_by(stepper, ping_pong_target_position);
+			stepper_move_by(stepper_motion_controller, ping_pong_target_position);
 			LOG_INF("mode: ping pong relative\n");
 			break;
 		case STEPPER_MODE_PING_PONG_ABSOLUTE:
 			ping_pong_target_position *= -1;
-			stepper_move_to(stepper, ping_pong_target_position);
+			stepper_move_to(stepper_motion_controller, ping_pong_target_position);
 			LOG_INF("mode: ping pong absolute\n");
 			break;
 		case STEPPER_MODE_DISABLE:
-			stepper_disable(stepper);
+			stepper_disable(stepper_motion_controller);
 			LOG_INF("mode: disable\n");
 			break;
 		}
@@ -118,7 +125,7 @@ static void monitor_thread(void)
 	for (;;) {
 		int32_t actual_position;
 
-		stepper_get_actual_position(stepper, &actual_position);
+		stepper_get_actual_position(stepper_motion_controller, &actual_position);
 		LOG_DBG("Actual position: %d\n", actual_position);
 		k_sleep(K_MSEC(CONFIG_MONITOR_THREAD_TIMEOUT_MS));
 	}

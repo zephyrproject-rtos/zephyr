@@ -8,6 +8,7 @@
 / {
 	aliases {
 		stepper =  &zephyr_h_bridge_stepper;
+		stepper-motion-control =  &zephyr_stepper_motion_control;
 	};
 };
 
@@ -21,5 +22,12 @@
 			<&gpio2 0 0>,
 			<&gpio3 0 0>,
 			<&gpio4 0 0>;
+	};
+
+	zephyr_stepper_motion_control: zephyr_stepper_motion_control {
+		compatible = "zephyr,stepper-motion-control";
+		status = "okay";
+		counter = <&counter0>;
+		stepper = <&zephyr_h_bridge_stepper>;
 	};
 };

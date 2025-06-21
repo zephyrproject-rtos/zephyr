@@ -7,4 +7,4 @@ description: |
 
 compatible: "zephyr,fake-stepper"
 
-include: stepper-controller.yaml
+include: stepper.yaml

@@ -7,7 +7,8 @@
 
 / {
 	aliases {
-		stepper =  &adi_tmc2209;
+		stepper = &adi_tmc2209;
+		stepper-motion-control =  &zephyr_stepper_motion_control;
 	};
 };
 
@@ -20,6 +21,12 @@
 		step-gpios = <&gpio1 1 0>;
 		en-gpios = <&gpio2 1 0>;
 		msx-gpios = <&gpio3 0 0>, <&gpio4 1 0>;
+	};
+
+	zephyr_stepper_motion_control: zephyr_stepper_motion_control {
+		compatible = "zephyr,stepper-motion-control";
+		status = "okay";
 		counter = <&counter0>;
+		stepper = <&adi_tmc2209>;
 	};
 };

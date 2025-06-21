@@ -39,5 +39,18 @@
 
 			#include "uart.dtsi"
 		};
+
+		zephyr_stepper_motion_control_counter: zephyr_stepper_motion_control_counter {
+			compatible = "zephyr,stepper-motion-control";
+			status = "okay";
+			counter = <&counter0>;
+			stepper = <&zephyr_h_bridge_stepper>;
+		};
+
+		zephyr_stepper_motion_control_workq: zephyr_stepper_motion_control_workq {
+			compatible = "zephyr,stepper-motion-control";
+			status = "okay";
+			stepper = <&zephyr_h_bridge_stepper>;
+		};
 	};
 };
