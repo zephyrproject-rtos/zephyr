@@ -1,0 +1,9 @@
+sample:
+  name: PZEM004T Sensor Sample
+tests:
+  sample.sensor.pzem004t:
+    build_only: true
+    platform_allow: nucleo_g071rb
+    integration_platforms:
+      - nucleo_g071rb
+    tags: sensors
