@@ -26,6 +26,10 @@
 
 #include <openthread.h>
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+#include <openthread/backbone_router_ftd.h>
+#endif /*CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -208,6 +212,38 @@ __deprecated void openthread_api_mutex_unlock(struct openthread_context *ot_cont
 #define OPENTHREAD_L2_CTX_TYPE struct openthread_context
 
 /** @endcond */
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+/**
+ * @brief The callback type for notifying a subscription to an IPv6 multicast address
+ * This callback is called when backbone router notifies a subscription/de-registration.
+ *
+ * @param context The context to pass to the callback.
+ * @param event The multicast listener event.
+ * @param address The IPv6 address of the multicast listener.
+ */
+typedef void (*openthread_bbr_multicast_listener_cb)(void *context,
+						     otBackboneRouterMulticastListenerEvent event,
+						     const otIp6Address *address);
+
+/**
+ * @brief Set the additional callback for OpenThread multicast listener subscription.
+ *
+ * @details This callback is called once a subscription to an IPv6 multicast address is performed.
+ * Setting this callback is optional.
+ *
+ * @param cb Callback to set.
+ * @param context Context to pass to the callback.
+ */
+void openthread_set_bbr_multicast_listener_cb(openthread_bbr_multicast_listener_cb cb,
+					      void *context);
+
+/**
+* @brief Starts the services associated with OpenThread Border Router.
+*/
+int openthread_start_border_router_services(struct net_if *ot_iface, struct net_if *ail_iface);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
+
 
 #ifdef __cplusplus
 }
