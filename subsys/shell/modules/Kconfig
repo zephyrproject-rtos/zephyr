@@ -23,4 +23,11 @@ config DEVMEM_SHELL
 	help
 	  This shell command provides read/write access to physical memory.
 
+config ZYCLICTEST_SHELL
+	bool "Zyclictest shell"
+	default y if !SHELL_MINIMAL
+	select POSIX_C_LIB_EXT
+	help
+	  This shell command provides latency measurement.
+
 rsource "kernel_service/Kconfig"
