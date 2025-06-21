@@ -962,13 +962,18 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	LOG_DBG("Broadcaster PA found, encrypted %d, requested_bis_sync %d", biginfo->encryption,
 		broadcaster->requested_bis_sync);
 
-	if (biginfo->encryption) {
+	broadcaster->biginfo_received = true;
+
+	if (biginfo->encryption && !broadcaster->broadcast_code_received) {
 		/* Wait for Set Broadcast Code and start sync at broadcast_code_cb */
+		LOG_DBG("BIGInfo received, but have not yet received broadcast code for encrypted "
+			"broadcast");
 		return;
 	}
 
-	if (!broadcaster->assistant_request || !broadcaster->requested_bis_sync) {
+	if (!broadcaster->assistant_request && broadcaster->requested_bis_sync == 0U) {
 		/* No sync with any BIS was requested yet */
+		LOG_DBG("BIGInfo received, but have not yet received request to sync to broadcast");
 		return;
 	}
 
@@ -1205,8 +1210,15 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 	broadcaster->sink_recv_state = recv_state;
 	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+	broadcaster->broadcast_code_received = true;
 
 	if (!broadcaster->requested_bis_sync) {
+		LOG_DBG("Broadcast code received, but not requested to sync");
+		return;
+	}
+
+	if (!broadcaster->biginfo_received) {
+		LOG_DBG("Broadcast code received, but have not yet received BIGInfo");
 		return;
 	}
 
@@ -1473,6 +1485,11 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len, void 
 	}
 
 	broadcaster->requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync);
+
+	if (!broadcaster->biginfo_received) {
+		LOG_DBG("Broadcast sync requested, but have not yet received BIGInfo");
+		return BTP_STATUS_SUCCESS;
+	}
 
 	err = bt_bap_broadcast_sink_sync(broadcaster->sink, broadcaster->requested_bis_sync,
 					 broadcaster->sink_streams,
