@@ -68,6 +68,15 @@ config TRACING_USER
 endchoice
 
 
+config TRACING_CTF_IDLE
+	bool "CTF idle events"
+	default y
+	depends on TRACING_CTF
+	help
+	  If enabled, sys_trace_idle events are added to CTF buffer. Consider
+	  disabling this option if you are not interested in idle events or
+	  if idle events flood your CTF buffer.
+
 config TRACING_CTF_TIMESTAMP
 	bool "CTF internal timestamp"
 	default y
