@@ -10,7 +10,6 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS2 pinctrl_arm_mps2.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS3 pinctrl_arm_mps3.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS4 pinctrl_arm_mps4.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_V2M_BEETLE pinctrl_arm_v2m_beetle.c)
-zephyr_library_sources_ifdef(CONFIG_PINCTRL_BFLB pinctrl_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AF pinctrl_gd32_af.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_GD32_AFIO pinctrl_gd32_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ITE_IT8XXX2 pinctrl_ite_it8xxx2.c)
@@ -59,3 +58,8 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_20X_30X_AFIO pinctrl_wch_20x_30x
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_00X_AFIO pinctrl_wch_00x_afio.c)
 
 add_subdirectory(renesas)
+
+if (CONFIG_PINCTRL_BFLB)
+  zephyr_library_sources(pinctrl_bflb.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_BL60X pinctrl_bflb_bl60x_70x.c)
+endif()
