@@ -1,0 +1,19 @@
+identifier: stm32wba65i_dk1/stm32wba65xx
+name: ST STM32WBA65I Discovery kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+  - adc
+  - rng
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+ram: 512
+flash: 2048
+vendor: st

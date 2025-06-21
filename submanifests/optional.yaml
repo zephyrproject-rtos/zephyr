@@ -29,7 +29,7 @@ manifest:
       groups:
         - optional
     - name: psa-arch-tests
-      revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
+      revision: pull/13/head
       path: modules/tee/tf-m/psa-arch-tests
       remote: upstream
       groups:

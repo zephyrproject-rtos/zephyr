@@ -1,3 +1,4 @@
+# Copyright (c) 2025 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_BUILD_WITH_TFM)
@@ -28,4 +29,4 @@ else()
 endif()
 
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
-include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
