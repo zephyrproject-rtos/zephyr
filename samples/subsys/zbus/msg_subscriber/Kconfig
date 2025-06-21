@@ -10,6 +10,6 @@ config ZBUS_MSG_SUBSCRIBER_SAMPLE
 config ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE
 	int "Set size of the isolated pool"
 	default 32
-	depends on ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION
+	depends on ZBUS_MSG_BUF_POOL_ISOLATION
 
 source "Kconfig.zephyr"

@@ -69,6 +69,8 @@ Another essential aspect of zbus is the observers. There are three types of obse
 
 * Listeners, a callback that the event dispatcher executes every time an observed channel is
   published or notified;
+* Async Listeners, a callback that the event dispatcher schedules to execute in the system work
+  queue every time an observed channel is published or notified;
 * Subscriber, a thread-based observer that relies internally on a message queue where the event
   dispatcher puts a changed channel's reference every time an observed channel is published or
   notified. Note this kind of observer does not receive the message itself. It should read the
@@ -391,8 +393,8 @@ message delivery guarantees for subscribers because zbus only sends the notifica
 message reading depends on the subscriber's implementation. It is possible to increase the delivery
 rate by following design tips:
 
-* Keep the listeners quick-as-possible (deal with them as ISRs). If some processing is needed,
-  consider submitting a work item to a work-queue;
+* Keep the listeners as quick as possible (deal with them as ISRs). If some processing is needed,
+  consider using async listeners instead;
 * Try to give producers a high priority to avoid losses;
 * Leave spare CPU for observers to consume data produced;
 * Consider using message queues or pipes for intensive byte transfers.
@@ -400,12 +402,13 @@ rate by following design tips:
 .. warning::
    ZBus uses :zephyr_file:`include/zephyr/net_buf.h` (network buffers) to exchange data with message
    subscribers. Thus, choose carefully the configurations
-   :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` and
+   :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_MSG_BUF_POOL_SIZE_ADD`,
+   :kconfig:option:`CONFIG_ZBUS_ASYNC_LISTENER_MSG_BUF_POOL_SIZE_ADD`, and
    :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. They are crucial to a proper VDED execution
-   (delivery guarantee) considering message subscribers. If you want to keep an isolated pool for a
-   specific set of channels, you can use
-   :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` with a dedicated pool. Look
-   at the :zephyr:code-sample:`zbus-msg-subscriber` to see the isolation in action.
+   (delivery guarantee) considering message subscribers and async listeners. If you want to keep an
+   isolated pool for a specific set of channels, you can use
+   :kconfig:option:`CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION` with a dedicated pool. Look at the
+   :zephyr:code-sample:`zbus-msg-subscriber` to see the isolation in action.
 
 .. warning::
    Subscribers will receive only the reference of the changing channel. A data loss may be perceived
@@ -434,10 +437,12 @@ The message delivery will follow the precedence:
 Usage
 *****
 
-ZBus operation depends on channels and observers. Therefore, it is necessary to determine its
-message and observers list during the channel definition. A message is a regular C struct; the
-observer can be a subscriber (asynchronous), a message subscriber (asynchronous), or a listener
-(synchronous).
+ZBus operation depends on channels and observers. Therefore, it is necessary to determine the
+channel's message during the channel definition and its list of observers, which can be either
+statically (in the channel definition), using the :c:macro:`ZBUS_CHAN_ADD_OBS` or at runtime (see
+`runtime observers`_). A message is a regular C struct; the observer can be a listener
+(synchronous), an async listener (asynchronous), a subscriber (asynchronous), or a message
+subscriber (asynchronous).
 
 The following code defines and initializes a regular channel and its dependencies. This channel
 exchanges accelerometer data, for example.
@@ -844,6 +849,7 @@ The following code has the exact behavior of the code in :ref:`reading from a ch
             zbus_chan_finish(&acc_chan);
     }
 
+.. _runtime observers:
 
 Runtime observer registration
 -----------------------------
@@ -889,6 +895,7 @@ available:
   Note there is an example of using a work queue instead of executing the listener as an execution
   option;
 * :zephyr:code-sample:`zbus-msg-subscriber` illustrates how to use message subscribers;
+* :zephyr:code-sample:`zbus-async-listeners` illustrates how to use async listeners;
 * :zephyr:code-sample:`zbus-dyn-channel` demonstrates how to use dynamically allocated exchanging
   data in zbus;
 * :zephyr:code-sample:`zbus-uart-bridge` shows an example of sending the operation of the channel to
@@ -926,32 +933,36 @@ For enabling zbus, it is necessary to enable the :kconfig:option:`CONFIG_ZBUS` o
 Related configuration options:
 
 * :kconfig:option:`CONFIG_ZBUS_PRIORITY_BOOST` zbus Highest Locker Protocol implementation;
+
 * :kconfig:option:`CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY` determine the :c:macro:`SYS_INIT`
   priority used by zbus to organize the channels observations by channel;
 * :kconfig:option:`CONFIG_ZBUS_CHANNEL_NAME` enables the name of channels to be available inside the
   channels metadata. The log uses this information to show the channels' names;
 * :kconfig:option:`CONFIG_ZBUS_OBSERVER_NAME` enables the name of observers to be available inside
   the channels metadata;
+* :kconfig:option:`CONFIG_ZBUS_PREFER_DYNAMIC_ALLOCATION` instructs zbus to
+  use dynamic allocation for its internals. That can be disabled by the user and tunned later;
+* :kconfig:option:`CONFIG_ZBUS_MSG_BUF_ALLOC_DYNAMIC` uses the heap to allocate message buffers;
+* :kconfig:option:`CONFIG_ZBUS_MSG_BUF_ALLOC_STATIC` uses the stack to allocate message buffers;
+* :kconfig:option:`CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION` enables the developer to isolate a pool for
+  message subscribers and async listeners for a set of channels;
+* :kconfig:option:`CONFIG_ZBUS_MSG_BUF_STATIC_DATA_SIZE` the biggest message of zbus channels to be
+  transported into message buffer (message subscribers and async listeners messages);
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER` enables the message subscriber observer type;
-* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC` uses the heap to allocate message
-  buffers;
-* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` uses the stack to allocate message
-  buffers;
-* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` the available number of message
-  buffers to be used simultaneously;
-* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` enables the developer to isolate
-  a pool for the message subscriber for a set of channels;
-* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE` the biggest message of zbus
-  channels to be transported into a message buffer;
+* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_MSG_BUF_POOL_SIZE_ADD` the available number of message
+  buffers to be used simultaneously with message subscribers;
+* :kconfig:option:`CONFIG_ZBUS_ASYNC_LISTENER` enables the async listener observer type;
+* :kconfig:option:`CONFIG_ZBUS_ASYNC_LISTENER_MSG_BUF_POOL_SIZE_ADD` the available number of message
+  buffers to be used simultaneously in with async listeners;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` enables the runtime observer registration;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC` allocate the runtime observers
   dynamically using the heap;
-* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC` allocate the runtime observers
-  statically using a memory slab;
-* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE` the amount of enabled runtime
-  observers to statically allocate.
+* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC`
+  allocate the runtime observers statically using a memory slab;
 * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_NONE` use user-provided runtime
   observers nodes;
+* :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE` the amount of
+  enabled runtime observers to allocate statically.
 
 API Reference
 *************
