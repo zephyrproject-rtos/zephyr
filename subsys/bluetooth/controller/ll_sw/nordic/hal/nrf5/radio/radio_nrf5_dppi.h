@@ -89,7 +89,7 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
  */
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
-	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_EVENT_END,
+	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_TRX_EVENT_END,
 			      HAL_RADIO_END_TIME_CAPTURE_PPI);
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_END_TASK,
 				HAL_RADIO_END_TIME_CAPTURE_PPI);
@@ -231,12 +231,24 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-/* DPPI setup used for SW-based auto-switching during TIFS. */
 
+/* DPPI setup used for SW-based auto-switching during TIFS. */
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) && !defined(CONFIG_BT_CTLR_DF)
+/* When using single timer s/w switching and no direction finding support, end capture, timer clear
+ * and switch group enable DPPI are the same. Hence, we will ensure the EVENT_END publishes to this
+ * one DPPI.
+ */
 #define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_END
 #define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_END
+
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
+/* When not using single timer s/w switching, EVENT_END is published so that end timestamp is
+ * captured on the packet timer instance. To clear the tIFS switching timer we need a different
+ * publish, hence we use the EVENT_PHYEND publish for the timer clear and switch group enable.
+ *
+ * When Direction Finding is enabled with use of single timer or not, we will use EVENT_PHYEND
+ * published to end capture, timer clear and switch group enable DPPI being the same.
+ */
 #define HAL_NRF_RADIO_TIMER_CLEAR_EVENT_END     HAL_NRF_RADIO_EVENT_PHYEND
 #define HAL_RADIO_GROUP_TASK_ENABLE_PUBLISH_END HAL_RADIO_PUBLISH_PHYEND
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER || CONFIG_BT_CTLR_DF */
@@ -493,7 +505,6 @@ static inline void hal_radio_sw_switch_disable(void)
 	 * are subscribed to RADIO_END event, i.e on the same channel.
 	 * So we simply cancel the task subscription.
 	 */
-	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
 		HAL_SW_DPPI_TASK_EN_FROM_IDX(SW_SWITCH_TIMER_TASK_GROUP(0)));
 	nrf_dppi_subscribe_clear(NRF_DPPIC,
@@ -527,12 +538,10 @@ static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
 
 static inline void hal_radio_sw_switch_cleanup(void)
 {
+	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	hal_radio_sw_switch_disable();
-	nrf_dppi_channels_disable(NRF_DPPIC,
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-				  BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-				  BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
+
+	nrf_dppi_channels_disable(NRF_DPPIC, BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(0));
 	nrf_dppi_group_disable(NRF_DPPIC, SW_SWITCH_TIMER_TASK_GROUP(1));
 }
