@@ -1257,6 +1257,10 @@ urllib3==2.5.0 \
     #   elastic-transport
     #   pygithub
     #   requests
+vale==3.12.0.0 \
+    --hash=sha256:26bf05326e8fbc878edb782fc9ecee87b826395ba00c066d91ef87a4ed6a6fed \
+    --hash=sha256:bb5f0907bfdbb61e3a11097d4e2b771b2796be2c4af94a45b09f74db39c50d30
+    # via -r requirements-actions.in
 vermin==1.6.0 \
     --hash=sha256:6266ca02f55d1c2aa189a610017c132eb2d1934f09e72a955b1eb3820ee6d4ef \
     --hash=sha256:f1fa9ee40f59983dc40e0477eb2b1fa8061a3df4c3b2bcf349add462a5610efb
