@@ -8,7 +8,9 @@ supported:
   - arduino_gpio
   - dac
   - adc
+  - arduino_i2c
   - gpio
+  - i2c
   - usart
 ram: 256
 flash: 1024
