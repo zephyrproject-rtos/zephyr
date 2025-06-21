@@ -109,6 +109,17 @@ config VFP_U_DP_D16_FP16_FMAC
 	  fused multiply-accumulate) and floating-point exception trapping with 16
 	  double-word registers.
 
+config VFP_DP_D32
+	bool
+	select CPU_HAS_VFP
+	select VFP_FEATURE_SINGLE_PRECISION
+	select VFP_FEATURE_DOUBLE_PRECISION
+	select VFP_FEATURE_REGS_S64_D32
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports single- and double-precision operations
+	  with 32 double-word registers.
+
 config VFP_DP_D32_FP16_FMAC
 	bool
 	select CPU_HAS_VFP
