@@ -63,7 +63,7 @@ static void stepper_print_event_callback(const struct device *dev, enum stepper_
 static void *stepper_setup(void)
 {
 	static struct stepper_fixture fixture = {
-		.dev = DEVICE_DT_GET(DT_ALIAS(stepper)),
+		.dev = DEVICE_DT_GET(DT_ALIAS(stepper_motion_control)),
 		.callback = stepper_print_event_callback,
 	};
 
@@ -177,6 +177,22 @@ ZTEST_F(stepper, test_move_by_negative_step_count)
 		K_MSEC(-steps * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
 	(void)stepper_get_actual_position(fixture->dev, &steps);
 	zassert_equal(steps, -20u, "Target position should be %d but is %d", -20u, steps);
+}
+
+/* move_by(dev, 0) shall stop the stepper and raise STEPPER_EVENT_STEPS_COMPLETED */
+ZTEST_F(stepper, test_move_by_zero_steps)
+{
+	bool is_moving;
+
+	(void)stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
+	(void)stepper_move_by(fixture->dev, 0);
+
+	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+			      K_MSEC(100));
+
+	stepper_is_moving(fixture->dev, &is_moving);
+	zassert_equal(is_moving, false, "Stepper is still moving");
 }
 
 ZTEST_F(stepper, test_stop)

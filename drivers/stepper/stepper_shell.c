@@ -64,9 +64,6 @@ static void print_callback(const struct device *dev, const enum stepper_event ev
 	case STEPPER_EVENT_STOPPED:
 		shell_info(sh, "%s: Stepper stopped.", dev->name);
 		break;
-	case STEPPER_EVENT_FAULT_DETECTED:
-		shell_info(sh, "%s: Fault detected.", dev->name);
-		break;
 	default:
 		shell_info(sh, "%s: Unknown signal received.", dev->name);
 		break;

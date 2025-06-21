@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CPU based Stepper Motion Controller for stepper motor drivers
+  This binding is used to configure the stepper controller in Zephyr.
+  It is used to control the stepper motor driver.
+  Example:
+  stepper_motion_control: stepper_motion_control {
+      compatible = "zephyr,stepper-motion-control";
+      stepper = <&gpio_stepper>;
+  };
+
+compatible: "zephyr,stepper-motion-control"
+
+properties:
+  counter:
+    type: phandle
+    description: Counter used for generating step-accurate pulse signals.
+
+  stepper:
+    type: phandle
+    required: true
+    description: |
+      The stepper motor driver to be controlled by the stepper motion controller.
+      This should be a reference to a stepper motor driver node in the device tree.
