@@ -1,10 +1,19 @@
+common:
+  tags:
+    - drivers
+    - mbox
+  filter: dt_compat_enabled("vnd,mbox-consumer")
 tests:
   drivers.mbox_data:
-    tags:
-      - drivers
-      - mbox
     sysbuild: true
-    filter: dt_compat_enabled("vnd,mbox-consumer")
     integration_platforms:
       - mimxrt1170_evk/mimxrt1176/cm7
       - lpcxpresso55s69/lpc55s69/cpu0
+  drivers.mbox_data.single_cpu:
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
+    extra_configs:
+      - CONFIG_TEST_SINGLE_CPU=y
