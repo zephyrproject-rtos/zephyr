@@ -11,9 +11,9 @@ if the touch screen works for a board, examine its parameters such as inverted/s
 
 Building and Running
 ********************
-While this is a generic sample and it should work with any boards with both display controllers
-and touch controllers supported by Zephyr (provided the corresponding ``/chosen node`` properties
-are set i.e. ``zephyr,touch`` and ``zephyr,display``).
+This is a generic sample and it should work with any board with both a display controller
+and a touch controller supported by Zephyr (provided ``/chosen node`` ``zephyr,display`` property
+and ``touch`` alias are set in devicetree).
 Below is an example on how to build the sample for :zephyr:board:`stm32f746g_disco`:
 
 .. zephyr-app-commands::

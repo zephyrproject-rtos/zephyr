@@ -22,7 +22,6 @@
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &mx25l51245g;
-		zephyr,touch = &ft6202;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -77,6 +76,7 @@
 		led1 = &green_led_2;
 		led2 = &green_led_3;
 		sw0 = &user_button;
+		touch = &ft6202;
 	};
 
 	quadspi_memory_avail: memory-avail@90000000 {

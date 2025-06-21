@@ -21,6 +21,7 @@
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
 		mcuboot-button0 = &user_button;
+		touch = &ft5336;
 	};
 
 	chosen {
@@ -34,7 +35,6 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
-		zephyr,touch = &ft5336;
 	};
 
 	sdram0: memory@80000000 {

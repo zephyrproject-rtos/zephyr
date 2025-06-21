@@ -25,6 +25,7 @@
 		rtc = &pfc8563_rtc;
 		led0 = &led_pwr;
 		sdhc0 = &sd0;
+		touch = &ft5336_touch;
 	};
 
 	chosen {
@@ -36,7 +37,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,rtc = &pfc8563_rtc;
 		zephyr,bt-hci = &esp32_bt_hci;
-		zephyr,touch = &ft5336_touch;
 	};
 
 	leds {
