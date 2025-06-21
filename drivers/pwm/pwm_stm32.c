@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Linaro Limited.
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2023 Nobleo Technology
+ * Copyright (c) 2025 Siemens SA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -180,6 +181,18 @@ static uint32_t __maybe_unused (*const is_capture_active[])(TIM_TypeDef *) = {
 static void __maybe_unused (*const clear_capture_interrupt[])(TIM_TypeDef *) = {
 	LL_TIM_ClearFlag_CC1, LL_TIM_ClearFlag_CC2,
 	LL_TIM_ClearFlag_CC3, LL_TIM_ClearFlag_CC4
+};
+
+/** Channel to enable DMA request flag mapping. */
+static void __maybe_unused (*const enable_dma_interrupt[])(TIM_TypeDef *) = {
+	LL_TIM_EnableDMAReq_CC1, LL_TIM_EnableDMAReq_CC2,
+	LL_TIM_EnableDMAReq_CC3, LL_TIM_EnableDMAReq_CC4
+};
+
+/** Channel to disable DMA request flag mapping. */
+static void __maybe_unused (*const disable_dma_interrupt[])(TIM_TypeDef *) = {
+	LL_TIM_DisableDMAReq_CC1, LL_TIM_DisableDMAReq_CC2,
+	LL_TIM_DisableDMAReq_CC3, LL_TIM_DisableDMAReq_CC4
 };
 
 /**
@@ -756,6 +769,51 @@ static void pwm_stm32_isr(const struct device *dev)
 
 #endif /* CONFIG_PWM_CAPTURE */
 
+#ifdef CONFIG_PWM_WITH_DMA
+static int pwm_stm32_enable_dma(const struct device *dev,
+					uint32_t channel)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+
+	/* DMA requests are only supported on Capture/Compare channels.
+	 * However, these DMA request can also be used in PWM output mode to
+	 * dynamically update the duty cycle once per period. Therefore, enabling
+	 * or disabling DMA requests on PWM channels should not be limited to
+	 * Capture/Compare driver functions.
+	 */
+	if ((channel < 1u) || (channel > 4u)) {
+		LOG_ERR("DMA for PWM only exists on channels 1, 2, 3 and 4.");
+		return -ENOTSUP;
+	}
+
+	enable_dma_interrupt[channel - 1](cfg->timer);
+
+	return 0;
+}
+
+static int pwm_stm32_disable_dma(const struct device *dev,
+					uint32_t channel)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+
+	/* DMA requests are only supported on Capture/Compare channels.
+	 * However, these DMA requests can also be used in PWM output mode to
+	 * dynamically update the duty cycle once per period. Therefore, enabling
+	 * or disabling DMA requests on PWM channels should not be limited to
+	 * Capture/Compare driver functions.
+	 */
+	if ((channel < 1u) || (channel > 4u)) {
+		LOG_ERR("DMA for PWM only exists on channels 1, 2, 3 and 4.");
+		return -ENOTSUP;
+	}
+
+	disable_dma_interrupt[channel - 1](cfg->timer);
+
+	return 0;
+}
+
+#endif /* CONFIG_PWM_WITH_DMA */
+
 static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 					uint32_t channel, uint64_t *cycles)
 {
@@ -775,6 +833,10 @@ static DEVICE_API(pwm, pwm_stm32_driver_api) = {
 	.enable_capture = pwm_stm32_enable_capture,
 	.disable_capture = pwm_stm32_disable_capture,
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_WITH_DMA
+	.enable_dma = pwm_stm32_enable_dma,
+	.disable_dma = pwm_stm32_disable_dma,
+#endif /* CONFIG_PWM_WITH_DMA */
 };
 
 static int pwm_stm32_init(const struct device *dev)
