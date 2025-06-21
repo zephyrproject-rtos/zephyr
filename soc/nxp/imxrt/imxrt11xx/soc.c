@@ -391,6 +391,18 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpuart2, &rootCfg);
 #endif
 
+#ifdef CONFIG_MCUX_FLEXIO
+	/* Configure flexio1 with oscRC400M */
+	rootCfg.mux = kCLOCK_FLEXIO1_ClockRoot_MuxOscRc400M;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio1, &rootCfg);
+
+	/* Configure flexio2 using oscRC400M */
+	rootCfg.mux = kCLOCK_FLEXIO2_ClockRoot_MuxOscRc400M;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio2, &rootCfg);
+#endif
+
 #ifdef CONFIG_I2C_MCUX_LPI2C
 	/* Configure Lpi2c1 using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_LPI2C1_ClockRoot_MuxOscRc48MDiv2;
