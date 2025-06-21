@@ -7,6 +7,15 @@
  #ifndef SINE_H_
  #define SINE_H_
 
+#if CONFIG_NOCACHE_MEMORY
+#define __NOCACHE	__attribute__((__section__(".nocache")))
+#elif defined(CONFIG_DT_DEFINED_NOCACHE)
+#define __NOCACHE	__attribute__((__section__(CONFIG_DT_DEFINED_NOCACHE_NAME)))
+#else /* CONFIG_NOCACHE_MEMORY */
+#define __NOCACHE
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+unsigned char __16kHz16bit_stereo_sine_pcm[] __NOCACHE;
 unsigned char __16kHz16bit_stereo_sine_pcm[] = {
 	0x00, 0x00, 0x00, 0x00, 0x08, 0x0b, 0x08, 0x0b, 0xbb, 0x15, 0xbb, 0x15, 0xc9, 0x1f, 0xc9,
 	0x1f, 0xe4, 0x28, 0xe4, 0x28, 0xc8, 0x30, 0xc8, 0x30, 0x38, 0x37, 0x38, 0x37, 0x03, 0x3c,
