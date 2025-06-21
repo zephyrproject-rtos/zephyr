@@ -98,4 +98,10 @@ config POWER_SUPPLY_EXTERNAL_SOURCE
 
 endchoice
 
+config STM32_BACKUP_PROTECTION
+	bool "SoC has backup domain protection access"
+	help
+	  Enabled for SoCs for which access protection to backup domain
+	  resources needs to be explicitly handled.
+
 endif # SOC_FAMILY_STM32
