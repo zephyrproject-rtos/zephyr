@@ -11,6 +11,7 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest_test.h>
 #include "nsi_host_trampolines.h"
+#include <nsi_tracing.h>
 
 static const char *test_args;
 static bool list_tests;
@@ -161,10 +162,18 @@ static bool z_ztest_testargs_contains(const char *suite_name, const char *test_n
 		suite_arg = strtok_r(suite_test_pair, ":", &last_arg);
 		test_arg = strtok_r(NULL, ":", &last_arg);
 
+		/* Validate format: must be test_suite::* or test_suite::test_case */
+		if (!suite_arg || !test_arg || strtok_r(NULL, ":", &last_arg) != NULL) {
+			/* Invalid format, report error and exit */
+			nsi_print_error_and_exit(
+				"Invalid test argument format '%s'. Expected a set of pairs like"
+				"'suite::test' or 'suite::*', got instead '%s'.\n",
+				test_args, suite_test_pair);
+		}
+
 		found = !strcmp(suite_arg, suite_name);
 		if (test_name) {
-			found &= !strcmp(test_arg, "*") ||
-				 !strcmp(test_arg, test_name);
+			found &= (!strcmp(test_arg, "*") || !strcmp(test_arg, test_name));
 		}
 
 		suite_test_pair = strtok_r(NULL, ",", &last_suite_test_pair);
