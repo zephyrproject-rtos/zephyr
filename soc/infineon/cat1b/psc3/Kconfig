@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon CAT1B devices
+
+# Series definitions
+
+DT_COMPAT_ARM_CORTEX_M33 := arm,cortex-m33
+DT_COMPAT_ARM_CORTEX_M55 := arm,cortex-m55
+
+config SOC_SERIES_PSC3
+	select ARM
+	select CPU_CORTEX_M33 if $(dt_compat_enabled,$(DT_COMPAT_ARM_CORTEX_M33))
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select ARM_TRUSTZONE_M
+	select ARCH_HAS_TRUSTED_EXECUTION
+	select BUILD_OUTPUT_HEX
+	select BUILD_OUTPUT_BIN
+	select CPU_CORTEX_M_HAS_CMSE
+	select SOC_EARLY_INIT_HOOK
