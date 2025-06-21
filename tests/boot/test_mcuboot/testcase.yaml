@@ -45,6 +45,12 @@ tests:
       - rd_rw612_bga
       - nucleo_wba55cg
       - frdm_mcxw71
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp8684_devkitm
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840
