@@ -69,9 +69,11 @@ static int mdio_adin2111_read_c45(const struct device *dev, uint8_t prtad,
 	cmd |= (devad & 0x1FU) << 16;
 	cmd |= regad;
 
+	eth_adin2111_lock(cfg->adin, K_FOREVER);
+
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);
 	if (ret < 0) {
-		return ret;
+		goto read_c45_done;
 	}
 
 	/* read op */
@@ -79,18 +81,21 @@ static int mdio_adin2111_read_c45(const struct device *dev, uint8_t prtad,
 
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC1, cmd);
 	if (ret < 0) {
-		return ret;
+		goto read_c45_done;
 	}
 
 	ret = mdio_adin2111_wait_ready(dev, ADIN2111_MDIOACC1, &rdy);
 	if (ret < 0) {
-		return ret;
+		goto read_c45_done;
 	}
 
 	/* read out */
 	ret = eth_adin2111_reg_read(cfg->adin, ADIN2111_MDIOACC1, &cmd);
 
 	*data = cmd & UINT16_MAX;
+
+read_c45_done:
+	eth_adin2111_unlock(cfg->adin);
 
 	return ret;
 }
@@ -110,9 +115,11 @@ static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad,
 	cmd |= (devad & 0x1FU) << 16;
 	cmd |= regad;
 
+	eth_adin2111_lock(cfg->adin, K_FOREVER);
+
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);
 	if (ret < 0) {
-		return ret;
+		goto write_c45_done;
 	}
 
 	/* write op */
@@ -121,10 +128,13 @@ static int mdio_adin2111_write_c45(const struct device *dev, uint8_t prtad,
 
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC1, cmd);
 	if (ret < 0) {
-		return ret;
+		goto write_c45_done;
 	}
 
 	ret = mdio_adin2111_wait_ready(dev, ADIN2111_MDIOACC1, &rdy);
+
+write_c45_done:
+	eth_adin2111_unlock(cfg->adin);
 
 	return ret;
 }
@@ -142,11 +152,15 @@ static int mdio_adin2111_read(const struct device *dev, uint8_t prtad,
 	cmd |= (prtad & 0x1FU) << 21;
 	cmd |= (regad & 0x1FU) << 16;
 
+	eth_adin2111_lock(cfg->adin, K_FOREVER);
+
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);
 	if (ret >= 0) {
 		ret = mdio_adin2111_wait_ready(dev, ADIN2111_MDIOACC0, &read);
 		*data = read & UINT16_MAX;
 	}
+
+	eth_adin2111_unlock(cfg->adin);
 
 	return ret;
 }
@@ -165,26 +179,16 @@ static int mdio_adin2111_write(const struct device *dev, uint8_t prtad,
 	cmd |= (regad & 0x1FU) << 16;
 	cmd |= data;
 
+	eth_adin2111_lock(cfg->adin, K_FOREVER);
+
 	ret = eth_adin2111_reg_write(cfg->adin, ADIN2111_MDIOACC0, cmd);
 	if (ret >= 0) {
 		ret = mdio_adin2111_wait_ready(dev, ADIN2111_MDIOACC0, &rdy);
 	}
 
-	return ret;
-}
-
-static void mdio_adin2111_bus_enable(const struct device *dev)
-{
-	const struct mdio_adin2111_config *const cfg = dev->config;
-
-	eth_adin2111_lock(cfg->adin, K_FOREVER);
-}
-
-static void mdio_adin2111_bus_disable(const struct device *dev)
-{
-	const struct mdio_adin2111_config *const cfg = dev->config;
-
 	eth_adin2111_unlock(cfg->adin);
+
+	return ret;
 }
 
 static DEVICE_API(mdio, mdio_adin2111_api) = {
@@ -192,8 +196,6 @@ static DEVICE_API(mdio, mdio_adin2111_api) = {
 	.write = mdio_adin2111_write,
 	.read_c45 = mdio_adin2111_read_c45,
 	.write_c45 = mdio_adin2111_write_c45,
-	.bus_enable = mdio_adin2111_bus_enable,
-	.bus_disable = mdio_adin2111_bus_disable
 };
 
 #define ADIN2111_MDIO_INIT(n)							\
