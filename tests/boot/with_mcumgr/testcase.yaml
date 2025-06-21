@@ -22,6 +22,18 @@ tests:
       pytest_root:
         - "pytest/test_upgrade.py"
 
+  boot.with_mcumgr.test_upgrade_ble:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
+    harness: pytest
+    harness_config:
+      fixture: usb_hci
+      pytest_root:
+        - "pytest/test_upgrade_ble.py"
+
   boot.with_mcumgr.test_downgrade_prevention:
     platform_allow:
       - nrf52840dk/nrf52840
