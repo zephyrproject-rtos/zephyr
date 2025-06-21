@@ -9,7 +9,7 @@
 
 void arch_cpu_idle(void)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 
 	/* The assembler instruction "wait" switches the processor to sleep mode,
 	 * which stops program execution until an interrupt is triggered.
@@ -27,7 +27,7 @@ void arch_cpu_idle(void)
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 
 	/* The assembler instruction "wait" switches the processor to sleep mode,
 	 * which stops program execution until an interrupt is triggered.

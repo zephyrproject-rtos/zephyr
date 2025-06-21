@@ -35,14 +35,14 @@ CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT must be selected"
 
 void arch_cpu_idle(void)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 	posix_irq_full_unlock();
 	posix_halt_cpu();
 }
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 	posix_atomic_halt_cpu(key);
 }
 

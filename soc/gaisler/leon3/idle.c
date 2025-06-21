@@ -9,7 +9,7 @@
 
 static void leon_idle(unsigned int key)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 	irq_unlock(key);
 
 	__asm__ volatile ("wr  %g0, %asr19");

@@ -443,7 +443,7 @@ void arch_cpu_idle(void)
 {
 	uint32_t cpu = arch_proc_id();
 
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 
 	/*
 	 * unlock and invalidate icache if clock gating is allowed

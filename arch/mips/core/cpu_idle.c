@@ -10,7 +10,7 @@
 
 static ALWAYS_INLINE void mips_idle(unsigned int key)
 {
-	sys_trace_idle();
+	SYS_PORT_TRACING_FUNC(idle, enter);
 
 	/* unlock interrupts */
 	irq_unlock(key);

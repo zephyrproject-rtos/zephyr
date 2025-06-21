@@ -190,17 +190,9 @@ void sys_trace_isr_exit_to_scheduler(void)
 void sys_trace_idle(void)
 {
 	ctf_top_idle();
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
-		cpu_load_on_enter_idle();
-	}
 }
 
-void sys_trace_idle_exit(void)
-{
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
-		cpu_load_on_exit_idle();
-	}
-}
+void sys_trace_idle_exit(void) {}
 
 /* Semaphore */
 void sys_trace_k_sem_init(struct k_sem *sem, int ret)

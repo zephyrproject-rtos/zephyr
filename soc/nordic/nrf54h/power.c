@@ -13,6 +13,7 @@
 #include <zephyr/cache.h>
 #include <power.h>
 #include <soc_lrcconf.h>
+#include <zephyr/debug/cpu_load.h>
 #include "soc.h"
 #include "pm_s2ram.h"
 
@@ -184,21 +185,33 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	if (state == PM_STATE_SUSPEND_TO_IDLE) {
 		__disable_irq();
-		sys_trace_idle();
+		SYS_PORT_TRACING_FUNC(idle, enter);
+		if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+			cpu_load_on_enter_idle();
+		}
 		s2idle_enter(substate_id);
 		/* Resume here. */
 		s2idle_exit(substate_id);
-		sys_trace_idle_exit();
+		if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+			cpu_load_on_exit_idle();
+		}
+		SYS_PORT_TRACING_FUNC(idle, exit);
 		__enable_irq();
 	}
 #if defined(CONFIG_PM_S2RAM)
 	else if (state == PM_STATE_SUSPEND_TO_RAM) {
 		__disable_irq();
-		sys_trace_idle();
+		SYS_PORT_TRACING_FUNC(idle, enter);
+		if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+			cpu_load_on_enter_idle();
+		}
 		s2ram_enter();
 		/* On resuming or error we return exactly *HERE* */
 		s2ram_exit();
-		sys_trace_idle_exit();
+		if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+			cpu_load_on_exit_idle();
+		}
+		SYS_PORT_TRACING_FUNC(idle, exit);
 		__enable_irq();
 	}
 #endif

@@ -479,6 +479,10 @@
 #define sys_port_trace_pm_device_runtime_disable_enter(dev)
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
+/* Idle state */
+#define sys_port_trace_idle_enter() sys_trace_idle()
+#define sys_port_trace_idle_exit()  sys_trace_idle_exit()
+
 void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
 void sys_trace_isr_enter(void);
