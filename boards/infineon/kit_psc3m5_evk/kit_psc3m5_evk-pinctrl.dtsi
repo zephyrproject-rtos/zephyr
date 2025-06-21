@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Configure pin drive mode for uart pins */
+&p6_3_scb3_uart_tx {
+	drive-push-pull;
+};
+
+&p6_2_scb3_uart_rx {
+	input-enable;
+};
+
+&p6_1_scb3_uart_rts {
+	drive-push-pull;
+};
+
+&p6_0_scb3_uart_cts {
+	input-enable;
+};
