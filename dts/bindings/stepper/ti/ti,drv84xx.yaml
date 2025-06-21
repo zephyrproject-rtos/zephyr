@@ -24,6 +24,7 @@ description: |
     m0-gpios = <&mikroe_stepper_gpios 0 0>;
     m1-gpios = <&mikroe_stepper_gpios 1 0>;
     counter = <&counter2>;
+    step-dir = "common";
   };
 
 
