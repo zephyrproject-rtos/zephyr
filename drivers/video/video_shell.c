@@ -576,7 +576,7 @@ static int cmd_video_format(const struct shell *sh, size_t argc, char **argv)
 
 	ret = video_shell_parse_in_out(sh, arg_in_out, &type);
 	if (ret < 0) {
-		return -ret;
+		return ret;
 	}
 	fmt.type = caps.type = type;
 
@@ -1042,6 +1042,137 @@ static void complete_video_format_dev(size_t idx, struct shell_static_entry *ent
 }
 SHELL_DYNAMIC_CMD_CREATE(dsub_video_format_dev, complete_video_format_dev);
 
+/* Video selection handling */
+
+static void video_shell_print_selection(const struct shell *sh, struct video_selection *sel)
+{
+	shell_print(sh, "\tselection target: %s: (%u,%u)/%ux%u",
+		    sel->target == VIDEO_SEL_TGT_CROP ? "crop" :
+		    sel->target == VIDEO_SEL_TGT_CROP_BOUND ? "crop_bound" :
+		    sel->target == VIDEO_SEL_TGT_NATIVE_SIZE ? "native_size" :
+		    sel->target == VIDEO_SEL_TGT_COMPOSE ? "compose" : "unknown",
+		    sel->rect.left, sel->rect.top, sel->rect.width, sel->rect.height);
+}
+
+static int video_shell_selection_parse_target(const struct shell *sh, char const *arg_target,
+					      enum video_selection_target *sel_target)
+{
+	if (strcmp(arg_target, "crop") == 0) {
+		*sel_target = VIDEO_SEL_TGT_CROP;
+	} else if (strcmp(arg_target, "crop_bound") == 0) {
+		*sel_target = VIDEO_SEL_TGT_CROP_BOUND;
+	} else if (strcmp(arg_target, "native_size") == 0) {
+		*sel_target = VIDEO_SEL_TGT_NATIVE_SIZE;
+	} else if (strcmp(arg_target, "compose") == 0) {
+		*sel_target = VIDEO_SEL_TGT_COMPOSE;
+	} else if (strcmp(arg_target, "compose_bound") == 0) {
+		*sel_target = VIDEO_SEL_TGT_COMPOSE_BOUND;
+	} else {
+		shell_error(sh,
+			    "Target must be crop, crop_bound, native_size, compose or compose_bound");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int video_shell_selection_parse_rect(const struct shell *sh, char **args_rect,
+					    struct video_rect *rect)
+{
+	char *arg_left = args_rect[0];
+	char *arg_top = args_rect[1];
+	char *arg_width_height = args_rect[2];
+	char *end_size;
+
+	rect->left = strtoul(arg_left, &end_size, 10);
+	if (*end_size != '\0') {
+		shell_error(sh,
+			    "Invalid left value in rect <left> <top> <width>x<height> parameters");
+		return -EINVAL;
+	}
+
+	rect->top = strtoul(arg_top, &end_size, 10);
+	if (*end_size != '\0') {
+		shell_error(sh,
+			    "Invalid top value in rect <left> <top> <width>x<height> parameters");
+		return -EINVAL;
+	}
+
+	rect->width = strtoul(arg_width_height, &end_size, 10);
+	if (*end_size != 'x' || rect->width == 0) {
+		shell_error(sh,
+			    "Invalid width value in rect left> <top> <width>x<height> parameters");
+		return -EINVAL;
+	}
+	end_size++;
+
+	rect->height = strtoul(end_size, &end_size, 10);
+	if (*end_size != '\0' || rect->height == 0) {
+		shell_error(sh,
+			    "Invalid height value in rect left> <top> <width>x<height> parameters");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int cmd_video_selection(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct video_selection sel = {0};
+	char *arg_device = argv[1];
+	char *arg_in_out = argv[2];
+	char *arg_target = argv[3];
+	int ret;
+
+	dev = device_get_binding(arg_device);
+	ret = video_shell_check_device(sh, dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_shell_parse_in_out(sh, arg_in_out, &sel.type);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_shell_selection_parse_target(sh, arg_target, &sel.target);
+	if (ret < 0) {
+		return ret;
+	}
+
+	switch (argc) {
+	case 4:
+		ret = video_get_selection(dev, &sel);
+		if (ret < 0) {
+			shell_error(sh, "Failed to get %s selection", dev->name);
+			return -ENODEV;
+		}
+
+		video_shell_print_selection(sh, &sel);
+		break;
+	case 7:
+		ret = video_shell_selection_parse_rect(sh, &argv[4], &sel.rect);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = video_set_selection(dev, &sel);
+		if (ret < 0) {
+			shell_error(sh, "Failed to set %s selection", dev->name);
+			return -ENODEV;
+		}
+
+		video_shell_print_selection(sh, &sel);
+		break;
+	default:
+		shell_error(sh, "Wrong parameter count");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* Video shell commands declaration */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
@@ -1067,6 +1198,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
 		SHELL_HELP("Query or set video controls of a device",
 			   "<device> [<ctrl> <value>]"),
 		cmd_video_ctrl, 2, 2),
+	SHELL_CMD_ARG(selection, &dsub_video_format_dev,
+		SHELL_HELP("Query or set the video selection of a device",
+			   "<device> <dir> <target> [<left> <top> <width>x<height>]"),
+		cmd_video_selection, 4, 3),
 	SHELL_SUBCMD_SET_END
 );
 
