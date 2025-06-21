@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
@@ -39,7 +40,7 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 #define I2C_STM32_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-static int i2c_stm32_do_configure(const struct device *dev, uint32_t config)
+int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -96,21 +97,31 @@ bool i2c_stm32_start(const struct device *dev)
 	struct i2c_rtio *ctx = data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
-
+	uint8_t flags = sqe->iodev_flags;
 	int res = 0;
+
+#ifdef CONFIG_I2C_STM32_V2
+	struct rtio_iodev_sqe *iodev_sqe_next = rtio_txn_next(ctx->txn_curr);
+
+	if ((iodev_sqe_next != NULL) &&
+	    ((sqe->iodev_flags & I2C_MSG_STOP) == 0U) &&
+	    ((iodev_sqe_next->sqe.iodev_flags & I2C_MSG_RESTART) == 0U)) {
+		flags |= I2C_MSG_STM32_USE_RELOAD_MODE;
+	}
+#endif
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		return i2c_stm32_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-					   sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
+		return i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf,
+					   sqe->rx.buf_len, dt_spec->addr);
 	case RTIO_OP_TINY_TX:
-		return i2c_stm32_msg_start(dev,  sqe->iodev_flags,
-					   sqe->tiny_tx.buf, sqe->tiny_tx.buf_len, dt_spec->addr);
+		return i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf,
+					   sqe->tiny_tx.buf_len, dt_spec->addr);
 	case RTIO_OP_TX:
-		return i2c_stm32_msg_start(dev, sqe->iodev_flags,
-					   (uint8_t *)sqe->tx.buf, sqe->tx.buf_len, dt_spec->addr);
+		return i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf,
+					   sqe->tx.buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
-		res = i2c_stm32_do_configure(dev, sqe->i2c_config);
+		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
 		return i2c_rtio_complete(data->ctx, res);
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
@@ -127,11 +138,51 @@ static int i2c_stm32_configure(const struct device *dev,
 	return i2c_rtio_configure(ctx, dev_config_raw);
 }
 
+#define OPERATION(msg)	((msg)->flags & I2C_MSG_RW_MASK)
+
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 				   uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
+
+	/* Always set I2C_MSG_RESTART flag on first message in order to send start condition */
+	msgs[0].flags |= I2C_MSG_RESTART;
+
+#ifdef CONFIG_I2C_STM32_V2
+	/*
+	 * If a message has no STOP flag and next has no RESTART flag, set private flag
+	 * I2C_MSG_STM32_USE_RELOAD_MODE in message flag to force STM32 v2 driver to enable
+	 * reload mode for the message so that there is no Stop or Start conditions emited
+	 * in between. This means that flags shall not be used by the generic I2C framework.
+	 */
+	if ((msgs[0].flags & I2C_MSG_STM32_USE_RELOAD_MODE) != 0U) {
+		LOG_ERR("Unexpected bit mask 0x%02lx set in I2C message",
+			I2C_MSG_STM32_USE_RELOAD_MODE);
+		return -EINVAL;
+	}
+#endif
+
+	for (size_t n = 1; n < num_msgs; n++) {
+#ifdef CONFIG_I2C_STM32_V2
+		if ((msgs[n].flags & I2C_MSG_STM32_USE_RELOAD_MODE) != 0U) {
+			LOG_ERR("Unexpected bit mask 0x%02lx set in I2C message",
+				I2C_MSG_STM32_USE_RELOAD_MODE);
+			return -EINVAL;
+		}
+#endif
+
+		if ((OPERATION(msgs + n - 1) != OPERATION(msgs + n)) &&
+		    ((msgs[n].flags & I2C_MSG_RESTART) == 0U)) {
+			LOG_ERR("Missing restart flag between message of different directions");
+			return -EINVAL;
+		}
+
+		if ((msgs[n - 1].flags & I2C_MSG_STOP) != 0U) {
+			LOG_ERR("Stop condition is only allowed on last message");
+			return -EINVAL;
+		}
+	}
 
 	return i2c_rtio_transfer(ctx, msgs, num_msgs, addr);
 }
@@ -150,6 +201,9 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
 
+	/* Always set I2C_MSG_RESTART flag on first message in order to send start condition */
+	iodev_sqe->sqe.iodev_flags |= RTIO_IODEV_I2C_RESTART;
+
 	if (i2c_rtio_submit(ctx, iodev_sqe)) {
 		i2c_stm32_start(dev);
 	}
@@ -160,6 +214,10 @@ static const struct i2c_driver_api api_funcs = {
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
 	.iodev_submit = i2c_stm32_submit,
+#if defined(CONFIG_I2C_TARGET)
+	.target_register = i2c_stm32_target_register,
+	.target_unregister = i2c_stm32_target_unregister,
+#endif
 };
 
 static int i2c_stm32_init(const struct device *dev)
@@ -205,7 +263,7 @@ static int i2c_stm32_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
-	ret = i2c_stm32_do_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
+	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
 		return ret;
