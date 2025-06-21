@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, align, size)
 #define VIDEO_COMMON_FREE(block) shared_multi_heap_free(block)
 #else
-K_HEAP_DEFINE(video_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX*CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+K_HEAP_DEFINE(video_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX *CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
 #define VIDEO_COMMON_HEAP_ALLOC(align, size, timeout)                                              \
 	k_heap_aligned_alloc(&video_buffer_pool, align, size, timeout);
 #define VIDEO_COMMON_FREE(block) k_heap_free(&video_buffer_pool, block)
@@ -130,19 +130,39 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 	uint64_t step = stepwise->step.numerator;
 	uint64_t goal = desired->numerator;
 
-	/* Set a common denominator to all values */
-	min *= stepwise->max.denominator * stepwise->step.denominator * desired->denominator;
-	max *= stepwise->min.denominator * stepwise->step.denominator * desired->denominator;
-	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
-	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
+	/* Compute a common denominator product */
+	uint64_t den_product = (uint64_t)stepwise->min.denominator *
+			       (uint64_t)stepwise->step.denominator *
+			       (uint64_t)desired->denominator;
 
-	/* Saturate the desired value to the min/max supported */
+	min *= (uint64_t)stepwise->max.denominator * (uint64_t)stepwise->step.denominator *
+	       (uint64_t)desired->denominator;
+
+	max *= den_product;
+
+	step *= (uint64_t)stepwise->min.denominator * (uint64_t)stepwise->max.denominator *
+		(uint64_t)desired->denominator;
+
+	goal *= (uint64_t)stepwise->min.denominator * (uint64_t)stepwise->max.denominator *
+		(uint64_t)stepwise->step.denominator;
+
+	/* Saturate goal to the supported range */
 	goal = CLAMP(goal, min, max);
 
-	/* Compute a numerator and denominator */
-	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
-	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
-			     stepwise->step.denominator * desired->denominator;
+	/* Prevent division by zero */
+	if (step == 0U) {
+		match->numerator = goal;
+		match->denominator = 1;
+		return;
+	}
+	/* Compute the closest supported numerator */
+	match->numerator =
+		min + (uint64_t)DIV_ROUND_CLOSEST((int64_t)(goal - min), (int64_t)step) * step;
+
+	/* Set common denominator */
+	match->denominator = (uint64_t)stepwise->min.denominator *
+			     (uint64_t)stepwise->max.denominator *
+			     (uint64_t)stepwise->step.denominator * (uint64_t)desired->denominator;
 }
 
 void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
