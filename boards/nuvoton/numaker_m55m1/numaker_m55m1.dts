@@ -65,6 +65,10 @@
 	status = "okay";
 };
 
+&gpioe {
+	status = "okay";
+};
+
 &gpioh {
 	status = "okay";
 };
