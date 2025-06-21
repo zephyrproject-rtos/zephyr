@@ -172,7 +172,7 @@ EXTERN(ext_man_fw_ver)
 SECTIONS
 {
 
-#ifdef CONFIG_OPENAMP_RSC_TABLE
+#ifdef CONFIG_OPENAMP_RSC_TABLE_PRESENT
     SECTION_PROLOGUE(.resource_table,, SUBALIGN(4))
     {
       KEEP(*(.resource_table*))
