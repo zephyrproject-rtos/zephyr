@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 
@@ -256,9 +257,8 @@ struct flash_flexspi_hyperflash_data {
 	struct flash_parameters flash_parameters;
 };
 
-static int flash_flexspi_hyperflash_wait_bus_busy(const struct device *dev)
+static int flash_flexspi_hyperflash_wait_bus_busy(struct flash_flexspi_hyperflash_data *data)
 {
-	struct flash_flexspi_hyperflash_data *data = dev->data;
 	flexspi_transfer_t transfer;
 	int ret;
 	bool is_busy;
@@ -289,9 +289,9 @@ static int flash_flexspi_hyperflash_wait_bus_busy(const struct device *dev)
 	return ret;
 }
 
-static int flash_flexspi_hyperflash_write_enable(const struct device *dev, uint32_t address)
+static int flash_flexspi_hyperflash_write_enable(struct flash_flexspi_hyperflash_data *data,
+						 uint32_t address)
 {
-	struct flash_flexspi_hyperflash_data *data = dev->data;
 	flexspi_transfer_t transfer;
 	int ret;
 
@@ -370,11 +370,9 @@ static int flash_flexspi_hyperflash_check_vendor_id(const struct device *dev)
 	return ret;
 }
 
-static int flash_flexspi_hyperflash_page_program(const struct device *dev, off_t
-		offset, const void *buffer, size_t len)
+static int flash_flexspi_hyperflash_page_program(struct flash_flexspi_hyperflash_data *data,
+		off_t offset, const void *buffer, size_t len)
 {
-	struct flash_flexspi_hyperflash_data *data = dev->data;
-
 	flexspi_transfer_t transfer = {
 		.deviceAddress = offset,
 		.port = data->port,
@@ -419,7 +417,6 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_hyperflash_data *data = dev->data;
-	size_t size = len;
 	uint8_t *src = (uint8_t *)buffer;
 	unsigned int key = 0;
 	int i, j;
@@ -431,6 +428,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 	if (!dst) {
 		return -EINVAL;
 	}
+
+	sys_cache_instr_disable();
+	sys_cache_data_disable();
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/*
@@ -464,23 +464,23 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 			memc_flexspi_wait_bus_idle(&data->controller);
 		}
 #endif
-		ret = flash_flexspi_hyperflash_write_enable(dev, offset);
+		ret = flash_flexspi_hyperflash_write_enable(data, offset);
 		if (ret != 0) {
 			LOG_ERR("failed to enable write");
 			break;
 		}
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
-		ret = flash_flexspi_hyperflash_page_program(dev, offset,
+		ret = flash_flexspi_hyperflash_page_program(data, offset,
 				hyperflash_write_buf, i);
 #else
-		ret = flash_flexspi_hyperflash_page_program(dev, offset, src, i);
+		ret = flash_flexspi_hyperflash_page_program(data, offset, src, i);
 #endif
 		if (ret != 0) {
 			LOG_ERR("failed to write");
 			break;
 		}
 
-		ret = flash_flexspi_hyperflash_wait_bus_busy(dev);
+		ret = flash_flexspi_hyperflash_wait_bus_busy(data);
 		if (ret != 0) {
 			LOG_ERR("failed to wait bus busy");
 			break;
@@ -493,13 +493,12 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		len -= i;
 	}
 
-	/* Clock FlexSPI at 332 MHZ (166 MHz SCLK in DDR mode) */
+	/* Clock FlexSPI at 200 MHZ (100 MHz SCLK in DDR mode) */
 	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MHZ(332));
+					data->port, MHZ(200));
 
-#ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
-#endif
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
@@ -520,6 +519,10 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	uint8_t *dst = memc_flexspi_get_ahb_address(&data->controller,
 			data->port,
 			offset);
+
+
+	sys_cache_instr_disable();
+	sys_cache_data_disable();
 
 	if (!dst) {
 		return -EINVAL;
@@ -546,7 +549,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	}
 
 	for (i = 0; i < num_sectors; i++) {
-		ret = flash_flexspi_hyperflash_write_enable(dev, offset);
+		ret = flash_flexspi_hyperflash_write_enable(data, offset);
 		if (ret != 0) {
 			LOG_ERR("failed to write_enable");
 			break;
@@ -567,7 +570,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 		}
 
 		/* wait bus busy */
-		ret = flash_flexspi_hyperflash_wait_bus_busy(dev);
+		ret = flash_flexspi_hyperflash_wait_bus_busy(data);
 		if (ret != 0) {
 			LOG_ERR("failed to wait bus busy");
 			break;
@@ -579,9 +582,8 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 		offset += SPI_HYPERFLASH_SECTOR_SIZE;
 	}
 
-#ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
-#endif
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
