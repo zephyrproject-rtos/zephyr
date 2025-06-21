@@ -50,7 +50,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
-/* Section 7.2.1 of IA architecture SW developer manual, Vol 3. */
+/* Section 8.2.1 of IA architecture SW developer manual, Vol 3. */
 struct __packed task_state_segment {
 	uint16_t backlink;
 	uint16_t reserved_1;
@@ -91,6 +91,7 @@ struct __packed task_state_segment {
 	uint8_t t:1;		/* Trap bit */
 	uint16_t reserved_12:15;
 	uint16_t iomap;
+	uint32_t ssp;
 };
 
 #define SEG_SELECTOR(index, table, dpl) (index << 3 | table << 2 | dpl)
