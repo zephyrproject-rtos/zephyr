@@ -22,6 +22,14 @@
 		};
 	};
 
+	i3c0_default: i3c0_default {
+		group1 {
+			/* SCL SDA */
+			psels = <RA_PSEL(RA_PSEL_I3C, 4, 0)>,
+				<RA_PSEL(RA_PSEL_I3C, 4, 1)>;
+		};
+	};
+
 	adc0_default: adc0_default {
 		group1 {
 			/* input */
