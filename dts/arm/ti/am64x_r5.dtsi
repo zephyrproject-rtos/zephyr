@@ -58,6 +58,11 @@
 	};
 };
 
+&secure_proxy_main {
+	interrupts = <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
 &timer0 {
 	interrupts = <0 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
