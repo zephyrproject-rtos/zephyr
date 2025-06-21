@@ -151,7 +151,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 
 # Extra warning options
-set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
+set_property(TARGET compiler PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
 set_property(TARGET asm PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
 
 # Disable exceptions flag in C++
