@@ -1917,6 +1917,10 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
 				   void *buf, uint16_t len, uint16_t offset)
 {
+	if ((attr == NULL) || (attr->user_data == NULL)) {
+		return -EINVAL;
+	}
+
 	struct bt_gatt_attr *incl = attr->user_data;
 	uint16_t handle = bt_gatt_attr_get_handle(incl);
 	struct bt_uuid *uuid = incl->user_data;
