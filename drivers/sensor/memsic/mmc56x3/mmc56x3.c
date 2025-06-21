@@ -357,7 +357,7 @@ static int mmc56x3_chip_configure(const struct device *dev, struct mmc56x3_confi
 	}
 
 	if (new_config->auto_sr != config->auto_sr) {
-		ret = mmc56x3_chip_set_auto_self_reset(dev, config->auto_sr);
+		ret = mmc56x3_chip_set_auto_self_reset(dev, new_config->auto_sr);
 	}
 
 	return ret;
@@ -366,7 +366,8 @@ static int mmc56x3_chip_configure(const struct device *dev, struct mmc56x3_confi
 static int mmc56x3_attr_set(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr, const struct sensor_value *val)
 {
-	struct mmc56x3_config new_config = {};
+	struct mmc56x3_data *data = dev->data;
+	struct mmc56x3_config new_config = data->config;
 	int ret = 0;
 
 	__ASSERT_NO_MSG(val != NULL);
