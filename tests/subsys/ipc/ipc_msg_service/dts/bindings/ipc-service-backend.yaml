@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# Copyright (c) 2025 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Backend binding to test the IPC message service
+
+compatible: "ipc-msg-service-backend"
+
+properties:
+  offset:
+    type: int
+    required: true
+    description: offset to add
