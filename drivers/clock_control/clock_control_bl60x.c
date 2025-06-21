@@ -91,7 +91,7 @@ const static uint32_t clock_control_bl60x_crystal_SDMIN_table[5] = {
 
 static inline void clock_control_bl60x_clock_settle(void)
 {
-	__asm__ volatile(".rept 15 ; nop ; .endr");
+	__asm__ volatile(".rept 20 ; nop ; .endr");
 }
 
 /* 32 Mhz Oscillator: 0
@@ -847,6 +847,8 @@ static int clock_control_bl60x_init(const struct device *dev)
 	}
 
 	clock_control_bl60x_peripheral_clock_init();
+
+	clock_control_bl60x_clock_settle();
 
 	irq_unlock(key);
 
