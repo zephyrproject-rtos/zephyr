@@ -191,6 +191,11 @@ config USE_RA_FSP_ELC
 	help
 	  Enable RA FSP ELC driver
 
+config USE_RA_FSP_SSI
+	bool
+	help
+	  Enable RA FSP I2S SSI driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP

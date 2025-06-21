@@ -20,7 +20,7 @@
 	pwm4_default: pwm4_default {
 		group1 {
 			/* GTIOC4A*/
-			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 15)>;
+			psels = <RA_PSEL(RA_PSEL_GPT1, 2, 5)>;
 		};
 	};
 };
