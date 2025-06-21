@@ -45,6 +45,7 @@
 static struct {
 	struct {
 		void              *param;
+		uint32_t          ticks_at_expire;
 		lll_is_abort_cb_t is_abort_cb;
 		lll_abort_cb_t    abort_cb;
 	} curr;
@@ -949,6 +950,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	LL_ASSERT(!ready || &ready->prepare_param == prepare_param);
 
 	event.curr.param = prepare_param->param;
+	event.curr.ticks_at_expire = prepare_param->ticks_at_expire;
 	event.curr.is_abort_cb = is_abort_cb;
 	event.curr.abort_cb = abort_cb;
 
@@ -1028,6 +1030,8 @@ static inline struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb)
 	 */
 	prepare_param.param = event.curr.param;
 	event.curr.param = NULL;
+
+	prepare_param.ticks_at_expire = event.curr.ticks_at_expire;
 
 	return ull_prepare_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
 				   &prepare_param, resume_cb, 1);
@@ -1312,19 +1316,67 @@ preempt_find_preemptor:
 
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &resume_cb);
-	if (!err || (err == -EBUSY)) {
-		/* Returns -EBUSY when same curr and next state/role, do not
-		 * abort same curr and next event.
+	if (err == 0U || err == -EINPROGRESS) {
+		/* Returns 0 to continue the current event, -EINPROGRESS to resume after the
+		 * preemptor (ready) event
 		 */
-		if (err != -EBUSY) {
-			/* Let preemptor LLL know about the cancelled prepare */
-			ready->is_aborted = 1;
-			ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+		/* Check if curr and next ready event are different state/role  */
+		if (event.curr.param != ready->prepare_param.param) {
+			int err_ready;
+
+			/* Check if ready event want to continue */
+			err_ready = ready->is_abort_cb(NULL, ready->prepare_param.param,
+						       &resume_cb);
+			if (err_ready == 0U) {
+				/* Preemptor (ready) event wants to cancel the current event */
+				if (err == -EINPROGRESS) {
+					/* Preemptee wants to continue after the preemptor */
+					err = -EAGAIN;
+				} else {
+					/* Preemptee be cancelled before preemptor */
+					err = -ECANCELED;
+				}
+
+				goto preempt_cancel_curr;
+			}
+
+			err = err_ready;
 		}
 
+		/* Let the prepare be dequeued from the pipeline */
+		ready->is_aborted = 1;
+
+		/* Check if resume requested */
+		if (err == -EAGAIN) {
+			struct lll_event *next;
+
+			next = ull_prepare_enqueue(ready->is_abort_cb, ready->abort_cb,
+						   &ready->prepare_param, resume_cb, 1U);
+			LL_ASSERT(next);
+
+			return;
+		}
+
+		/* Let preemptor LLL know about the cancelled prepare */
+		ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+
 		return;
+
+	} else if (err == -EBUSY) {
+		/* Returns -EBUSY when same curr and next ready state/role, do not abort same curr
+		 * and next ready event.
+		 */
+		return;
+
+	} else if (err == -EAGAIN) {
+		/* Returns -EAGAIN to be placed back in pipeline as resume event */
+
+	} else {
+		/* Returns -ECANCELED to have current event aborted */
+		LL_ASSERT(err == -ECANCELED);
 	}
 
+preempt_cancel_curr:
 	/* Abort the current event */
 	event.curr.abort_cb(NULL, event.curr.param);
 
