@@ -796,6 +796,8 @@ static const struct video_format_cap fmts[] = {
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_RGB565),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_RGB565),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP(480, 320, VIDEO_PIX_FMT_RGB565), /* ILI948x, ST7796 */
+	GC2145_VIDEO_FORMAT_CAP(240, 320, VIDEO_PIX_FMT_RGB565), /* ILI9341, ST7785 port */
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_YUYV),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_YUYV),
 	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_YUYV),
@@ -1036,8 +1038,19 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 		r_ratio = 1;
 		break;
 	default:
-		LOG_ERR("Unsupported resolution %d %d", w, h);
-		return -EIO;
+		if ((w > UXGA_HSIZE) || (h > UXGA_VSIZE)) {
+			LOG_ERR("Unsupported resolution %d %d", w, h);
+			return -EIO;
+		}
+		c_ratio = UXGA_HSIZE / w;
+		r_ratio = UXGA_VSIZE / h;
+		if (c_ratio < r_ratio) {
+			r_ratio = c_ratio;
+		} else {
+			c_ratio = r_ratio;
+		}
+		LOG_DBG("set resolution(%u %u): ratio: %u %u\n", w, h, c_ratio, r_ratio);
+		break;
 	};
 
 	/* Calculates the window boundaries to obtain the desired resolution */
@@ -1048,6 +1061,7 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	win_x = ((UXGA_HSIZE - win_w) / 2);
 	win_y = ((UXGA_VSIZE - win_h) / 2);
 
+	LOG_DBG("xy: %u %u win: %u %u\n", x, y, win_w, win_h);
 	/* Set readout window first. */
 	ret = gc2145_set_window(dev, GC2145_REG_BLANK_WINDOW_BASE, win_x, win_y, win_w + 16,
 				win_h + 8);
