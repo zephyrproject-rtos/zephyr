@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Andes Technology Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_ANDES_AE350
+if SOC_ANDES_AE350 || SOC_ANDES_AE350_CLIC
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 100 if (!ICACHE || XIP)
@@ -22,4 +22,4 @@ config MP_MAX_NUM_CPUS
 	default 1
 	range 1 8
 
-endif # SOC_ANDES_AE350
+endif # SOC_ANDES_AE350 || SOC_ANDES_AE350_CLIC
