@@ -1213,12 +1213,10 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 
 			if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 				status->iface_mode = WIFI_MODE_INFRA;
-			}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-			else if (if_handle->state.interface == WLAN_BSS_TYPE_UAP) {
+			} else if (IS_ENABLED(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) &&
+				   (if_handle->state.interface == WLAN_BSS_TYPE_UAP)) {
 				status->iface_mode = WIFI_MODE_AP;
 			}
-#endif
 
 #ifdef CONFIG_NXP_WIFI_11AX
 			if (nxp_wlan_network.dot11ax) {
@@ -1273,12 +1271,11 @@ static int nxp_wifi_get_detail_stats(int bss_type, wlan_pkt_stats_t *stats)
 
 	if (bss_type == WLAN_BSS_TYPE_STA) {
 		ret = wlan_get_log(stats);
-	}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	else if (bss_type == WLAN_BSS_TYPE_UAP) {
+	} else if (IS_ENABLED(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) &&
+		   (bss_type == WLAN_BSS_TYPE_UAP)) {
 		ret = wlan_uap_get_log(stats);
 	}
-#endif
+
 	return ret;
 }
 #endif
@@ -2030,13 +2027,12 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 				LOG_ERR("Failed to set Wi-Fi MAC Address");
 				return -ENOEXEC;
 			}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-		} else if (if_handle->state.interface == WLAN_BSS_TYPE_UAP) {
+		} else if (IS_ENABLED(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) &&
+			   (if_handle->state.interface == WLAN_BSS_TYPE_UAP)) {
 			if (wlan_set_uap_mac_addr(if_handle->mac_address)) {
 				LOG_ERR("Failed to set Wi-Fi MAC Address");
 				return -ENOEXEC;
 			}
-#endif
 		} else {
 			LOG_ERR("Invalid Interface index");
 			return -ENOEXEC;
