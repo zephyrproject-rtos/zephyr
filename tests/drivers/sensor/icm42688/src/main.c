@@ -55,7 +55,7 @@ static void test_fetch_temp_mc(const struct icm42688_fixture *fixture, int16_t t
 	uint8_t buffer[2];
 
 	/* Set the INT_STATUS register to show we have data */
-	buffer[0] = BIT_INT_STATUS_DATA_RDY;
+	buffer[0] = BIT_DATA_RDY_INT;
 	icm42688_emul_set_reg(fixture->target, REG_INT_STATUS, buffer, 1);
 
 	/*
@@ -95,7 +95,7 @@ static void test_fetch_accel_with_range(const struct icm42688_fixture *fixture,
 	uint8_t register_buffer[6];
 
 	/* Se the INT_STATUS register to show we have data */
-	register_buffer[0] = BIT_INT_STATUS_DATA_RDY;
+	register_buffer[0] = BIT_DATA_RDY_INT;
 	icm42688_emul_set_reg(fixture->target, REG_INT_STATUS, register_buffer, 1);
 
 	/* Set accel range */
@@ -157,7 +157,7 @@ static void test_fetch_gyro_with_range(const struct icm42688_fixture *fixture, i
 	uint8_t register_buffer[6];
 
 	/* Se the INT_STATUS register to show we have data */
-	register_buffer[0] = BIT_INT_STATUS_DATA_RDY;
+	register_buffer[0] = BIT_DATA_RDY_INT;
 	icm42688_emul_set_reg(fixture->target, REG_INT_STATUS, register_buffer, 1);
 
 	/* Set gyro range */
