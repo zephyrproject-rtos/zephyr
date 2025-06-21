@@ -1,4 +1,4 @@
-# Copyright 2021 NXP
+# Copyright 2021, 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_MCUX_SCTIMER
@@ -9,3 +9,12 @@ config PWM_MCUX_SCTIMER
 	select PINCTRL
 	help
 	  Enable sctimer based pwm driver.
+
+config PWM_MCUX_SCT_KEEP_STATE
+	bool "Retain output level after PWM is disabled"
+	default y
+	help
+	  When enabled, the PWM driver will hold the inactive output level and
+	  retain the power management lock even after the PWM signal is
+	  stopped (pulse = 0). This prevents the pin from floating or losing state
+	  in low power modes where the peripheral or pad may be disabled.
