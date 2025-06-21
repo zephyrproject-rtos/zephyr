@@ -47,11 +47,23 @@ See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` docume
 
 Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/basic/blinky
-   :board: rpi_pico2/rp2350a/m33
-   :goals: build flash
-   :flash-args: --openocd /usr/local/bin/openocd
+.. tabs::
+
+  .. group-tab:: Pico 2
+
+    .. zephyr-app-commands::
+      :zephyr-app: samples/basic/blinky
+      :board: rpi_pico2/rp2350a/m33
+      :goals: build flash
+      :flash-args: --openocd /usr/local/bin/openocd
+
+  .. group-tab:: Pico 2W
+
+    .. zephyr-app-commands::
+      :zephyr-app: samples/basic/blinky
+      :board: rpi_pico2/rp2350a/m33
+      :goals: build flash
+      :flash-args: --openocd /usr/local/bin/openocd
 
 References
 **********
