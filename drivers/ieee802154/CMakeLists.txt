@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ
 )
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC2520		ieee802154_cc2520.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_DW1000		ieee802154_dw1000.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_ESP32		ieee802154_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_KW41Z		ieee802154_kw41z.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_MCR20A		ieee802154_mcr20a.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_MCXW		ieee802154_mcxw.c		ieee802154_mcxw_utils.c)
