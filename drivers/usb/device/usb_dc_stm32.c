@@ -59,11 +59,15 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define USB_VBUS_SENSING false
 #endif
 
-#define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
 #define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
 #define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
 #define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
+
+/* Values comes from HAL macros. */
+#define USB_OTG_HS_PHY_ULPI	1U
+#define USB_FS_PHY_EMBEDDED	2U
+#define USB_OTG_HS_PHY_EMBEDDED	3U
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
@@ -473,34 +477,57 @@ static int usb_dc_stm32_clock_disable(void)
 	return 0;
 }
 
+/*
+ * Function to determine the USB PHY interface selection for STM32 using device tree configurations.
+ * The function checks for compatible PHY types and phy phandle,
+ * and returns the corresponding physel.
+ * There are three types of supported physel:
+ * - USB_OTG_HS_PHY_ULPI: UTMI+ Low Pin Interface for external high-speed PHY.
+ * - USB_FS_PHY_EMBEDDED: on-chip full-speed PHY.
+ * - USB_OTG_HS_PHY_EMBEDDED: on-chip high-speed PHY.
+ */
+static uint8_t usb_dc_stm32_get_physel(void)
+{
+	uint8_t physel;
+
+/* If the ULPI interface for an external high-speed PHY is enabled, it is assumed to be chosen. */
+#if DT_HAS_COMPAT_STATUS_OKAY(usb_ulpi_phy)
+	physel = USB_OTG_HS_PHY_ULPI;
+#elif (((DT_PHANDLE(DT_INST(0, st_stm32_otgfs), phys) == otgfs_phy) || \
+	(DT_PHANDLE(DT_INST(0, st_stm32_usb), phys) == otgfs_phy) || \
+	(DT_PHANDLE(DT_INST(0, st_stm32_usb), phys) == usb_fs_phy)) && \
+	DT_HAS_COMPAT_STATUS_OKAY(usb_nop_xceiv))
+	physel = USB_FS_PHY_EMBEDDED;
+#elif (((DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == otghs_fs_phy) && \
+	DT_HAS_COMPAT_STATUS_OKAY(usb_nop_xceiv)) || \
+	((DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == otghs_phy) && \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)) || \
+	(((DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == usbphyc) || \
+	(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys) == usbphyc1)) && \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)))
+	physel = USB_OTG_HS_PHY_EMBEDDED;
+#else
+#error "Unsupported device"
+#endif
+
+	return physel;
+}
+
 static int usb_dc_stm32_init(void)
 {
 	HAL_StatusTypeDef status;
 	unsigned int i;
 
+	/* Per controller/Phy values */
 	usb_dc_stm32_state.pcd.Init.speed =
 			UTIL_CAT(USB_DC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
-
-#if defined(USB) || defined(USB_DRD_FS)
-#ifdef USB
-	usb_dc_stm32_state.pcd.Instance = USB;
-#else
-	usb_dc_stm32_state.pcd.Instance = USB_DRD_FS;
-#endif
+	usb_dc_stm32_state.pcd.Instance = (PCD_TypeDef *)DT_INST_REG_ADDR(0);
+	usb_dc_stm32_state.pcd.Init.phy_itface = usb_dc_stm32_get_physel();
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
+#if defined(USB) || defined(USB_DRD_FS)
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-	usb_dc_stm32_state.pcd.Instance = (USB_OTG_GlobalTypeDef *)USB_BASE_ADDRESS;
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = USB_NUM_BIDIR_ENDPOINTS;
-#if USB_OTG_HS_EMB_PHYC || USB_OTG_HS_EMB_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
-#elif USB_OTG_HS_ULPI_PHY
-	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_ULPI_PHY;
-#else
-	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = USB_VBUS_SENSING ? ENABLE : DISABLE;
 
@@ -761,7 +788,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
+	if (ep_idx >= USB_NUM_BIDIR_ENDPOINTS) {
 		LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
