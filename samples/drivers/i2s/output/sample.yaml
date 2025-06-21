@@ -8,6 +8,10 @@ common:
 tests:
   sample.drivers.i2s.output:
     filter: dt_alias_exists("i2s-tx")
+    platform_allow:
+      - mimxrt1060_evk@B/mimxrt1062/qspi
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+      - mimxrt1170_evk@B/mimxrt1176/cm7
     integration_platforms:
       - mimxrt1060_evk@B/mimxrt1062/qspi
     harness: console
