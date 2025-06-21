@@ -8,6 +8,7 @@ toolchain:
 supported:
   - LED
   - gpio
+  - shell
 testing:
   ignore_tags:
     - cmsis_rtos_v2
@@ -17,7 +18,6 @@ testing:
     - crypto
     - aes
     - cmm
-    - shell
     - nfc
 ram: 8192
 flash: 8192

@@ -9,6 +9,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
+#include <zephyr/dt-bindings/reset/stm32mp2_reset.h>
 
 / {
 	cpus {
@@ -36,6 +37,11 @@
 			clocks-controller;
 			#clock-cells = <2>;
 			reg = <0x44200000 DT_SIZE_K(64)>;
+
+			rctl: reset-controller {
+				compatible = "st,stm32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		exti2: interrupt-controller@46230000 {
@@ -152,6 +158,87 @@
 				reg = <0x442e0000 DT_SIZE_K(1)>;
 				status = "disabled";
 			};
+		};
+
+		usart1: serial@40330000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40330000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(USART1, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(USART1, STM32_RST)>;
+			interrupts = <114 0>;
+			status = "disabled";
+		};
+
+		usart2: serial@400e0000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x400e0000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(USART2, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(USART2, STM32_RST)>;
+			interrupts = <115 0>;
+			status = "disabled";
+		};
+
+		usart3: serial@400f0000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x400f0000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(USART3, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(USART3, STM32_RST)>;
+			interrupts = <116 0>;
+			status = "disabled";
+		};
+
+		uart4: serial@40100000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40100000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(UART4, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(UART4, STM32_RST)>;
+			interrupts = <126 0>;
+			status = "disabled";
+		};
+
+		uart5: serial@40110000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40110000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(UART5, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(UART5, STM32_RST)>;
+			interrupts = <127 0>;
+			status = "disabled";
+		};
+
+		usart6: serial@40220000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40220000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(USART6, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(USART6, STM32_RST)>;
+			interrupts = <136 0>;
+			status = "disabled";
+		};
+
+		uart7: serial@40370000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40370000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(UART7, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(UART7, STM32_RST)>;
+			interrupts = <148 0>;
+			status = "disabled";
+		};
+
+		uart8: serial@40380000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40380000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(UART8, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(UART8, STM32_RST)>;
+			interrupts = <149 0>;
+			status = "disabled";
+		};
+
+		uart9: serial@402c0000 {
+			compatible = "st,stm32-uart";
+			reg = <0x402c0000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(UART9, STM32_CLK)>;
+			resets = <&rctl STM32_RESET(UART9, STM32_RST)>;
+			interrupts = <150 0>;
+			status = "disabled";
 		};
 	};
 };
