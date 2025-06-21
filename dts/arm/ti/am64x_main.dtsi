@@ -5,7 +5,7 @@
  */
 
 #include <freq.h>
-
+#include "am64x_power_domains.dtsi"
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
