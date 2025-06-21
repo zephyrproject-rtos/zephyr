@@ -273,3 +273,8 @@ set_compiler_property(PROPERTY no_function_sections "-fno-function-sections")
 
 # Compiler flag for not placing variables in their own sections:
 set_compiler_property(PROPERTY no_data_sections "-fno-data-sections")
+
+# Compiler flag to enable function instrumentation
+if(CONFIG_INSTRUMENTATION)
+set_compiler_property(PROPERTY func_instrumentation -finstrument-functions)
+endif()
