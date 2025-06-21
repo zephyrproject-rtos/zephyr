@@ -44,6 +44,48 @@ config MM_DRV_INTEL_ADSP_TLB
 	  Driver for the translation lookup buffer on
 	  Intel Audio DSP hardware.
 
+config MM_DRV_INTEL_ADSP_TLB_USE_PER_CORE_VIRTUAL_MEMORY_REGIONS
+	bool "Support for per core virtual memory regions"
+	depends on MM_DRV_INTEL_ADSP_MTL_TLB
+	default y
+	help
+	  This config enables per-core virtual memory regions
+
+config MM_DRV_INTEL_ADSP_TLB_PER_CORE_VIRTUAL_MEMORY_REGIONS_SIZE
+	hex "Size in bytes of virtual memory regions per core"
+	depends on MM_DRV_INTEL_ADSP_TLB_USE_PER_CORE_VIRTUAL_MEMORY_REGIONS
+	default 0x100000
+	help
+	  This config defines size of per-core virtual memory regions
+
+config MM_DRV_INTEL_ADSP_TLB_USE_VIRTUAL_MEMORY_SHARED_REGION
+	bool "Support for virtual memory region shared between all cores"
+	depends on MM_DRV_INTEL_ADSP_MTL_TLB
+	default y
+	help
+	  This config enables shared between all cores virtual memory region
+
+config MM_DRV_INTEL_ADSP_TLB_VIRTUAL_MEMORY_SHARED_REGION_SIZE
+	hex "Size in bytes of virtual memory region shared between all cores"
+	depends on MM_DRV_INTEL_ADSP_TLB_USE_VIRTUAL_MEMORY_SHARED_REGION
+	default 0x100000
+	help
+	  This config defines size of virtual memory region shared between all cores
+
+config MM_DRV_INTEL_ADSP_TLB_USE_VIRTUAL_MEMORY_OPPORTUNISTIC_REGION
+	bool "Support for opportunistic virtual memory region"
+	depends on MM_DRV_INTEL_ADSP_MTL_TLB
+	default y
+	help
+	  This config enables opportunistic virtual memory region
+
+config MM_DRV_INTEL_ADSP_TLB_VIRTUAL_MEMORY_OPPORTUNISTIC_REGION_SIZE
+	hex "Size in bytes of opportunistic virtual memory region"
+	depends on MM_DRV_INTEL_ADSP_TLB_USE_VIRTUAL_MEMORY_OPPORTUNISTIC_REGION
+	default 0x100000
+	help
+	  This config defines size of opportunistic virtual memory region
+
 config EXTERNAL_ADDRESS_TRANSLATION
 	bool "Support for external address translation modules"
 	depends on !MMU
