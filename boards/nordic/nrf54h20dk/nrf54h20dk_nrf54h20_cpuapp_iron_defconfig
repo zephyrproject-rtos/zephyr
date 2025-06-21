@@ -11,9 +11,6 @@ CONFIG_UART_CONSOLE=y
 # Enable MPU
 CONFIG_ARM_MPU=y
 
-# Enable hardware stack protection
-CONFIG_HW_STACK_PROTECTION=y
-
 # MPU-based null-pointer dereferencing detection cannot be applied
 # as the (0x0 - 0x400) region is unmapped for this target.
 CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y

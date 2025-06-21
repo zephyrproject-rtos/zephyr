@@ -1,9 +1,14 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_NRF54L15DK
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
 
 if BOARD_NRF54L15DK_NRF54L05_CPUAPP || BOARD_NRF54L15DK_NRF54L10_CPUAPP || \
 	BOARD_NRF54L15DK_NRF54L15_CPUAPP
@@ -31,3 +36,4 @@ config BUILD_WITH_TFM
 	default y
 
 endif # BOARD_NRF54L15DK_NRF54L15_CPUAPP_NS || BOARD_NRF54L15DK_NRF54L10_CPUAPP_NS
+endif # BOARD_NRF54L15DK
