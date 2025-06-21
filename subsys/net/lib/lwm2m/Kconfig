@@ -520,6 +520,12 @@ config LWM2M_SECONDS_TO_UPDATE_EARLY
 	  round trip times (like NB-IoT), it might be needed to set this value
 	  higher, in order to allow the response to arrive before timeout.
 
+config LWM2M_SERVER_BOOTSTRAP_ON_FAIL
+	bool "Bootstrap on Registration Failure"
+	default y
+	help
+	  If set to true, the LwM2M client will attempt to re-bootstrap if the registration fails.
+
 config LWM2M_SHELL
 	bool "LwM2M shell utilities"
 	select SHELL
