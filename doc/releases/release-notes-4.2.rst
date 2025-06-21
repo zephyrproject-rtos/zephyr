@@ -71,6 +71,9 @@ Removed APIs and options
 * Removed :dtcompatible:`meas,ms5837` and replaced with :dtcompatible:`meas,ms5837-30ba`
   and :dtcompatible:`meas,ms5837-02ba`.
 
+* Removed deprecated property ``config`` and broken enum ``"Shutdown continuous"`` from
+  :dtcompatible:`ti,ina230`.
+
 * Removed the ``get_ctrl`` video driver API
 
 Deprecated APIs and options
