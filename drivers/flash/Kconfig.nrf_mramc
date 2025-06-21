@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FLASH_NRF_MRAMC
+	bool "Nordic Semiconductor flash driver for MRAMC"
+	default y
+	depends on DT_HAS_NORDIC_MRAM_CONTROLLER_ENABLED
+	select NRFX_MRAMC
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	imply MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enables Nordic Semiconductor flash driver for MRAMC in direct write mode.
