@@ -1206,7 +1206,7 @@ static int rcar_mmc_set_bus_width(const struct device *dev, struct sdhc_io *ios)
 		reg_width = RCAR_MMC_OPTION_WIDTH_1;
 		break;
 	case SDHC_BUS_WIDTH4BIT:
-		if (data->props.host_caps.bus_4_bit_support) {
+		if (data->props.host_caps_extra.bus_4_bit_support) {
 			reg_width = RCAR_MMC_OPTION_WIDTH_4;
 		} else {
 			LOG_ERR("SDHC I/O: 4-bits bus width isn't supported");
@@ -1331,7 +1331,7 @@ static int rcar_mmc_set_timings(const struct device *dev, struct sdhc_io *ios)
 		}
 		break;
 	case SDHC_TIMING_HS400:
-		if (!data->props.host_caps.hs400_support) {
+		if (!data->props.host_caps_extra.hs400_support) {
 			LOG_ERR("SDHC I/O: HS400 timing isn't supported");
 			return -ENOTSUP;
 		}
@@ -1347,7 +1347,7 @@ static int rcar_mmc_set_timings(const struct device *dev, struct sdhc_io *ios)
 		data->ddr_mode = 1;
 		break;
 	case SDHC_TIMING_HS200:
-		if (!data->props.host_caps.hs200_support) {
+		if (!data->props.host_caps_extra.hs200_support) {
 			LOG_ERR("SDHC I/O: HS200 timing isn't supported");
 			return -ENOTSUP;
 		}
@@ -1927,6 +1927,7 @@ static void rcar_mmc_init_host_props(const struct device *dev)
 	const struct mmc_rcar_cfg *cfg = dev->config;
 	struct sdhc_host_props *props = &data->props;
 	struct sdhc_host_caps *host_caps = &props->host_caps;
+	struct sdhc_host_caps_extra *host_caps_extra = &props->host_caps_extra;
 
 	memset(props, 0, sizeof(*props));
 
@@ -1947,7 +1948,7 @@ static void rcar_mmc_init_host_props(const struct device *dev)
 	case SDHC_BUS_WIDTH8BIT:
 		host_caps->bus_8_bit_support = 1;
 	case SDHC_BUS_WIDTH4BIT:
-		host_caps->bus_4_bit_support = 1;
+		host_caps_extra->bus_4_bit_support = 1;
 	default:
 		break;
 	}
@@ -1958,9 +1959,9 @@ static void rcar_mmc_init_host_props(const struct device *dev)
 	host_caps->sdr50_support = cfg->uhs_support;
 	/* neither Linux nor U-boot support DDR50 mode, that's why we don't support it too */
 	host_caps->ddr50_support = 0;
-	host_caps->hs200_support = cfg->mmc_hs200_1_8v;
+	host_caps_extra->hs200_support = cfg->mmc_hs200_1_8v;
 	/* TODO: add support */
-	host_caps->hs400_support = 0;
+	host_caps_extra->hs400_support = 0;
 #endif
 
 	host_caps->vol_330_support =
