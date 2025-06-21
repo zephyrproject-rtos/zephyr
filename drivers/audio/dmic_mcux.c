@@ -125,6 +125,8 @@ static int dmic_mcux_enable_dma(struct mcux_dmic_drv_data *drv_data, bool enable
 			}
 		} else {
 			if (dma_stop(pdm_channel->dma, pdm_channel->dma_chan)) {
+				LOG_ERR("Error stopping DMA for HW channel %d",
+					hw_chan);
 				ret = -EIO;
 			}
 		}
@@ -187,7 +189,14 @@ static int dmic_mcux_stop(struct mcux_dmic_drv_data *drv_data)
 	}
 
 	/* Purge the RX queue as well. */
-	k_msgq_purge(drv_data->rx_queue);
+	while (1) {
+		void *buffer;
+
+		if (k_msgq_get(drv_data->rx_queue, &buffer, K_NO_WAIT) < 0) {
+			break;
+		}
+		k_mem_slab_free(drv_data->mem_slab, buffer);
+	}
 
 	drv_data->dmic_state = DMIC_STATE_CONFIGURED;
 
@@ -555,6 +564,7 @@ static int dmic_mcux_start(const struct device *dev)
 			return -ENOBUFS;
 		}
 	}
+	drv_data->active_buf_idx = 0;
 
 	ret = dmic_mcux_setup_dma(dev);
 	if (ret < 0) {
