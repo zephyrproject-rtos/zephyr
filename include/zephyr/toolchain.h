@@ -318,6 +318,18 @@
 #define TOOLCHAIN_ENABLE_IAR_WARNING(warning)
 #endif
 
+/**
+ * @def TOOLCHAIN_DEPRECATED
+ * @brief Marks a function or symbol as deprecated as of @p removal_version.
+ *
+ * @param removal_version Version of planned removal
+ */
+#if defined(__GNUC__) || defined(__llvm__)
+#define TOOLCHAIN_DEPRECATED(removal_version) __deprecated_version(removal_version)
+#else
+#define TOOLCHAIN_DEPRECATED(removal_version)
+#endif
+
 /*
  * Ensure that __BYTE_ORDER__ and related preprocessor definitions are defined,
  * and that they match the Kconfig option that is used in the code itself to
