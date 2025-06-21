@@ -288,10 +288,20 @@ struct bt_conn {
 #endif
 
 	/* Callback into the higher-layers (L2CAP / ISO) to return a buffer for
-	 * sending `amount` of bytes to HCI.
+	 * sending `amount` of bytes to HCI. Will only be called when
+	 * the state is connected.
 	 *
 	 * Scheduling from which channel to pull (e.g. for L2CAP) is done at the
 	 * upper layer's discretion.
+	 *
+	 * Ownership of the returned net_buf varies as follows:
+	 *   - If the net_buf->len <= *length, then the net_buf has been removed
+	 *     from the tx_queue of the connection and is now owned by the caller.
+	 *   - Otherwise, the returned pointer is only a reference to
+	 *     a buffer that is still on the tx_queue of the connection, and
+	 *     the reference has a lifetime until the next call of this function
+	 *     on this connection. The caller must also consume *length bytes
+	 *     from the net_buf before calling this function again.
 	 */
 	struct net_buf * (*tx_data_pull)(struct bt_conn *conn,
 					 size_t amount,

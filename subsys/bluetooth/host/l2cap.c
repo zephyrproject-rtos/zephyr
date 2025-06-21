@@ -83,11 +83,6 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 
 static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
-
-static void l2cap_tx_buf_destroy(struct bt_conn *conn, struct net_buf *buf, int err)
-{
-	net_buf_unref(buf);
-}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -257,6 +252,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
 	const struct bt_l2cap_chan_ops *ops = chan->ops;
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct net_buf *buf;
 
 	LOG_DBG("conn %p chan %p", chan->conn, chan);
 
@@ -269,9 +265,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 	/* Remove buffers on the PDU TX queue. We can't do that in
 	 * `l2cap_chan_destroy()` as it is not called for fixed channels.
 	 */
-	while (chan_has_data(le_chan)) {
-		struct net_buf *buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT);
-
+	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -930,6 +924,8 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		bt_tx_irq_raise();
 		return NULL;
 	}
+
+	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
 
 	if (bt_buf_has_view(pdu)) {
 		LOG_ERR("already have view on %p", pdu);
@@ -2290,7 +2286,7 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 
 	/* Remove buffers on the TX queue */
 	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
-		l2cap_tx_buf_destroy(chan->conn, buf, -ESHUTDOWN);
+		net_buf_unref(buf);
 	}
 
 	/* Remove buffers on the RX queue */

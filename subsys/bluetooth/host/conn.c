@@ -956,8 +956,8 @@ struct bt_conn *get_conn_ready(void)
 			sys_slist_remove(&bt_dev.le.conn_ready, prev, &conn->_conn_ready);
 			(void)atomic_set(&conn->_conn_ready_lock, 0);
 
-			/* Append connection to list if it still has data */
-			if (conn->has_data(conn)) {
+			/* Append connection to list if it is connected and still has data */
+			if (conn->has_data(conn) && (conn->state == BT_CONN_CONNECTED)) {
 				LOG_DBG("appending %p to back of TX queue", conn);
 				bt_conn_data_ready(conn);
 			}
@@ -993,10 +993,6 @@ static void destroy_and_callback(struct bt_conn *conn,
 				 bt_conn_tx_cb_t cb,
 				 void *ud)
 {
-	if (!cb) {
-		conn->get_and_clear_cb(conn, buf, &cb, &ud);
-	}
-
 	LOG_DBG("pop: cb %p userdata %p", cb, ud);
 
 	/* bt_send() would've done an unref. Do it here also, so the buffer is
@@ -1052,16 +1048,8 @@ void bt_conn_tx_processor(void)
 	if (conn->state != BT_CONN_CONNECTED) {
 		LOG_WRN("conn %p: not connected", conn);
 
-		/* Call the user callbacks & destroy (final-unref) the buffers
-		 * we were supposed to send.
-		 */
-		buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
-		while (buf) {
-			destroy_and_callback(conn, buf, cb, ud);
-			buf = conn->tx_data_pull(conn, SIZE_MAX, &buf_len);
-		}
-
-		goto exit;
+		/* Purging of conn's tx_queue will happen in bt_l2cap_disconnected */
+		goto raise_and_exit;
 	}
 
 	/* now that we are guaranteed resources, we can pull data from the upper
@@ -1114,6 +1102,7 @@ void bt_conn_tx_processor(void)
 		goto exit;
 	}
 
+raise_and_exit:
 	/* Always kick the TX work. It will self-suspend if it doesn't get
 	 * resources or there is nothing left to send.
 	 */
