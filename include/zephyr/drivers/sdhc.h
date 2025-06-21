@@ -161,7 +161,7 @@ enum sd_voltage {
  * driver, using the @ref sdhc_get_host_props api.
  */
 struct sdhc_host_caps {
-	unsigned int timeout_clk_freq: 5;		/**< Timeout clock frequency */
+	unsigned int timeout_clk_freq: 6;		/**< Timeout clock frequency */
 	unsigned int _rsvd_6: 1;			/**< Reserved */
 	unsigned int timeout_clk_unit: 1;		/**< Timeout clock unit */
 	unsigned int sd_base_clk: 8;			/**< SD base clock frequency */
