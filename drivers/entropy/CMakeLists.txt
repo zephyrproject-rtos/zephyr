@@ -36,6 +36,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_NRF_CRACEN_CTR_DRBG	entropy_nrf_crac
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NXP_ELE_TRNG        entropy_nxp_ele.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_PSA_CRYPTO_RNG      entropy_psa_crypto.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_RENESAS_RA          entropy_renesas_ra.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_RPI_PICO_RNG        entropy_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_RV32M1_TRNG         entropy_rv32m1_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_SAM_RNG             entropy_sam.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_SILABS_SIWX91X      entropy_silabs_siwx91x.c)
