@@ -1,0 +1,20 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdrive.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Even Older RISC-V core local interrupt controller
+  it uses different offsets than the newer memory-mapped legacy CLIC
+
+compatible: "sifive,legacy-clic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
