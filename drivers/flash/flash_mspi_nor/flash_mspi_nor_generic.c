@@ -1,77 +1,16 @@
 /*
  * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __FLASH_MSPI_NOR_H__
-#define __FLASH_MSPI_NOR_H__
+/* Generic commands for MSPI NOR devices */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "flash_mspi_nor.h"
 
-#include <zephyr/drivers/flash.h>
-#include <zephyr/drivers/mspi.h>
-#include "jesd216.h"
-#include "spi_nor.h"
-
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#define WITH_RESET_GPIO 1
-#endif
-
-struct flash_mspi_nor_config {
-	const struct device *bus;
-	uint32_t flash_size;
-	struct mspi_dev_id mspi_id;
-	struct mspi_dev_cfg mspi_nor_cfg;
-	struct mspi_dev_cfg mspi_nor_init_cfg;
-	enum mspi_dev_cfg_mask mspi_nor_cfg_mask;
-#if defined(CONFIG_MSPI_XIP)
-	struct mspi_xip_cfg xip_cfg;
-#endif
-#if defined(WITH_RESET_GPIO)
-	struct gpio_dt_spec reset;
-	uint32_t reset_pulse_us;
-	uint32_t reset_recovery_us;
-#endif
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	struct flash_pages_layout layout;
-#endif
-	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
-	const struct flash_mspi_nor_cmds *jedec_cmds;
-	struct flash_mspi_nor_quirks *quirks;
-	uint8_t dw15_qer;
-};
-
-struct flash_mspi_nor_data {
-	struct k_sem acquired;
-	struct mspi_xfer_packet packet;
-	struct mspi_xfer xfer;
-	struct mspi_dev_cfg *curr_cfg;
-};
-
-struct flash_mspi_nor_cmd {
-	enum mspi_xfer_direction dir;
-	uint32_t cmd;
-	uint16_t tx_dummy;
-	uint16_t rx_dummy;
-	uint8_t cmd_length;
-	uint8_t addr_length;
-	bool force_single;
-};
-
-struct flash_mspi_nor_cmds {
-	struct flash_mspi_nor_cmd id;
-	struct flash_mspi_nor_cmd write_en;
-	struct flash_mspi_nor_cmd read;
-	struct flash_mspi_nor_cmd status;
-	struct flash_mspi_nor_cmd config;
-	struct flash_mspi_nor_cmd page_program;
-	struct flash_mspi_nor_cmd sector_erase;
-	struct flash_mspi_nor_cmd chip_erase;
-	struct flash_mspi_nor_cmd sfdp;
-};
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 const struct flash_mspi_nor_cmds commands_single = {
 	.id = {
@@ -123,7 +62,7 @@ const struct flash_mspi_nor_cmds commands_single = {
 		.cmd = JESD216_CMD_READ_SFDP,
 		.cmd_length = 1,
 		.addr_length = 3,
-		.rx_dummy = 8,
+		.rx_dummy = 0,
 	},
 };
 
@@ -239,10 +178,35 @@ const struct flash_mspi_nor_cmds commands_octal = {
 	},
 };
 
-void flash_mspi_command_set(const struct device *dev, const struct flash_mspi_nor_cmd *cmd);
+int flash_mspi_nor_probe_dev(const struct device *mspi,
+			     struct flash_mspi_device_data *flash_dev,
+			     const struct flash_mspi_device_data **vendor_devs,
+			     uint32_t dev_count)
+{
+	int rc;
+	uint8_t id[JESD216_READ_ID_LEN] = {0};
 
-#ifdef __cplusplus
+	rc = read_jedec_id(mspi, id);
+	if (rc < 0) {
+		LOG_ERR("Failed to read JEDEC ID: %d", rc);
+		return rc;
+	}
+	for (int i = 0; i < dev_count; i++) {
+		if (memcmp(id, &vendor_devs[i]->jedec_id, sizeof(id)) == 0 &&
+		    vendor_devs[i]->dev_cfg.io_mode == flash_dev->dev_cfg.io_mode) {
+			/* Copy all data but the device configuration */
+			memcpy(flash_dev->jedec_id, vendor_devs[i]->jedec_id,
+			       sizeof(flash_dev->jedec_id));
+			flash_dev->flash_size = vendor_devs[i]->flash_size;
+			flash_dev->layout = vendor_devs[i]->layout;
+			flash_dev->dw15_qer = vendor_devs[i]->dw15_qer;
+			flash_dev->jedec_cmds = vendor_devs[i]->jedec_cmds;
+			flash_dev->quirks = vendor_devs[i]->quirks;
+			LOG_DBG("Found device: %02x %02x %02x",
+			 id[0], id[1], id[2]);
+			return 0;
+		}
+	}
+	LOG_ERR("Device not found: %02x %02x %02x", id[0], id[1], id[2]);
+	return -ENODEV;
 }
-#endif
-
-#endif /*__FLASH_MSPI_NOR_H__*/
