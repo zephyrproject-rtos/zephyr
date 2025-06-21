@@ -154,10 +154,14 @@ static int xbr818_attr_set(const struct device *dev, enum sensor_channel chan,
 		if (val->val1 > SENSOR_XBR818_CLOCKRATE || val->val1 <= 0) {
 			return -EINVAL;
 		}
-		tmp[0] = SENSOR_XBR818_CLOCKRATE / val->val1;
-		if (tmp[0] > 0xFF) {
+		const int32_t temp = SENSOR_XBR818_CLOCKRATE / val->val1;
+
+		if (temp > 0xFF) {
 			return -EINVAL;
 		}
+
+		tmp[0] = (uint8_t)temp;
+
 		ret = i2c_reg_write_byte_dt(&config->i2c, XBR818_SAMPLE_RATE_DIVIDER, tmp[0]);
 	} else {
 		ret = xbr818_disable_i2c(dev);
