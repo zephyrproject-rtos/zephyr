@@ -15,6 +15,8 @@ tests:
       - native_sim/native/64
       - xmc45_relax_kit
       - xmc47_relax_kit
+      - siwx917_rb4338a
+      - siwx917_rb4342a
     filter: dt_alias_exists("dma0")
     integration_platforms:
       - intel_adsp/cavs25
