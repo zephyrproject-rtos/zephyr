@@ -101,6 +101,7 @@ DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 #define INTERFACE_EVENT_MASK (NET_EVENT_IF_ADMIN_UP | NET_EVENT_IF_ADMIN_DOWN)
 #endif
+
 struct supplicant_context {
 	struct wpa_global *supplicant;
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
@@ -509,13 +510,29 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 
 	if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
 		LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
-		add_interface(get_default_context(), iface);
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+		if (wifi_nm_iface_is_sap(iface)) {
+			zephyr_hostapd_add_interface(&get_default_context()->hostapd, iface);
+		}
+		else
+#endif
+		{
+			add_interface(get_default_context(), iface);
+		}
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IF_ADMIN_DOWN) {
 		LOG_INF("Network interface %d (%p) down", net_if_get_by_iface(iface), iface);
-		del_interface(get_default_context(), iface);
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+		if (wifi_nm_iface_is_sap(iface)) {
+			zephyr_hostapd_del_interface(&get_default_context()->hostapd, iface);
+		}
+		else
+#endif
+		{
+			del_interface(get_default_context(), iface);
+		}
 		return;
 	}
 }
@@ -530,15 +547,16 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (wifi_nm_iface_is_sap(iface)) {
-		return;
-	}
-#endif
-
 	if (!net_if_is_admin_up(iface)) {
 		return;
 	}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if (wifi_nm_iface_is_sap(iface)) {
+		zephyr_hostapd_add_interface(&ctx->hostapd, iface);
+		return;
+	}
+#endif
 
 	ret = add_interface(ctx, iface);
 	if (ret < 0) {
@@ -696,11 +714,11 @@ static void handler(void)
 
 	register_supplicant_event_socket(ctx);
 
-	submit_iface_work(ctx, NULL, setup_interface_monitoring);
-
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	zephyr_hostapd_init(&ctx->hostapd);
 #endif
+	submit_iface_work(ctx, NULL, setup_interface_monitoring);
+
 	wpa_msg_register_ifname_cb(zephyr_hostap_msg_ifname_cb);
 
 	(void)wpa_supplicant_run(ctx->supplicant);
@@ -713,6 +731,9 @@ static void handler(void)
 
 	fst_global_deinit();
 
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	zephyr_hostapd_deinit(&ctx->hostapd);
+#endif
 out:
 	wpa_supplicant_deinit(ctx->supplicant);
 
