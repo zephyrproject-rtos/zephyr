@@ -135,6 +135,7 @@ class Platform:
 
         self.arch = variant_data.get('arch', data.get('arch', self.arch))
         self.vendor = board.vendor
+        self.board = board
         self.tier = variant_data.get("tier", data.get("tier", self.tier))
         self.type = variant_data.get('type', data.get('type', self.type))
 
