@@ -70,6 +70,10 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_hse {
 	status = "okay";
 	clock-frequency = <DT_FREQ_M(8)>;
