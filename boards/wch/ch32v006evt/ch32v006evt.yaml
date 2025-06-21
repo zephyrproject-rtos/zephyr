@@ -12,5 +12,6 @@ supported:
   - gpio
   - i2c
   - pwm
+  - uart
   - watchdog
 vendor: wch
