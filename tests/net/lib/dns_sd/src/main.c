@@ -382,56 +382,90 @@ ZTEST(dns_sd, test_add_txt_record)
 ZTEST(dns_sd, test_add_srv_record)
 {
 	const uint32_t ttl = DNS_SD_SRV_TTL;
-	const uint32_t offset = 0;
+	const uint16_t offset = 0;
 	const uint16_t instance_offset = 0x28;
 	const uint16_t domain_offset = 0x17;
+	uint16_t host_offset = UINT16_MAX;
 
-	uint16_t host_offset = -1;
 	static uint8_t actual_buf[BUFSZ];
-	static const uint8_t expected_buf[] = {
-		0xc0, 0x28, 0x00, 0x21, 0x80, 0x01, 0x00, 0x00,
-		0x00, 0x78, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00,
-		0x1f, 0x90, 0x09, 0x4e, 0x41, 0x53, 0x58, 0x58,
-		0x58, 0x58, 0x58, 0x58, 0xc0, 0x17
-	};
+	const char *hostname = net_hostname_get();
+	const size_t host_len = strlen(hostname);
 
-	int expected_int = sizeof(expected_buf);
-	int actual_int = add_srv_record(&nasxxxxxx, ttl,
-					instance_offset, domain_offset,
-					actual_buf,
-					offset, sizeof(actual_buf),
-					&host_offset);
+	/* -------- happy path -------- */
+	int len = add_srv_record(&nasxxxxxx, ttl,
+				 instance_offset, domain_offset,
+				 actual_buf, offset, sizeof(actual_buf),
+				 &host_offset);
 
-	zassert_equal(actual_int, expected_int, "");
+	/* size we expect: ptr + rr + rdata + len-byte + host + ptr */
+	size_t expected_len =
+		DNS_POINTER_SIZE                          +  /* C0 nn                    */
+		sizeof(struct dns_rr)                     +  /* 10-byte RR header        */
+		sizeof(struct dns_srv_rdata)              +  /* 6-byte rdata             */
+		DNS_LABEL_LEN_SIZE + host_len             +  /* 1-byte len + hostname    */
+		DNS_POINTER_SIZE;                            /* C0 nn                    */
 
-	zassert_equal(host_offset, 18, "");
+	zassert_equal(len, expected_len, "length mismatch");
+	zassert_equal(host_offset, 18, "host offset mismatch");
 
-	zassert_mem_equal(actual_buf, expected_buf,
-			  MIN(actual_int, expected_int), "");
+	/* first two bytes must be the compression pointer to the instance */
+	zassert_equal(actual_buf[0], 0xC0, "");
+	zassert_equal(actual_buf[1], instance_offset, "");
 
-	/* offset too big for message compression (instance) */
+	/* ---- inspect the RR header directly in the buffer ---- */
+	struct dns_rr *rr = (struct dns_rr *)&actual_buf[2];
+
+	zassert_equal(ntohs(rr->type),    DNS_RR_TYPE_SRV,           "type");
+	zassert_equal(ntohs(rr->class_),  DNS_CLASS_IN | DNS_CLASS_FLUSH, "class");
+	zassert_equal(ntohl(rr->ttl),     ttl,                       "ttl");
+	zassert_equal(ntohs(rr->rdlength),
+		      expected_len - DNS_POINTER_SIZE - sizeof(*rr),
+		      "rdlength");
+
+	/* ---- inspect the SRV RDATA ---- */
+	struct dns_srv_rdata *rdata =
+		(struct dns_srv_rdata *)&actual_buf[2 + sizeof(*rr)];
+
+	zassert_equal(rdata->priority, 0, "priority");
+	zassert_equal(rdata->weight,   0, "weight");
+	zassert_equal(rdata->port,    *nasxxxxxx.port, "port");
+
+	/* ---- hostname label ---- */
+	int actual_hostname_len = actual_buf[host_offset];
+
+	zassert_equal(actual_hostname_len, host_len, "act: %d, exp: %d",
+				  actual_hostname_len, host_len);
+
+	zassert_mem_equal(&actual_buf[host_offset+1], hostname, host_len, "");
+
+	/* last two bytes must be the compression pointer to '.local.' */
+	uint16_t dom_ptr;
+
+	memcpy(&dom_ptr, &actual_buf[host_offset + 1 + host_len], sizeof(dom_ptr));
+	zassert_equal(ntohs(dom_ptr), DNS_SD_PTR_MASK | domain_offset,
+		      "domain pointer");
+
+	/* -------- negative paths (unchanged) -------- */
 	zassert_equal(-E2BIG,
-		      add_srv_record(&nasxxxxxx, ttl, DNS_SD_PTR_MASK,
-				     domain_offset,
-				     actual_buf, offset,
-				     sizeof(actual_buf),
-				     &host_offset), "");
+		      add_srv_record(&nasxxxxxx, ttl,
+				     DNS_SD_PTR_MASK, domain_offset,
+				     actual_buf, offset, sizeof(actual_buf),
+				     &host_offset),
+		      "instance offset bounds");
 
-	/* offset too big for message compression (domain) */
-	zassert_equal(-E2BIG, add_srv_record(&nasxxxxxx, ttl,
-					     instance_offset,
-					     DNS_SD_PTR_MASK,
-					     actual_buf, offset,
-					     sizeof(actual_buf),
-					     &host_offset), "");
+	zassert_equal(-E2BIG,
+		      add_srv_record(&nasxxxxxx, ttl,
+				     instance_offset, DNS_SD_PTR_MASK,
+				     actual_buf, offset, sizeof(actual_buf),
+				     &host_offset),
+		      "domain offset bounds");
 
-	/* buffer too small */
-	zassert_equal(-ENOSPC, add_srv_record(&nasxxxxxx, ttl,
-					      instance_offset,
-					      domain_offset,
-					      actual_buf,
-					      offset, 0,
-					      &host_offset), "");
+	zassert_equal(-ENOSPC,
+		      add_srv_record(&nasxxxxxx, ttl,
+				     instance_offset, domain_offset,
+				     actual_buf, offset, 0,
+				     &host_offset),
+		      "buffer too small");
 }
 
 /** Test for @ref add_a_record */
@@ -522,6 +556,7 @@ ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 		.s_addr = htonl(IP_ADDR(177, 5, 240, 13)),
 	};
 	static uint8_t actual_rsp[512];
+
 	static uint8_t expected_rsp[] = {
 		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01,
 		0x00, 0x00, 0x00, 0x03, 0x05, 0x5f, 0x68, 0x74,
@@ -533,12 +568,14 @@ ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 		0x80, 0x01, 0x00, 0x00, 0x11, 0x94, 0x00, 0x07,
 		0x06, 0x70, 0x61, 0x74, 0x68, 0x3d, 0x2f, 0xc0,
 		0x28, 0x00, 0x21, 0x80, 0x01, 0x00, 0x00, 0x00,
-		0x78, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x1f,
-		0x90, 0x09, 0x4e, 0x41, 0x53, 0x58, 0x58, 0x58,
-		0x58, 0x58, 0x58, 0xc0, 0x17, 0xc0, 0x59, 0x00,
-		0x01, 0x80, 0x01, 0x00, 0x00, 0x00, 0x78, 0x00,
-		0x04, 0xb1, 0x05, 0xf0, 0x0d,
+		0x78, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x1f,
+		0x90, 0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72,
+		0xc0, 0x17, 0xc0, 0x59, 0x00, 0x01, 0x80, 0x01,
+		0x00, 0x00, 0x00, 0x78, 0x00, 0x04, 0xb1, 0x05,
+		0xf0, 0x0d
 	};
+
+
 	int expected_int = sizeof(expected_rsp);
 	int actual_int = dns_sd_handle_ptr_query(&nasxxxxxx,
 						 &addr,
