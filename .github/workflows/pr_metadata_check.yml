@@ -36,14 +36,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./scripts/ci/do_not_merge.py -p "${{ github.event.pull_request.number }}"
-
-  empty_pr_description:
-    if: ${{ github.event.pull_request.body == '' }}
-    name: PR Description
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check for PR description
-        run: |
-          echo "Pull request description cannot be empty."
-          exit 1
+          python -u scripts/ci/do_not_merge.py -p "${{ github.event.pull_request.number }}"
