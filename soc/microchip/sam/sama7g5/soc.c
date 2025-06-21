@@ -9,12 +9,17 @@
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include <zephyr/kernel.h>
 
+#define MMU_REGION_FLEXCOM_DEFN(idx, n)								\
+		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flx##n)),			\
+			(MMU_REGION_FLAT_ENTRY("flexcom"#n, FLEXCOM##n##_BASE_ADDRESS, 0x4000,	\
+					       MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),),	\
+			())
+
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
 
-	MMU_REGION_FLAT_ENTRY("flexcom3", FLEXCOM3_BASE_ADDRESS, 0x4000,
-			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+	FOR_EACH_IDX(MMU_REGION_FLEXCOM_DEFN, (), 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
 	MMU_REGION_FLAT_ENTRY("gic", GIC_DISTRIBUTOR_BASE, 0x1100,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
