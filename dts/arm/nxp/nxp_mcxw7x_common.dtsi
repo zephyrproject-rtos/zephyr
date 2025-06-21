@@ -351,6 +351,22 @@
 		interrupts = <18 0>;
 		clk-divider = <0x0>;
 	};
+
+	edma: dma-controller@2000 {
+		compatible = "nxp,mcux-edma";
+		#dma-cells = <2>;
+		nxp,version = <3>;
+		dma-channels = <16>;
+		dma-requests = <64>;
+		reg = <0x2000 0x140>,
+			<0x3000 0xF040>;
+		clocks = <&scg SCG_K4_EDMA_CLK 0x410>;
+		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
+			<6 0>, <7 0>, <8 0>, <9 0>,
+			<10 0>, <11 0>, <12 0>, <13 0>,
+			<14 0>, <15 0>, <16 0>, <17 0>;
+		status = "disabled";
+	};
 };
 
 &fast_peripheral0 {
