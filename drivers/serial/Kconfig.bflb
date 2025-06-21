@@ -9,6 +9,5 @@ config UART_BFLB
 	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select USE_BFLB_UART
 	help
 	  This option enables the UART driver for Bouffalo Lab SoC family.
