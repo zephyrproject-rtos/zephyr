@@ -199,7 +199,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0xa2, 0x00},
 
 	/* BLK Settings */
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x40, 0x42},
 	{0x41, 0x00},
 	{0x43, 0x5b},
@@ -232,7 +231,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0x48, 0x15},
 	{0x49, 0x00},
 	{0x4b, 0x0b},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 
 	/* AEC Settings */
 	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
@@ -275,8 +273,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0x95, 0x84},
 	{0x97, 0x65},
 	{0xa2, 0x11},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x80, 0xc1},
 	{0x81, 0x08},
 	{0x82, 0x05},
@@ -306,10 +302,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0x3d, 0x15},
 	{0x4b, 0x06},
 	{0x4c, 0x20},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
-
 	/* Gamma Control */
-	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x10, 0x09},
 	{0x11, 0x0d},
 	{0x12, 0x13},
@@ -358,7 +351,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0x39, 0xf3},
 	{0x3a, 0xf9},
 	{0x3b, 0xff},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0xd1, 0x32},
 	{0xd2, 0x32},
 	{0xd3, 0x40},
@@ -373,7 +365,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0xd8, 0xd8},
 	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x9f, 0x40},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0xc2, 0x14},
 	{0xc3, 0x0d},
 	{0xc4, 0x0c},
@@ -430,8 +421,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0xa9, 0x77},
 	{0xa1, 0x80},
 	{0xa2, 0x80},
-
-	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0xdf, 0x0d},
 	{0xdc, 0x25},
 	{0xdd, 0x30},
@@ -443,13 +432,10 @@ static const struct gc2145_reg default_regs[] = {
 	{0xe7, 0xa0},
 	{0xe8, 0x90},
 	{0xe9, 0xa0},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x4f, 0x00},
 	{0x4f, 0x00},
 	{0x4b, 0x01},
 	{0x4f, 0x00},
-
 	{0x4c, 0x01},
 	{0x4d, 0x71},
 	{0x4e, 0x01},
@@ -684,7 +670,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0x79, 0x5e},
 	{0x7a, 0x54},
 	{0x7b, 0x58},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0xc0, 0x01},
 	{0xc1, 0x44},
@@ -707,13 +692,11 @@ static const struct gc2145_reg default_regs[] = {
 	{0xe5, 0xe0},
 	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x9f, 0x40},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 
 	/* Output Control  */
 	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x40, 0xbf},
 	{0x46, 0xcf},
-	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 
 	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x05, 0x01},
