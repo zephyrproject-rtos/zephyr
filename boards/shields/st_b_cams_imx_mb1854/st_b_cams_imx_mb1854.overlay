@@ -5,12 +5,12 @@
  *
  */
 
-#include <zephyr/dt-bindings/gpio/raspberrypi-csi-22pins-connector.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
 	chosen {
-		zephyr,camera = &csi_22pins_capture_port;
+		zephyr,camera = &csi_capture_port;
 	};
 
 	imx335_input_clock: imx335-input-clock {
@@ -20,26 +20,26 @@
 	};
 };
 
-&csi_22pins_interface {
+&csi_interface {
 	status = "okay";
 };
 
-&csi_22pins_ep_in {
+&csi_ep_in {
 	remote-endpoint-label = "imx335_ep_out";
 	bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
 	data-lanes = <1 2>;
 };
 
-&csi_22pins_i2c {
+&csi_i2c {
 	imx335: camera@1a {
 		compatible = "sony,imx335";
 		clocks = <&imx335_input_clock>;
 		reg = <0x1a>;
-		reset-gpios = <&csi_22pins_connector CSI_22PINS_IO0 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&csi_connector CSI_IO0 GPIO_ACTIVE_LOW>;
 
 		port {
 			imx335_ep_out: endpoint {
-				remote-endpoint-label = "csi_22pins_ep_in";
+				remote-endpoint-label = "csi_ep_in";
 				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
 				data-lanes = <1 2>;
 			};
@@ -47,11 +47,11 @@
 	};
 };
 
-&csi_22pins_connector {
+&csi_connector {
 	/* Power the camera module */
 	en-module-gpios {
 		gpio-hog;
-		gpios = <CSI_22PINS_IO1 GPIO_ACTIVE_HIGH>;
+		gpios = <CSI_IO1 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
 };
