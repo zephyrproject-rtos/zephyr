@@ -54,7 +54,7 @@ extern "C" {
 #define TMC_RAMP_IHOLD_IRUN_MIN 0
 #define TMC_RAMP_IHOLDDELAY_MAX GENMASK(3, 0)
 #define TMC_RAMP_IHOLDDELAY_MIN 0
-#define TMC_RAMP_VACTUAL_SHIFT  22
+#define TMC_RAMP_VACTUAL_SHIFT  23
 #define TMC_RAMP_XACTUAL_SHIFT  31
 
 /* TMC50XX specific */
@@ -194,11 +194,11 @@ struct tmc_ramp_generator_data {
 
 #define TMC_RAMP_DT_SPEC_GET_TMC51XX(node)					\
 	{									\
-		TMC_RAMP_DT_SPEC_GET_COMMON(DT_DRV_INST(node))			\
-		.tpowerdown = DT_INST_PROP(node, tpowerdown),			\
-		.tpwmthrs = DT_INST_PROP(node, tpwmthrs),			\
-		.tcoolthrs = DT_INST_PROP(node, tcoolthrs),			\
-		.thigh = DT_INST_PROP(node, thigh),				\
+		TMC_RAMP_DT_SPEC_GET_COMMON(node)			\
+		.tpowerdown = DT_PROP(node, tpowerdown),			\
+		.tpwmthrs = DT_PROP(node, tpwmthrs),			\
+		.tcoolthrs = DT_PROP(node, tcoolthrs),			\
+		.thigh = DT_PROP(node, thigh),				\
 	}
 
 /**
