@@ -33,7 +33,10 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_SYNC_MODE_ROW_SWITCH 0x20
 #define GC2145_REG_RESET                0xFE
 #define GC2145_REG_SW_RESET             0x80
-#define GC2145_SET_P0_REGS              0x00
+#define GC2145_REG_RESET_P0_REGS        0x00
+#define GC2145_REG_RESET_P1_REGS        0x01
+#define GC2145_REG_RESET_P2_REGS        0x02
+#define GC2145_REG_RESET_P3_REGS        0x03
 #define GC2145_REG_CROP_ENABLE          0x90
 #define GC2145_CROP_SET_ENABLE          0x01
 #define GC2145_REG_BLANK_WINDOW_BASE    0x09
@@ -99,9 +102,9 @@ struct gc2145_reg {
 };
 
 static const struct gc2145_reg default_regs[] = {
-	{0xfe, 0xf0},
-	{0xfe, 0xf0},
-	{0xfe, 0xf0},
+	{GC2145_REG_RESET, 0xf0},
+	{GC2145_REG_RESET, 0xf0},
+	{GC2145_REG_RESET, 0xf0},
 	{0xfc, 0x06},
 	{0xf6, 0x00},
 	{0xf7, 0x1d},
@@ -111,7 +114,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0xf2, 0x00},
 
 	/* ISP settings */
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x03, 0x04},
 	{0x04, 0xe2},
 
@@ -196,7 +199,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0xa2, 0x00},
 
 	/* BLK Settings */
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x40, 0x42},
 	{0x41, 0x00},
 	{0x43, 0x5b},
@@ -225,14 +228,14 @@ static const struct gc2145_reg default_regs[] = {
 	{0x72, 0xf0},
 	{0x7e, 0x3c},
 	{0x7f, 0x00},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x48, 0x15},
 	{0x49, 0x00},
 	{0x4b, 0x0b},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 
 	/* AEC Settings */
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x01, 0x04},
 	{0x02, 0xc0},
 	{0x03, 0x04},
@@ -254,9 +257,9 @@ static const struct gc2145_reg default_regs[] = {
 	{0x20, 0x40},
 	{0x22, 0x40},
 	{0x23, 0x20},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x0f, 0x04},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x12, 0x30},
 	{0x15, 0xb0},
 	{0x10, 0x31},
@@ -264,7 +267,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0x3f, 0xb0},
 	{0x40, 0x90},
 	{0x41, 0x0f},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x90, 0x6c},
 	{0x91, 0x03},
 	{0x92, 0xcb},
@@ -272,8 +275,8 @@ static const struct gc2145_reg default_regs[] = {
 	{0x95, 0x84},
 	{0x97, 0x65},
 	{0xa2, 0x11},
-	{0xfe, 0x00},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x80, 0xc1},
 	{0x81, 0x08},
 	{0x82, 0x05},
@@ -285,9 +288,9 @@ static const struct gc2145_reg default_regs[] = {
 	{0x89, 0xb0},
 	{0x8a, 0x30},
 	{0x8b, 0x10},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x21, 0x04},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0xa3, 0x50},
 	{0xa4, 0x20},
 	{0xa5, 0x40},
@@ -303,10 +306,10 @@ static const struct gc2145_reg default_regs[] = {
 	{0x3d, 0x15},
 	{0x4b, 0x06},
 	{0x4c, 0x20},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 
 	/* Gamma Control */
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x10, 0x09},
 	{0x11, 0x0d},
 	{0x12, 0x13},
@@ -329,10 +332,10 @@ static const struct gc2145_reg default_regs[] = {
 	{0x23, 0xf5},
 	{0x24, 0xf9},
 	{0x25, 0xff},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0xc6, 0x20},
 	{0xc7, 0x2b},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x26, 0x0f},
 	{0x27, 0x14},
 	{0x28, 0x19},
@@ -355,7 +358,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0x39, 0xf3},
 	{0x3a, 0xf9},
 	{0x3b, 0xff},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0xd1, 0x32},
 	{0xd2, 0x32},
 	{0xd3, 0x40},
@@ -368,9 +371,9 @@ static const struct gc2145_reg default_regs[] = {
 	{0xee, 0x00},
 	{0xef, 0x3f},
 	{0xd8, 0xd8},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x9f, 0x40},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0xc2, 0x14},
 	{0xc3, 0x0d},
 	{0xc4, 0x0c},
@@ -428,7 +431,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0xa1, 0x80},
 	{0xa2, 0x80},
 
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0xdf, 0x0d},
 	{0xdc, 0x25},
 	{0xdd, 0x30},
@@ -440,8 +443,8 @@ static const struct gc2145_reg default_regs[] = {
 	{0xe7, 0xa0},
 	{0xe8, 0x90},
 	{0xe9, 0xa0},
-	{0xfe, 0x00},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x4f, 0x00},
 	{0x4f, 0x00},
 	{0x4b, 0x01},
@@ -681,8 +684,8 @@ static const struct gc2145_reg default_regs[] = {
 	{0x79, 0x5e},
 	{0x7a, 0x54},
 	{0x7b, 0x58},
-	{0xfe, 0x00},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0xc0, 0x01},
 	{0xc1, 0x44},
 	{0xc2, 0xfd},
@@ -702,17 +705,17 @@ static const struct gc2145_reg default_regs[] = {
 	{0xe3, 0x0c},
 	{0xe4, 0x4b},
 	{0xe5, 0xe0},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x9f, 0x40},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 
 	/* Output Control  */
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x40, 0xbf},
 	{0x46, 0xcf},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x05, 0x01},
 	{0x06, 0x1C},
 	{0x07, 0x00},
@@ -722,16 +725,16 @@ static const struct gc2145_reg default_regs[] = {
 	{0x13, 0x00},
 	{0x14, 0x00},
 
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x3c, 0x00},
 	{0x3d, 0x04},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x00, 0x00},
 };
 
 static const struct gc2145_reg default_mipi_csi_regs[] = {
 	/* Switch to page 3 */
-	{0xfe, 0x03},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P3_REGS},
 	{GC2145_REG_DPHY_MODE1, GC2145_DPHY_MODE1_CLK_EN |
 				GC2145_DPHY_MODE1_LANE0_EN | GC2145_DPHY_MODE1_LANE1_EN |
 				GC2145_DPHY_MODE1_CLK_LANE_P2S_SEL},
@@ -918,7 +921,7 @@ static int gc2145_set_window(const struct device *dev, uint16_t reg, uint16_t x,
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_SET_P0_REGS);
+	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS);
 	if (ret < 0) {
 		return ret;
 	}
@@ -976,7 +979,7 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 	uint8_t old_value;
 	const struct gc2145_config *cfg = dev->config;
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_SET_P0_REGS);
+	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1190,7 +1193,7 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 		return ret;
 	}
 
-	return gc2145_write_reg(&cfg->i2c, 0xfe, 0x0);
+	return gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS);
 }
 
 static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
@@ -1268,7 +1271,7 @@ static int gc2145_set_stream_csi(const struct device *dev, bool enable)
 	const struct gc2145_config *cfg = dev->config;
 	int ret;
 
-	ret = gc2145_write_reg(&cfg->i2c, 0xfe, 0x03);
+	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_REG_RESET_P3_REGS);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1281,7 +1284,7 @@ static int gc2145_set_stream_csi(const struct device *dev, bool enable)
 		return ret;
 	}
 
-	return gc2145_write_reg(&cfg->i2c, 0xfe, 0x0);
+	return gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS);
 }
 
 static int gc2145_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
