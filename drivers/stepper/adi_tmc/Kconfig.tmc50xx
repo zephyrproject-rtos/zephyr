@@ -5,7 +5,7 @@
 config STEPPER_ADI_TMC50XX
 	bool "Activate trinamic tmc50xx stepper driver"
 	depends on DT_HAS_ADI_TMC50XX_ENABLED && STEPPER_ADI_TMC
-	select STEPPER_ADI_TMC_SPI
+	select STEPPER_ADI_TMC_SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC50XX),spi)
 	default y
 
 module = TMC50XX
