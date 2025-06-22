@@ -9,6 +9,8 @@
 
 adi_tmc51xx_uart: adi_tmc51xx {
 	compatible = "adi,tmc51xx";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
 	label = "tmc5160_uart_1";
@@ -22,25 +24,29 @@ adi_tmc51xx_uart: adi_tmc51xx {
 	micro-step-res = <256>;
 
 	/* ADI TMC stallguard settings specific to TMC5160 */
-	activate-stallguard2;
-	stallguard-velocity-check-interval-ms = <100>;
-	stallguard2-threshold = <9>;
-	stallguard-threshold-velocity = <50000>;
+	adi_tmc51xx_uart_motor: motor@0 {
+		status = "okay";
+		reg = <0>;
+		activate-stallguard2;
+		stallguard-velocity-check-interval-ms = <100>;
+		stallguard2-threshold = <9>;
+		stallguard-threshold-velocity = <50000>;
 
-	/* ADI TMC ramp generator as well as current settings */
-	vstart = <10>;
-	a1 = <20>;
-	v1 = <30>;
-	d1 = <40>;
-	vmax = <50>;
-	amax = <60>;
-	dmax = <70>;
-	tzerowait = <80>;
-	thigh = <90>;
-	tcoolthrs = <100>;
-	tpwmthrs = <110>;
-	tpowerdown = <120>;
-	ihold = <1>;
-	irun = <2>;
-	iholddelay = <3>;
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		thigh = <90>;
+		tcoolthrs = <100>;
+		tpwmthrs = <110>;
+		tpowerdown = <120>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
+	};
 };
