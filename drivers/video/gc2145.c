@@ -750,10 +750,10 @@ static const struct video_reg8 default_mipi_csi_regs[] = {
 
 struct gc2145_config {
 	struct i2c_dt_spec i2c;
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
 	struct gpio_dt_spec pwdn_gpio;
 #endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
 	int bus_type;
@@ -1221,23 +1221,40 @@ static int gc2145_init(const struct device *dev)
 	const struct gc2145_config *cfg = dev->config;
 	(void) cfg;
 
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
-	if (ret) {
-		return ret;
+	if (!i2c_is_ready_dt(&cfg->i2c)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+	if (cfg->pwdn_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
+			LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			return ret;
+		}
+	}
 	k_sleep(K_MSEC(10));
 #endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
-	if (ret) {
-		return ret;
-	}
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+			LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->reset_gpio.port->name);
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
 
-	k_sleep(K_MSEC(1));
-	gpio_pin_set_dt(&cfg->reset_gpio, 0);
-	k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(1));
+		gpio_pin_set_dt(&cfg->reset_gpio, 0);
+		k_sleep(K_MSEC(1));
+	}
 #endif
 
 	ret = gc2145_check_connection(dev);
@@ -1265,46 +1282,30 @@ static int gc2145_init(const struct device *dev)
 	return gc2145_init_controls(dev);
 }
 
-/* Unique Instance */
-static const struct gc2145_config gc2145_cfg_0 = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define GC2145_GET_RESET_GPIO(n)	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define GC2145_GET_RESET_GPIO(n)
 #endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-#endif
-	.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0), bus_type,
-			       VIDEO_BUS_TYPE_PARALLEL),
-};
-static struct gc2145_data gc2145_data_0;
-
-static int gc2145_init_0(const struct device *dev)
-{
-	const struct gc2145_config *cfg = dev->config;
-
-	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("Bus device is not ready");
-		return -ENODEV;
-	}
-
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
-		return -ENODEV;
-	}
-#endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
-		return -ENODEV;
-	}
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+#define GC2145_GET_PWDN_GPIO(n)	.pwdn_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwdn_gpios, {0}),
+#else
+#define GC2145_GET_PWDN_GPIO(n)
 #endif
 
-	return gc2145_init(dev);
-}
+#define GC2145_INIT(n)										\
+	static struct gc2145_data gc2145_data_##n;						\
+	static const struct gc2145_config gc2145_cfg_##n = {					\
+		.i2c = I2C_DT_SPEC_INST_GET(n),							\
+		GC2145_GET_PWDN_GPIO(n)								\
+		GC2145_GET_RESET_GPIO(n)							\
+		.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0), bus_type,		\
+				       VIDEO_BUS_TYPE_PARALLEL),				\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(n, &gc2145_init, NULL, &gc2145_data_##n, &gc2145_cfg_##n,		\
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);	\
+												\
+	VIDEO_DEVICE_DEFINE(gc2145_##n, DEVICE_DT_INST_GET(n), NULL);
 
-DEVICE_DT_INST_DEFINE(0, &gc2145_init_0, NULL, &gc2145_data_0, &gc2145_cfg_0, POST_KERNEL,
-		      CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
-
-VIDEO_DEVICE_DEFINE(gc2145, DEVICE_DT_INST_GET(0), NULL);
+DT_INST_FOREACH_STATUS_OKAY(GC2145_INIT)
