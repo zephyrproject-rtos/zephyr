@@ -48,7 +48,7 @@ static int paj7620_select_register_bank(const struct device *dev, enum paj7620_m
 
 static int paj7620_get_hw_id(const struct device *dev, uint16_t *result)
 {
-	uint8_t ret;
+	int ret;
 	uint8_t hw_id[2];
 	const struct paj7620_config *config = dev->config;
 
