@@ -30,6 +30,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		sdhc0 = &sdhc;
 	};
 };
 
@@ -236,6 +237,29 @@ zephyr_i2c: &i2c1 {
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
+	};
+};
+
+sdhc: &sdmmc1 {
+	compatible = "st,stm32-sdio";
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	sdhi-on-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
+	interrupts = <49 0>;
+	interrupt-names = "event";
+	min-bus-freq = <DT_FREQ_K(400)>;
+	max-bus-freq = <DT_FREQ_M(208)>;
+	hw-flow-control;
+	bus-width = <4>;
+	status = "okay";
+
+	wifi: airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+		wifi-reg-on-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpioj 5 GPIO_ACTIVE_HIGH>;
 	};
 };
 
