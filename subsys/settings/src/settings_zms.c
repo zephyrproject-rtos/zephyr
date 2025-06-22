@@ -644,7 +644,7 @@ static int settings_zms_get_last_hash_ids(struct settings_zms *cf)
 			}
 			/* Now recover the linked list */
 			settings_element.previous_hash = previous_ll_hash_id;
-			zms_write(&cf->cf_zms, ll_last_hash_id, &settings_element,
+			rc = zms_write(&cf->cf_zms, ll_last_hash_id, &settings_element,
 				  sizeof(struct settings_hash_linked_list));
 			if (rc < 0) {
 				return rc;
