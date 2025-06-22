@@ -525,7 +525,7 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 			       enum phy_cfg_link_flag flags)
 {
-	uint8_t ret;
+	int ret;
 	uint16_t data;
 	uint16_t req_speed;
 	const struct phy_dm8806_config *cfg = dev->config;
