@@ -1211,7 +1211,12 @@ static int gc2145_init_controls(const struct device *dev)
 
 static int gc2145_init(const struct device *dev)
 {
-	struct video_format fmt;
+	/* set default/init format VGA RGB565 */
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = RESOLUTION_VGA_W,
+		.height = RESOLUTION_VGA_H,
+	};
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
 	(void) cfg;
@@ -1249,11 +1254,6 @@ static int gc2145_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-
-	/* set default/init format VGA RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = RESOLUTION_VGA_W;
-	fmt.height = RESOLUTION_VGA_H;
 
 	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {
