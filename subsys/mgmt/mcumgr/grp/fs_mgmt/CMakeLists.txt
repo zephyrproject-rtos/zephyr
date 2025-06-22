@@ -8,7 +8,7 @@
 
 # File System management group public API is exposed by MCUmgr API
 # interface, when File System management is enabled.
-zephyr_library(mgmt_mcumgr_grp_fs)
+zephyr_library()
 zephyr_library_sources(src/fs_mgmt.c)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH src/fs_mgmt_hash_checksum.c)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32 src/fs_mgmt_hash_checksum_crc32.c)
