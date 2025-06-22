@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding provides resources required for the LED matrix
+  on the RTK0EG0019B01002BJ board.
+
+compatible: "rtk0eg0019b01002bj-led-matrix"
+
+properties:
+  led-row-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of GPIOs that will be used to control the LED matrix.
+      Each entry in the array corresponds to a row of the matrix.
+
+  led-col-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of GPIOs that will be used to control the LED matrix.
+      Each entry in the array corresponds to a column of the matrix.
+
+  num-rows:
+    type: int
+    required: true
+    description: |
+      Number of rows in the LED matrix.
+
+  num-cols:
+    type: int
+    required: true
+    description: |
+      Number of columns in the LED matrix.
