@@ -203,6 +203,13 @@ void soc_late_init_hook(void)
 			 CONFIG_ROM_START_OFFSET);
 #endif
 
+	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&
+	    sys_read32((mem_addr_t)radiocore_address) == 0xFFFFFFFFUL) {
+		LOG_ERR("Radiocore is not programmed, it will not be started");
+
+		return;
+	}
+
 	/* Don't wait as this is not yet supported. */
 	bool cpu_wait = false;
 
