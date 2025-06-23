@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nrf54lm20a_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp";
+	model = "Nordic nRF54LM20 DK nRF54LM20A Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+&bt_hci_sdc {
+	status = "okay";
+};
+
+&bt_hci_controller {
+	status = "disabled";
+};
+
+/* Get a node label for wi-fi spi to use in shield files */
+wifi_spi: &spi22 {};
