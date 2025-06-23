@@ -34,7 +34,6 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/linker/linker-defs.h>
-#include <zephyr/arch/cache.h>
 
 #include "spi_ll_stm32.h"
 
