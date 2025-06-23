@@ -237,6 +237,24 @@ struct dhcp_msg {
 static uint32_t offer_xid;
 static uint32_t request_xid;
 
+#define EVT_ADDR_ADD        BIT(0)
+#define EVT_ADDR_DEL        BIT(1)
+#define EVT_DNS_SERVER1_ADD BIT(2)
+#define EVT_DNS_SERVER2_ADD BIT(3)
+#define EVT_DNS_SERVER3_ADD BIT(4)
+#define EVT_DHCP_START      BIT(5)
+#define EVT_DHCP_BOUND      BIT(6)
+#define EVT_DHCP_STOP       BIT(7)
+#define EVT_OPTION_DOMAIN   BIT(8)
+#define EVT_OPTION_POP3     BIT(9)
+#define EVT_VENDOR_STRING   BIT(10)
+#define EVT_VENDOR_BYTE     BIT(11)
+#define EVT_VENDOR_EMPTY    BIT(12)
+#define EVT_DHCP_OFFER      BIT(13)
+#define EVT_DHCP_ACK        BIT(14)
+
+static K_EVENT_DEFINE(events);
+
 #define WAIT_TIME K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX + 1)
 
 struct net_dhcpv4_context {
@@ -437,12 +455,14 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		if (!rpkt) {
 			return -EINVAL;
 		}
+		k_event_post(&events, EVT_DHCP_OFFER);
 	} else if (msg.type == REQUEST) {
 		/* Reply with DHCPv4 ACK message */
 		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
 			return -EINVAL;
 		}
+		k_event_post(&events, EVT_DHCP_ACK);
 	} else {
 		/* Invalid message type received */
 		return -EINVAL;
@@ -484,20 +504,6 @@ static struct net_dhcpv4_option_callback opt_vs_empty_cb;
 static struct net_dhcpv4_option_callback opt_vs_invalid_cb;
 #endif
 
-#define EVT_ADDR_ADD        BIT(0)
-#define EVT_DNS_SERVER1_ADD BIT(1)
-#define EVT_DNS_SERVER2_ADD BIT(2)
-#define EVT_DNS_SERVER3_ADD BIT(3)
-#define EVT_DHCP_START      BIT(4)
-#define EVT_DHCP_BOUND      BIT(5)
-#define EVT_OPTION_DOMAIN   BIT(6)
-#define EVT_OPTION_POP3     BIT(7)
-#define EVT_VENDOR_STRING   BIT(8)
-#define EVT_VENDOR_BYTE     BIT(9)
-#define EVT_VENDOR_EMPTY    BIT(10)
-
-static K_EVENT_DEFINE(events);
-
 static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, size_t info_length,
 			void *user_data)
 {
@@ -517,6 +523,9 @@ static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, siz
 		zassert_mem_equal(info, &ip_addr, sizeof(struct in_addr));
 		k_event_post(&events, EVT_ADDR_ADD);
 		break;
+	case NET_EVENT_IPV4_ADDR_DEL:
+		k_event_post(&events, EVT_ADDR_DEL);
+		break;
 	case NET_EVENT_DNS_SERVER_ADD:
 		zassert_equal(info_length, sizeof(struct sockaddr));
 		if (net_sin(info)->sin_addr.s_addr == dns_addrs[0].s_addr) {
@@ -535,13 +544,19 @@ static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, siz
 	case NET_EVENT_IPV4_DHCP_BOUND:
 		k_event_post(&events, EVT_DHCP_BOUND);
 		break;
+	case NET_EVENT_IPV4_DHCP_STOP:
+		k_event_post(&events, EVT_DHCP_STOP);
+		break;
 	}
 }
 
-NET_MGMT_REGISTER_EVENT_HANDLER(rx_cb, NET_EVENT_IPV4_ADDR_ADD, receiver_cb, NULL);
+NET_MGMT_REGISTER_EVENT_HANDLER(rx_cb, NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL,
+				receiver_cb, NULL);
 NET_MGMT_REGISTER_EVENT_HANDLER(dns_cb, NET_EVENT_DNS_SERVER_ADD | NET_EVENT_DNS_SERVER_DEL,
 				receiver_cb, NULL);
-NET_MGMT_REGISTER_EVENT_HANDLER(dhcp_cb, NET_EVENT_IPV4_DHCP_START | NET_EVENT_IPV4_DHCP_BOUND,
+NET_MGMT_REGISTER_EVENT_HANDLER(dhcp_cb,
+				NET_EVENT_IPV4_DHCP_START | NET_EVENT_IPV4_DHCP_BOUND |
+					NET_EVENT_IPV4_DHCP_STOP,
 				receiver_cb, NULL);
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
@@ -709,35 +724,70 @@ ZTEST(dhcpv4_tests, test_dhcp)
 		zassert_true(false, "Interface not available");
 	}
 
-	net_dhcpv4_start(iface);
+	for (int loop = 0; loop < 2; ++loop) {
+		LOG_DBG("Running DHCPv4 loop %d", loop);
+		net_dhcpv4_start(iface);
 
-	evt = k_event_wait(&events, EVT_DHCP_START, false, WAIT_TIME);
-	zassert_equal(evt, EVT_DHCP_START, "Missing DHCP start");
+		evt = k_event_wait(&events, EVT_DHCP_START, false, WAIT_TIME);
+		zassert_equal(evt, EVT_DHCP_START, "Missing DHCP start");
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
-	evt = k_event_wait_all(&events, EVT_OPTION_DOMAIN | EVT_OPTION_POP3, false, WAIT_TIME);
-	zassert_equal(evt, EVT_OPTION_DOMAIN | EVT_OPTION_POP3, "Missing DHCP option(s) %08x", evt);
+		evt = k_event_wait_all(&events, EVT_OPTION_DOMAIN | EVT_OPTION_POP3, false,
+				       WAIT_TIME);
+		zassert_equal(evt, EVT_OPTION_DOMAIN | EVT_OPTION_POP3,
+			      "Missing DHCP option(s) %08x", evt);
 #endif
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
-	evt = k_event_wait_all(&events, EVT_VENDOR_STRING | EVT_VENDOR_BYTE | EVT_VENDOR_EMPTY,
-			       false, WAIT_TIME);
-	zassert_equal(evt, EVT_VENDOR_STRING | EVT_VENDOR_BYTE | EVT_VENDOR_EMPTY,
-		      "Missing DHCP vendor option(s) %08x", evt);
+		evt = k_event_wait_all(&events,
+				       EVT_VENDOR_STRING | EVT_VENDOR_BYTE | EVT_VENDOR_EMPTY,
+				       false, WAIT_TIME);
+		zassert_equal(evt, EVT_VENDOR_STRING | EVT_VENDOR_BYTE | EVT_VENDOR_EMPTY,
+			      "Missing DHCP vendor option(s) %08x", evt);
 #endif
 
-	evt = k_event_wait_all(&events,
-			       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD | EVT_DNS_SERVER3_ADD,
-			       false, WAIT_TIME);
-	zassert_equal(evt, EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD | EVT_DNS_SERVER3_ADD,
-		      "Missing DNS server(s) %08x", evt);
+		if (loop == 0) {
+			/* Associated DNS servers aren't deleted on DHCP stop */
+			evt = k_event_wait_all(&events,
+					       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+						       EVT_DNS_SERVER3_ADD,
+					       false, WAIT_TIME);
+			zassert_equal(evt,
+				      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+					      EVT_DNS_SERVER3_ADD,
+				      "Missing DNS server(s) %08x", evt);
+		}
 
-	evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
-	zassert_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound");
+		evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
+		zassert_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound");
 
-	/* Verify that Request xid matched Offer xid. */
-	zassert_equal(offer_xid, request_xid, "Offer/Request xid mismatch, "
-		      "Offer 0x%08x, Request 0x%08x", offer_xid, request_xid);
+		if (loop == 0 || !IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT)) {
+			evt = k_event_wait_all(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false,
+					       WAIT_TIME);
+			zassert_equal(evt, EVT_DHCP_OFFER | EVT_DHCP_ACK,
+				      "Missing offer or ack %08x", evt);
+
+			/* Verify that Request xid matched Offer xid. */
+			zassert_equal(offer_xid, request_xid,
+				      "Offer/Request xid mismatch, "
+				      "Offer 0x%08x, Request 0x%08x",
+				      offer_xid, request_xid);
+		} else {
+			/* An init-reboot was done */
+			evt = k_event_wait(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false,
+					   WAIT_TIME);
+			zassert_equal(evt, EVT_DHCP_ACK, "Ack only expected %08x", evt);
+		}
+
+		/* Clear all events */
+		k_event_set(&events, 0U);
+
+		net_dhcpv4_stop(iface);
+
+		evt = k_event_wait_all(&events, EVT_DHCP_STOP | EVT_ADDR_DEL, false, WAIT_TIME);
+		zassert_equal(evt, EVT_DHCP_STOP | EVT_ADDR_DEL,
+			      "Missing DHCP stop or deleted address");
+	}
 }
 
 /**test case main entry */
