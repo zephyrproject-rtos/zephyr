@@ -30,7 +30,7 @@ ZTEST(nanopb_tests, test_nanopb_simple)
 	zassert_true(pb_encode(&ostream, SimpleMessage_fields, &msg),
 		     "Encoding failed: %s", PB_GET_ERROR(&ostream));
 
-	/* Sanity check, clear data */
+	/* Coherence check, clear data */
 	memset(&msg, 0, sizeof(SimpleMessage));
 
 	pb_istream_t istream = pb_istream_from_buffer(buffer, ostream.bytes_written);
@@ -57,7 +57,7 @@ ZTEST(nanopb_tests, test_nanopb_nested)
 	zassert_true(pb_encode(&ostream, ComplexMessage_fields, &msg),
 		     "Encoding failed: %s", PB_GET_ERROR(&ostream));
 
-	/* Sanity check, clear data */
+	/* Coherence check, clear data */
 	memset(&msg, 0, sizeof(ComplexMessage));
 
 	pb_istream_t istream = pb_istream_from_buffer(buffer, ostream.bytes_written);
