@@ -16,6 +16,12 @@
 			status = "okay";
 		};
 
+		test_regulator: regulator {
+			compatible = "zephyr,fake-regulator";
+
+			reg0: REG0 {};
+		};
+
 		test_i2c: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -54,6 +60,30 @@
 				compatible = "ti,tas2563";
 				reg = <0x4>;
 				status = "okay";
+			};
+
+			test_i2c_cs35l56: cs35l56@5 {
+				compatible = "cirrus,cs35l56";
+				reg = <0x5>;
+				status = "okay";
+				reset-gpios = <&test_gpio 1 0>;
+				vdd-p-supply = <&test_regulator>;
+				vdd-io-supply = <&test_regulator>;
+				vdd-a-supply = <&test_regulator>;
+				vdd-b-supply = <&test_regulator>;
+				vdd-amp-supply = <&test_regulator>;
+			};
+
+			test_i2c_cs35l57: cs35l57@6 {
+				compatible = "cirrus,cs35l57";
+				reg = <0x6>;
+				status = "okay";
+				reset-gpios = <&test_gpio 1 0>;
+				vdd-p-supply = <&test_regulator>;
+				vdd-io-supply = <&test_regulator>;
+				vdd-a-supply = <&test_regulator>;
+				vdd-b-supply = <&test_regulator>;
+				vdd-amp-supply = <&test_regulator>;
 			};
 		};
 	};

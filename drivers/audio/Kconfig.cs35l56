@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig AUDIO_CODEC_CS35L56
+	bool "Cirrus Logic CS35L56 codec support"
+	default y
+	depends on DT_HAS_CIRRUS_CS35L56_ENABLED || \
+				DT_HAS_CIRRUS_CS35L57_ENABLED
+	select GPIO
+	select REGULATOR
+	help
+	  Enable driver for CS35L56 family of smart amplifiers
+
+if AUDIO_CODEC_CS35L56
+
+config AUDIO_CODEC_CS35L56_RESET
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),reset-gpios)
+	select GPIO
+
+config AUDIO_CODEC_CS35L56_REGULATOR
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-p-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-p-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-io-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-io-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-a-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-a-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-b-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-b-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-amp-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-amp-supply)
+	select REGULATOR
+
+endif # AUDIO_CODEC_CS35L56
