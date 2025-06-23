@@ -1151,7 +1151,7 @@ apds_9306: apds9306@9a {
 	status = "okay";
 	gain = <1>;
 	resolution = <13>;
-	frequency = <2000>;
+	measurement-period = <2000>;
 };
 
 test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
