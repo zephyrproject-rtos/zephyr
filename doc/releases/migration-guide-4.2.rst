@@ -663,8 +663,8 @@ SPI
   matching the compatible string.
 
 
-oSPI/xSPI
-=========
+qSPI/oSPI/xSPI
+==============
 
 * On STM32 devices, external memories device tree descriptions for size and address are now split
   in two separate properties to comply with specification recommendations.
@@ -673,7 +673,7 @@ oSPI/xSPI
   is changed to ``reg = <0>;`` ``size = <DT_SIZE_M(512)>; / 512 Mbits */``.
 
   Note that the property gives the actual size of the memory device in bits.
-  Previous mapping address information is now described in xspi or ospi nodes at SoC dtsi level.
+  Previous mapping address information is now described in xspi, ospi or qspi nodes at SoC dtsi level.
 
 Video
 =====
