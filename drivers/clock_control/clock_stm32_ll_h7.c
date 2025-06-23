@@ -729,6 +729,8 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_Enable();
 		while (LL_RCC_LSE_IsReady() != 1) {
 		}
+
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
