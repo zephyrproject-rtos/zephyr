@@ -71,6 +71,8 @@ struct tach_nct_data {
 	uint32_t input_clk;
 	/* Captured counts of tachometer */
 	uint32_t capture;
+	/* current channel */
+	uint8_t Curr_chan;
 };
 
 /* Driver convenience defines */
@@ -196,10 +198,10 @@ static int tach_nct_configure(const struct device *dev)
 	if (config->pin_static ||
 			config->pin_select == NCT_TACH_PIN_SELECT_DEFAULT) {
 		LOG_WRN("Tachometer %d select default pin", config->tach_channel);
-		SET_FIELD(inst->TCFG, NCT_TCFG_MFT_IN_SEL, config->tach_channel);
+		//SET_FIELD(inst->TCFG, NCT_TCFG_MFT_IN_SEL, config->tach_channel);
 	} else {
 		/* select pin to sample */
-		SET_FIELD(inst->TCFG, NCT_TCFG_MFT_IN_SEL, config->pin_select);
+		//SET_FIELD(inst->TCFG, NCT_TCFG_MFT_IN_SEL, config->pin_select);
 	}
 
 	return 0;
@@ -208,8 +210,19 @@ static int tach_nct_configure(const struct device *dev)
 /* TACH api functions */
 int tach_nct_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	ARG_UNUSED(chan);
+	struct tach_reg *const inst = HAL_INSTANCE(dev);
 	struct tach_nct_data *const data = dev->data;
+
+	if(data->Curr_chan != chan){
+		/* stop taho*/
+		SET_FIELD(inst->TCKC, NCT_TCKC_C1CSEL_FIELD, 0);
+		SET_FIELD(inst->TCFG, NCT_TCFG_MFT_IN_SEL, chan);
+		tach_nct_clear_underflow_flag(dev);
+		tach_nct_clear_captured_flag(dev);
+		tach_nct_start(dev);
+		data->Curr_chan = chan;
+		return -ECANCELED;
+	}
 
 	/* Check whether underflow flag of tachometer is occurred */
 	if (tach_nct_is_underflow(dev)) {
@@ -219,19 +232,22 @@ int tach_nct_sample_fetch(const struct device *dev, enum sensor_channel chan)
 		tach_nct_clear_captured_flag(dev);
 		data->capture = 0;
 
-		return 0;
+		return -EOVERFLOW;
 	}
 
 	/* Check whether capture flag of tachometer is set */
 	if (tach_nct_is_captured(dev)) {
 		/* Clear pending flags */
+		tach_nct_clear_underflow_flag(dev);
+		/* Clear pending flags */
 		tach_nct_clear_captured_flag(dev);
 		/* Save captured count */
 		data->capture = NCT_TACHO_CNT_MAX -
 					tach_nct_get_captured_count(dev);
+			return 0;
 	}
 
-	return 0;
+	return -ECANCELED;
 }
 
 static int tach_nct_channel_get(const struct device *dev,
@@ -241,7 +257,7 @@ static int tach_nct_channel_get(const struct device *dev,
 	const struct tach_nct_config *const config = dev->config;
 	struct tach_nct_data *const data = dev->data;
 
-	if (chan != SENSOR_CHAN_RPM) {
+	if (chan != data->Curr_chan) {
 		return -ENOTSUP;
 	}
 
@@ -270,6 +286,7 @@ static int tach_nct_init(const struct device *dev)
 	const struct tach_nct_config *const config = dev->config;
 	struct tach_nct_data *const data = dev->data;
 	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
+
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
@@ -293,7 +310,7 @@ static int tach_nct_init(const struct device *dev)
 	}
 
 	/* Configure pin-mux for tachometer device */
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	//ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("Tacho pinctrl setup failed (%d)", ret);
 		return ret;

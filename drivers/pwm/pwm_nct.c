@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(pwm_nct, LOG_LEVEL_ERR);
 /* PWM heart-beat mode selection */
 #define NCT_PWM_HBM_NORMAL         0
 
+#define PWM_TYPE_ODPPMSK 0x80
+
 /* Device config */
 struct pwm_nct_config {
 	/* pwm controller base address */
@@ -101,6 +103,13 @@ static int pwm_nct_set_cycles(const struct device *dev, uint32_t channel,
 		ctl |= BIT(NCT_PWMCTL_INVP);
 	} else {
 		ctl &= ~BIT(NCT_PWMCTL_INVP);
+	}
+
+	/* Select PWM type*/
+	if (flags & PWM_TYPE_ODPPMSK) {
+		inst->PWMCTLEX |= BIT(NCT_PWMCTLEX_OD_OUT);
+	} else {
+		inst->PWMCTLEX &= ~BIT(NCT_PWMCTLEX_OD_OUT);
 	}
 
 	/* If pulse_cycles is 0, switch PWM off and return. */
