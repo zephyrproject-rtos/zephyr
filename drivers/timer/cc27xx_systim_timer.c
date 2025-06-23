@@ -20,6 +20,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/arch/exception.h>
 
 #include <inc/hw_ints.h>
 #include <inc/hw_types.h>
@@ -42,7 +43,7 @@
 #define SYSTIM_TIMEOUT_MAX 0xFFBFFFFFU
 
 /* Set systim interrupt to lowest priority */
-#define SYSTIM_ISR_PRIORITY 3U
+#define SYSTIM_ISR_PRIORITY IRQ_PRIO_LOWEST
 
 static struct k_spinlock lock;
 
