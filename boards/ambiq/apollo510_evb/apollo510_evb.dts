@@ -182,7 +182,7 @@ zephyr_udc0: &usb {
 	pinctrl-1 = <&mspi0_sleep>;
 	pinctrl-2 = <&mspi0_psram>;
 	pinctrl-names = "default","sleep","psram";
-	status = "okay";
+	status = "disabled";
 	zephyr,pm-device-runtime-auto;
 
 	ce-gpios = <&gpio192_223 7 GPIO_ACTIVE_LOW>;
@@ -194,11 +194,11 @@ zephyr_udc0: &usb {
 
 	dqs-support;
 
-	psram0: aps51216ba@0 {
+	aps51216ba: aps_z8@0 {
 		compatible = "ambiq,mspi-device", "mspi-aps-z8";
 		size = <DT_SIZE_M(512)>;
 		reg = <0>;
-		status = "okay";
+		status = "disabled";
 		mspi-max-frequency = <125000000>;
 		mspi-io-mode = "MSPI_IO_MODE_HEX_8_8_16";
 		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
@@ -207,7 +207,7 @@ zephyr_udc0: &usb {
 		read-command = <0x20>;
 		write-command = <0xA0>;
 		command-length = "INSTR_1_BYTE";
-		address-length = "ADDR_4_BYTE"; /* Avoid use of 3 byte address if Ambiq MSPI */
+		address-length = "ADDR_4_BYTE";
 		rx-dummy = <7>;
 		tx-dummy = <8>;
 		xip-config = <1 0 DT_SIZE_M(64) 0>;

@@ -6,6 +6,14 @@
 
 / {
 	aliases {
-		psram0 = &psram0;
+		psram0 = &aps51216ba;
 	};
+};
+
+&mspi0 {
+	status = "okay";
+};
+
+&aps51216ba {
+	status = "okay";
 };
