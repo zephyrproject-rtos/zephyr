@@ -17,7 +17,7 @@
 #define VIDEO_CTRL_FLAG_VOLATILE   BIT(2)
 /** Control is inactive, e.g. manual controls of an autocluster in automatic mode */
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
-/** Control that affects other controls, e.g. the master control of a cluster */
+/** Control that affects other controls, e.g. the primary control of a cluster */
 #define VIDEO_CTRL_FLAG_UPDATE     BIT(4)
 
 enum video_ctrl_type {
