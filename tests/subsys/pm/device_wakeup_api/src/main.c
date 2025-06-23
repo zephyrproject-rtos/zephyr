@@ -22,7 +22,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 	switch (sleep_count) {
 	case 1:
-		/* Just  a sanity check that the system is the right state.
+		/* Just  a coherence check that the system is the right state.
 		 * Devices are suspended before SoC on PM_STATE_SUSPEND_TO_RAM, that is why
 		 * we can check the device state here.
 		 */

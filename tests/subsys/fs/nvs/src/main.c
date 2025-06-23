@@ -559,7 +559,7 @@ ZTEST_F(nvs, test_nvs_full_sector)
 	len = nvs_write(&fixture->fs, filling_id, &filling_id, sizeof(filling_id));
 	zassert_true(len == sizeof(filling_id), "nvs_write failed: %d", len);
 
-	/* sanitycheck on NVS content */
+	/* coherence check on NVS content */
 	for (i = 0; i <= filling_id; i++) {
 		len = nvs_read(&fixture->fs, i, &data_read, sizeof(data_read));
 		if (i == 1) {
