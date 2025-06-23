@@ -9,6 +9,7 @@
 #include <nxp/nxp_mcxa276.dtsi>
 #include "frdm_mcxa276-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <freq.h>
 
 / {
 	model = "NXP FRDM_MCXA276 board";
@@ -21,6 +22,7 @@
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		watchdog0 = &wwdt0;
+		ambient-temp0 = &p3t1755;
 	};
 
 	chosen {
@@ -118,6 +120,22 @@
 
 &edma0 {
 	status = "okay";
+};
+
+&i3c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i3c0>;
+	pinctrl-names = "default";
+
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+
+	p3t1755: p3t1755@4800000236152a0090 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48 0x0236 0x152a0090>;
+		status = "okay";
+	};
 };
 
 &lpadc0 {

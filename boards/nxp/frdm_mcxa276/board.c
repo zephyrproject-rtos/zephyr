@@ -192,6 +192,11 @@ void board_early_init_hook(void)
 	CLOCK_SetClockDiv(kCLOCK_DivADC, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_ADC);
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c0))
+	CLOCK_SetClockDiv(kCLOCK_DivI3C0_FCLK, 15U);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_I3C0FCLK);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_EnableClock(kCLOCK_GateADC0);
 #endif
