@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_CS35L56
+	bool "Cirrus Logic CS35L56 codec support"
+	select GPIO
+	select REGULATOR
+	help
+	  Enable driver for CS35L56 family of smart amplifiers
+
+config AUDIO_CODEC_CS35L56_I2C
+	bool "Cirrus Logic CS35L56 I2C-based amp"
+	default y
+	depends on DT_HAS_CIRRUS_CS35L56_ENABLED || \
+			   DT_HAS_CIRRUS_CS35L57_ENABLED
+	select I2C
+	select AUDIO_CODEC_CS35L56
+	help
+	  Enable driver for CS35L56 I2C-based amp.
