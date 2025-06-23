@@ -492,6 +492,7 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 	struct usbd_class_data *c_data = data->c_data;
 	size_t len = net_pkt_get_len(pkt);
 	struct net_buf *buf;
+	int ret;
 
 	if (len > NET_ETH_MAX_FRAME_SIZE) {
 		LOG_WRN("Trying to send too large packet, drop");
@@ -523,7 +524,14 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 		udc_ep_buf_set_zlp(buf);
 	}
 
-	usbd_ep_enqueue(c_data, buf);
+	ret = usbd_ep_enqueue(c_data, buf);
+	if (ret) {
+		LOG_ERR("Failed to enqueue buf");
+		net_buf_unref(buf);
+
+		return ret;
+	}
+
 	k_sem_take(&data->sync_sem, K_FOREVER);
 	net_buf_unref(buf);
 
