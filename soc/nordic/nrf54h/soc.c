@@ -35,6 +35,15 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HSFLL_NODE DT_NODELABEL(cpurad_hsfll)
 #endif
 
+#ifdef CONFIG_USE_DT_CODE_PARTITION
+#define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#elif defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#endif
+
+#define PARTITION_IS_RUNNING_APP_PARTITION(label)                                                  \
+	(DT_REG_ADDR(DT_NODELABEL(label)) == FLASH_LOAD_OFFSET)
+
 sys_snode_t soc_node;
 
 #define FICR_ADDR_GET(node_id, name)                                           \
@@ -46,8 +55,6 @@ sys_snode_t soc_node;
 				      ADDRESS_SECURITY_Msk |                   \
 				      ADDRESS_DOMAIN_Msk |                     \
 				      ADDRESS_BUS_Msk)))
-
-#define DT_NODELABEL_CPURAD_SLOT0_PARTITION DT_NODELABEL(cpurad_slot0_partition)
 
 static void power_domain_init(void)
 {
@@ -175,11 +182,26 @@ void soc_late_init_hook(void)
 	 */
 	uint8_t *msg = NULL;
 	size_t msg_size = 0;
+	void *radiocore_address = NULL;
 
-	void *radiocore_address =
-		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL_CPURAD_SLOT0_PARTITION)) +
-			 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION) +
+#if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
+	if (PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
+		radiocore_address =
+			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot1_partition))) +
+				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot1_partition)) +
+				 CONFIG_ROM_START_OFFSET);
+	} else {
+		radiocore_address =
+			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
+				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
+				 CONFIG_ROM_START_OFFSET);
+	}
+#else
+	radiocore_address =
+		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
+			 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
 			 CONFIG_ROM_START_OFFSET);
+#endif
 
 	/* Don't wait as this is not yet supported. */
 	bool cpu_wait = false;
