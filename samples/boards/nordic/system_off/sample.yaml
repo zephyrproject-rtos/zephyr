@@ -15,6 +15,7 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     harness: console
     harness_config:
       type: multi_line
@@ -34,6 +35,7 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y
     harness: console
@@ -53,6 +55,7 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     extra_configs:
       - CONFIG_GRTC_WAKEUP_ENABLE=y
       - CONFIG_GPIO_WAKEUP_ENABLE=n
@@ -77,6 +80,7 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y
       - CONFIG_GRTC_WAKEUP_ENABLE=y

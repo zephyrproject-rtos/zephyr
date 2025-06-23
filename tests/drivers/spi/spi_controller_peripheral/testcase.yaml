@@ -10,6 +10,7 @@ common:
     - nrf52840dk/nrf52840
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l20pdk/nrf54l20/cpuapp
+    - nrf54lm20dk/nrf54lm20a/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54h20dk/nrf54h20/cpurad
     - nrf54h20dk/nrf54h20/cpuppr
@@ -66,6 +67,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spis_fast:
@@ -79,6 +81,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.pm_runtime:
