@@ -1081,14 +1081,16 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 		}
 		case DHCPV4_OPTIONS_HOST_NAME: {
 			char hostname[NET_HOSTNAME_SIZE] = { 0 };
+			uint8_t read_len;
 
 			if (length < 1) {
 				NET_ERR("options_host_name, bad length");
 				return false;
 			}
 
-			if (net_pkt_read(pkt, hostname, MIN(length,
-							    sizeof(hostname) - 1))) {
+			read_len = MIN(length, sizeof(hostname) - 1);
+			if (net_pkt_read(pkt, hostname, read_len) ||
+			    net_pkt_skip(pkt, length - read_len)) {
 				NET_ERR("options_host_name, short packet");
 				return false;
 			}
@@ -1099,14 +1101,16 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 		}
 		case DHCPV4_OPTIONS_DOMAIN_NAME: {
 			char domain_name[NET_HOSTNAME_SIZE] = { 0 };
+			uint8_t read_len;
 
 			if (length < 1) {
 				NET_ERR("options_domain_name, bad length");
 				return false;
 			}
 
-			if (net_pkt_read(pkt, domain_name, MIN(length,
-							       sizeof(domain_name) - 1))) {
+			read_len = MIN(length, sizeof(domain_name) - 1);
+			if (net_pkt_read(pkt, domain_name, read_len) ||
+			    net_pkt_skip(pkt, length - read_len)) {
 				NET_ERR("options_domain_name, short packet");
 				return false;
 			}
