@@ -180,7 +180,30 @@ static inline void trigger_irq(int irq)
 #elif defined(CONFIG_XTENSA)
 static inline void trigger_irq(int irq)
 {
-	z_xt_set_intset(BIT((unsigned int)irq));
+#if XCHAL_NUM_INTERRUPTS > 32
+	switch (irq >> 5) {
+	case 0:
+		z_xt_set_intset(1 << irq);
+		break;
+	case 1:
+		z_xt_set_intset1(1 << irq);
+		break;
+#if XCHAL_NUM_INTERRUPTS > 64
+	case 2:
+		z_xt_set_intset2(1 << irq);
+		break;
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	case 3:
+		z_xt_set_intset3(1 << irq);
+		break;
+#endif
+	default:
+		break;
+	}
+#else
+	z_xt_set_intset(1 << irq);
+#endif
 }
 
 #elif defined(CONFIG_SPARC)
