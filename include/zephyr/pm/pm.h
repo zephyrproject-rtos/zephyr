@@ -171,6 +171,15 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
 
 /**
+ * @brief Increment post_ops required counter.
+ *
+ * In the normal suspend flow, this will be done when pm_system_suspend() is
+ * invoked. But in the case of hibernate, this will need to be set explicitly
+ * to allow for the exit ops to be executed during resume.
+ */
+void pm_increment_post_ops_required(void);
+
+/**
  * @}
  */
 

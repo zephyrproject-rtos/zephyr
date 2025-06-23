@@ -122,6 +122,13 @@ void pm_system_resume(void)
 	}
 }
 
+void pm_increment_post_ops_required(void)
+{
+	uint8_t id = CPU_ID;
+
+	atomic_set_bit(z_post_ops_required, id);
+}
+
 bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 {
 	k_spinlock_key_t key;

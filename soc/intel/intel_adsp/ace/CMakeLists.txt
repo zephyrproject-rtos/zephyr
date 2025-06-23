@@ -23,6 +23,7 @@ zephyr_library_sources_ifdef(
   spin_relax.c
 )
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+zephyr_library_sources_ifdef(CONFIG_HIBERNATE hibernate.c)
 
 
 if (CONFIG_XTENSA_MMU)
