@@ -173,15 +173,22 @@ void soc_late_init_hook(void)
 	uint8_t *msg = NULL;
 	size_t msg_size = 0;
 
-	void *radiocore_address =
-		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL_CPURAD_SLOT0_PARTITION)) +
-			 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION) +
-			 CONFIG_ROM_START_OFFSET);
+	const uintptr_t radiocore_address =
+		(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL_CPURAD_SLOT0_PARTITION)) +
+		 DT_REG_ADDR(DT_NODELABEL_CPURAD_SLOT0_PARTITION) + CONFIG_ROM_START_OFFSET);
+
+	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&
+	    sys_read32(radiocore_address) == 0xFFFFFFFF) {
+		LOG_ERR("Radiocore is not programmed, it will not be started");
+
+		return;
+	}
 
 	/* Don't wait as this is not yet supported. */
 	bool cpu_wait = false;
 
-	err = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, radiocore_address, cpu_wait, msg, msg_size);
+	err = ironside_cpuconf(NRF_PROCESSOR_RADIOCORE, (void *)radiocore_address, cpu_wait, msg,
+			       msg_size);
 	__ASSERT(err == 0, "err was %d", err);
 }
 #endif
