@@ -496,6 +496,8 @@ static void set_up_fixed_clock_sources(void)
 		/* Wait till LSESYS is ready */
 		while (!LL_RCC_LSE_IsPropagationReady()) {
 		}
+
+		stm32_backup_domain_disable_access();
 	}
 }
 
