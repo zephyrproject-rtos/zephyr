@@ -255,10 +255,11 @@ static void monitor_work_handler(struct k_work *work)
 	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
-static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
+static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed speeds,
 			      enum phy_cfg_link_flag flags)
 {
 	uint32_t bmcr_reg;
+	int ret;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
 		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
