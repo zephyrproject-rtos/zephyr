@@ -150,7 +150,16 @@ _ResetHandler:
 	/* make sure that interrupts are shut off (*before* we lower
 	 * PS.INTLEVEL and PS.EXCM!)
 	 */
-	wsr	a0, INTENABLE
+	wsr.intenable	a0
+#if (XCHAL_NUM_INTERRUPTS > 32)
+	wsr.intenable1	a0
+#endif
+#if (XCHAL_NUM_INTERRUPTS > 64)
+	wsr.intenable2	a0
+#endif
+#if (XCHAL_NUM_INTERRUPTS > 96)
+	wsr.intenable3	a0
+#endif
 #endif
 
 #if !XCHAL_HAVE_FULL_RESET
