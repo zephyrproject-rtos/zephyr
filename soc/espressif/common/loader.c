@@ -57,20 +57,19 @@
 #define TAG "boot"
 
 #define CHECKSUM_ALIGN 16
-#define IS_PADD(addr) (addr == 0)
-#define IS_DRAM(addr) (addr >= SOC_DRAM_LOW && addr < SOC_DRAM_HIGH)
-#define IS_IRAM(addr) (addr >= SOC_IRAM_LOW && addr < SOC_IRAM_HIGH)
-#define IS_IROM(addr) (addr >= SOC_IROM_LOW && addr < SOC_IROM_HIGH)
-#define IS_DROM(addr) (addr >= SOC_DROM_LOW && addr < SOC_DROM_HIGH)
+#define IS_PADD(o) (o.load_addr == 0)
+#define IS_DRAM(o) (o.load_addr >= SOC_DRAM_LOW && o.load_addr < SOC_DRAM_HIGH)
+#define IS_IRAM(o) (o.load_addr >= SOC_IRAM_LOW && o.load_addr < SOC_IRAM_HIGH)
+#define IS_IROM(o) (o.load_addr >= SOC_IROM_LOW && o.load_addr < SOC_IROM_HIGH)
+#define IS_DROM(o) (o.load_addr >= SOC_DROM_LOW && o.load_addr < SOC_DROM_HIGH)
 #ifdef SOC_RTC_MEM_SUPPORTED
-#define IS_RTC(addr) (addr >= SOC_RTC_DRAM_LOW && addr < SOC_RTC_DRAM_HIGH)
+#define IS_RTC(o) (o.load_addr >= SOC_RTC_DRAM_LOW && o.load_addr < SOC_RTC_DRAM_HIGH)
 #else
-#define IS_RTC(addr) 0
+#define IS_RTC(o) 0
 #endif
-#define IS_SRAM(addr) (IS_IRAM(addr) || IS_DRAM(addr))
-#define IS_MMAP(addr) (IS_IROM(addr) || IS_DROM(addr))
-#define IS_NONE(addr) (!IS_IROM(addr) && !IS_DROM(addr) \
-			&& !IS_IRAM(addr) && !IS_DRAM(addr) && !IS_PADD(addr) && !IS_RTC(addr))
+#define IS_SRAM(o) (IS_IRAM(o) || IS_DRAM(o))
+#define IS_MMAP(o) (IS_IROM(o) || IS_DROM(o))
+#define IS_LAST(o) (o.load_addr == 0xffffffff)
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
@@ -127,18 +126,17 @@ void map_rom_segments(int core, struct rom_segments *map)
 			abort();
 		}
 
-		/* TODO: Find better end-of-segment detection */
-		if (IS_NONE(segment_hdr.load_addr)) {
+		if (IS_LAST(segment_hdr)) {
 			/* Total segment count = (segments - 1) */
 			break;
 		}
 
 		ESP_EARLY_LOGI(TAG, "%s: lma 0x%08x vma 0x%08x len 0x%-6x (%u)",
-			IS_NONE(segment_hdr.load_addr) ? "???" :
-			 IS_MMAP(segment_hdr.load_addr) ?
-			  IS_IROM(segment_hdr.load_addr) ? "IMAP" : "DMAP" :
-			    IS_DRAM(segment_hdr.load_addr) ? "DRAM" :
-				IS_RTC(segment_hdr.load_addr) ? "RTC" : "IRAM",
+			IS_LAST(segment_hdr) ? "???" :
+			 IS_MMAP(segment_hdr) ?
+			  IS_IROM(segment_hdr) ? "IMAP" : "DMAP" :
+			    IS_DRAM(segment_hdr) ? "DRAM" :
+				IS_RTC(segment_hdr) ? "RTC" : "IRAM",
 			offset + sizeof(esp_image_segment_header_t),
 			segment_hdr.load_addr, segment_hdr.data_len, segment_hdr.data_len);
 
@@ -153,7 +151,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 			map->irom_flash_offset = offset + sizeof(esp_image_segment_header_t);
 			app_irom_start_align = map->irom_flash_offset & MMU_FLASH_MASK;
 		}
-		if (IS_SRAM(segment_hdr.load_addr) || IS_RTC(segment_hdr.load_addr)) {
+		if (IS_SRAM(segment_hdr) || IS_RTC(segment_hdr)) {
 			ram_segments++;
 		}
 
