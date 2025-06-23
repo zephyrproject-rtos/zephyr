@@ -397,7 +397,7 @@ static uint32_t search_uuid(struct bt_sdp_data_elem *elem, struct bt_uuid *uuid,
 			}
 		} else if (seq_size == 16U) {
 			u.uuid.type = BT_UUID_TYPE_128;
-			memcpy(u.u128.val, cur_elem, seq_size);
+			sys_memcpy_swap(u.u128.val, cur_elem, seq_size);
 			if (!bt_uuid_cmp(&u.uuid, uuid)) {
 				*found = true;
 			}
