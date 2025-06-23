@@ -30,9 +30,9 @@ struct longest_ones {
 };
 
 uint8_t txdata_buff[CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE]
-__attribute__((section(".mspi_buff")));
+__attribute__((section(".ambiq_dma_buff")));
 uint8_t rxdata_buff[CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE]
-__attribute__((section(".mspi_buff")));
+__attribute__((section(".ambiq_dma_buff")));
 
 static int flash_write_data(const struct device *dev,
 			    uint32_t             device_addr)
@@ -47,8 +47,8 @@ static int flash_write_data(const struct device *dev,
 		return ret;
 	}
 
-	while ( num_bytes_left ) {
-		if ( num_bytes_left > CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE ) {
+	while (num_bytes_left) {
+		if (num_bytes_left > CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE) {
 			test_bytes = CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE;
 			num_bytes_left -= CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE;
 		} else {
@@ -74,8 +74,8 @@ static int flash_read_scan(const struct device *dev,
 	uint32_t num_bytes_left = CONFIG_MSPI_AMBIQ_TIMING_SCAN_DATA_SIZE;
 	uint32_t test_bytes = 0;
 
-	while ( num_bytes_left ) {
-		if ( num_bytes_left > CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE ) {
+	while (num_bytes_left) {
+		if (num_bytes_left > CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE) {
 			test_bytes = CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE;
 			num_bytes_left -= CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE;
 		} else {
@@ -100,10 +100,10 @@ static int flash_read_scan(const struct device *dev,
 
 #define SECTOR_SIZE 1024
 
-static void prepare_test_pattern(uint8_t* buff, uint32_t len)
+static void prepare_test_pattern(uint8_t *buff, uint32_t len)
 {
-	uint32_t *ui32_tx_ptr = (uint32_t*)buff;
-	uint8_t  *ui8_tx_ptr  = (uint8_t*)buff;
+	uint32_t *ui32_tx_ptr = (uint32_t *)buff;
+	uint8_t  *ui8_tx_ptr  = (uint8_t *)buff;
 	uint32_t pattern_index = 0;
 	uint32_t byte_left = len - len % SECTOR_SIZE;
 
@@ -209,8 +209,8 @@ static int timing_scan_write_read_memc(const struct device             *dev,
 	uint32_t num_bytes_left = CONFIG_MSPI_AMBIQ_TIMING_SCAN_DATA_SIZE;
 	uint32_t test_bytes = 0;
 
-	while ( num_bytes_left ) {
-		if ( num_bytes_left > CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE ) {
+	while (num_bytes_left) {
+		if (num_bytes_left > CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE) {
 			test_bytes = CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE;
 			num_bytes_left -= CONFIG_MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE;
 		} else {
@@ -307,16 +307,16 @@ static inline int timing_scan(const struct device           *dev,
 	/* LOOP_TXDQSDELAY */
 	for (param->ui32TxDQSDelay  = (param_mask & MSPI_AMBIQ_SET_TXDQSDLY) ?
 					range->txdqs_start : 0;
-	     param->ui32TxDQSDelay <= ((param_mask & MSPI_AMBIQ_SET_TXDQSDLY) ?
-	     				range->txdqs_end : 0);
-	     param->ui32TxDQSDelay++) {
+		param->ui32TxDQSDelay <= ((param_mask & MSPI_AMBIQ_SET_TXDQSDLY) ?
+					   range->txdqs_end : 0);
+		param->ui32TxDQSDelay++) {
 
 		/* LOOP_RXDQSDELAY */
 		for (param->ui32RxDQSDelay  = (param_mask & MSPI_AMBIQ_SET_RXDQSDLY) ?
 						range->rxdqs_start : 0;
-		     param->ui32RxDQSDelay <= ((param_mask & MSPI_AMBIQ_SET_RXDQSDLY) ?
-		     				range->rxdqs_end : 0);
-		     param->ui32RxDQSDelay++) {
+			param->ui32RxDQSDelay <= ((param_mask & MSPI_AMBIQ_SET_RXDQSDLY) ?
+						   range->rxdqs_end : 0);
+			param->ui32RxDQSDelay++) {
 			if (scan->scan_type == MSPI_AMBIQ_TIMING_SCAN_MEMC) {
 				address = scan->device_addr;
 				address += (param->bTxNeg + param->bRxNeg + param->bRxCap
@@ -371,7 +371,7 @@ static inline int timing_scan(const struct device           *dev,
 				param->ui32TxDQSDelay, rx_res[param->ui32TxDQSDelay],
 				longest.length);
 		} else {
-			if(rx_res[param->ui32TxDQSDelay] != 0) {
+			if (rx_res[param->ui32TxDQSDelay] != 0) {
 				tx_result |= 0x01 << param->ui32TxDQSDelay;
 			}
 			LOG_INF("    TxDQSDelay: %d, RxDQSDelay Scan = 0x%08X\n",
@@ -406,12 +406,12 @@ static inline int timing_scan(const struct device           *dev,
 		scan->result.ui32RxDQSDelay = rxdqsdelay;
 		LOG_INF("Selected setting: TxNeg=%d, RxNeg=%d, RxCap=%d, Turnaround=%d,"
 			"TxDQSDelay=%d, RxDQSDelay=%d\n", param->bTxNeg, param->bRxNeg,
-			 				  param->bRxCap, param->ui8TurnAround,
+							  param->bRxCap, param->ui8TurnAround,
 							  txdqsdelay, rxdqsdelay);
 	} else {
 		LOG_INF("Candidate setting: TxNeg=%d, RxNeg=%d, RxCap=%d, Turnaround=%d,"
 			"TxDQSDelay=%d, RxDQSDelay=%d\n", param->bTxNeg, param->bRxNeg,
-			 				  param->bRxCap, param->ui8TurnAround,
+							  param->bRxCap, param->ui8TurnAround,
 							  txdqsdelay, rxdqsdelay);
 	}
 
@@ -481,10 +481,10 @@ int mspi_ambiq_timing_scan(const struct device           *dev,
 					}
 
 					if (((range->txdqs_start == range->txdqs_end &&
-	     				     range->rxdqs_start == range->rxdqs_end) ||
-	     				    ((param_mask & (MSPI_AMBIQ_SET_TXDQSDLY |
-							   MSPI_AMBIQ_SET_RXDQSDLY)) == 0)) &&
-					    max_window != 0) {
+					      range->rxdqs_start == range->rxdqs_end) ||
+					      ((param_mask & (MSPI_AMBIQ_SET_TXDQSDLY |
+							      MSPI_AMBIQ_SET_RXDQSDLY)) == 0)) &&
+						max_window != 0) {
 						return 0;
 					}
 				}

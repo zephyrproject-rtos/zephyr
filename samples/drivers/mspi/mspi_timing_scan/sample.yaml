@@ -6,6 +6,13 @@ tests:
       - mspi
     filter: dt_compat_enabled("ambiq,mspi-device")
     harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "<inf> mspi_ambiq_timing_scan: TxNeg=0, RxNeg=0, RxCap=0, Turnaround=[0-9]*"
+        - "<inf> mspi_ambiq_timing_scan:     TxDQSDelay: [0-9]*, RxDQSDelay Scan = 0x[0-9]*,(.*)"
+        - "<inf> mspi_ambiq_timing_scan: Selected setting: TxNeg=0, RxNeg=0, RxCap=0, (.*)"
     platform_allow:
       - apollo510_eb
       - apollo510_evb
@@ -25,6 +32,13 @@ tests:
       - mspi
     filter: dt_compat_enabled("ambiq,mspi-device")
     harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "<inf> mspi_ambiq_timing_scan: TxNeg=0, RxNeg=0, RxCap=0, Turnaround=[0-9]*"
+        - "<inf> mspi_ambiq_timing_scan:     TxDQSDelay: [0-9]*, RxDQSDelay Scan = 0x[0-9]*,(.*)"
+        - "<inf> mspi_ambiq_timing_scan: Selected setting: TxNeg=0, RxNeg=0, RxCap=0, (.*)"
     platform_allow:
       - apollo510_eb
       - apollo510_evb

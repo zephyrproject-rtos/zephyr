@@ -7,18 +7,25 @@
 / {
 	aliases {
 		flash0 = &is25wx064;
-		psram0 = &psram0;
+		psram0 = &aps51216ba;
 	};
 };
 
 &mspi0 {
 	/delete-property/ zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
-&psram0 {
+&aps51216ba {
 	/delete-property/ zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 &mspi1 {
 	/delete-property/ zephyr,pm-device-runtime-auto;
+	status = "okay";
+};
+
+&is25wx064 {
+	status = "okay";
 };
