@@ -15,6 +15,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
+#include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
 #define z_ic_src_pll(v) LL_RCC_ICCLKSOURCE_PLL ## v
@@ -889,13 +890,7 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable the power interface clock */
 		LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
-		if (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Enable write access to Backup domain */
-			LL_PWR_EnableBkUpAccess();
-			while (!LL_PWR_IsEnabledBkUpAccess()) {
-				/* Wait for Backup domain access */
-			}
-		}
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_LSECFGR_LSEDRV_Pos);
@@ -911,7 +906,7 @@ static void set_up_fixed_clock_sources(void)
 		while (!LL_RCC_LSE_IsReady()) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_LSI_ENABLED)) {
