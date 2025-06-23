@@ -116,7 +116,7 @@
 #error core-isa.h interrupt level does not match dispatcher!
 #endif
 
-static inline int _xtensa_handle_one_int5(unsigned int mask)
+static inline int _xtensa_handle_one_int5(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -131,7 +131,7 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int2(unsigned int mask)
+static inline int _xtensa_handle_one_int2(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -200,7 +200,7 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int3(unsigned int mask)
+static inline int _xtensa_handle_one_int3(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -274,7 +274,7 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int1(unsigned int mask)
+static inline int _xtensa_handle_one_int1(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -343,51 +343,51 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int0(unsigned int mask)
+static inline int _xtensa_handle_one_int0(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int4(unsigned int mask)
+static inline int _xtensa_handle_one_int4(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int6(unsigned int mask)
+static inline int _xtensa_handle_one_int6(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int7(unsigned int mask)
+static inline int _xtensa_handle_one_int7(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int8(unsigned int mask)
+static inline int _xtensa_handle_one_int8(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int9(unsigned int mask)
+static inline int _xtensa_handle_one_int9(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int10(unsigned int mask)
+static inline int _xtensa_handle_one_int10(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int11(unsigned int mask)
+static inline int _xtensa_handle_one_int11(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int12(unsigned int mask)
+static inline int _xtensa_handle_one_int12(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int13(unsigned int mask)
+static inline int _xtensa_handle_one_int13(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int14(unsigned int mask)
+static inline int _xtensa_handle_one_int14(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
-static inline int _xtensa_handle_one_int15(unsigned int mask)
+static inline int _xtensa_handle_one_int15(unsigned int set, unsigned int mask)
 {
 	return 0;
 }

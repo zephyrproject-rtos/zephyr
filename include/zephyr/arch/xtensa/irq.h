@@ -18,7 +18,7 @@
  */
 
 /*
- * Call this function to enable the specified interrupts.
+ * Call these functions to enable the specified interrupts.
  *
  * mask     - Bit mask of interrupts to be enabled.
  */
@@ -30,10 +30,40 @@ static inline void z_xt_ints_on(unsigned int mask)
 	val |= mask;
 	__asm__ volatile("wsr.intenable %0; rsync" : : "r"(val));
 }
+#if XCHAL_NUM_INTERRUPTS > 32
+static inline void z_xt_ints1_on(unsigned int mask)
+{
+	int val;
+
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(val));
+	val |= mask;
+	__asm__ volatile("wsr.intenable1 %0; rsync" : : "r"(val));
+}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 64
+static inline void z_xt_ints2_on(unsigned int mask)
+{
+	int val;
+
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(val));
+	val |= mask;
+	__asm__ volatile("wsr.intenable2 %0; rsync" : : "r"(val));
+}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+static inline void z_xt_ints3_on(unsigned int mask)
+{
+	int val;
+
+	__asm__ volatile("rsr.intenable3 %0" : "=r"(val));
+	val |= mask;
+	__asm__ volatile("wsr.intenable3 %0; rsync" : : "r"(val));
+}
+#endif
 
 
 /*
- * Call this function to disable the specified interrupts.
+ * Call these functions to disable the specified interrupts.
  *
  * mask     - Bit mask of interrupts to be disabled.
  */
@@ -45,10 +75,40 @@ static inline void z_xt_ints_off(unsigned int mask)
 	val &= ~mask;
 	__asm__ volatile("wsr.intenable %0; rsync" : : "r"(val));
 }
+#if XCHAL_NUM_INTERRUPTS > 32
+static inline void z_xt_ints1_off(unsigned int mask)
+{
+	int val;
+
+	__asm__ volatile("rsr.intenable1 %0" : "=r"(val));
+	val &= ~mask;
+	__asm__ volatile("wsr.intenable1 %0; rsync" : : "r"(val));
+}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 64
+static inline void z_xt_ints2_off(unsigned int mask)
+{
+	int val;
+
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(val));
+	val &= ~mask;
+	__asm__ volatile("wsr.intenable2 %0; rsync" : : "r"(val));
+}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+static inline void z_xt_ints3_off(unsigned int mask)
+{
+	int val;
+
+	__asm__ volatile("rsr.intenable3 %0" : "=r"(val));
+	val &= ~mask;
+	__asm__ volatile("wsr.intenable3 %0; rsync" : : "r"(val));
+}
+#endif
 
 
 /*
- * Call this function to set the specified (s/w) interrupt.
+ * Call these functions to set the specified (s/w) interrupt.
  */
 static inline void z_xt_set_intset(unsigned int arg)
 {
@@ -58,6 +118,25 @@ static inline void z_xt_set_intset(unsigned int arg)
 	ARG_UNUSED(arg);
 #endif
 }
+#if XCHAL_NUM_INTERRUPTS > 32
+static inline void z_xt_set_intset1(unsigned int arg)
+{
+	__asm__ volatile("wsr.intset1 %0; rsync" : : "r"(arg));
+}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 64
+static inline void z_xt_set_intset2(unsigned int arg)
+{
+	__asm__ volatile("wsr.intset2 %0; rsync" : : "r"(arg));
+}
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+static inline void z_xt_set_intset3(unsigned int arg)
+{
+	__asm__ volatile("wsr.intset3 %0; rsync" : : "r"(arg));
+}
+#endif
+
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -117,7 +196,30 @@ extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  */
 static ALWAYS_INLINE void xtensa_irq_enable(uint32_t irq)
 {
+#if XCHAL_NUM_INTERRUPTS > 32
+	switch (irq >> 5) {
+	case 0:
+		z_xt_ints_on(1 << irq);
+		break;
+	case 1:
+		z_xt_ints1_on(1 << irq);
+		break;
+#if XCHAL_NUM_INTERRUPTS > 64
+	case 2:
+		z_xt_ints2_on(1 << irq);
+		break;
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	case 3:
+		z_xt_ints3_on(1 << irq);
+		break;
+#endif
+	default:
+		break;
+	}
+#else
 	z_xt_ints_on(1 << irq);
+#endif
 }
 
 /**
@@ -127,7 +229,30 @@ static ALWAYS_INLINE void xtensa_irq_enable(uint32_t irq)
  */
 static ALWAYS_INLINE void xtensa_irq_disable(uint32_t irq)
 {
+#if XCHAL_NUM_INTERRUPTS > 32
+	switch (irq >> 5) {
+	case 0:
+		z_xt_ints_off(1 << irq);
+		break;
+	case 1:
+		z_xt_ints1_off(1 << irq);
+		break;
+#if XCHAL_NUM_INTERRUPTS > 64
+	case 2:
+		z_xt_ints2_off(1 << irq);
+		break;
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	case 3:
+		z_xt_ints3_off(1 << irq);
+		break;
+#endif
+	default:
+		break;
+	}
+#else
 	z_xt_ints_off(1 << irq);
+#endif
 }
 
 /** Implementation of @ref arch_irq_lock. */
