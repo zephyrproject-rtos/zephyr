@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NCT6
+if SOC_SERIES_NCT66
 
 config NUM_IRQS
 	default 82
@@ -50,4 +50,4 @@ config ESIO_EXT_SIGN
 	bool "Use external signing tool"
 	default n	
 
-endif # SOC_SERIES_NCT6
+endif # SOC_SERIES_NCT66

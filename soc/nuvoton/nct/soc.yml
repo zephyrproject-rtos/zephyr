@@ -1,6 +1,6 @@
 family:
 - name: nct
   series:
-  - name: nct6
+  - name: nct66
     socs:
     - name: nct6694b

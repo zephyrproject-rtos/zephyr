@@ -7,14 +7,14 @@
 /* Device tree declarations of nct soc family */
 #include "nct.dtsi"
 
-/* nct6 series pinmux mapping table */
-#include "nct6/nct6-alts-map.dtsi"
-/* nct6 series mapping table between MIWU wui bits and source device */
-#include "nct6/nct6-miwus-wui-map.dtsi"
-/* nct6 series mapping table between MIWU groups and interrupts */
-#include "nct6/nct6-miwus-int-map.dtsi"
-/* nct6 series eSPI VW mapping table */
-#include "nct6/nct6-espi-vws-map.dtsi"
+/* nct66 series pinmux mapping table */
+#include "nct66/nct66-alts-map.dtsi"
+/* nct66 series mapping table between MIWU wui bits and source device */
+#include "nct66/nct66-miwus-wui-map.dtsi"
+/* nct66 series mapping table between MIWU groups and interrupts */
+#include "nct66/nct66-miwus-int-map.dtsi"
+/* nct66 series eSPI VW mapping table */
+#include "nct66/nct66-espi-vws-map.dtsi"
 
 / {
 	def-io-conf-list {

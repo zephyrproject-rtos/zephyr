@@ -3,7 +3,7 @@
  * @version  V1.00
  * $Revision: 12 $
  * $Date: 14/10/07 5:47p $
- * @brief    NCT6 MCU USB Host HID library core.
+ * @brief    NCT66 MCU USB Host HID library core.
  *
  * @note
  * Copyright (C) 2025 Nuvoton Technology Corp. All rights reserved.
@@ -13,15 +13,15 @@
 
 #include "apiHID.h"
 
-/** @addtogroup NCT6_Device_Driver NCT6 Device Driver
+/** @addtogroup NCT66_Device_Driver NCT66 Device Driver
   @{
 */
 
-/** @addtogroup NCT6_USBH_HID_Driver USB Host HID Driver
+/** @addtogroup NCT66_USBH_HID_Driver USB Host HID Driver
   @{
 */
 
-/** @addtogroup NCT6_USBH_HID_EXPORTED_FUNCTIONS USB Host HID Driver Exported Functions
+/** @addtogroup NCT66_USBH_HID_EXPORTED_FUNCTIONS USB Host HID Driver Exported Functions
   @{
 */
 
@@ -469,11 +469,11 @@ int32_t USBH_HidStartIntWritePipe(HID_DEV_T *hdev, HID_IW_FUNC *func)
 }
 
 
-/*@}*/ /* end of group NCT6_USBH_HID_EXPORTED_FUNCTIONS */
+/*@}*/ /* end of group NCT66_USBH_HID_EXPORTED_FUNCTIONS */
 
-/*@}*/ /* end of group NCT6_USBH_HID_Driver */
+/*@}*/ /* end of group NCT66_USBH_HID_Driver */
 
-/*@}*/ /* end of group NCT6_Device_Driver */
+/*@}*/ /* end of group NCT66_Device_Driver */
 
 /*** (C) COPYRIGHT 2013 Nuvoton Technology Corp. ***/
 

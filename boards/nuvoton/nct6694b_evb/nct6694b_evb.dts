@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <nuvoton/nct6694b.dtsi>
-#include <nuvoton/nct/nct6/nct6-pinctrl.dtsi>
+#include <nuvoton/nct/nct66/nct66-pinctrl.dtsi>
 
 / {
 	model = "Nuvoton NCT6694B evaluation board";

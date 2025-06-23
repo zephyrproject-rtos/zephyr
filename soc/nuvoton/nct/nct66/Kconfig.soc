@@ -1,9 +1,9 @@
-# Nuvoton Cortex-M4 Embedded Controller NCT6 series
+# Nuvoton Cortex-M4 Embedded Controller NCT66 series
 
 # Copyright (c) 2025 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NCT6
+config SOC_SERIES_NCT66
 	bool
 	select SOC_FAMILY_NCT
 	help
@@ -11,12 +11,12 @@ config SOC_SERIES_NCT6
 
 config SOC_NCT6694B
 	bool
-	select SOC_SERIES_NCT6
+	select SOC_SERIES_NCT66
 	help
 	  NCT6694B
 
 config SOC_SERIES
-	default "nct6" if SOC_SERIES_NCT6
+	default "nct66" if SOC_SERIES_NCT66
 
 config SOC
 	default "nct6694b" if SOC_NCT6694B

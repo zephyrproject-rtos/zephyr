@@ -32,11 +32,11 @@ config ESPI_NCT_PERIPHERAL_HOST_CMD_PARAM_SIZE
 
 config ESPI_TAF_NCT
 	bool "Nuvoton NCT ESPI TAF driver"
-	depends on SOC_SERIES_NCT6
+	depends on SOC_SERIES_NCT66
 	depends on FLASH
 	help
 	  This option enables the Intel Enhanced Serial Peripheral Interface
-	  Target Attached Flash (eSPI TAF) for NCT6 family of processors.
+	  Target Attached Flash (eSPI TAF) for NCT66 family of processors.
 
 choice ESPI_NCT_TAF_ACCESS_MODE_CHOICE
 	prompt "eSPI TAF Read Access Mode"

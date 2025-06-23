@@ -12,9 +12,9 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-static int soc_nct6_init(void)
+static int soc_nct66_init(void)
 {
 	return 0;
 }
 
-SYS_INIT(soc_nct6_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(soc_nct66_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

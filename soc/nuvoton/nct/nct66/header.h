@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NCT6_HEADER_H__
-#define __NCT6_HEADER_H__
+#ifndef __NCT66_HEADER_H__
+#define __NCT66_HEADER_H__
 
 #ifdef __cplusplus
 extern "C"
@@ -94,10 +94,10 @@ struct FIRMWARE_HEDAER_TYPE {
 	uint8_t hFwHash[4][64];
 };
 
-#define NPCM4XX_FW_HEADER_SIZE (sizeof(struct FIRMWARE_HEDAER_TYPE))
+#define NCT66_FW_HEADER_SIZE (sizeof(struct FIRMWARE_HEDAER_TYPE))
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __NCT6_HEADER_H__ */
+#endif /* __NCT66_HEADER_H__ */

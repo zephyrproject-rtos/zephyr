@@ -355,7 +355,7 @@ RAMFUNC static int flash_nct_nor_erase(const struct device *dev, off_t addr, siz
 #ifdef CONFIG_XIP
 	/* if execute in the place, disable IRQ to avoid interrupt and context
 	 * switch, to make sure always execute code in the RAM(SRAM) when use
-	 * spim driver. nct6xx only have one core, we don't need use lock to
+	 * spim driver. nct only have one core, we don't need use lock to
 	 * handle race condition.
 	 */
 	key = irq_lock();
@@ -394,8 +394,8 @@ RAMFUNC static int flash_nct_nor_erase(const struct device *dev, off_t addr, siz
 	return ret;
 }
 
-uintptr_t nct6xx_vector_table_save(void);
-void nct6xx_vector_table_restore(uintptr_t vtor);
+uintptr_t nct_vector_table_save(void);
+void nct_vector_table_restore(uintptr_t vtor);
 
 RAMFUNC static int flash_nct_nor_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)

@@ -1,16 +1,16 @@
-# Nuvoton Cortex-M4 Embedded Controller NCT6 series
+# Nuvoton Cortex-M4 Embedded Controller NCT66 series
 
 # Copyright (c) 2025 Nuvoton Technology Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NCT6
+config SOC_SERIES_NCT66
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_FAMILY_NCT
 	select CPU_HAS_ARM_MPU
 	help
-	  Enable support for Nuvoton NCT6 series
+	  Enable support for Nuvoton NCT66 series
 
 config USBH_OHCI
     bool "Enable Nuvoton NCT USB OHCI Host Driver"

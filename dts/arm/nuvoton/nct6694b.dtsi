@@ -7,7 +7,7 @@
 
 /* Device tree declarations of nct soc family */
 #include <mem.h>
-#include "nct/nct6.dtsi"
+#include "nct/nct66.dtsi"
 
 / {
 	flash0: flash@80000 {

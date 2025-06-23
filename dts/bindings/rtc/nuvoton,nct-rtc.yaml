@@ -18,5 +18,5 @@ properties:
     required: true
     description: |
         Mapping table between Wake-Up Input (WUI) and rtc alarm signal.
-        For example, the WUI mapping on NCT6 would be
+        For example, the WUI mapping on NCT66 would be
            rtc-wk = <&wui_rtc>;

@@ -41,21 +41,21 @@ config ETH_NCT_RANDOM_MAC
 
 if !ETH_NCT_RANDOM_MAC
 
-config ETH_NCT6XX_MAC3
+config ETH_NCT66XX_MAC3
 	hex "MAC Address Byte 3"
 	default 0
 	range 0 0xff
 	help
 	  This is the byte 3 of the MAC address.
 
-config ETH_NCT6XX_MAC4
+config ETH_NCT66XX_MAC4
 	hex "MAC Address Byte 4"
 	default 0
 	range 0 0xff
 	help
 	  This is the byte 4 of the MAC address.
 
-config ETH_NCT6XX_MAC5
+config ETH_NCT66XX_MAC5
 	hex "MAC Address Byte 5"
 	default 0
 	range 0 0xff

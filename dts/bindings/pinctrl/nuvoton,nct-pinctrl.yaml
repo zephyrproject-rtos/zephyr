@@ -13,10 +13,10 @@ description: |
   Custom pin properties for nct series are available also:
     - pinmux-gpio: Inverse pinmux back to gpio
 
-  An example for NCT6 family, include the chip level pinctrl DTSI file in the
+  An example for NCT66 family, include the chip level pinctrl DTSI file in the
   board level DTS:
 
-    #include <nuvoton/nct/nct6/nct6-pinctrl.dtsi>
+    #include <nuvoton/nct/nct66/nct66-pinctrl.dtsi>
 
   We want to use the I2C0_0 port of the NCT6694B controller and enable the
   internal 3.3V pull-up if its i2c frequency won't exceed 400kHz.

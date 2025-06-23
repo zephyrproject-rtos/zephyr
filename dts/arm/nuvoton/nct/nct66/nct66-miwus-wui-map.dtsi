@@ -7,7 +7,7 @@
 /* Common Wake-Up Unit Input (WUI) mapping configurations in nct family */
 #include <nuvoton/nct/nct-miwus-wui-map.dtsi>
 
-/* Specific Wake-Up Unit Input (WUI) mapping configurations in nct6 series */
+/* Specific Wake-Up Unit Input (WUI) mapping configurations in nct66 series */
 / {
 	/* Mapping between MIWU wui bits and source device */
 	nct-miwus-wui-map {
