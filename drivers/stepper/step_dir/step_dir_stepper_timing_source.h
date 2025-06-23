@@ -9,6 +9,11 @@
 #include <zephyr/device.h>
 
 /**
+ * @brief Step-Dir function to call when time for one step has passed
+ */
+typedef void (*step_dir_step_handler)(const struct device *dev);
+
+/**
  * @brief Initialize the stepper timing source.
  *
  * @param dev Pointer to the device structure.
@@ -60,6 +65,16 @@ typedef int (*stepper_timing_source_stop)(const struct device *dev);
 typedef bool (*stepper_timing_source_is_running)(const struct device *dev);
 
 /**
+ * @brief Registers step-dir function to call when time for one step has passed.
+ *
+ * @param dev Pointer to the device structure.
+ * @param handler Step dir function to call.
+ * @return 0 on success, or a negative error code on failure.
+ */
+typedef int (*stepper_timing_source_register_step_handler)(const struct device *dev,
+							   step_dir_step_handler handler);
+
+/**
  * @brief Stepper timing source API.
  */
 struct stepper_timing_source_api {
@@ -69,6 +84,7 @@ struct stepper_timing_source_api {
 	stepper_timing_sources_requires_reschedule needs_reschedule;
 	stepper_timing_source_stop stop;
 	stepper_timing_source_is_running is_running;
+	stepper_timing_source_register_step_handler register_step_handler;
 };
 
 extern const struct stepper_timing_source_api step_work_timing_source_api;

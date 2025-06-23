@@ -8,13 +8,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio.h>
-#include "../step_dir/step_dir_stepper_common.h"
+#include "../step_dir/step_dir_stepper.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(a4979, CONFIG_STEPPER_LOG_LEVEL);
 
 struct a4979_config {
-	const struct step_dir_stepper_common_config common;
+	union step_dir_stepper_config step_dir_config;
+	const struct step_dir_stepper_api *step_dir_api;
 	const struct gpio_dt_spec en_pin;
 	const struct gpio_dt_spec reset_pin;
 	const struct gpio_dt_spec m0_pin;
@@ -22,7 +23,7 @@ struct a4979_config {
 };
 
 struct a4979_data {
-	const struct step_dir_stepper_common_data common;
+	union step_dir_stepper_data step_dir_data;
 	enum stepper_micro_step_resolution micro_step_res;
 	bool enabled;
 };
@@ -93,7 +94,7 @@ static int a4979_stepper_disable(const struct device *dev)
 		return ret;
 	}
 
-	config->common.timing_source->stop(dev);
+	config->step_dir_api->stop(dev);
 	data->enabled = false;
 
 	return 0;
@@ -156,37 +157,40 @@ static int a4979_stepper_get_micro_step_res(const struct device *dev,
 static int a4979_move_to(const struct device *dev, int32_t target)
 {
 	struct a4979_data *data = dev->data;
+	const struct a4979_config *config = dev->config;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to move to target position, device is not enabled");
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_move_to(dev, target);
+	return config->step_dir_api->move_to(dev, target);
 }
 
 static int a4979_stepper_move_by(const struct device *dev, const int32_t micro_steps)
 {
 	struct a4979_data *data = dev->data;
+	const struct a4979_config *config = dev->config;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to move by delta, device is not enabled");
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_move_by(dev, micro_steps);
+	return config->step_dir_api->move_by(dev, micro_steps);
 }
 
 static int a4979_run(const struct device *dev, enum stepper_direction direction)
 {
 	struct a4979_data *data = dev->data;
+	const struct a4979_config *config = dev->config;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to run stepper, device is not enabled");
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_run(dev, direction);
+	return config->step_dir_api->run(dev, direction);
 }
 
 static int a4979_init(const struct device *dev)
@@ -256,12 +260,11 @@ static int a4979_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = step_dir_stepper_common_init(dev);
+	ret = config->step_dir_api->init(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize common stepper data: %d", ret);
+		LOG_ERR("Failed to initialize step direction implementation (error: %d)", ret);
 		return ret;
 	}
-	gpio_pin_set_dt(&config->common.step_pin, 0);
 
 	return 0;
 }
@@ -271,29 +274,32 @@ static DEVICE_API(stepper, a4979_stepper_api) = {
 	.disable = a4979_stepper_disable,
 	.move_by = a4979_stepper_move_by,
 	.move_to = a4979_move_to,
-	.is_moving = step_dir_stepper_common_is_moving,
-	.set_reference_position = step_dir_stepper_common_set_reference_position,
-	.get_actual_position = step_dir_stepper_common_get_actual_position,
-	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
+	.is_moving = step_dir_stepper_is_moving,
+	.set_reference_position = step_dir_stepper_set_reference_position,
+	.get_actual_position = step_dir_stepper_get_actual_position,
+	.set_microstep_interval = step_dir_stepper_set_microstep_interval,
 	.run = a4979_run,
-	.stop = step_dir_stepper_common_stop,
+	.stop = step_dir_stepper_stop,
 	.set_micro_step_res = a4979_stepper_set_micro_step_res,
 	.get_micro_step_res = a4979_stepper_get_micro_step_res,
-	.set_event_callback = step_dir_stepper_common_set_event_callback,
+	.set_event_callback = step_dir_stepper_set_event_callback,
 };
 
 #define A4979_DEVICE(inst)                                                                         \
                                                                                                    \
+	STEP_DIR_STEPPER_INST_SETUP(inst);                                                         \
+                                                                                                   \
 	static const struct a4979_config a4979_config_##inst = {                                   \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                       \
+		.step_dir_api = STEP_DIR_STEPPER_SELECT_INST(inst),                                \
 		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                           \
 		.reset_pin = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                     \
 		.m0_pin = GPIO_DT_SPEC_INST_GET(inst, m0_gpios),                                   \
 		.m1_pin = GPIO_DT_SPEC_INST_GET(inst, m1_gpios),                                   \
+		STEP_DIR_STEPPER_CONFIG_INST(inst),                                                \
 	};                                                                                         \
                                                                                                    \
 	static struct a4979_data a4979_data_##inst = {                                             \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                         \
+		STEP_DIR_STEPPER_DATA_INST(inst),                                                  \
 		.micro_step_res = DT_INST_PROP(inst, micro_step_res),                              \
 	};                                                                                         \
                                                                                                    \

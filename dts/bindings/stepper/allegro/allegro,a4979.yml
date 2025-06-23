@@ -19,6 +19,7 @@ description: |
       m0-gpios = <&gpiod 13 0>;
       m1-gpios = <&gpiod 12 0>;
       counter = <&counter5>;
+      step-dir = "common";
   };
 
 compatible: "allegro,a4979"

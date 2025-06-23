@@ -23,7 +23,7 @@ static void stepper_work_step_handler(struct k_work *work)
 	struct step_dir_stepper_common_data *data =
 		CONTAINER_OF(dwork, struct step_dir_stepper_common_data, stepper_dwork);
 
-	stepper_handle_timing_signal(data->dev);
+	data->handler(data->dev);
 }
 
 int step_work_timing_source_init(const struct device *dev)
@@ -69,6 +69,15 @@ bool step_work_timing_source_is_running(const struct device *dev)
 	return k_work_delayable_is_pending(&data->stepper_dwork);
 }
 
+int step_work_timing_register_handler(const struct device *dev, step_dir_step_handler handler)
+{
+	struct step_dir_stepper_common_data *data = dev->data;
+
+	data->handler = handler;
+
+	return 0;
+}
+
 const struct stepper_timing_source_api step_work_timing_source_api = {
 	.init = step_work_timing_source_init,
 	.update = step_work_timing_source_update,
@@ -76,4 +85,5 @@ const struct stepper_timing_source_api step_work_timing_source_api = {
 	.needs_reschedule = step_work_timing_source_needs_reschedule,
 	.stop = step_work_timing_source_stop,
 	.is_running = step_work_timing_source_is_running,
+	.register_step_handler = step_work_timing_register_handler,
 };

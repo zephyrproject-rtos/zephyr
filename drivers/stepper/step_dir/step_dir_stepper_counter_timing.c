@@ -14,7 +14,7 @@ static void step_counter_top_interrupt(const struct device *dev, void *user_data
 	ARG_UNUSED(dev);
 	struct step_dir_stepper_common_data *data = user_data;
 
-	stepper_handle_timing_signal(data->dev);
+	data->handler(data->dev);
 }
 
 int step_counter_timing_source_update(const struct device *dev,
@@ -93,6 +93,15 @@ bool step_counter_timing_source_is_running(const struct device *dev)
 	return data->counter_running;
 }
 
+int step_counter_timing_register_handler(const struct device *dev, step_dir_step_handler handler)
+{
+	struct step_dir_stepper_common_data *data = dev->data;
+
+	data->handler = handler;
+
+	return 0;
+}
+
 int step_counter_timing_source_init(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
@@ -118,4 +127,5 @@ const struct stepper_timing_source_api step_counter_timing_source_api = {
 	.needs_reschedule = step_counter_timing_source_needs_reschedule,
 	.stop = step_counter_timing_source_stop,
 	.is_running = step_counter_timing_source_is_running,
+	.register_step_handler = step_counter_timing_register_handler,
 };

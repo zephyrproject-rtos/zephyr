@@ -9,7 +9,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/stepper/stepper_drv84xx.h>
-#include "../step_dir/step_dir_stepper_common.h"
+#include "../step_dir/step_dir_stepper.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(drv84xx, CONFIG_STEPPER_LOG_LEVEL);
@@ -27,7 +27,8 @@ LOG_MODULE_REGISTER(drv84xx, CONFIG_STEPPER_LOG_LEVEL);
  * needed by a given DRV84XX stepper driver.
  */
 struct drv84xx_config {
-	struct step_dir_stepper_common_config common;
+	union step_dir_stepper_config step_dir_config;
+	const struct step_dir_stepper_api *step_dir_api;
 	struct gpio_dt_spec sleep_pin;
 	struct gpio_dt_spec en_pin;
 	struct gpio_dt_spec m0_pin;
@@ -47,7 +48,7 @@ struct drv84xx_pin_states {
  * @brief DRV84XX stepper driver data.
  */
 struct drv84xx_data {
-	const struct step_dir_stepper_common_data common;
+	union step_dir_stepper_data step_dir_data;
 	const struct device *dev;
 	bool enabled;
 	struct drv84xx_pin_states pin_states;
@@ -255,7 +256,7 @@ static int drv84xx_disable(const struct device *dev)
 		}
 	}
 
-	config->common.timing_source->stop(dev);
+	config->step_dir_api->stop(dev);
 
 	data->enabled = false;
 
@@ -354,44 +355,48 @@ static int drv84xx_get_micro_step_res(const struct device *dev,
 static int drv84xx_move_to(const struct device *dev, int32_t target)
 {
 	struct drv84xx_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to move to target position, device is not enabled");
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_move_to(dev, target);
+	return config->step_dir_api->move_to(dev, target);
 }
 
 static int drv84xx_move_by(const struct device *dev, int32_t steps)
 {
 	struct drv84xx_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to move by delta, device is not enabled");
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_move_by(dev, steps);
+	return config->step_dir_api->move_by(dev, steps);
 }
 
 static int drv84xx_run(const struct device *dev, enum stepper_direction direction)
 {
 	struct drv84xx_data *data = dev->data;
+	const struct drv84xx_config *config = dev->config;
 
 	if (!data->enabled) {
 		LOG_ERR("Failed to run stepper, device is not enabled");
 		return -ECANCELED;
 	}
 
-	return step_dir_stepper_common_run(dev, direction);
+	return config->step_dir_api->run(dev, direction);
 }
 
 void fault_event(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct drv84xx_data *data = CONTAINER_OF(cb, struct drv84xx_data, fault_cb_data);
+	const struct drv84xx_config *config = dev->config;
 
-	stepper_trigger_callback(data->dev, STEPPER_EVENT_FAULT_DETECTED);
+	config->step_dir_api->trigger_callback(data->dev, STEPPER_EVENT_FAULT_DETECTED);
 }
 
 static int drv84xx_init(const struct device *dev)
@@ -447,9 +452,9 @@ static int drv84xx_init(const struct device *dev)
 		}
 	}
 
-	ret = step_dir_stepper_common_init(dev);
+	ret = config->step_dir_api->init(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize common step direction stepper (error: %d)", ret);
+		LOG_ERR("Failed to initialize step direction implementaion (error: %d)", ret);
 		return ret;
 	}
 
@@ -480,32 +485,35 @@ static DEVICE_API(stepper, drv84xx_stepper_api) = {
 	.disable = drv84xx_disable,
 	.move_by = drv84xx_move_by,
 	.move_to = drv84xx_move_to,
-	.is_moving = step_dir_stepper_common_is_moving,
-	.set_reference_position = step_dir_stepper_common_set_reference_position,
-	.get_actual_position = step_dir_stepper_common_get_actual_position,
-	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
+	.is_moving = step_dir_stepper_is_moving,
+	.set_reference_position = step_dir_stepper_set_reference_position,
+	.get_actual_position = step_dir_stepper_get_actual_position,
+	.set_microstep_interval = step_dir_stepper_set_microstep_interval,
 	.run = drv84xx_run,
-	.stop = step_dir_stepper_common_stop,
+	.stop = step_dir_stepper_stop,
 	.set_micro_step_res = drv84xx_set_micro_step_res,
 	.get_micro_step_res = drv84xx_get_micro_step_res,
-	.set_event_callback = step_dir_stepper_common_set_event_callback,
+	.set_event_callback = step_dir_stepper_set_event_callback,
 };
 
 #define DRV84XX_DEVICE(inst)                                                                       \
                                                                                                    \
+	STEP_DIR_STEPPER_INST_SETUP(inst);                                                         \
+                                                                                                   \
 	static const struct drv84xx_config drv84xx_config_##inst = {                               \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                       \
+		.step_dir_api = STEP_DIR_STEPPER_SELECT_INST(inst),                                \
 		.sleep_pin = GPIO_DT_SPEC_INST_GET_OR(inst, sleep_gpios, {0}),                     \
 		.en_pin = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                           \
 		.m0_pin = GPIO_DT_SPEC_INST_GET_OR(inst, m0_gpios, {0}),                           \
 		.m1_pin = GPIO_DT_SPEC_INST_GET_OR(inst, m1_gpios, {0}),                           \
 		.fault_pin = GPIO_DT_SPEC_INST_GET_OR(inst, fault_gpios, {0}),                     \
+		STEP_DIR_STEPPER_CONFIG_INST(inst),                                                \
 	};                                                                                         \
                                                                                                    \
 	static struct drv84xx_data drv84xx_data_##inst = {                                         \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                         \
 		.ustep_res = DT_INST_PROP(inst, micro_step_res),                                   \
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
+		STEP_DIR_STEPPER_DATA_INST(inst),                                                  \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &drv84xx_init, NULL, &drv84xx_data_##inst,                     \
