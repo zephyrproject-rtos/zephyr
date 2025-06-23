@@ -134,6 +134,17 @@ config POWEROFF
 	help
 	  Enable support for system power off.
 
+config HAS_HIBERNATE
+	  bool
+	  help
+		Option to signal that hibernate functionality is implemented.
+
+config HIBERNATE
+	  bool "Hibernate functionality"
+	  depends on HAS_HIBERNATE
+	  help
+		Enable support for system hibernate.
+
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
 
