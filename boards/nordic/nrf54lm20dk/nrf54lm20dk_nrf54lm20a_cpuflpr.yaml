@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf54lm20dk/nrf54lm20a/cpuflpr
+name: nRF54LM20-DK-nRF54LM20A-Fast-Lightweight-Peripheral-Processor
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 96
+flash: 96
+supported:
+  - counter
+  - gpio
+  - watchdog
