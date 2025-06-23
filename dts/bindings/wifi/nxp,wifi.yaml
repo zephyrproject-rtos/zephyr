@@ -33,3 +33,11 @@ properties:
       This pin defaults to active high when consumed by the SD card. The
       property value should ensure the flags properly describe the signal
       that is presented to the driver.
+
+  wakeup-gpios:
+    type: phandle-array
+    description: |
+      WLAN wakeup host pin
+      This pin defaults to active low when consumed by the SDK card. The
+      property value should ensure the flags properly describ the signal
+      that is presendted to the driver.
