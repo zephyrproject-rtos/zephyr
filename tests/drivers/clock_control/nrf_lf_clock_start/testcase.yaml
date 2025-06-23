@@ -15,7 +15,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_SYSTEM_CLOCK_WAIT_FOR_STABILITY=y
@@ -33,7 +33,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY=y
@@ -66,7 +66,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
@@ -83,7 +83,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
@@ -100,7 +100,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
@@ -117,7 +117,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
@@ -134,7 +134,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
@@ -151,7 +151,7 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l20pdk/nrf54l20/cpuapp
+      - nrf54lm20pdk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
