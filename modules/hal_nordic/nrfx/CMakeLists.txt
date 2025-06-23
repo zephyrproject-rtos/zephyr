@@ -63,6 +63,9 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54L15_CPUAPP NRF_APPLI
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L20_ENGA       NRF54LM20A_ENGA_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L20_ENGA_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L20_ENGA_CPUFLPR NRF_FLPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20A_ENGA     NRF54LM20A_ENGA_XXAA)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20A_ENGA_CPUAPP NRF_APPLICATION)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20A_ENGA_CPUFLPR NRF_FLPR)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
 
@@ -200,7 +203,7 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE 
 
 # Inject code to skip TAMPC setup for nRF54L20 and nRF54L09. It is not supported for now.
 # It needs to be removed when support is provided.
-if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP OR CONFIG_SOC_NRF54L09_ENGA_CPUAPP)
+if(CONFIG_SOC_NRF54L20_ENGA_CPUAPP OR CONFIG_SOC_NRF54LM20A_ENGA_CPUAPP OR CONFIG_SOC_NRF54L09_ENGA_CPUAPP)
 	  zephyr_compile_definitions(NRF_SKIP_TAMPC_SETUP)
 endif()
 
@@ -246,6 +249,8 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54L15_CPUAPP      nrf54l15_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_CPUFLPR     nrf54l15_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L20_ENGA_CPUAPP nrf54lm20a_enga_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L20_ENGA_CPUFLPR nrf54lm20a_enga_flpr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54LM20A_ENGA_CPUAPP nrf54lm20a_enga_application.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54LM20A_ENGA_CPUFLPR nrf54lm20a_enga_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9120              nrf9120.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9160              nrf9160.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF9230_ENGB_CPUAPP  nrf9230_engb_application.svd)
