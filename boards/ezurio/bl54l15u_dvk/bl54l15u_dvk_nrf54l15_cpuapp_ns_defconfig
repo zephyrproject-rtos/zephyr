@@ -1,6 +1,6 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # Copyright (c) 2025 Ezurio LLC
-# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+# SPDX-License-Identifier: Apache-2.0
 
 CONFIG_ARM_MPU=y
 CONFIG_HW_STACK_PROTECTION=y
