@@ -116,6 +116,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_SRAM_VECTOR_TABLE` moved from ``zephyr/Kconfig.zephyr`` to
     ``zephyr/arch/Kconfig`` and added dependencies to it.
 
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
 * Kernel
 
  * :c:macro:`K_TIMEOUT_ABS_SEC`
