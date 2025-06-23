@@ -54,7 +54,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
-ZTEST(hifi, test_register_sanity)
+ZTEST(hifi, test_register_coherence)
 {
 	int       priority;
 	uint32_t  i;
