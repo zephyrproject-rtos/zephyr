@@ -7,9 +7,9 @@ tests:
       - drivers
       - mspi
       - flash
-    filter: dt_compat_enabled("zephyr,mspi-emul-flash") or
-            dt_compat_enabled("mspi-atxp032") or
-            dt_compat_enabled("mspi-is25xX0xx")
+    filter: dt_compat_enabled("zephyr,mspi-emul-flash")
+      or dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
+      or dt_compat_enabled("mspi-atxp032") or dt_compat_enabled("mspi-is25xX0xx")
     harness: ztest
     platform_allow:
       - native_sim

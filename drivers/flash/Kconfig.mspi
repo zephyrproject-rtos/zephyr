@@ -73,15 +73,15 @@ config FLASH_MSPI_HANDLE_CACHE
 	  Disable this if cache has been handled in upper layers.
 
 config FLASH_MSPI_RANGE_HANDLE_CACHE_SIZE
-	int "threshold to do cache handling by range or in full, size in bytes"
-	default SOC_AMBIQ_DCACHE_SIZE if SOC_APOLLO510
+	int "Threshold to do cache handling by range or in full, size in bytes"
+	default SOC_AMBIQ_DCACHE_SIZE if SOC_SERIES_APOLLO5X
+	default 0
 	help
 	  If size is larger than this number, it is uneconomical to handle cache in range.
 	  However, this is a number by experience and could be platform specific.
 
 config FLASH_MSPI_XIP_READ
 	bool "Turn on XIP read in flash_read"
-	default n
 	depends on MSPI_XIP
 	help
 	  Enable this for those controllers that supports XIP and wishes to

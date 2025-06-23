@@ -9,3 +9,11 @@
 		flash0 = &is25wx064;
 	};
 };
+
+&mspi1 {
+	status = "okay";
+};
+
+&is25wx064 {
+	status = "okay";
+};

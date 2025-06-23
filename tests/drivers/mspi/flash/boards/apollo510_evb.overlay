@@ -9,3 +9,11 @@
 		mspi0 = &mspi1;
 	};
 };
+
+&mspi1 {
+	status = "okay";
+};
+
+&is25wx064 {
+	status = "okay";
+};

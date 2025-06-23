@@ -22,8 +22,8 @@ static const struct device *mspi_devices[] = {
 };
 
 #if CONFIG_DCACHE
-static uint8_t expected[MSPI_FLASH_TEST_SIZE]__attribute__((aligned(CONFIG_DCACHE_LINE_SIZE)));
-static uint8_t actual[MSPI_FLASH_TEST_SIZE]__attribute__((aligned(CONFIG_DCACHE_LINE_SIZE)));
+static uint8_t expected[MSPI_FLASH_TEST_SIZE]__aligned(CONFIG_DCACHE_LINE_SIZE);
+static uint8_t actual[MSPI_FLASH_TEST_SIZE]__aligned(CONFIG_DCACHE_LINE_SIZE);
 #else
 static uint8_t expected[MSPI_FLASH_TEST_SIZE];
 static uint8_t actual[MSPI_FLASH_TEST_SIZE];

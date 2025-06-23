@@ -84,7 +84,7 @@ struct flash_mspi_is25xX0xx_data {
 	struct mspi_xfer_packet             packet;
 
 	struct k_sem                        lock;
-	uint32_t                            jedec_id;
+	uint8_t                             id[20];
 };
 
 static int is25xX0xx_get_dummy_clk(uint8_t rxdummy, uint8_t *dummy_clk)
@@ -321,20 +321,19 @@ static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 			k_busy_wait(cfg->reset_recovery_us);
 		}
 	} else {
-		ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_EN, 0, 0, 0, NULL, 0);
+		ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_EN,
+							 0, 0, 0, NULL, 0);
 		if (ret) {
 			return ret;
 		}
-		ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_MEM, 0, 0, 0, NULL, 0);
+		ret = flash_mspi_is25xX0xx_command_write(flash, SPI_NOR_CMD_RESET_MEM,
+							 0, 0, 0, NULL, 0);
 		if (ret) {
 			return ret;
 		}
 	}
 
 	ret = flash_mspi_is25xX0xx_is_ready(flash);
-	if (ret) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -342,7 +341,6 @@ static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 static int flash_mspi_is25xX0xx_get_vendor_id(const struct device *flash, uint8_t *vendor_id)
 {
 	struct flash_mspi_is25xX0xx_data *data = flash->data;
-	uint8_t                           buffer[20];
 	int                               ret;
 
 	if (vendor_id == NULL) {
@@ -351,10 +349,9 @@ static int flash_mspi_is25xX0xx_get_vendor_id(const struct device *flash, uint8_
 
 	LOG_DBG("Reading id");
 	/* serial mode */
-	ret = flash_mspi_is25xX0xx_command_read(flash, SPI_NOR_CMD_RDID, 0, 0, 0, buffer, 20);
-	*vendor_id = buffer[0];
-
-	memcpy(&data->jedec_id, buffer, 3);
+	ret = flash_mspi_is25xX0xx_command_read(flash, SPI_NOR_CMD_RDID, 0, 0, 0,
+						(uint8_t *)data->id, 20);
+	*vendor_id = data->id[0];
 
 	return ret;
 }
@@ -954,7 +951,7 @@ static int flash_mspi_is25xX0xx_read_jedec_id(const struct device *flash, uint8_
 {
 	struct flash_mspi_is25xX0xx_data *data = flash->data;
 
-	id = &data->jedec_id;
+	id = &data->id;
 	return 0;
 }
 #endif /* CONFIG_FLASH_JESD216_API */
@@ -1034,8 +1031,8 @@ static DEVICE_API(flash, flash_mspi_is25xX0xx_api) = {
 					      timing_cfg_mask, MSPI_TIMING_CONFIG_MASK(n))        \
 		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral),          \
 		.reset_gpio         = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),              \
-		.reset_pulse_us     = DT_INST_PROP_OR(n, t_reset_pulse, 0) / 1000,                \
-		.reset_recovery_us  = DT_INST_PROP_OR(n, t_reset_recovery, 0) / 1000,             \
+		.reset_pulse_us     = DT_INST_PROP_OR(n, t_reset_pulse, 0),                       \
+		.reset_recovery_us  = DT_INST_PROP_OR(n, t_reset_recovery, 0),                    \
 	};                                                                                        \
 	static struct flash_mspi_is25xX0xx_data flash_mspi_is25xX0xx_data_##n = {                 \
 		.lock = Z_SEM_INITIALIZER(flash_mspi_is25xX0xx_data_##n.lock, 0, 1),              \

@@ -20,14 +20,14 @@
 int single_sector_test(const struct device *flash_dev)
 {
 #if CONFIG_DCACHE
-	const uint8_t expected[]__attribute__((aligned(CONFIG_DCACHE_LINE_SIZE))) = {
+	const uint8_t expected[]__aligned(CONFIG_DCACHE_LINE_SIZE) = {
 #else
 	const uint8_t expected[] = {
 #endif
 					0x55, 0xaa, 0x66, 0x99};
 	const size_t len = sizeof(expected);
 #if CONFIG_DCACHE
-	uint8_t buf[sizeof(expected)]__attribute__((aligned(CONFIG_DCACHE_LINE_SIZE)));
+	uint8_t buf[sizeof(expected)]__aligned(CONFIG_DCACHE_LINE_SIZE);
 #else
 	uint8_t buf[sizeof(expected)];
 #endif
@@ -92,14 +92,14 @@ int single_sector_test(const struct device *flash_dev)
 int multi_sector_test(const struct device *flash_dev)
 {
 #if CONFIG_DCACHE
-	const uint8_t expected[]__attribute__((aligned(CONFIG_DCACHE_LINE_SIZE))) = {
+	const uint8_t expected[]__aligned(CONFIG_DCACHE_LINE_SIZE) = {
 #else
 	const uint8_t expected[] = {
 #endif
 					0x55, 0xaa, 0x66, 0x99};
 	const size_t len = sizeof(expected);
 #if CONFIG_DCACHE
-	uint8_t buf[sizeof(expected)]__attribute__((aligned(CONFIG_DCACHE_LINE_SIZE)));
+	uint8_t buf[sizeof(expected)]__aligned(CONFIG_DCACHE_LINE_SIZE);
 #else
 	uint8_t buf[sizeof(expected)];
 #endif
