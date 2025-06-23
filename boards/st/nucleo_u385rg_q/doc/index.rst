@@ -186,6 +186,8 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - DAC1_OUT1 : PA4
+- FDCAN1_TX : PA12
+- FDCAN1_RX : PA11
 - LD4 : PA5
 - LPUART_1_TX : PA2
 - LPUART_1_RX : PA3
