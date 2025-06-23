@@ -56,6 +56,14 @@
 	};
 };
 
+&secure_proxy_main {
+	status = "okay";
+};
+
+&dmsc {
+	status = "okay";
+};
+
 /* system timer */
 &timer8 {
 	status = "okay";
