@@ -16,8 +16,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
+
 #include "clock_stm32_ll_common.h"
-#include "stm32_hsem.h"
 
 /* Macros to fill up prescaler values */
 #define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
@@ -712,13 +714,7 @@ static void set_up_fixed_clock_sources(void)
 
 		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPR_DBP)
-		/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
-		LL_PWR_EnableBkUpAccess();
-		while (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Wait for Backup domain access */
-		}
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+		stm32_backup_domain_enable_access();
 
 #if STM32_LSE_DRIVING
 		/* Configure driving capability */
@@ -743,9 +739,7 @@ static void set_up_fixed_clock_sources(void)
 		}
 #endif /* RCC_BDCR_LSESYSEN */
 
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPR_DBP)
-		LL_PWR_DisableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+		stm32_backup_domain_disable_access();
 
 		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
