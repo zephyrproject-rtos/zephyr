@@ -6,7 +6,7 @@
 
 #include <ti/am64x_r5.dtsi>
 
-&mbox4 {
+&main_mbox4 {
 	usr-id = <1>;
 	status = "okay";
 };
