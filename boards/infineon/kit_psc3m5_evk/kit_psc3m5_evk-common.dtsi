@@ -64,6 +64,10 @@
 	status = "okay";
 };
 
+&gpio_prt6 {
+	status = "okay";
+};
+
 &gpio_prt8 {
 	status = "okay";
 };
