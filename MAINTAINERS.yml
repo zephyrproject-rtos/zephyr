@@ -183,6 +183,7 @@ Arduino Platforms:
     - facchinm
   files:
     - boards/arduino/
+    - boards/shields/arduino_*/
     - drivers/*/*modulino*
 
 ARM arch:
