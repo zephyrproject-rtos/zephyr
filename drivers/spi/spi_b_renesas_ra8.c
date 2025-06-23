@@ -161,15 +161,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 
 static bool ra_spi_b_transfer_ongoing(struct ra_spi_data *data)
 {
-#if defined(CONFIG_SPI_B_INTERRUPT)
 	return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-#else
-	if (spi_context_total_tx_len(&data->ctx) < spi_context_total_rx_len(&data->ctx)) {
-		return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-	} else {
-		return (spi_context_tx_on(&data->ctx) && spi_context_rx_on(&data->ctx));
-	}
-#endif
 }
 
 #ifndef CONFIG_SPI_B_INTERRUPT
@@ -241,26 +233,28 @@ static int ra_spi_b_transceive_master(struct ra_spi_data *data)
 
 	while (!p_spi_reg->SPSR_b.SPTEF) {
 	}
-
 	p_spi_reg->SPDR = tx;
 
 	/* Clear Transmit Empty flag */
 	p_spi_reg->SPSRC = R_SPI_B0_SPSRC_SPTEFC_Msk;
 	spi_context_update_tx(&data->ctx, data->dfs, 1);
 
-	/* Rx receive */
-	if (spi_context_rx_on(&data->ctx)) {
+	if (p_spi_reg->SPCR_b.TXMD == 0x0) {
 		while (!p_spi_reg->SPSR_b.SPRF) {
 		}
 		rx = p_spi_reg->SPDR;
 		/* Clear Receive Full flag */
 		p_spi_reg->SPSRC = R_SPI_B0_SPSRC_SPRFC_Msk;
-		if (data->dfs > 2) {
-			UNALIGNED_PUT(rx, (uint32_t *)data->ctx.rx_buf);
-		} else if (data->dfs > 1) {
-			UNALIGNED_PUT(rx, (uint16_t *)data->ctx.rx_buf);
-		} else {
-			UNALIGNED_PUT(rx, (uint8_t *)data->ctx.rx_buf);
+
+		/* Rx receive */
+		if (spi_context_rx_buf_on(&data->ctx)) {
+			if (data->dfs > 2) {
+				UNALIGNED_PUT(rx, (uint32_t *)data->ctx.rx_buf);
+			} else if (data->dfs > 1) {
+				UNALIGNED_PUT(rx, (uint16_t *)data->ctx.rx_buf);
+			} else {
+				UNALIGNED_PUT(rx, (uint8_t *)data->ctx.rx_buf);
+			}
 		}
 		spi_context_update_rx(&data->ctx, data->dfs, 1);
 	}
@@ -349,9 +343,6 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 #else
 	p_spi_reg->SPCR_b.TXMD = 0x0; /* tx - rx*/
-	if (!spi_context_tx_on(&data->ctx)) {
-		p_spi_reg->SPCR_b.TXMD = 0x2; /* rx only */
-	}
 	if (!spi_context_rx_on(&data->ctx)) {
 		p_spi_reg->SPCR_b.TXMD = 0x1; /* tx only */
 	}
