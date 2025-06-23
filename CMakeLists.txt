@@ -2352,3 +2352,12 @@ build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
 build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
 
 yaml_save(NAME build_info)
+
+if(CONFIG_USE_DT_CODE_PARTITION)
+  dt_chosen(chosen_code_partition PROPERTY "zephyr,code-partition")
+  dt_reg_addr(flash_addr PATH ${chosen_code_partition})
+
+  if(NOT ${CONFIG_FLASH_LOAD_OFFSET} EQUAL ${flash_addr})
+    message(FATAL_ERROR "Mismatch: ${CONFIG_FLASH_LOAD_OFFSET} vs ${flash_addr}")
+  endif()
+endif()
