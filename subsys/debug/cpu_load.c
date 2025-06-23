@@ -19,8 +19,8 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_CPU_LOAD_USE_COUNTER) || DT_HAS_CHOSEN(zephyr_cp
 static const struct device *counter = COND_CODE_1(CONFIG_CPU_LOAD_USE_COUNTER,
 				(DEVICE_DT_GET(DT_CHOSEN(zephyr_cpu_load_counter))), (NULL));
 static uint32_t enter_ts;
-static uint32_t cyc_start;
-static uint32_t ticks_idle;
+static uint64_t cyc_start;
+static uint64_t ticks_idle;
 
 static cpu_load_cb_t load_cb;
 static uint8_t cpu_load_threshold_percent;
@@ -110,25 +110,30 @@ void cpu_load_on_exit_idle(void)
 
 int cpu_load_get(bool reset)
 {
-	uint32_t idle_us;
-	uint32_t total = k_cycle_get_32() - cyc_start;
-	uint32_t total_us = (uint32_t)k_cyc_to_us_floor32(total);
+	uint64_t idle_us;
+	uint64_t now = IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER) ?
+		k_cycle_get_64() : k_cycle_get_32();
+	uint64_t total = now - cyc_start;
+	uint64_t total_us = k_cyc_to_us_floor64(total);
 	uint32_t res;
-	uint32_t active_us;
+	uint64_t active_us;
 
 	if (IS_ENABLED(CONFIG_CPU_LOAD_USE_COUNTER)) {
-		idle_us = counter_ticks_to_us(counter, ticks_idle);
+		if (ticks_idle > (uint64_t)UINT32_MAX) {
+			return -ERANGE;
+		}
+		idle_us = counter_ticks_to_us(counter, (uint32_t)ticks_idle);
 	} else {
-		idle_us = k_cyc_to_us_floor32(ticks_idle);
+		idle_us = k_cyc_to_us_floor64(ticks_idle);
 	}
 
 	idle_us = MIN(idle_us, total_us);
 	active_us = total_us - idle_us;
 
-	res = ((1000 * active_us) / total_us);
+	res = (uint32_t)((1000 * active_us) / total_us);
 
 	if (reset) {
-		cyc_start = k_cycle_get_32();
+		cyc_start = now;
 		ticks_idle = 0;
 	}
 
