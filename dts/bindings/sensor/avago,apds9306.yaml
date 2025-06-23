@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2024 Daniel Kampert
-# Author: Daniel Kampert <DanielKampert@Kampis-Elektroecke.de>
+# Author: Daniel Kampert <DanielKampert@kampis-elektroecke.de>
 
 description: APDS9306 miniature Surface-Mount Digital Ambient Light Sensor.
 
@@ -13,13 +13,13 @@ include:
 properties:
   gain:
     type: int
-    default: 1
+    default: 3
     enum:
-      - 18
-      - 9
-      - 6
-      - 3
       - 1
+      - 3
+      - 6
+      - 9
+      - 18
     description:
       ALS Gain range.
       The default corresponds to the reset value of the register field.
@@ -28,27 +28,27 @@ properties:
     type: int
     default: 18
     enum:
-      - 13
-      - 16
-      - 17
-      - 18
-      - 19
       - 20
+      - 19
+      - 18
+      - 17
+      - 16
+      - 13
     description:
       ALS Resolution / Bit width.
       The default corresponds to the reset value of the register field.
 
-  frequency:
+  measurement-period:
     type: int
     default: 100
     enum:
-      - 2000
-      - 1000
-      - 500
-      - 200
-      - 100
-      - 50
       - 25
+      - 50
+      - 100
+      - 200
+      - 500
+      - 1000
+      - 2000
     description:
-      ALS Measurement Rate in milliseconds.
+      ALS Measurement period in milliseconds.
       The default corresponds to the reset value of the register field.
