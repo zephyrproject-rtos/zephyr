@@ -33,8 +33,8 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${checksums_calc
 set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
   # Insert CRC32 in CCFG
   COMMAND crc_tool patch-image
-	  --elf ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
+	  --elf ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
 	  --symbol-prefix CRC_CCFG
-	  --output ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
-  COMMAND ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-objcopy -O ihex ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf ${CMAKE_BINARY_DIR}/zephyr/zephyr.hex
+	  --output ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
+  COMMAND ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-objcopy -O ihex ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME} ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
   )
