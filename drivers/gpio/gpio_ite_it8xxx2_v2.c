@@ -375,9 +375,9 @@ static int gpio_ite_manage_callback(const struct device *dev,
 
 static void gpio_ite_isr(const void *arg)
 {
-	const struct device *dev = arg;
-	const struct gpio_ite_cfg *gpio_config = dev->config;
-	struct gpio_ite_data *data = dev->data;
+	const struct device *dev = (const struct device *)arg;
+	const struct gpio_ite_cfg *gpio_config = (const struct gpio_ite_cfg *)dev->config;
+	struct gpio_ite_data *data = (struct gpio_ite_data *)dev->data;
 	uint8_t irq = ite_intc_get_irq_num();
 	uint8_t num_pins = gpio_config->num_pins;
 	uint8_t pin;
