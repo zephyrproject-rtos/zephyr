@@ -17,11 +17,21 @@
 #include <haly/nrfy_rtc.h>
 #include <zephyr/irq.h>
 
+/* Ensure that selected counter bit width is within its maximum hardware width. */
+BUILD_ASSERT(CONFIG_NRF_RTC_COUNTER_BIT_WIDTH <= 24, "Counter bit width exceeds maximum width.");
+
+#if (CONFIG_NRF_RTC_COUNTER_BIT_WIDTH < 24)
+#define CUSTOM_COUNTER_BIT_WIDTH 1
+#include "nrfx_ppi.h"
+#else
+#define CUSTOM_COUNTER_BIT_WIDTH 0
+#endif
+
 #define RTC_PRETICK (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && \
 		     IS_ENABLED(CONFIG_SOC_NRF5340_CPUNET))
 
 #define EXT_CHAN_COUNT CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT
-#define CHAN_COUNT (EXT_CHAN_COUNT + 1)
+#define CHAN_COUNT (EXT_CHAN_COUNT + 1 + CUSTOM_COUNTER_BIT_WIDTH)
 
 #define RTC NRF_RTC1
 #define RTC_IRQn NRFX_IRQ_NUMBER_GET(RTC)
@@ -33,7 +43,7 @@ BUILD_ASSERT(CHAN_COUNT <= CHAN_COUNT_MAX, "Not enough compare channels");
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
 	     "Counter for RTC1 must be disabled");
 
-#define COUNTER_BIT_WIDTH 24U
+#define COUNTER_BIT_WIDTH CONFIG_NRF_RTC_COUNTER_BIT_WIDTH
 #define COUNTER_SPAN BIT(COUNTER_BIT_WIDTH)
 #define COUNTER_MAX (COUNTER_SPAN - 1U)
 #define COUNTER_HALF_SPAN (COUNTER_SPAN / 2U)
@@ -422,6 +432,12 @@ uint64_t z_nrf_rtc_timer_read(void)
 
 	uint32_t cntr = counter();
 
+#if CUSTOM_COUNTER_BIT_WIDTH
+	if ((cntr == COUNTER_MAX) && (val > anchor)) {
+		cntr = 0;
+	}
+#endif
+
 	val += cntr;
 
 	if (cntr < OVERFLOW_RISK_RANGE_END) {
@@ -560,8 +576,13 @@ void rtc_nrf_isr(const void *arg)
 		rtc_pretick_rtc1_isr_hook();
 	}
 
-	if (nrfy_rtc_int_enable_check(RTC, NRF_RTC_INT_OVERFLOW_MASK) &&
-	    nrfy_rtc_events_process(RTC, NRF_RTC_INT_OVERFLOW_MASK)) {
+	if ((nrfy_rtc_int_enable_check(RTC, NRF_RTC_INT_OVERFLOW_MASK) &&
+	    nrfy_rtc_events_process(RTC, NRF_RTC_INT_OVERFLOW_MASK)) ||
+#if CUSTOM_COUNTER_BIT_WIDTH
+	    (nrfy_rtc_int_enable_check(RTC, NRF_RTC_INT_COMPARE1_MASK) &&
+	    nrfy_rtc_events_process(RTC, NRF_RTC_INT_COMPARE1_MASK)) ||
+#endif
+		0) {
 		overflow_cnt++;
 	}
 
@@ -697,7 +718,9 @@ uint32_t sys_clock_cycle_get_32(void)
 static void int_event_disable_rtc(void)
 {
 	uint32_t mask = NRF_RTC_INT_TICK_MASK     |
+#if !CUSTOM_COUNTER_BIT_WIDTH
 			NRF_RTC_INT_OVERFLOW_MASK |
+#endif
 			NRF_RTC_INT_COMPARE0_MASK |
 			NRF_RTC_INT_COMPARE1_MASK |
 			NRF_RTC_INT_COMPARE2_MASK |
@@ -729,7 +752,9 @@ static int sys_clock_driver_init(void)
 		nrfy_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 	}
 
+#if !CUSTOM_COUNTER_BIT_WIDTH
 	nrfy_rtc_int_enable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
+#endif
 
 	NVIC_ClearPendingIRQ(RTC_IRQn);
 
@@ -742,7 +767,7 @@ static int sys_clock_driver_init(void)
 
 	int_mask = BIT_MASK(CHAN_COUNT);
 	if (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT) {
-		alloc_mask = BIT_MASK(EXT_CHAN_COUNT) << 1;
+		alloc_mask = BIT_MASK(EXT_CHAN_COUNT) << (1 + CUSTOM_COUNTER_BIT_WIDTH);
 	}
 
 	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
@@ -761,6 +786,28 @@ static int sys_clock_driver_init(void)
 	z_nrf_clock_control_lf_on(mode);
 #endif
 
+#if CUSTOM_COUNTER_BIT_WIDTH
+	/* Use channel 1 for wrapping. */
+	uint8_t chan = 1;
+	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
+	nrfx_err_t result;
+	nrf_ppi_channel_t ch;
+
+	nrfy_rtc_event_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
+	nrfy_rtc_cc_set(RTC, chan, COUNTER_MAX);
+	uint32_t evt_addr;
+	uint32_t task_addr;
+
+	evt_addr = nrfy_rtc_event_address_get(RTC, evt);
+	task_addr = nrfy_rtc_task_address_get(RTC, NRF_RTC_TASK_CLEAR);
+
+	result = nrfx_ppi_channel_alloc(&ch);
+	if (result != NRFX_SUCCESS) {
+		return -ENODEV;
+	}
+	(void)nrfx_ppi_channel_assign(ch, evt_addr, task_addr);
+	(void)nrfx_ppi_channel_enable(ch);
+#endif
 	return 0;
 }
 
