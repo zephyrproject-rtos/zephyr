@@ -508,6 +508,12 @@ config BT_COD
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
+config BT_DEFAULT_ROLE_SWITCH_ENABLE
+	bool "Default Bluetooth Role Switch Enable/Disable State"
+	help
+	  This option sets the controller's default link policy to
+	  enable/disable the role switch.
+
 endif # BT_CLASSIC
 
 endmenu
