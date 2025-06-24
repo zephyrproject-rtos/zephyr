@@ -33,7 +33,7 @@ static void *drv84xx_emul_setup(void)
 static void drv84xx_emul_before(void *f)
 {
 	struct drv84xx_emul_fixture *fixture = f;
-	(void)stepper_drv_set_micro_stepper_res(fixture->dev, 1);
+	(void)stepper_drv_set_micro_step_res(fixture->dev, 1);
 }
 
 static void drv84xx_emul_after(void *f)
