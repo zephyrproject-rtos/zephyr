@@ -88,6 +88,8 @@ int lwm2m_get_path_reference_ptr(struct lwm2m_engine_obj *obj, const struct lwm2
  */
 void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t *lwm2m_free_list);
 
+void lwm2m_engine_observer_refresh_notified_values(struct observe_node *obs);
+
 /* Resources */
 sys_slist_t *lwm2m_obs_obj_path_list(void);
 #endif /* LWM2M_OBSERVATION_H */
