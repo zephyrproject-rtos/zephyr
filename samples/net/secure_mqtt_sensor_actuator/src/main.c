@@ -53,7 +53,7 @@ void log_mac_addr(struct net_if *iface)
 	mac = net_if_get_link_addr(iface);
 
 	LOG_INF("MAC Address: %02X:%02X:%02X:%02X:%02X:%02X",
-		mac->addr[0], mac->addr[1], mac->addr[3],
+		mac->addr[0], mac->addr[1], mac->addr[2],
 		mac->addr[3], mac->addr[4], mac->addr[5]);
 }
 
