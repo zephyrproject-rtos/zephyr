@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mimx95_a55.dtsi>
+#include <nxp/nxp_mimx95_19x19_a55.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
 
 / {
