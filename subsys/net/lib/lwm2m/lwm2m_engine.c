@@ -71,6 +71,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #define ENGINE_SLEEP_MS 500
+#define NOTIFY_DELAY_MS 100
 
 #ifdef CONFIG_LWM2M_VERSION_1_1
 #define LWM2M_ENGINE_MAX_OBSERVER_PATH CONFIG_LWM2M_ENGINE_MAX_OBSERVER * 3
@@ -613,6 +614,7 @@ static int64_t check_notifications(struct lwm2m_ctx *ctx, const int64_t timestam
 		}
 		/* Check That There is not pending process*/
 		if (obs->active_notify != NULL) {
+			obs->event_timestamp += NOTIFY_DELAY_MS;
 			continue;
 		}
 
