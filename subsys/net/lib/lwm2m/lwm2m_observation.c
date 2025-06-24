@@ -1131,6 +1131,33 @@ struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref, struct lwm2m_attr
 	return result;
 }
 
+static bool is_resource_numerical(const struct lwm2m_obj_path *path)
+{
+	struct lwm2m_engine_obj_field *obj_field;
+	int ret;
+
+	ret = path_to_objs(path, NULL, &obj_field, NULL, NULL);
+	if (ret < 0 || obj_field == NULL) {
+		return false;
+	}
+
+	switch (obj_field->data_type) {
+	case LWM2M_RES_TYPE_U32:
+	case LWM2M_RES_TYPE_U16:
+	case LWM2M_RES_TYPE_U8:
+	case LWM2M_RES_TYPE_S64:
+	case LWM2M_RES_TYPE_S32:
+	case LWM2M_RES_TYPE_S16:
+	case LWM2M_RES_TYPE_S8:
+	case LWM2M_RES_TYPE_FLOAT:
+		return true;
+	default:
+		break;
+	}
+
+	return false;
+}
+
 int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 {
 	bool update_observe_node = false;
@@ -1212,8 +1239,12 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 			continue;
 		}
 
-		/* gt/lt/st cannot be assigned to obj/obj_inst unless unset */
-		if (plen == 2 && msg->path.level <= 2U) {
+		/* gt/lt/st cannot be assigned to obj/obj_inst unless unset.
+		 * They also can only be applied to numerical resources.
+		 */
+		if (plen == 2 &&
+		    (msg->path.level <= LWM2M_PATH_LEVEL_OBJECT_INST ||
+		     !is_resource_numerical(&msg->path))) {
 			return -EEXIST;
 		}
 
