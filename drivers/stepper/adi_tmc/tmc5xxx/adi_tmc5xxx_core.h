@@ -16,6 +16,33 @@ extern "C" {
 #endif
 
 /**
+ * @name TMC5XXX Motor Status Flags
+ *
+ * @brief Motor status flags for TMC5XXX controllers
+ *
+ * These flags represent the current state of the motor and can be used to
+ * determine if the motor is enabled, moving, stalled, stopped, or in an error state.
+ * /
+
+/** Motor power stage disabled */
+#define TMC5XXX_MOTOR_DISABLED 0
+/** Motor power stage enabled */
+#define TMC5XXX_MOTOR_ENABLED  1
+/** Motor is currently moving */
+#define TMC5XXX_MOTOR_MOVING   2
+/** Motor is stalled */
+#define TMC5XXX_MOTOR_STALLED  3
+/** Motor is stopped */
+#define TMC5XXX_MOTOR_STOPPED  4
+/** Motor has encountered an error */
+#define TMC5XXX_MOTOR_ERROR    5
+/** Number of motor state flags */
+#define TMC5XXX_MOTOR_STATE_COUNT 6
+/**
+ * @}
+ */
+
+/**
  * @brief Core context for stepper motor operations
  *
  * This structure contains all the necessary information to operate
@@ -63,6 +90,7 @@ struct tmc5xxx_stepper_data {
 	struct gpio_callback diag0_cb;                   /* DIAG0 GPIO callback */
 	stepper_event_callback_t callback;               /* Event callback function */
 	void *callback_user_data;                        /* User data for callback */
+	atomic_t state[ATOMIC_BITMAP_SIZE(TMC5XXX_MOTOR_STATE_COUNT)]; /* State flags for the stepper motor */
 };
 
 /**
@@ -141,6 +169,7 @@ int tmc5xxx_set_max_velocity(const struct device *dev, uint32_t velocity);
 int tmc5xxx_move_to(const struct device *dev, int32_t position);
 int tmc5xxx_move_by(const struct device *dev, int32_t steps);
 int tmc5xxx_run(const struct device *dev, enum stepper_direction direction);
+int tmc5xxx_stepper_stop(const struct device *dev);
 int tmc5xxx_set_micro_step_res(const struct device *dev, enum stepper_micro_step_resolution res);
 int tmc5xxx_get_micro_step_res(const struct device *dev, enum stepper_micro_step_resolution *res);
 int tmc5xxx_stallguard_enable(const struct device *dev, bool enable);
