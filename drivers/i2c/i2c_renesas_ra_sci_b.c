@@ -710,7 +710,7 @@ static const struct i2c_driver_api renesas_ra_sci_b_i2c_driver_api = {
 				.txi_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),        \
 				.tei_irq = DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),        \
 				.p_callback = renesas_ra_sci_b_i2c_callback,                       \
-				.p_context = DEVICE_DT_GET(DT_DRV_INST(index)),                    \
+				.p_context = (void *)DEVICE_DT_GET(DT_DRV_INST(index)),            \
 			},                                                                         \
 		.ext_cfg =                                                                         \
 			{                                                                          \

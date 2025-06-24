@@ -1042,7 +1042,7 @@ static int uart_ra_sci_b_init(const struct device *dev)
 
 #if defined(CONFIG_UART_ASYNC_API)
 	data->fsp_config.p_callback = uart_ra_sci_b_callback_adapter;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 
 	k_work_init_delayable(&data->tx_timeout_work, uart_ra_sci_b_async_tx_timeout);
 	k_work_init_delayable(&data->rx_timeout_work, uart_ra_sci_b_async_rx_timeout);

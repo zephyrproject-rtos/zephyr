@@ -493,7 +493,7 @@ static int pwm_renesas_ra_init(const struct device *dev)
 
 #if defined(CONFIG_PWM_CAPTURE)
 	data->fsp_cfg.p_callback = fsp_callback;
-	data->fsp_cfg.p_context = dev;
+	data->fsp_cfg.p_context = (void *)dev;
 #endif /* defined(CONFIG_PWM_CAPTURE) */
 
 #ifdef CONFIG_RENESAS_RA_ELC
