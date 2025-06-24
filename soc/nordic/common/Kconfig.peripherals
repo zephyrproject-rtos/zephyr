@@ -514,6 +514,12 @@ config HAS_HW_NRF_TWIM21
 config HAS_HW_NRF_TWIM22
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
+config HAS_HW_NRF_TWIM23
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c23,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM24
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c24,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
 config HAS_HW_NRF_TWIM30
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
@@ -564,6 +570,12 @@ config HAS_HW_NRF_TWIS21
 
 config HAS_HW_NRF_TWIS22
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS23
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c23,$(DT_COMPAT_NORDIC_NRF_TWIS))
+
+config HAS_HW_NRF_TWIS24
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c24,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
 config HAS_HW_NRF_TWIS30
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIS))
