@@ -486,7 +486,6 @@
 			reg = <0x402b8000 0x4000>;
 			interrupts = <42 0>;
 			status = "disabled";
-			nxp,pxp = <&pxp>;
 		};
 
 		lpspi1: spi@40394000 {
