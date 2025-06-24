@@ -111,6 +111,11 @@ Deprecated APIs and options
   was deprecated since Zephyr 4.0, and users were advised to migrate to alternative
   crypto backends.
 
+* The :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` Kconfig option has been removed. It
+  was deprecated since Zephyr 4.0. Users were advised to use
+  :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA` or
+  :kconfig:option:`CONFIG_BT_MESH_USES_TFM_PSA` instead.
+
 Stable API changes in this release
 ==================================
 
