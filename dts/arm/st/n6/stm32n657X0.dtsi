@@ -17,4 +17,34 @@
 		/* This section is the RAM available to FSBL application */
 		reg = <0x34180400 DT_SIZE_K(511)>;
 	};
+
+	soc {
+		ramcfg@42023100 {
+			axisram3: memory@34200000 {
+				reg = <0x34200000 DT_SIZE_K(448)>;
+				status = "okay";
+			};
+		};
+
+		ramcfg@42023180 {
+			axisram4: memory@34270000 {
+				reg = <0x34270000 DT_SIZE_K(448)>;
+				status = "disabled";
+			};
+		};
+
+		ramcfg@42023200 {
+			axisram5: memory@342e0000 {
+				reg = <0x342e0000 DT_SIZE_K(448)>;
+				status = "disabled";
+			};
+		};
+
+		ramcfg@42023280 {
+			axisram6: memory@34350000 {
+				reg = <0x34350000 DT_SIZE_K(448)>;
+				status = "disabled";
+			};
+		};
+	};
 };
