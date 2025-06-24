@@ -9,31 +9,6 @@ include:
     property-allowlist:
       - en-pwm-mode
       - test-mode
-  - name: stepper.yaml
-  - name: adi,trinamic-ramp-generator.yaml
-    property-allowlist:
-      - vstart
-      - a1
-      - v1
-      - amax
-      - vmax
-      - dmax
-      - d1
-      - vstop
-      - tzerowait
-      - thigh
-      - tcoolthrs
-      - tpwmthrs
-      - tpowerdown
-      - ihold
-      - irun
-      - iholddelay
-  - name: adi,trinamic-stallguard.yaml
-    property-allowlist:
-      - activate-stallguard2
-      - stallguard2-threshold
-      - stallguard-threshold-velocity
-      - stallguard-velocity-check-interval-ms
 
 properties:
   "#address-cells":
@@ -53,3 +28,34 @@ properties:
 
       Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[51xx] * ( fCLK[Hz]/2 / 2^23 )
             where v[51xx] is the value written to the TMC51XX.
+
+child-binding:
+  include:
+    - name: stepper.yaml
+    - name: base.yaml
+      property-allowlist:
+        - reg
+    - name: adi,trinamic-ramp-generator.yaml
+      property-allowlist:
+        - vstart
+        - a1
+        - v1
+        - amax
+        - vmax
+        - dmax
+        - d1
+        - vstop
+        - tzerowait
+        - thigh
+        - tcoolthrs
+        - tpwmthrs
+        - tpowerdown
+        - ihold
+        - irun
+        - iholddelay
+    - name: adi,trinamic-stallguard.yaml
+      property-allowlist:
+        - activate-stallguard2
+        - stallguard2-threshold
+        - stallguard-threshold-velocity
+        - stallguard-velocity-check-interval-ms

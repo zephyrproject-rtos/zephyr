@@ -9,4 +9,9 @@
 		compatible = "zephyr,fake-stepper";
 		status = "okay";
 	};
+
+	fake_stepper_controller: fake_stepper_controller {
+		compatible = "zephyr,fake-stepper-controller";
+		status = "okay";
+	};
 };
