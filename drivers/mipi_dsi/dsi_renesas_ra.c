@@ -374,7 +374,7 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 				.eotp_enable = (1),                                                \
 				.p_extend = &mipi_dsi_##id##_extended_cfg,                         \
 				.p_callback = mipi_dsi_callback,                                   \
-				.p_context = DEVICE_DT_INST_GET(id),                               \
+				.p_context = (void *)DEVICE_DT_INST_GET(id),                       \
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
