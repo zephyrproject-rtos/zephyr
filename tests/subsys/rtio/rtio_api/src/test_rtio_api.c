@@ -1079,7 +1079,6 @@ ZTEST(rtio_api, test_rtio_await)
 }
 
 
-
 RTIO_DEFINE(r_callback_result, SQE_POOL_SIZE, CQE_POOL_SIZE);
 RTIO_IODEV_TEST_DEFINE(iodev_test_callback_result);
 static int callback_count;
@@ -1139,6 +1138,37 @@ ZTEST(rtio_api, test_rtio_callbacks)
 	zassert_equal(callback_count, 2, "expected two callbacks to complete");
 }
 
+
+RTIO_DEFINE(r_acquire_array, SQE_POOL_SIZE, CQE_POOL_SIZE);
+
+ZTEST(rtio_api, test_rtio_acquire_array)
+{
+	TC_PRINT("rtio acquire array\n");
+
+	struct rtio_sqe *sqes[SQE_POOL_SIZE];
+
+	int res = rtio_sqe_acquire_array(&r_acquire_array, SQE_POOL_SIZE, sqes);
+
+	zassert_ok(res, "Expected to acquire sqes");
+
+	struct rtio_sqe *last_sqe;
+
+	res = rtio_sqe_acquire_array(&r_acquire_array, 1, &last_sqe);
+	zassert_equal(res, -ENOMEM, "Expected to have no more sqes available");
+
+	rtio_sqe_drop_all(&r_acquire_array);
+
+	res = rtio_sqe_acquire_array(&r_acquire_array, SQE_POOL_SIZE - 1, sqes);
+	zassert_ok(res, "Expected to acquire sqes");
+	res = rtio_sqe_acquire_array(&r_acquire_array, 2, &last_sqe);
+	zassert_equal(res, -ENOMEM, "Expected to have only have a single sqe available");
+	res = rtio_sqe_acquire_array(&r_acquire_array, 1, &last_sqe);
+	zassert_equal(res, 0, "Expected a single sqe available");
+	res = rtio_sqe_acquire_array(&r_acquire_array, 1, &last_sqe);
+	zassert_equal(res, -ENOMEM, "Expected to have no more sqes available");
+
+	rtio_sqe_drop_all(&r_acquire_array);
+}
 
 static void *rtio_api_setup(void)
 {
