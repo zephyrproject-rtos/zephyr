@@ -62,7 +62,7 @@
 
 	ipc0: ipc {
 		compatible = "zephyr,mbox-ipm";
-		mboxes = <&mbox6 0>, <&mbox6 1>;
+		mboxes = <&main_mbox6 0>, <&main_mbox6 1>;
 		mbox-names = "tx", "rx";
 	};
 };
@@ -80,7 +80,7 @@
 	status = "okay";
 };
 
-&mbox6 {
+&main_mbox6 {
 	usr-id = <3>;
 	status = "okay";
 };
