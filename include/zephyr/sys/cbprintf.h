@@ -529,6 +529,10 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
 {
 	struct z_cbprintf_buf_desc *desc = (struct z_cbprintf_buf_desc *)ctx;
 
+	if (len == 0) {
+		return 0;
+	}
+
 	if ((desc->size - desc->off) < len) {
 		return -ENOSPC;
 	}
