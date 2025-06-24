@@ -41,7 +41,7 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
-#if defined(CONFIG_MBEDTLS_LMS)
+#if defined(CONFIG_MBEDTLS_LMS_C)
 #define MBEDTLS_LMS_C
 #endif
 
@@ -296,19 +296,19 @@
 
 /* Supported hash algorithms */
 
-#if defined(CONFIG_MBEDTLS_MD5)
+#if defined(CONFIG_MBEDTLS_MD5_C)
 #define MBEDTLS_MD5_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA1)
+#if defined(CONFIG_MBEDTLS_SHA1_C)
 #define MBEDTLS_SHA1_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA224)
+#if defined(CONFIG_MBEDTLS_SHA224_C)
 #define MBEDTLS_SHA224_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA256)
+#if defined(CONFIG_MBEDTLS_SHA256_C)
 #define MBEDTLS_SHA256_C
 #endif
 
@@ -316,19 +316,19 @@
 #define MBEDTLS_SHA256_SMALLER
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA384)
+#if defined(CONFIG_MBEDTLS_SHA384_C)
 #define MBEDTLS_SHA384_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA512)
+#if defined(CONFIG_MBEDTLS_SHA512_C)
 #define MBEDTLS_SHA512_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_POLY1305)
+#if defined(CONFIG_MBEDTLS_POLY1305_C)
 #define MBEDTLS_POLY1305_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CMAC)
+#if defined(CONFIG_MBEDTLS_CMAC_C)
 #define MBEDTLS_CMAC_C
 #endif
 
@@ -368,11 +368,11 @@
 #define MBEDTLS_SSL_ALPN
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER)
+#if defined(CONFIG_MBEDTLS_CIPHER_C)
 #define MBEDTLS_CIPHER_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MD)
+#if defined(CONFIG_MBEDTLS_MD_C)
 #define MBEDTLS_MD_C
 #endif
 
