@@ -205,16 +205,24 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 		return;
 	}
 
-	/*
-	 * TODO - we only support 1 buffer formats for the time being, setting of
-	 * MEMORY_ADDRESS_1 and MEMORY_ADDRESS_2 required depending on the pixelformat
-	 * for Pipe1
-	 */
 	ret = HAL_DCMIPP_PIPE_SetMemoryAddress(&dcmipp->hdcmipp, Pipe, DCMIPP_MEMORY_ADDRESS_0,
 					       (uint32_t)pipe->next->buffer);
 	if (ret != HAL_OK) {
 		LOG_ERR("Failed to update memory address");
 		return;
+	}
+
+	if (pipe->fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+		uint32_t addr = (uint32_t)pipe->next->buffer +
+				pipe->fmt.width * pipe->fmt.height;
+
+		ret = HAL_DCMIPP_PIPE_SetMemoryAddress(&dcmipp->hdcmipp, Pipe,
+						       DCMIPP_MEMORY_ADDRESS_1,
+						       addr);
+		if (ret != HAL_OK) {
+			LOG_ERR("Failed to update second memory address");
+			return;
+		}
 	}
 }
 
@@ -432,6 +440,7 @@ static const struct stm32_dcmipp_mapping {
 	PIXEL_PIPE_FMT(RGB565, RGB565_1, 0, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(YUYV, YUV422_1, 0, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(YVYU, YUV422_1, 1, (BIT(1) | BIT(2))),
+	PIXEL_PIPE_FMT(NV12, YUV420_2, 0, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(GREY, MONO_Y8_G8_1, 0, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(RGB24, RGB888_YUV444_1, 1, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(BGR24, RGB888_YUV444_1, 0, (BIT(1) | BIT(2))),
@@ -460,7 +469,7 @@ static const struct stm32_dcmipp_mapping {
 	 ((fmt) == VIDEO_PIX_FMT_GREY ||					\
 	  (fmt) == VIDEO_PIX_FMT_YUYV || (fmt) == VIDEO_PIX_FMT_YVYU ||		\
 	  (fmt) == VIDEO_PIX_FMT_VYUY || (fmt) == VIDEO_PIX_FMT_UYVY ||		\
-	  (fmt) == VIDEO_PIX_FMT_XYUV32) ? VIDEO_COLORSPACE_YUV :		\
+	  (fmt) == VIDEO_PIX_FMT_XYUV32 || (fmt) == VIDEO_PIX_FMT_NV12) ? VIDEO_COLORSPACE_YUV :		\
 										\
 	  VIDEO_COLORSPACE_RAW)
 
@@ -481,6 +490,9 @@ static inline void stm32_dcmipp_compute_fmt_pitch(uint32_t pipe_id, struct video
 {
 	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	if (fmt->pixelformat == VIDEO_PIX_FMT_NV12)
+		fmt->pitch = fmt->width;
+
 	if (pipe_id == DCMIPP_PIPE1 || pipe_id == DCMIPP_PIPE2) {
 		/* On Pipe1 and Pipe2, the pitch must be multiple of 16 bytes */
 		fmt->pitch = ROUND_UP(fmt->pitch, 16);
@@ -1044,9 +1056,21 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	}
 #if defined(STM32_DCMIPP_HAS_CSI)
 	else if (config->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
-		ret = HAL_DCMIPP_CSI_PIPE_Start(&dcmipp->hdcmipp, pipe->id, DCMIPP_VIRTUAL_CHANNEL0,
-						(uint32_t)pipe->next->buffer,
-						DCMIPP_MODE_CONTINUOUS);
+		uint32_t addr = (uint32_t)pipe->next->buffer;
+
+		if (pipe->fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+			DCMIPP_SemiPlanarDstAddressTypeDef spaddr;
+
+			spaddr.YAddress = addr;
+			spaddr.UVAddress = addr + pipe->fmt.width * pipe->fmt.height;
+			ret = HAL_DCMIPP_CSI_PIPE_SemiPlanarStart(&dcmipp->hdcmipp,
+								  pipe->id, DCMIPP_VIRTUAL_CHANNEL0,
+								  &spaddr, DCMIPP_MODE_CONTINUOUS);
+		} else {
+			ret = HAL_DCMIPP_CSI_PIPE_Start(&dcmipp->hdcmipp, pipe->id,
+							DCMIPP_VIRTUAL_CHANNEL0,
+							addr, DCMIPP_MODE_CONTINUOUS);
+		}
 	}
 #endif
 	else {
@@ -1193,6 +1217,20 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 			LOG_ERR("Failed to update memory address");
 			return -EIO;
 		}
+
+		if (pipe->fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+			uint32_t addr = (uint32_t)pipe->next->buffer +
+					pipe->fmt.width * pipe->fmt.height;
+
+			ret = HAL_DCMIPP_PIPE_SetMemoryAddress(&dcmipp->hdcmipp, pipe->id,
+							       DCMIPP_MEMORY_ADDRESS_1,
+							       addr);
+			if (ret != HAL_OK) {
+				LOG_ERR("Failed to update second memory address");
+				return -EIO;
+			}
+		}
+
 		if (pipe->id == DCMIPP_PIPE0) {
 			SET_BIT(dcmipp->hdcmipp.Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 		}
