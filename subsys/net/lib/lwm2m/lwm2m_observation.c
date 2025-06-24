@@ -87,11 +87,142 @@ static const uint8_t LWM2M_ATTR_LEN[] = {4, 4, 2, 2, 2};
 
 static struct lwm2m_attr write_attr_pool[CONFIG_LWM2M_NUM_ATTR];
 
+/* Notification value register is used to store the resource values sent in
+ * the last notification, for resources that carry one of the numerical
+ * gt/lt/st attributes. This value is needed to determine whether notification
+ * send conditions are satisfied for given attributes.
+ */
+static struct lwm2m_notify_value_register {
+	/* A pointer to the corresponding resource instance. */
+	const struct lwm2m_engine_res_inst *ref;
+
+	/* Last notified resource value. */
+	double value;
+
+	/* Whether resource was notified already or not. */
+	bool notified : 1;
+} notify_value_pool[CONFIG_LWM2M_MAX_NOTIFIED_NUMERICAL_RES_TRACKED];
+
 /* Forward declarations */
 
 void lwm2m_engine_free_list(sys_slist_t *path_list, sys_slist_t *free_list);
 
 struct lwm2m_obj_path_list *lwm2m_engine_get_from_list(sys_slist_t *path_list);
+
+static struct lwm2m_notify_value_register *notify_value_reg_alloc(
+	const struct lwm2m_engine_res_inst *ref)
+{
+	for (int i = 0; i < ARRAY_SIZE(notify_value_pool); i++) {
+		if (notify_value_pool[i].ref == NULL) {
+			notify_value_pool[i].ref = ref;
+			notify_value_pool[i].notified = false;
+
+			return &notify_value_pool[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void notify_value_reg_free(const struct lwm2m_engine_res_inst *ref)
+{
+	for (int i = 0; i < ARRAY_SIZE(notify_value_pool); i++) {
+		if (ref == notify_value_pool[i].ref) {
+			(void)memset(&notify_value_pool[i], 0,
+				     sizeof(notify_value_pool[i]));
+			break;
+		}
+	}
+}
+
+static struct lwm2m_notify_value_register *notify_value_reg_get(
+	const struct lwm2m_engine_res_inst *ref)
+{
+	for (int i = 0; i < ARRAY_SIZE(notify_value_pool); i++) {
+		if (ref == notify_value_pool[i].ref) {
+			return &notify_value_pool[i];
+		}
+	}
+
+	return NULL;
+}
+
+static int notify_value_reg_inst_update(const struct lwm2m_engine_res_inst *ref,
+					bool enable)
+{
+	struct lwm2m_notify_value_register *notify_reg;
+
+	if (ref->res_inst_id == RES_INSTANCE_NOT_CREATED) {
+		return 0;
+	}
+
+	if (!enable) {
+		notify_value_reg_free(ref);
+		return 0;
+	}
+
+	notify_reg = notify_value_reg_get(ref);
+	if (notify_reg == NULL) {
+		notify_reg = notify_value_reg_alloc(ref);
+	}
+
+	if (notify_reg == NULL) {
+		LOG_ERR("Failed to allocate entry in notify registry");
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static int notify_value_reg_update(uint8_t level, void *ref, bool enable)
+{
+	struct lwm2m_engine_res *res;
+	int ret;
+
+	if (level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return -EINVAL;
+	}
+
+	if (level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		return notify_value_reg_inst_update(ref, enable);
+	}
+
+	/* Resource level - need to allocate value registers for all instances */
+	res = ref;
+	for (int i = 0; i < res->res_inst_count; i++) {
+		ret = notify_value_reg_inst_update(&res->res_instances[i],
+						   enable);
+		if (ret < 0) {
+			goto cleanup;
+		}
+	}
+
+	return 0;
+
+cleanup:
+	for (int i = 0; i < res->res_inst_count; i++) {
+		bool skip = false;
+
+		for (int j = 0; j < ARRAY_SIZE(write_attr_pool); j++) {
+			struct lwm2m_attr *attr = &write_attr_pool[j];
+
+			/* If register was allocated individually for the resource
+			 * instance earlier - skip.
+			 */
+			if (attr->ref == &res->res_instances[i] &&
+			    (attr->type == LWM2M_ATTR_LT ||
+			     attr->type == LWM2M_ATTR_GT ||
+			     attr->type == LWM2M_ATTR_STEP)) {
+				skip = true;
+				break;
+			}
+		}
+
+		(void)notify_value_reg_inst_update(&res->res_instances[i], false);
+	}
+
+	return -ENOMEM;
+}
 
 const char *const lwm2m_attr_to_str(uint8_t type)
 {
@@ -148,7 +279,7 @@ static int update_attrs(void *ref, struct notification_attrs *out)
 	return 0;
 }
 
-void clear_attrs(void *ref)
+void clear_attrs(uint8_t level, void *ref)
 {
 	int i;
 
@@ -157,6 +288,8 @@ void clear_attrs(void *ref)
 			(void)memset(&write_attr_pool[i], 0, sizeof(write_attr_pool[i]));
 		}
 	}
+
+	(void)notify_value_reg_update(level, ref, false);
 }
 
 static bool lwm2m_observer_path_compare(const struct lwm2m_obj_path *o_p,
@@ -1306,6 +1439,21 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 				LOG_DBG("lt + 2*st > gt");
 				return -EEXIST;
 			}
+		}
+	}
+
+	if (msg->path.level >= LWM2M_PATH_LEVEL_RESOURCE) {
+		bool enable = false;
+
+		if ((nattrs.flags & (BIT(LWM2M_ATTR_LT) |
+				     BIT(LWM2M_ATTR_GT) |
+				     BIT(LWM2M_ATTR_STEP))) != 0) {
+			enable = true;
+		}
+
+		ret = notify_value_reg_update(msg->path.level, ref, enable);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
