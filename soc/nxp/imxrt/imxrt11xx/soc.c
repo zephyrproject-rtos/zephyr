@@ -227,31 +227,31 @@ __weak void clock_init(void)
 	CLOCK_InitSysPll2(&sysPll2Config);
 
 	/* Init System Pll2 pfd0. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd0, 27);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd0, CONFIG_SYS_PLL2_PFD0_DIV);
 
 	/* Init System Pll2 pfd1. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd1, 16);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd1, CONFIG_SYS_PLL2_PFD1_DIV);
 
 	/* Init System Pll2 pfd2. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, CONFIG_SYS_PLL2_PFD2_DIV);
 
 	/* Init System Pll2 pfd3. */
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
+	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, CONFIG_SYS_PLL2_PFD3_DIV);
 
 	/* Init Sys Pll3. */
 	CLOCK_InitSysPll3();
 
 	/* Init System Pll3 pfd0. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd0, 13);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd0, CONFIG_SYS_PLL3_PFD0_DIV);
 
 	/* Init System Pll3 pfd1. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd1, 17);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd1, CONFIG_SYS_PLL3_PFD1_DIV);
 
 	/* Init System Pll3 pfd2. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd2, 32);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd2, CONFIG_SYS_PLL3_PFD2_DIV);
 
 	/* Init System Pll3 pfd3. */
-	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd3, 22);
+	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd3, CONFIG_SYS_PLL3_PFD3_DIV);
 
 	static const clock_video_pll_config_t videoPllConfig = {
 		/* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
