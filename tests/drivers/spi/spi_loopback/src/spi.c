@@ -16,6 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -56,7 +57,8 @@ static int spec_idx;
  */
 struct spi_dt_spec spec_copies[5];
 
-
+const struct gpio_dt_spec miso_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), miso_gpios, {});
+const struct gpio_dt_spec mosi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), mosi_gpios, {});
 
 /*
  ********************
@@ -829,6 +831,35 @@ ZTEST(spi_loopback, test_spi_concurrent_transfer_different_spec)
 	spec_copies[2] = *loopback_specs[spec_idx];
 
 	test_spi_concurrent_transfer_helper(specs);
+}
+
+ZTEST(spi_loopback, test_spi_deinit)
+{
+	struct spi_dt_spec *spec = loopback_specs[0];
+	const struct device *dev = spec->bus;
+	int ret;
+
+	if (miso_pin.port == NULL || mosi_pin.port == NULL) {
+		TC_PRINT("  zephyr,user miso-gpios or mosi-gpios are not defined\n");
+		ztest_test_skip();
+	}
+
+	ret = device_deinit(dev);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		ztest_test_skip();
+	}
+
+	zassert_ok(ret);
+	zassert_ok(gpio_pin_configure_dt(&miso_pin, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_OUTPUT_INACTIVE));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
+	zassert_ok(gpio_pin_set_dt(&mosi_pin, 1));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 1);
+	zassert_ok(gpio_pin_set_dt(&mosi_pin, 0));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
+	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_INPUT));
+	zassert_ok(device_init(dev));
 }
 
 #if (CONFIG_SPI_ASYNC)
