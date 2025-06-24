@@ -4,4 +4,4 @@
 description: RZ/A2M Clock Pulse Generator
 compatible: "renesas,rza2m-cpg"
 
-include: renesas,rz-cpg.yml
+include: renesas,rz-cpg.yaml
