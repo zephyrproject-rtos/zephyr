@@ -37,6 +37,7 @@ WINDOW_STRIDE_ACE = 0x8000
 
 DEBUG_SLOT_SIZE = 4096
 DEBUG_SLOT_SHELL = 0
+DEBUG_SLOT_SHELL_TYPE = 0x73686c6c
 SHELL_RX_SIZE = 256
 SHELL_MAX_VALID_SLOT_SIZE = 16777216
 
@@ -769,7 +770,7 @@ def debug_slot_offset_by_type(the_type, timeout_s=0.2):
     return None
 
 def shell_base_offset():
-    return debug_offset() + DEBUG_SLOT_SIZE * (1 + DEBUG_SLOT_SHELL)
+    return debug_slot_offset_by_type(DEBUG_SLOT_SHELL_TYPE)
 
 def read_from_shell_memwindow_winstream(last_seq):
     offset = shell_base_offset() + SHELL_RX_SIZE
