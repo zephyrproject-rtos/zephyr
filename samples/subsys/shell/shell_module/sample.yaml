@@ -1,7 +1,7 @@
 sample:
   name: Shell Sample
 common:
-  filter: not CONFIG_NATIVE_LIBC and not CONFIG_SOC_SERIES_BSIM_NRFXX
+  filter: not CONFIG_SOC_SERIES_BSIM_NRFXX
 tests:
   sample.shell.shell_module:
     platform_exclude: qemu_rx
