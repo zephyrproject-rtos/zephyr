@@ -127,7 +127,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.0.20250523
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.1.20250624
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
