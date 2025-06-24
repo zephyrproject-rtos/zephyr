@@ -9,7 +9,6 @@ include: [sensor-device.yaml, i2c-device.yaml]
 properties:
   int-gpios:
     type: phandle-array
-    required: false
     description: Interrupt pin.
 
       The interrupt pin of BMP581 is open-drain, active low. If connected directly to the MCU,
