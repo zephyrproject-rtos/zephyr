@@ -484,6 +484,71 @@ int engine_observe_attribute_list_get(sys_slist_t *path_list, struct notificatio
 	return 0;
 }
 
+static int resource_value_as_double(const struct lwm2m_obj_path *path,
+				    double *value)
+{
+	struct lwm2m_engine_obj_field *obj_field;
+	union {
+		int64_t s64;
+		int32_t s32;
+		int16_t s16;
+		int8_t s8;
+		uint32_t u32;
+		uint16_t u16;
+		uint8_t u8;
+	} temp_buf = { 0 };
+	int ret;
+
+	lwm2m_registry_lock();
+
+	ret = path_to_objs(path, NULL, &obj_field, NULL, NULL);
+	if (ret < 0 || obj_field == NULL) {
+		lwm2m_registry_unlock();
+		return -ENOENT;
+	}
+
+	switch (obj_field->data_type) {
+	case LWM2M_RES_TYPE_U32:
+		ret = lwm2m_get_u32(path, &temp_buf.u32);
+		*value = (double)temp_buf.u32;
+		break;
+	case LWM2M_RES_TYPE_U16:
+		ret = lwm2m_get_u16(path, &temp_buf.u16);
+		*value = (double)temp_buf.u16;
+		break;
+	case LWM2M_RES_TYPE_U8:
+		ret = lwm2m_get_u8(path, &temp_buf.u8);
+		*value = (double)temp_buf.u8;
+		break;
+	case LWM2M_RES_TYPE_S64:
+		ret = lwm2m_get_s64(path, &temp_buf.s64);
+		*value = (double)temp_buf.s64;
+		break;
+	case LWM2M_RES_TYPE_S32:
+		ret = lwm2m_get_s32(path, &temp_buf.s32);
+		*value = (double)temp_buf.s32;
+		break;
+	case LWM2M_RES_TYPE_S16:
+		ret = lwm2m_get_s16(path, &temp_buf.s16);
+		*value = (double)temp_buf.s16;
+		break;
+	case LWM2M_RES_TYPE_S8:
+		ret = lwm2m_get_s8(path, &temp_buf.s8);
+		*value = (double)temp_buf.s8;
+		break;
+	case LWM2M_RES_TYPE_FLOAT:
+		ret = lwm2m_get_f64(path, value);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	lwm2m_registry_unlock();
+
+	return ret;
+}
+
 int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 {
 	struct observe_node *obs;
@@ -757,6 +822,8 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 			msg->path.obj_inst_id, msg->path.res_id, msg->path.level,
 			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
+		lwm2m_engine_observer_refresh_notified_values(obs);
+
 		return 0;
 	}
 
@@ -772,6 +839,8 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 	}
 
 	engine_observe_node_init(obs, token, msg->ctx, tkl, format, attrs.pmax);
+	lwm2m_engine_observer_refresh_notified_values(obs);
+
 	return 0;
 }
 
@@ -845,6 +914,8 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 		LOG_DBG("OBSERVER Composite DUPLICATE [%s]",
 			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
+		lwm2m_engine_observer_refresh_notified_values(obs);
+
 		return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 	}
 
@@ -858,6 +929,8 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 		return -ENOMEM;
 	}
 	engine_observe_node_init(obs, token, msg->ctx, tkl, format, attrs.pmax);
+	lwm2m_engine_observer_refresh_notified_values(obs);
+
 	return do_composite_read_op_for_parsed_list(msg, format, &lwm2m_path_list);
 }
 
@@ -1821,4 +1894,135 @@ void lwm2m_engine_clear_duplicate_path(sys_slist_t *lwm2m_path_list, sys_slist_t
 			prev = entry;
 		}
 	}
+}
+
+static void update_resource_instance_notified_value(
+		const struct lwm2m_obj_path *path,
+		const struct lwm2m_engine_res_inst *ref)
+{
+	struct lwm2m_notify_value_register *last_notified;
+	double new_value;
+	int ret;
+
+	last_notified = notify_value_reg_get(ref);
+	if (last_notified == NULL) {
+		return;
+	}
+
+	ret = resource_value_as_double(path, &new_value);
+	if (ret < 0) {
+		return;
+	}
+
+	last_notified->value = new_value;
+	last_notified->notified = true;
+}
+
+static void update_resource_notified_value(const struct lwm2m_obj_path *path,
+					   const struct lwm2m_engine_res *res)
+{
+	struct lwm2m_obj_path res_inst_path = {
+		.level = LWM2M_PATH_LEVEL_RESOURCE_INST,
+		.obj_id = path->obj_id,
+		.obj_inst_id = path->obj_inst_id,
+		.res_id = path->res_id,
+	};
+	struct lwm2m_engine_res_inst *res_inst;
+
+	if (!is_resource_numerical(path)) {
+		return;
+	}
+
+	for (int i = 0; i < res->res_inst_count; i++) {
+		res_inst = &res->res_instances[i];
+		res_inst_path.res_inst_id = res_inst->res_inst_id;
+
+		if (res_inst->res_inst_id == RES_INSTANCE_NOT_CREATED) {
+			continue;
+		}
+
+		update_resource_instance_notified_value(&res_inst_path, res_inst);
+	}
+}
+
+static void update_object_instance_notified_values(
+		const struct lwm2m_obj_path *path,
+		const struct lwm2m_engine_obj_inst *obj_inst)
+{
+	struct lwm2m_obj_path res_path = {
+		.level = LWM2M_PATH_LEVEL_RESOURCE,
+		.obj_id = path->obj_id,
+		.obj_inst_id = path->obj_inst_id,
+	};
+	struct lwm2m_engine_res *res;
+
+	for (int i = 0; i < obj_inst->resource_count; i++) {
+		res = &obj_inst->resources[i];
+		res_path.res_id = res->res_id;
+
+		update_resource_notified_value(&res_path, res);
+	}
+}
+
+static void update_object_notified_values(const struct lwm2m_obj_path *path,
+					  const struct lwm2m_engine_obj *obj)
+{
+	struct lwm2m_engine_obj_inst *obj_inst = next_engine_obj_inst(obj->obj_id, -1);
+	struct lwm2m_obj_path obj_inst_path = {
+		.level = LWM2M_PATH_LEVEL_OBJECT_INST,
+		.obj_id = path->obj_id,
+	};
+
+	if (obj_inst == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < obj->instance_count; i++) {
+		obj_inst_path.obj_inst_id = obj_inst->obj_inst_id;
+
+		update_object_instance_notified_values(&obj_inst_path, obj_inst);
+
+		obj_inst = next_engine_obj_inst(obj->obj_id, obj_inst->obj_inst_id);
+		if (obj_inst == NULL) {
+			break;
+		}
+	}
+}
+
+void lwm2m_engine_observer_refresh_notified_values(struct observe_node *obs)
+{
+	struct lwm2m_obj_path_list *tmp;
+	struct lwm2m_obj_path *obs_path;
+	void *ref;
+	int ret;
+
+	lwm2m_registry_lock();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&obs->path_list, tmp, node) {
+		obs_path =  &tmp->path;
+
+		ret = lwm2m_get_path_reference_ptr(NULL, &tmp->path, &ref);
+		if (ret < 0) {
+			continue;
+		}
+
+		switch (obs_path->level) {
+		case LWM2M_PATH_LEVEL_RESOURCE_INST:
+			update_resource_instance_notified_value(obs_path, ref);
+			break;
+		case LWM2M_PATH_LEVEL_RESOURCE:
+			update_resource_notified_value(obs_path, ref);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT_INST:
+			update_object_instance_notified_values(obs_path, ref);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT:
+			update_object_notified_values(obs_path, ref);
+			break;
+		default:
+			break;
+		}
+	}
+
+	lwm2m_registry_unlock();
 }
