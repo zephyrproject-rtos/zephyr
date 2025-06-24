@@ -134,13 +134,18 @@ enum video_colorfx {
 	VIDEO_COLORFX_ANTIQUE = 14,
 };
 
-/* Enable Automatic Brightness. */
+/** Enable Automatic Brightness. */
 #define VIDEO_CID_AUTOBRIGHTNESS (VIDEO_CID_BASE + 32)
 
 /** Switch the band-stop filter of a camera sensor on or off, or specify its strength.
  * Such band-stop filters can be used, for example, to filter out the fluorescent light component.
  */
 #define VIDEO_CID_BAND_STOP_FILTER (VIDEO_CID_BASE + 33)
+
+/** Rotate the image by a given angle, e.g. 90, 180, 270 degree. The application will be then
+ * responsible for setting the new width and height of the image using video_set_fmt() if needed.
+ */
+#define VIDEO_CID_ROTATE (VIDEO_CID_BASE + 34)
 
 /** Sets the alpha color component.
  * Some devices produce data with a user-controllable alpha component. Set the value applied to
