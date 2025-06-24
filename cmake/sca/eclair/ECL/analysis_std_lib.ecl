@@ -9,20 +9,20 @@
 
 -doc_begin="Selection of guidelines from
 https://docs.zephyrproject.org/latest/contribute/coding_guidelines/index.html"
--enable=MC3R1.R21.1
--enable=MC3R1.R21.12
--enable=MC3R1.R21.14
--enable=MC3R1.R21.15
--enable=MC3R1.R21.16
--enable=MC3R1.R21.2
--enable=MC3R1.R21.3
--enable=MC3R1.R21.4
--enable=MC3R1.R21.6
--enable=MC3R1.R21.7
--enable=MC3R1.R21.9
--enable=MC3R1.R22.1
--enable=MC3R1.R22.10
--enable=MC3R1.R22.7
--enable=MC3R1.R22.8
--enable=MC3R1.R22.9
+-enable=MC3A2.R21.1
+-enable=MC3A2.R21.12
+-enable=MC3A2.R21.14
+-enable=MC3A2.R21.15
+-enable=MC3A2.R21.16
+-enable=MC3A2.R21.2
+-enable=MC3A2.R21.3
+-enable=MC3A2.R21.4
+-enable=MC3A2.R21.6
+-enable=MC3A2.R21.7
+-enable=MC3A2.R21.9
+-enable=MC3A2.R22.1
+-enable=MC3A2.R22.10
+-enable=MC3A2.R22.7
+-enable=MC3A2.R22.8
+-enable=MC3A2.R22.9
 -doc_end
