@@ -2509,7 +2509,8 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 	/* TODO: Handle lifetime. */
 	ctx = dns_resolve_get_default();
 	ret = dns_resolve_reconfigure_with_interfaces(ctx, NULL, dns_servers,
-						      interfaces);
+						      interfaces,
+						      DNS_SOURCE_IPV6_RA);
 	if (ret < 0) {
 		NET_DBG("Failed to set RDNSS resolve address: %d", ret);
 	}
