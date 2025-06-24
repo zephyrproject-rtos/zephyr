@@ -19,7 +19,9 @@ tests:
       - CONFIG_NET_CONFIG_NEED_IPV6=n
       - CONFIG_NET_CONFIG_MY_IPV6_ADDR=""
       - CONFIG_NET_CONFIG_PEER_IPV6_ADDR=""
+      - CONFIG_NET_CONFIG_MY_IPV6_GW=""
       - CONFIG_LOG_BACKEND_NET_SERVER="192.0.2.1:514"
+      - CONFIG_DNS_SERVER1="192.0.2.2"
   sample.net.syslog.ipv6_only:
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
@@ -27,6 +29,7 @@ tests:
       - CONFIG_NET_CONFIG_NEED_IPV4=n
       - CONFIG_NET_CONFIG_MY_IPV4_ADDR=""
       - CONFIG_NET_CONFIG_PEER_IPV4_ADDR=""
+      - CONFIG_NET_CONFIG_MY_IPV4_GW=""
   sample.net.syslog.no_autostart:
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
