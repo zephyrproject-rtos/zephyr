@@ -121,11 +121,13 @@ static void rampstat_work_handler(struct k_work *work)
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", ctx->dev->name);
 			tmc5xxx_trigger_callback(ctx->dev, STEPPER_EVENT_LEFT_END_STOP_DETECTED);
+			atomic_set_bit(stepper_data->state, TMC5XXX_MOTOR_STOPPED);
 			break;
 
 		case TMC5XXX_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", ctx->dev->name);
 			tmc5xxx_trigger_callback(ctx->dev, STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
+			atomic_set_bit(stepper_data->state, TMC5XXX_MOTOR_STOPPED);
 			break;
 
 		case TMC5XXX_POS_REACHED_EVENT:
@@ -133,12 +135,20 @@ static void rampstat_work_handler(struct k_work *work)
 		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", ctx->dev->name);
 			tmc5xxx_trigger_callback(ctx->dev, STEPPER_EVENT_STEPS_COMPLETED);
+			atomic_set_bit(stepper_data->state, TMC5XXX_MOTOR_STOPPED);
 			break;
 
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", ctx->dev->name);
 			tmc5xxx_stallguard_enable(ctx->dev, false);
 			tmc5xxx_trigger_callback(ctx->dev, STEPPER_EVENT_STALL_DETECTED);
+			atomic_set_bit(stepper_data->state, TMC5XXX_MOTOR_STALLED);
+			break;
+		case TMC5XXX_VZERO:
+			LOG_DBG("RAMPSTAT %s:Stop detected", ctx->dev->name);
+			tmc5xxx_stallguard_enable(ctx->dev, false);
+			tmc5xxx_trigger_callback(ctx->dev, STEPPER_EVENT_STOPPED);
+			atomic_set_bit(stepper_data->state, TMC5XXX_MOTOR_STOPPED);
 			break;
 		default:
 			LOG_ERR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
@@ -361,6 +371,7 @@ static DEVICE_API(stepper, tmc5xxx_stepper_api) = {
 	.get_actual_position = tmc5xxx_get_actual_position,
 	.move_to = tmc5xxx_move_to,
 	.run = tmc5xxx_run,
+	.stop = tmc5xxx_stepper_stop,
 	.set_event_callback = tmc51xx_stepper_set_event_callback,
 };
 

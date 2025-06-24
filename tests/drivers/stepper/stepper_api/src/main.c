@@ -62,6 +62,8 @@ static void stepper_print_event_callback(const struct device *dev, enum stepper_
 
 static void *stepper_setup(void)
 {
+	/* Initialize the stepper fixture */
+	k_sleep(K_MSEC(1000)); /* Allow time for the stepper device to initialize */
 	static struct stepper_fixture fixture = {
 		.dev = DEVICE_DT_GET(DT_ALIAS(stepper)),
 		.callback = stepper_print_event_callback,

@@ -138,7 +138,13 @@ int tmc5xxx_enable(const struct device *dev)
 
 	reg_value |= TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
 
-	return tmc5xxx_write_reg(ctx, TMC5XXX_CHOPCONF(ctx->motor_index), reg_value);
+	err = tmc5xxx_write_reg(ctx, TMC5XXX_CHOPCONF(ctx->motor_index), reg_value);
+	if (err != 0) {
+		return err;
+	}
+	atomic_set_bit(data->state, TMC5XXX_MOTOR_ENABLED);
+
+	return 0;
 }
 
 int tmc5xxx_disable(const struct device *dev)
@@ -157,7 +163,89 @@ int tmc5xxx_disable(const struct device *dev)
 
 	reg_value &= ~TMC5XXX_CHOPCONF_DRV_ENABLE_MASK;
 
-	return tmc5xxx_write_reg(ctx, TMC5XXX_CHOPCONF(ctx->motor_index), reg_value);
+	err = tmc5xxx_write_reg(ctx, TMC5XXX_CHOPCONF(ctx->motor_index), reg_value);
+	if (err != 0) {
+		return err;
+	}
+	atomic_set_bit(data->state, TMC5XXX_MOTOR_DISABLED);
+	return 0;
+}
+
+int tmc5xxx_stepper_stop(const struct device *dev)
+{
+    struct tmc5xxx_stepper_data const *data = dev->data;
+    const struct tmc5xxx_core_context *ctx = &data->core;
+    const struct tmc5xxx_stepper_config *config = dev->config;
+    uint32_t current_mode;
+    int err;
+
+    LOG_DBG("%s: Stopping stepper motor", ctx->dev->name);
+
+    /* Read current ramp mode */
+    err = tmc5xxx_read_reg(ctx, TMC5XXX_RAMPMODE(ctx->motor_index), &current_mode);
+    if (err != 0) {
+        LOG_ERR("%s: Failed to read ramp mode", ctx->dev->name);
+        return -EIO;
+    }
+
+    if (current_mode == TMC5XXX_RAMPMODE_POSITIONING_MODE) {
+        /* Stop in positioning mode (option b):
+         * Set VSTART=0 and VMAX=0 to decelerate using AMAX/A1
+         */
+        err = tmc5xxx_write_reg(ctx, TMC5XXX_VSTART(ctx->motor_index), 0);
+        if (err != 0) {
+            LOG_ERR("%s: Failed to set VSTART to 0", ctx->dev->name);
+            return -EIO;
+        }
+
+        err = tmc5xxx_write_reg(ctx, TMC5XXX_VMAX(ctx->motor_index), 0);
+        if (err != 0) {
+            LOG_ERR("%s: Failed to set VMAX to 0", ctx->dev->name);
+            return -EIO;
+        }
+
+        LOG_DBG("%s: Stopping in positioning mode", ctx->dev->name);
+    } else if (current_mode == TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE || 
+               current_mode == TMC5XXX_RAMPMODE_NEGATIVE_VELOCITY_MODE) {
+        /* Stop in velocity mode (option a):
+         * Set AMAX to desired deceleration value and VMAX=0
+         */
+        err = tmc5xxx_write_reg(ctx, TMC5XXX_AMAX(ctx->motor_index), 
+                              config->default_ramp_config.amax);
+        if (err != 0) {
+            LOG_ERR("%s: Failed to set AMAX for deceleration", ctx->dev->name);
+            return -EIO;
+        }
+
+        err = tmc5xxx_write_reg(ctx, TMC5XXX_VMAX(ctx->motor_index), 0);
+        if (err != 0) {
+            LOG_ERR("%s: Failed to set VMAX to 0", ctx->dev->name);
+            return -EIO;
+        }
+
+        LOG_DBG("%s: Stopping in velocity mode", ctx->dev->name);
+    } else {
+        /* In hold mode or unknown mode: switch to velocity mode and stop */
+        err = tmc5xxx_write_reg(ctx, TMC5XXX_RAMPMODE(ctx->motor_index),
+                              TMC5XXX_RAMPMODE_POSITIVE_VELOCITY_MODE);
+        if (err != 0) {
+            LOG_ERR("%s: Failed to set ramp mode", ctx->dev->name);
+            return -EIO;
+        }
+
+        err = tmc5xxx_write_reg(ctx, TMC5XXX_VMAX(ctx->motor_index), 0);
+        if (err != 0) {
+            LOG_ERR("%s: Failed to set VMAX to 0", ctx->dev->name);
+            return -EIO;
+        }
+
+        LOG_DBG("%s: Switching to velocity mode and stopping", ctx->dev->name);
+    }
+
+    /* Update motor state */
+    atomic_clear_bit(data->state, TMC5XXX_MOTOR_STOPPED);
+    
+    return 0;
 }
 
 int tmc5xxx_is_moving(const struct device *dev, bool *is_moving)
@@ -302,7 +390,7 @@ int tmc5xxx_move_to(const struct device *dev, int32_t position)
 				  );
 #endif
 	}
-
+	atomic_set_bit(data->state, TMC5XXX_MOTOR_MOVING);
 	return 0;
 }
 
@@ -324,9 +412,12 @@ int tmc5xxx_move_by(const struct device *dev, int32_t steps)
 
 int tmc5xxx_run(const struct device *dev, const enum stepper_direction direction)
 {
-	struct tmc5xxx_stepper_data const *data = dev->data;
+	struct tmc5xxx_stepper_data *data = dev->data;
 	const struct tmc5xxx_core_context *ctx = &data->core;
+	const struct tmc5xxx_stepper_config *config = dev->config;
 	uint8_t ramp_mode;
+	uint32_t rampstat;
+	int err;
 
 	/* Set the appropriate ramp mode based on direction */
 	if (direction == STEPPER_DIRECTION_POSITIVE) {
@@ -335,9 +426,48 @@ int tmc5xxx_run(const struct device *dev, const enum stepper_direction direction
 		ramp_mode = TMC5XXX_RAMPMODE_NEGATIVE_VELOCITY_MODE;
 	}
 
+	/* Clear any pending events in RAMPSTAT */
+	err = tmc5xxx_rampstat_read_clear(dev, &rampstat);
+	if (err != 0) {
+		return err;
+	}
+
 	LOG_DBG("%s: Running in %s direction", ctx->dev->name,
-		(direction == STEPPER_DIRECTION_POSITIVE) ? "positive" : "negative");
-	return tmc5xxx_write_reg(ctx, TMC5XXX_RAMPMODE(ctx->motor_index), ramp_mode);
+	(direction == STEPPER_DIRECTION_POSITIVE) ? "positive" : "negative");
+	err = tmc5xxx_write_reg(ctx, TMC5XXX_RAMPMODE(ctx->motor_index), ramp_mode);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	/* Re-enable stallguard check if configured */
+	if (config->is_sg_enabled) {
+		k_work_reschedule(&data->stallguard_dwork,
+				  K_MSEC(config->sg_velocity_check_interval_ms));
+	}
+
+	/* Set up position monitoring if callback is registered */
+	if (data->callback) {
+		const struct tmc5xxx_controller_config *ctrl_config = ctx->controller_dev->config;
+
+		/* For SPI with DIAG0 pin, we use interrupt-driven approach */
+		if (ctrl_config->comm_type == TMC_COMM_SPI && ctrl_config->diag0_gpio.port) {
+			/* Using interrupt-driven approach - no polling needed */
+			return 0;
+		}
+
+		/* For UART or SPI without DIAG0, schedule RAMPSTAT polling */
+#if defined(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC)
+		k_work_reschedule(&data->rampstat_callback_dwork,
+				  K_MSEC(CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC)
+				  );
+#elif defined(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC)
+		k_work_reschedule(&data->rampstat_callback_dwork,
+				  K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC)
+				  );
+#endif
+	}
+	atomic_set_bit(data->state, TMC5XXX_MOTOR_MOVING);
+	return 0;
 }
 
 int tmc5xxx_set_micro_step_res(const struct device *dev,
