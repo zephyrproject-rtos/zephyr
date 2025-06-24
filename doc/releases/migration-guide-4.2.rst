@@ -549,6 +549,11 @@ Networking
   the previously used ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` and
   ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` options.
 
+* The DNS server resolver configuration functions :c:func:`dns_resolve_reconfigure` and
+  :c:func:`dns_resolve_reconfigure_with_interfaces` now require that the user supplies
+  the source of the DNS server information. For example when DNS server information is
+  received via DHCPv4, then :c:enumerator:`DNS_SOURCE_DHCPV4` needs to be specified.
+
 LwM2M
 =====
 
