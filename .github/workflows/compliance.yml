@@ -43,10 +43,14 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
 
+    - name: Set the Python version
+      run: |
+        echo "PYTHON_VERSION=$( cat PYTHON_VERSION )" >> $GITHUB_ENV
+
     - name: Set up Python
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
-        python-version: 3.12
+        python-version: ${{ env.PYTHON_VERSION }}
         cache: pip
         cache-dependency-path: scripts/requirements-actions.txt
 
