@@ -9,7 +9,9 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/net_config.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/usb/usb_device.h>
 
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -29,6 +31,14 @@ static ssize_t sendall(int sock, const void *buf, size_t len)
 	}
 
 	return 0;
+}
+
+void usb_init(void)
+{
+	if (usb_enable(NULL))
+		printk("usb enable error\n");
+
+	(void)net_config_init_app(NULL, "Initializing network over USB");
 }
 
 #if DT_HAS_CHOSEN(zephyr_videoenc)
@@ -166,6 +176,8 @@ int main(void)
 	}
 
 	/* Prepare Network */
+	usb_init();
+
 	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(MY_PORT);

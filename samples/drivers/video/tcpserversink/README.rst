@@ -31,7 +31,8 @@ interface. Ethernet cable must be connected to RJ45 connector.
 
 On :zephyr:board:`stm32n6570_dk`, the MB1854 IMX335 camera module must be plugged in
 the CSI-2 camera connector. A RJ45 ethernet cable must be plugged in the ethernet CN6
-connector.
+connector. When using ethernet over USB, plug an USB-C cable between CN8 USB1 connector
+and your host PC.
 
 Building and Running
 ********************
@@ -93,6 +94,16 @@ When using compression support, use this GStreamer command line:
 
     gst-launch-1.0 tcpclientsrc host=192.0.2.1 port=5000 \
         ! queue ! decodebin ! queue ! fpsdisplaysink sync=false
+
+When using ethernet over USB, set the ethernet interface through USB before
+starting the GStreamer command line:
+
+.. code-block:: console
+    sudo ifconfig enx00005e005301 192.0.2.2
+
+To find the right interface, search for "enx" in dmesg
+ .. code-block:: console
+    [1316045.847337] cdc_ether 3-6.3.2:1.0 enx00005e005301: renamed from eth0
 
 References
 **********
