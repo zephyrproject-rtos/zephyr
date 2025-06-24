@@ -483,10 +483,11 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 
 		pair_ep = bt_bap_iso_get_paired_ep(stream_ep);
 
-		/* If there are no paired endpoint, or the paired endpoint is
-		 * not in the streaming state, we can disconnect the CIS
+		/* If there are no paired endpoint, or the paired endpoint is in the QoS Configured
+		 * or Codec Configured state, we can disconnect the CIS
 		 */
-		if (pair_ep == NULL || pair_ep->status.state != BT_BAP_EP_STATE_STREAMING) {
+		if (pair_ep == NULL || pair_ep->status.state == BT_BAP_EP_STATE_QOS_CONFIGURED ||
+			pair_ep->status.state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 			return true;
 		}
 	}
