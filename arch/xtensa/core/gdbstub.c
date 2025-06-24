@@ -598,8 +598,52 @@ void arch_gdb_continue(void)
 
 void arch_gdb_step(void)
 {
+	uint32_t ps = xtensa_gdb_ctx.regs[xtensa_gdb_ctx.ps_idx].val;
+	uint32_t intlevel = ps & PS_INTLEVEL_MASK;
+	bool excm = (ps & PS_EXCM_MASK) != 0;
+	uint32_t icountlevel;
+
+	/* Avoid counting while in this function. */
+	set_one_sreg(ICOUNT, 0);
+	set_one_sreg(ICOUNTLEVEL, 0);
+
+	/*
+	 * Note that ICOUNT only increments when current interrupt level
+	 * is less then ICOUNTLEVEL, and that ICOUNT interrupt is triggered
+	 * when it reaches zero.
+	 */
+	if (excm) {
+		icountlevel = XCHAL_EXCM_LEVEL + 1;
+	} else if (arch_curr_cpu()->nested > 1) {
+		/*
+		 * ICOUNT, IBREAK and DBREAK all trigger interrupts.
+		 * So we need to account for nested being 1 when we
+		 * are running GDB stub. If nested is higher than one,
+		 * this means we are debugging inside ISRs.
+		 */
+		icountlevel = intlevel + 1;
+
+		/*
+		 * PS.INTLEVEL would be zero when it is level-1 interrupts.
+		 * A simple +1 does not work as ICOUNT would not stop inside
+		 * the ISR. So we need to up the ICOUNTLEVEL.
+		 */
+		icountlevel = MAX(icountlevel, 2);
+
+		/*
+		 * Make sure instructions are only counted below debug
+		 * interrupt level, or else ICOUNT would increment while
+		 * we are working in this function.
+		 */
+		icountlevel = MIN(icountlevel, XCHAL_DEBUGLEVEL);
+	} else {
+		/* Will break in non-ISR, normal code execution. */
+		icountlevel = 1;
+	}
+
 	set_one_sreg(ICOUNT, 0xFFFFFFFEU);
-	set_one_sreg(ICOUNTLEVEL, XCHAL_DEBUGLEVEL);
+	set_one_sreg(ICOUNTLEVEL, icountlevel);
+
 	__asm__ volatile("isync");
 }
 
@@ -965,6 +1009,9 @@ void arch_gdb_init(void)
 			/* AR0: 0x0100 */
 			xtensa_gdb_ctx.ar_idx = idx;
 			break;
+		case 0x02E6:
+			/* PS: 0x02E6 */
+			xtensa_gdb_ctx.ps_idx = idx;
 		default:
 			break;
 		};
