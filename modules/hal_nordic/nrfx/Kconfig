@@ -921,6 +921,16 @@ config NRFX_TWIM22
 	depends on $(dt_nodelabel_exists,i2c22)
 	select NRFX_TWIM
 
+config NRFX_TWIM23
+	bool "TWIM23 driver instance"
+	depends on $(dt_nodelabel_exists,i2c23)
+	select NRFX_TWIM
+
+config NRFX_TWIM24
+	bool "TWIM24 driver instance"
+	depends on $(dt_nodelabel_exists,i2c24)
+	select NRFX_TWIM
+
 config NRFX_TWIM30
 	bool "TWIM30 driver instance"
 	depends on $(dt_nodelabel_exists,i2c30)
@@ -1007,6 +1017,16 @@ config NRFX_TWIS21
 config NRFX_TWIS22
 	bool "TWIS22 driver instance"
 	depends on $(dt_nodelabel_exists,i2c22)
+	select NRFX_TWIS
+
+config NRFX_TWIS23
+	bool "TWIS23 driver instance"
+	depends on $(dt_nodelabel_exists,i2c23)
+	select NRFX_TWIS
+
+config NRFX_TWIS24
+	bool "TWIS24 driver instance"
+	depends on $(dt_nodelabel_exists,i2c24)
 	select NRFX_TWIS
 
 config NRFX_TWIS30
