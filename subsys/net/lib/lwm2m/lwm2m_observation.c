@@ -549,6 +549,86 @@ static int resource_value_as_double(const struct lwm2m_obj_path *path,
 	return ret;
 }
 
+static bool value_conditions_satisfied(const struct lwm2m_obj_path *path,
+				       uint16_t srv_obj_inst)
+{
+	struct lwm2m_notify_value_register *last_notified;
+	struct notification_attrs attrs = { 0 };
+	double res_value, old_value;
+	void *ref;
+	int ret;
+
+	/* Value check only applies to resource or resource instance levels. */
+	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
+		return true;
+	}
+
+	ret = engine_observe_get_attributes(path, &attrs, srv_obj_inst);
+	if (ret < 0) {
+		return true;
+	}
+
+	/* Check if any of the value attributes is actually set. */
+	if ((attrs.flags & (BIT(LWM2M_ATTR_GT) |
+			    BIT(LWM2M_ATTR_LT) |
+			    BIT(LWM2M_ATTR_STEP))) == 0) {
+		return true;
+	}
+
+	ret = lwm2m_get_path_reference_ptr(NULL, path, &ref);
+	if (ret < 0 || ref == NULL) {
+		return true;
+	}
+
+	/* Notification value register uses resource instance pointer as ref */
+	if (path->level == LWM2M_PATH_LEVEL_RESOURCE) {
+		struct lwm2m_engine_res *res = ref;
+
+		ref = res->res_instances;
+		if (ref == NULL) {
+			return true;
+		}
+	}
+
+	last_notified = notify_value_reg_get(ref);
+	if (last_notified == NULL || !last_notified->notified) {
+		return true;
+	}
+
+	old_value = last_notified->value;
+
+	/* Value check only applies to numerical resources. */
+	ret = resource_value_as_double(path, &res_value);
+	if (ret < 0) {
+		return true;
+	}
+
+	if ((attrs.flags & BIT(LWM2M_ATTR_STEP)) != 0) {
+		double res_diff = old_value > res_value ?
+				  old_value - res_value : res_value - old_value;
+
+		if (res_diff >= attrs.st) {
+			return true;
+		}
+	}
+
+	if ((attrs.flags & BIT(LWM2M_ATTR_GT)) != 0) {
+		if ((old_value <= attrs.gt && res_value > attrs.gt) ||
+		    (old_value >= attrs.gt && res_value < attrs.gt)) {
+			return true;
+		}
+	}
+
+	if ((attrs.flags & BIT(LWM2M_ATTR_LT)) != 0) {
+		if ((old_value <= attrs.lt && res_value > attrs.lt) ||
+		    (old_value >= attrs.lt && res_value < attrs.lt)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 {
 	struct observe_node *obs;
@@ -571,6 +651,10 @@ int lwm2m_notify_observer_path(const struct lwm2m_obj_path *path)
 									sock_ctx[i]->srv_obj_inst);
 				if (ret < 0) {
 					return ret;
+				}
+
+				if (!value_conditions_satisfied(path, sock_ctx[i]->srv_obj_inst)) {
+					continue;
 				}
 
 				if (nattrs.pmin) {
