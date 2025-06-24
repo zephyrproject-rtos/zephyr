@@ -12,6 +12,7 @@ multiple scopes, including:
 * Code (C/C++)
 * Kconfig
 * CMake
+* Shell
 
 which makes it a very versatile system for lifecycle management of applications. In addition, it
 can be used when building applications which target supported bootloaders (e.g. MCUboot) allowing
@@ -195,3 +196,18 @@ Use in MCUboot-supported applications
 No additional configuration needs to be done to the target application so long as it is configured
 to support MCUboot and a signed image is generated, the version information will be automatically
 included in the image data.
+
+Use in Shell
+============
+
+When a shell interface is configured, the following commands are available to retrieve application version information:
+
++----------------------+-----------------------------+-------------------------+
+| Command              | Variable                    | Example                 |
++----------------------+-----------------------------+-------------------------+
+| app version          | APP_VERSION_STRING          | 1.2.3-unstable.5        |
++----------------------+-----------------------------+-------------------------+
+| app version-extended | APP_VERSION_EXTENDED_STRING | 1.2.3-unstable.5+4      |
++----------------------+-----------------------------+-------------------------+
+| app build-version    | APP_BUILD_VERSION           | v3.3.0-18-g2c85d9224fca |
++----------------------+-----------------------------+-------------------------+

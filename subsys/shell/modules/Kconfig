@@ -22,4 +22,11 @@ config DEVMEM_SHELL
 	help
 	  This shell command provides read/write access to physical memory.
 
+config APP_VERSION_SHELL
+	bool "Application version information shell"
+	default y if !SHELL_MINIMAL
+	depends on "$(APP_VERSION_EXTENDED_STRING)" != ""
+	help
+	  This shell command provides read access to application version information.
+
 rsource "kernel_service/Kconfig"
