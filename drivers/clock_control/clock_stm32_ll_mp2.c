@@ -105,6 +105,10 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	case STM32_CLOCK_PERIPH_SPI7:
 		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI67_CLKSOURCE);
 		break;
+	case STM32_CLOCK_PERIPH_WWDG1:
+		/* The WWDG1 clock is derived from the APB3 clock */
+		*rate = SystemCoreClock >> (LL_RCC_Get_LSMCUDIVR() + LL_RCC_GetAPB3Prescaler());
+		break;
 	default:
 		return -ENOTSUP;
 	}
