@@ -897,6 +897,15 @@
 		clock-src = <0>;
 		alarms-count = <1>;
 	};
+
+	smartdma: smartdma@33000 {
+		compatible = "nxp,smartdma";
+		reg = <0x33000 0x1000>;
+		status = "disabled";
+		interrupts = <53 0>;
+		program-mem = <0x4000000>;
+		#dma-cells = <0>;
+	};
 };
 
 &systick {
