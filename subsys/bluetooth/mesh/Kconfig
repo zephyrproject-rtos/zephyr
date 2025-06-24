@@ -1494,19 +1494,6 @@ choice BT_MESH_CRYPTO_LIB
 	help
 	  Crypto library selection for mesh security.
 
-config BT_MESH_USES_TINYCRYPT
-	bool "TinyCrypt [DEPRECATED]"
-	select DEPRECATED
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
-	select TINYCRYPT_ECC_DH
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select BT_HOST_CCM
-	help
-	  Use TinyCrypt library to perform crypto operations.
-
 config BT_MESH_USES_MBEDTLS_PSA
 	bool "mbed TLS PSA"
 	select MBEDTLS
