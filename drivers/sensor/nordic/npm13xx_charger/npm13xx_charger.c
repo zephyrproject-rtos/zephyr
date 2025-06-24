@@ -188,7 +188,7 @@ static uint32_t calc_ntc_res(const struct npm13xx_charger_config *const config, 
 	float inv_temp_k = 1.f / (temp + 273.15f);
 
 	return config->thermistor_ohms *
-	       exp((float)config->thermistor_beta * (inv_temp_k - inv_t0));
+	       exp((double)((float)config->thermistor_beta * (inv_temp_k - inv_t0)));
 }
 
 static uint16_t adc_get_res(uint8_t msb, uint8_t lsb, uint16_t lsb_shift)
@@ -473,6 +473,8 @@ static int npm13xx_charger_attr_set(const struct device *dev, enum sensor_channe
 {
 	const struct npm13xx_charger_config *const config = dev->config;
 	int ret;
+	int32_t current = (val->val1 * 1000000) + val->val2;
+	uint16_t idx;
 
 	if (attr != SENSOR_ATTR_CONFIGURATION) {
 		return -ENOTSUP;
@@ -495,8 +497,6 @@ static int npm13xx_charger_attr_set(const struct device *dev, enum sensor_channe
 
 	case SENSOR_CHAN_CURRENT:
 		/* Set vbus current limit */
-		int32_t current = (val->val1 * 1000000) + val->val2;
-		uint16_t idx;
 
 		ret = linear_range_get_win_index(&vbus_current_range, current, current, &idx);
 
