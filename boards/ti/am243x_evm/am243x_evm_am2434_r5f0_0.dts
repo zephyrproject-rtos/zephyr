@@ -16,15 +16,15 @@
 	chosen {
 		zephyr,sram = &sram;
 		zephyr,sram1 = &atcm;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &main_uart0;
+		zephyr,shell-uart = &main_uart0;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc-shm = &ipc_shm0;
 	};
 
 	aliases {
 		led0 = &ld26;
-		adc0 = &adc0;
+		adc0 = &main_adc0;
 	};
 
 	leds: leds {
@@ -51,7 +51,7 @@
 
 	ipc0: ipc {
 		compatible = "zephyr,mbox-ipm";
-		mboxes = <&mbox6 0>, <&mbox6 1>;
+		mboxes = <&main_mbox6 0>, <&main_mbox6 1>;
 		mbox-names = "rx", "tx";
 	};
 };
@@ -65,13 +65,13 @@
 };
 
 /* system timer */
-&timer8 {
+&main_timer8 {
 	status = "okay";
 };
 
-&uart0 {
+&main_uart0 {
 	status = "okay";
-	pinctrl-0 = <&uart0_tx &uart0_rx>;
+	pinctrl-0 = <&main_uart0_tx &main_uart0_rx>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 };
@@ -82,20 +82,21 @@
 	status = "okay";
 };
 
-&i2c0 {
-	pinctrl-0 = <&i2c0_scl &i2c0_sda>;
+&main_i2c0 {
+	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
 	pinctrl-names = "default";
 	status = "okay";
 	power-domains = <&i2c0_pd>;
 };
 
-&mcspi0 {
+&main_mcspi0 {
 	pinctrl-0 = <&spi0_clk &spi0_cs0 &spi0_d0 &spi0_d1>;
 	pinctrl-names = "default";
 	status = "okay";
+	power-domains = <&mcspi0_pd>;
 };
 
-&adc0 {
+&main_adc0 {
 	ti,vrefp = <1800>;
 	ti,fifo = <0>;
 	status = "okay";
@@ -182,7 +183,7 @@
 	};
 };
 
-&mbox6 {
+&main_mbox6 {
 	usr-id = <0>;
 	status = "okay";
 };
