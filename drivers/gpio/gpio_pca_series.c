@@ -1359,7 +1359,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	uint32_t int_mask, input_latch;
 	int ret = 0;
 	uint32_t edge_cfg_shift = pin << 1U;
-	uint64_t edge_cfg_mask = 0b11 << edge_cfg_shift;
+	uint64_t edge_cfg_mask = 3ULL << edge_cfg_shift;
 
 	if (cfg->gpio_int.port == NULL) {
 		return -ENOTSUP;
