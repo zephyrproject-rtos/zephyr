@@ -8,3 +8,12 @@ description: |
 compatible: "nxp,wifi"
 
 include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  wakeup-gpios:
+    type: phandle-array
+    description: |
+      WLAN wakeup host pin
+      This pin defaults to active low when consumed by the SDK card. The
+      property value should ensure the flags properly describ the signal
+      that is presendted to the driver.
