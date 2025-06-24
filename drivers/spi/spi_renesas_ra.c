@@ -159,7 +159,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 	data->fsp_config.p_extend = &data->fsp_config_extend;
 
 	data->fsp_config.p_callback = spi_cb;
-	data->fsp_config.p_context = dev;
+	data->fsp_config.p_context = (void *)dev;
 	fsp_err = R_SPI_Open(&data->spi, &data->fsp_config);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("R_SPI_Open error: %d", fsp_err);
