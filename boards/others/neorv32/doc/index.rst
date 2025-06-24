@@ -13,7 +13,7 @@ For more information about the NEORV32, see the following websites:
 - `The NEORV32 RISC-V Processor Datasheet`_
 - `The NEORV32 RISC-V Processor User Guide`_
 
-The currently supported version is NEORV32 v1.11.3.
+The currently supported version is NEORV32 v1.11.6.
 
 Supported Board Targets
 =======================

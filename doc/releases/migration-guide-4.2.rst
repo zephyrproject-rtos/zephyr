@@ -58,7 +58,7 @@ Boards
 * The DT binding :dtcompatible:`zephyr,native-posix-cpu` has been deprecated in favor of
   :dtcompatible:`zephyr,native-sim-cpu`.
 
-* Zephyr now supports version 1.11.3 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
+* Zephyr now supports version 1.11.6 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
   implementations need to be updated to this version to be compatible with Zephyr v4.2.0.
 
 * The :zephyr:board:`neorv32` now targets NEORV32 processor (SoC) templates via board variants. The

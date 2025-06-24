@@ -13,7 +13,7 @@ if SOC_NEORV32
 
 config SOC_NEORV32_VERSION
 	hex
-	default 0x01110300
+	default 0x01110600
 	help
 	  The targeted NEORV32 version as BCD-coded number. The format is
 	  identical to that of the NEORV32 Machine implementation ID (mimpid)
