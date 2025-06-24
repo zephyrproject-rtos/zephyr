@@ -176,8 +176,11 @@ For your commits, replace:
 - ``Your Name`` with your legal name (pseudonyms, hacker handles, and the
   names of groups are not allowed)
 
-- ``your.email@example.com`` with the same email address you are using to
-  author the commit (CI will fail if there is no match)
+- ``your.email@example.com`` with the real email address you are using to
+  author the commit. Pseudo or anonymized emails such as
+  ``you-id+your-username@users.noreply.github.com`` are not allowed. The
+  email must match the one you use to author the commit (CI will fail if
+  there is no match).
 
 You can automatically add the Signed-off-by: line to your commit body using
 ``git commit -s``. Use other commits in the zephyr git history as examples.
