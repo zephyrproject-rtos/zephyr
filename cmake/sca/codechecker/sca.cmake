@@ -143,7 +143,9 @@ if(DEFINED CODECHECKER_EXPORT)
     add_dependencies(codechecker-report-${export_item} codechecker)
     add_dependencies(codechecker-parse-check codechecker-report-${export_item})
   endforeach()
-elseif(NOT CODECHECKER_PARSE_SKIP)
+endif()
+
+if(NOT CODECHECKER_PARSE_SKIP)
   # Output parse results
     add_custom_target(codechecker-parse ALL
     COMMAND ${CODECHECKER_EXE} parse
