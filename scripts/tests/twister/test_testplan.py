@@ -342,7 +342,7 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
             if testname in expected_val:
                 assert instance.status == TwisterStatus.NONE
             else:
-                assert instance.status == TwisterStatus.SKIP
+                assert instance.status == TwisterStatus.FILTER
                 assert instance.reason == "Not under quarantine"
         else:
             if testname in expected_val:
