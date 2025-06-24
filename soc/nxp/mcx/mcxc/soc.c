@@ -68,7 +68,7 @@ const sim_clock_config_t simConfig_BOARD_BootClockRUN = {
 
 const osc_config_t oscConfig_BOARD_BootClockRUN = {
 	.freq = DT_PROP(OSC_NODE, clock_frequency),
-	.capLoad = 0,
+	.capLoad = DT_PROP_OR(OSC_NODE, load_capacitance_picofarads, 0),
 #if DT_ENUM_HAS_VALUE(OSC_NODE, mode, external)
 	.workMode = kOSC_ModeExt,
 #elif DT_ENUM_HAS_VALUE(OSC_NODE, mode, low_power)
