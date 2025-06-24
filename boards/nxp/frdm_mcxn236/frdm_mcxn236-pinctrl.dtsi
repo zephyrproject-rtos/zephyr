@@ -7,6 +7,16 @@
 #include <nxp/mcx/MCXN236VDF-pinctrl.h>
 
 &pinctrl {
+	pinmux_flexcomm0_lpuart: pinmux_flexcomm0_lpuart {
+		group0 {
+			pinmux = <FC0_P0_PIO0_16>,
+				<FC0_P1_PIO0_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexcomm2_lpuart: pinmux_flexcomm2_lpuart {
 		group0 {
 			pinmux = <FC2_P2_PIO4_2>,
@@ -175,6 +185,26 @@
 			drive-strength = "low";
 			input-enable;
 			bias-pull-up;
+		};
+	};
+
+	pinmux_smartdma_camera: pinmux_smartdma_camera {
+		group0 {
+			pinmux = <EZH_PIO0_PIO1_4>,
+				<EZH_PIO1_PIO1_5>,
+				<EZH_PIO2_PIO1_6>,
+				<EZH_PIO3_PIO1_7>,
+				<EZH_PIO4_PIO1_8>,
+				<EZH_PIO5_PIO1_9>,
+				<EZH_PIO6_PIO1_10>,
+				<EZH_PIO7_PIO1_11>,
+				<PIO0_4>,
+				<PIO0_5>,
+				<PIO0_7>,
+				<CLKOUT_PIO2_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
 		};
 	};
 };
