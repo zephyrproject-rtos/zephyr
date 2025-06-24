@@ -816,6 +816,9 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 				       ctx->user_data);
 	} else if (!is_feedback) {
 		ctx->ops->buf_release_cb(dev, terminal, buf->__buf, ctx->user_data);
+		if (buf->frags) {
+			ctx->ops->buf_release_cb(dev, terminal, buf->frags->__buf, ctx->user_data);
+		}
 	}
 
 	usbd_ep_buf_free(uds_ctx, buf);
