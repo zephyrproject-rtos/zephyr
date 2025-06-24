@@ -1426,9 +1426,11 @@ static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
 
 		status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
 								 dns_servers,
-								 interfaces);
+								 interfaces,
+								 DNS_SOURCE_DHCPV6);
 	} else {
-		status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+		status = dns_resolve_reconfigure(ctx, NULL, dns_servers,
+						 DNS_SOURCE_DHCPV6);
 	}
 
 	if (status < 0) {

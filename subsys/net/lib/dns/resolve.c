@@ -488,13 +488,34 @@ static int get_free_slot(struct dns_resolve_context *ctx)
 	return -ENOENT;
 }
 
+const char *dns_get_source_str(enum dns_server_source source)
+{
+	switch (source) {
+	case DNS_SOURCE_UNKNOWN:
+		return "unknown";
+	case DNS_SOURCE_MANUAL:
+		return "manual";
+	case DNS_SOURCE_DHCPV4:
+		__fallthrough;
+	case DNS_SOURCE_DHCPV6:
+		return "DHCP";
+	case DNS_SOURCE_IPV6_RA:
+		return "IPv6 RA";
+	case DNS_SOURCE_PPP:
+		return "PPP";
+	}
+
+	return "";
+}
+
 /* Must be invoked with context lock held */
 static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				   const char *servers[],
 				   const struct sockaddr *servers_sa[],
 				   const struct net_socket_service_desc *svc,
 				   uint16_t port, int interfaces[],
-				   bool do_cleanup)
+				   bool do_cleanup,
+				   enum dns_server_source source)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6 = {
@@ -608,6 +629,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			}
 		}
 
+		ctx->servers[idx].source = source;
+
 		addr = &ctx->servers[idx].dns_server;
 
 		(void)memset(addr, 0, sizeof(*addr));
@@ -624,13 +647,16 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 		dns_postprocess_server(ctx, idx);
 
-		NET_DBG("[%d] %.*s%s%s%s%s", i, (int)server_len, servers[i],
+		NET_DBG("[%d] %.*s%s%s%s%s%s%s%s", i, (int)server_len, servers[i],
 			IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
 			(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
 			IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
 			(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
 			iface_str != NULL ? " via " : "",
-			iface_str != NULL ? iface_str : "");
+			iface_str != NULL ? iface_str : "",
+			source != DNS_SOURCE_UNKNOWN ? " (" : "",
+			source != DNS_SOURCE_UNKNOWN ? dns_get_source_str(source) : "",
+			source != DNS_SOURCE_UNKNOWN ? ")" : "");
 		idx++;
 	}
 
@@ -656,6 +682,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			break;
 		}
 
+		ctx->servers[idx].source = source;
+
 		memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
 		       sizeof(ctx->servers[idx].dns_server));
 
@@ -668,7 +696,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 		dns_postprocess_server(ctx, idx);
 
-		NET_DBG("[%d] %s%s%s%s%s", i,
+		NET_DBG("[%d] %s%s%s%s%s%s%s%s", i,
 			net_sprint_addr(servers_sa[i]->sa_family,
 					&net_sin(servers_sa[i])->sin_addr),
 			IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
@@ -676,7 +704,10 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
 			(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
 			interfaces != NULL ? " via " : "",
-			interfaces != NULL ? iface_str : "");
+			interfaces != NULL ? iface_str : "",
+			source != DNS_SOURCE_UNKNOWN ? " (" : "",
+			source != DNS_SOURCE_UNKNOWN ? dns_get_source_str(source) : "",
+			source != DNS_SOURCE_UNKNOWN ? ")" : "");
 		idx++;
 	}
 
@@ -871,7 +902,7 @@ int dns_resolve_init_with_svc(struct dns_resolve_context *ctx, const char *serve
 	}
 
 	ret = dns_resolve_init_locked(ctx, servers, servers_sa, svc, port,
-				      interfaces, true);
+				      interfaces, true, DNS_SOURCE_UNKNOWN);
 
 	k_mutex_unlock(&lock);
 
@@ -2101,7 +2132,8 @@ static int do_dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 				      const char *servers[],
 				      const struct sockaddr *servers_sa[],
 				      int interfaces[],
-				      bool do_close)
+				      bool do_close,
+				      enum dns_server_source source)
 {
 	int err;
 
@@ -2138,7 +2170,8 @@ static int do_dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 
 	err = dns_resolve_init_locked(ctx, servers, servers_sa,
 				      &resolve_svc, 0, interfaces,
-				      do_close);
+				      do_close,
+				      source);
 
 unlock:
 	k_mutex_unlock(&ctx->lock);
@@ -2150,26 +2183,30 @@ unlock:
 int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 					    const char *servers[],
 					    const struct sockaddr *servers_sa[],
-					    int interfaces[])
+					    int interfaces[],
+					    enum dns_server_source source)
 {
 	return do_dns_resolve_reconfigure(ctx,
 					  servers,
 					  servers_sa,
 					  interfaces,
 					  IS_ENABLED(CONFIG_DNS_RECONFIGURE_CLEANUP) ?
-					  true : false);
+					  true : false,
+					  source);
 }
 
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers[],
-			    const struct sockaddr *servers_sa[])
+			    const struct sockaddr *servers_sa[],
+			    enum dns_server_source source)
 {
 	return do_dns_resolve_reconfigure(ctx,
 					  servers,
 					  servers_sa,
 					  NULL,
 					  IS_ENABLED(CONFIG_DNS_RECONFIGURE_CLEANUP) ?
-					  true : false);
+					  true : false,
+					  source);
 }
 
 int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index)
