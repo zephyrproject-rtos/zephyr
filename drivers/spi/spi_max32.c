@@ -108,7 +108,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 
 	ret = Wrap_MXC_SPI_Init(regs, master_mode, quad_mode, num_slaves, ss_polarity, spi_speed);
 	if (ret) {
-		return ret;
+		return -EINVAL;
 	}
 
 	int cpol = (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0;
@@ -124,12 +124,12 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		ret = MXC_SPI_SetMode(regs, SPI_MODE_0);
 	}
 	if (ret) {
-		return ret;
+		return -EINVAL;
 	}
 
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
-		return ret;
+		return -ENOTSUP;
 	}
 
 #if defined(CONFIG_SPI_EXTENDED_MODES)
@@ -150,7 +150,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	}
 
 	if (ret) {
-		return ret;
+		return -EINVAL;
 	}
 #endif
 
@@ -388,7 +388,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	ret = spi_configure(dev, config);
 	if (ret != 0) {
 		spi_context_release(ctx, ret);
-		return -EIO;
+		return ret;
 	}
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
@@ -596,7 +596,6 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 
 	ret = spi_configure(dev, config);
 	if (ret != 0) {
-		ret = -EIO;
 		goto unlock;
 	}
 
