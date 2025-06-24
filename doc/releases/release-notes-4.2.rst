@@ -47,8 +47,8 @@ The following CVEs are addressed by this release:
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
-
-* :cve:`2025-2962` Under embargo until 2025-06-07
+* :cve:`2025-2962` `Infinite loop in dns_copy_qname
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2qp5-c2vq-g2ww>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
