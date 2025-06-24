@@ -1194,9 +1194,11 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 				status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
 										 dns_servers,
-										 interfaces);
+										 interfaces,
+										 DNS_SOURCE_DHCPV4);
 			} else {
-				status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+				status = dns_resolve_reconfigure(ctx, NULL, dns_servers,
+								 DNS_SOURCE_DHCPV4);
 			}
 
 			if (status < 0) {
