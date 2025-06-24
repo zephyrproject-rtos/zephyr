@@ -12,10 +12,10 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/drivers/mfd/npm13xx.h>
 
-#define TIME_BASE 0x07U
-#define MAIN_BASE 0x00U
-#define SHIP_BASE 0x0BU
-#define GPIO_BASE 0x06U
+#define NPM13XX_TIME_BASE 0x07U
+#define NPM13XX_MAIN_BASE 0x00U
+#define NPM13XX_SHIP_BASE 0x0BU
+#define NPM13XX_GPIO_BASE 0x06U
 
 #define TIME_OFFSET_LOAD  0x03U
 #define TIME_OFFSET_TIMER 0x08U
@@ -93,7 +93,7 @@ static void work_callback(struct k_work *work)
 	int ret;
 
 	/* Read all MAIN registers into temporary buffer */
-	ret = mfd_npm13xx_reg_read_burst(data->dev, MAIN_BASE, 0U, buf, sizeof(buf));
+	ret = mfd_npm13xx_reg_read_burst(data->dev, NPM13XX_MAIN_BASE, 0U, buf, sizeof(buf));
 	if (ret < 0) {
 		k_work_submit(&data->work);
 		return;
@@ -105,7 +105,7 @@ static void work_callback(struct k_work *work)
 		if ((buf[offset] & event_reg[i].mask) != 0U) {
 			gpio_fire_callbacks(&data->callbacks, data->dev, BIT(i));
 
-			ret = mfd_npm13xx_reg_write(data->dev, MAIN_BASE, offset,
+			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE, offset,
 						    event_reg[i].mask);
 			if (ret < 0) {
 				k_work_submit(&data->work);
@@ -136,7 +136,8 @@ static int mfd_npm13xx_init(const struct device *dev)
 
 	if (config->host_int_gpios.port != NULL) {
 		/* Set specified PMIC pin to be interrupt output */
-		ret = mfd_npm13xx_reg_write(dev, GPIO_BASE, GPIO_OFFSET_MODE + config->pmic_int_pin,
+		ret = mfd_npm13xx_reg_write(dev, NPM13XX_GPIO_BASE,
+					    GPIO_OFFSET_MODE + config->pmic_int_pin,
 					    GPIO_MODE_GPOIRQ);
 		if (ret < 0) {
 			return ret;
@@ -169,17 +170,18 @@ static int mfd_npm13xx_init(const struct device *dev)
 		}
 	}
 
-	ret = mfd_npm13xx_reg_write(dev, SHIP_BASE, SHIP_OFFSET_CONFIG, config->active_time);
+	ret = mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_CONFIG,
+				    config->active_time);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = mfd_npm13xx_reg_write(dev, SHIP_BASE, SHIP_OFFSET_LPCONFIG, config->lp_reset);
+	ret = mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_LPCONFIG, config->lp_reset);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return mfd_npm13xx_reg_write(dev, SHIP_BASE, SHIP_OFFSET_CFGSTROBE, 1U);
+	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_CFGSTROBE, 1U);
 }
 
 int mfd_npm13xx_reg_read_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
@@ -237,7 +239,7 @@ int mfd_npm13xx_reg_update(const struct device *dev, uint8_t base, uint8_t offse
 int mfd_npm13xx_set_timer(const struct device *dev, uint32_t time_ms)
 {
 	const struct mfd_npm13xx_config *config = dev->config;
-	uint8_t buff[5] = {TIME_BASE, TIME_OFFSET_TIMER};
+	uint8_t buff[5] = {NPM13XX_TIME_BASE, TIME_OFFSET_TIMER};
 	uint32_t ticks = time_ms / TIMER_PRESCALER_MS;
 
 	if (ticks > TIMER_MAX) {
@@ -252,12 +254,12 @@ int mfd_npm13xx_set_timer(const struct device *dev, uint32_t time_ms)
 		return ret;
 	}
 
-	return mfd_npm13xx_reg_write(dev, TIME_BASE, TIME_OFFSET_LOAD, 1U);
+	return mfd_npm13xx_reg_write(dev, NPM13XX_TIME_BASE, TIME_OFFSET_LOAD, 1U);
 }
 
 int mfd_npm13xx_reset(const struct device *dev)
 {
-	return mfd_npm13xx_reg_write(dev, MAIN_BASE, MAIN_OFFSET_RESET, 1U);
+	return mfd_npm13xx_reg_write(dev, NPM13XX_MAIN_BASE, MAIN_OFFSET_RESET, 1U);
 }
 
 int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
@@ -268,7 +270,7 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 		return ret;
 	}
 
-	return mfd_npm13xx_reg_write(dev, SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
+	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
 }
 
 int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *callback)
@@ -279,7 +281,7 @@ int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *cal
 	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
 		if ((callback->pin_mask & BIT(i)) != 0U) {
 			/* Clear pending interrupt */
-			int ret = mfd_npm13xx_reg_write(data->dev, MAIN_BASE,
+			int ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
 							event_reg[i].offset + MAIN_OFFSET_CLR,
 							event_reg[i].mask);
 
@@ -287,7 +289,7 @@ int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *cal
 				return ret;
 			}
 
-			ret = mfd_npm13xx_reg_write(data->dev, MAIN_BASE,
+			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
 						    event_reg[i].offset + MAIN_OFFSET_INTENSET,
 						    event_reg[i].mask);
 			if (ret < 0) {
