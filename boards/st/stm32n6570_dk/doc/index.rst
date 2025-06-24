@@ -301,20 +301,28 @@ You should see the following message on the console:
 Debugging
 =========
 
-For now debugging is only available through STM32CubeIDE:
+You can debug an application in the usual way using the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-* Go to File > Import and select C/C++ > STM32 Cortex-M Executable.
-* In Executable field, browse to your <ZEPHYR_PATH>/build/zephyr/zephyr.elf.
-* In MCU field, select STM32N657X0HxQ.
-* Click on Finish.
-* Finally, click on Debug to start the debugging session.
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32n6570_dk
+   :maybe-skip-config:
+   :goals: debug
 
 .. note::
-   For debugging, before powering on the board, set the boot pins in the following configuration:
+   To enable debugging, before powering on the board, set the boot pins in the following configuration:
 
    * BOOT0: 0
    * BOOT1: 1
 
+Another solution for debugging is to use STM32CubeIDE:
+
+* Go to :menuselection:`File --> Import` and select :menuselection:`C/C++ --> STM32 Cortex-M Executable`.
+* In the :guilabel:`Executable` field, browse to your ``<ZEPHYR_PATH>/build/zephyr/zephyr.elf``.
+* In :guilabel:`MCU` field, select ``STM32N657X0HxQ``.
+* Click on :guilabel:`Finish`.
+* Finally, click on :guilabel:`Debug` to start the debugging session.
 
 Running tests with twister
 ==========================
