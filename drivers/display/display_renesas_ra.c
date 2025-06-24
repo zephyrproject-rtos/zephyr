@@ -491,7 +491,7 @@ static int display_init(const struct device *dev)
 				   .contrast = {.enable = false},                                  \
 				   .dithering_on = false},                                         \
 			.p_callback = renesas_ra_callback_adapter,                                 \
-			.p_context = DEVICE_DT_INST_GET(id),                                       \
+			.p_context = (void *)DEVICE_DT_INST_GET(id),                               \
 			.p_extend = (void *)(&display_extend_cfg##id),                             \
 			.line_detect_irq = DT_INST_IRQ_BY_NAME(id, line, irq),                     \
 			.line_detect_ipl = DT_INST_IRQ_BY_NAME(id, line, priority),                \
