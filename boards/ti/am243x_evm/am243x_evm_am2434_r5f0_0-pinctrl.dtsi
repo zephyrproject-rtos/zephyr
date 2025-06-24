@@ -24,6 +24,22 @@
 	i2c0_sda: i2c0_sda_default {
 		pinmux = <K3_PINMUX(0x264, PIN_INPUT_PULLUP, MUX_MODE_0)>;
 	};
+
+	spi0_cs0: spi0_cs0_default {
+		pinmux = <K3_PINMUX(0x208, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	spi0_clk: spi0_clk_default {
+		pinmux = <K3_PINMUX(0x210, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	spi0_d0: spi0_d0_default {
+		pinmux = <K3_PINMUX(0x214, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	spi0_d1: spi0_d1_default {
+		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
+	};
 };
 
 &mcu_pinctrl {

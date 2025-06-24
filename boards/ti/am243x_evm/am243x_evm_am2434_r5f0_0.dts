@@ -89,6 +89,12 @@
 	power-domains = <&i2c0_pd>;
 };
 
+&mcspi0 {
+	pinctrl-0 = <&spi0_clk &spi0_cs0 &spi0_d0 &spi0_d1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &adc0 {
 	ti,vrefp = <1800>;
 	ti,fifo = <0>;
