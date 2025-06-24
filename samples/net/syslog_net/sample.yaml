@@ -34,6 +34,10 @@ tests:
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_LOG_BACKEND_NET_AUTOSTART=n
+  sample.net.syslog.net_conn_mgr:
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_NET_CONNECTION_MANAGER=y
   sample.net.syslog.runtime_srv_addr:
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
