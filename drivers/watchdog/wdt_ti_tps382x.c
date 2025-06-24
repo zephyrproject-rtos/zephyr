@@ -57,14 +57,13 @@ static int ti_tps382x_disable(const struct device *dev)
 	return gpio_pin_configure_dt(&config->wdi_gpio, GPIO_INPUT);
 }
 
-static int ti_tps382x_install_timeout(const struct device *dev,
-				      const struct wdt_timeout_cfg *cfg)
+static int ti_tps382x_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	const struct ti_tps382x_config *config = dev->config;
 
 	if (cfg->window.max != config->timeout) {
-		LOG_ERR("Upper limit of watchdog timeout must be %d not %u",
-			config->timeout, cfg->window.max);
+		LOG_ERR("Upper limit of watchdog timeout must be %d not %u", config->timeout,
+			cfg->window.max);
 		return -EINVAL;
 	} else if (cfg->window.min != 0) {
 		LOG_ERR("Window timeouts not supported");
@@ -108,16 +107,13 @@ static DEVICE_API(wdt, ti_tps382x_api) = {
 	.feed = ti_tps382x_feed,
 };
 
-#define WDT_TI_TPS382X_INIT(n)                                                \
-	static const struct ti_tps382x_config ti_tps382x_##n##config = {      \
-		.wdi_gpio = GPIO_DT_SPEC_INST_GET(n, wdi_gpios),              \
-		.timeout = DT_INST_PROP(n, timeout_period),                   \
-	};                                                                    \
-                                                                              \
-	DEVICE_DT_INST_DEFINE(                                                \
-		n, ti_tps382x_init, NULL, NULL, &ti_tps382x_##n##config,      \
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,              \
-		&ti_tps382x_api                                               \
-	);
+#define WDT_TI_TPS382X_INIT(n)                                                                     \
+	static const struct ti_tps382x_config ti_tps382x_##n##config = {                           \
+		.wdi_gpio = GPIO_DT_SPEC_INST_GET(n, wdi_gpios),                                   \
+		.timeout = DT_INST_PROP(n, timeout_period),                                        \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, ti_tps382x_init, NULL, NULL, &ti_tps382x_##n##config,             \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ti_tps382x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_TI_TPS382X_INIT);
