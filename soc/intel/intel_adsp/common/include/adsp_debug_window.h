@@ -74,7 +74,7 @@ struct adsp_dw_desc {
 struct adsp_debug_window {
 	struct adsp_dw_desc descs[ADSP_DW_DESC_COUNT];
 	uint8_t reserved[ADSP_DW_SLOT_SIZE - ADSP_DW_DESC_COUNT * sizeof(struct adsp_dw_desc)];
-	uint8_t slots[ADSP_DW_DESC_COUNT][ADSP_DW_SLOT_SIZE];
+	uint8_t slots[ADSP_DW_SLOT_COUNT][ADSP_DW_SLOT_SIZE];
 } __packed;
 
 #define WIN2_MBASE DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(mem_window2), memory))
