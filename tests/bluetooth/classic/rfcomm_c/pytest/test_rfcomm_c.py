@@ -21,10 +21,10 @@ from twister_harness import DeviceAdapter, Shell
 logger = logging.getLogger(__name__)
 logger_capture = setup_logger_capture(logger)
 
-
 dlc_9 = None
 dlc_7 = None
 rfcomm_mux = None
+original_dlc_accept_api = DLC.accept
 
 
 # power on dongle
@@ -192,7 +192,6 @@ async def establish_dlc(rfcomm_mux, channel, send_PN=True):
         await rfcomm_mux.disconnect()
         raise error
 
-    # dlc_echo_back
     def dlc_echo_back(data):
         logger.info(f'<<< [Channel: {int(session.dlci / 2)}] RFCOMM Data received: {data.hex()}')
         if data == send_value:
@@ -709,6 +708,328 @@ async def tc_rfcomm_c_5(hci_port, shell, dut, address) -> None:
             await send_cmd_to_iut(shell, dut, "rfcomm_s send 9 1", "Unable to send", shell_ret=True)
 
 
+async def tc_rfcomm_c_6(hci_port, shell, dut, address) -> None:
+    case_name = 'RFCOMM MTU Size Data Send/Receive Test'
+    logger.info(f'<<< Start {case_name} ...')
+    dut_address = address.split(" ")[0]
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # Init Dongle State
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        device.listener = DiscoveryListener()
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            str(device.public_address).replace(r'/P', '')
+            await device.set_discoverable(True)
+            await device.set_connectable(True)
+            await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+            # Initial Condition
+            global send_value
+            DLC.accept = original_dlc_accept_api
+            channel_9 = 9
+            try:
+                logger.info('Initial Condition: Set DUT state...')
+                await send_cmd_to_iut(shell, dut, "br pscan on")  # set to connectable
+                await send_cmd_to_iut(shell, dut, "br iscan on")  # set to general discoverable
+                await send_cmd_to_iut(shell, dut, "rfcomm_s register 9")  # create RFCOMM server
+
+                # Connecting
+                logger.info(f'Initial Condition: establish be connection to {dut_address}...')
+                connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
+                found, _ = await _wait_for_shell_response(dut, "Connected")
+                assert found is True, "DUT did not report connection established"
+
+                # Request authentication
+                logger.info('Initial Condition: Authenticating...')
+                await connection.authenticate()
+
+                # Enable encryption
+                logger.info('Initial Condition: Enabling encryption...')
+                await connection.encrypt()
+
+                # Create RFCOMM server
+                logger.info('Initial Condition: Create RFCOMM client...')
+                rfcomm_server = Server(device)
+                rfcomm_server.on('start', on_multiplexer_start)
+                rfcomm_server.listen(on_rfcomm_dlc, channel=channel_9)
+
+            except Exception as e:
+                logger.error(f'Failed to set Initial Condition: {e}')
+                AssertionError()
+
+            # Test Start
+            logger.info('Step 1: Initialize RFCOMM client and establish connection with the server')
+            await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", " connected")
+
+            logger.info('Step 2: Generate a test data packet with size equal to the MTU size')
+            dlc_9.write(bytes([0xFF]))
+            data_length = int(dlc_9.mtu)
+            send_value = bytes([0xFF] * data_length)
+
+            logger.info('Step 3: Send the test data packet from client to server')
+            await send_cmd_to_iut(shell, dut, f"rfcomm_s send 9 {data_length}")
+            assert await wait_mux_response(logger_capture, 'Data send pass'), (
+                "Failed to receive data on channel 9 from DUT"
+            )
+
+            logger.info('Step 4: Request server to send back a data packet of MTU size')
+            # Server will send back the same data length as received automatically
+
+            logger.info('Step 5: Receive and verify the data packet from server')
+            found, _ = await _wait_for_shell_response(dut, f"Data length: {data_length}")
+            assert found is True, "Failed to send data on channel 9 to DUT"
+
+
+async def tc_rfcomm_c_7(hci_port, shell, dut, address) -> None:
+    case_name = 'RFCOMM Data Transfer Exceeding MTU Size Test'
+    logger.info(f'<<< Start {case_name} ...')
+    dut_address = address.split(" ")[0]
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # Init Dongle State
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        device.listener = DiscoveryListener()
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            str(device.public_address).replace(r'/P', '')
+            await device.set_discoverable(True)
+            await device.set_connectable(True)
+            await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+            # Initial Condition
+            global send_value
+            DLC.accept = original_dlc_accept_api
+            channel_9 = 9
+            try:
+                logger.info('Initial Condition: Set DUT state...')
+                await send_cmd_to_iut(shell, dut, "br pscan on")  # set to connectable
+                await send_cmd_to_iut(shell, dut, "br iscan on")  # set to general discoverable
+                await send_cmd_to_iut(shell, dut, "rfcomm_s register 9")  # create RFCOMM server
+
+                # Connecting
+                logger.info(f'Initial Condition: establish be connection to {dut_address}...')
+                connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
+                found, _ = await _wait_for_shell_response(dut, "Connected")
+                assert found is True, "DUT did not report connection established"
+
+                # Request authentication
+                logger.info('Initial Condition: Authenticating...')
+                await connection.authenticate()
+
+                # Enable encryption
+                logger.info('Initial Condition: Enabling encryption...')
+                await connection.encrypt()
+
+                # Create RFCOMM server
+                logger.info('Initial Condition: Create RFCOMM client...')
+                rfcomm_server = Server(device)
+                rfcomm_server.on('start', on_multiplexer_start)
+                rfcomm_server.listen(on_rfcomm_dlc, channel=channel_9)
+
+            except Exception as e:
+                logger.error(f'Failed to set Initial Condition: {e}')
+                AssertionError()
+
+            # Test Start
+            logger.info('Step 1: Initialize RFCOMM client and establish connection with the server')
+            await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", " connected")
+
+            logger.info('Step 2: Generate a test data packet with size 3 times the MTU size')
+            dlc_9.write(bytes([0xFF]))
+            data_length = int(dlc_9.mtu * 3)
+            send_value = bytes([0xFF] * data_length)
+
+            logger.info('Step 3: Send the test data packet from client to server')
+            await send_cmd_to_iut(
+                shell, dut, f"rfcomm_s send 9 {data_length}", "Unable to send", shell_ret=True
+            )
+
+
+async def tc_rfcomm_c_8(hci_port, shell, dut, address) -> None:
+    case_name = 'RFCOMM Disconnect and Reconnect Test'
+    logger.info(f'<<< Start {case_name} ...')
+    dut_address = address.split(" ")[0]
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # Init Dongle State
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        device.listener = DiscoveryListener()
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            str(device.public_address).replace(r'/P', '')
+            await device.set_discoverable(True)
+            await device.set_connectable(True)
+            await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+            # Initial Condition
+            DLC.accept = original_dlc_accept_api
+            channel_9 = 9
+            global send_value
+            try:
+                logger.info('Initial Condition: Set DUT state...')
+                await send_cmd_to_iut(shell, dut, "br pscan on")  # set to connectable
+                await send_cmd_to_iut(shell, dut, "br iscan on")  # set to general discoverable
+                await send_cmd_to_iut(shell, dut, "rfcomm_s register 9")  # create RFCOMM server
+
+                # Connecting
+                logger.info(f'Initial Condition: establish be connection to {dut_address}...')
+                connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
+                found, _ = await _wait_for_shell_response(dut, "Connected")
+                assert found is True, "DUT did not report connection established"
+
+                # Request authentication
+                logger.info('Initial Condition: Authenticating...')
+                await connection.authenticate()
+
+                # Enable encryption
+                logger.info('Initial Condition: Enabling encryption...')
+                await connection.encrypt()
+
+                # Create RFCOMM server
+                logger.info('Initial Condition: Create RFCOMM client...')
+                rfcomm_server = Server(device)
+                rfcomm_server.on('start', on_multiplexer_start)
+                rfcomm_server.listen(on_rfcomm_dlc, channel=channel_9)
+
+            except Exception as e:
+                logger.error(f'Failed to set Initial Condition: {e}')
+                AssertionError()
+
+            # Test Start
+            logger.info('Step 1: Initialize RFCOMM client and establish connection with the server')
+            await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", " connected")
+
+            logger.info('Step 2: Initiate a controlled RFCOMM disconnection from the client side')
+            await send_cmd_to_iut(shell, dut, "rfcomm_s disconnect 9", "disconnect")
+
+            logger.info('Step 3: Initiate RFCOMM reconnection from the client to the server')
+            await asyncio.sleep(1)
+            await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", " connected")
+
+            logger.info('Step 4: Exchange data to confirm the new connection is working properly')
+            send_value = bytes([0xFF])
+            await send_cmd_to_iut(shell, dut, "rfcomm_s send 9 1")
+            assert await wait_mux_response(logger_capture, 'Data send pass'), (
+                "Failed to receive data on channel 9 from DUT"
+            )
+
+
+async def tc_rfcomm_c_9(hci_port, shell, dut, address) -> None:
+    case_name = 'RFCOMM Recovery After ACL Disconnection Test'
+    logger.info(f'<<< Start {case_name} ...')
+    dut_address = address.split(" ")[0]
+
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        # Init Dongle State
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        device.listener = DiscoveryListener()
+
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            str(device.public_address).replace(r'/P', '')
+            await device.set_discoverable(True)
+            await device.set_connectable(True)
+            await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+            # Initial Condition
+            DLC.accept = original_dlc_accept_api
+            channel_9 = 9
+            global send_value
+            try:
+                logger.info('Initial Condition: Set DUT state...')
+                await send_cmd_to_iut(shell, dut, "br pscan on")  # set to connectable
+                await send_cmd_to_iut(shell, dut, "br iscan on")  # set to general discoverable
+                await send_cmd_to_iut(shell, dut, "rfcomm_s register 9")  # create RFCOMM server
+
+                # Connecting
+                logger.info(f'Initial Condition: establish be connection to {dut_address}...')
+                connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
+                found, _ = await _wait_for_shell_response(dut, "Connected")
+                assert found is True, "DUT did not report connection established"
+
+                # Request authentication
+                logger.info('Initial Condition: Authenticating...')
+                await connection.authenticate()
+
+                # Enable encryption
+                logger.info('Initial Condition: Enabling encryption...')
+                await connection.encrypt()
+
+                # Create RFCOMM server
+                logger.info('Initial Condition: Create RFCOMM client...')
+                rfcomm_server = Server(device)
+                rfcomm_server.on('start', on_multiplexer_start)
+                rfcomm_server.listen(on_rfcomm_dlc, channel=channel_9)
+
+            except Exception as e:
+                logger.error(f'Failed to set Initial Condition: {e}')
+                AssertionError()
+
+            # Test Start
+            logger.info('Step 1: Initialize RFCOMM client and establish connection with the server')
+            await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", " connected")
+
+            logger.info('Step 2: Force an abrupt ACL disconnection')
+            await send_cmd_to_iut(shell, dut, "bt disconnect", "disconnect")
+
+            logger.info('Step 3: Verify that both ACL and RFCOMM connections are terminated')
+            await asyncio.sleep(1)
+            send_value = bytes([0xFF])
+            await send_cmd_to_iut(shell, dut, "rfcomm_s send 9 1", "Unable to send", shell_ret=True)
+
+            logger.info('Step 4: Initiate ACL connection reestablishment from the client')
+            connection = await device.connect(dut_address, transport=BT_BR_EDR_TRANSPORT)
+            found, _ = await _wait_for_shell_response(dut, "Connected")
+            assert found is True, "DUT did not report connection established"
+            await connection.authenticate()
+            await connection.encrypt()
+
+            logger.info('Step 5: Initialize RFCOMM client and establish connection with the server')
+            await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", " connected")
+
+            logger.info('Step 6: Exchange data to confirm the new connections are working properly')
+            await send_cmd_to_iut(shell, dut, "rfcomm_s send 9 1")
+            assert await wait_mux_response(logger_capture, 'Data send pass'), (
+                "Failed to receive data on channel 9 from DUT"
+            )
+
+
 class TestRFCOMM:
     def test_rfcomm_c_1(self, shell: Shell, dut: DeviceAdapter, device_under_test):
         """RFCOMM Client Command Transfer."""
@@ -739,3 +1060,27 @@ class TestRFCOMM:
         logger.info(f'RFCOMM-C-5 {device_under_test}')
         hci, iut_address = device_under_test
         asyncio.run(tc_rfcomm_c_5(hci, shell, dut, iut_address))
+
+    def test_rfcomm_c_6(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """RFCOMM MTU Size Data Send/Receive Test."""
+        logger.info(f'RFCOMM-C-6 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_rfcomm_c_6(hci, shell, dut, iut_address))
+
+    def test_rfcomm_c_7(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """RFCOMM Data Transfer Exceeding MTU Size Test."""
+        logger.info(f'RFCOMM-C-7 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_rfcomm_c_7(hci, shell, dut, iut_address))
+
+    def test_rfcomm_c_8(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """RFCOMM Disconnect and Reconnect Test."""
+        logger.info(f'RFCOMM-C-8 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_rfcomm_c_8(hci, shell, dut, iut_address))
+
+    def test_rfcomm_c_9(self, shell: Shell, dut: DeviceAdapter, device_under_test):
+        """RFCOMM Recovery After ACL Disconnection Test."""
+        logger.info(f'RFCOMM-C-9 {device_under_test}')
+        hci, iut_address = device_under_test
+        asyncio.run(tc_rfcomm_c_9(hci, shell, dut, iut_address))
