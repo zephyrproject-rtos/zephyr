@@ -49,8 +49,10 @@ static struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 
 static char info_data[TEST_MGMT_EVENT_INFO_SIZE];
 
-static int test_mgmt_request(uint64_t mgmt_request,
-			     struct net_if *iface, void *data, uint32_t len)
+NET_MGMT_DEFINE_REQUEST_HANDLER(TEST_MGMT_REQUEST);
+
+static int test_mgmt_request(uint64_t mgmt_req,
+			     struct net_if *iface, void *data, size_t len)
 {
 	uint32_t *test_data = data;
 
