@@ -980,5 +980,108 @@ ZTEST(net_buf_tests, test_net_buf_fixed_append)
 	net_buf_unref(buf);
 }
 
+ZTEST(net_buf_tests, test_net_buf_linearize)
+{
+	struct net_buf *buf, *frag;
+	uint8_t linear_buffer[256];
+	uint8_t expected_data[256];
+	size_t copied;
+
+	static const char fragment1_data[] = "Hello World! This is fragment 1";
+	static const char fragment2_data[] = "Fragment 2 data here";
+	static const char fragment3_data[] = "Final fragment data";
+	const size_t fragment1_len = sizeof(fragment1_data) - 1;
+	const size_t fragment2_len = sizeof(fragment2_data) - 1;
+	const size_t fragment3_len = sizeof(fragment3_data) - 1;
+	const size_t total_len = fragment1_len + fragment2_len + fragment3_len;
+
+	destroy_called = 0;
+
+	/* Create a buf that does not have any data to store, it just
+	 * contains link to fragments.
+	 */
+	buf = net_buf_alloc_len(&bufs_pool, 0, K_FOREVER);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	/* Add first fragment with some data */
+	frag = net_buf_alloc_len(&bufs_pool, 50, K_FOREVER);
+	zassert_not_null(frag, "Failed to get fragment");
+	net_buf_add_mem(frag, fragment1_data, fragment1_len);
+	net_buf_frag_add(buf, frag);
+
+	/* Add second fragment with more data */
+	frag = net_buf_alloc_len(&bufs_pool, 50, K_FOREVER);
+	zassert_not_null(frag, "Failed to get fragment");
+	net_buf_add_mem(frag, fragment2_data, fragment2_len);
+	net_buf_frag_add(buf, frag);
+
+	/* Add third fragment */
+	frag = net_buf_alloc_len(&bufs_pool, 50, K_FOREVER);
+	zassert_not_null(frag, "Failed to get fragment");
+	net_buf_add_mem(frag, fragment3_data, fragment3_len);
+	net_buf_frag_add(buf, frag);
+
+	/* Prepare expected data (all fragments concatenated) */
+	memset(expected_data, 0, sizeof(expected_data));
+	memcpy(expected_data, fragment1_data, fragment1_len);
+	memcpy(expected_data + fragment1_len, fragment2_data, fragment2_len);
+	memcpy(expected_data + fragment1_len + fragment2_len, fragment3_data, fragment3_len);
+
+	/* Test 1: Linearize entire buffer */
+	memset(linear_buffer, 0, sizeof(linear_buffer));
+	copied = net_buf_linearize(linear_buffer, sizeof(linear_buffer), buf->frags, 0, total_len);
+	zassert_equal(copied, total_len, "Incorrect number of bytes copied");
+	zassert_mem_equal(linear_buffer, expected_data, total_len, "Linearized data doesn't match");
+
+	/* Test 2: Linearize with offset */
+	memset(linear_buffer, 0, sizeof(linear_buffer));
+	copied = net_buf_linearize(linear_buffer, sizeof(linear_buffer), buf->frags, 10, 10);
+	zassert_equal(copied, 10, "Incorrect number of bytes copied with offset");
+	zassert_mem_equal(linear_buffer, expected_data + 10, 10,
+			  "Linearized data with offset doesn't match");
+
+	/* Test 3: Linearize across fragment boundary */
+	memset(linear_buffer, 0, sizeof(linear_buffer));
+	copied = net_buf_linearize(linear_buffer, sizeof(linear_buffer), buf->frags,
+				   fragment1_len - 5, 20);
+	zassert_equal(copied, 20, "Incorrect number of bytes copied across boundary");
+	zassert_mem_equal(linear_buffer, expected_data + fragment1_len - 5, 20,
+			  "Linearized data across boundary doesn't match");
+
+	/* Test 4: Linearize with destination buffer too small */
+	memset(linear_buffer, 0, sizeof(linear_buffer));
+	copied = net_buf_linearize(linear_buffer, 10, buf->frags, 0, total_len);
+	zassert_equal(copied, 10, "Should copy only up to destination buffer size");
+	zassert_mem_equal(linear_buffer, expected_data, 10,
+			  "Partial linearized data doesn't match");
+
+	/* Test 5: Linearize with offset beyond available data */
+	memset(linear_buffer, 0, sizeof(linear_buffer));
+	copied = net_buf_linearize(linear_buffer, sizeof(linear_buffer), buf->frags, total_len + 10,
+				   20);
+	zassert_equal(copied, 0, "Should copy 0 bytes when offset is beyond data");
+
+	/* Test 6: Linearize with len beyond available data */
+	memset(linear_buffer, 0, sizeof(linear_buffer));
+	copied = net_buf_linearize(linear_buffer, sizeof(linear_buffer), buf->frags, 0,
+				   total_len + 10);
+	zassert_equal(copied, total_len, "Should copy only available data when len exceeds data");
+
+	/* Test 7: Linearize with NULL source */
+	copied = net_buf_linearize(linear_buffer, sizeof(linear_buffer), NULL, 0, 20);
+	zassert_equal(copied, 0, "Should return 0 for NULL source");
+
+	/* Test 8: Linearize with zero length */
+	memset(linear_buffer, 0, sizeof(linear_buffer));
+	copied = net_buf_linearize(linear_buffer, sizeof(linear_buffer), buf->frags, 0, 0);
+	zassert_equal(copied, 0, "Should copy 0 bytes when len is 0");
+
+	/* Test 9: Linearize with zero destination length */
+	copied = net_buf_linearize(linear_buffer, 0, buf->frags, 0, 20);
+	zassert_equal(copied, 0, "Should copy 0 bytes when destination length is 0");
+
+	net_buf_unref(buf);
+	zassert_equal(destroy_called, 4, "Incorrect destroy callback count");
+}
 
 ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);
