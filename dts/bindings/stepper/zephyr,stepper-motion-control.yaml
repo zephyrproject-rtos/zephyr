@@ -16,7 +16,12 @@ compatible: "zephyr,stepper-motion-control"
 properties:
   counter:
     type: phandle
-    description: Counter used for generating step-accurate pulse signals.
+    description: |
+      Counter used for generating step-accurate pulse signals.
+      This should be a reference to a counter node in the device tree.
+      When this property is present, the stepper motion controller will use
+      the counter as a timing source instead of the default work queue timing.
+      This enables more precise step timing control.
 
   stepper:
     type: phandle

@@ -16,7 +16,6 @@
 	allegro_a4979: allegro_a4979 {
 		status = "okay";
 		compatible = "allegro,a4979";
-		micro-step-res = <1>;
 		reset-gpios = <&gpio4 0 0>;
 		dir-gpios = <&gpio1 0 0>;
 		step-gpios = <&gpio1 1 0>;
