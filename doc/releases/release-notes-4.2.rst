@@ -152,6 +152,11 @@ New APIs and options
   * :c:macro:`I2C_DEVICE_DT_DEINIT_DEFINE`
   * :c:macro:`I2C_DEVICE_DT_INST_DEINIT_DEFINE`
 
+* SPI
+
+  * :c:macro:`SPI_DEVICE_DT_DEINIT_DEFINE`
+  * :c:macro:`SPI_DEVICE_DT_INST_DEINIT_DEFINE`
+
 ..
   Link to new APIs here, in a group if you think it's necessary, no need to get
   fancy just list the link, that should contain the documentation. If you feel
