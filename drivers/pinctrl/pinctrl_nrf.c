@@ -483,9 +483,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 					}
 					gpd_requested = true;
 				}
-
-				nrf_gpio_pin_retain_disable(pin);
 			}
+
+			/*
+			 * Pad power domain now on, retain no longer needed
+			 * as pad config will be persists as pad is powered.
+			 */
+			nrf_gpio_pin_retain_disable(pin);
 #endif /* CONFIG_SOC_NRF54H20_GPD */
 
 			if (write != NO_WRITE) {
@@ -504,7 +508,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 #endif
 #ifdef CONFIG_SOC_NRF54H20_GPD
-			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
+			if (NRF_GET_LP(pins[i]) == NRF_LP_ENABLE) {
+				/*
+				 * Pad power domain may be turned off, and pad is not
+				 * actively used as pincnf is low-power. Enable retain
+				 * to ensure pad output and config persists if pad
+				 * power domain is suspended.
+				 */
 				nrf_gpio_pin_retain_enable(pin);
 			}
 #endif /* CONFIG_SOC_NRF54H20_GPD */
