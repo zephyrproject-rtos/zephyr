@@ -17,6 +17,7 @@
 	dma-names = "dma";
 
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in3_pa3>;
+	st,adc-prescaler = <4>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 
