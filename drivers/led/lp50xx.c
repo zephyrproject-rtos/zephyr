@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 
 /* Maximum number of channels */
 #define LP50XX_MAX_CHANNELS(nmodules)	\
-	((LP50XX_COLORS_PER_LED + 1) * ((nmodules) + 1))
+	(LP50XX_COLORS_PER_LED * nmodules)
 
 #define LP50XX_DISABLE_DELAY_US		3
 #define LP50XX_ENABLE_DELAY_US		500
@@ -168,7 +168,7 @@ static int lp50xx_write_channels(const struct device *dev,
 	struct lp50xx_data *data = dev->data;
 	uint8_t base_channel, end_channel, max_channels;
 
-	base_channel = LP50XX_BANK_BASE(config->num_modules);
+	base_channel = LP50XX_OUT0_COLOR(config->num_modules);
 	end_channel = base_channel + start_channel + num_channels;
 	max_channels = base_channel + LP50XX_MAX_CHANNELS(config->num_modules);
 
