@@ -746,17 +746,14 @@ ZTEST(dhcpv4_tests, test_dhcp)
 			      "Missing DHCP vendor option(s) %08x", evt);
 #endif
 
-		if (loop == 0) {
-			/* Associated DNS servers aren't deleted on DHCP stop */
-			evt = k_event_wait_all(&events,
-					       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
-						       EVT_DNS_SERVER3_ADD,
-					       false, WAIT_TIME);
-			zassert_equal(evt,
-				      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
-					      EVT_DNS_SERVER3_ADD,
-				      "Missing DNS server(s) %08x", evt);
-		}
+		evt = k_event_wait_all(&events,
+				       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+				       EVT_DNS_SERVER3_ADD,
+				       false, WAIT_TIME);
+		zassert_equal(evt,
+			      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+			      EVT_DNS_SERVER3_ADD,
+			      "Missing DNS server(s) %08x", evt);
 
 		evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
 		zassert_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound");
