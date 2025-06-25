@@ -572,7 +572,7 @@ extern "C" {
 	size_t __arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((__v)) \
+			sizeof((__v)) /* NOLINT(bugprone-sizeof-expression) */ \
 		); \
 	__arg_size; \
 })
