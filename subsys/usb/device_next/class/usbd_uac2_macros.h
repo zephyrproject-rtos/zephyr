@@ -707,14 +707,22 @@
 #define AS_BYTES_PER_SAMPLE(node)						\
 	DT_PROP(node, subslot_size)
 
+#define AS_FS_DATA_EP_BINTERVAL(node)						\
+	USB_FS_ISO_EP_INTERVAL(DT_PROP_OR(node, polling_period_us, 1000))
+
+#define AS_HS_DATA_EP_BINTERVAL(node)						\
+	USB_HS_ISO_EP_INTERVAL(DT_PROP_OR(node, polling_period_us, 125))
+
 /* Asynchronous endpoints needs space for 1 extra sample */
 #define AS_SAMPLES_PER_FRAME(node)						\
-	((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 1000) / 1000) +			\
-	  UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)))
+	(((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 1000) / 1000)			\
+	  << (AS_FS_DATA_EP_BINTERVAL(node) - 1)) +				\
+	 UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)))
 
 #define AS_SAMPLES_PER_MICROFRAME(node)						\
-	((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 8000) / 8000) +			\
-	  UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)))
+	(((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 8000) / 8000)			\
+	  << (AS_HS_DATA_EP_BINTERVAL(node) - 1)) +				\
+	 UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)))
 
 #define AS_DATA_EP_SYNC_TYPE(node)						\
 	COND_CODE_1(AS_IS_SOF_SYNCHRONIZED(node), (0x3 << 2), (0x1 << 2))
@@ -745,7 +753,7 @@
 	AS_DATA_EP_ADDR(node),				/* bEndpointAddress */	\
 	AS_DATA_EP_ATTR(node),				/* bmAttributes */	\
 	U16_LE(AS_FS_DATA_EP_MAX_PACKET_SIZE(node)),	/* wMaxPacketSize */	\
-	0x01,						/* bInterval */
+	AS_FS_DATA_EP_BINTERVAL(node),			/* bInterval */
 
 #define AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTORS_ARRAYS(node)		\
 	static uint8_t DESCRIPTOR_NAME(fs_std_data_ep, node)[] = {		\
@@ -758,7 +766,7 @@
 	AS_DATA_EP_ADDR(node),				/* bEndpointAddress */	\
 	AS_DATA_EP_ATTR(node),				/* bmAttributes */	\
 	U16_LE(AS_HS_DATA_EP_MAX_PACKET_SIZE(node)),	/* wMaxPacketSize */	\
-	0x01,						/* bInterval */
+	AS_HS_DATA_EP_BINTERVAL(node),			/* bInterval */
 
 #define AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTORS_ARRAYS(node)		\
 	static uint8_t DESCRIPTOR_NAME(hs_std_data_ep, node)[] = {		\
