@@ -118,6 +118,14 @@ Supported Features
      |     OFF     |      OFF    |      OFF     |     OFF    |     OFF    |      OFF   |      OFF    |     ON    |
      +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
 
+   - For using the Camera Expansion Port (J59) with the Camera, please set switch SW1 as following configuration:
+
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |     OFF     |      ON     |     OFF    |     OFF    |     OFF     |     ON      |    OFF    |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+
 .. warning::
 
    Do not enable SW1-4 and SW1-5 together
