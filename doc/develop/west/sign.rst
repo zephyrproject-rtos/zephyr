@@ -58,3 +58,23 @@ both are used, the command-line arguments go last.
 
 .. _rimage:
    https://github.com/thesofproject/rimage
+
+
+silabs_commander
+****************
+
+The ``silabs_commander`` tool is used to apply sign or MIC or encrypt binaries for Silicon Labs
+devices. It can be invoked either by ``west sign`` when the ``sign.tool`` configuration is set to
+``silabs_commander`` or by ``west build`` if ``CONFIG_SIWX91X_SIGN_KEY`` or
+``CONFIG_SIWX91X_MIC_KEY`` is set.
+
+If one of ``CONFIG_SIWX91X_SIGN_KEY`` or ``CONFIG_SIWX91X_MIC_KEY`` is set, ``west flash`` will
+automatically flash the signed version of the binary.
+
+``silabs_commander`` require `Simplicity Commander`_ to be install on the host. The provisionning of the
+key on the device is described in `UG574 SiWx917 SoC Manufacturing Utility User Guide`_.
+
+.. _Simplicity Commander:
+   https://www.silabs.com/developer-tools/simplicity-studio/simplicity-commander?tab=downloads
+.. _UG574 SiWx917 SoC Manufacturing Utility User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug574-siwx917-soc-manufacturing-utility-user-guide.pdf
