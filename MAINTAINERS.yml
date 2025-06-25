@@ -3342,6 +3342,7 @@ RISCV arch:
     - npitre
     - ycsin
     - VynDragon
+    - masz-nordic
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
