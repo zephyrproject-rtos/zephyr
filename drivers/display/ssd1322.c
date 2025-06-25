@@ -118,7 +118,7 @@ static int ssd1322_conv_mono01_grayscale(const uint8_t **buf_in, uint32_t *pixel
 		}
 	}
 
-	buf_in += pixels_in_chunk / 8;
+	*buf_in += pixels_in_chunk / 8;
 	*pixel_count -= pixels_in_chunk;
 	return pixels_in_chunk * segments_per_pixel / SEGMENTS_PER_BYTE;
 }

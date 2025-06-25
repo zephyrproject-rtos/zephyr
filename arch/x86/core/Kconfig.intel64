@@ -32,7 +32,7 @@ config X86_EXCEPTION_STACK_SIZE
 config ARCH_HAS_STACKWALK
 	bool
 	default y
-	select DEBUG_INFO
+	select X86_DEBUG_INFO
 	select THREAD_STACK_INFO
 	depends on !OMIT_FRAME_POINTER
 	help

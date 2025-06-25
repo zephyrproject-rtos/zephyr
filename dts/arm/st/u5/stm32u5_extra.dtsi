@@ -57,14 +57,14 @@
 
 		octospi2: spi@420d2400 {
 			compatible = "st,stm32-ospi";
-			reg = <0x420d2400 0x400>;
+			reg = <0x420d2400 0x400>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <120 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB2_2, 8)>,
 				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
 				<&rcc STM32_CLOCK(AHB2, 21)>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 

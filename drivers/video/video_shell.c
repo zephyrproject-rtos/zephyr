@@ -637,8 +637,7 @@ static void video_shell_convert_ctrl_name(char const *src, char *dst, size_t dst
 	} while (o-- > 0 && !isalnum(dst[o]));
 }
 
-static int video_shell_get_ctrl_by_name(const struct device *dev, struct video_ctrl_query *cq,
-					char const *name)
+static int video_shell_get_ctrl_by_name(struct video_ctrl_query *cq, char const *name)
 {
 	char ctrl_name[CONFIG_VIDEO_SHELL_CTRL_NAME_SIZE];
 	int ret;
@@ -647,7 +646,7 @@ static int video_shell_get_ctrl_by_name(const struct device *dev, struct video_c
 	for (size_t i = 0;; i++) {
 		cq->id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
 
-		ret = video_query_ctrl(dev, cq);
+		ret = video_query_ctrl(cq);
 		if (ret < 0) {
 			return -ENOENT;
 		}
@@ -661,8 +660,7 @@ static int video_shell_get_ctrl_by_name(const struct device *dev, struct video_c
 	return 0;
 }
 
-static int video_shell_get_ctrl_by_num(const struct device *dev, struct video_ctrl_query *cq,
-				       int num)
+static int video_shell_get_ctrl_by_num(struct video_ctrl_query *cq, int num)
 {
 	int ret;
 
@@ -670,7 +668,7 @@ static int video_shell_get_ctrl_by_num(const struct device *dev, struct video_ct
 	for (size_t i = 0; i <= num; i++) {
 		cq->id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
 
-		ret = video_query_ctrl(dev, cq);
+		ret = video_query_ctrl(cq);
 		if (ret < 0) {
 			return -ENOENT;
 		}
@@ -682,7 +680,7 @@ static int video_shell_get_ctrl_by_num(const struct device *dev, struct video_ct
 static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev, size_t argc,
 				char **argv)
 {
-	struct video_ctrl_query cq = {0};
+	struct video_ctrl_query cq = {.dev = dev};
 	struct video_control ctrl;
 	char menu_name[CONFIG_VIDEO_SHELL_CTRL_NAME_SIZE];
 	char *arg_ctrl = argv[0];
@@ -691,7 +689,7 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 	size_t i;
 	int ret;
 
-	ret = video_shell_get_ctrl_by_name(dev, &cq, arg_ctrl);
+	ret = video_shell_get_ctrl_by_name(&cq, arg_ctrl);
 	if (ret < 0) {
 		shell_error(sh, "Video control '%s' not found for this device", arg_ctrl);
 		return ret;
@@ -752,15 +750,15 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 
 static int video_shell_print_ctrls(const struct shell *sh, const struct device *dev)
 {
-	struct video_ctrl_query cq = {.id = VIDEO_CTRL_FLAG_NEXT_CTRL};
+	struct video_ctrl_query cq = {.dev = dev, .id = VIDEO_CTRL_FLAG_NEXT_CTRL};
 	char ctrl_name[CONFIG_VIDEO_SHELL_CTRL_NAME_SIZE];
 
-	while (video_query_ctrl(dev, &cq) == 0) {
+	while (video_query_ctrl(&cq) == 0) {
 		/* Convert from human-friendly form to machine-friendly */
 		video_shell_convert_ctrl_name(cq.name, ctrl_name, sizeof(ctrl_name));
 		cq.name = ctrl_name;
 
-		video_print_ctrl(dev, &cq);
+		video_print_ctrl(&cq);
 		cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
 	}
 
@@ -812,7 +810,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_video_ctrl_boolean, complete_video_ctrl_boolean);
 static void complete_video_ctrl_menu_name(size_t idx, struct shell_static_entry *entry, int ctrln)
 {
 	const struct device *dev = video_shell_dev;
-	struct video_ctrl_query cq = {0};
+	struct video_ctrl_query cq = {.dev = dev};
 	int ret;
 
 	entry->handler = NULL;
@@ -820,14 +818,13 @@ static void complete_video_ctrl_menu_name(size_t idx, struct shell_static_entry 
 	entry->subcmd = NULL;
 	entry->syntax = NULL;
 
-	dev = video_shell_dev;
 	if (!device_is_ready(dev)) {
 		return;
 	}
 
 	/* Check which control name was selected */
 
-	ret = video_shell_get_ctrl_by_num(dev, &cq, ctrln);
+	ret = video_shell_get_ctrl_by_num(&cq, ctrln);
 	if (ret < 0) {
 		return;
 	}
@@ -874,13 +871,13 @@ static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *
 	}
 
 	/* Then complete the control name */
-
-	ret = video_shell_get_ctrl_by_num(dev, &video_shell_cq, idx);
+	cq->dev = dev;
+	ret = video_shell_get_ctrl_by_num(cq, idx);
 	if (ret < 0) {
 		return;
 	}
 
-	video_shell_convert_ctrl_name(video_shell_cq.name, video_shell_ctrl_name,
+	video_shell_convert_ctrl_name(cq->name, video_shell_ctrl_name,
 				      sizeof(video_shell_ctrl_name));
 	entry->syntax = video_shell_ctrl_name;
 

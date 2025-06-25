@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_R9A09G057H44GBG_CR8
+
+config NUM_IRQS
+	default 512
+
+config FPU
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(div,$(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency),4)
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config SYS_CLOCK_EXISTS
+	default y
+
+endif # SOC_R9A09G057H44GBG_CR8

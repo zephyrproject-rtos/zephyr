@@ -7,3 +7,5 @@ board:
     variants:
     - name: xip
       cpucluster: cpuppr
+    - name: iron
+      cpucluster: cpuapp

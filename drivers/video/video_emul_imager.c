@@ -344,7 +344,11 @@ static int emul_imager_init_controls(const struct device *dev)
 
 int emul_imager_init(const struct device *dev)
 {
-	struct video_format fmt;
+	struct video_format fmt = {
+		.pixelformat = fmts[0].pixelformat,
+		.width = fmts[0].width_min,
+		.height = fmts[0].height_min,
+	};
 	uint8_t sensor_id;
 	int ret;
 
@@ -364,10 +368,6 @@ int emul_imager_init(const struct device *dev)
 		LOG_ERR("Could not set initial registers");
 		return ret;
 	}
-
-	fmt.pixelformat = fmts[0].pixelformat;
-	fmt.width = fmts[0].width_min;
-	fmt.height = fmts[0].height_min;
 
 	ret = emul_imager_set_fmt(dev, &fmt);
 	if (ret < 0) {

@@ -2162,11 +2162,12 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	/* Unmask interrupts */
-	sys_write32(USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
+	sys_write32(IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USB_DWC2_GINTSTS_SOF |
+						       USB_DWC2_GINTSTS_INCOMPISOOUT |
+						       USB_DWC2_GINTSTS_INCOMPISOIN |))
+		    USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
 		    USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
-		    USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
-		    USB_DWC2_GINTSTS_INCOMPISOOUT | USB_DWC2_GINTSTS_INCOMPISOIN |
-		    USB_DWC2_GINTSTS_SOF,
+		    USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP,
 		    (mem_addr_t)&base->gintmsk);
 
 	return 0;
@@ -2890,7 +2891,8 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 
 		LOG_DBG("GINTSTS 0x%x", int_status);
 
-		if (int_status & USB_DWC2_GINTSTS_SOF) {
+		if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
+		    int_status & USB_DWC2_GINTSTS_SOF) {
 			uint32_t dsts;
 
 			/* Clear USB SOF interrupt. */
@@ -2898,7 +2900,7 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 
 			dsts = sys_read32((mem_addr_t)&base->dsts);
 			priv->sof_num = usb_dwc2_get_dsts_soffn(dsts);
-			udc_submit_event(dev, UDC_EVT_SOF, 0);
+			udc_submit_sof_event(dev);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_USBRST) {
@@ -2941,11 +2943,13 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			dwc2_handle_oepint(dev);
 		}
 
-		if (int_status & USB_DWC2_GINTSTS_INCOMPISOIN) {
+		if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
+		    int_status & USB_DWC2_GINTSTS_INCOMPISOIN) {
 			dwc2_handle_incompisoin(dev);
 		}
 
-		if (int_status & USB_DWC2_GINTSTS_INCOMPISOOUT) {
+		if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
+		    int_status & USB_DWC2_GINTSTS_INCOMPISOOUT) {
 			dwc2_handle_incompisoout(dev);
 		}
 

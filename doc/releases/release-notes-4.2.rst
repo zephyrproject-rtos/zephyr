@@ -254,6 +254,9 @@ New APIs and options
 
   * :c:func:`util_eq`
   * :c:func:`util_memeq`
+  * :c:func:`sys_clock_gettime`
+  * :c:func:`sys_clock_settime`
+  * :c:func:`sys_clock_nanosleep`
 
 * LoRaWAN
    * :c:func:`lorawan_request_link_check`
@@ -514,6 +517,14 @@ New Boards
 * Würth Elektronik GmbH.
 
    * :zephyr:board:`ophelia4ev` (``ophelia4ev``)
+
+.. _shields_added_in_zephyr_4_2:
+
+New shields
+============
+
+ * :ref:`MikroElektronika Stepper 18 Click <mikroe_stepper_18_click_shield>`
+ * :ref:`MikroElektronika Stepper 19 Click <mikroe_stepper_19_click_shield>`
 
 New Drivers
 ***********
@@ -903,6 +914,7 @@ New Drivers
 
 * Stepper
 
+   * :dtcompatible:`allegro,a4979`
    * :dtcompatible:`adi,tmc51xx`
 
 * System controller

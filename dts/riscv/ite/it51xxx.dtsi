@@ -6,9 +6,10 @@
 
 #include <ite/it51xxx-wuc-map.dtsi>
 #include <mem.h>
-#include <zephyr/dt-bindings/clock/ite-it51xxx-clock.h>
-#include <zephyr/dt-bindings/dt-util.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/ite-it51xxx-clock.h>
+#include <zephyr/dt-bindings/comparator/it51xxx-vcmp.h>
+#include <zephyr/dt-bindings/dt-util.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/i2c/it51xxx-i2c.h>
@@ -82,6 +83,36 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		vcmp0: vcmp@f04520 {
+			compatible = "ite,it51xxx-vcmp";
+			interrupt-parent = <&intc>;
+			interrupts = <IT51XXX_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xf04520 0x08
+			       0xf04500 0xc1>; /* vcmp base address */
+			vcmp-ch = <VCMP_CHANNEL_0>;
+			status = "disabled";
+		};
+
+		vcmp1: vcmp@f04528 {
+			compatible = "ite,it51xxx-vcmp";
+			interrupt-parent = <&intc>;
+			interrupts = <IT51XXX_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xf04528 0x08
+			       0xf04500 0xc1>; /* vcmp base address */
+			vcmp-ch = <VCMP_CHANNEL_1>;
+			status = "disabled";
+		};
+
+		vcmp2: vcmp@f0452c {
+			compatible = "ite,it51xxx-vcmp";
+			interrupt-parent = <&intc>;
+			interrupts = <IT51XXX_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xf0452c 0x08
+			       0xf04500 0xc1>; /* vcmp base address */
+			vcmp-ch = <VCMP_CHANNEL_2>;
+			status = "disabled";
 		};
 
 		gpiogcr: gpio-gcr@f01600 {

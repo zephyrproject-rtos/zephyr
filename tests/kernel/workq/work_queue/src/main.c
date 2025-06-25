@@ -10,11 +10,6 @@
  * about the use of that API.
  */
 #include <zephyr/toolchain.h>
-#undef __deprecated
-#define __deprecated
-#undef __DEPRECATED_MACRO
-#define __DEPRECATED_MACRO
-
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>

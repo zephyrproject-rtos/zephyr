@@ -12,19 +12,35 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
-if DISPLAY
+if DISPLAY || VIDEO
+# MEMC needs to be enabled in order to store
+# display frame buffer to external PSRAM
+config MEMC
+	default y
 
+# Rely on Multi-Heap / Shared-Multi-Heap for PSRAM access
+config MULTI_HEAP
+	default y
+config SHARED_MULTI_HEAP
+	default y
+endif # DISPLAY || VIDEO
+
+if DISPLAY
 config INPUT
 	default y
 
 config I2C_STM32_V2_TIMING
 	default y if INPUT
 
-# MEMC needs to be enabled in order to store
-# display frame buffer to external PSRAM
-config MEMC
+# Let LTDC use memory allocated via SMH
+config STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
 	default y
-
 endif # DISPLAY
+
+if VIDEO
+# Let video framework use memory allocated via SMH
+config VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
+	default y
+endif # VIDEO
 
 endif # BOARD_STM32N6570_DK

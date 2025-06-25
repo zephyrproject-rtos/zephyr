@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 
 #ifdef CONFIG_SAI_HAS_MCLK_CONFIG_OPTION
 #define SAI_MCLK_MCR_MSEL_SHIFT 24
-#define SAI_MCLK_MCR_MSEL_MASK GENMASK(24, 25)
+#define SAI_MCLK_MCR_MSEL_MASK GENMASK(25, 24)
 #endif /* CONFIG_SAI_HAS_MCLK_CONFIG_OPTION */
 /* workaround the fact that device_map() doesn't exist for SoCs with no MMU */
 #ifndef DEVICE_MMIO_IS_IN_RAM

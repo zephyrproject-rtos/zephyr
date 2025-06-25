@@ -1078,7 +1078,7 @@ out:
 	return ret;
 }
 
-bool xtensa_mem_kernel_has_access(void *addr, size_t size, int write)
+bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write)
 {
 	uintptr_t aligned_addr;
 	size_t aligned_size, addr_offset;

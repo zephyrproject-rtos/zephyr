@@ -891,6 +891,7 @@ int gdb_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_GDBSTUB_ENTER_IMMEDIATELY
 #ifdef CONFIG_XTENSA
 /*
  * Interrupt stacks are being setup during init and are not
@@ -903,4 +904,5 @@ int gdb_init(void)
 SYS_INIT(gdb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(gdb_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
 #endif

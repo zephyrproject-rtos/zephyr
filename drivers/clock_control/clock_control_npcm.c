@@ -124,7 +124,7 @@ struct freq_multiplier_t {
 	uint8_t hfcgml;
 };
 
-static struct freq_multiplier_t freq_multiplier[] = {
+static const struct freq_multiplier_t freq_multiplier[] = {
 	{.ofmclk = 100000000, .hfcgn = 0x82, .hfcgmh = 0x0B, .hfcgml = 0xEC},
 	{.ofmclk = 96000000, .hfcgn = 0x82, .hfcgmh = 0x0B, .hfcgml = 0x72},
 	{.ofmclk = 80000000, .hfcgn = 0x82, .hfcgmh = 0x09, .hfcgml = 0x89},
@@ -139,7 +139,7 @@ struct clk_cfg_t {
 	uint16_t bus;
 };
 
-static struct clk_cfg_t clk_cfg[] = {
+static const struct clk_cfg_t clk_cfg[] = {
 	{.clock_id = NPCM_CLOCK_PWM_I, .bus = NPCM_CLOCK_BUS_LFCLK},
 	{.clock_id = NPCM_CLOCK_PWM_J, .bus = NPCM_CLOCK_BUS_LFCLK},
 	{.clock_id = NPCM_CLOCK_I3CI, .bus = NPCM_CLOCK_BUS_APB3},
@@ -193,7 +193,7 @@ static struct clk_cfg_t clk_cfg[] = {
 #define DRV_CONFIG(dev) ((const struct npcm_pcc_config *)(dev)->config)
 
 /* Clock controller local functions */
-static struct clk_cfg_t *npcm_get_cfg(clock_control_subsys_t sub_system)
+static const struct clk_cfg_t *npcm_get_cfg(clock_control_subsys_t sub_system)
 {
 	uint32_t clk_id = (uint32_t)sub_system;
 	uint32_t i;
@@ -210,7 +210,7 @@ static struct clk_cfg_t *npcm_get_cfg(clock_control_subsys_t sub_system)
 static inline int npcm_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clk_id = (uint32_t)sub_system;
-	struct clk_cfg_t *priv;
+	const struct clk_cfg_t *priv;
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
 
 	priv = npcm_get_cfg(sub_system);
@@ -229,7 +229,7 @@ static inline int npcm_clock_control_off(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	uint32_t clk_id = (uint32_t)sub_system;
-	struct clk_cfg_t *priv;
+	const struct clk_cfg_t *priv;
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
 
 	priv = npcm_get_cfg(sub_system);
@@ -240,7 +240,7 @@ static inline int npcm_clock_control_off(const struct device *dev,
 
 	/* Set related PD (Power-Down) bit of module to turn off clock */
 	NPCM_PWDWN_CTL(pmc_base, NPCM_CLOCK_REG_OFFSET(priv->clock_id)) |=
-		~(BIT(NPCM_CLOCK_REG_BIT_OFFSET(priv->clock_id)));
+		(BIT(NPCM_CLOCK_REG_BIT_OFFSET(priv->clock_id)));
 	return 0;
 }
 
@@ -249,7 +249,7 @@ static int npcm_clock_control_get_subsys_rate(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 	uint32_t clk_id = (uint32_t)sub_system;
-	struct clk_cfg_t *priv;
+	const struct clk_cfg_t *priv;
 
 	priv = npcm_get_cfg(sub_system);
 	if (!priv) {
@@ -310,7 +310,7 @@ static DEVICE_API(clock_control, npcm_clock_control_api) = {
 static int npcm_clock_control_init(const struct device *dev)
 {
 	struct cdcg_reg *const priv = (struct cdcg_reg *)(DRV_CONFIG(dev)->base_cdcg);
-	struct freq_multiplier_t *freq_p;
+	const struct freq_multiplier_t *freq_p;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(freq_multiplier); i++) {

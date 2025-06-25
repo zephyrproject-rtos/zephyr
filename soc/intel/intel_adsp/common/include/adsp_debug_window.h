@@ -40,10 +40,15 @@
 #define ADSP_DW_PAGE_SIZE		0x1000
 #define ADSP_DW_SLOT_SIZE		ADSP_DW_PAGE_SIZE
 #define ADSP_DW_SLOT_COUNT		15
+#define ADSP_DW_DESC_COUNT		(ADSP_DW_SLOT_COUNT + 1)
 
-/* debug window slots usage */
-#define ADSP_DW_SLOT_NUM_TRACE		1
+/* debug window slots usage, mutually exclusive options can reuse slots */
 #define ADSP_DW_SLOT_NUM_SHELL		0
+#define ADSP_DW_SLOT_NUM_MTRACE		0
+#define ADSP_DW_SLOT_NUM_TRACE		1
+#define ADSP_DW_SLOT_NUM_TELEMETRY	1
+/* this uses remaining space in the first page after descriptors */
+#define ADSP_DW_SLOT_NUM_GDB		(ADSP_DW_DESC_COUNT - 1)
 
 /* debug log slot types */
 #define ADSP_DW_SLOT_UNUSED		0x00000000
@@ -67,9 +72,9 @@ struct adsp_dw_desc {
 } __packed;
 
 struct adsp_debug_window {
-	struct adsp_dw_desc descs[ADSP_DW_SLOT_COUNT];
-	uint8_t reserved[ADSP_DW_SLOT_SIZE - ADSP_DW_SLOT_COUNT * sizeof(struct adsp_dw_desc)];
-	uint8_t slots[ADSP_DW_SLOT_COUNT][ADSP_DW_SLOT_SIZE];
+	struct adsp_dw_desc descs[ADSP_DW_DESC_COUNT];
+	uint8_t reserved[ADSP_DW_SLOT_SIZE - ADSP_DW_DESC_COUNT * sizeof(struct adsp_dw_desc)];
+	uint8_t slots[ADSP_DW_DESC_COUNT][ADSP_DW_SLOT_SIZE];
 } __packed;
 
 #define WIN2_MBASE DT_REG_ADDR(DT_PHANDLE(DT_NODELABEL(mem_window2), memory))

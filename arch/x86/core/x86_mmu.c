@@ -1267,6 +1267,7 @@ static pentry_t flags_to_entry(uint32_t flags)
 		break;
 	default:
 		__ASSERT(false, "bad memory mapping flags 0x%x", flags);
+		break;
 	}
 
 	if ((flags & K_MEM_PERM_RW) != 0U) {

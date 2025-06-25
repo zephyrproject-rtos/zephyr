@@ -244,6 +244,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
 		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
 
+		LL_LPTIM_DisableIT_ARROK(LPTIM);
+		LL_LPTIM_ClearFlag_ARROK(LPTIM);
+		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		/* Stop clocks for LPTIM, since RTC is used instead */
 		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 
@@ -552,6 +555,7 @@ static int sys_clock_driver_init(void)
 	LL_LPTIM_ClearFLAG_ARRM(LPTIM);
 
 	/* ARROK bit validates the write operation to ARR register */
+	autoreload_ready = true;
 	LL_LPTIM_EnableIT_ARROK(LPTIM);
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
@@ -627,7 +631,7 @@ void sys_clock_idle_exit(void)
 		stdby_timer_us = counter_ticks_to_us(stdby_timer, stdby_timer_diff);
 
 		/* Convert standby time in LPTIM cnt */
-		missed_lptim_cnt = (sys_clock_hw_cycles_per_sec() * stdby_timer_us) /
+		missed_lptim_cnt = (CONFIG_STM32_LPTIM_CLOCK * stdby_timer_us) /
 				   USEC_PER_SEC;
 		/* Add the LPTIM cnt pre standby */
 		missed_lptim_cnt += lptim_cnt_pre_stdby;

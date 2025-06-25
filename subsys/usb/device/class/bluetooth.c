@@ -154,20 +154,20 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 
 		type = net_buf_pull_u8(buf);
 		switch (type) {
-		case BT_BUF_EVT:
+		case BT_HCI_H4_EVT:
 			usb_transfer_sync(
 				bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr,
 				buf->data, buf->len,
 				USB_TRANS_WRITE | USB_TRANS_NO_ZLP);
 			break;
-		case BT_BUF_ACL_IN:
+		case BT_HCI_H4_ACL:
 			usb_transfer_sync(
 				bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr,
 				buf->data, buf->len,
 				USB_TRANS_WRITE);
 			break;
 		default:
-			LOG_ERR("Unknown type %u", type);
+			LOG_ERR("Unsupported type %u", type);
 			break;
 		}
 
@@ -200,11 +200,11 @@ static uint16_t hci_acl_pkt_len(const uint8_t *data, size_t data_len)
 	struct bt_hci_acl_hdr *acl_hdr;
 	size_t hdr_len = sizeof(*acl_hdr);
 
-	if (data_len - 1 < hdr_len) {
+	if (data_len < hdr_len) {
 		return 0;
 	}
 
-	acl_hdr = (struct bt_hci_acl_hdr *)(data + 1);
+	acl_hdr = (struct bt_hci_acl_hdr *)data;
 
 	return sys_le16_to_cpu(acl_hdr->len) + hdr_len;
 }
@@ -250,7 +250,7 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 		LOG_DBG("len %u, chunk %u", buf->len, size);
 	}
 
-	if (buf != NULL && pkt_len == buf->len) {
+	if (buf != NULL && pkt_len == buf->len - 1) {
 		k_fifo_put(&rx_queue, buf);
 		LOG_DBG("put");
 		buf = NULL;

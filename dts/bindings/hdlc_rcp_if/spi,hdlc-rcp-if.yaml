@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: SPI HDLC RCP interface node
+
+compatible: "spi,hdlc-rcp-if"
+
+include: spi-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt GPIO. Used by the RCP to signal data is available. Active low.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO. Used to assert a hardware reset for the RCP. Active low.
+
+  reset-assert-time:
+    type: int
+    default: 30
+    description: The time (in ms) to keep the RCP radio reset active.
+
+  reset-delay:
+    type: int
+    default: 0
+    description: The delay (in ms) after reset de-assertion.
+
+  cs-delay:
+    type: int
+    default: 0
+    description: The delay (in ms) for the RCP radio chip select.

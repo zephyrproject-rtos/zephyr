@@ -15,4 +15,12 @@
  */
 #define DW_GPIO_DEBOUNCE (1U << 8)
 
+/**
+ * @brief Enable hardware control/data source for a pin.
+ *
+ * Configures a pin to be controlled by a hardware data source (if
+ * supported).
+ */
+#define DW_GPIO_HW_MODE (1U << 9)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_SNPS_DESIGNWARE_GPIO_H_ */

@@ -9,17 +9,26 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <rail.h>
 #include <sl_status.h>
 
-struct RAIL_TxPowerCurvesConfigAlt {
-};
-
-void RAIL_VerifyTxPowerCurves(const struct RAIL_TxPowerCurvesConfigAlt *config)
+RAIL_Status_t RAIL_VerifyTxPowerCurves(const struct RAIL_TxPowerCurvesConfigAlt *config)
 {
+	return RAIL_STATUS_NO_ERROR;
 }
 
 void RAIL_EnablePaCal(bool enable)
 {
+}
+
+RAIL_Status_t RAIL_ConfigSleep(RAIL_Handle_t handle, RAIL_SleepConfig_t config)
+{
+	return RAIL_STATUS_NO_ERROR;
+}
+
+RAIL_Status_t RAIL_InitPowerManager(void)
+{
+	return RAIL_STATUS_NO_ERROR;
 }
 
 int16_t sl_btctrl_hci_receive(uint8_t *data, int16_t len, bool lastFragment)
@@ -36,86 +45,18 @@ int16_t BTLE_LL_SetMaxPower(int16_t power)
 	return 0;
 }
 
-void sl_btctrl_disable_2m_phy(void)
+sl_status_t sl_btctrl_init(void)
+{
+	return SL_STATUS_OK;
+}
+
+void sl_btctrl_deinit(void)
 {
 }
 
-void sl_btctrl_disable_coded_phy(void)
-{
-}
-
-uint32_t sl_btctrl_init_mem(uint32_t memsize)
+void *sli_btctrl_get_radio_context_handle(void)
 {
 	return 0;
-}
-
-void sl_btctrl_configure_le_buffer_size(uint8_t count)
-{
-}
-
-sl_status_t sl_btctrl_init_ll(void)
-{
-	return SL_STATUS_NOT_AVAILABLE;
-}
-
-void sli_btctrl_deinit_mem(void)
-{
-}
-
-void sl_btctrl_init_adv(void)
-{
-}
-
-void sl_btctrl_init_adv_ext(void)
-{
-}
-
-void sl_btctrl_init_scan(void)
-{
-}
-
-void sl_btctrl_init_scan_ext(void)
-{
-}
-
-void sl_btctrl_init_conn(void)
-{
-}
-
-void sl_btctrl_init_phy(void)
-{
-}
-
-void sl_btctrl_init_basic(void)
-{
-}
-
-void sl_btctrl_configure_completed_packets_reporting(uint8_t packets, uint8_t events)
-{
-}
-
-void sl_bthci_init_upper(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_default(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_conn(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_adv(void)
-{
-}
-
-void sl_btctrl_hci_parser_init_phy(void)
-{
-}
-
-void sl_bthci_init_vs(void)
-{
 }
 
 void AGC_IRQHandler(void)
@@ -127,6 +68,10 @@ void BUFC_IRQHandler(void)
 }
 
 void FRC_IRQHandler(void)
+{
+}
+
+void FRC_PRI_IRQHandler(void)
 {
 }
 
@@ -147,6 +92,10 @@ void RAC_SEQ_IRQHandler(void)
 }
 
 void SYNTH_IRQHandler(void)
+{
+}
+
+void HOSTMAILBOX_IRQHandler(void)
 {
 }
 

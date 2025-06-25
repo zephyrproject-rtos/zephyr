@@ -23,8 +23,16 @@ set(BLOBS_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/simplicity_sdk)
 # respectively.
 string(TOUPPER ${CONFIG_SOC_SERIES} SILABS_DEVICE_FAMILY)
 
-# Get SoC series number, i.e. translate e.g. efr32bg22 -> 22
-string(SUBSTRING ${CONFIG_SOC_SERIES} 7 2 SILABS_DEVICE_FAMILY_NUMBER)
+# Get SoC series number, i.e. translate efr32bg22 -> 22, mgm240p -> 24, simg301 -> 301
+if(CONFIG_SOC_SERIES MATCHES "^ef[rm]32")
+  string(SUBSTRING ${CONFIG_SOC_SERIES} 7 2 SILABS_DEVICE_FAMILY_NUMBER)
+elseif(CONFIG_SOC_SERIES MATCHES "^si")
+  string(SUBSTRING ${CONFIG_SOC_SERIES} 4 3 SILABS_DEVICE_FAMILY_NUMBER)
+elseif(CONFIG_SOC_SERIES MATCHES "^.gm")
+  string(SUBSTRING ${CONFIG_SOC_SERIES} 3 2 SILABS_DEVICE_FAMILY_NUMBER)
+else()
+  message(FATAL_ERROR "unknown part")
+endif()
 
 set(SILABS_DEVICE_PART_NUMBER ${CONFIG_SOC_PART_NUMBER})
 
@@ -64,7 +72,21 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     # prebuilt libs
     add_prebuilt_library(liblinklayer protocol/bluetooth/bgstack/ll/build/gcc/xg${SILABS_DEVICE_FAMILY_NUMBER}/release/liblinklayer.a)
     add_prebuilt_library(libbgcommon  protocol/bluetooth/bgcommon/lib/build/gcc/cortex-m33/bgcommon/release/libbgcommon.a)
+    if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+      # There is a circular dependency between the libs: libbgcommon depends on the symbol
+      # bg_pool_pools while liblinklayer depends on many symbols in libbgcommon
+      target_link_libraries(libbgcommon INTERFACE liblinklayer)
+      target_link_libraries(liblinklayer INTERFACE libbgcommon)
+      # Only two functions need to be stubbed if this is not included when no blobs are used.
+      # The contents of the init/deinit functions are provided by the Link Layer from SiSDK,
+      # and we should not care about their exact implementation and which calls they make.
+      zephyr_library_sources(
+        ${BLUETOOTH_DIR}/bgstack/ll/src/sl_btctrl_init.c
+        ${BLUETOOTH_DIR}/bgstack/ll/src/sl_btctrl_init_tasklets.c
+      )
+    endif()
     zephyr_library_sources(src/sl_btctrl_hci_reset_shim.c)
+    zephyr_include_directories(config/ll)
 
     # link mbedTLS
     if(CONFIG_MBEDTLS)
@@ -74,11 +96,20 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   if(CONFIG_SOC_GECKO_USE_RAIL)
     # rail
-    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
+    # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
+    if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
+      zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
+    endif()
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
 
-    # prebuilt libs
-    add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+    if(CONFIG_SILABS_DEVICE_IS_MODULE)
+      # RAIL lib and config for modules
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+      add_prebuilt_library(librail_config platform/radio/rail_lib/autogen/librail_release/librail_config_${CONFIG_SOC}_gcc.a)
+    else()
+      # generic RAIL lib for SoCs
+      add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+    endif()
 
     zephyr_include_directories_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
       ${RADIO_DIR}/rail_lib/protocol/ble
@@ -210,7 +241,6 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT     ${COMMON_DIR}/src/sl_slist.c)
 if(CONFIG_SOC_GECKO_CORE)
   zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE
-    ${EMLIB_DIR}/src/em_core.c
     ${COMMON_DIR}/src/sl_core_cortexm.c
   )
   zephyr_compile_definitions(
@@ -232,10 +262,12 @@ if(CONFIG_SOC_GECKO_GPIO)
   )
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
+
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LETIMER      ${EMLIB_DIR}/src/em_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_MSC          ${EMLIB_DIR}/src/em_msc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMLIB_DIR}/src/em_ldma.c)
@@ -244,7 +276,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RMU          ${EMLIB_DIR}/src/em_r
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTC          ${EMLIB_DIR}/src/em_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTCC         ${EMLIB_DIR}/src/em_rtcc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EUSART       ${EMLIB_DIR}/src/em_eusart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_TIMER        ${EMLIB_DIR}/src/em_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_WDOG         ${EMLIB_DIR}/src/em_wdog.c)
 

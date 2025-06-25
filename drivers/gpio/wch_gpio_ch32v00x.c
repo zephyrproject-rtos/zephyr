@@ -104,9 +104,9 @@ static int gpio_ch32v00x_port_clear_bits_raw(const struct device *dev, uint32_t 
 static int gpio_ch32v00x_port_toggle_bits(const struct device *dev, uint32_t pins)
 {
 	const struct gpio_ch32v00x_config *config = dev->config;
-	uint32_t changed = (config->regs->OUTDR ^ pins) & pins;
+	uint32_t current = config->regs->OUTDR;
 
-	config->regs->BSHR = (changed & pins) | (~changed & pins) << 16;
+	config->regs->BSHR = (~current & pins) | (current & pins) << 16;
 
 	return 0;
 }

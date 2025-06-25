@@ -156,6 +156,29 @@ int udc_submit_event(const struct device *dev,
 int udc_submit_ep_event(const struct device *dev,
 			struct net_buf *const buf,
 			const int err);
+
+/**
+ * @brief Helper function to send UDC SOF event to a higher level.
+ *
+ * Type of this event is hardcoded to UDC_EVT_SOF.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ */
+#if defined(CONFIG_UDC_ENABLE_SOF)
+static inline void udc_submit_sof_event(const struct device *dev)
+{
+	struct udc_data *data = dev->data;
+	struct udc_event drv_evt = {
+		.type = UDC_EVT_SOF,
+		.dev = dev,
+	};
+
+	(void)data->event_cb(dev, &drv_evt);
+}
+#else
+#define udc_submit_sof_event(dev) ARG_UNUSED(dev)
+#endif
+
 /**
  * @brief Helper function to enable endpoint.
  *

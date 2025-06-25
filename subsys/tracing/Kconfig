@@ -41,8 +41,6 @@ config PERCEPIO_TRACERECORDER
 
 config SEGGER_SYSTEMVIEW
 	bool "Segger SystemView support"
-	select CONSOLE
-	select RTT_CONSOLE
 	select USE_SEGGER_RTT
 	select THREAD_MONITOR
 	select SEGGER_RTT_CUSTOM_LOCKING

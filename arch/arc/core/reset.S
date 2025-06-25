@@ -163,20 +163,20 @@ hw_pf_setup_done:
 
 #if defined(CONFIG_SMP) || CONFIG_MP_MAX_NUM_CPUS  > 1
 	_get_cpu_id r0
-	breq r0, 0, _master_core_startup
+	breq r0, 0, _primary_core_startup
 
 /*
- * Non-masters wait for master core (core 0) to boot enough
+ * Non-primary cores wait for primary core (core 0) to boot enough
  */
-_slave_core_wait:
+_secondary_core_wait:
 #if CONFIG_MP_MAX_NUM_CPUS == 1
 	kflag	1
 #endif
 	ld r1, [arc_cpu_wake_flag]
-	brne r0, r1, _slave_core_wait
+	brne r0, r1, _secondary_core_wait
 
 	LDR sp, arc_cpu_sp
-	/* signal master core that slave core runs */
+	/* signal primary core that secondary core runs */
 	st 0, [arc_cpu_wake_flag]
 
 #if defined(CONFIG_ARC_FIRQ_STACK)
@@ -186,7 +186,7 @@ _slave_core_wait:
 #endif
 	j arch_secondary_cpu_init
 
-_master_core_startup:
+_primary_core_startup:
 #endif
 
 #ifdef CONFIG_INIT_STACKS

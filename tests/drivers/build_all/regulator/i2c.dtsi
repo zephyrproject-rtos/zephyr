@@ -143,3 +143,17 @@ npm2100@8 {
 		LDOSW {};
 	};
 };
+
+npm1304@9 {
+	compatible = "nordic,npm1304";
+	reg = <0x9>;
+
+	regulators {
+		compatible = "nordic,npm1304-regulator";
+
+		BUCK1 {};
+		BUCK2 {};
+		LDO1 {};
+		LDO2 {};
+	};
+};

@@ -528,13 +528,9 @@ static int qspi_device_init(const struct device *dev)
 	return ret;
 }
 
-static void qspi_device_uninit(const struct device *dev)
+static void _qspi_device_uninit(const struct device *dev)
 {
 	bool last = true;
-
-	if (!IS_ENABLED(CONFIG_NRF70_QSPI_LOW_POWER)) {
-		return;
-	}
 
 	qspi_lock(dev);
 
@@ -566,6 +562,15 @@ static void qspi_device_uninit(const struct device *dev)
 	}
 
 	qspi_unlock(dev);
+}
+
+static void qspi_device_uninit(const struct device *dev)
+{
+	if (!IS_ENABLED(CONFIG_NRF70_QSPI_LOW_POWER)) {
+		return;
+	}
+
+	_qspi_device_uninit(dev);
 }
 
 /* QSPI send custom command.
@@ -1191,7 +1196,7 @@ struct device qspi_perip = {
 
 int qspi_deinit(void)
 {
-	LOG_DBG("TODO : %s", __func__);
+	_qspi_device_uninit(&qspi_perip);
 
 	return 0;
 }

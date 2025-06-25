@@ -118,9 +118,10 @@
 	status = "okay";
 
 	/* Winbond external flash */
-	w25q64_qspi: qspi-nor-flash@90000000 {
+	w25q64_qspi: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 64 Mbits */
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <40000000>;
 		status = "okay";
 		spi-bus-width = <4>;

@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2c-0 = &iic0;
+		gy271 = &iic0;
+	};
+};
+
+&pinctrl {
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 4, 8)>,
+			<RA_PSEL(RA_PSEL_I2C, 4, 7)>;
+			drive-strength = "medium";
+		};
+	};
+};
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};

@@ -207,11 +207,6 @@ int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t w
 	}
 
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		if (!IS_ENABLED(CONFIG_PM)) {
-			boot_config->custom_feature_bit_map |=
-				SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
-		}
-
 		siwx91x_configure_network_stack(boot_config, wifi_oper_mode);
 	}
 

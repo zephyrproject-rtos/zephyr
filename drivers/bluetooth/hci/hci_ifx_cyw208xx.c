@@ -146,7 +146,7 @@ static int cyw208xx_bt_firmware_download(const uint8_t *firmware_image, uint32_t
 		}
 
 		/* Allocate buffer for hci_write_ram/hci_launch_ram command. */
-		buf = bt_hci_cmd_create(op_code, data_length);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
 			LOG_ERR("Unable to allocate command buffer");
 			return -ENOBUFS;
@@ -211,7 +211,7 @@ static int cyw208xx_setup(const struct device *dev, const struct bt_hci_setup_pa
 	cybt_platform_hci_wait_for_boot_fully_up(false);
 
 	/* Set public address */
-	buf = bt_hci_cmd_create(BT_HCI_VND_OP_SET_LOCAL_DEV_ADDR, BTM_SET_LOCAL_DEV_ADDR_LENGTH);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
 		LOG_ERR("Unable to allocate command buffer");
 		cyhal_syspm_unlock_deepsleep();
@@ -375,7 +375,7 @@ wiced_bt_dev_vendor_specific_command(uint16_t opcode, uint8_t param_len, uint8_t
 	struct net_buf *buf = NULL;
 
 	/* Allocate a HCI command buffer */
-	buf = bt_hci_cmd_create(opcode, param_len);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Unable to allocate buffer");
 		return WICED_NO_MEMORY;

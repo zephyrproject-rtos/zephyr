@@ -12,7 +12,6 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/sntp.h>
-#include <zephyr/posix/time.h>
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
 static void sntp_resync_handler(struct k_work *work);
@@ -60,7 +59,7 @@ int net_init_clock_via_sntp(void)
 
 	tspec.tv_sec = ts.seconds;
 	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
-	res = clock_settime(CLOCK_REALTIME, &tspec);
+	res = sys_clock_settime(SYS_CLOCK_REALTIME, &tspec);
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC

@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <zephyr/drivers/sensor.h>
+#include "icm42688.h"
 
 struct icm42688_decoder_header {
 	uint64_t timestamp;
@@ -16,6 +17,7 @@ struct icm42688_decoder_header {
 	uint8_t gyro_fs: 3;
 	uint8_t accel_fs: 2;
 	uint8_t reserved: 2;
+	struct alignment axis_align[3];
 } __attribute__((__packed__));
 
 struct icm42688_fifo_data {

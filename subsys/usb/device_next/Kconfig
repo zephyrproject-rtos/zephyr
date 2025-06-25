@@ -74,19 +74,19 @@ config USBD_MAX_UDC_MSG
 	help
 	  Maximum number of USB device controller events that can be queued.
 
-config USBD_MSG_SLAB_COUNT
-	int "Maximum number of USB device notification messages"
-	range 4 64
-	default 8
-	help
-	  Maximum number of USB device notification messages that can be queued.
-
 config USBD_MSG_DEFERRED_MODE
 	bool "Execute message callback from system workqueue"
 	default y
 	help
 	  Execute message callback from system workqueue. If disabled, message
 	  callback will be executed in the device stack context.
+
+config USBD_MSG_SLAB_COUNT
+	int "Maximum number of USB device notification messages" if USBD_MSG_DEFERRED_MODE
+	range 4 64
+	default 8
+	help
+	  Maximum number of USB device notification messages that can be queued.
 
 config USBD_MSG_WORK_DELAY
 	int "USB device notification messages work delay" if USBD_MSG_DEFERRED_MODE
@@ -95,6 +95,16 @@ config USBD_MSG_WORK_DELAY
 	help
 	  Message work may need to be delayed because the device stack is not
 	  yet ready to publish the message. The delay unit is milliseconds.
+
+config USBD_HWINFO_DEVID_LENGTH
+	int "The length of the device ID requested from HWINFO in bytes"
+	depends on HWINFO
+	range 8 128
+	default 16
+	help
+	  Each byte represents two digits in the serial number string
+	  descriptor. This option can be used to limit the length requested
+	  from HWINFO to a meaningful number of digits.
 
 rsource "class/Kconfig"
 rsource "app/Kconfig.cdc_acm_serial"

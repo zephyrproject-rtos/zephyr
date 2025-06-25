@@ -56,7 +56,7 @@ static lv_fs_res_t errno_to_lv_fs_res(int err)
 static void *lvgl_fs_open(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode)
 {
 	int err;
-	int zmode = FS_O_CREATE;
+	int zmode = 0;
 	void *file;
 
 	/* LVGL is passing absolute paths without the root slash add it back
@@ -64,8 +64,12 @@ static void *lvgl_fs_open(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode)
 	 */
 	path--;
 
-	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE : 0;
+	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE | FS_O_CREATE : 0;
 	zmode |= (mode & LV_FS_MODE_RD) ? FS_O_READ : 0;
+
+	if (zmode == 0) {
+		return NULL;
+	}
 
 	file = lv_malloc(sizeof(struct fs_file_t));
 	if (!file) {

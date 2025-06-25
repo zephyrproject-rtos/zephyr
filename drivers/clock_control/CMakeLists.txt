@@ -54,6 +54,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_FLL16M          clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF54H_HFXO         clock_control_nrf54h_hfxo.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_HSFLL_LOCAL     clock_control_nrf_hsfll_local.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_LFCLK           clock_control_nrf_lfclk.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL60X   clock_control_bl60x.c)
 
 if(CONFIG_CLOCK_CONTROL_RENESAS_RZA2M_CPG)
   zephyr_library_sources(clock_control_renesas_rza2m_cpg.c)

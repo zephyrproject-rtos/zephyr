@@ -232,9 +232,9 @@ static int max98091_set_property(const struct device *dev, audio_property_t prop
 {
 	switch (property) {
 	case AUDIO_PROPERTY_OUTPUT_VOLUME:
-		max98091_out_volume_config(dev, channel, val.vol);
+		return max98091_out_volume_config(dev, channel, val.vol);
 	case AUDIO_PROPERTY_OUTPUT_MUTE:
-		max98091_out_mute_config(dev, channel, val.mute);
+		return max98091_out_mute_config(dev, channel, val.mute);
 	default:
 		return -EINVAL;
 	}

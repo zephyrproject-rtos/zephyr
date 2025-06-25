@@ -22,4 +22,13 @@ config IDLE_STACK_SIZE
 configdefault NUM_METAIRQ_PRIORITIES
 	default 1 if BT_SILABS_EFR32
 
+if BT_LONG_WQ
+configdefault BT_LONG_WQ_STACK_SIZE
+	# Hidden config item. We require a slightly larger stack than the
+	# default values are. As of this writing, we have a bit less than
+	# 200 bytes of headroom for future increases here, before we hit
+	# the limit again.
+	default 1600 if BT_ECC
+endif
+
 endif

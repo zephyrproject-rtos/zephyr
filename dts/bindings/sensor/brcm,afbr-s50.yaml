@@ -15,6 +15,8 @@ description: |
 
     Example:
 
+    #include <zephyr/dt-bindings/sensor/afbr_s50.h>
+
     &spi_bus {
         status = "okay";
         pinctrl-0 = <&spi_bus_default>;
@@ -26,6 +28,9 @@ description: |
           compatible = "brcm,afbr-s50";
           reg = <0>;
           spi-max-frequency = <10000000>;
+          measurement-mode = <AFBR_S50_DT_MODE_SHORT_RANGE>;
+          dual-freq-mode = <AFBR_S50_DT_DFM_MODE_OFF>;
+          odr = <10>;
           int-gpios = <&gpio0 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
           spi-mosi-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
           spi-sck-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;

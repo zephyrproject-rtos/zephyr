@@ -8,6 +8,7 @@ set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/common)
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
+  SL_SUPPRESS_DEPRECATION_WARNINGS_WISECONNECT_3_5
   SL_SI91X_ENABLE_LITTLE_ENDIAN
   SLI_SI91X_MCU_COMMON_FLASH_MODE
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2

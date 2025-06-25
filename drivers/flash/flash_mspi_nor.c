@@ -567,15 +567,20 @@ static int default_io_mode(const struct device *dev)
 	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
 	int rc = 0;
 
-	/* For Quad 1-1-4 and 1-4-4, entering or leaving mode is defined in JEDEC216 BFP DW15 QER */
-	if (io_mode == MSPI_IO_MODE_SINGLE) {
-		rc = quad_enable_set(dev, false);
-	} else if ((io_mode == MSPI_IO_MODE_QUAD_1_1_4) || (io_mode == MSPI_IO_MODE_QUAD_1_4_4)) {
-		rc = quad_enable_set(dev, true);
-	}
+	if (dev_config->dw15_qer != JESD216_DW15_QER_VAL_NONE) {
+		/* For Quad 1-1-4 and 1-4-4, entering or leaving mode is defined
+		 * in JEDEC216 BFP DW15 QER
+		 */
+		if (io_mode == MSPI_IO_MODE_SINGLE) {
+			rc = quad_enable_set(dev, false);
+		} else if (io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
+			   io_mode == MSPI_IO_MODE_QUAD_1_4_4) {
+			rc = quad_enable_set(dev, true);
+		}
 
-	if (rc < 0) {
-		LOG_ERR("Failed to modify Quad Enable bit: %d", rc);
+		if (rc < 0) {
+			LOG_ERR("Failed to modify Quad Enable bit: %d", rc);
+		}
 	}
 
 	if ((dev_config->quirks != NULL) && (dev_config->quirks->post_switch_mode != NULL)) {
@@ -646,8 +651,10 @@ static int flash_chip_init(const struct device *dev)
 	/* Some chips reuse RESET pin for data in Quad modes:
 	 * force single line mode before resetting.
 	 */
-	if ((io_mode == MSPI_IO_MODE_SINGLE) || (io_mode == MSPI_IO_MODE_QUAD_1_1_4) ||
-	    (io_mode == MSPI_IO_MODE_QUAD_1_4_4)) {
+	if (dev_config->dw15_qer != JESD216_DW15_QER_VAL_NONE &&
+	    (io_mode == MSPI_IO_MODE_SINGLE ||
+	     io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
+	     io_mode == MSPI_IO_MODE_QUAD_1_4_4)) {
 		rc = quad_enable_set(dev, false);
 
 		if (rc < 0) {

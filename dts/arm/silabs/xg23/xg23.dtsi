@@ -291,6 +291,86 @@
 			};
 		};
 
+		timer0: timer@50048000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50048000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER0 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupts = <4 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer1: timer@5004c000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x5004c000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER1 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <5 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer2: timer@50050000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50050000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER2 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <6 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer3: timer@50054000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50054000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER3 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <7 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer4: timer@50058000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50058000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_TIMER4 CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <8 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		usart0: usart@5005c000 {
 			compatible = "silabs,usart-uart";
 			reg = <0x5005C000 0x4000>;
@@ -455,6 +535,20 @@
 			interrupts = <44 2>;
 			clocks = <&cmu CLOCK_WDOG1 CLOCK_BRANCH_WDOG1CLK>;
 			status = "disabled";
+		};
+
+		letimer0: letimer@59000000 {
+			compatible = "silabs,series2-letimer";
+			reg = <0x59000000 0x4000>;
+			clocks = <&cmu CLOCK_LETIMER0 CLOCK_BRANCH_EM23GRPACLK>;
+			interrupts = <19 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,letimer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		adc0: adc@59004000 {

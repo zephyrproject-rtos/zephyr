@@ -127,3 +127,9 @@ test_veaa_x_3: test_veaa_x_3 {
 	dac-resolution = <12>;
 	pressure-range-type = "D2";
 };
+
+test_als_pt19: test_als-pt19 {
+	compatible = "everlight,als-pt19";
+	io-channels = <&test_adc 0>;
+	load-resistor = <10000>;
+};

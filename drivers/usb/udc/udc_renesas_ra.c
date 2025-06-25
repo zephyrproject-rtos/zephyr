@@ -79,7 +79,7 @@ static void udc_renesas_ra_event_handler(usbd_callback_arg_t *p_args)
 		break;
 
 	case USBD_EVENT_SOF:
-		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		udc_submit_sof_event(dev);
 		break;
 
 	default:

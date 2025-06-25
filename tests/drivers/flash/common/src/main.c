@@ -87,7 +87,8 @@ static void flash_driver_before(void *arg)
 		TC_PRINT("No devices with erase requirement present\n");
 		erase_value = 0x55;
 		page_info.start_offset = TEST_AREA_OFFSET;
-		page_info.size = TEST_AREA_MAX - TEST_AREA_OFFSET;
+		/* test_flash_copy uses 2 pages, so split the test area */
+		page_info.size = (TEST_AREA_MAX - TEST_AREA_OFFSET) / 2;
 	}
 
 
@@ -110,6 +111,10 @@ static void flash_driver_before(void *arg)
 	/* Check if tested region fits in flash */
 	zassert_true((TEST_AREA_OFFSET + EXPECTED_SIZE) <= TEST_AREA_MAX,
 		     "Test area exceeds flash size");
+
+	/* Check if test region is suitable for test_flash_copy */
+	zassert_true((TEST_AREA_OFFSET + 2 * page_info.size) <= TEST_AREA_MAX,
+		     "test_flash_copy needs 2 flash pages");
 
 	/* Check if flash is cleared */
 	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {

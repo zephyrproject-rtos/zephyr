@@ -14,4 +14,8 @@ DT_STM32_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_CPU_CLOCK_PATH),clo
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_STM32_CPU_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,cpusw)"
 
+config STM32_LTDC_FB_SMH_ALIGN
+	default 256 if MEMC_STM32_XSPI_PSRAM && SHARED_MULTI_HEAP && \
+		       STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
+
 endif # SOC_SERIES_STM32N6X

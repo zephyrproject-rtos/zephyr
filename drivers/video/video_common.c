@@ -400,6 +400,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 		.id = VIDEO_CID_LINK_FREQ,
 	};
 	struct video_ctrl_query ctrl_query = {
+		.dev = dev,
 		.id = VIDEO_CID_LINK_FREQ,
 	};
 	int ret;
@@ -410,7 +411,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 		goto fallback;
 	}
 
-	ret = video_query_ctrl(dev, &ctrl_query);
+	ret = video_query_ctrl(&ctrl_query);
 	if (ret < 0) {
 		return ret;
 	}

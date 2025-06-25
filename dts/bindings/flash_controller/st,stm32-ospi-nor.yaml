@@ -6,9 +6,10 @@ description: |
 
     Representation of a serial flash on a octospi bus:
 
-        mx25lm51245: ospi-nor-flash@70000000 {
+        mx25lm51245: ospi-nor-flash@0 {
                 compatible = "st,stm32-ospi-nor";
-                reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
+                reg = <0>;
+                size = <DT_SIZE_M(512)>; /* 512 Mbits */
                 data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
                 data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
                 ospi-max-frequency = <DT_FREQ_M(50)>;
@@ -22,6 +23,9 @@ include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
 on-bus: ospi
 
 properties:
+  size:
+    required: true
+    description: Flash Memory size in bits
   reg:
     required: true
     description: Flash Memory base address and size in bytes

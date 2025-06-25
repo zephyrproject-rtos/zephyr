@@ -10,30 +10,4 @@ description: |
 
 compatible: "nordic,npm1300-led"
 
-properties:
-  nordic,led0-mode:
-    type: string
-    required: true
-    enum:
-    - error
-    - charging
-    - host
-    description: LED 0 mode
-
-  nordic,led1-mode:
-    type: string
-    required: true
-    enum:
-    - error
-    - charging
-    - host
-    description: LED 1 mode
-
-  nordic,led2-mode:
-    type: string
-    required: true
-    enum:
-    - error
-    - charging
-    - host
-    description: LED 2 mode
+include: "nordic,npm13xx-led-common.yaml"

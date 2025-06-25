@@ -69,13 +69,23 @@
  *
  * Pin configuration is coded with the following
  * fields
- *    Alternate Functions [ 0 : 3 ]
- *    GPIO Mode           [ 4 : 5 ]
- *    GPIO Output type    [ 6 ]
- *    GPIO Speed          [ 7 : 8 ]
- *    GPIO PUPD config    [ 9 : 10 ]
- *    GPIO Output data     [ 11 ]
+ *	[03:00] Alternate Functions
+ *	[05:04] GPIO Mode
+ *	[   06] GPIO Output type
+ *	[08:07] GPIO Speed
+ *	[10:09] GPIO PUPD config
+ *	[   11] GPIO Output data
  *
+ * These fields are only used when pinctrl with compatible
+ * "st,stm32n6-pinctrl" is in use:
+ *	[15:12] I/O delay length
+ *	[   16] I/O delay direction
+ *	[18:17] I/O retime edge
+ *	[   19]	I/O retime enable
+ *
+ * NOTE: the values for these fields are not defined in this file
+ * because they depend on hardware definitions. The values can be
+ * found in `soc/st/stm32/common/pinctrl_soc.h` instead.
  */
 
 /* GPIO Mode */
@@ -112,5 +122,17 @@
 #define STM32_ODR_1			(0x1 << STM32_ODR_SHIFT)
 #define STM32_ODR_MASK			0x1
 #define STM32_ODR_SHIFT			11
+
+/* I/O delay length (DELAYR) */
+#define STM32_IODELAY_LENGTH_MASK	0xFU
+#define STM32_IODELAY_LENGTH_SHIFT	12
+
+/* I/O delay & retime configuration (ADVCFGR) */
+#define STM32_IORETIME_ADVCFGR_MASK	0xFU
+#define STM32_IORETIME_ADVCFGR_SHIFT	16
+
+#define STM32_IODELAY_DIRECTION_SHIFT	STM32_IORETIME_ADVCFGR_SHIFT
+#define STM32_IORETIME_EDGE_SHIFT	17
+#define STM32_IORETIME_ENABLE_SHIFT	19
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_STM32_PINCTRL_H_ */

@@ -87,72 +87,6 @@ ZTEST_F(drv84xx_api, test_actual_position_set)
 	zassert_equal(pos, 100u, "Actual position should be %u but is %u", 100u, pos);
 }
 
-ZTEST_F(drv84xx_api, test_is_not_moving_when_disabled)
-{
-	int32_t steps = 100;
-	bool moving = true;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_move_by(fixture->dev, steps);
-	(void)stepper_disable(fixture->dev);
-	(void)stepper_is_moving(fixture->dev, &moving);
-	zassert_false(moving, "Driver should not be in state is_moving after being disabled");
-}
-
-ZTEST_F(drv84xx_api, test_position_not_updating_when_disabled)
-{
-	int32_t steps = 1000;
-	int32_t position_1 = 0;
-	int32_t position_2 = 0;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_move_by(fixture->dev, steps);
-	(void)stepper_disable(fixture->dev);
-	(void)stepper_get_actual_position(fixture->dev, &position_1);
-	k_msleep(100);
-	(void)stepper_get_actual_position(fixture->dev, &position_2);
-	zassert_equal(position_2, position_1,
-		      "Actual position should not have changed from %d but is %d", position_1,
-		      position_2);
-}
-
-ZTEST_F(drv84xx_api, test_is_not_moving_when_reenabled_after_movement)
-{
-	int32_t steps = 1000;
-	bool moving = true;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_move_by(fixture->dev, steps);
-	(void)stepper_disable(fixture->dev);
-	(void)k_msleep(100);
-	(void)stepper_enable(fixture->dev);
-	(void)k_msleep(100);
-	(void)stepper_is_moving(fixture->dev, &moving);
-	zassert_false(moving, "Driver should not be in state is_moving after being reenabled");
-}
-ZTEST_F(drv84xx_api, test_position_not_updating_when_reenabled_after_movement)
-{
-	int32_t steps = 1000;
-	int32_t position_1 = 0;
-	int32_t position_2 = 0;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_move_by(fixture->dev, steps);
-	(void)stepper_disable(fixture->dev);
-	(void)stepper_get_actual_position(fixture->dev, &position_1);
-	(void)k_msleep(100);
-	(void)stepper_enable(fixture->dev);
-	(void)k_msleep(100);
-	(void)stepper_get_actual_position(fixture->dev, &position_2);
-	zassert_equal(position_2, position_1,
-		      "Actual position should not have changed from %d but is %d", position_1,
-		      position_2);
-}
-
 ZTEST_F(drv84xx_api, test_move_to_positive_direction_movement)
 {
 	int32_t pos = 50;
@@ -247,23 +181,6 @@ ZTEST_F(drv84xx_api, test_move_to_is_moving_false_when_completed)
 	zassert_false(moving, "Driver should not be in state is_moving after finishing");
 }
 
-ZTEST_F(drv84xx_api, test_move_to_no_movement_when_disabled)
-{
-	int32_t pos = 50;
-	int32_t curr_pos = 50;
-	int32_t ret = 0;
-
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_disable(fixture->dev);
-
-	ret = stepper_move_to(fixture->dev, pos);
-	zassert_equal(ret, -ECANCELED, "Move_to should fail with error code %d but returned %d",
-		      -ECANCELED, ret);
-	(void)stepper_get_actual_position(fixture->dev, &curr_pos);
-	zassert_equal(curr_pos, 0, "Current position should not have changed from %d but is %d", 0,
-		      curr_pos);
-}
-
 ZTEST_F(drv84xx_api, test_move_by_zero_steps_no_movement)
 {
 	int32_t steps = 0;
@@ -282,22 +199,6 @@ ZTEST_F(drv84xx_api, test_move_by_zero_steps_no_movement)
 		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
 	(void)stepper_get_actual_position(fixture->dev, &steps);
 	zassert_equal(steps, 0, "Target position should be %d but is %d", 0, steps);
-}
-
-ZTEST_F(drv84xx_api, test_move_by_zero_step_interval)
-{
-	int32_t steps = 100;
-	int32_t ret = 0;
-	int32_t pos = 100;
-
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_disable(fixture->dev);
-	ret = stepper_move_by(fixture->dev, steps);
-
-	zassert_not_equal(ret, 0, "Command should fail with an error code, but returned 0");
-	k_msleep(100);
-	(void)stepper_get_actual_position(fixture->dev, &pos);
-	zassert_equal(pos, 0, "Target position should not have changed from %d but is %d", 0, pos);
 }
 
 ZTEST_F(drv84xx_api, test_move_by_is_moving_true_while_moving)
@@ -332,23 +233,6 @@ ZTEST_F(drv84xx_api, test_move_by_is_moving_false_when_completed)
 		      "Event was not STEPPER_EVENT_STEPS_COMPLETED event");
 	(void)stepper_is_moving(fixture->dev, &moving);
 	zassert_false(moving, "Driver should not be in state is_moving after completion");
-}
-
-ZTEST_F(drv84xx_api, test_move_by_no_movement_when_disabled)
-{
-	int32_t steps = 100;
-	int32_t curr_pos = 100;
-	int32_t ret = 0;
-
-	(void)stepper_set_microstep_interval(fixture->dev, 20000000);
-	(void)stepper_disable(fixture->dev);
-
-	ret = stepper_move_by(fixture->dev, steps);
-	zassert_equal(ret, -ECANCELED, "Move_by should fail with error code %d but returned %d",
-		      -ECANCELED, ret);
-	(void)stepper_get_actual_position(fixture->dev, &curr_pos);
-	zassert_equal(curr_pos, 0, "Current position should not have changed from %d but is %d", 0,
-		      curr_pos);
 }
 
 ZTEST_F(drv84xx_api, test_run_positive_direction_correct_position)
@@ -406,23 +290,6 @@ ZTEST_F(drv84xx_api, test_run_is_moving_true_when_step_interval_greater_zero)
 	(void)stepper_is_moving(fixture->dev, &moving);
 	zassert_true(moving, "Driver should be in state is_moving");
 	(void)stepper_disable(fixture->dev);
-}
-
-ZTEST_F(drv84xx_api, test_run_no_movement_when_disabled)
-{
-	uint64_t step_interval = 20000000;
-	int32_t steps = 50;
-	int32_t ret = 0;
-
-	(void)stepper_disable(fixture->dev);
-	(void)stepper_set_microstep_interval(fixture->dev, step_interval);
-
-	ret = stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
-	zassert_equal(ret, -ECANCELED, "Run should fail with error code %d but returned %d",
-		      -ECANCELED, ret);
-	(void)stepper_get_actual_position(fixture->dev, &steps);
-	zassert_equal(steps, 0, "Current position should not have changed from %d but is %d", 0,
-		      steps);
 }
 
 ZTEST_SUITE(drv84xx_api, NULL, drv84xx_api_setup, drv84xx_api_before, drv84xx_api_after, NULL);

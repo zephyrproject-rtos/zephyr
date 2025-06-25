@@ -52,7 +52,7 @@ ZTEST(bt_id_set_adv_random_addr, test_no_ext_adv)
 
 	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
 
-	expect_not_called_bt_hci_cmd_create();
+	expect_not_called_bt_hci_cmd_alloc();
 	expect_not_called_bt_hci_cmd_send_sync();
 	expect_not_called_net_buf_simple_add();
 
@@ -82,7 +82,7 @@ ZTEST(bt_id_set_adv_random_addr, test_ext_adv_enabled)
 
 	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
 
-	expect_not_called_bt_hci_cmd_create();
+	expect_not_called_bt_hci_cmd_alloc();
 	expect_not_called_bt_hci_cmd_send_sync();
 	expect_not_called_net_buf_simple_add();
 
@@ -102,7 +102,7 @@ ZTEST(bt_id_set_adv_random_addr, test_ext_adv_enabled)
  *  Constraints:
  *   - 'CONFIG_BT_EXT_ADV' is enabled
  *   - 'BT_ADV_PARAMS_SET' flag in advertising parameters reference is set
- *   - bt_hci_cmd_create() returns a valid buffer pointer
+ *   - bt_hci_cmd_alloc() returns a valid buffer pointer
  *   - bt_hci_cmd_send_sync() returns 0 (success)
  *
  *  Expected behaviour:
@@ -120,13 +120,13 @@ ZTEST(bt_id_set_adv_random_addr, test_ext_adv_enabled_hci_set_adv_set_random_add
 	atomic_set_bit(adv_param.flags, BT_ADV_PARAMS_SET);
 
 	net_buf_simple_add_fake.return_val = &cp;
-	bt_hci_cmd_create_fake.return_val = &net_buff;
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
 
 	expect_single_call_net_buf_simple_add(&net_buff.b, sizeof(cp));
-	expect_single_call_bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR, sizeof(cp));
+	expect_single_call_bt_hci_cmd_alloc();
 	expect_single_call_bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);

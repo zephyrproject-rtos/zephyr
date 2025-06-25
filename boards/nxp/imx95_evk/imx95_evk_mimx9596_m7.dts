@@ -69,6 +69,13 @@
 	pinctrl-names = "default";
 };
 
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart5_default>;
+	pinctrl-names = "default";
+};
+
 &sai3 {
 	pinctrl-0 = <&sai3_default>;
 	pinctrl-names = "default";
@@ -81,5 +88,9 @@
 };
 
 &lptmr2 {
+	status = "okay";
+};
+
+&edma2 {
 	status = "okay";
 };

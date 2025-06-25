@@ -237,7 +237,23 @@ struct dhcp_msg {
 static uint32_t offer_xid;
 static uint32_t request_xid;
 
-static struct k_sem test_lock;
+#define EVT_ADDR_ADD        BIT(0)
+#define EVT_ADDR_DEL        BIT(1)
+#define EVT_DNS_SERVER1_ADD BIT(2)
+#define EVT_DNS_SERVER2_ADD BIT(3)
+#define EVT_DNS_SERVER3_ADD BIT(4)
+#define EVT_DHCP_START      BIT(5)
+#define EVT_DHCP_BOUND      BIT(6)
+#define EVT_DHCP_STOP       BIT(7)
+#define EVT_OPTION_DOMAIN   BIT(8)
+#define EVT_OPTION_POP3     BIT(9)
+#define EVT_VENDOR_STRING   BIT(10)
+#define EVT_VENDOR_BYTE     BIT(11)
+#define EVT_VENDOR_EMPTY    BIT(12)
+#define EVT_DHCP_OFFER      BIT(13)
+#define EVT_DHCP_ACK        BIT(14)
+
+static K_EVENT_DEFINE(events);
 
 #define WAIT_TIME K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX + 1)
 
@@ -248,9 +264,7 @@ struct net_dhcpv4_context {
 
 static int net_dhcpv4_dev_init(const struct device *dev)
 {
-	struct net_dhcpv4_context *net_dhcpv4_context = dev->data;
-
-	net_dhcpv4_context = net_dhcpv4_context;
+	ARG_UNUSED(dev);
 
 	return 0;
 }
@@ -441,12 +455,14 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		if (!rpkt) {
 			return -EINVAL;
 		}
+		k_event_post(&events, EVT_DHCP_OFFER);
 	} else if (msg.type == REQUEST) {
 		/* Reply with DHCPv4 ACK message */
 		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
 			return -EINVAL;
 		}
+		k_event_post(&events, EVT_DHCP_ACK);
 	} else {
 		/* Invalid message type received */
 		return -EINVAL;
@@ -475,9 +491,6 @@ NET_DEVICE_INIT(net_dhcpv4_test, "net_dhcpv4_test",
 		&net_dhcpv4_if_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
-static struct net_mgmt_event_callback rx_cb;
-static struct net_mgmt_event_callback dns_cb;
-static struct net_mgmt_event_callback dhcp_cb;
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
 static struct net_dhcpv4_option_callback opt_domain_cb;
 static struct net_dhcpv4_option_callback opt_pop3_cb;
@@ -490,24 +503,61 @@ static struct net_dhcpv4_option_callback opt_vs_byte_cb;
 static struct net_dhcpv4_option_callback opt_vs_empty_cb;
 static struct net_dhcpv4_option_callback opt_vs_invalid_cb;
 #endif
-static int event_count;
 
-static void receiver_cb(struct net_mgmt_event_callback *cb,
-			uint64_t nm_event, struct net_if *iface)
+static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, size_t info_length,
+			void *user_data)
 {
-	if (nm_event != NET_EVENT_IPV4_ADDR_ADD &&
-	    nm_event != NET_EVENT_DNS_SERVER_ADD &&
-	    nm_event != NET_EVENT_DNS_SERVER_DEL &&
-	    nm_event != NET_EVENT_IPV4_DHCP_START &&
-	    nm_event != NET_EVENT_IPV4_DHCP_BOUND) {
-		/* Spurious callback. */
-		return;
+	const struct in_addr ip_addr = { { { 10, 237, 72, 158 } } };
+	const struct in_addr dns_addrs[3] = {
+		{ { { 10, 248, 2, 1 } } },
+		{ { { 163, 33, 253, 68 } } },
+		{ { { 10, 184, 9, 1 } } },
+	};
+
+	ARG_UNUSED(iface);
+	ARG_UNUSED(user_data);
+
+	switch (nm_event) {
+	case NET_EVENT_IPV4_ADDR_ADD:
+		zassert_equal(info_length, sizeof(struct in_addr));
+		zassert_mem_equal(info, &ip_addr, sizeof(struct in_addr));
+		k_event_post(&events, EVT_ADDR_ADD);
+		break;
+	case NET_EVENT_IPV4_ADDR_DEL:
+		k_event_post(&events, EVT_ADDR_DEL);
+		break;
+	case NET_EVENT_DNS_SERVER_ADD:
+		zassert_equal(info_length, sizeof(struct sockaddr));
+		if (net_sin(info)->sin_addr.s_addr == dns_addrs[0].s_addr) {
+			k_event_post(&events, EVT_DNS_SERVER1_ADD);
+		} else if (net_sin(info)->sin_addr.s_addr == dns_addrs[1].s_addr) {
+			k_event_post(&events, EVT_DNS_SERVER2_ADD);
+		} else if (net_sin(info)->sin_addr.s_addr == dns_addrs[2].s_addr) {
+			k_event_post(&events, EVT_DNS_SERVER3_ADD);
+		} else {
+			zassert_unreachable("Unknown DNS server");
+		}
+		break;
+	case NET_EVENT_IPV4_DHCP_START:
+		k_event_post(&events, EVT_DHCP_START);
+		break;
+	case NET_EVENT_IPV4_DHCP_BOUND:
+		k_event_post(&events, EVT_DHCP_BOUND);
+		break;
+	case NET_EVENT_IPV4_DHCP_STOP:
+		k_event_post(&events, EVT_DHCP_STOP);
+		break;
 	}
-
-	event_count++;
-
-	k_sem_give(&test_lock);
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(rx_cb, NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL,
+				receiver_cb, NULL);
+NET_MGMT_REGISTER_EVENT_HANDLER(dns_cb, NET_EVENT_DNS_SERVER_ADD | NET_EVENT_DNS_SERVER_DEL,
+				receiver_cb, NULL);
+NET_MGMT_REGISTER_EVENT_HANDLER(dhcp_cb,
+				NET_EVENT_IPV4_DHCP_START | NET_EVENT_IPV4_DHCP_BOUND |
+					NET_EVENT_IPV4_DHCP_STOP,
+				receiver_cb, NULL);
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
 
@@ -516,16 +566,17 @@ static void option_domain_cb(struct net_dhcpv4_option_callback *cb,
 			     enum net_dhcpv4_msg_type msg_type,
 			     struct net_if *iface)
 {
-	char expectation[] = "fi.intel.com";
+	static const char expectation[] = "fi.intel.com";
+
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(iface);
 
 	zassert_equal(cb->option, OPTION_DOMAIN, "Unexpected option value");
 	zassert_equal(length, sizeof(expectation), "Incorrect data length");
 	zassert_mem_equal(buffer, expectation, sizeof(expectation),
 			  "Incorrect buffer contents");
 
-	event_count++;
-
-	k_sem_give(&test_lock);
+	k_event_post(&events, EVT_OPTION_DOMAIN);
 }
 
 static void option_pop3_cb(struct net_dhcpv4_option_callback *cb,
@@ -533,21 +584,17 @@ static void option_pop3_cb(struct net_dhcpv4_option_callback *cb,
 			   enum net_dhcpv4_msg_type msg_type,
 			   struct net_if *iface)
 {
-	uint8_t expectation[4];
+	static const uint8_t expectation[4] = { 198, 51, 100, 16 };
 
-	expectation[0] = 198;
-	expectation[1] = 51;
-	expectation[2] = 100;
-	expectation[3] = 16;
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(iface);
 
 	zassert_equal(cb->option, OPTION_POP3, "Unexpected option value");
 	zassert_equal(length, sizeof(expectation), "Incorrect data length");
 	zassert_mem_equal(buffer, expectation, sizeof(expectation),
 			  "Incorrect buffer contents");
 
-	event_count++;
-
-	k_sem_give(&test_lock);
+	k_event_post(&events, EVT_OPTION_POP3);
 }
 
 static void option_invalid_cb(struct net_dhcpv4_option_callback *cb,
@@ -555,8 +602,13 @@ static void option_invalid_cb(struct net_dhcpv4_option_callback *cb,
 			      enum net_dhcpv4_msg_type msg_type,
 			      struct net_if *iface)
 {
+	ARG_UNUSED(cb);
+	ARG_UNUSED(length);
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(iface);
+
 	/* This function should never be called. If it is, the parser took a wrong turn. */
-	zassert_true(false, "Unexpected callback - incorrect parsing of vendor sepcific options");
+	zassert_unreachable("Unexpected callback - incorrect parsing of vendor sepcific options");
 }
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
@@ -566,16 +618,17 @@ static void vendor_specific_string_cb(struct net_dhcpv4_option_callback *cb,
 				      enum net_dhcpv4_msg_type msg_type,
 				      struct net_if *iface)
 {
-	char expectation[] = "string";
+	static const char expectation[] = "string";
+
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(iface);
 
 	zassert_equal(cb->option, OPTION_VENDOR_STRING,
 		      "Unexpected vendor specific option value");
 	zassert_equal(length, sizeof(expectation), "Incorrect data length");
 	zassert_mem_equal(buffer, expectation, sizeof(expectation), "Incorrect buffer contents");
 
-	event_count++;
-
-	k_sem_give(&test_lock);
+	k_event_post(&events, EVT_VENDOR_STRING);
 }
 
 static void vendor_specific_byte_cb(struct net_dhcpv4_option_callback *cb,
@@ -583,14 +636,15 @@ static void vendor_specific_byte_cb(struct net_dhcpv4_option_callback *cb,
 				    enum net_dhcpv4_msg_type msg_type,
 				    struct net_if *iface)
 {
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(iface);
+
 	zassert_equal(cb->option, OPTION_VENDOR_BYTE,
 		      "Unexpected vendor specific option value");
 	zassert_equal(length, 1, "Incorrect data length");
 	zassert_equal(buffer[0], 1, "Incorrect buffer contents");
 
-	event_count++;
-
-	k_sem_give(&test_lock);
+	k_event_post(&events, EVT_VENDOR_BYTE);
 }
 
 static void vendor_specific_empty_cb(struct net_dhcpv4_option_callback *cb,
@@ -598,13 +652,14 @@ static void vendor_specific_empty_cb(struct net_dhcpv4_option_callback *cb,
 				     enum net_dhcpv4_msg_type msg_type,
 				     struct net_if *iface)
 {
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(iface);
+
 	zassert_equal(cb->option, OPTION_VENDOR_EMPTY,
 		      "Unexpected vendor specific option value");
 	zassert_equal(length, 0, "Incorrect data length");
 
-	event_count++;
-
-	k_sem_give(&test_lock);
+	k_event_post(&events, EVT_VENDOR_EMPTY);
 }
 
 #endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
@@ -614,25 +669,7 @@ static void vendor_specific_empty_cb(struct net_dhcpv4_option_callback *cb,
 ZTEST(dhcpv4_tests, test_dhcp)
 {
 	struct net_if *iface;
-
-	k_sem_init(&test_lock, 0, UINT_MAX);
-
-	net_mgmt_init_event_callback(&rx_cb, receiver_cb,
-				     NET_EVENT_IPV4_ADDR_ADD);
-
-	net_mgmt_add_event_callback(&rx_cb);
-
-	net_mgmt_init_event_callback(&dns_cb, receiver_cb,
-				     NET_EVENT_DNS_SERVER_ADD |
-				     NET_EVENT_DNS_SERVER_DEL);
-
-	net_mgmt_add_event_callback(&dns_cb);
-
-	net_mgmt_init_event_callback(&dhcp_cb, receiver_cb,
-				     NET_EVENT_IPV4_DHCP_START |
-				     NET_EVENT_IPV4_DHCP_BOUND);
-
-	net_mgmt_add_event_callback(&dhcp_cb);
+	uint32_t evt;
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
 	net_dhcpv4_init_option_callback(&opt_domain_cb, option_domain_cb,
@@ -687,25 +724,70 @@ ZTEST(dhcpv4_tests, test_dhcp)
 		zassert_true(false, "Interface not available");
 	}
 
-	net_dhcpv4_start(iface);
+	for (int loop = 0; loop < 2; ++loop) {
+		LOG_DBG("Running DHCPv4 loop %d", loop);
+		net_dhcpv4_start(iface);
+
+		evt = k_event_wait(&events, EVT_DHCP_START, false, WAIT_TIME);
+		zassert_equal(evt, EVT_DHCP_START, "Missing DHCP start");
+
+#ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
+		evt = k_event_wait_all(&events, EVT_OPTION_DOMAIN | EVT_OPTION_POP3, false,
+				       WAIT_TIME);
+		zassert_equal(evt, EVT_OPTION_DOMAIN | EVT_OPTION_POP3,
+			      "Missing DHCP option(s) %08x", evt);
+#endif
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
-	while (event_count < 16) {
-#elif defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
-	while (event_count < 10) {
-#elif defined(CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED)
-	while (event_count < 1) {
-#else
-	while (event_count < 5) {
+		evt = k_event_wait_all(&events,
+				       EVT_VENDOR_STRING | EVT_VENDOR_BYTE | EVT_VENDOR_EMPTY,
+				       false, WAIT_TIME);
+		zassert_equal(evt, EVT_VENDOR_STRING | EVT_VENDOR_BYTE | EVT_VENDOR_EMPTY,
+			      "Missing DHCP vendor option(s) %08x", evt);
 #endif
-		if (k_sem_take(&test_lock, WAIT_TIME)) {
-			zassert_true(false, "Timeout while waiting");
-		}
-	}
 
-	/* Verify that Request xid matched Offer xid. */
-	zassert_equal(offer_xid, request_xid, "Offer/Request xid mismatch, "
-		      "Offer 0x%08x, Request 0x%08x", offer_xid, request_xid);
+		if (loop == 0) {
+			/* Associated DNS servers aren't deleted on DHCP stop */
+			evt = k_event_wait_all(&events,
+					       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+						       EVT_DNS_SERVER3_ADD,
+					       false, WAIT_TIME);
+			zassert_equal(evt,
+				      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+					      EVT_DNS_SERVER3_ADD,
+				      "Missing DNS server(s) %08x", evt);
+		}
+
+		evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
+		zassert_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound");
+
+		if (loop == 0 || !IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT)) {
+			evt = k_event_wait_all(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false,
+					       WAIT_TIME);
+			zassert_equal(evt, EVT_DHCP_OFFER | EVT_DHCP_ACK,
+				      "Missing offer or ack %08x", evt);
+
+			/* Verify that Request xid matched Offer xid. */
+			zassert_equal(offer_xid, request_xid,
+				      "Offer/Request xid mismatch, "
+				      "Offer 0x%08x, Request 0x%08x",
+				      offer_xid, request_xid);
+		} else {
+			/* An init-reboot was done */
+			evt = k_event_wait(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false,
+					   WAIT_TIME);
+			zassert_equal(evt, EVT_DHCP_ACK, "Ack only expected %08x", evt);
+		}
+
+		/* Clear all events */
+		k_event_set(&events, 0U);
+
+		net_dhcpv4_stop(iface);
+
+		evt = k_event_wait_all(&events, EVT_DHCP_STOP | EVT_ADDR_DEL, false, WAIT_TIME);
+		zassert_equal(evt, EVT_DHCP_STOP | EVT_ADDR_DEL,
+			      "Missing DHCP stop or deleted address");
+	}
 }
 
 /**test case main entry */

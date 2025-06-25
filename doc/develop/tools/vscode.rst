@@ -45,13 +45,15 @@ Generate compile commands
 
 In order to support code navigation and linting capabilities, you must compile your project once to
 generate the :file:`compile_commands.json` file that will provide the C/C++ extension with the
-required information (ex. include paths):
+required information (ex. include paths). You may do it from VS Code embedded terminal; select
+:menuselection:`Terminal --> New Terminal` from the top menu or the command palette
+(:kbd:`Ctrl+Shift+P`), then type:
 
-   .. zephyr-app-commands::
-      :zephyr-app: samples/basic/blinky
-      :board: native_sim/native/64
-      :goals: build
-      :compact:
+.. code-block:: console
+
+   $ cd zephyr
+   $ west build -p always -b native_sim/native/64
+
 
 Configure the C/C++ extension
 *****************************

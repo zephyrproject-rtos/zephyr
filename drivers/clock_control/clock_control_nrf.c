@@ -329,6 +329,18 @@ static void hfclk_stop(void)
 	nrfx_clock_hfclk_stop();
 }
 
+#if NRF_CLOCK_HAS_HFCLK24M
+static void hfclk24m_start(void)
+{
+	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLK24M);
+}
+
+static void hfclk24m_stop(void)
+{
+	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLK24M);
+}
+#endif
+
 #if NRF_CLOCK_HAS_HFCLK192M
 static void hfclk192m_start(void)
 {
@@ -718,7 +730,11 @@ static void clock_event_handler(nrfx_clock_evt_type_t event)
 		break;
 	}
 #endif
-
+#if NRF_CLOCK_HAS_HFCLK24M
+	case NRFX_CLOCK_EVT_HFCLK24M_STARTED:
+		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK24M);
+		break;
+#endif
 #if NRF_CLOCK_HAS_HFCLK192M
 	case NRFX_CLOCK_EVT_HFCLK192M_STARTED:
 		clkstarted_handle(dev, CLOCK_CONTROL_NRF_TYPE_HFCLK192M);
@@ -841,6 +857,13 @@ static const struct nrf_clock_control_config config = {
 			.stop = lfclk_stop,
 			IF_ENABLED(CONFIG_LOG, (.name = "lfclk",))
 		},
+#if NRF_CLOCK_HAS_HFCLK24M
+		[CLOCK_CONTROL_NRF_TYPE_HFCLK24M] = {
+			.start = hfclk24m_start,
+			.stop = hfclk24m_stop,
+			IF_ENABLED(CONFIG_LOG, (.name = "hfclk24m",))
+		},
+#endif
 #if NRF_CLOCK_HAS_HFCLK192M
 		[CLOCK_CONTROL_NRF_TYPE_HFCLK192M] = {
 			.start = hfclk192m_start,

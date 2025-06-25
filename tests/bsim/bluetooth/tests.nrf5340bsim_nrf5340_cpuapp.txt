@@ -12,4 +12,5 @@ tests/bsim/bluetooth/audio/
 tests/bsim/bluetooth/host/gatt/notify_stress/
 tests/bsim/bluetooth/host/misc/hfc/
 tests/bsim/bluetooth/host/misc/hfc_multilink/
+tests/bsim/bluetooth/host/privacy/peripheral
 tests/bsim/bluetooth/tester/

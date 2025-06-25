@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Felipe Neves
+ * Copyright (c) 2025 STMicroelectronics.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,31 +16,47 @@
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/logging/log.h>
 
+#include "video_common.h"
 #include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 
-#define GC2145_REG_AMODE1               0x17
-#define GC2145_AMODE1_WINDOW_MASK       0xFC
+#define GC2145_REG8(addr)	((addr) | VIDEO_REG_ADDR8_DATA8)
+#define GC2145_REG16_LE(addr)	((addr) | VIDEO_REG_ADDR8_DATA16_LE)
+#define GC2145_REG16_BE(addr)	((addr) | VIDEO_REG_ADDR8_DATA16_BE)
+
+#define GC2145_REG_AMODE1               GC2145_REG8(0x17)
 #define GC2145_REG_AMODE1_DEF           0x14
+#define GC2145_REG_AMODE1_UPDOWN	BIT(1)
+#define GC2145_REG_AMODE1_MIRROR	BIT(0)
 #define GC2145_REG_OUTPUT_FMT           0x84
 #define GC2145_REG_OUTPUT_FMT_MASK      0x1F
 #define GC2145_REG_OUTPUT_FMT_RGB565    0x06
 #define GC2145_REG_OUTPUT_FMT_YCBYCR    0x02
 #define GC2145_REG_SYNC_MODE            0x86
-#define GC2145_REG_SYNC_MODE_DEF        0x23
+#define GC2145_REG_SYNC_MODE_DEF        0x03
 #define GC2145_REG_SYNC_MODE_COL_SWITCH 0x10
 #define GC2145_REG_SYNC_MODE_ROW_SWITCH 0x20
+#define GC2145_REG_CHIP_ID		GC2145_REG16_BE(0xF0)
 #define GC2145_REG_RESET                0xFE
 #define GC2145_REG_SW_RESET             0x80
-#define GC2145_SET_P0_REGS              0x00
-#define GC2145_REG_CROP_ENABLE          0x90
+#define GC2145_REG_RESET_P0_REGS        0x00
+#define GC2145_REG_RESET_P1_REGS        0x01
+#define GC2145_REG_RESET_P2_REGS        0x02
+#define GC2145_REG_RESET_P3_REGS        0x03
+#define GC2145_REG_CROP_ENABLE          GC2145_REG8(0x90)
 #define GC2145_CROP_SET_ENABLE          0x01
-#define GC2145_REG_BLANK_WINDOW_BASE    0x09
-#define GC2145_REG_WINDOW_BASE          0x91
-#define GC2145_REG_SUBSAMPLE            0x99
-#define GC2145_REG_SUBSAMPLE_MODE       0x9A
+#define GC2145_REG_WIN_ROW_START	GC2145_REG16_BE(0x09)
+#define GC2145_REG_WIN_COL_START	GC2145_REG16_BE(0x0b)
+#define GC2145_REG_WIN_HEIGHT		GC2145_REG16_BE(0x0d)
+#define GC2145_REG_WIN_WIDTH		GC2145_REG16_BE(0x0f)
+#define GC2145_REG_OUT_WIN_ROW_START	GC2145_REG16_BE(0x91)
+#define GC2145_REG_OUT_WIN_COL_START	GC2145_REG16_BE(0x93)
+#define GC2145_REG_OUT_WIN_HEIGHT	GC2145_REG16_BE(0x95)
+#define GC2145_REG_OUT_WIN_WIDTH	GC2145_REG16_BE(0x97)
+#define GC2145_REG_SUBSAMPLE		GC2145_REG8(0x99)
+#define GC2145_REG_SUBSAMPLE_MODE       GC2145_REG8(0x9A)
 #define GC2145_SUBSAMPLE_MODE_SMOOTH    0x0E
 
 /* MIPI-CSI registers - on page 3 */
@@ -49,35 +66,33 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_DPHY_MODE1_LANE1_EN	BIT(2)
 #define GC2145_DPHY_MODE1_CLK_LANE_P2S_SEL	BIT(7)
 
-#define GC2145_REG_DPHY_MODE2	0x02
+#define GC2145_REG_DPHY_MODE2		0x02
 #define GC2145_DPHY_MODE2_CLK_DIFF(a)		((a) & 0x07)
 #define GC2145_DPHY_MODE2_LANE0_DIFF(a)	(((a) & 0x07) << 4)
 
-#define GC2145_REG_DPHY_MODE3	0x03
+#define GC2145_REG_DPHY_MODE3		0x03
 #define GC2145_DPHY_MODE3_LANE1_DIFF(a)	((a) & 0x07)
 #define GC2145_DPHY_MODE3_CLK_DELAY		BIT(4)
 #define GC2145_DPHY_MODE3_LANE0_DELAY		BIT(5)
 #define GC2145_DPHY_MODE3_LANE1_DELAY		BIT(6)
 
-#define GC2145_REG_FIFO_FULL_LVL_LOW	0x04
-#define GC2145_REG_FIFO_FULL_LVL_HIGH	0x05
+#define GC2145_REG_FIFO_FULL_LVL	GC2145_REG16_LE(0x04)
 #define GC2145_REG_FIFO_MODE		0x06
 #define GC2145_FIFO_MODE_READ_GATE	BIT(3)
 #define GC2145_FIFO_MODE_MIPI_CLK_MODULE	BIT(7)
 
-#define GC2145_REG_BUF_CSI2_MODE	0x10
+#define GC2145_REG_BUF_CSI2_MODE	GC2145_REG8(0x10)
 #define GC2145_CSI2_MODE_DOUBLE		BIT(0)
 #define GC2145_CSI2_MODE_RAW8		BIT(2)
 #define GC2145_CSI2_MODE_MIPI_EN	BIT(4)
 #define GC2145_CSI2_MODE_EN		BIT(7)
 
-#define GC2145_REG_MIPI_DT		0x11
-#define GC2145_REG_LWC_LOW		0x12
-#define GC2145_REG_LWC_HIGH		0x13
+#define GC2145_REG_MIPI_DT		GC2145_REG8(0x11)
+#define GC2145_REG_LWC			GC2145_REG16_LE(0x12)
 #define GC2145_REG_DPHY_MODE		0x15
 #define GC2145_DPHY_MODE_TRIGGER_PROG	BIT(4)
 
-#define GC2145_REG_FIFO_GATE_MODE	0x17
+#define GC2145_REG_FIFO_GATE_MODE	GC2145_REG8(0x17)
 #define GC2145_REG_T_LPX		0x21
 #define GC2145_REG_T_CLK_HS_PREPARE	0x22
 #define GC2145_REG_T_CLK_ZERO		0x23
@@ -93,15 +108,10 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define UXGA_HSIZE 1600
 #define UXGA_VSIZE 1200
 
-struct gc2145_reg {
-	uint8_t addr;
-	uint8_t value;
-};
-
-static const struct gc2145_reg default_regs[] = {
-	{0xfe, 0xf0},
-	{0xfe, 0xf0},
-	{0xfe, 0xf0},
+static const struct video_reg8 default_regs[] = {
+	{GC2145_REG_RESET, 0xf0},
+	{GC2145_REG_RESET, 0xf0},
+	{GC2145_REG_RESET, 0xf0},
 	{0xfc, 0x06},
 	{0xf6, 0x00},
 	{0xf7, 0x1d},
@@ -111,7 +121,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0xf2, 0x00},
 
 	/* ISP settings */
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x03, 0x04},
 	{0x04, 0xe2},
 
@@ -155,8 +165,8 @@ static const struct gc2145_reg default_regs[] = {
 	{0x81, 0x26},
 	{0x82, 0xfa},
 	{0x83, 0x00},
-	{GC2145_REG_OUTPUT_FMT, 0x06},
-	{GC2145_REG_SYNC_MODE, 0x23},
+	{GC2145_REG_OUTPUT_FMT, GC2145_REG_OUTPUT_FMT_RGB565},
+	{GC2145_REG_SYNC_MODE, GC2145_REG_SYNC_MODE_DEF},
 	{0x88, 0x03},
 	{0x89, 0x03},
 	{0x85, 0x08},
@@ -196,7 +206,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0xa2, 0x00},
 
 	/* BLK Settings */
-	{0xfe, 0x00},
 	{0x40, 0x42},
 	{0x41, 0x00},
 	{0x43, 0x5b},
@@ -225,14 +234,13 @@ static const struct gc2145_reg default_regs[] = {
 	{0x72, 0xf0},
 	{0x7e, 0x3c},
 	{0x7f, 0x00},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x48, 0x15},
 	{0x49, 0x00},
 	{0x4b, 0x0b},
-	{0xfe, 0x00},
 
 	/* AEC Settings */
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x01, 0x04},
 	{0x02, 0xc0},
 	{0x03, 0x04},
@@ -247,16 +255,16 @@ static const struct gc2145_reg default_regs[] = {
 	{0x0c, 0x10},
 	{0x11, 0x10},
 	{0x13, 0x68},
-	{GC2145_REG_OUTPUT_FMT, 0x00},
+	{0x84, 0x00},
 	{0x1c, 0x11},
 	{0x1e, 0x61},
 	{0x1f, 0x35},
 	{0x20, 0x40},
 	{0x22, 0x40},
 	{0x23, 0x20},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x0f, 0x04},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x12, 0x30},
 	{0x15, 0xb0},
 	{0x10, 0x31},
@@ -264,7 +272,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0x3f, 0xb0},
 	{0x40, 0x90},
 	{0x41, 0x0f},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x90, 0x6c},
 	{0x91, 0x03},
 	{0x92, 0xcb},
@@ -272,22 +280,20 @@ static const struct gc2145_reg default_regs[] = {
 	{0x95, 0x84},
 	{0x97, 0x65},
 	{0xa2, 0x11},
-	{0xfe, 0x00},
-	{0xfe, 0x02},
 	{0x80, 0xc1},
 	{0x81, 0x08},
 	{0x82, 0x05},
 	{0x83, 0x08},
-	{GC2145_REG_OUTPUT_FMT, 0x0a},
-	{GC2145_REG_SYNC_MODE, 0xf0},
+	{0x84, 0x0a},
+	{0x86, 0xf0},
 	{0x87, 0x50},
 	{0x88, 0x15},
 	{0x89, 0xb0},
 	{0x8a, 0x30},
 	{0x8b, 0x10},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x21, 0x04},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0xa3, 0x50},
 	{0xa4, 0x20},
 	{0xa5, 0x40},
@@ -303,10 +309,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0x3d, 0x15},
 	{0x4b, 0x06},
 	{0x4c, 0x20},
-	{0xfe, 0x00},
-
 	/* Gamma Control */
-	{0xfe, 0x02},
 	{0x10, 0x09},
 	{0x11, 0x0d},
 	{0x12, 0x13},
@@ -314,7 +317,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0x14, 0x27},
 	{0x15, 0x37},
 	{0x16, 0x45},
-	{GC2145_REG_OUTPUT_FMT, 0x53},
+	{0x84, 0x53},
 	{0x18, 0x69},
 	{0x19, 0x7d},
 	{0x1a, 0x8f},
@@ -329,10 +332,10 @@ static const struct gc2145_reg default_regs[] = {
 	{0x23, 0xf5},
 	{0x24, 0xf9},
 	{0x25, 0xff},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0xc6, 0x20},
 	{0xc7, 0x2b},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x26, 0x0f},
 	{0x27, 0x14},
 	{0x28, 0x19},
@@ -355,7 +358,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0x39, 0xf3},
 	{0x3a, 0xf9},
 	{0x3b, 0xff},
-	{0xfe, 0x02},
 	{0xd1, 0x32},
 	{0xd2, 0x32},
 	{0xd3, 0x40},
@@ -368,9 +370,8 @@ static const struct gc2145_reg default_regs[] = {
 	{0xee, 0x00},
 	{0xef, 0x3f},
 	{0xd8, 0xd8},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x9f, 0x40},
-	{0xfe, 0x01},
 	{0xc2, 0x14},
 	{0xc3, 0x0d},
 	{0xc4, 0x0c},
@@ -427,8 +428,6 @@ static const struct gc2145_reg default_regs[] = {
 	{0xa9, 0x77},
 	{0xa1, 0x80},
 	{0xa2, 0x80},
-
-	{0xfe, 0x01},
 	{0xdf, 0x0d},
 	{0xdc, 0x25},
 	{0xdd, 0x30},
@@ -440,13 +439,10 @@ static const struct gc2145_reg default_regs[] = {
 	{0xe7, 0xa0},
 	{0xe8, 0x90},
 	{0xe9, 0xa0},
-	{0xfe, 0x00},
-	{0xfe, 0x01},
 	{0x4f, 0x00},
 	{0x4f, 0x00},
 	{0x4b, 0x01},
 	{0x4f, 0x00},
-
 	{0x4c, 0x01},
 	{0x4d, 0x71},
 	{0x4e, 0x01},
@@ -681,8 +677,7 @@ static const struct gc2145_reg default_regs[] = {
 	{0x79, 0x5e},
 	{0x7a, 0x54},
 	{0x7b, 0x58},
-	{0xfe, 0x00},
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0xc0, 0x01},
 	{0xc1, 0x44},
 	{0xc2, 0xfd},
@@ -702,17 +697,15 @@ static const struct gc2145_reg default_regs[] = {
 	{0xe3, 0x0c},
 	{0xe4, 0x4b},
 	{0xe5, 0xe0},
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x9f, 0x40},
-	{0xfe, 0x00},
 
 	/* Output Control  */
-	{0xfe, 0x02},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P2_REGS},
 	{0x40, 0xbf},
 	{0x46, 0xcf},
-	{0xfe, 0x00},
 
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x05, 0x01},
 	{0x06, 0x1C},
 	{0x07, 0x00},
@@ -722,16 +715,16 @@ static const struct gc2145_reg default_regs[] = {
 	{0x13, 0x00},
 	{0x14, 0x00},
 
-	{0xfe, 0x01},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P1_REGS},
 	{0x3c, 0x00},
 	{0x3d, 0x04},
-	{0xfe, 0x00},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P0_REGS},
 	{0x00, 0x00},
 };
 
-static const struct gc2145_reg default_mipi_csi_regs[] = {
+static const struct video_reg8 default_mipi_csi_regs[] = {
 	/* Switch to page 3 */
-	{0xfe, 0x03},
+	{GC2145_REG_RESET, GC2145_REG_RESET_P3_REGS},
 	{GC2145_REG_DPHY_MODE1, GC2145_DPHY_MODE1_CLK_EN |
 				GC2145_DPHY_MODE1_LANE0_EN | GC2145_DPHY_MODE1_LANE1_EN |
 				GC2145_DPHY_MODE1_CLK_LANE_P2S_SEL},
@@ -757,10 +750,10 @@ static const struct gc2145_reg default_mipi_csi_regs[] = {
 
 struct gc2145_config {
 	struct i2c_dt_spec i2c;
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
 	struct gpio_dt_spec pwdn_gpio;
 #endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	struct gpio_dt_spec reset_gpio;
 #endif
 	int bus_type;
@@ -802,181 +795,29 @@ static const struct video_format_cap fmts[] = {
 	{0},
 };
 
-static int gc2145_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t value)
-{
-	int ret;
-	uint8_t tries = 3;
-
-	/*
-	 * It rarely happens that the camera does not respond with ACK signal.
-	 * In that case it usually responds on 2nd try but there is a 3rd one
-	 * just to be sure that the connection error is not caused by driver
-	 * itself.
-	 */
-	do {
-		ret = i2c_reg_write_byte_dt(spec, reg_addr, value);
-		if (!ret) {
-			return 0;
-		}
-		/* If writing failed wait 5ms before next attempt */
-		k_msleep(5);
-	} while (tries-- > 0);
-
-	LOG_ERR("failed to write 0x%x to 0x%x,", value, reg_addr);
-	return ret;
-}
-
-static int gc2145_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint8_t *value)
-{
-	int ret;
-	uint8_t tries = 3;
-
-	/*
-	 * It rarely happens that the camera does not respond with ACK signal.
-	 * In that case it usually responds on 2nd try but there is a 3rd one
-	 * just to be sure that the connection error is not caused by driver
-	 * itself.
-	 */
-	do {
-		ret = i2c_reg_read_byte_dt(spec, reg_addr, value);
-		if (!ret) {
-			return 0;
-		}
-		/* If writing failed wait 5ms before next attempt */
-		k_msleep(5);
-	} while (tries-- > 0);
-
-	LOG_ERR("failed to read 0x%x register", reg_addr);
-	return ret;
-}
-
-static int gc2145_write_all(const struct device *dev, const struct gc2145_reg *regs,
-			    uint16_t reg_num)
-{
-	const struct gc2145_config *cfg = dev->config;
-
-	for (uint16_t i = 0; i < reg_num; i++) {
-		int ret;
-
-		ret = gc2145_write_reg(&cfg->i2c, regs[i].addr, regs[i].value);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
 static int gc2145_soft_reset(const struct device *dev)
 {
-	int ret;
 	const struct gc2145_config *cfg = dev->config;
+	int ret;
 
 	/* Initiate system reset */
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_REG_SW_RESET);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET), GC2145_REG_SW_RESET);
+	if (ret) {
+		return ret;
+	}
 
 	k_msleep(300);
-
-	return ret;
-}
-
-static int gc2145_set_ctrl_vflip(const struct device *dev, bool enable)
-{
-	int ret;
-	const struct gc2145_config *cfg = dev->config;
-	uint8_t old_value;
-
-	ret = gc2145_read_reg(&cfg->i2c, GC2145_REG_AMODE1, &old_value);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Set the vertical flip state */
-	return gc2145_write_reg(&cfg->i2c, GC2145_REG_AMODE1,
-				(old_value & GC2145_AMODE1_WINDOW_MASK) | (enable << 1));
-}
-
-static int gc2145_set_ctrl_hmirror(const struct device *dev, bool enable)
-{
-	int ret;
-	const struct gc2145_config *cfg = dev->config;
-	uint8_t old_value;
-
-	ret = gc2145_read_reg(&cfg->i2c, GC2145_REG_AMODE1, &old_value);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Set the horizontal mirror state */
-	return gc2145_write_reg(&cfg->i2c, GC2145_REG_AMODE1,
-				(old_value & GC2145_AMODE1_WINDOW_MASK) | enable);
-}
-
-static int gc2145_set_window(const struct device *dev, uint16_t reg, uint16_t x, uint16_t y,
-			     uint16_t w, uint16_t h)
-{
-	int ret;
-	const struct gc2145_config *cfg = dev->config;
-
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_SET_P0_REGS);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Y/row offset */
-	ret = gc2145_write_reg(&cfg->i2c, reg++, y >> 8);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gc2145_write_reg(&cfg->i2c, reg++, y & 0xff);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* X/col offset */
-	ret = gc2145_write_reg(&cfg->i2c, reg++, x >> 8);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gc2145_write_reg(&cfg->i2c, reg++, x & 0xff);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Window height */
-	ret = gc2145_write_reg(&cfg->i2c, reg++, h >> 8);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gc2145_write_reg(&cfg->i2c, reg++, h & 0xff);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Window width */
-	ret = gc2145_write_reg(&cfg->i2c, reg++, w >> 8);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gc2145_write_reg(&cfg->i2c, reg++, w & 0xff);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return 0;
 }
 
 static int gc2145_set_output_format(const struct device *dev, int output_format)
 {
-	int ret;
-	uint8_t old_value;
 	const struct gc2145_config *cfg = dev->config;
+	int ret;
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_RESET, GC2145_SET_P0_REGS);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
+				  GC2145_REG_RESET_P0_REGS);
 	if (ret < 0) {
 		return ret;
 	}
@@ -991,13 +832,8 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 		return -ENOTSUP;
 	}
 
-	ret = gc2145_read_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT, &old_value);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_OUTPUT_FMT,
-			(old_value & ~GC2145_REG_OUTPUT_FMT_MASK) | output_format);
+	ret = video_modify_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_OUTPUT_FMT),
+				   GC2145_REG_OUTPUT_FMT_MASK, output_format);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1009,8 +845,8 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 
 static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t h)
 {
-	int ret;
 	const struct gc2145_config *cfg = dev->config;
+	int ret;
 
 	uint16_t win_w;
 	uint16_t win_h;
@@ -1048,32 +884,62 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	win_x = ((UXGA_HSIZE - win_w) / 2);
 	win_y = ((UXGA_VSIZE - win_h) / 2);
 
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
+				  GC2145_REG_RESET_P0_REGS);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Set readout window first. */
-	ret = gc2145_set_window(dev, GC2145_REG_BLANK_WINDOW_BASE, win_x, win_y, win_w + 16,
-				win_h + 8);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_WIN_ROW_START, win_y);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_WIN_COL_START, win_x);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_WIN_HEIGHT, win_h + 8);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_WIN_WIDTH, win_w + 16);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set cropping window next. */
-	ret = gc2145_set_window(dev, GC2145_REG_WINDOW_BASE, x, y, w, h);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_ROW_START, y);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_COL_START, x);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_HEIGHT, h);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_OUT_WIN_WIDTH, w);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Enable crop */
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_CROP_ENABLE, GC2145_CROP_SET_ENABLE);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_CROP_ENABLE, GC2145_CROP_SET_ENABLE);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Set Sub-sampling ratio and mode */
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_SUBSAMPLE, ((r_ratio << 4) | c_ratio));
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_SUBSAMPLE, ((r_ratio << 4) | c_ratio));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_SUBSAMPLE_MODE, GC2145_SUBSAMPLE_MODE_SMOOTH);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_SUBSAMPLE_MODE,
+				  GC2145_SUBSAMPLE_MODE_SMOOTH);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1088,24 +954,16 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	return 0;
 }
 
-static uint8_t gc2145_check_connection(const struct device *dev)
+static int gc2145_check_connection(const struct device *dev)
 {
-	int ret;
 	const struct gc2145_config *cfg = dev->config;
-	uint8_t reg_chip_id[2];
-	uint16_t chip_id;
+	uint32_t chip_id;
+	int ret;
 
-	ret = gc2145_read_reg(&cfg->i2c, 0xf0, &reg_chip_id[0]);
+	ret = video_read_cci_reg(&cfg->i2c, GC2145_REG_CHIP_ID, &chip_id);
 	if (ret < 0) {
 		return ret;
 	}
-
-	ret = gc2145_read_reg(&cfg->i2c, 0xf1, &reg_chip_id[1]);
-	if (ret < 0) {
-		return ret;
-	}
-
-	chip_id = reg_chip_id[0] << 8 | reg_chip_id[1];
 
 	if (chip_id != 0x2145 && chip_id != 0x2155) {
 		LOG_WRN("Unexpected GC2145 chip ID: 0x%04x", chip_id);
@@ -1155,42 +1013,34 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 	}
 
 	/* Apply fixed settings for MIPI-CSI. After that active page is 3 */
-	ret = gc2145_write_all(dev, default_mipi_csi_regs, ARRAY_SIZE(default_mipi_csi_regs));
+	ret = video_write_cci_multiregs8(&cfg->i2c, default_mipi_csi_regs,
+					 ARRAY_SIZE(default_mipi_csi_regs));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_LWC_LOW, lwc & 0xff);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_LWC, lwc);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_LWC_HIGH, lwc >> 8);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_FIFO_FULL_LVL, fifo_full_level);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_FIFO_FULL_LVL_LOW, fifo_full_level & 0xff);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_FIFO_GATE_MODE, 0xf0);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_FIFO_FULL_LVL_HIGH, fifo_full_level >> 8);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_MIPI_DT, csi_dt);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_FIFO_GATE_MODE, 0xf0);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_MIPI_DT, csi_dt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return gc2145_write_reg(&cfg->i2c, 0xfe, 0x0);
+	return video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
+				   GC2145_REG_RESET_P0_REGS);
 }
 
 static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
@@ -1259,8 +1109,7 @@ static int gc2145_set_stream_dvp(const struct device *dev, bool enable)
 {
 	const struct gc2145_config *cfg = dev->config;
 
-	return enable ? gc2145_write_reg(&cfg->i2c, 0xf2, 0x0f)
-		      : gc2145_write_reg(&cfg->i2c, 0xf2, 0x00);
+	return video_write_cci_reg(&cfg->i2c, GC2145_REG8(0xf2), enable ? 0x0f : 0x00);
 }
 
 static int gc2145_set_stream_csi(const struct device *dev, bool enable)
@@ -1268,20 +1117,22 @@ static int gc2145_set_stream_csi(const struct device *dev, bool enable)
 	const struct gc2145_config *cfg = dev->config;
 	int ret;
 
-	ret = gc2145_write_reg(&cfg->i2c, 0xfe, 0x03);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
+				  GC2145_REG_RESET_P3_REGS);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gc2145_write_reg(&cfg->i2c, GC2145_REG_BUF_CSI2_MODE,
-			       enable ? GC2145_CSI2_MODE_RAW8 | GC2145_CSI2_MODE_DOUBLE |
-					GC2145_CSI2_MODE_EN | GC2145_CSI2_MODE_MIPI_EN
-				      : 0);
+	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG_BUF_CSI2_MODE, enable ?
+				  GC2145_CSI2_MODE_RAW8 | GC2145_CSI2_MODE_DOUBLE |
+				  GC2145_CSI2_MODE_EN | GC2145_CSI2_MODE_MIPI_EN :
+				  0);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return gc2145_write_reg(&cfg->i2c, 0xfe, 0x0);
+	return video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
+				   GC2145_REG_RESET_P0_REGS);
 }
 
 static int gc2145_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -1301,13 +1152,20 @@ static int gc2145_get_caps(const struct device *dev, struct video_caps *caps)
 
 static int gc2145_set_ctrl(const struct device *dev, uint32_t id)
 {
+	const struct gc2145_config *cfg = dev->config;
 	struct gc2145_data *drv_data = dev->data;
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
-		return gc2145_set_ctrl_hmirror(dev, drv_data->ctrls.hflip.val);
+		/* Set the horizontal mirror state */
+		return video_modify_cci_reg(&cfg->i2c, GC2145_REG_AMODE1, GC2145_REG_AMODE1_MIRROR,
+					    drv_data->ctrls.hflip.val ?
+					    GC2145_REG_AMODE1_MIRROR : 0);
 	case VIDEO_CID_VFLIP:
-		return gc2145_set_ctrl_vflip(dev, drv_data->ctrls.vflip.val);
+		/* Set the vertical flip state */
+		return video_modify_cci_reg(&cfg->i2c, GC2145_REG_AMODE1, GC2145_REG_AMODE1_UPDOWN,
+					    drv_data->ctrls.vflip.val ?
+					    GC2145_REG_AMODE1_UPDOWN : 0);
 	default:
 		return -ENOTSUP;
 	}
@@ -1353,28 +1211,50 @@ static int gc2145_init_controls(const struct device *dev)
 
 static int gc2145_init(const struct device *dev)
 {
-	struct video_format fmt;
+	/* set default/init format VGA RGB565 */
+	struct video_format fmt = {
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.width = RESOLUTION_VGA_W,
+		.height = RESOLUTION_VGA_H,
+	};
 	int ret;
 	const struct gc2145_config *cfg = dev->config;
 	(void) cfg;
 
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
-	if (ret) {
-		return ret;
+	if (!i2c_is_ready_dt(&cfg->i2c)) {
+		LOG_ERR("Bus device is not ready");
+		return -ENODEV;
 	}
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+	if (cfg->pwdn_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
+			LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			return ret;
+		}
+	}
 	k_sleep(K_MSEC(10));
 #endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
-	if (ret) {
-		return ret;
-	}
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+			LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->reset_gpio.port->name);
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
 
-	k_sleep(K_MSEC(1));
-	gpio_pin_set_dt(&cfg->reset_gpio, 0);
-	k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(1));
+		gpio_pin_set_dt(&cfg->reset_gpio, 0);
+		k_sleep(K_MSEC(1));
+	}
 #endif
 
 	ret = gc2145_check_connection(dev);
@@ -1382,13 +1262,15 @@ static int gc2145_init(const struct device *dev)
 		return ret;
 	}
 
-	gc2145_soft_reset(dev);
-	gc2145_write_all(dev, default_regs, ARRAY_SIZE(default_regs));
+	ret = gc2145_soft_reset(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
-	/* set default/init format VGA RGB565 */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
-	fmt.width = RESOLUTION_VGA_W;
-	fmt.height = RESOLUTION_VGA_H;
+	ret = video_write_cci_multiregs8(&cfg->i2c, default_regs, ARRAY_SIZE(default_regs));
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {
@@ -1400,46 +1282,30 @@ static int gc2145_init(const struct device *dev)
 	return gc2145_init_controls(dev);
 }
 
-/* Unique Instance */
-static const struct gc2145_config gc2145_cfg_0 = {
-	.i2c = I2C_DT_SPEC_INST_GET(0),
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	.pwdn_gpio = GPIO_DT_SPEC_INST_GET(0, pwdn_gpios),
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define GC2145_GET_RESET_GPIO(n)	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define GC2145_GET_RESET_GPIO(n)
 #endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-#endif
-	.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(0, 0, 0), bus_type,
-			       VIDEO_BUS_TYPE_PARALLEL),
-};
-static struct gc2145_data gc2145_data_0;
-
-static int gc2145_init_0(const struct device *dev)
-{
-	const struct gc2145_config *cfg = dev->config;
-
-	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("Bus device is not ready");
-		return -ENODEV;
-	}
-
-#if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
-	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
-		return -ENODEV;
-	}
-#endif
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
-		return -ENODEV;
-	}
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+#define GC2145_GET_PWDN_GPIO(n)	.pwdn_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwdn_gpios, {0}),
+#else
+#define GC2145_GET_PWDN_GPIO(n)
 #endif
 
-	return gc2145_init(dev);
-}
+#define GC2145_INIT(n)										\
+	static struct gc2145_data gc2145_data_##n;						\
+	static const struct gc2145_config gc2145_cfg_##n = {					\
+		.i2c = I2C_DT_SPEC_INST_GET(n),							\
+		GC2145_GET_PWDN_GPIO(n)								\
+		GC2145_GET_RESET_GPIO(n)							\
+		.bus_type = DT_PROP_OR(DT_INST_ENDPOINT_BY_ID(n, 0, 0), bus_type,		\
+				       VIDEO_BUS_TYPE_PARALLEL),				\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(n, &gc2145_init, NULL, &gc2145_data_##n, &gc2145_cfg_##n,		\
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);	\
+												\
+	VIDEO_DEVICE_DEFINE(gc2145_##n, DEVICE_DT_INST_GET(n), NULL);
 
-DEVICE_DT_INST_DEFINE(0, &gc2145_init_0, NULL, &gc2145_data_0, &gc2145_cfg_0, POST_KERNEL,
-		      CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
-
-VIDEO_DEVICE_DEFINE(gc2145, DEVICE_DT_INST_GET(0), NULL);
+DT_INST_FOREACH_STATUS_OKAY(GC2145_INIT)

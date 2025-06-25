@@ -329,10 +329,7 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 	const struct stm32_dcmipp_config *config = dev->config;
 	struct stm32_dcmipp_data *dcmipp = dev->data;
 	DCMIPP_CSI_ConfTypeDef csiconf = { 0 };
-	uint64_t phy_bitrate;
-	struct video_control ctrl = {
-		.id = VIDEO_CID_PIXEL_RATE,
-	};
+	int64_t phy_bitrate;
 	int err, i;
 
 	csiconf.NumberOfLanes = config->csi.nb_lanes == 2 ? DCMIPP_CSI_TWO_DATA_LANES :
@@ -340,17 +337,16 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 	csiconf.DataLaneMapping = config->csi.lanes[0] == 1 ? DCMIPP_CSI_PHYSICAL_DATA_LANES :
 							      DCMIPP_CSI_INVERTED_DATA_LANES;
 
-	/* Get the pixel_rate from the source to guess the bitrate */
-	err = video_get_ctrl(config->source_dev, &ctrl);
-	if (err < 0) {
-		LOG_ERR("Can not get source_dev pixel rate");
-		return err;
+	/* Get link-frequency information from source */
+	phy_bitrate = video_get_csi_link_freq(config->source_dev,
+					      video_bits_per_pixel(dcmipp->source_fmt.pixelformat),
+					      config->csi.nb_lanes);
+	if (phy_bitrate < 0) {
+		LOG_ERR("Failed to retrieve source link-frequency");
+		return -EIO;
 	}
-	phy_bitrate = ctrl.val64 * video_bits_per_pixel(dcmipp->source_fmt.pixelformat) /
-		      (2 * config->csi.nb_lanes);
+
 	phy_bitrate /= MHZ(1);
-	LOG_DBG("Sensor PixelRate = %lld, PHY Bitrate computed = %lld MHz",
-		ctrl.val64, phy_bitrate);
 
 	for (i = 0; i < ARRAY_SIZE(stm32_dcmipp_bitrate); i++) {
 		if (stm32_dcmipp_bitrate[i].rate >= phy_bitrate) {

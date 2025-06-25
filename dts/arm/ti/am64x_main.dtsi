@@ -10,6 +10,24 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	dmsc: system-controller@44043000 {
+		compatible = "ti,k2g-sci";
+		ti,host-id = <36>;
+		mbox-names = "rx", "tx";
+		mboxes = <&secure_proxy_main 2>, <&secure_proxy_main 3>;
+		reg-names = "debug_messages";
+		reg = <0x44043000 0xfe0>;
+		status = "disabled";
+	};
+
+	secure_proxy_main: mailbox0@4d000000 {
+		compatible = "ti,secure-proxy";
+		reg-names = "target_data", "rt", "scfg";
+		reg = <0x4d000000 0x80000>, <0x4a600000 0x80000>, <0x4a400000 0x80000>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
 	pinctrl: pinctrl@f4000 {
 		compatible = "ti,k3-pinctrl";
 		reg = <0xf4000 0x2ac>;

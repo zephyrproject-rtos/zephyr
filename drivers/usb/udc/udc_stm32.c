@@ -182,7 +182,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
-	udc_submit_event(priv->dev, UDC_EVT_SOF, 0);
+	udc_submit_sof_event(priv->dev);
 }
 
 static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
@@ -1144,7 +1144,7 @@ static int priv_clock_enable(void)
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
 	/* Both OTG HS and USBPHY sleep clock MUST be disabled here at the same time */
-	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS ||
+	LL_AHB2_GRP1_DisableClockStopSleep(LL_AHB2_GRP1_PERIPH_OTG_HS |
 						LL_AHB2_GRP1_PERIPH_USBPHY);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	/* Reset specific configuration bits before setting new values */

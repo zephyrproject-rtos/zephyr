@@ -23,6 +23,7 @@ static bool ts_cb_registered[CONFIG_NET_GPTP_NUM_PORTS];
 
 static const struct net_eth_addr gptp_multicast_eth_addr = {
 	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } };
+static uint8_t ieee8021_oui[3] = { OUI_IEEE_802_1_COMMITTEE };
 
 #define NET_GPTP_INFO(msg, pkt)						\
 	if (CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
@@ -788,6 +789,14 @@ void gptp_handle_signaling(int port, struct net_pkt *pkt)
 
 	/* If time-synchronization not enabled, drop packet. */
 	if (!port_ds->ptt_port_enabled) {
+		return;
+	}
+
+	/* Check if this is interval request. */
+	if (ntohs(sig->tlv.type) != GPTP_TLV_ORGANIZATION_EXT ||
+	    memcmp(sig->tlv.org_id, ieee8021_oui, sizeof(ieee8021_oui)) != 0 ||
+	    sig->tlv.org_sub_type[0] != 0 || sig->tlv.org_sub_type[1] != 0 ||
+	    sig->tlv.org_sub_type[2] != 2) {
 		return;
 	}
 

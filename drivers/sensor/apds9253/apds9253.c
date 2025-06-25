@@ -131,7 +131,7 @@ static int apds9253_attr_set_gain(const struct device *dev, uint8_t gain)
 		return 0;
 	}
 
-	static uint8_t value_map[] = {
+	static const uint8_t value_map[] = {
 		APDS9253_LS_GAIN_RANGE_1, APDS9253_LS_GAIN_RANGE_3,  APDS9253_LS_GAIN_RANGE_6,
 		APDS9253_LS_GAIN_RANGE_9, APDS9253_LS_GAIN_RANGE_18,
 	};

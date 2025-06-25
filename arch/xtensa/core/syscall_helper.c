@@ -115,7 +115,7 @@ size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
 	 * For MPU systems, this would simply results in access errors
 	 * and the exception handler will terminate the thread.
 	 */
-	if (!xtensa_mem_kernel_has_access((void *)s, maxsize, 0)) {
+	if (arch_buffer_validate(s, maxsize, 0)) {
 		/*
 		 * API says we need to set err_arg to -1 if there are
 		 * any errors.

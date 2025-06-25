@@ -8,5 +8,17 @@ config ADC_AMBIQ
 	depends on DT_HAS_AMBIQ_ADC_ENABLED
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_ADC
+	select AMBIQ_HAL_USE_TIMER if SOC_SERIES_APOLLO3X
 	help
 	  Enables the Adc driver for Ambiq devices.
+
+if ADC_AMBIQ
+
+config ADC_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in adc driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Disable this if cache has been handled in upper layers.
+
+endif # ADC_AMBIQ

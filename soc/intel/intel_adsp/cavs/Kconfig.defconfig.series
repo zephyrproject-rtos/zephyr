@@ -44,4 +44,12 @@ config LOG_BACKEND_ADSP
 
 endif # LOG
 
+if GDBSTUB
+
+# GDB expects 420 byte G-packet, so double for hexadecimal digits.
+config GDBSTUB_BUF_SZ
+	default 840 if GDBSTUB
+
+endif
+
 endif # SOC_SERIES_INTEL_ADSP_CAVS

@@ -210,8 +210,9 @@ struct str_context {
 	int count;
 };
 
-static int str_out(int c, struct str_context *ctx)
+static int str_out(int c, void *context)
 {
+	struct str_context *ctx = context;
 	if ((ctx->str == NULL) || (ctx->count >= ctx->max)) {
 		++ctx->count;
 		return c;

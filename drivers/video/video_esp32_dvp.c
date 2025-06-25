@@ -432,7 +432,7 @@ DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POS
 
 VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));
 
-static int video_esp32_cam_init_master_clock(void)
+static int video_esp32_cam_init_main_clock(void)
 {
 	int ret = 0;
 
@@ -459,11 +459,11 @@ static int video_esp32_cam_init_master_clock(void)
 		return -EINVAL;
 	}
 
-	/* Enable camera master clock output */
+	/* Enable camera main clock output */
 	cam_ll_select_clk_src(0, LCD_CLK_SRC_PLL160M);
 	cam_ll_set_group_clock_coeff(0, ESP32_CLK_CPU_PLL_160M / esp32_config.cam_clk, 0, 0);
 
 	return 0;
 }
 
-SYS_INIT(video_esp32_cam_init_master_clock, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(video_esp32_cam_init_main_clock, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

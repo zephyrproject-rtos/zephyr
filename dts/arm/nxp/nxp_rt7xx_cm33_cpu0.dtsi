@@ -274,6 +274,7 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x2000 0x1000>;
 		#clock-cells = <1>;
+		#pinmux-cells = <2>;
 	};
 
 	syscon2: syscon@66000 {
@@ -1067,6 +1068,57 @@
 		interrupts = <43 0>;
 		status = "disabled";
 		clk-divider = <1>;
+	};
+
+	sai0: sai@152000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x152000 0x1000>;
+		clocks = <&clkctl0 MCUX_SAI0_CLK>;
+		pinmuxes = <&syscon0 0x240 0x1>;
+		interrupts = <115 0>;
+		dmas = <&edma0 0 81>, <&edma0 1 82>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <1>;
+		nxp,rx-dma-channel = <0>;
+		status = "disabled";
+	};
+
+	sai1: sai@153000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x153000 0x1000>;
+		clocks = <&clkctl0 MCUX_SAI1_CLK>;
+		pinmuxes = <&syscon0 0x240 0x1>;
+		interrupts = <116 0>;
+		dmas = <&edma0 0 83>, <&edma0 0 84>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		status = "disabled";
+	};
+
+	sai2: sai@154000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = < 0x154000 0x1000>;
+		clocks = <&clkctl0 MCUX_SAI2_CLK>;
+		pinmuxes = <&syscon0 0x240 0x1>;
+		interrupts = <117 0>;
+		dmas = <&edma0 0 85>, <&edma0 0 86>;
+		dma-names = "rx", "tx";
+		nxp,tx-channel = <1>;
+		nxp,tx-dma-channel = <2>;
+		nxp,rx-dma-channel = <3>;
+		status = "disabled";
 	};
 
 	sc_timer: pwm@114000 {

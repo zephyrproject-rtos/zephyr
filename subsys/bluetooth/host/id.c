@@ -142,7 +142,7 @@ static int set_random_address(const bt_addr_t *addr)
 		return 0;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(*addr));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -193,8 +193,7 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 		return 0;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR,
-				sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -314,8 +313,7 @@ static void le_rpa_timeout_update(void)
 		struct net_buf *buf;
 		struct bt_hci_cp_le_set_rpa_timeout *cp;
 
-		buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_RPA_TIMEOUT,
-					sizeof(*cp));
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			LOG_ERR("Failed to create HCI RPA timeout command");
 			err = -ENOBUFS;
@@ -850,7 +848,7 @@ static int le_set_privacy_mode(const bt_addr_le_t *addr, uint8_t mode)
 	bt_addr_le_copy(&cp.id_addr, addr);
 	cp.mode = mode;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PRIVACY_MODE, sizeof(cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -871,7 +869,7 @@ static int addr_res_enable(uint8_t enable)
 
 	LOG_DBG("%s", enable ? "enabled" : "disabled");
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADDR_RES_ENABLE, 1);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -893,7 +891,7 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 
 	LOG_DBG("addr %s", bt_addr_le_str(addr));
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_RL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -1152,7 +1150,7 @@ static int hci_id_del(const bt_addr_le_t *addr)
 
 	LOG_DBG("addr %s", bt_addr_le_str(addr));
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_RL, sizeof(*cp));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

@@ -444,6 +444,15 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 		}
 
 		trigger_config.p_in_channel = &ch;
+	} else {
+		/* If edge mode with channel was previously used and we are changing to sense or
+		 * level triggered, we must free the channel.
+		 */
+		err = nrfx_gpiote_channel_get(&cfg->gpiote, abs_pin, &ch);
+		if (err == NRFX_SUCCESS) {
+			err = nrfx_gpiote_channel_free(&cfg->gpiote, ch);
+			__ASSERT_NO_MSG(err == NRFX_SUCCESS);
+		}
 	}
 
 	err = nrfx_gpiote_input_configure(&cfg->gpiote, abs_pin, &input_pin_config);

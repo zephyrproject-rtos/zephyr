@@ -149,6 +149,8 @@ struct video_buffer {
 	void *driver_data;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
+	/** index of the buffer, optionally set by the application */
+	uint8_t index;
 	/** size of the buffer in bytes. */
 	uint32_t size;
 	/** number of bytes occupied by the valid data in the buffer. */
@@ -708,14 +710,13 @@ struct video_ctrl_query;
  * difficult. Hence, the best way to enumerate all kinds of device's supported controls is to
  * iterate with VIDEO_CTRL_FLAG_NEXT_CTRL.
  *
- * @param dev Pointer to the device structure.
  * @param cq Pointer to the control query struct.
  *
  * @retval 0 If successful.
  * @retval -EINVAL If the control id is invalid.
  * @retval -ENOTSUP If the control id is not supported.
  */
-int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq);
+int video_query_ctrl(struct video_ctrl_query *cq);
 
 /**
  * @brief Print all the information of a control.
@@ -724,10 +725,9 @@ int video_query_ctrl(const struct device *dev, struct video_ctrl_query *cq);
  * menu (if any) and current value, i.e. by invoking the video_get_ctrl(), in a
  * human readble format.
  *
- * @param dev Pointer to the device structure.
  * @param cq Pointer to the control query struct.
  */
-void video_print_ctrl(const struct device *const dev, const struct video_ctrl_query *const cq);
+void video_print_ctrl(const struct video_ctrl_query *const cq);
 
 /**
  * @brief Register/Unregister k_poll signal for a video endpoint.
@@ -1242,6 +1242,46 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 #define VIDEO_PIX_FMT_Y14P VIDEO_FOURCC('Y', '1', '4', 'P')
 
 /**
+ * Little endian, with the 6 most significant bits set to Zero.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | ...
+ * | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | yyyyyyyy 000000Yy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y10 VIDEO_FOURCC('Y', '1', '0', ' ')
+
+/**
+ * Little endian, with the 4 most significant bits set to Zero.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | ...
+ * | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | yyyyyyyy 0000Yyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y12 VIDEO_FOURCC('Y', '1', '2', ' ')
+
+/**
+ * Little endian, with the 2 most significant bits set to Zero.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | ...
+ * | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | yyyyyyyy 00Yyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y14 VIDEO_FOURCC('Y', '1', '4', ' ')
+
+/**
+ * Little endian.
+ * @code{.unparsed}
+ *   0                   1                   2                   3
+ * | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | ...
+ * | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | yyyyyyyy Yyyyyyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y16 VIDEO_FOURCC('Y', '1', '6', ' ')
+
+/**
  * @}
  */
 
@@ -1456,6 +1496,10 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_SGBRG16:
 	case VIDEO_PIX_FMT_SGRBG16:
 	case VIDEO_PIX_FMT_SRGGB16:
+	case VIDEO_PIX_FMT_Y10:
+	case VIDEO_PIX_FMT_Y12:
+	case VIDEO_PIX_FMT_Y14:
+	case VIDEO_PIX_FMT_Y16:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:

@@ -179,9 +179,10 @@ zephyr_i2c: &i2c1 {
 	pinctrl-names = "default";
 	status = "okay";
 
-	mx25l12833f: qspi-nor-flash@90000000 {
+	mx25l12833f: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
-		reg = < 0x90000000 DT_SIZE_M(16) >; /* 128 MBits */
+		reg = <0>;
+		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = < 40000000 >;
 		sfdp-bfp = [ e5 20 f1 ff  ff ff ff 07  44 eb 08 6b  08 3b 04 bb
 			     fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52

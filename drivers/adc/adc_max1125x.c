@@ -799,7 +799,7 @@ static DEVICE_API(adc, max1125x_api) = {
 		.gpio.gpio1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_enable, 0),          \
 		.gpio.gpio0_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio0_direction, 0),    \
 		.gpio.gpio1_direction = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpio1_direction, 0),    \
-		.gpo.gpo0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),             \
+		.gpo.gpo0_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo0_enable, 0),             \
 		.gpo.gpo1_enable = DT_PROP_OR(DT_INST_MAX1125X(n, t), gpo1_enable, 0),             \
 	};                                                                                         \
 	static struct max1125x_data max##t##_data_##n = {                                          \
