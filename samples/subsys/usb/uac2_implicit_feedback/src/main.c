@@ -21,15 +21,17 @@ LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);
 #define HEADPHONES_OUT_TERMINAL_ID UAC2_ENTITY_ID(DT_NODELABEL(out_terminal))
 #define MICROPHONE_IN_TERMINAL_ID UAC2_ENTITY_ID(DT_NODELABEL(in_terminal))
 
-#define SAMPLES_PER_SOF     48
-#define SAMPLE_FREQUENCY    (SAMPLES_PER_SOF * 1000)
+#define FS_SAMPLES_PER_SOF  48
+#define HS_SAMPLES_PER_SOF  6
+#define MAX_SAMPLES_PER_SOF MAX(FS_SAMPLES_PER_SOF, HS_SAMPLES_PER_SOF)
+#define SAMPLE_FREQUENCY    (FS_SAMPLES_PER_SOF * 1000)
 #define SAMPLE_BIT_WIDTH    16
 #define NUMBER_OF_CHANNELS  2
 #define BYTES_PER_SAMPLE    DIV_ROUND_UP(SAMPLE_BIT_WIDTH, 8)
 #define BYTES_PER_SLOT      (BYTES_PER_SAMPLE * NUMBER_OF_CHANNELS)
-#define MIN_BLOCK_SIZE      ((SAMPLES_PER_SOF - 1) * BYTES_PER_SLOT)
-#define BLOCK_SIZE          (SAMPLES_PER_SOF * BYTES_PER_SLOT)
-#define MAX_BLOCK_SIZE      ((SAMPLES_PER_SOF + 1) * BYTES_PER_SLOT)
+#define MIN_BLOCK_SIZE      ((MAX_SAMPLES_PER_SOF - 1) * BYTES_PER_SLOT)
+#define BLOCK_SIZE          (MAX_SAMPLES_PER_SOF * BYTES_PER_SLOT)
+#define MAX_BLOCK_SIZE      ((MAX_SAMPLES_PER_SOF + 1) * BYTES_PER_SLOT)
 
 /* Absolute minimum is 5 TX buffers (1 actively consumed by I2S, 2nd queued as
  * next buffer, 3rd acquired by USB stack to receive data to, and 2 to handle
@@ -49,6 +51,7 @@ struct usb_i2s_ctx {
 	bool i2s_started;
 	bool rx_started;
 	bool usb_data_received;
+	bool microframes;
 	/* Counter used to determine when to start I2S and then when to start
 	 * sending RX packets to host. Overflows are not a problem because this
 	 * variable is not necessary after both I2S and RX is started.
@@ -70,8 +73,8 @@ struct usb_i2s_ctx {
 	 * Used to avoid overcompensation in feedback regulator. LSBs indicate
 	 * latest write size.
 	 */
-	uint8_t plus_ones;
-	uint8_t minus_ones;
+	uint32_t plus_ones;
+	uint32_t minus_ones;
 };
 
 static void uac2_terminal_update_cb(const struct device *dev, uint8_t terminal,
@@ -80,8 +83,7 @@ static void uac2_terminal_update_cb(const struct device *dev, uint8_t terminal,
 {
 	struct usb_i2s_ctx *ctx = user_data;
 
-	/* This sample is for Full-Speed only devices. */
-	__ASSERT_NO_MSG(microframes == false);
+	ctx->microframes = microframes;
 
 	if (terminal == HEADPHONES_OUT_TERMINAL_ID) {
 		ctx->headphones_enabled = enabled;
@@ -102,6 +104,15 @@ static void uac2_terminal_update_cb(const struct device *dev, uint8_t terminal,
 			ctx->pending_mic_samples = 0;
 		}
 	}
+}
+
+static int nominal_samples_per_sof(struct usb_i2s_ctx *ctx)
+{
+	if (USBD_SUPPORTS_HIGH_SPEED && ctx->microframes) {
+		return HS_SAMPLES_PER_SOF;
+	}
+
+	return FS_SAMPLES_PER_SOF;
 }
 
 static void *uac2_get_recv_buf(const struct device *dev, uint8_t terminal,
@@ -133,6 +144,7 @@ static void uac2_data_recv_cb(const struct device *dev, uint8_t terminal,
 			      void *buf, uint16_t size, void *user_data)
 {
 	struct usb_i2s_ctx *ctx = user_data;
+	int nominal = nominal_samples_per_sof(ctx);
 	int ret;
 
 	ctx->usb_data_received = true;
@@ -159,11 +171,11 @@ static void uac2_data_recv_cb(const struct device *dev, uint8_t terminal,
 		 * of samples sent.
 		 */
 		if (ctx->plus_ones & 1) {
-			size = (SAMPLES_PER_SOF + 1) * BYTES_PER_SLOT;
+			size = (nominal + 1) * BYTES_PER_SLOT;
 		} else if (ctx->minus_ones & 1) {
-			size = (SAMPLES_PER_SOF - 1) * BYTES_PER_SLOT;
+			size = (nominal - 1) * BYTES_PER_SLOT;
 		} else {
-			size = SAMPLES_PER_SOF * BYTES_PER_SLOT;
+			size = nominal * BYTES_PER_SLOT;
 		}
 		memset(buf, 0, size);
 	}
@@ -208,6 +220,7 @@ static void uac2_buf_release_cb(const struct device *dev, uint8_t terminal,
 /* Determine next number of samples to send, called at most once every SOF */
 static int next_mic_num_samples(struct usb_i2s_ctx *ctx)
 {
+	int nominal = nominal_samples_per_sof(ctx);
 	int offset = feedback_samples_offset(ctx->fb);
 
 	/* The rolling buffers essentially handle controller dead time, i.e.
@@ -217,12 +230,18 @@ static int next_mic_num_samples(struct usb_i2s_ctx *ctx)
 	ctx->plus_ones <<= 1;
 	ctx->minus_ones <<= 1;
 
+	/* At Full-Speed only remember last 8 frames */
+	if (!USBD_SUPPORTS_HIGH_SPEED || !ctx->microframes) {
+		ctx->plus_ones &= 0x000000FF;
+		ctx->minus_ones &= 0x000000FF;
+	}
+
 	if ((offset < 0) && (POPCOUNT(ctx->plus_ones) < -offset)) {
 		/* I2S buffer starts at least 1 sample before SOF, send nominal
 		 * + 1 samples to host in order to shift offset towards 0.
 		 */
 		ctx->plus_ones |= 1;
-		return SAMPLES_PER_SOF + 1;
+		return nominal + 1;
 	}
 
 	if ((offset > 0) && (POPCOUNT(ctx->minus_ones) < offset)) {
@@ -230,11 +249,11 @@ static int next_mic_num_samples(struct usb_i2s_ctx *ctx)
 		 * - 1 samples to host in order to shift offset towards 0
 		 */
 		ctx->minus_ones |= 1;
-		return SAMPLES_PER_SOF - 1;
+		return nominal - 1;
 	}
 
 	/* I2S is either spot on, or the offset is expected to correct soon */
-	return SAMPLES_PER_SOF;
+	return nominal;
 }
 
 static void process_mic_data(const struct device *dev, struct usb_i2s_ctx *ctx)
@@ -488,7 +507,7 @@ static void uac2_sof(const struct device *dev, void *user_data)
 	    ctx->i2s_counter >= 2) {
 		i2s_trigger(ctx->i2s_dev, I2S_DIR_BOTH, I2S_TRIGGER_START);
 		ctx->i2s_started = true;
-		feedback_start(ctx->fb, ctx->i2s_counter);
+		feedback_start(ctx->fb, ctx->i2s_counter, ctx->microframes);
 		ctx->i2s_counter = 0;
 	}
 

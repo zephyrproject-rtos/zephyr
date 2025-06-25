@@ -24,10 +24,12 @@ void feedback_reset_ctx(struct feedback_ctx *ctx)
 	ARG_UNUSED(ctx);
 }
 
-void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued)
+void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued,
+		    bool microframes)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(i2s_blocks_queued);
+	ARG_UNUSED(microframes);
 }
 
 int feedback_samples_offset(struct feedback_ctx *ctx)
