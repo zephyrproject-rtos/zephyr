@@ -51,4 +51,12 @@
 			renesas,analog-enable;
 		};
 	};
+
+	ctsu_default: ctsu_default {
+		group1 {
+			/* TS01 TSCAP */
+			psels = <RA_PSEL(RA_PSEL_CTSU, 0, 1)>,
+				<RA_PSEL(RA_PSEL_CTSU, 4, 9)>;
+		};
+	};
 };

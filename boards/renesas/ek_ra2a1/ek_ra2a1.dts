@@ -83,6 +83,10 @@
 	status = "okay";
 };
 
+&ioport4 {
+	status = "okay";
+};
+
 &port_irq6 {
 	interrupts = <29 3>;
 	status = "okay";
@@ -119,4 +123,41 @@
 
 &wdt {
 	status = "okay";
+};
+
+&ctsu {
+	pinctrl-0 = <&ctsu_default>;
+	pinctrl-names = "default";
+	interrupts = <10 3>, <11 3>, <12 3>;
+	interrupt-names = "ctsuwr", "ctsurd", "ctsufn";
+	clock-div = <1>;
+	pwr-supply-sel = "vcc";
+	atune1 = "normal";
+	measure-mode = "self-multi-scan";
+	tscap-gpios = <&ioport4 9 0>;
+	status = "okay";
+
+	group1 {
+		ctsuchac = <0x00>, <0x80>, <0x00>, <0x00>, <0x00>;
+		ctsuchtrc = <0x00>, <0x00>, <0x00>, <0x00>, <0x00>;
+		rx-count = <1>;
+		tx-count = <0>;
+		ssdiv = "1.00";
+		so = <0x108>;
+		snum = <0x01>;
+		sdpa = <0x0B>;
+		on-freq = <3>;
+		off-freq = <3>;
+		drift-freq = <255>;
+		cancel-freq = <0>;
+		num-moving-avg = <4>;
+
+		ts1: button1 {
+			compatible = "renesas,ra-ctsu-button";
+			event-code = <INPUT_KEY_1>;
+			elements = <0>;
+			threshold = <2305>;
+			hysteresis = <115>;
+		};
+	};
 };
