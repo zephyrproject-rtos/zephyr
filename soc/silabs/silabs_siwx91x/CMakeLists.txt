@@ -12,3 +12,5 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     ${KERNEL_BIN_NAME}
     ${KERNEL_BIN_NAME}.rps
 )
+# runners_yaml_props_target controls the file used by "west flash"
+set_target_properties(runners_yaml_props_target PROPERTIES bin_file ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}.rps)
