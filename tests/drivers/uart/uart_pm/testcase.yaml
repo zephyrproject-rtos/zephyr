@@ -7,6 +7,7 @@ common:
     - nrf52840dk/nrf52840
     - nrf54l09pdk/nrf54l09/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp
+    - nrf54lm20bsim/nrf54lm20a/cpuapp
     - nrf54lm20pdk/nrf54lm20a/cpuapp
     - nrf54l15bsim/nrf54l15/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
@@ -34,6 +35,7 @@ tests:
     platform_exclude:
       - nrf54l09pdk/nrf54l09/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20bsim/nrf54lm20a/cpuapp
       - nrf54lm20pdk/nrf54lm20a/cpuapp
       - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
