@@ -17,6 +17,7 @@ tests:
       - nucleo_h7s3l8
       - nucleo_u385rg_q
       - stm32h7s78_dk
+      - stm32h573i_dk
     integration_platforms:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu
