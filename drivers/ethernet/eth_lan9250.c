@@ -702,7 +702,7 @@ static int lan9250_init(const struct device *dev)
 
 #define LAN9250_DEFINE(inst)                                                                       \
 	static struct lan9250_runtime lan9250_##inst##_runtime = {                                 \
-		.mac_address = DT_INST_PROP(inst, local_mac_address),                              \
+		.mac_address = DT_INST_PROP_OR(inst, local_mac_address, {0}),                      \
 		.tx_rx_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.tx_rx_sem, 1, UINT_MAX),   \
 		.int_sem = Z_SEM_INITIALIZER(lan9250_##inst##_runtime.int_sem, 0, UINT_MAX),       \
 	};                                                                                         \

@@ -586,7 +586,7 @@ static const struct ethernet_api xilinx_axienet_api = {
 	}                                                                                          \
                                                                                                    \
 	static struct xilinx_axienet_data data_##inst = {                                          \
-		.mac_addr = DT_INST_PROP(inst, local_mac_address),                                 \
+		.mac_addr = DT_INST_PROP_OR(inst, local_mac_address, {0}),                         \
 		.dma_is_configured_rx = false,                                                     \
 		.dma_is_configured_tx = false};                                                    \
 	static const struct xilinx_axienet_config config_##inst = {                                \
