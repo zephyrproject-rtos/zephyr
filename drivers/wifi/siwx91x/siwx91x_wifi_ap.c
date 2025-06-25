@@ -260,10 +260,10 @@ int siwx91x_ap_sta_disconnect(const struct device *dev, const uint8_t *mac_addr)
 		return -EINVAL;
 	}
 
-	memcpy(mac.octet, mac_addr, ARRAY_SIZE(mac.octet));
+	memcpy(mac.octet, mac_addr, WIFI_MAC_ADDR_LEN);
 
 	ret = sl_wifi_disconnect_ap_client(SL_WIFI_AP_INTERFACE | SL_WIFI_2_4GHZ_INTERFACE,
-					  &mac, SL_WIFI_DEAUTH);
+					   &mac, SL_WIFI_DEAUTH);
 	if (ret) {
 		LOG_ERR("Failed	to disconnect: 0x%x", ret);
 		return -EIO;
