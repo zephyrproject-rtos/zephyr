@@ -137,23 +137,25 @@ struct mss_i2c_data {
 };
 
 
-static int mss_i2c_configure(const struct device *dev, uint32_t dev_config_raw)
+static int mss_i2c_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct mss_i2c_config *cfg = dev->config;
-
 	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
 
-	switch (I2C_SPEED_GET(dev_config_raw)) {
+	ctrl &= ~CLK_MASK;
+
+	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
-		sys_write8((ctrl | PCLK_DIV_960), cfg->i2c_base_addr + CORE_I2C_CTRL);
+		ctrl |= PCLK_DIV_960;
 		break;
 	case I2C_SPEED_FAST:
-		sys_write8((ctrl | PCLK_DIV_256), cfg->i2c_base_addr + CORE_I2C_CTRL);
+		ctrl |= PCLK_DIV_256;
 		break;
 	default:
 		return -EINVAL;
 	}
 
+	sys_write8(ctrl, cfg->i2c_base_addr + CORE_I2C_CTRL);
 	return 0;
 }
 
