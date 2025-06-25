@@ -5739,6 +5739,20 @@ macro(zephyr_check_flags_exclusive function prefix)
   endif()
 endmacro()
 
+#
+# Helper macro for verifying that no unexpected arguments are provided.
+#
+# A FATAL_ERROR will be raised if any unexpected argument is given.
+#
+# Usage:
+#   zephyr_check_no_arguments(<function_name> ${ARGN})
+#
+macro(zephyr_check_no_arguments function)
+  if(${ARGC} GREATER 1)
+    message(FATAL_ERROR "${function} called with unexpected argument(s): ${ARGN}")
+  endif()
+endmacro()
+
 ########################################################
 # 7. Linkable loadable extensions (llext)
 ########################################################
