@@ -24,10 +24,6 @@
 	i2c0_sda: i2c0_sda_default {
 		pinmux = <K3_PINMUX(0x264, PIN_INPUT_PULLUP, MUX_MODE_0)>;
 	};
-};
-
-&pinctrl {
-	status = "okay";
 
 	gpio0_led1: test_led1_green {
 		pinmux = <K3_PINMUX(0x58, PIN_OUTPUT, MUX_MODE_7)>;
