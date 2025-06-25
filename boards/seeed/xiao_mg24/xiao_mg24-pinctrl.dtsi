@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Pete Johanson
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +55,14 @@
 			pins = <I2C0_SCL_PC4>, <I2C0_SDA_PC5>;
 			drive-open-drain;
 			bias-pull-up;
+		};
+	};
+
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PA7>;
+			drive-push-pull;
+			output-high;
 		};
 	};
 };
