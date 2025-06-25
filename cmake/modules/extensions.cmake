@@ -428,6 +428,8 @@ endmacro()
 
 # Constructor with a directory-inferred name
 macro(zephyr_library)
+  zephyr_check_no_arguments(zephyr_library ${ARGN})
+
   zephyr_library_get_current_dir_lib_name(${ZEPHYR_BASE} lib_name)
   zephyr_library_named(${lib_name})
 endmacro()
@@ -452,6 +454,8 @@ endmacro()
 
 # Constructor with an explicitly given name.
 macro(zephyr_library_named name)
+  zephyr_check_no_arguments(zephyr_library_named ${ARGN})
+
   # This is a macro because we need add_library() to be executed
   # within the scope of the caller.
   set(ZEPHYR_CURRENT_LIBRARY ${name})
