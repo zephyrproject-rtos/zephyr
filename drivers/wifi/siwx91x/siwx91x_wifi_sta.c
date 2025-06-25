@@ -76,14 +76,12 @@ sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, void 
 							   uint32_t result_length, void *arg)
 {
 	sl_si91x_module_state_stats_response_t *notif = response;
+	const char *reason_str = siwx91x_get_reason_string(notif->reason_code);
 	uint8_t module_state = notif->state_code & 0xF0;
 	struct siwx91x_dev *sidev = arg;
-	const char *reason_str;
 
 	ARG_UNUSED(event);
 	ARG_UNUSED(result_length);
-
-	reason_str = siwx91x_get_reason_string(notif->reason_code);
 
 	switch (module_state) {
 	case STATE_BEACON_LOSS:
