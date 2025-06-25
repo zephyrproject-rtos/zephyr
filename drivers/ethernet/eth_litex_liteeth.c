@@ -331,7 +331,8 @@ static const struct ethernet_api eth_api = {
 	}                                                                                          \
                                                                                                    \
 	static struct eth_litex_dev_data eth_data##n = {                                           \
-		.mac_addr = DT_INST_PROP(n, local_mac_address)};                                   \
+		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),			           \
+	};                                                                                         \
                                                                                                    \
 	static const struct eth_litex_config eth_config##n = {                                     \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phy_handle)),                  \
