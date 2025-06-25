@@ -476,7 +476,7 @@ static const struct eth_xlnx_gem_dev_cfg eth_xlnx_gem##port##_dev_cfg = {\
 /* Device run-time data declaration macro */
 #define ETH_XLNX_GEM_DEV_DATA(port) \
 static struct eth_xlnx_gem_dev_data eth_xlnx_gem##port##_dev_data = {\
-	.mac_addr        = DT_INST_PROP(port, local_mac_address),\
+	.mac_addr        = DT_INST_PROP_OR(port, local_mac_address, {0}),\
 	.started         = 0,\
 	.eff_link_speed  = LINK_DOWN,\
 	.phy_addr        = 0,\

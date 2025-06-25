@@ -1699,7 +1699,7 @@ static const struct ethernet_api eth_dwc_xgmac_apis = {
 /* Device run-time data declaration macro */
 #define ETH_DWC_XGMAC_DEV_DATA(port)                                                               \
 	static struct eth_dwc_xgmac_dev_data eth_dwc_xgmac##port##_dev_data = {                    \
-		.mac_addr = DT_INST_PROP(port, local_mac_address),                                 \
+		.mac_addr = DT_INST_PROP_OR(port, local_mac_address, {0}),                         \
 		.link_speed = DT_INST_PROP(port, max_speed),                                       \
 		.enable_full_duplex = DT_INST_PROP(port, full_duplex_mode_en),                     \
 		.dma_rx_desc = &eth_dwc_xgmac##port##_rx_desc[0u][0u],                             \
