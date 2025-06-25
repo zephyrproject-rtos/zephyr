@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Linumiz GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		capture = &pwma1;
+	};
+};
+
+&pinctrl {
+	tima1_ccp0_pb4 {
+		input-enable;
+		bias-pull-down;
+	};
+};
+
+&tima1 {
+	status = "okay";
+
+	pwma1: pwma1 {
+		pinctrl-0 = <&tima1_ccp0_pb4>;
+		pinctrl-names = "default";
+		ti,cc-index = <0>;
+		ti,cc-mode = "PULSE_WIDTH";
+		ti,period = <0xFFFF>;
+		status = "okay";
+	};
+};
