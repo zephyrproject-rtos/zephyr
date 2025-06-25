@@ -42,4 +42,7 @@ endchoice
 
 endif # BOARD_MAX32657EVKIT_MAX32657_NS
 
+config I3C
+	default y if ADXL367
+
 endif # BOARD_MAX32657EVKIT
