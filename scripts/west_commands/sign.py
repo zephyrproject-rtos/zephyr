@@ -685,8 +685,8 @@ class CommanderSigner(Signer):
     def get_input_output(command, build_dir, build_conf):
         kernel_prefix = (pathlib.Path(build_dir) / 'zephyr' /
                          build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr"))
-        in_file = f'{kernel_prefix}.bin.rps'
-        out_file = command.args.sbin or f'{kernel_prefix}.signed.bin.rps'
+        in_file = f'{kernel_prefix}.rps'
+        out_file = command.args.sbin or f'{kernel_prefix}.signed.rps'
         return (in_file, out_file)
 
     def sign(self, command, build_dir, build_conf, formats):
