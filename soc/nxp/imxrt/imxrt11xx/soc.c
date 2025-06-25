@@ -90,12 +90,6 @@ static const clock_sys_pll2_config_t sysPll2Config = {
 	.ssEnable = false,
 };
 
-#ifdef CONFIG_INIT_ENET_PLL
-static const clock_sys_pll1_config_t sysPll1Config = {
-	.pllDiv2En = true,
-};
-#endif
-
 #ifdef CONFIG_INIT_VIDEO_PLL
 static const clock_video_pll_config_t videoPllConfig = {
 	/* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
@@ -261,17 +255,17 @@ __weak void clock_init(void)
 	CLOCK_InitArmPll(&armPllConfig);
 #endif
 
-#ifdef CONFIG_INIT_ENET_PLL
-	CLOCK_InitSysPll1(&sysPll1Config);
-#else
-#ifndef CONFIG_SECOND_CORE_MCUX
-	/* Bypass Sys Pll1. */
-	CLOCK_SetPllBypass(kCLOCK_PllSys1, true);
-
-	/* DeInit Sys Pll1. */
-	CLOCK_DeinitSysPll1();
-#endif
-#endif
+	if (IS_ENABLED(CONFIG_ETH_NXP_ENET)) {
+		/* For default clocking, we will only use pll1 for div2 output for enet */
+		static const clock_sys_pll1_config_t sysPll1Config = {
+			.pllDiv2En = true,
+		};
+		CLOCK_InitSysPll1(&sysPll1Config);
+	} else if (!IS_ENABLED(CONFIG_SECOND_CORE_MCUX)) {
+		/* PLL1 not used otherwise, so bypass first then deinit */
+		CLOCK_SetPllBypass(kCLOCK_PllSys1, true);
+		CLOCK_DeinitSysPll1();
+	}
 
 	/* Init Sys Pll2. */
 	CLOCK_InitSysPll2(&sysPll2Config);
