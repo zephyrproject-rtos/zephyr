@@ -1716,12 +1716,15 @@ static void get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 }
 #endif
 
-static void generate_mac(uint8_t mac_addr[6])
+static void generate_mac(uint8_t mac_addr[6], const struct eth_sam_dev_cfg *const cfg)
 {
 #if DT_INST_NODE_HAS_PROP(0, mac_eeprom)
+	ARG_UNUSED(cfg);
 	get_mac_addr_from_i2c_eeprom(mac_addr);
-#elif DT_INST_PROP(0, zephyr_random_mac_address)
-	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
+#else
+	if (cfg->random_mac_addr) {
+		gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
+	}
 #endif
 }
 
@@ -1799,7 +1802,7 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
-	generate_mac(dev_data->mac_addr);
+	generate_mac(dev_data->mac_addr, cfg);
 
 	LOG_INF("%s MAC: %02x:%02x:%02x:%02x:%02x:%02x", dev->name,
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -2119,6 +2122,7 @@ static const struct ethernet_api eth_api = {
 #else
 #define CFG_CLK_DEFN(n)
 #endif
+
 #define SAM_GMAC_CFG_DEFN(n)								\
 		BUILD_ASSERT(DT_INST_ENUM_IDX(n, phy_connection_type) <=		\
 			     SAM_GMAC_PHY_CONNECTION_TYPE_MAX,				\
@@ -2132,6 +2136,7 @@ static const struct ethernet_api eth_api = {
 			.num_queues = DT_INST_PROP(n, num_queues),			\
 			.phy_conn_type = DT_INST_ENUM_IDX(n, phy_connection_type),	\
 			.ref_clk_source = DT_INST_ENUM_IDX(n, ref_clk_source),		\
+			.random_mac_addr = DT_INST_PROP(n, zephyr_random_mac_address),	\
 		};
 
 #define DEFN_RX_FLAG_LIST_0(n)								\
