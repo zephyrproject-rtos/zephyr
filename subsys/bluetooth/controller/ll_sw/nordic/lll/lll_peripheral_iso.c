@@ -555,8 +555,15 @@ static void isr_rx(void *param)
 		radio_tmr_ready_save(radio_tmr_ready_get() - se_offset_us);
 	}
 
-	/* Close subevent, one tx-rx chain */
-	radio_switch_complete_and_disable();
+	/* Close subevent, one rx-tx chain */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		/* Required under single time tIFS switching, to accumulate the packet
+		 * timer value at the time of clear on radio end.
+		 */
+		radio_switch_complete_end_capture_and_disable();
+	} else {
+		radio_switch_complete_and_disable();
+	}
 
 	/* FIXME: Do not call this for every event/subevent */
 	ull_conn_iso_lll_cis_established(param);
@@ -868,6 +875,11 @@ static void isr_tx(void *param)
 	uint32_t subevent_us;
 	uint32_t start_us;
 	uint32_t hcto;
+
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
 
 	lll_isr_tx_sub_status_reset();
 
