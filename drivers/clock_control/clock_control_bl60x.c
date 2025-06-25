@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(clock_control_bl60x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl60x/pds_reg.h>
 #include <bouffalolab/bl60x/l1c_reg.h>
 #include <bouffalolab/bl60x/extra_defines.h>
+#include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 #define CLK_SRC_IS(clk, src)                                                                       \
 	DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk), 0),                \
@@ -89,39 +90,6 @@ const static uint32_t clock_control_bl60x_crystal_SDMIN_table[5] = {
 	0x49D39D,
 };
 
-static inline void clock_control_bl60x_clock_settle(void)
-{
-	__asm__ volatile(".rept 15 ; nop ; .endr");
-}
-
-/* 32 Mhz Oscillator: 0
- * crystal: 1
- * PLL and 32M: 2
- * PLL and crystal: 3
- */
-static void clock_control_bl60x_set_root_clock(uint32_t clock)
-{
-	uint32_t tmp;
-
-	/* invalid value, fallback to internal 32M */
-	if (clock > 3) {
-		clock = 0;
-	}
-	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
-	tmp = (tmp & HBN_ROOT_CLK_SEL_UMSK) | (clock << HBN_ROOT_CLK_SEL_POS);
-	sys_write32(tmp, HBN_BASE + HBN_GLB_OFFSET);
-
-	clock_control_bl60x_clock_settle();
-}
-
-static uint32_t clock_control_bl60x_get_root_clock(void)
-{
-	uint32_t tmp;
-
-	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
-	return (((tmp & HBN_ROOT_CLK_SEL_MSK) >> HBN_ROOT_CLK_SEL_POS) & 0x3);
-}
-
 static int clock_control_bl60x_deinit_crystal(void)
 {
 	uint32_t tmp;
@@ -132,7 +100,7 @@ static int clock_control_bl60x_deinit_crystal(void)
 	tmp = tmp & AON_PU_XTAL_BUF_AON_UMSK;
 	sys_write32(tmp, AON_BASE + AON_RF_TOP_AON_OFFSET);
 
-	clock_control_bl60x_clock_settle();
+	clock_bflb_settle();
 	return 0;
 }
 
@@ -149,12 +117,12 @@ static int clock_control_bl60x_init_crystal(void)
 
 	/* wait for crystal to be powered on */
 	do {
-		clock_control_bl60x_clock_settle();
+		clock_bflb_settle();
 		tmp = sys_read32(AON_BASE + AON_TSEN_OFFSET);
 		count--;
 	} while (!(tmp & AON_XTAL_RDY_MSK) && count > 0);
 
-	clock_control_bl60x_clock_settle();
+	clock_bflb_settle();
 	if (count < 1) {
 		return -1;
 	}
@@ -167,11 +135,11 @@ static int clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div, uint32
 	uint32_t tmp;
 	uint32_t old_rootclk;
 
-	old_rootclk = clock_control_bl60x_get_root_clock();
+	old_rootclk = clock_bflb_get_root_clock();
 
 	/* security RC32M */
 	if (old_rootclk > 1) {
-		clock_control_bl60x_set_root_clock(0);
+		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
 	}
 
 	/* set dividers */
@@ -186,7 +154,7 @@ static int clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div, uint32
 	sys_write32(0x00000001, 0x40000FFC);
 	sys_write32(0x00000000, 0x40000FFC);
 
-	clock_control_bl60x_clock_settle();
+	clock_bflb_settle();
 
 	/* enable clocks */
 	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG0_OFFSET);
@@ -194,8 +162,8 @@ static int clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div, uint32
 	tmp = (tmp & GLB_REG_HCLK_EN_UMSK) | (1U << GLB_REG_HCLK_EN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG0_OFFSET);
 
-	clock_control_bl60x_set_root_clock(old_rootclk);
-	clock_control_bl60x_clock_settle();
+	clock_bflb_set_root_clock(old_rootclk);
+	clock_bflb_settle();
 
 	return 0;
 }
@@ -284,11 +252,11 @@ static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t cryst
 	uint32_t tmp;
 	uint32_t old_rootclk;
 
-	old_rootclk = clock_control_bl60x_get_root_clock();
+	old_rootclk = clock_bflb_get_root_clock();
 
 	/* security RC32M */
 	if (old_rootclk > 1) {
-		clock_control_bl60x_set_root_clock(0);
+		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
 	}
 
 	clock_control_bl60x_deinit_pll();
@@ -356,7 +324,7 @@ static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t cryst
 	tmp = sys_read32(PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
 	tmp = (tmp & PDS_PU_CLKPLL_SFREG_UMSK) | (1U << PDS_PU_CLKPLL_SFREG_POS);
 	sys_write32(tmp, PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
-	clock_control_bl60x_clock_settle();
+	clock_bflb_settle();
 
 	/* enable PPL clock actual? */
 	tmp = sys_read32(PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
@@ -371,7 +339,7 @@ static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t cryst
 	tmp = (tmp & PDS_CLKPLL_PU_POSTDIV_UMSK) | (1U << PDS_CLKPLL_PU_POSTDIV_POS);
 	sys_write32(tmp, PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
 
-	clock_control_bl60x_clock_settle();
+	clock_bflb_settle();
 
 	/* reset couple things one by one? */
 	tmp = sys_read32(PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
@@ -390,8 +358,8 @@ static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t cryst
 	tmp = (tmp & PDS_CLKPLL_SDM_RESET_UMSK) | (0U << PDS_CLKPLL_SDM_RESET_POS);
 	sys_write32(tmp, PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
 
-	clock_control_bl60x_set_root_clock(old_rootclk);
-	clock_control_bl60x_clock_settle();
+	clock_bflb_set_root_clock(old_rootclk);
+	clock_bflb_settle();
 }
 
 /*
@@ -439,7 +407,7 @@ static int clock_control_bl60x_clock_trim_32M(void)
 	tmp = (tmp & PDS_RC32M_CODE_FR_EXT_UMSK) | trim << PDS_RC32M_CODE_FR_EXT_POS;
 	sys_write32(tmp, PDS_BASE + PDS_RC32M_CTRL0_OFFSET);
 
-	clock_control_bl60x_clock_settle();
+	clock_bflb_settle();
 
 	return 0;
 }
@@ -557,9 +525,9 @@ static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
 	clock_control_bl60x_select_PLL(data->root.pll_select);
 
 	if (data->pll.source == bl60x_clkid_clk_crystal) {
-		clock_control_bl60x_set_root_clock(3);
+		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_PLL_XTAL);
 	} else {
-		clock_control_bl60x_set_root_clock(2);
+		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_PLL_RC32M);
 	}
 
 	if (clock_control_bl60x_get_clk(dev) > MHZ(120)) {
@@ -572,7 +540,7 @@ static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
 
 static void clock_control_bl60x_init_root_as_crystal(const struct device *dev)
 {
-	clock_control_bl60x_set_root_clock(1);
+	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 	sys_write32(clock_control_bl60x_get_clk(dev), CORECLOCKREGISTER);
 }
 
@@ -590,7 +558,7 @@ static int clock_control_bl60x_update_root(const struct device *dev)
 	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG0_OFFSET);
 
 	/* set root clock to internal 32MHz Oscillator as failsafe */
-	clock_control_bl60x_set_root_clock(0);
+	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
 	if (clock_control_bl60x_set_root_clock_dividers(0, 0) != 0) {
 		return -EIO;
 	}
@@ -627,7 +595,7 @@ static int clock_control_bl60x_update_root(const struct device *dev)
 	clock_control_bl60x_set_machine_timer_clock(
 		1, 0, clock_control_bl60x_mtimer_get_clk_src_div(dev));
 
-	clock_control_bl60x_clock_settle();
+	clock_bflb_settle();
 
 	return ret;
 }
