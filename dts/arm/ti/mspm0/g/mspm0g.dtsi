@@ -58,5 +58,21 @@
 				status = "disabled";
 			};
 		};
+
+		tima1: tima@40862000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40862000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			interrupts = <19 0>;
+			ti,clk-prescaler = <0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			pwma1: pwma1 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
 	};
 };
