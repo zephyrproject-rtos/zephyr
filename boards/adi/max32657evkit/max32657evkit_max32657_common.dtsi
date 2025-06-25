@@ -39,6 +39,7 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
+		accel0 = &adxl367;
 		led0 = &led1;
 		sw0 = &pb1;
 		watchdog0 = &wdt0;
@@ -84,4 +85,10 @@
 	i2c-scl-hz = <DT_FREQ_K(200)>;
 	i3c-scl-hz = <DT_FREQ_K(800)>;
 	i3c-od-scl-hz = <DT_FREQ_K(400)>;
+
+	adxl367: adxl367@530000000000000000 {
+		compatible = "adi,adxl367";
+		reg = <0x53 0x00 0x00>;
+		status = "okay";
+	};
 };
