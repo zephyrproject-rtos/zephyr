@@ -57,36 +57,6 @@ const clock_sys_pll_config_t sysPllConfig = {
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
-#ifdef CONFIG_INIT_ENET_PLL
-/* ENET PLL configuration for RUN mode */
-const clock_enet_pll_config_t ethPllConfig = {
-#if defined(CONFIG_SOC_MIMXRT1011) || \
-	defined(CONFIG_SOC_MIMXRT1015) || \
-	defined(CONFIG_SOC_MIMXRT1021) || \
-	defined(CONFIG_SOC_MIMXRT1024)
-	.enableClkOutput500M = true,
-#endif
-#if defined(CONFIG_ETH_NXP_ENET)
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
-	.enableClkOutput = true,
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2))
-	.enableClkOutput1 = true,
-#endif
-#endif
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	.enableClkOutput25M = true,
-#else
-	.enableClkOutput25M = false,
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
-	.loopDivider = 1,
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2))
-	.loopDivider1 = 1,
-#endif
-};
-#endif
 
 #if CONFIG_USB_DC_NXP_EHCI
 	usb_phy_config_struct_t usbPhyConfig = {
@@ -164,9 +134,26 @@ __weak void clock_init(void)
 #ifdef CONFIG_INIT_ARM_PLL
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
 #endif
-#ifdef CONFIG_INIT_ENET_PLL
-	CLOCK_InitEnetPll(&ethPllConfig);
+
+	static const clock_enet_pll_config_t ethPllConfig = {
+		.enableClkOutput25M = IS_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET),
+		.enableClkOutput = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)),
+		.loopDivider = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)),
+#if DT_NODE_EXISTS(DT_NODELABEL(enet2))
+		/* some platform don't have enet 2 and sdk doesn't have these fields for it */
+		.enableClkOutput1 = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2)),
+		.loopDivider1 = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2)),
 #endif
+#if IS_ENABLED(CONFIG_INIT_PLL6_500M)
+		/* this field only exists on some platforms, so ifdef is needed */
+		.enableClkOutput500M = true,
+#endif
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_ENET_PLL)) {
+		CLOCK_InitEnetPll(&ethPllConfig);
+	}
+
 #ifdef CONFIG_INIT_VIDEO_PLL
 	CLOCK_InitVideoPll(&videoPllConfig);
 #endif

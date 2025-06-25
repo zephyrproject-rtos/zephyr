@@ -184,13 +184,6 @@ config INIT_ARM_PLL
 config INIT_VIDEO_PLL
 	bool "Initialize Video PLL"
 
-config INIT_ENET_PLL
-	bool
-	help
-	  If y, the Ethernet PLL is initialized. Always enabled on e.g.
-	  MIMXRT1021 - see commit 17f4d6bec7 ("soc: nxp_imx: fix ENET_PLL selection
-	  for MIMXRT1021").
-
 config INIT_SYS_PLL
 	bool "Initialize System PLL"
 
