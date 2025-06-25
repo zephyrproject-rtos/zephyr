@@ -41,6 +41,11 @@
 #include <zephyr/internal/syscall_handler.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
+/* avoid pulling in stdlib */
+#undef _abs
+#define _abs(x) ((x) < 0 ? (-(x)) : (x))
+
+
 /* the only struct z_kernel instance */
 __pinned_bss
 struct z_kernel _kernel;
@@ -313,20 +318,14 @@ static int do_device_init(const struct device *dev)
 
 	if (dev->ops.init != NULL) {
 		rc = dev->ops.init(dev);
-		/* Mark device initialized. If initialization
-		 * failed, record the error condition.
-		 */
+		/* If initialization failed, record the error condition. */
 		if (rc != 0) {
-			if (rc < 0) {
-				rc = -rc;
-			}
-			if (rc > UINT8_MAX) {
-				rc = UINT8_MAX;
-			}
-			dev->state->init_res = rc;
+			__ASSERT(rc != INT_MIN, "init(dev) failed, but init_res will be 0");
+			dev->state->init_res = CLAMP(_abs(rc), 0, UINT8_MAX);
 		}
 	}
 
+	/* device initialization has been invoked */
 	dev->state->initialized = true;
 
 	if (rc == 0) {
