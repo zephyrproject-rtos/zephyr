@@ -169,6 +169,76 @@
 			};
 		};
 
+		spi1: spi@40230000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40230000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI1, STM32_CLK)>;
+			interrupts = <112 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@400b0000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x400b0000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI2, STM32_CLK)>;
+			interrupts = <113 0>;
+			status = "disabled";
+		};
+
+		spi3: spi@400c0000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x400c0000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI3, STM32_CLK)>;
+			interrupts = <125 0>;
+			status = "disabled";
+		};
+
+		spi4: spi@40240000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40240000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI4, STM32_CLK)>;
+			interrupts = <152 0>;
+			status = "disabled";
+		};
+
+		spi5: spi@40280000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40280000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI5, STM32_CLK)>;
+			interrupts = <153 0>;
+			status = "disabled";
+		};
+
+		spi6: spi@40350000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40350000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI6, STM32_CLK)>;
+			interrupts = <154 0>;
+			status = "disabled";
+		};
+
+		spi7: spi@40360000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40360000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(SPI7, STM32_CLK)>;
+			interrupts = <155 0>;
+			status = "disabled";
+		};
+
 		usart1: serial@40330000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40330000 DT_SIZE_K(1)>;
