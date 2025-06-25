@@ -1,0 +1,20 @@
+sample:
+  name: PWM capture
+  description: input capture for PWM signal, time and duration application
+common:
+  tags:
+    - drivers
+    - pwm
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "timclk ([0-9]*) Hz"
+      - "{period: ([0-9]*)  pulse width: ([0-9]*)} in TIMCLK cycle"
+      - "{period: ([0-9]*) Hz duty: ([0-9]*)}"
+  depends_on: pwm
+tests:
+  sample.drivers.pwm.capture:
+    platform_allow:
+      - lp_mspm0g3507
