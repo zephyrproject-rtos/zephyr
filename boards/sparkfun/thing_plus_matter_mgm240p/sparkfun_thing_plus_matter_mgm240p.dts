@@ -1,12 +1,14 @@
 /*
  * Copyright (c) 2024 Daikin Comfort Technologies North America, Inc.
  * Copyright (c) 2020 TriaGnoSys GmbH
+ * Copyright (c) 2025 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 #include <silabs/xg24/mgm240pb32vna.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "sparkfun_thing_plus_matter_mgm240p-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -26,6 +28,7 @@
 
 	aliases {
 		led0 = &blue_led;
+		pwm-led0 = &blue_pwm_led;
 		spi0 = &eusart1;
 		watchdog0 = &wdog0;
 	};
@@ -38,9 +41,28 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "blue";
+		};
+	};
+
 	wake_up_trigger: gpio-wake-up  {
 		compatible = "silabs,gecko-wake-up-trigger";
 		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

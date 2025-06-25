@@ -29,6 +29,14 @@
 		};
 	};
 
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PA8>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
 	/* configuration for uart0 device, default state */
 	usart0_default: usart0_default {
 		group0 {
