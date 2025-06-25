@@ -222,6 +222,36 @@ follows:
 
 DAC output is available on connector J12 pin 4.
 
+Building and Running for NXP FRDM-MCXA166
+============================================
+The sample can be built and executed for the :zephyr:board:`frdm_mcxa166` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_mcxa166
+   :goals: build flash
+   :compact:
+
+DAC output is available on connector J1 pin 4.
+Because DAC out pin is conflict with LPUART2 TX, so switch to LPUART3 for console
+The J5 Pin3,4 are LPUART3 Rx,Tx pins.
+
+Building and Running for NXP FRDM-MCXA276
+============================================
+The sample can be built and executed for the :zephyr:board:`frdm_mcxa276` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_mcxa276
+   :goals: build flash
+   :compact:
+
+DAC output is available on connector J1 pin 4.
+Because DAC out pin is conflict with LPUART2 TX, so switch to LPUART3 for console
+The J5 Pin3,4 are LPUART3 Rx,Tx pins.
+
 Sample output
 =============
 

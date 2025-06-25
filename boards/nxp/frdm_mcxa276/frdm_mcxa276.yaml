@@ -23,4 +23,5 @@ supported:
   - watchdog
   - counter
   - dma
+  - dac
 vendor: nxp
