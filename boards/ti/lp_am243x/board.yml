@@ -1,0 +1,6 @@
+board:
+  name: lp_am243x
+  full_name: AM243x LaunchPad
+  vendor: ti
+  socs:
+  - name: am2434
