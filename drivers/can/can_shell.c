@@ -813,10 +813,12 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 		frame.data[i] = val;
 	}
 
+#ifndef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
 	err = can_shell_tx_msgq_poll_submit(sh);
 	if (err != 0) {
 		return err;
 	}
+#endif
 
 	frame_no = frame_counter++;
 
