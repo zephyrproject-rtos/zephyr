@@ -261,6 +261,7 @@ struct eth_sam_dev_cfg {
 	const uint32_t max_frame_size;
 	const uint8_t num_queues;
 	const uint8_t phy_conn_type;
+	const bool random_mac_addr;
 };
 
 /* Device run time data */
