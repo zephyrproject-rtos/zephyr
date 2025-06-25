@@ -149,6 +149,8 @@ New APIs and options
 * I2C
 
   * :c:func:`i2c_configure_dt`.
+  * :c:macro:`I2C_DEVICE_DT_DEINIT_DEFINE`
+  * :c:macro:`I2C_DEVICE_DT_INST_DEINIT_DEFINE`
 
 ..
   Link to new APIs here, in a group if you think it's necessary, no need to get
