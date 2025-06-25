@@ -117,7 +117,7 @@ The skeleton of a simple SoC YAML file containing just one SoC is:
 .. code-block:: yaml
 
    socs:
-   - name: <soc1>
+     - name: <soc1>
 
 It is possible to have multiple SoC located in the SoC folder.
 For example if they belong to a common family or series it is recommended to
