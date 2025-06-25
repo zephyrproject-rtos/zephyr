@@ -90,6 +90,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	case STM32_CLOCK_PERIPH_I2C8:
 		*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C8_CLKSOURCE);
 		break;
+	case STM32_CLOCK_PERIPH_SPI1:
+		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI1_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_SPI2:
+	case STM32_CLOCK_PERIPH_SPI3:
+		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_SPI4:
+	case STM32_CLOCK_PERIPH_SPI5:
+		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI45_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_SPI6:
+	case STM32_CLOCK_PERIPH_SPI7:
+		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI67_CLKSOURCE);
+		break;
 	default:
 		return -ENOTSUP;
 	}
