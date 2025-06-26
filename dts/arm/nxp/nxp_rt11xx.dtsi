@@ -796,7 +796,7 @@
 				interrupts = <137 0>;
 				interrupt-names = "COMMON";
 				nxp,mdio = <&enet_mdio>;
-				nxp,ptp-clock = <&enet_ptp_clock>;
+				ptp-clock = <&enet_ptp_clock>;
 				status = "disabled";
 			};
 			enet_mdio: mdio {
@@ -823,7 +823,7 @@
 				interrupts = <141 0>;
 				interrupt-names = "COMMON";
 				nxp,mdio = <&enet1g_mdio>;
-				nxp,ptp-clock = <&enet1g_ptp_clock>;
+				ptp-clock = <&enet1g_ptp_clock>;
 				status = "disabled";
 			};
 			enet1g_mdio: mdio {
