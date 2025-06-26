@@ -56,31 +56,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
-#ifdef CONFIG_INIT_ARM_PLL
-
-#if defined(CONFIG_SOC_MIMXRT1176)
-#define DEFAULT_LOOPDIV 83
-#define DEFAULT_POSTDIV 2
-#elif defined(CONFIG_SOC_MIMXRT1166)
-#define DEFAULT_LOOPDIV 100
-#define DEFAULT_POSTDIV 4
-#else
-/*
- * Check that the ARM PLL has a multiplier and divider set
- */
-BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_mult),
-	     "ARM PLL must have clock-mult property");
-BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_div),
-	     "ARM PLL must have clock-div property");
-#endif
-
-static const clock_arm_pll_config_t armPllConfig = {
-	.postDivider = CONCAT(kCLOCK_PllPostDiv,
-			      DT_PROP_OR(DT_NODELABEL(arm_pll), clock_div, DEFAULT_POSTDIV)),
-	.loopDivider = DT_PROP_OR(DT_NODELABEL(arm_pll), clock_mult, DEFAULT_LOOPDIV) * 2,
-};
-#endif
-
 static const clock_sys_pll2_config_t sysPll2Config = {
 	/* Denominator of spread spectrum */
 	.mfd = 268435455,
@@ -250,10 +225,15 @@ __weak void clock_init(void)
 	 * changed in the following PLL/PFD configuration code.
 	 */
 
-#ifdef CONFIG_INIT_ARM_PLL
-	/* Init Arm Pll. */
-	CLOCK_InitArmPll(&armPllConfig);
-#endif
+
+	static const clock_arm_pll_config_t armPllConfig = {
+		.postDivider = CONCAT(kCLOCK_PllPostDiv, DT_PROP(DT_NODELABEL(arm_pll), clock_div)),
+		.loopDivider = DT_PROP(DT_NODELABEL(arm_pll), clock_mult) * 2,
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_ARM_PLL)) {
+		CLOCK_InitArmPll(&armPllConfig);
+	}
 
 	if (IS_ENABLED(CONFIG_ETH_NXP_ENET)) {
 		/* For default clocking, we will only use pll1 for div2 output for enet */
