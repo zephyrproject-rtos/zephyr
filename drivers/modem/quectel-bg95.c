@@ -780,6 +780,8 @@ MODEM_CMD_DEFINE(on_cmd_sockreadfrom)
 
     if (i >= (len + 7)) {
         LOG_ERR("Wrong format in QSSLRECV");
+        // FIX for infinite loop if corrupted QSSLRECV
+        data->rx_buf = net_buf_skip(data->rx_buf, len);
         return -EINVAL; /* FIXME */
     }
 
