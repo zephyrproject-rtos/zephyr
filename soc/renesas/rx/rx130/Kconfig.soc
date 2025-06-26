@@ -7,14 +7,14 @@ config SOC_SERIES_RX130
 	help
 	  Renesas RX130 series
 
-config SOC_R5F513083XFB
+config SOC_R5F51308AXFP
 	bool
 	select SOC_SERIES_RX130
 	help
-	  R5F513083XFB
+	  R5F51308AXFP
 
 config SOC_SERIES
 	default "rx130" if SOC_SERIES_RX130
 
 config SOC
-	default "r5f513083xfb" if SOC_R5F513083XFB
+	default "r5f51308axfp" if SOC_R5F51308AXFP

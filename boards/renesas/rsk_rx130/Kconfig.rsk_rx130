@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_RSK_RX130
-	select SOC_R5F513083XFB
+	select SOC_R5F51308AXFP
