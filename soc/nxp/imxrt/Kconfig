@@ -179,6 +179,9 @@ config DCDC_VALUE
 	hex "DCDC value for VDD_SOC"
 
 config INIT_ARM_PLL
+	default y
+	depends on !SOC_MIMXRT1011 && !SOC_MIMXRT1015 && \
+		   !SOC_MIMXRT1021 && !SOC_MIMXRT1024
 	bool "Initialize ARM PLL"
 
 config INIT_VIDEO_PLL
