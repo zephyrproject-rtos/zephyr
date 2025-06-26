@@ -52,3 +52,12 @@ properties:
       The INT2 signal defaults to active high as produced by the
       sensor.  The property value should ensure the flags properly
       describe the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    enum: [1, 2]
+    description: |
+      This property selects the interrupt line (INT1 or INT2) used to deliver
+      the data ready signal, if enabled.
+      - 1
+      - 2
