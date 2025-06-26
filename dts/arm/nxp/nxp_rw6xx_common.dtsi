@@ -609,7 +609,7 @@
 			interrupts = <115 0>;
 			interrupt-names = "COMMON";
 			nxp,mdio = <&enet_mdio>;
-			nxp,ptp-clock = <&enet_ptp_clock>;
+			ptp-clock = <&enet_ptp_clock>;
 			status = "disabled";
 			power-domains = <&power_mode3_domain>;
 		};
