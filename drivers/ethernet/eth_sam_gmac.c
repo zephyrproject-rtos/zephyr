@@ -1785,8 +1785,10 @@ static void eth_iface_init(struct net_if *iface)
 #ifdef CONFIG_SOC_SAMA7G54
 		| GMAC_NCFGR_DBW(1)  /* Data Bus Width. Must always be written to ‘1’ */
 #endif
-		| GMAC_NCFGR_RXCOEN  /* Receive Checksum Offload Enable */
-		| GMAC_MAX_FRAME_SIZE;
+#ifdef CONFIG_NET_VLAN
+		| GMAC_NCFGR_MAXFS
+#endif
+		| GMAC_NCFGR_RXCOEN; /* Receive Checksum Offload Enable */
 	result = gmac_init(cfg->regs, gmac_ncfgr_val, cfg);
 	if (result < 0) {
 		LOG_ERR("%s Unable to initialize ETH driver", dev->name);
