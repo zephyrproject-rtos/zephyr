@@ -2241,6 +2241,8 @@ static const struct ethernet_api eth_api = {
 #define DEFN_DATA_QUEUE_LIST_5(n)
 #endif
 #define SAM_GMAC_DATA_DEFN(n)								\
+		BUILD_ASSERT(GMAC_QUEUE_NUM >= DT_INST_PROP(n, num_queues),		\
+			     "The size of array queue_list[] is too small");		\
 		static struct eth_sam_dev_data eth##n##_data = {			\
 			.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0U}),	\
 			.queue_list = {							\
