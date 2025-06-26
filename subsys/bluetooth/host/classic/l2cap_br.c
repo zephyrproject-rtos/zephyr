@@ -4664,11 +4664,16 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 		return -EBUSY;
 	}
 
+	if (!br_chan->rx.mtu) {
+		br_chan->rx.mtu = BT_L2CAP_RX_MTU;
+	}
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	err = l2cap_br_check_chan_config(conn, br_chan);
 	if (err) {
 		return err;
 	}
+#else
+	br_chan->rx.mtu = MIN(br_chan->rx.mtu, BT_L2CAP_RX_MTU);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	if (!l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy)) {
