@@ -298,7 +298,7 @@ static const struct tospec {
 	{K_NSEC(2000000000), {2, 0}, 0},
 	{K_USEC(0), {0, 0}, 0},
 	{K_USEC(2000000), {2, 0}, 0},
-	{K_MSEC(100), {0, 100000000}, 0},
+	{K_MSEC(100), {0, k_ticks_to_ns_ceil64(k_ms_to_ticks_ceil32(100))}, 0},
 	{K_MSEC(2000), {2, 0}, 0},
 	{K_SECONDS(0), {0, 0}, 0},
 	{K_SECONDS(1), {1, 0}, 0},
