@@ -68,6 +68,13 @@ config VIDEO_CTRL_VFLIP
 	help
 	  If set, mirror the video frame vertically
 
+config VIDEO_ENCODED_PIXEL_FORMAT
+	string "Pixel format of the encoded frame"
+	default VIDEO_PIX_FMT_H264
+	help
+	  Compression format used by the video encoder if enabled.
+	  If not set defaults to H264 video bitstream with startcodes.
+
 endmenu
 
 source "Kconfig.zephyr"
