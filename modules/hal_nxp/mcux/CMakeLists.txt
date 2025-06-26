@@ -101,6 +101,11 @@ zephyr_compile_definitions_ifdef(
   FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL=1
   )
 
+zephyr_compile_definitions_ifdef(
+  CONFIG_I2C_NXP_II2C
+  I2C_RETRY_TIMES=40000
+  )
+
 # note: if FSL_IRQSTEER_ENABLE_MASTER_INT is not
 # defined then it will automatically be defined
 # and set to 1 via fsl_irqsteer.h
