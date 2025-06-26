@@ -133,9 +133,9 @@ __weak void clock_init(void)
 {
 	clock_root_config_t rootCfg = {0};
 
-#if CONFIG_ADJUST_DCDC
-	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
-#endif
+	if (IS_ENABLED(CONFIG_ADJUST_DCDC)) {
+		DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
+	}
 
 /* RT1160 does not have Forward Body Biasing on the CM7 core */
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
