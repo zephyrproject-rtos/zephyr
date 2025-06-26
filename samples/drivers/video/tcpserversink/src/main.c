@@ -33,12 +33,171 @@ static ssize_t sendall(int sock, const void *buf, size_t len)
 	return 0;
 }
 
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+const struct device *encoder_dev;
+
+int configure_encoder(void)
+{
+	struct video_buffer *buffer;
+	struct video_format fmt;
+	struct video_caps caps;
+	uint32_t size;
+	int i;
+
+	encoder_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_videoenc));
+	if (!device_is_ready(encoder_dev)) {
+		LOG_ERR("%s: encoder video device not ready.", encoder_dev->name);
+		return -1;
+	}
+
+	/* Get capabilities */
+	caps.type = VIDEO_BUF_TYPE_OUTPUT;
+	if (video_get_caps(encoder_dev, &caps)) {
+		LOG_ERR("Unable to retrieve video capabilities");
+		return -1;
+	}
+
+	LOG_INF("- Encoder output capabilities:");
+	i = 0;
+	while (caps.format_caps[i].pixelformat) {
+		const struct video_format_cap *fcap = &caps.format_caps[i];
+		/* fourcc to string */
+		LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
+			VIDEO_FOURCC_TO_STR(fcap->pixelformat), fcap->width_min, fcap->width_max,
+			fcap->width_step, fcap->height_min, fcap->height_max, fcap->height_step);
+		i++;
+	}
+
+	caps.type = VIDEO_BUF_TYPE_INPUT;
+	if (video_get_caps(encoder_dev, &caps)) {
+		LOG_ERR("Unable to retrieve video capabilities");
+		return -1;
+	}
+
+	LOG_INF("- Encoder input capabilities:");
+	i = 0;
+	while (caps.format_caps[i].pixelformat) {
+		const struct video_format_cap *fcap = &caps.format_caps[i];
+		/* fourcc to string */
+		LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
+			VIDEO_FOURCC_TO_STR(fcap->pixelformat), fcap->width_min, fcap->width_max,
+			fcap->width_step, fcap->height_min, fcap->height_max, fcap->height_step);
+		i++;
+	}
+
+	/* Get default/native format */
+	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+	if (video_get_format(encoder_dev, &fmt)) {
+		LOG_ERR("Unable to retrieve video format");
+		return -1;
+	}
+
+	LOG_INF("Video encoder device detected, format: %s %ux%u",
+		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
+
+#if CONFIG_VIDEO_FRAME_HEIGHT
+	fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
+#endif
+
+#if CONFIG_VIDEO_FRAME_WIDTH
+	fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
+#endif
+
+	/* Set output format */
+	if (strcmp(CONFIG_VIDEO_ENCODED_PIXEL_FORMAT, "")) {
+		fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_ENCODED_PIXEL_FORMAT);
+	}
+
+	LOG_INF("- Video encoder output format: %s %ux%u", VIDEO_FOURCC_TO_STR(fmt.pixelformat),
+		fmt.width, fmt.height);
+
+	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+	if (video_set_format(encoder_dev, &fmt)) {
+		LOG_ERR("Unable to set format");
+		return -1;
+	}
+
+	/* Alloc output buffer */
+	size = fmt.size;
+	if (size == 0) {
+		LOG_ERR("Encoder driver must set format size");
+		return -1;
+	}
+
+	buffer = video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_FOREVER);
+	if (buffer == NULL) {
+		LOG_ERR("Unable to alloc compressed video buffer size=%d", size);
+		return -1;
+	}
+
+	buffer->type = VIDEO_BUF_TYPE_OUTPUT;
+	video_enqueue(encoder_dev, buffer);
+
+	/* Set input format */
+	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
+		fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
+	}
+
+	LOG_INF("- Video encoder input format: %s %ux%u", VIDEO_FOURCC_TO_STR(fmt.pixelformat),
+		fmt.width, fmt.height);
+
+	fmt.type = VIDEO_BUF_TYPE_INPUT;
+	if (video_set_format(encoder_dev, &fmt)) {
+		LOG_ERR("Unable to set input format");
+		return -1;
+	}
+
+	/* Start video encoder */
+	if (video_stream_start(encoder_dev, VIDEO_BUF_TYPE_INPUT)) {
+		LOG_ERR("Unable to start video encoder (input)");
+		return -1;
+	}
+	if (video_stream_start(encoder_dev, VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Unable to start video encoder (output)");
+		return -1;
+	}
+
+	return 0;
+}
+
+int encode_frame(struct video_buffer *in, struct video_buffer **out)
+{
+	int ret;
+
+	in->type = VIDEO_BUF_TYPE_INPUT;
+	video_enqueue(encoder_dev, in);
+
+	(*out)->type = VIDEO_BUF_TYPE_OUTPUT;
+	ret = video_dequeue(encoder_dev, out, K_FOREVER);
+	if (ret) {
+		LOG_ERR("Unable to dequeue encoder buf");
+		return ret;
+	}
+
+	return 0;
+}
+
+void stop_encoder(void)
+{
+	if (video_stream_stop(encoder_dev, VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Unable to stop encoder (output)");
+	}
+
+	if (video_stream_stop(encoder_dev, VIDEO_BUF_TYPE_INPUT)) {
+		LOG_ERR("Unable to stop encoder (input)");
+	}
+}
+#endif
+
 int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 	struct video_buffer *buffers[CONFIG_VIDEO_CAPTURE_N_BUFFERING];
 	struct video_buffer *vbuf = &(struct video_buffer){};
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+	struct video_buffer *vbuf_out = &(struct video_buffer){};
+#endif
 	int ret, sock, client;
 	struct video_format fmt;
 	struct video_caps caps;
@@ -267,6 +426,13 @@ int main(void)
 
 		LOG_INF("TCP: Accepted connection");
 
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+		if (configure_encoder()) {
+			LOG_ERR("Unable to configure video encoder");
+			return 0;
+		}
+#endif
+
 		/* Enqueue Buffers */
 		for (i = 0; i < ARRAY_SIZE(buffers); i++) {
 			video_enqueue(video_dev, buffers[i]);
@@ -290,16 +456,28 @@ int main(void)
 				return 0;
 			}
 
-			LOG_INF("Sending frame %d", i++);
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+			encode_frame(vbuf, &vbuf_out);
 
+			LOG_INF("Sending compressed frame %d (size=%d bytes)", i++,
+				vbuf_out->bytesused);
+			/* Send compressed video buffer to TCP client */
+			ret = sendall(client, vbuf_out->buffer, vbuf_out->bytesused);
+
+			vbuf_out->type = VIDEO_BUF_TYPE_OUTPUT;
+			video_enqueue(encoder_dev, vbuf_out);
+#else
+			LOG_INF("Sending frame %d", i++);
 			/* Send video buffer to TCP client */
 			ret = sendall(client, vbuf->buffer, vbuf->bytesused);
+#endif
 			if (ret && ret != -EAGAIN) {
 				/* client disconnected */
 				LOG_ERR("TCP: Client disconnected %d", ret);
 				close(client);
 			}
 
+			vbuf->type = VIDEO_BUF_TYPE_INPUT;
 			(void)video_enqueue(video_dev, vbuf);
 		} while (!ret);
 
@@ -309,8 +487,13 @@ int main(void)
 			return 0;
 		}
 
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+		stop_encoder();
+#endif
+
 		/* Flush remaining buffers */
 		do {
+			vbuf->type = VIDEO_BUF_TYPE_INPUT;
 			ret = video_dequeue(video_dev, &vbuf, K_NO_WAIT);
 		} while (!ret);
 
