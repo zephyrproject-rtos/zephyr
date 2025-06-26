@@ -17,6 +17,8 @@
  * number from 16 to last IRQ number on the platform.
  */
 
+#include "sw_isr_common.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
@@ -25,7 +27,8 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/printk.h>
-
+#include <zephyr/irq_multilevel.h>
+#include <zephyr/irq_nextlevel.h>
 
 /*
  * storage space for the interrupt stack of fast_irq
@@ -153,6 +156,57 @@ void arch_irq_disable(unsigned int irq);
  */
 int arch_irq_is_enabled(unsigned int irq);
 
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+/**
+ * @brief Multi-level interrupt management.
+ *
+ * A 2nd or 3rd level interrupt is not managed by the ARC core interrupt unit
+ * directly. Instead the request is forwarded via the irq_nextlevel API to the
+ * aggregator driver that owns the leaf interrupt line.
+ *
+ * Only the leaf-level interrupt line is enabled or disabled at runtime.
+ * The parent interrupt line connecting an aggregator to the level above is
+ * enabled once by the aggregator's driver at device initialization time and
+ * is assumed to remain enabled.
+ *
+ * @retval true		If @a irq was handled by an aggregator
+ * @retval false	If @a irq is a 1st level interrupt that must be handled by ARC
+ */
+static bool arc_irq_next_level_config(unsigned int irq, bool enable)
+{
+	unsigned int level = irq_get_level(irq);
+	const struct device *dev;
+
+	if (level == 1) {
+		return false;
+	}
+
+	dev = z_get_sw_isr_device_from_irq(irq);
+	if (enable) {
+		irq_enable_next_level(dev, irq_from_level(irq, level));
+	} else {
+		irq_disable_next_level(dev, irq_from_level(irq, level));
+	}
+
+	return true;
+}
+
+/**
+ * @brief Query the enable state of a 2nd or 3rd level interrupt.
+ *
+ * The enable state of the leaf interrupt line is queried from the aggregator
+ * driver that owns it.
+ *
+ * @retval Interrupt enable state, true or false
+ */
+static int arc_irq_next_level_is_enabled(unsigned int irq)
+{
+	const struct device *dev = z_get_sw_isr_device_from_irq(irq);
+
+	return irq_line_is_enabled_next_level(dev, irq_from_level(irq, irq_get_level(irq)));
+}
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
+
 #ifdef CONFIG_ARC_CONNECT
 
 #define IRQ_NUM_TO_IDU_NUM(id)		((id) - ARC_CONNECT_IDU_IRQ_START)
@@ -160,6 +214,12 @@ int arch_irq_is_enabled(unsigned int irq);
 
 void arch_irq_enable(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	if (arc_irq_next_level_config(irq, true)) {
+		return;
+	}
+#endif
+
 	if (IRQ_IS_COMMON(irq)) {
 		z_arc_connect_idu_set_mask(IRQ_NUM_TO_IDU_NUM(irq), 0x0);
 	} else {
@@ -169,6 +229,12 @@ void arch_irq_enable(unsigned int irq)
 
 void arch_irq_disable(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	if (arc_irq_next_level_config(irq, false)) {
+		return;
+	}
+#endif
+
 	if (IRQ_IS_COMMON(irq)) {
 		z_arc_connect_idu_set_mask(IRQ_NUM_TO_IDU_NUM(irq), 0x1);
 	} else {
@@ -178,6 +244,12 @@ void arch_irq_disable(unsigned int irq)
 
 int arch_irq_is_enabled(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	if (irq_get_level(irq) != 1) {
+		return arc_irq_next_level_is_enabled(irq);
+	}
+#endif
+
 	if (IRQ_IS_COMMON(irq)) {
 		return !z_arc_connect_idu_read_mask(IRQ_NUM_TO_IDU_NUM(irq));
 	} else {
@@ -187,16 +259,34 @@ int arch_irq_is_enabled(unsigned int irq)
 #else
 void arch_irq_enable(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	if (arc_irq_next_level_config(irq, true)) {
+		return;
+	}
+#endif
+
 	z_arc_v2_irq_unit_int_enable(irq);
 }
 
 void arch_irq_disable(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	if (arc_irq_next_level_config(irq, false)) {
+		return;
+	}
+#endif
+
 	z_arc_v2_irq_unit_int_disable(irq);
 }
 
 int arch_irq_is_enabled(unsigned int irq)
 {
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+	if (irq_get_level(irq) != 1) {
+		return arc_irq_next_level_is_enabled(irq);
+	}
+#endif
+
 	return z_arc_v2_irq_unit_int_enabled(irq);
 }
 #endif /* CONFIG_ARC_CONNECT */
