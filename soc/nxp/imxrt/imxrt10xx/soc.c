@@ -57,15 +57,6 @@ const clock_sys_pll_config_t sysPllConfig = {
 	};
 #endif
 
-#ifdef CONFIG_INIT_VIDEO_PLL
-const clock_video_pll_config_t videoPllConfig = {
-	.loopDivider = 31,
-	.postDivider = 8,
-	.numerator = 0,
-	.denominator = 0,
-};
-#endif
-
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
 #ifdef CONFIG_XIP
@@ -152,6 +143,12 @@ __weak void clock_init(void)
 	}
 
 #ifdef CONFIG_INIT_VIDEO_PLL
+	static const clock_video_pll_config_t videoPllConfig = {
+		.loopDivider = 31,
+		.postDivider = 8,
+		.numerator = 0,
+		.denominator = 0,
+	};
 	CLOCK_InitVideoPll(&videoPllConfig);
 #endif
 
