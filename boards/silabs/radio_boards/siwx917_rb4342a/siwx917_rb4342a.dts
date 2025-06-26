@@ -114,6 +114,10 @@
 	};
 };
 
+&sysrtc0  {
+	status = "okay";
+};
+
 &memc {
 	clocks = <&clock0 SIWX91X_CLK_QSPI>;
 	pinctrl-0 = <&psram_default>;
