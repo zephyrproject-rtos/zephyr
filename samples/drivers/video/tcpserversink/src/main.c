@@ -31,12 +31,119 @@ static ssize_t sendall(int sock, const void *buf, size_t len)
 	return 0;
 }
 
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+const struct device *encoder_dev = NULL;
+
+int configure_encoder()
+{
+	struct video_buffer *buffer;
+	struct video_format fmt;
+	struct video_caps caps;
+	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
+	uint32_t size;
+	if (encoder_dev)
+		return 0;
+
+	encoder_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_videoenc));
+	if (!device_is_ready(encoder_dev)) {
+		LOG_ERR("%s: video device not ready.", encoder_dev->name);
+		return -1;
+	}
+	LOG_INF("Video device: %s", encoder_dev->name);
+
+	/* Get capabilities */
+	caps.type = type;
+	if (video_get_caps(encoder_dev, &caps)) {
+		LOG_ERR("Unable to retrieve video capabilities");
+		return -1;
+	}
+
+	/* Get default/native format */
+	fmt.type = type;
+	if (video_get_format(encoder_dev, &fmt)) {
+		LOG_ERR("Unable to retrieve video format");
+		return -1;
+	}
+
+#if CONFIG_VIDEO_FRAME_HEIGHT
+	fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
+#endif
+
+#if CONFIG_VIDEO_FRAME_WIDTH
+	fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
+#endif
+
+	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
+		fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
+	}
+
+	LOG_INF("- Video format: %s %ux%u",
+		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
+
+	if (video_set_format(encoder_dev, &fmt)) {
+		LOG_ERR("Unable to set format");
+		return -1;
+	}
+
+	printk("Video device detected, format: %s %ux%u\n",
+		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
+
+	/* Alloc output buffer */
+	size = fmt.width * fmt.height / 10;/* Assuming H264 x10 compression ratio */
+	buffer = video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+					    K_FOREVER);
+	if (buffer == NULL) {
+		LOG_ERR("Unable to alloc compressed video buffer size=%d", size);
+		return -1;
+	}
+	buffer->type = type;
+	video_enqueue(encoder_dev, buffer);
+
+	/* Start video capture */
+	if (video_stream_start(encoder_dev, type)) {
+		LOG_ERR("Unable to start video");
+		return -1;
+	}
+
+	return 0;
+}
+
+int encode_frame(struct video_buffer *in, struct video_buffer **out)
+{
+	struct video_buffer vbuf_in;
+	int ret;
+
+	vbuf_in = *in;/* Do not override capture video buffer */
+
+	vbuf_in.type = VIDEO_BUF_TYPE_INPUT;
+	video_enqueue(encoder_dev, &vbuf_in);
+
+	(*out)->type = VIDEO_BUF_TYPE_OUTPUT;
+	ret = video_dequeue(encoder_dev, out, K_FOREVER);
+	if (ret) {
+		LOG_ERR("Unable to dequeue encoder buf");
+		return ret;
+	}
+
+	video_enqueue(encoder_dev, (*out));
+
+	return 0;
+}
+
+void stop_encoder(void)
+{
+	if (video_stream_stop(encoder_dev, VIDEO_BUF_TYPE_OUTPUT))
+		LOG_ERR("Unable to stop encoder");
+}
+#endif
+
 int main(void)
 {
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 	struct video_buffer *buffers[2];
 	struct video_buffer *vbuf = &(struct video_buffer){};
+	struct video_buffer *vbuf_out = &(struct video_buffer){};
 	int ret, sock, client;
 	struct video_format fmt;
 	struct video_caps caps;
@@ -265,6 +372,13 @@ int main(void)
 
 		printk("TCP: Accepted connection\n");
 
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+		if (configure_encoder()) {
+			LOG_ERR("Unable to configure video encoder");
+			return 0;
+		}
+#endif
+
 		/* Enqueue Buffers */
 		for (i = 0; i < ARRAY_SIZE(buffers); i++) {
 			video_enqueue(video_dev, buffers[i]);
@@ -288,10 +402,17 @@ int main(void)
 				return 0;
 			}
 
-			printk("\rSending frame %d\n", i++);
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+			encode_frame(vbuf, &vbuf_out);
 
+			printk("\rSending compressed frame %d (size=%d bytes)\n", i++, vbuf_out->bytesused);
+			/* Send compressed video buffer to TCP client */
+			ret = sendall(client, vbuf_out->buffer, vbuf_out->bytesused);
+#else
+			printk("\rSending frame %d\n", i++);
 			/* Send video buffer to TCP client */
 			ret = sendall(client, vbuf->buffer, vbuf->bytesused);
+#endif
 			if (ret && ret != -EAGAIN) {
 				/* client disconnected */
 				printk("\nTCP: Client disconnected %d\n", ret);
@@ -306,6 +427,10 @@ int main(void)
 			LOG_ERR("Unable to stop video");
 			return 0;
 		}
+
+#if DT_HAS_CHOSEN(zephyr_videoenc)
+		stop_encoder();
+#endif
 
 		/* Flush remaining buffers */
 		do {

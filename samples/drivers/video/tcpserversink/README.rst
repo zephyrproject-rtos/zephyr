@@ -71,6 +71,13 @@ Example with gstreamer:
 
 For video software generator, the default resolution should be width=320 and height=160.
 
+When using compression support, use this GStreamer command line:
+
+.. code-block:: console
+
+    gst-launch-1.0 tcpclientsrc host=192.0.2.1 port=5000 \
+        ! queue ! decodebin ! queue ! fpsdisplaysink sync=false
+
 References
 **********
 
