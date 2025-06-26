@@ -41,7 +41,7 @@
 				interrupts = <73 0>, <74 0>, <75 0>;
 				interrupt-names = "TX", "RX", "ERR";
 				nxp,mdio = <&enet_mdio>;
-				nxp,ptp-clock = <&enet_ptp_clock>;
+				ptp-clock = <&enet_ptp_clock>;
 				phy-connection-type = "rmii";
 			};
 
