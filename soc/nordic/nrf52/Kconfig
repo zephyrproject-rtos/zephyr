@@ -59,7 +59,7 @@ config SOC_DCDC_NRF52X_HV
 	  Enable nRF52 series System on Chip High Voltage DC/DC converter.
 
 config GPIO_AS_PINRESET
-	bool "[DEPRECATED] GPIO as pin reset (reset button)"
+	bool
 	select DEPRECATED
 	help
 	  This option is deprecated, use devicetree instead. Example
