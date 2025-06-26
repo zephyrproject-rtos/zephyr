@@ -65,29 +65,6 @@ static const clock_sys_pll2_config_t sysPll2Config = {
 	.ssEnable = false,
 };
 
-#ifdef CONFIG_INIT_VIDEO_PLL
-static const clock_video_pll_config_t videoPllConfig = {
-	/* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
-	.loopDivider = 41,
-	/* Divider after PLL, should only be 1, 2, 4, 8, 16, 32 */
-	.postDivider = 0,
-	/*
-	 * 30 bit numerator of fractional loop divider,
-	 * Fout = Fin * ( loopDivider + numerator / denominator )
-	 */
-	.numerator = 1,
-	/*
-	 * 30 bit denominator of fractional loop divider,
-	 * Fout = Fin * ( loopDivider + numerator / denominator )
-	 */
-	.denominator = 960000,
-	/* Spread spectrum parameter */
-	.ss = NULL,
-	/* Enable spread spectrum or not */
-	.ssEnable = false,
-};
-#endif
-
 #if CONFIG_USB_DC_NXP_EHCI
 usb_phy_config_struct_t usbPhyConfig = {
 	BOARD_USB_PHY_D_CAL,
@@ -277,10 +254,31 @@ __weak void clock_init(void)
 	/* Init System Pll3 pfd3. */
 	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd3, 22);
 
-#ifdef CONFIG_INIT_VIDEO_PLL
-	/* Init Video Pll. */
-	CLOCK_InitVideoPll(&videoPllConfig);
-#endif
+	static const clock_video_pll_config_t videoPllConfig = {
+		/* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
+		.loopDivider = 41,
+		/* Divider after PLL, should only be 1, 2, 4, 8, 16, 32 */
+		.postDivider = 0,
+		/*
+		 * 30 bit numerator of fractional loop divider,
+		 * Fout = Fin * ( loopDivider + numerator / denominator )
+		 */
+		.numerator = 1,
+		/*
+		 * 30 bit denominator of fractional loop divider,
+		 * Fout = Fin * ( loopDivider + numerator / denominator )
+		 */
+		.denominator = 960000,
+		/* Spread spectrum parameter */
+		.ss = NULL,
+		/* Enable spread spectrum or not */
+		.ssEnable = false,
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_VIDEO_PLL)) {
+		/* Init Video Pll. */
+		CLOCK_InitVideoPll(&videoPllConfig);
+	}
 
 	/* Module clock root configurations. */
 	/* Configure M7 using ARM_PLL_CLK */
