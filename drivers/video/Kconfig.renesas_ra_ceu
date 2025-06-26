@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_RENESAS_RA_CEU
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_CEU_ENABLED
+	select PINCTRL
+	select PWM
+	select USE_RA_FSP_CEU
+	help
+	  Enable driver for Renesas RA CEU.
+
+config VIDEO_RENESAS_BUFFER_SDRAM
+	bool "Allocate the video buffer into SDRAM"
+	depends on VIDEO_RENESAS_RA_CEU
+	select MEMC
+	help
+	  Allocate the video buffer into SDRAM
