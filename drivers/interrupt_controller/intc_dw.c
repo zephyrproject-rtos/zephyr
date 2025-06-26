@@ -30,7 +30,7 @@ static ALWAYS_INLINE void dw_ictl_dispatch_child_isrs(uint32_t intr_status,
 	while (intr_status) {
 		intr_bitpos = find_lsb_set(intr_status) - 1;
 		intr_status &= ~(1 << intr_bitpos);
-		intr_offset = isr_base_offset + intr_bitpos;
+		intr_offset = isr_base_offset + intr_bitpos - CONFIG_GEN_IRQ_START_VECTOR;
 		_sw_isr_table[intr_offset].isr(
 			_sw_isr_table[intr_offset].arg);
 	}
@@ -45,6 +45,8 @@ static int dw_ictl_initialize(const struct device *dev)
 	/* disable all interrupts */
 	regs->irq_inten_l = 0U;
 	regs->irq_inten_h = 0U;
+
+	config->config_func();
 
 	return 0;
 }
@@ -130,15 +132,6 @@ static int dw_ictl_intr_get_line_state(const struct device *dev,
 	return 0;
 }
 
-static void dw_ictl_config_irq(const struct device *dev);
-
-static const struct dw_ictl_config dw_config = {
-	.base_addr = DT_INST_REG_ADDR(0),
-	.numirqs = DT_INST_PROP(0, num_irqs),
-	.isr_table_offset = CONFIG_DW_ISR_TBL_OFFSET,
-	.config_func = dw_ictl_config_irq,
-};
-
 static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_enable = dw_ictl_intr_enable,
 	.intr_disable = dw_ictl_intr_disable,
@@ -146,18 +139,26 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_get_line_state = dw_ictl_intr_get_line_state,
 };
 
-DEVICE_DT_INST_DEFINE(0, dw_ictl_initialize, NULL,
-		NULL, &dw_config, PRE_KERNEL_1,
-		CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
+#define INTC_DW_DEVICE_INIT(inst)                                                                  \
+                                                                                                   \
+	static void dw_ictl_config_irq_##inst(void)                                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_ictl_isr,          \
+			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                   \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}                                                                                          \
+	IRQ_PARENT_ENTRY_DEFINE(intc_dw##inst, DEVICE_DT_INST_GET(inst), DT_INST_IRQN(inst),       \
+				INTC_INST_ISR_TBL_OFFSET(inst),                                    \
+				DT_INST_INTC_GET_AGGREGATOR_LEVEL(inst));                          \
+                                                                                                   \
+	static const struct dw_ictl_config dw_config_##inst = {                                    \
+		.base_addr = DT_INST_REG_ADDR(inst),                                               \
+		.numirqs = DT_INST_PROP(inst, num_irqs),                                           \
+		.isr_table_offset = INTC_INST_ISR_TBL_OFFSET(inst),                                \
+		.config_func = dw_ictl_config_irq_##inst,                                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, dw_ictl_initialize, NULL, NULL, &dw_config_##inst,             \
+			      PRE_KERNEL_1, CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
 
-static void dw_ictl_config_irq(const struct device *port)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    dw_ictl_isr,
-		    DEVICE_DT_INST_GET(0),
-		    DT_INST_IRQ(0, sense));
-}
-
-IRQ_PARENT_ENTRY_DEFINE(intc_dw, DEVICE_DT_INST_GET(0), DT_INST_IRQN(0),
-			INTC_INST_ISR_TBL_OFFSET(0), DT_INST_INTC_GET_AGGREGATOR_LEVEL(0));
+DT_INST_FOREACH_STATUS_OKAY(INTC_DW_DEVICE_INIT)
