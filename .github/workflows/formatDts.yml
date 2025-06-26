@@ -1,0 +1,53 @@
+name: Format DTS
+
+on:
+  push:
+    paths:
+      - "**/*.dts"
+      - "**/*.dtsi"
+      - "**/*.overlay"
+  pull_request:
+    paths:
+      - "**/*.dts"
+      - "**/*.dtsi"
+      - "**/*.overlay"
+  workflow_dispatch:
+
+jobs:
+  dts-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install dts-linter ts-node
+
+      - name: Run DTS Linter
+        id: run-linter
+        run: |
+          FILES=$(find /opt/nordic/ncs/v3.0.2 \
+            -type f \
+            \( -name "*.dts" -o -name "*.dtsi" -o -name "*.overlay" \) \
+            -print0 | xargs -0 -I{} printf "\"%s\" " "{}")
+
+          node --max-old-space-size=4096 $(which ts-node) src/dts-linter.ts \
+            --outFile ./diff \
+            --diagnostics false \
+            --files $FILES || echo "EXIT_CODE=$?" >> $GITHUB_ENV
+
+      - name: Upload diff artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dts-diff
+          path: ./diff
+
+      - name: Fail if linter failed
+        if: env.EXIT_CODE == '1'
+        run: exit 1
