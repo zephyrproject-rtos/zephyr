@@ -1030,7 +1030,7 @@ static int bmm350_init_chip(const struct device *dev)
 err_poweroff:
 	ret = bmm350_set_powermode(dev, BMM350_SUSPEND_MODE);
 	if (ret != 0) {
-		return -EIO;
+		LOG_ERR("failed to set suspend mode");
 	}
 	return -EIO;
 }
