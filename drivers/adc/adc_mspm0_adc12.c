@@ -529,23 +529,17 @@ static int adc_mspm0_read_internal(const struct device *dev, const struct adc_se
 
 	data->buffer = sequence->buffer;
 
-	/* Validate oversampling */
-	if ((sequence->oversampling != 0) && (sequence->oversampling != 2) &&
-	    (sequence->oversampling != 4) && (sequence->oversampling != 8) &&
-	    (sequence->oversampling != 16) && (sequence->oversampling != 32) &&
-	    (sequence->oversampling != 64) && (sequence->oversampling != 128)) {
-		LOG_ERR("ADC oversampling %d not supported. Only 2/4/8/16/32/64/128.",
-			sequence->oversampling);
+	if(data->resolution == 14 && sequence->oversampling != 7){
+		LOG_ERR("Oversampling has to be set to 7. 14-bit effective resolution can only be used with hardware averaging.");
 		return -EINVAL;
 	}
 
-	if(data->resolution == 14 && sequence->oversampling != 128){
-		LOG_ERR("Oversampling has to be set to 128. 14-bit effective resolution can only be used with hardware averaging.");
+	if (sequence->oversampling > 7) {
+		LOG_ERR("Oversampling out of range");
 		return -EINVAL;
 	}
 
-	data->oversampling = sequence->oversampling;
-
+	data->oversampling = sequence->oversampling ? BIT(sequence->oversampling) : 0;
 	if (sequence->calibrate) {
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
