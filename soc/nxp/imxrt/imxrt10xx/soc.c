@@ -114,15 +114,15 @@ __weak void clock_init(void)
 	/* Set PERIPH_CLK MUX to PERIPH_CLK2 */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x1);
 
-#if CONFIG_ADJUST_DCDC
-	/* Setting the VDD_SOC value */
-	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
-	/* Waiting for DCDC_STS_DC_OK bit is asserted */
-	while (DCDC_REG0_STS_DC_OK_MASK !=
-			(DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
-		;
+	if (IS_ENABLED(CONFIG_ADJUST_DCDC)) {
+		/* Setting the VDD_SOC value */
+		DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) |
+				DCDC_REG3_TRG(CONFIG_DCDC_VALUE);
+		/* Waiting for DCDC_STS_DC_OK bit is asserted */
+		while (DCDC_REG0_STS_DC_OK_MASK != (DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
+			;
+		}
 	}
-#endif
 
 #ifdef CONFIG_INIT_ARM_PLL
 	/* ARM PLL configuration for RUN mode */
