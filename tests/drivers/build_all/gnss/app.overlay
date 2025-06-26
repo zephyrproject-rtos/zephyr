@@ -9,6 +9,21 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "zephyr,i2c-emul-controller";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			gnss_l96_i2c: l96@10 {
+				compatible = "quectel,l96";
+				pps-mode = "GNSS_PPS_MODE_ENABLED";
+				reg = <0x10>;
+			};
+		};
+
 		test_uart: uart@0 {
 			compatible = "vnd,serial";
 			reg = <0x0 0x1000>;
@@ -25,6 +40,11 @@
 
 			gnss_lc86g: lc86g {
 				compatible = "quectel,lc86g";
+				pps-mode = "GNSS_PPS_MODE_ENABLED";
+			};
+
+			gnss_l96: l96 {
+				compatible = "quectel,l96";
 				pps-mode = "GNSS_PPS_MODE_ENABLED";
 			};
 
