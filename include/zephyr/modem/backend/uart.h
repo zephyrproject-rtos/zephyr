@@ -31,8 +31,6 @@ struct modem_backend_uart_isr {
 };
 
 struct modem_backend_uart_async_common {
-	uint8_t *transmit_buf;
-	uint32_t transmit_buf_size;
 	struct k_work rx_disabled_work;
 	atomic_t state;
 };
@@ -46,6 +44,7 @@ struct rx_queue_event {
 
 struct modem_backend_uart_async {
 	struct modem_backend_uart_async_common common;
+	struct ring_buf transmit_rb;
 	struct k_mem_slab rx_slab;
 	struct k_msgq rx_queue;
 	struct rx_queue_event rx_event;
@@ -58,6 +57,8 @@ struct modem_backend_uart_async {
 
 struct modem_backend_uart_async {
 	struct modem_backend_uart_async_common common;
+	uint8_t *transmit_buf;
+	uint32_t transmit_buf_size;
 	uint8_t *receive_bufs[2];
 	uint32_t receive_buf_size;
 	struct ring_buf receive_rb;

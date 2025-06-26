@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(modem_backend_uart_async_hwfc, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <string.h>
 
 struct rx_buf_t {
@@ -134,19 +135,46 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 
 	switch (evt->type) {
 	case UART_TX_DONE:
+		ring_buf_get_finish(&backend->async.transmit_rb, evt->data.tx.len);
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
 		k_work_submit(&backend->transmit_idle_work);
 		break;
 
 	case UART_TX_ABORTED:
-		if (modem_backend_uart_async_hwfc_is_open(backend)) {
-			LOG_WRN("Transmit aborted (%zu sent)", evt->data.tx.len);
+		ring_buf_get_finish(&backend->async.transmit_rb, evt->data.tx.len);
+		if (!modem_backend_uart_async_hwfc_is_open(backend)) {
+			/* When we are closing, send the remaining data after re-open. */
+			atomic_clear_bit(&backend->async.common.state,
+				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
+			break;
 		}
+		if (evt->data.tx.len != 0) {
+			/* If we were able to send some data, attempt to send the remaining
+			 * data before releasing the transmit bit.
+			 */
+			uint8_t *buf;
+			size_t bytes_to_transmit = ring_buf_get_claim(
+				&backend->async.transmit_rb, &buf,
+				ring_buf_capacity_get(&backend->async.transmit_rb));
+
+			err = uart_tx(backend->uart, buf, bytes_to_transmit,
+				CONFIG_MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS * 1000L);
+			if (err) {
+				LOG_ERR("Failed to %s %u bytes. (%d)",
+					"start async transmit for", bytes_to_transmit, err);
+				atomic_clear_bit(&backend->async.common.state,
+						 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
+			}
+			break;
+		}
+
+		/* We were not able to send anything. Start dropping data. */
+		LOG_ERR("Transmit aborted (%u bytes dropped)",
+			ring_buf_size_get(&backend->async.transmit_rb));
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
 		k_work_submit(&backend->transmit_idle_work);
-
 		break;
 
 	case UART_RX_BUF_REQUEST:
@@ -213,22 +241,47 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 static int modem_backend_uart_async_hwfc_open(void *data)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
-	struct rx_buf_t *buf = rx_buf_alloc(&backend->async);
+	struct rx_buf_t *rx_buf = rx_buf_alloc(&backend->async);
 	int ret;
 
-	if (!buf) {
+	if (!rx_buf) {
 		return -ENOMEM;
 	}
 
 	atomic_clear(&backend->async.common.state);
+	atomic_set_bit(&backend->async.common.state, MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
 	atomic_set_bit(&backend->async.common.state, MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
 
-	ret = uart_rx_enable(backend->uart, buf->buf,
+	if (!ring_buf_is_empty(&backend->async.transmit_rb)) {
+		/* Transmit was aborted due to modem_backend_uart_async_hwfc_close.
+		 * Send the remaining data before allowing further transmits.
+		 */
+		uint8_t *tx_buf;
+		const uint32_t tx_buf_size =
+			ring_buf_get_claim(&backend->async.transmit_rb, &tx_buf,
+					   ring_buf_size_get(&backend->async.transmit_rb));
+
+		ret = uart_tx(backend->uart, tx_buf, tx_buf_size,
+			CONFIG_MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS * 1000L);
+		if (ret) {
+			LOG_ERR("Failed to %s %u bytes. (%d)",
+				"start async transmit for", tx_buf_size, ret);
+			atomic_clear_bit(&backend->async.common.state,
+					 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
+		}
+	} else {
+		/* Previous transmit was not aborted. */
+		atomic_clear_bit(&backend->async.common.state,
+				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
+	}
+
+	ret = uart_rx_enable(backend->uart, rx_buf->buf,
 			     backend->async.rx_buf_size - sizeof(struct rx_buf_t),
 			     CONFIG_MODEM_BACKEND_UART_ASYNC_RECEIVE_IDLE_TIMEOUT_MS * 1000L);
 	if (ret < 0) {
-		rx_buf_unref(&backend->async, buf->buf);
-		atomic_clear(&backend->async.common.state);
+		rx_buf_unref(&backend->async, rx_buf->buf);
+		atomic_clear_bit(&backend->async.common.state,
+				 MODEM_BACKEND_UART_ASYNC_STATE_OPEN_BIT);
 		return ret;
 	}
 
@@ -242,6 +295,11 @@ static uint32_t get_receive_buf_size(struct modem_backend_uart *backend)
 	return (backend->async.rx_buf_size - sizeof(struct rx_buf_t)) * backend->async.rx_buf_count;
 }
 
+static uint32_t get_transmit_buf_size(const struct modem_backend_uart *backend)
+{
+	return ring_buf_capacity_get(&backend->async.transmit_rb);
+}
+
 static void advertise_transmit_buf_stats(struct modem_backend_uart *backend, uint32_t length)
 {
 	modem_stats_buffer_advertise_length(&backend->transmit_buf_stats, length);
@@ -253,17 +311,17 @@ static void advertise_receive_buf_stats(struct modem_backend_uart *backend, uint
 }
 #endif
 
-static uint32_t get_transmit_buf_size(const struct modem_backend_uart *backend)
-{
-	return backend->async.common.transmit_buf_size;
-}
-
 static int modem_backend_uart_async_hwfc_transmit(void *data, const uint8_t *buf, size_t size)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 	bool transmitting;
 	uint32_t bytes_to_transmit;
 	int ret;
+	uint8_t *tx_buf;
+
+	if (!modem_backend_uart_async_hwfc_is_open(backend)) {
+		return -EPERM;
+	}
 
 	transmitting = atomic_test_and_set_bit(&backend->async.common.state,
 					       MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
@@ -271,13 +329,12 @@ static int modem_backend_uart_async_hwfc_transmit(void *data, const uint8_t *buf
 		return 0;
 	}
 
-	/* Determine amount of bytes to transmit */
-	bytes_to_transmit = MIN(size, get_transmit_buf_size(backend));
+	/* Copy buf to transmit ring buffer which is passed to UART. */
+	ring_buf_reset(&backend->async.transmit_rb);
+	ring_buf_put(&backend->async.transmit_rb, buf, size);
+	bytes_to_transmit = ring_buf_get_claim(&backend->async.transmit_rb, &tx_buf, size);
 
-	/* Copy buf to transmit buffer which is passed to UART */
-	memcpy(backend->async.common.transmit_buf, buf, bytes_to_transmit);
-
-	ret = uart_tx(backend->uart, backend->async.common.transmit_buf, bytes_to_transmit,
+	ret = uart_tx(backend->uart, tx_buf, bytes_to_transmit,
 		      CONFIG_MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS * 1000L);
 
 #if CONFIG_MODEM_STATS
@@ -287,6 +344,8 @@ static int modem_backend_uart_async_hwfc_transmit(void *data, const uint8_t *buf
 	if (ret != 0) {
 		LOG_ERR("Failed to %s %u bytes. (%d)",
 			"start async transmit for", bytes_to_transmit, ret);
+		atomic_clear_bit(&backend->async.common.state,
+				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMIT_BIT);
 		return ret;
 	}
 
@@ -429,8 +488,8 @@ int modem_backend_uart_async_init(struct modem_backend_uart *backend,
 	k_msgq_init(&backend->async.rx_queue, (char *)&backend->async.rx_queue_buf,
 		sizeof(struct rx_queue_event), CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC_BUFFER_COUNT);
 
-	backend->async.common.transmit_buf = config->transmit_buf;
-	backend->async.common.transmit_buf_size = config->transmit_buf_size;
+	ring_buf_init(&backend->async.transmit_rb, config->transmit_buf_size, config->transmit_buf);
+
 	k_work_init(&backend->async.common.rx_disabled_work,
 		    modem_backend_uart_async_hwfc_notify_closed);
 
