@@ -81,19 +81,19 @@ static int rtc_esp32_set_time(const struct device *dev, const struct rtc_time *t
 static int rtc_esp32_get_time(const struct device *dev, struct rtc_time *tp)
 {
 	struct rtc_esp32_data *data = dev->data;
-	struct tm tm;
+	struct tm now;
 	uint64_t actual = rtc_esp32_get_raw_seconds() + data->time_offset;
 
-	gmtime_r((const time_t *)&actual, &tm);
+	gmtime_r((const time_t *)&actual, &now);
 
-	tp->tm_sec = tm.tm_sec;
-	tp->tm_min = tm.tm_min;
-	tp->tm_hour = tm.tm_hour;
-	tp->tm_mday = tm.tm_mday;
-	tp->tm_mon = tm.tm_mon;
-	tp->tm_year = tm.tm_year;
-	tp->tm_wday = tm.tm_wday;
-	tp->tm_yday = tm.tm_yday;
+	tp->tm_sec = now.tm_sec;
+	tp->tm_min = now.tm_min;
+	tp->tm_hour = now.tm_hour;
+	tp->tm_mday = now.tm_mday;
+	tp->tm_mon = now.tm_mon;
+	tp->tm_year = now.tm_year;
+	tp->tm_wday = now.tm_wday;
+	tp->tm_yday = now.tm_yday;
 	tp->tm_isdst = -1;
 	tp->tm_nsec = 0;
 

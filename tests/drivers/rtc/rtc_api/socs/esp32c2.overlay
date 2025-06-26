@@ -1,0 +1,15 @@
+/*
+ * Copyright 2025 Espressif (Shanghai)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &rtc;
+	};
+};
+
+&rtc {
+	status = "okay";
+};
