@@ -188,6 +188,9 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp8684_devkitm
 
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
+
 Debugging
 *********
 
