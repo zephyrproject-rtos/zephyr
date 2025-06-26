@@ -6,6 +6,14 @@ if SOC_FAMILY_TI_MSPM0
 
 rsource "*/Kconfig.defconfig"
 
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
 DT_MSPM0_MCLK_PATH := $(dt_nodelabel_path,mclk)
 DT_MSPM0_MCLK_CPU_FREQ := $(dt_node_int_prop_int,$(DT_MSPM0_MCLK_PATH),clock-frequency)
 
