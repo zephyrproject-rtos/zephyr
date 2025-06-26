@@ -33,13 +33,6 @@
 		     DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) <= (b), \
 		     #podf " is out of supported range (" #a ", " #b ")")
 
-#ifdef CONFIG_INIT_ARM_PLL
-/* ARM PLL configuration for RUN mode */
-const clock_arm_pll_config_t armPllConfig = {
-	.loopDivider = 100U
-};
-#endif
-
 #if CONFIG_INIT_SYS_PLL
 /* Configure System PLL */
 const clock_sys_pll_config_t sysPllConfig = {
@@ -132,6 +125,10 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_INIT_ARM_PLL
+	/* ARM PLL configuration for RUN mode */
+	static const clock_arm_pll_config_t armPllConfig = {
+		.loopDivider = 100U
+	};
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
 #endif
 
