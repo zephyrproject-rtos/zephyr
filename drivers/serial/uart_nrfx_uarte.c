@@ -122,11 +122,8 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #include <nrf/gpd.h>
 
 /* Macro must resolve to literal 0 or 1 */
-#define INSTANCE_IS_FAST_PD(unused, prefix, idx, _)						\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)),					\
-		    (COND_CODE_1(DT_NODE_HAS_PROP(UARTE(idx), power_domains),			\
-			(IS_EQ(DT_PHA(UARTE(idx), power_domains, id), NRF_GPD_FAST_ACTIVE1)),	\
-			(0))), (0))
+#define INSTANCE_IS_FAST_PD(unused, prefix, idx, _) \
+	UTIL_AND(DT_NODE_HAS_STATUS_OKAY(UARTE(idx)), Z_GET_GPD_FAST_ACTIVE1(UARTE(idx)))
 
 #if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST_PD, (||), (0))
 /* Instance in fast power domain (PD) requires special PM treatment and clock control, so
@@ -419,6 +416,7 @@ static void endtx_isr(const struct device *dev)
 static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 {
 	struct uarte_nrfx_data *data = dev->data;
+	const struct uarte_nrfx_config *config = dev->config;
 
 	data->flags &= ~dis_mask;
 	if (data->flags & UARTE_FLAG_LOW_POWER) {
@@ -436,12 +434,9 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	}
 #endif
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	const struct uarte_nrfx_config *cfg = dev->config;
-
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
-#endif
 	nrf_uarte_disable(get_uarte_instance(dev));
+
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 }
 
 #if defined(UARTE_ANY_NONE_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_NO_IRQ)
@@ -724,9 +719,9 @@ static void uarte_periph_enable(const struct device *dev)
 #endif
 
 	nrf_uarte_enable(uarte);
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(config->pcfg, false);
-#endif
+
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
 	nrf_uarte_baudrate_set(uarte,
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
@@ -2407,10 +2402,6 @@ static void uarte_pm_suspend(const struct device *dev)
 
 		wait_for_tx_stopped(dev);
 	}
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
-#endif
 
 	nrf_uarte_disable(uarte);
 

@@ -379,12 +379,6 @@ static void spi_nrfx_suspend(const struct device *dev)
 		nrf_spis_disable(dev_config->spis.p_reg);
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	if (dev_config->gpd_ctrl) {
-		nrf_gpd_retain_pins_set(dev_config->pcfg, true);
-	}
-#endif
-
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
 
@@ -393,12 +387,6 @@ static void spi_nrfx_resume(const struct device *dev)
 	const struct spi_nrfx_config *dev_config = dev->config;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	if (dev_config->gpd_ctrl) {
-		nrf_gpd_retain_pins_set(dev_config->pcfg, false);
-	}
-#endif
 
 	if (dev_config->wake_gpio.port == NULL) {
 		nrf_spis_enable(dev_config->spis.p_reg);

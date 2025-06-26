@@ -99,3 +99,7 @@ wdt011: &cpurad_wdt011 {};
 &dppic020 {
 	status = "okay";
 };
+
+&gdpwr {
+	status = "okay";
+};
