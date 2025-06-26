@@ -208,11 +208,9 @@ static inline void dma_finish(const struct device *dev, struct i2c_msg *msg)
 	if ((data->current.msg->flags & I2C_MSG_READ) != 0U) {
 		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
 		LL_I2C_DisableDMAReq_RX(i2c);
-#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-		if (!buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
+#if defined(CONFIG_DCACHE)
+		if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
 			((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ)) {
-			LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache",
-				msg->buf, msg->len);
 			sys_cache_data_invd_range((void *)msg->buf, msg->len);
 		}
 #endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
@@ -644,38 +642,6 @@ end:
 	return -EIO;
 }
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes)
-{
-	bool buf_within_nocache = false;
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	/* Check if buffer is in nocache region defined by the linker */
-	buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#ifdef CONFIG_MEM_ATTR
-	/* Check if buffer is in nocache memory region defined in DT */
-	buf_within_nocache = mem_attr_check_buf(
-		(void *)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-	if (buf_within_nocache) {
-		return true;
-	}
-#endif /* CONFIG_MEM_ATTR */
-
-	/* Check if buffer is in RO region (Flash..) */
-	buf_within_nocache = (buf >= ((uintptr_t)__rodata_region_start)) &&
-		((buf + len_bytes - 1) <= ((uintptr_t)__rodata_region_end));
-
-	return buf_within_nocache;
-}
-#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
-
-
 static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t *next_msg_flags, uint16_t slave)
 {
@@ -696,10 +662,8 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 #endif
 
 #if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-	if (!buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
+	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
 		((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE)) {
-		LOG_DBG("Tx buffer at %p (len %zu) is in cached memory; cleaning cache", msg->buf,
-			msg->len);
 		sys_cache_data_flush_range((void *)msg->buf, msg->len);
 	}
 #endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA*/
