@@ -2210,6 +2210,7 @@ static void l2cap_br_conf(struct bt_l2cap_chan *chan, bool init)
 	}
 #else
 	(void)init;
+	BR_CHAN(chan)->rx.mtu = MIN(BR_CHAN(chan)->rx.mtu, BT_L2CAP_RX_MTU);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	buf = bt_l2cap_create_pdu(&br_sig_pool, 0);
