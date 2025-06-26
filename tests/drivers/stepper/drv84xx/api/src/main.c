@@ -67,6 +67,7 @@ static void drv84xx_api_before(void *f)
 static void drv84xx_api_after(void *f)
 {
 	struct drv84xx_api_fixture *fixture = f;
+	(void)stepper_stop(fixture->dev);
 	(void)stepper_disable(fixture->dev);
 }
 

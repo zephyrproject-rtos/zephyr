@@ -118,8 +118,8 @@ static void update_remaining_steps(struct step_dir_stepper_common_data *data)
 	} else if (data->step_count < 0) {
 		data->step_count++;
 	} else {
-		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 		config->timing_source->stop(data->dev);
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 	}
 }
 
@@ -231,6 +231,12 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 	if (data->microstep_interval_ns == 0) {
 		LOG_ERR("Step interval not set or invalid step interval set");
 		return -EINVAL;
+	}
+
+	if (micro_steps == 0) {
+		config->timing_source->stop(data->dev);
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
+		return 0;
 	}
 
 	K_SPINLOCK(&data->lock) {
