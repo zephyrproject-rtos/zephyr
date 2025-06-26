@@ -936,7 +936,7 @@ static const struct ethernet_api api_funcs = {
 	NXP_ENET_INVALID_MII_MODE))
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
-#define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_ptp_clock)),
+#define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),
 #define NXP_ENET_FRAMEINFO_ARRAY(n)							\
 	static enet_frame_info_t							\
 		nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
