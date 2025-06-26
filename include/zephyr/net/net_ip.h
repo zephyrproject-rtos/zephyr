@@ -202,7 +202,7 @@ struct sockaddr_ll {
 	uint8_t     sll_pkttype;  /**< Packet type                        */
 	uint8_t     sll_halen;    /**< Length of address                  */
 	uint8_t     sll_addr[8];  /**< Physical-layer address, big endian */
-};
+} __packed __aligned(2);
 
 /** @cond INTERNAL_HIDDEN */
 
