@@ -224,6 +224,9 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp32c6_devkitc/esp32c6/hpcore
 
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
+
 Debugging
 *********
 
