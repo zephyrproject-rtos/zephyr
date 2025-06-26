@@ -18,6 +18,9 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #define MY_PORT          5000
 #define MAX_CLIENT_QUEUE 1
 
+/* Assuming that video encoder will at least compress to this ratio */
+#define ESTIMATED_COMPRESSION_RATIO 10
+
 static ssize_t sendall(int sock, const void *buf, size_t len)
 {
 	while (len) {
