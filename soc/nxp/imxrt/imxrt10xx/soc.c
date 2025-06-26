@@ -33,16 +33,6 @@
 		     DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) <= (b), \
 		     #podf " is out of supported range (" #a ", " #b ")")
 
-#if CONFIG_INIT_SYS_PLL
-/* Configure System PLL */
-const clock_sys_pll_config_t sysPllConfig = {
-	.loopDivider = (DT_PROP(DT_CHILD(CCM_NODE, sys_pll), loop_div) - 20) / 2,
-	.numerator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), numerator),
-	.denominator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), denominator),
-	.src = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), src),
-};
-#endif
-
 #if CONFIG_USB_DC_NXP_EHCI
 /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL (0x0CU)
@@ -152,9 +142,16 @@ __weak void clock_init(void)
 	CLOCK_InitVideoPll(&videoPllConfig);
 #endif
 
-#if CONFIG_INIT_SYS_PLL
-	CLOCK_InitSysPll(&sysPllConfig);
-#endif
+	const clock_sys_pll_config_t sysPllConfig = {
+		.loopDivider = (DT_PROP(DT_CHILD(CCM_NODE, sys_pll), loop_div) - 20) / 2,
+		.numerator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), numerator),
+		.denominator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), denominator),
+		.src = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), src),
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_SYS_PLL)) {
+		CLOCK_InitSysPll(&sysPllConfig);
+	}
 
 #if DT_NODE_EXISTS(DT_CHILD(CCM_NODE, arm_podf))
 	/* Set ARM PODF */
