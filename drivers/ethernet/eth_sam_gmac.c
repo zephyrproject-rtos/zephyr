@@ -1762,8 +1762,22 @@ static void eth_iface_init(struct net_if *iface)
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
-		| GMAC_NCFGR_RXCOEN  /* Receive Checksum Offload Enable */
-		| GMAC_MAX_FRAME_SIZE;
+		| GMAC_NCFGR_RXCOEN; /* Receive Checksum Offload Enable */
+	switch (cfg->max_frame_size) {
+	case 1518:
+		break;
+	case 1536:
+		gmac_ncfgr_val |= GMAC_NCFGR_MAXFS;
+		break;
+	case 10240:
+		gmac_ncfgr_val |= GMAC_NCFGR_JFRAME;
+		break;
+	default:
+		/* Build assert in this file should catch this case */
+		LOG_ERR("max-frame-size %d is invalid, fix it at device tree", cfg->max_frame_size);
+		return;
+	}
+
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
 	if (result < 0) {
 		LOG_ERR("%s Unable to initialize ETH driver", dev->name);
@@ -2093,12 +2107,17 @@ static const struct ethernet_api eth_api = {
 #define CFG_CLK_DEFN(n)
 #endif
 #define SAM_GMAC_CFG_DEFN(n)								\
+		BUILD_ASSERT(DT_INST_PROP(n, max_frame_size) == 1518 ||			\
+			     DT_INST_PROP(n, max_frame_size) == 1536 ||			\
+			     DT_INST_PROP(n, max_frame_size) == 10240,			\
+			     "max-frame-size is invalid, fix it at device tree.");	\
 		static const struct eth_sam_dev_cfg eth##n##_config = {			\
 			.regs = (Gmac *)DT_INST_REG_ADDR(n),				\
 			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 			CFG_CLK_DEFN(n)							\
 			.config_func = eth##n##_irq_config,				\
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
+			.max_frame_size = DT_INST_PROP(n, max_frame_size),		\
 			.num_queues = DT_INST_PROP(n, num_queues),			\
 		};
 

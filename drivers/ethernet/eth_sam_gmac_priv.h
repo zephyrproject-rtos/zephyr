@@ -198,19 +198,6 @@ enum queue_idx {
 	GMAC_QUE_5,  /** Priority queue 5 */
 };
 
-#if (DT_INST_PROP(0, max_frame_size) == 1518)
-	/* Maximum frame length is 1518 bytes */
-#define GMAC_MAX_FRAME_SIZE 0
-#elif (DT_INST_PROP(0, max_frame_size) == 1536)
-	/* Enable Max Frame Size of 1536 */
-#define GMAC_MAX_FRAME_SIZE GMAC_NCFGR_MAXFS
-#elif (DT_INST_PROP(0, max_frame_size) == 10240)
-	/* Jumbo Frame Enable */
-#define GMAC_MAX_FRAME_SIZE GMAC_NCFGR_JFRAME
-#else
-#error "GMAC_MAX_FRAME_SIZE is invalid, fix it at device tree."
-#endif
-
 /** Minimal ring buffer implementation */
 struct ring_buffer {
 	uint32_t *buf;
@@ -271,6 +258,7 @@ struct eth_sam_dev_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	void (*config_func)(void);
 	const struct device *phy_dev;
+	const uint32_t max_frame_size;
 	const uint8_t num_queues;
 };
 
