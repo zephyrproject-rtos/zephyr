@@ -147,28 +147,28 @@ __weak void clock_init(void)
 	}
 #endif
 
-#if CONFIG_BYPASS_LDO_LPSR
-	PMU_StaticEnableLpsrAnaLdoBypassMode(ANADIG_LDO_SNVS, true);
-	PMU_StaticEnableLpsrDigLdoBypassMode(ANADIG_LDO_SNVS, true);
-#endif
-
-#if CONFIG_ADJUST_LDO
-	pmu_static_lpsr_ana_ldo_config_t lpsrAnaConfig;
-	pmu_static_lpsr_dig_config_t lpsrDigConfig;
-
-	if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_ANA &
-	     ANADIG_LDO_SNVS_PMU_LDO_LPSR_ANA_BYPASS_MODE_EN_MASK) == 0UL) {
-		PMU_StaticGetLpsrAnaLdoDefaultConfig(&lpsrAnaConfig);
-		PMU_StaticLpsrAnaLdoInit(ANADIG_LDO_SNVS, &lpsrAnaConfig);
+	if (IS_ENABLED(CONFIG_BYPASS_LDO_LPSR)) {
+		PMU_StaticEnableLpsrAnaLdoBypassMode(ANADIG_LDO_SNVS, true);
+		PMU_StaticEnableLpsrDigLdoBypassMode(ANADIG_LDO_SNVS, true);
 	}
 
-	if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_DIG &
-	     ANADIG_LDO_SNVS_PMU_LDO_LPSR_DIG_BYPASS_MODE_MASK) == 0UL) {
-		PMU_StaticGetLpsrDigLdoDefaultConfig(&lpsrDigConfig);
-		lpsrDigConfig.targetVoltage = kPMU_LpsrDigTargetStableVoltage1P117V;
-		PMU_StaticLpsrDigLdoInit(ANADIG_LDO_SNVS, &lpsrDigConfig);
+	if (IS_ENABLED(CONFIG_ADJUST_LDO)) {
+		pmu_static_lpsr_ana_ldo_config_t lpsrAnaConfig;
+		pmu_static_lpsr_dig_config_t lpsrDigConfig;
+
+		if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_ANA &
+		     ANADIG_LDO_SNVS_PMU_LDO_LPSR_ANA_BYPASS_MODE_EN_MASK) == 0UL) {
+			PMU_StaticGetLpsrAnaLdoDefaultConfig(&lpsrAnaConfig);
+			PMU_StaticLpsrAnaLdoInit(ANADIG_LDO_SNVS, &lpsrAnaConfig);
+		}
+
+		if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_DIG &
+		     ANADIG_LDO_SNVS_PMU_LDO_LPSR_DIG_BYPASS_MODE_MASK) == 0UL) {
+			PMU_StaticGetLpsrDigLdoDefaultConfig(&lpsrDigConfig);
+			lpsrDigConfig.targetVoltage = kPMU_LpsrDigTargetStableVoltage1P117V;
+			PMU_StaticLpsrDigLdoInit(ANADIG_LDO_SNVS, &lpsrDigConfig);
+		}
 	}
-#endif
 
 	/* PLL LDO shall be enabled first before enable PLLs */
 
