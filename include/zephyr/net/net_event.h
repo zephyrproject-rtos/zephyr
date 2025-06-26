@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_NET_NET_EVENT_H_
 
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/hostname.h>
 
 #ifdef __cplusplus
