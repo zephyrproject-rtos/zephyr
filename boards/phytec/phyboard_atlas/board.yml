@@ -1,0 +1,6 @@
+board:
+  name: phyboard_atlas
+  full_name: phyBOARD-Atlas i.MX RT1170
+  vendor: phytec
+  socs:
+    - name: mimxrt1176
