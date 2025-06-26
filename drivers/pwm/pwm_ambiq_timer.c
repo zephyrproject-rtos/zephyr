@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(ambiq_timer_pwm, CONFIG_PWM_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_APOLLO4X)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
 typedef am_hal_timer_config_t pwm_timer_config_t;
 #endif
 

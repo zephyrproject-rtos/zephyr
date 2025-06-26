@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(ambiq_counter, CONFIG_COUNTER_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 #define SOC_TIMER_BASE CTIMER_BASE
-#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
+#elif defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
 #define SOC_TIMER_BASE TIMER_BASE
 #endif
 static void counter_ambiq_isr(void *arg);
@@ -120,7 +120,7 @@ static uint32_t get_clock_cycles(uint32_t clock_sel)
 	case 18:
 		ret = 1024;
 		break;
-#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
+#elif defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
 	case 0:
 		ret = 24000000;
 		break;
