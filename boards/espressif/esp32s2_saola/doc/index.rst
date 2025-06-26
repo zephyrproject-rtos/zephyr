@@ -181,6 +181,9 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp32s2_saola
 
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
+
 Debugging
 *********
 

@@ -581,6 +581,9 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp_wrover_kit
 
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
+
 Debugging
 *********
 
