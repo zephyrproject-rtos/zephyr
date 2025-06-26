@@ -68,6 +68,11 @@ config VIDEO_CTRL_VFLIP
 	help
 	  If set, mirror the video frame vertically
 
+config VIDEO_ENCODED_PIXEL_FORMAT
+	string "Pixel format of the encoded frame"
+	help
+	  Pixel format of the encoded frame.
+
 endmenu
 
 source "Kconfig.zephyr"
