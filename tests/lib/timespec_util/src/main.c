@@ -268,42 +268,88 @@ ZTEST(timeutil_api, test_timespec_equal)
 	zexpect_false(timespec_equal(&a, &b));
 }
 
-#define K_TICK_MAX  ((uint64_t)(CONFIG_TIMEOUT_64BIT ? (INT64_MAX) : (UINT32_MAX)))
-#define NS_PER_TICK (NSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-
-/* 0 := lower limit, 2 := upper limit */
-static const struct timespec k_timeout_limits[] = {
-	/* K_NO_WAIT + 1 tick */
-	{
-		.tv_sec = 0,
-		.tv_nsec = NS_PER_TICK,
-	},
-	/* K_FOREVER - 1 tick */
-	{
-		.tv_sec = CLAMP((NS_PER_TICK * K_TICK_MAX) / NSEC_PER_SEC, 0, INT64_MAX),
-		.tv_nsec = CLAMP((NS_PER_TICK * K_TICK_MAX) % NSEC_PER_SEC, 0, NSEC_PER_SEC - 1),
-	},
-};
+/* non-saturating */
+#define DECL_TOSPEC_TEST(to, sec, nsec, sat, neg)                                                  \
+	{                                                                                          \
+		.timeout = (to),                                                                   \
+		.tspec =                                                                           \
+			{                                                                          \
+				.tv_sec = (sec),                                                   \
+				.tv_nsec = (nsec),                                                 \
+			},                                                                         \
+		.saturation = (sat),                                                               \
+		.negative = (neg),                                                                 \
+	}
+/* negative timespecs rounded up to K_NO_WAIT */
+#define DECL_TOSPEC_NEGATIVE_TEST(sec, nsec) DECL_TOSPEC_TEST(K_NO_WAIT, (sec), (nsec), 0, true)
+/* zero-valued timeout (no saturation / exact) */
+#define DECL_TOSPEC_ZERO_TEST(to)            DECL_TOSPEC_TEST((to), 0, 0, 0, false)
+/* round up toward K_TICK_MIN */
+#define DECL_NSAT_TOSPEC_TEST(sec, nsec)                                                           \
+	DECL_TOSPEC_TEST(K_TICKS(K_TICK_MIN), (sec), (nsec), -1, false)
+/* round down toward K_TICK_MAX */
+#define DECL_PSAT_TOSPEC_TEST(sec, nsec)                                                           \
+	DECL_TOSPEC_TEST(K_TICKS(K_TICK_MAX), (sec), (nsec), 1, false)
 
 static const struct tospec {
 	k_timeout_t timeout;
 	struct timespec tspec;
 	int saturation;
+	bool negative;
 } tospecs[] = {
-	{K_NO_WAIT, {INT64_MIN, 0}, -1},
-	{K_NO_WAIT, {-1, 0}, -1},
-	{K_NO_WAIT, {-1, NSEC_PER_SEC - 1}, -1},
-	{K_NO_WAIT, {0, 0}, 0},
-	{K_NSEC(0), {0, 0}, 0},
-	{K_NSEC(2000000000), {2, 0}, 0},
-	{K_USEC(0), {0, 0}, 0},
-	{K_USEC(2000000), {2, 0}, 0},
-	{K_MSEC(100), {0, 100000000}, 0},
-	{K_MSEC(2000), {2, 0}, 0},
-	{K_SECONDS(0), {0, 0}, 0},
-	{K_SECONDS(1), {1, 0}, 0},
-	{K_SECONDS(100), {100, 0}, 0},
-	{K_FOREVER, {INT64_MAX, NSEC_PER_SEC - 1}, 0},
+	/* negative timespecs should round-up to K_NO_WAIT */
+	DECL_TOSPEC_NEGATIVE_TEST(INT64_MIN, 0),
+	DECL_TOSPEC_NEGATIVE_TEST(-1, 0),
+	DECL_TOSPEC_NEGATIVE_TEST(-1, NSEC_PER_SEC - 1),
+
+	/* zero-valued timeouts are equivalent to K_NO_WAIT */
+	DECL_TOSPEC_ZERO_TEST(K_NSEC(0)),
+	DECL_TOSPEC_ZERO_TEST(K_USEC(0)),
+	DECL_TOSPEC_ZERO_TEST(K_MSEC(0)),
+	DECL_TOSPEC_ZERO_TEST(K_SECONDS(0)),
+
+	/* round up to K_TICK_MIN */
+	DECL_NSAT_TOSPEC_TEST(0, 1),
+	DECL_NSAT_TOSPEC_TEST(0, 2),
+	DECL_NSAT_TOSPEC_TEST(0, (long)(K_TICKS_TO_NSECS(K_TICK_MIN) % NSEC_PER_SEC)),
+
+#if CONFIG_SYS_CLOCK_TICKS_PER_SEC < GHZ(1)
+	DECL_TOSPEC_TEST(K_NSEC(1), 0, (long)(K_TICKS_TO_NSECS(K_TICK_MIN) % NSEC_PER_SEC), 0,
+			 false),
+#endif
+#if CONFIG_SYS_CLOCK_TICKS_PER_SEC < MHZ(1)
+	DECL_TOSPEC_TEST(K_USEC(1), 0, (long)(K_TICKS_TO_NSECS(K_TICK_MIN) % NSEC_PER_SEC), 0,
+			 false),
+#endif
+#if CONFIG_SYS_CLOCK_TICKS_PER_SEC < KHZ(1)
+	DECL_TOSPEC_TEST(K_MSEC(1), 0, (long)(K_TICKS_TO_NSECS(K_TICK_MIN) % NSEC_PER_SEC), 0,
+			 false),
+#endif
+
+	/* round to next tick boundary */
+	DECL_TOSPEC_TEST(K_TICKS(1), 0, K_TICKS_TO_NSECS(1) % NSEC_PER_SEC, 0, false),
+	DECL_TOSPEC_TEST(K_TICKS(2), 0, K_TICKS_TO_NSECS(2) % NSEC_PER_SEC, 0, false),
+
+	DECL_TOSPEC_TEST(K_NSEC(2000000000), 2, 0, 0, false),
+	DECL_TOSPEC_TEST(K_USEC(2000000), 2, 0, 0, false),
+	DECL_TOSPEC_TEST(K_MSEC(2000), 2, 0, 0, false),
+
+	DECL_TOSPEC_TEST(K_SECONDS(1), 1, 0, 0, false),
+	DECL_TOSPEC_TEST(K_SECONDS(2), 2, 0, 0, false),
+	DECL_TOSPEC_TEST(K_SECONDS(100), 100, 0, 0, false),
+
+	DECL_TOSPEC_TEST(K_TICKS(1000), 1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+			 K_TICKS_TO_NSECS(1000) % NSEC_PER_SEC, 0, false),
+
+	/* round down toward K_TICK_MAX */
+	DECL_PSAT_TOSPEC_TEST((uint64_t)K_TICK_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+			      K_TICKS_TO_NSECS(K_TICK_MAX) % NSEC_PER_SEC),
+	DECL_PSAT_TOSPEC_TEST(((uint64_t)K_TICK_MAX + 1) / CONFIG_SYS_CLOCK_TICKS_PER_SEC, 0),
+	DECL_PSAT_TOSPEC_TEST(((uint64_t)K_TICK_MAX + 1) / CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+			      K_TICKS_TO_NSECS(((uint64_t)K_TICK_MAX + 1)) % NSEC_PER_SEC),
+
+	/* forever-valued timeouts are equivalent to K_FOREVER */
+	DECL_TOSPEC_TEST(K_FOREVER, INT64_MAX, NSEC_PER_SEC - 1, 0, false),
 };
 
 ZTEST(timeutil_api, test_timespec_from_timeout)
@@ -312,8 +358,11 @@ ZTEST(timeutil_api, test_timespec_from_timeout)
 		const struct tospec *const tspec = &tospecs[i];
 		struct timespec actual;
 
-		if (tspec->saturation != 0) {
-			/* saturation cases are only checked in test_timespec_to_timeout */
+		/*
+		 * In this test we only check exact conversions, so skip negative timespecs that
+		 * saturate up to K_NO_WAIT and skip values under K_TS_MIN and over K_TS_MAX
+		 */
+		if (tspec->negative || (tspec->saturation != 0)) {
 			continue;
 		}
 
@@ -330,49 +379,52 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 	ARRAY_FOR_EACH(tospecs, i) {
 		const struct tospec *const tspec = &tospecs[i];
 		k_timeout_t actual;
+		struct timespec rem;
+		struct timespec tick_ts;
 
 		if (tspec->saturation == 0) {
 			/* no saturation / exact match */
-			actual = timespec_to_timeout(&tspec->tspec);
+			actual = timespec_to_timeout_rem(&tspec->tspec, &rem);
 			zexpect_equal(actual.ticks, tspec->timeout.ticks,
 				      "%d: {%" PRId64 "} and {%" PRId64
 				      "} are unexpectedly different",
 				      i, (int64_t)actual.ticks, (int64_t)tspec->timeout.ticks);
-			continue;
-		}
-
-		if ((tspec->saturation < 0) ||
-		    (timespec_compare(&tspec->tspec, &k_timeout_limits[0]) < 0)) {
-			/* K_NO_WAIT saturation */
-			actual = timespec_to_timeout(&tspec->tspec);
-			zexpect_equal(actual.ticks, K_NO_WAIT.ticks,
+		} else if (tspec->saturation < 0) {
+			/* K_TICK_MIN saturation */
+			actual = timespec_to_timeout_rem(&tspec->tspec, &rem);
+			zexpect_equal(actual.ticks, K_TICK_MIN,
 				      "%d: {%" PRId64 "} and {%" PRId64
 				      "} are unexpectedly different",
-				      i, (int64_t)actual.ticks, (int64_t)K_NO_WAIT.ticks);
-			continue;
-		}
-
-		if ((tspec->saturation > 0) ||
-		    (timespec_compare(&tspec->tspec, &k_timeout_limits[1]) > 0)) {
-			/* K_FOREVER saturation */
-			actual = timespec_to_timeout(&tspec->tspec);
-			zexpect_equal(actual.ticks, K_TICKS_FOREVER,
+				      i, (int64_t)actual.ticks, (int64_t)K_TICK_MIN);
+		} else if (tspec->saturation > 0) {
+			/* K_TICK_MAX saturation */
+			actual = timespec_to_timeout_rem(&tspec->tspec, &rem);
+			zexpect_equal(actual.ticks, K_TICK_MAX,
 				      "%d: {%" PRId64 "} and {%" PRId64
 				      "} are unexpectedly different",
-				      i, (int64_t)actual.ticks, (int64_t)K_TICKS_FOREVER);
-			continue;
+				      i, (int64_t)actual.ticks, (int64_t)K_TICK_MAX);
 		}
+
+		timespec_from_timeout(tspec->timeout, &tick_ts);
+		timespec_add(&tick_ts, &rem);
+		zexpect_true(timespec_equal(&tick_ts, &tspec->tspec),
+			     "%d: {%ld, %ld} and {%ld, %ld} are unexpectedly different", i,
+			     tick_ts.tv_sec, tick_ts.tv_nsec, tspec->tspec.tv_sec,
+			     tspec->tspec.tv_nsec);
 	}
 }
 
 static void *setup(void)
 {
-	printk("CONFIG_TIMEOUT_64BIT=%c\n", CONFIG_TIMEOUT_64BIT ? 'y' : 'n');
-	printk("K_TICK_MAX: %lld\n", (long long)K_TICK_MAX);
-	printk("minimum timeout: {%lld, %lld}\n", (long long)k_timeout_limits[0].tv_sec,
-	       (long long)k_timeout_limits[0].tv_nsec);
-	printk("maximum timeout: {%lld, %lld}\n", (long long)k_timeout_limits[1].tv_sec,
-	       (long long)k_timeout_limits[1].tv_nsec);
+	TC_PRINT("CONFIG_SYS_CLOCK_TICKS_PER_SEC=%d\n", CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	TC_PRINT("CONFIG_TIMEOUT_64BIT=%c\n", IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? 'y' : 'n');
+	TC_PRINT("K_TICK_MIN: %lld\n", (long long)K_TICK_MIN);
+	TC_PRINT("K_TICK_MAX: %lld\n", (long long)K_TICK_MAX);
+	TC_PRINT("K_TS_MIN: {%lld, %lld}\n", (long long)K_TS_MIN.tv_sec,
+		 (long long)K_TS_MIN.tv_nsec);
+	TC_PRINT("K_TS_MAX: {%lld, %lld}\n", (long long)K_TS_MAX.tv_sec,
+		 (long long)K_TS_MAX.tv_nsec);
+	PRINT_LINE;
 
 	return NULL;
 }

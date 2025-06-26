@@ -166,6 +166,44 @@ typedef struct {
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 
+/* Converts ticks to nanoseconds with minimal rounding error */
+#define K_TICKS_TO_NSECS(ticks)                                                                    \
+	MULDIV((uint64_t)(ticks), NSEC_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+/* The minimum duration in ticks strictly greater than that of K_NO_WAIT */
+#define K_TICK_MIN ((k_ticks_t)1)
+
+/* The maximum duration in ticks strictly and semantically "less than" K_FOREVER */
+#define K_TICK_MAX ((k_ticks_t)(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MAX : UINT32_MAX - 1))
+
+/* The semantic equivalent of K_NO_WAIT but expressed as a timespec object*/
+#define K_TS_NO_WAIT                                                                               \
+	((struct timespec){                                                                        \
+		.tv_sec = 0,                                                                       \
+		.tv_nsec = 0,                                                                      \
+	})
+
+/* The semantic equivalent of K_FOREVER but expressed as a timespec object*/
+#define K_TS_FOREVER                                                                               \
+	((struct timespec){                                                                        \
+		.tv_sec = (time_t)K_TICK_MAX,                                                      \
+		.tv_nsec = (long)(NSEC_PER_SEC - 1),                                               \
+	})
+
+/* The semantic equivalent of K_TICK_MIN but expressed as a timespec object */
+#define K_TS_MIN                                                                                   \
+	((struct timespec){                                                                        \
+		.tv_sec = 0,                                                                       \
+		.tv_nsec = (long)(K_TICKS_TO_NSECS(K_TICK_MIN) % NSEC_PER_SEC),                    \
+	})
+
+/* The semantic equivalent of K_TICK_MAX but expressed as a timespec object */
+#define K_TS_MAX                                                                                   \
+	((struct timespec){                                                                        \
+		.tv_sec = (time_t)(K_TICK_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC),                   \
+		.tv_nsec = (long)(K_TICKS_TO_NSECS(K_TICK_MAX) % NSEC_PER_SEC),                    \
+	})
+
 /** @endcond */
 
 #ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME

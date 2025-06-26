@@ -372,6 +372,13 @@ extern "C" {
 		 ? ((n) - ((d) / 2)) / (d)                                                         \
 		 : ((n) + ((d) / 2)) / (d))
 
+/**
+ * @brief Calculate `a * (b / c)` as `(a * b) / c` to minimize rounding errors
+ *
+ * @return The result  of @p a * @p b / @p c ordered to minimize rounding errors.
+ */
+#define MULDIV(a, b, c) (((a) * (b)) / (c))
+
 #ifndef MAX
 /**
  * @brief Obtain the maximum of two values.
@@ -846,6 +853,8 @@ static inline bool util_eq(const void *m1, size_t len1, const void *m2, size_t l
 #define KHZ(x) ((x) * 1000)
 /** @brief Number of Hz in @p x MHz */
 #define MHZ(x) (KHZ(x) * 1000)
+/** @brief Number of Hz in @p x GHz */
+#define GHZ(x) (MHZ(x) * 1000ULL)
 
 /**
  * @brief For the POSIX architecture add a minimal delay in a busy wait loop.
