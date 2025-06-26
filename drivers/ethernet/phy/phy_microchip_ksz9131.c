@@ -304,6 +304,11 @@ static int phy_mchp_ksz9131_cfg_link(const struct device *dev, enum phy_link_spe
 		goto done;
 	}
 
+	ret = phy_mii_set_c1kt_reg(dev, adv_speeds);
+	if (ret < 0) {
+		goto done;
+	}
+
 	ret = phy_mchp_ksz9131_autonegotiate(dev);
 done:
 	k_sem_give(&data->sem);
@@ -353,6 +358,37 @@ static int phy_mchp_ksz9131_speed(const struct device *dev, enum phy_link_speed 
 	return ret;
 }
 
+static int phy_mchp_ksz9131_gigabit(const struct device *dev, enum phy_link_speed *speed)
+{
+	uint16_t mutual_capabilities = 0;
+	uint16_t mscr = 0;
+	uint16_t mssr = 0;
+	int ret = 0;
+
+	/* Read AUTO-NEGOTIATION MASTER SLAVE CONTROL REGISTER */
+	ret = ksz9131_read(dev, MII_1KTCR, &mscr);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Read AUTO-NEGOTIATION MASTER SLAVE STATUS REGISTER */
+	ret = ksz9131_read(dev, MII_1KSTSR, &mssr);
+	if (ret < 0) {
+		return ret;
+	}
+
+	mutual_capabilities = mscr & (mssr >> 2);
+	if (mutual_capabilities & MII_ADVERTISE_1000_FULL) {
+		*speed = LINK_FULL_1000BASE;
+	} else if (mutual_capabilities & MII_ADVERTISE_1000_HALF) {
+		*speed = LINK_HALF_1000BASE;
+	} else {
+		ret = phy_mchp_ksz9131_speed(dev, speed);
+	}
+
+	return ret;
+}
+
 static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_state *state)
 {
 	__maybe_unused const struct mchp_ksz9131_config *config = dev->config;
@@ -368,7 +404,7 @@ static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_s
 	}
 
 	if (state->is_up) {
-		ret = phy_mchp_ksz9131_speed(dev, &state->speed);
+		ret = phy_mchp_ksz9131_gigabit(dev, &state->speed);
 		if (ret < 0) {
 			goto done;
 		}
