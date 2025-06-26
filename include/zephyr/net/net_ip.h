@@ -682,10 +682,10 @@ union net_proto_header {
  */
 static inline bool net_ipv6_is_addr_loopback(struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
-		ntohl(UNALIGNED_GET(&addr->s6_addr32[3])) == 1;
+	return addr->s6_addr32[0] == 0 &&
+		addr->s6_addr32[1] == 0 &&
+		addr->s6_addr32[2] == 0 &&
+		ntohl(addr->s6_addr32[3]) == 1;
 }
 
 /**
@@ -826,7 +826,7 @@ static inline bool net_ipv4_is_addr_loopback(struct in_addr *addr)
  */
 static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s_addr) == 0;
+	return addr->s_addr == 0;
 }
 
 /**
@@ -838,7 +838,7 @@ static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
  */
 static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
 {
-	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xF0000000) == 0xE0000000;
+	return (ntohl(addr->s_addr) & 0xF0000000) == 0xE0000000;
 }
 
 /**
@@ -850,7 +850,7 @@ static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
  */
 static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 {
-	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xFFFF0000) == 0xA9FE0000;
+	return (ntohl(addr->s_addr) & 0xFFFF0000) == 0xA9FE0000;
 }
 
 /**
@@ -866,7 +866,7 @@ static inline bool net_ipv4_is_private_addr(const struct in_addr *addr)
 {
 	uint32_t masked_24, masked_16, masked_12, masked_10, masked_8;
 
-	masked_24 = ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xFFFFFF00;
+	masked_24 = ntohl(addr->s_addr) & 0xFFFFFF00;
 	masked_16 = masked_24 & 0xFFFF0000;
 	masked_12 = masked_24 & 0xFFF00000;
 	masked_10 = masked_24 & 0xFFC00000;
@@ -890,7 +890,7 @@ static inline bool net_ipv4_is_private_addr(const struct in_addr *addr)
  *  @return Destination address.
  */
 #define net_ipaddr_copy(dest, src) \
-	UNALIGNED_PUT(UNALIGNED_GET(src), dest)
+	*(dest) = *(src)
 
 /**
  *  @brief Copy an IPv4 address raw buffer
@@ -927,7 +927,7 @@ static inline void net_ipv6_addr_copy_raw(uint8_t *dest,
 static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 				     const struct in_addr *addr2)
 {
-	return UNALIGNED_GET(&addr1->s_addr) == UNALIGNED_GET(&addr2->s_addr);
+	return addr1->s_addr == addr2->s_addr;
 }
 
 /**
@@ -983,7 +983,7 @@ static inline bool net_ipv6_addr_cmp_raw(const uint8_t *addr1,
  */
 static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFE80);
+	return addr->s6_addr16[0] == htons(0xFE80);
 }
 
 /**
@@ -995,7 +995,7 @@ static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
  */
 static inline bool net_ipv6_is_sl_addr(const struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFEC0);
+	return addr->s6_addr16[0] == htons(0xFEC0);
 }
 
 
@@ -1036,7 +1036,7 @@ static inline bool net_ipv6_is_private_addr(const struct in6_addr *addr)
 {
 	uint32_t masked_32, masked_7;
 
-	masked_32 = ntohl(UNALIGNED_GET(&addr->s6_addr32[0]));
+	masked_32 = ntohl(addr->s6_addr32[0]);
 	masked_7 = masked_32 & 0xfc000000;
 
 	return masked_32 == 0x20010db8 || /* 2001:db8::/32 */
@@ -1148,10 +1148,10 @@ static inline bool net_ipv4_is_my_addr(const struct in_addr *addr)
  */
 static inline bool net_ipv6_is_addr_unspecified(const struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[3]) == 0;
+	return addr->s6_addr32[0] == 0 &&
+		addr->s6_addr32[1] == 0 &&
+		addr->s6_addr32[2] == 0 &&
+		addr->s6_addr32[3] == 0;
 }
 
 /**
@@ -1164,10 +1164,10 @@ static inline bool net_ipv6_is_addr_unspecified(const struct in6_addr *addr)
  */
 static inline bool net_ipv6_is_addr_solicited_node(const struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr32[0]) == htonl(0xff020000) &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00000000 &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0x00000001) &&
-		((UNALIGNED_GET(&addr->s6_addr32[3]) & htonl(0xff000000)) ==
+	return addr->s6_addr32[0] == htonl(0xff020000) &&
+		addr->s6_addr32[1] == 0x00000000 &&
+		addr->s6_addr32[2] == htonl(0x00000001) &&
+		((addr->s6_addr32[3] & htonl(0xff000000)) ==
 		 htonl(0xff000000));
 }
 
@@ -1298,12 +1298,12 @@ static inline bool net_ipv6_is_addr_mcast_org(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_group(const struct in6_addr *addr,
 						const struct in6_addr *group)
 {
-	return UNALIGNED_GET(&addr->s6_addr16[1]) == group->s6_addr16[1] &&
-		UNALIGNED_GET(&addr->s6_addr16[2]) == group->s6_addr16[2] &&
-		UNALIGNED_GET(&addr->s6_addr16[3]) == group->s6_addr16[3] &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == group->s6_addr32[1] &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == group->s6_addr32[1] &&
-		UNALIGNED_GET(&addr->s6_addr32[3]) == group->s6_addr32[3];
+	return addr->s6_addr16[1] == group->s6_addr16[1] &&
+		addr->s6_addr16[2] == group->s6_addr16[2] &&
+		addr->s6_addr16[3] == group->s6_addr16[3] &&
+		addr->s6_addr32[1] == group->s6_addr32[1] &&
+		addr->s6_addr32[2] == group->s6_addr32[1] &&
+		addr->s6_addr32[3] == group->s6_addr32[3];
 }
 
 /**
@@ -1370,15 +1370,15 @@ void net_ipv6_addr_create_solicited_node(const struct in6_addr *src,
 {
 	dst->s6_addr[0]   = 0xFF;
 	dst->s6_addr[1]   = 0x02;
-	UNALIGNED_PUT(0, &dst->s6_addr16[1]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[2]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[3]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[4]);
+	dst->s6_addr16[1] = 0;
+	dst->s6_addr16[2] = 0;
+	dst->s6_addr16[3] = 0;
+	dst->s6_addr16[4] = 0;
 	dst->s6_addr[10]  = 0U;
 	dst->s6_addr[11]  = 0x01;
 	dst->s6_addr[12]  = 0xFF;
 	dst->s6_addr[13]  = src->s6_addr[13];
-	UNALIGNED_PUT(UNALIGNED_GET(&src->s6_addr16[7]), &dst->s6_addr16[7]);
+	dst->s6_addr16[7] = src->s6_addr16[7];
 }
 
 /** @brief Construct an IPv6 address from eight 16-bit words.
@@ -1399,14 +1399,14 @@ static inline void net_ipv6_addr_create(struct in6_addr *addr,
 					uint16_t addr4, uint16_t addr5,
 					uint16_t addr6, uint16_t addr7)
 {
-	UNALIGNED_PUT(htons(addr0), &addr->s6_addr16[0]);
-	UNALIGNED_PUT(htons(addr1), &addr->s6_addr16[1]);
-	UNALIGNED_PUT(htons(addr2), &addr->s6_addr16[2]);
-	UNALIGNED_PUT(htons(addr3), &addr->s6_addr16[3]);
-	UNALIGNED_PUT(htons(addr4), &addr->s6_addr16[4]);
-	UNALIGNED_PUT(htons(addr5), &addr->s6_addr16[5]);
-	UNALIGNED_PUT(htons(addr6), &addr->s6_addr16[6]);
-	UNALIGNED_PUT(htons(addr7), &addr->s6_addr16[7]);
+	addr->s6_addr16[0] = htons(addr0);
+	addr->s6_addr16[1] = htons(addr1);
+	addr->s6_addr16[2] = htons(addr2);
+	addr->s6_addr16[3] = htons(addr3);
+	addr->s6_addr16[4] = htons(addr4);
+	addr->s6_addr16[5] = htons(addr5);
+	addr->s6_addr16[6] = htons(addr6);
+	addr->s6_addr16[7] = htons(addr7);
 }
 
 /**
@@ -1453,9 +1453,9 @@ static inline void net_ipv6_addr_create_v4_mapped(const struct in_addr *addr4,
  */
 static inline bool net_ipv6_addr_is_v4_mapped(const struct in6_addr *addr)
 {
-	if (UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
-	    UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
-	    UNALIGNED_GET(&addr->s6_addr16[5]) == 0xffff) {
+	if (addr->s6_addr32[0] == 0 &&
+	    addr->s6_addr32[1] == 0 &&
+	    addr->s6_addr16[5] == 0xffff) {
 		return true;
 	}
 

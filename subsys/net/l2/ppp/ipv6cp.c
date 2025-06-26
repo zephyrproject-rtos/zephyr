@@ -210,8 +210,8 @@ static void setup_iid_address(uint8_t *iid, struct in6_addr *addr)
 {
 	addr->s6_addr[0] = 0xfe;
 	addr->s6_addr[1] = 0x80;
-	UNALIGNED_PUT(0, &addr->s6_addr16[1]);
-	UNALIGNED_PUT(0, &addr->s6_addr32[1]);
+	addr->s6_addr16[1] = 0;
+	addr->s6_addr32[1] = 0;
 	memcpy(&addr->s6_addr[8], iid, PPP_INTERFACE_IDENTIFIER_LEN);
 
 	/* TODO: should we toggle local/global bit */
