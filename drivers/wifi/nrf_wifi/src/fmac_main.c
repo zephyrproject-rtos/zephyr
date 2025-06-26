@@ -350,7 +350,7 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 		goto out;
 	}
 
-#ifdef CONFIG_NRF70_SCAN_ONLY
+#if defined(CONFIG_NRF70_SCAN_ONLY) || defined(CONFIG_NRF70_RAW_DATA_RX)
 	if (reg_domain->oper == WIFI_MGMT_SET) {
 		memcpy(reg_domain_info.alpha2, reg_domain->country_code, WIFI_COUNTRY_CODE_LEN);
 
@@ -739,10 +739,10 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	data_config.rate_protection_type = rate_protection_type;
 	callbk_fns.if_carr_state_chg_callbk_fn = nrf_wifi_if_carr_state_chg;
 	callbk_fns.rx_frm_callbk_fn = nrf_wifi_if_rx_frm;
+#endif
 #if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
 	callbk_fns.sniffer_callbk_fn = nrf_wifi_if_sniffer_rx_frm;
 #endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
-#endif
 	rx_buf_pools[0].num_bufs = rx1_num_bufs;
 	rx_buf_pools[1].num_bufs = rx2_num_bufs;
 	rx_buf_pools[2].num_bufs = rx3_num_bufs;
@@ -756,6 +756,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.scan_start_callbk_fn = nrf_wifi_event_proc_scan_start_zep;
 	callbk_fns.scan_done_callbk_fn = nrf_wifi_event_proc_scan_done_zep;
 	callbk_fns.reg_change_callbk_fn = reg_change_callbk_fn;
+	callbk_fns.event_get_reg = nrf_wifi_event_get_reg_zep;
 #ifdef CONFIG_NET_L2_WIFI_MGMT
 	callbk_fns.disp_scan_res_callbk_fn = nrf_wifi_event_proc_disp_scan_res_zep;
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
@@ -769,7 +770,6 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.twt_config_callbk_fn = nrf_wifi_event_proc_twt_setup_zep;
 	callbk_fns.twt_teardown_callbk_fn = nrf_wifi_event_proc_twt_teardown_zep;
 	callbk_fns.twt_sleep_callbk_fn = nrf_wifi_event_proc_twt_sleep_zep;
-	callbk_fns.event_get_reg = nrf_wifi_event_get_reg_zep;
 	callbk_fns.event_get_ps_info = nrf_wifi_event_proc_get_power_save_info;
 	callbk_fns.cookie_rsp_callbk_fn = nrf_wifi_event_proc_cookie_rsp;
 	callbk_fns.process_rssi_from_rx = nrf_wifi_process_rssi_from_rx;
@@ -858,10 +858,12 @@ static const struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.get_stats = nrf_wifi_stats_get,
 	.reset_stats = nrf_wifi_stats_reset,
 #endif /* CONFIG_NET_STATISTICS_WIFI */
+#if defined(CONFIG_NRF70_STA_MODE) || defined(CONFIG_NRF70_RAW_DATA_RX)
+	.reg_domain = nrf_wifi_reg_domain,
+#endif
 #ifdef CONFIG_NRF70_STA_MODE
 	.set_power_save = nrf_wifi_set_power_save,
 	.set_twt = nrf_wifi_set_twt,
-	.reg_domain = nrf_wifi_reg_domain,
 	.get_power_save_config = nrf_wifi_get_power_save_config,
 	.set_rts_threshold = nrf_wifi_set_rts_threshold,
 	.get_rts_threshold = nrf_wifi_get_rts_threshold,
