@@ -256,39 +256,6 @@ static void nrf_wifi_net_iface_work_handler(struct k_work *work)
 	}
 }
 
-#if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
-void nrf_wifi_if_sniffer_rx_frm(void *os_vif_ctx, void *frm,
-				struct raw_rx_pkt_header *raw_rx_hdr,
-				bool pkt_free)
-{
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = os_vif_ctx;
-	struct net_if *iface = vif_ctx_zep->zep_net_if_ctx;
-	struct net_pkt *pkt;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
-	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
-	int ret;
-
-	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
-
-	pkt = net_raw_pkt_from_nbuf(iface, frm, sizeof(struct raw_rx_pkt_header),
-				    raw_rx_hdr,
-				    pkt_free);
-	if (!pkt) {
-		LOG_DBG("Failed to allocate net_pkt");
-		return;
-	}
-
-	net_capture_pkt(iface, pkt);
-
-	ret = net_recv_data(iface, pkt);
-	if (ret < 0) {
-		LOG_DBG("RCV Packet dropped by NET stack: %d", ret);
-		net_pkt_unref(pkt);
-	}
-}
-#endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
-
 void nrf_wifi_if_rx_frm(void *os_vif_ctx, void *frm)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = os_vif_ctx;
@@ -357,6 +324,39 @@ static bool is_eapol(struct net_pkt *pkt)
 	return ethertype == NET_ETH_PTYPE_EAPOL;
 }
 #endif /* CONFIG_NRF70_DATA_TX */
+
+#if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
+void nrf_wifi_if_sniffer_rx_frm(void *os_vif_ctx, void *frm,
+				struct raw_rx_pkt_header *raw_rx_hdr,
+				bool pkt_free)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = os_vif_ctx;
+	struct net_if *iface = vif_ctx_zep->zep_net_if_ctx;
+	struct net_pkt *pkt;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
+	int ret;
+
+	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
+
+	pkt = net_raw_pkt_from_nbuf(iface, frm, sizeof(struct raw_rx_pkt_header),
+				    raw_rx_hdr,
+				    pkt_free);
+	if (!pkt) {
+		LOG_DBG("Failed to allocate net_pkt");
+		return;
+	}
+
+	net_capture_pkt(iface, pkt);
+
+	ret = net_recv_data(iface, pkt);
+	if (ret < 0) {
+		LOG_DBG("RCV Packet dropped by NET stack: %d", ret);
+		net_pkt_unref(pkt);
+	}
+}
+#endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
 
 enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev)
 {

@@ -22,6 +22,7 @@
 #define WIFI_MGMT_DATA_CTRL_FILTER_SETTING 0xE
 #define WIFI_ALL_FILTER_SETTING 0xF
 
+#ifdef CONFIG_NRF70_STA_MODE
 struct twt_interval_float {
 	unsigned short mantissa;
 	unsigned char exponent;
@@ -54,6 +55,7 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 void nrf_wifi_event_proc_get_power_save_info(void *vif_ctx,
 		struct nrf_wifi_umac_event_power_save_info *ps_info,
 		unsigned int event_len);
+#endif /* CONFIG_NRF70_STA_MODE */
 
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 int nrf_wifi_mode(const struct device *dev,
