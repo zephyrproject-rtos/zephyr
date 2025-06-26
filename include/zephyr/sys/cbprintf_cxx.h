@@ -81,11 +81,10 @@ template < typename T >
 static inline int z_cbprintf_cxx_is_pchar(T arg, bool const_as_fixed)
 {
 	ARG_UNUSED(arg);
-	_Pragma("GCC diagnostic push")
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 	ARG_UNUSED(const_as_fixed);
 	return 0;
-	_Pragma("GCC diagnostic pop")
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 }
 
 /* C++ version for determining if variable type is numeric and fits in 32 bit word. */
@@ -133,10 +132,9 @@ template < typename T >
 static inline int z_cbprintf_cxx_is_word_num(T arg)
 {
 	ARG_UNUSED(arg);
-	_Pragma("GCC diagnostic push")
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 	return 0;
-	_Pragma("GCC diagnostic pop")
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 }
 
 /* C++ version for determining if argument is a none character pointer. */

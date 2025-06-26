@@ -23,16 +23,13 @@
 #include <zephyr/platform/hooks.h>
 #include <zephyr/arch/cache.h>
 
-#if defined(__GNUC__)
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of
  * the cases of relocate_vector_table() it is valid to pass NULL, so we
  * suppress the warning for this case.  We need to do this before
  * string.h is included to get the declaration of memcpy.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull"
-#endif
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 
 #include <string.h>
 
@@ -72,9 +69,7 @@ void __weak relocate_vector_table(void)
 #endif
 }
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic pop
-#endif
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 
 #endif /* CONFIG_CPU_CORTEX_M_HAS_VTOR */
 
