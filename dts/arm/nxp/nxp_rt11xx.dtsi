@@ -14,42 +14,9 @@
 #include <zephyr/dt-bindings/power/imx_spc.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 / {
-	chosen {
-		zephyr,entropy = &caam;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		cpu0: cpu@0 {
-			device_type = "cpu";
-			compatible = "arm,cortex-m7";
-			reg = <0>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-			d-cache-line-size = <32>;
-
-			mpu: mpu@e000ed90 {
-				compatible = "arm,armv7m-mpu";
-				reg = <0xe000ed90 0x40>;
-			};
-		};
-		cpu1: cpu@1 {
-			device_type = "cpu";
-			compatible = "arm,cortex-m4f";
-			reg = <1>;
-			d-cache-line-size = <32>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			mpu: mpu@e000ed90 {
-				compatible = "arm,armv7m-mpu";
-				reg = <0xe000ed90 0x40>;
-			};
-		};
 
 		power-states {
 			/*
@@ -838,14 +805,6 @@
 				status = "disabled";
 				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
 			};
-		};
-
-		caam: caam@40440000 {
-			compatible = "nxp,imx-caam";
-			reg = <0x40440000 0x81000>;
-			interrupts = <69 0>, <70 0>, <71 0>,
-				     <72 0>,  <73 0>,  <74 0>;
-			status = "okay";
 		};
 
 		usb1: usbd@40430000 {
