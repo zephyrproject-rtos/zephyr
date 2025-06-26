@@ -36,6 +36,7 @@ struct mchp_ksz9131_data {
 	struct k_work_delayable monitor_work;
 	struct phy_link_state state;
 	struct k_sem sem;
+	bool gigabit_supported;
 };
 
 #define PHY_ID_KSZ9131     0x00221640
@@ -80,6 +81,30 @@ static int phy_mchp_ksz9131_read(const struct device *dev, uint16_t reg_addr, ui
 static int phy_mchp_ksz9131_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
 	return ksz9131_write(dev, reg_addr, (uint16_t)data);
+}
+
+static int read_gigabit_supported_flag(const struct device *dev, bool *supported)
+{
+	uint16_t bmsr_reg;
+	uint16_t estat_reg;
+
+	if (ksz9131_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		return -EIO;
+	}
+
+	if ((bmsr_reg & MII_BMSR_EXTEND_STATUS) != 0U) {
+		if (ksz9131_read(dev, MII_ESTAT, &estat_reg) < 0) {
+			return -EIO;
+		}
+
+		if ((estat_reg & (MII_ESTAT_1000BASE_T_HALF | MII_ESTAT_1000BASE_T_FULL)) != 0U) {
+			*supported = true;
+			return 0;
+		}
+	}
+
+	*supported = false;
+	return 0;
 }
 
 static int phy_mchp_ksz9131_reset(const struct device *dev)
@@ -336,6 +361,30 @@ static int phy_mchp_ksz9131_cfg_link(const struct device *dev, enum phy_link_spe
 		goto done;
 	}
 
+	if (data->gigabit_supported) {
+		ret = ksz9131_read(dev, MII_1KTCR, &c1kt);
+		if (ret < 0) {
+			goto done;
+		}
+
+		if (adv_speeds & LINK_FULL_1000BASE) {
+			c1kt |= MII_ADVERTISE_1000_FULL;
+		} else {
+			c1kt &= ~MII_ADVERTISE_1000_FULL;
+		}
+
+		if (adv_speeds & LINK_HALF_1000BASE) {
+			c1kt |= MII_ADVERTISE_1000_HALF;
+		} else {
+			c1kt &= ~MII_ADVERTISE_1000_HALF;
+		}
+
+		ret = ksz9131_write(dev, MII_1KTCR, c1kt);
+		if (ret < 0) {
+			goto done;
+		}
+	}
+
 	ret = phy_mchp_ksz9131_autonegotiate(dev);
 done:
 	k_sem_give(&data->sem);
@@ -350,6 +399,36 @@ done:
 	k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 
 	return ret;
+}
+
+static bool phy_mchp_ksz9131_gigabit(const struct device *dev, enum phy_link_speed *speed, int *ret)
+{
+	uint16_t mutual_capabilities = 0;
+	uint16_t mscr = 0;
+	uint16_t mssr = 0;
+
+	/* Read AUTO-NEGOTIATION MASTER SLAVE CONTROL REGISTER */
+	*ret = ksz9131_read(dev, MII_1KTCR, &mscr);
+	if (*ret < 0) {
+		return true;
+	}
+
+	/* Read AUTO-NEGOTIATION MASTER SLAVE STATUS REGISTER */
+	*ret = ksz9131_read(dev, MII_1KSTSR, &mssr);
+	if (*ret < 0) {
+		return true;
+	}
+
+	mutual_capabilities = mscr & (mssr >> 2);
+	if (mutual_capabilities & MII_ADVERTISE_1000_FULL) {
+		*speed = LINK_FULL_1000BASE;
+		return true;
+	} else if (mutual_capabilities & MII_ADVERTISE_1000_HALF) {
+		*speed = LINK_HALF_1000BASE;
+		return true;
+	}
+
+	return false;
 }
 
 static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_state *state)
@@ -368,6 +447,10 @@ static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_s
 
 	ret = phy_mchp_ksz9131_link_status(dev, &state->is_up);
 	if (ret < 0 || !state->is_up) {
+		goto done;
+	}
+
+	if (data->gigabit_supported && phy_mchp_ksz9131_gigabit(dev, &state->speed, &ret)) {
 		goto done;
 	}
 
@@ -488,6 +571,12 @@ static int phy_mchp_ksz9131_init(const struct device *dev)
 
 	ret = phy_check_ksz9131_id(dev);
 	if (ret < 0) {
+		return ret;
+	}
+
+	ret = read_gigabit_supported_flag(dev, &data->gigabit_supported);
+	if (ret < 0) {
+		LOG_ERR("Failed to read PHY capabilities: %d", ret);
 		return ret;
 	}
 
