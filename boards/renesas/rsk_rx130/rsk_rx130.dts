@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <renesas/r5f513083xfb.dtsi>
+#include <renesas/r5f51308axfp.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include "rsk_rx130_512kb-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
