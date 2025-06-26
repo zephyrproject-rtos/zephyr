@@ -227,11 +227,11 @@ int mctp_i2c_gpio_controller_start(struct mctp_binding *binding)
 
 	mctp_binding_set_tx_enabled(binding, true);
 
+	LOG_DBG("started, enabling gpio interrupts");
+
 	for (int i = 0; i < b->num_endpoints; i++) {
 		gpio_pin_interrupt_configure_dt(&b->endpoint_gpios[i], GPIO_INT_LEVEL_HIGH);
 	}
-
-	LOG_DBG("started");
 
 	return 0;
 }
