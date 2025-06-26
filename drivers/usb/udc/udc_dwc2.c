@@ -139,6 +139,7 @@ struct udc_dwc2_data {
 	unsigned int hibernated : 1;
 	unsigned int enumdone : 1;
 	unsigned int enumspd : 2;
+	unsigned int pending_dout_feed : 1;
 	enum dwc2_suspend_type suspend_type;
 	/* Number of endpoints including control endpoint */
 	uint8_t numdeveps;
@@ -428,10 +429,28 @@ static void dwc2_ensure_setup_ready(const struct device *dev)
 	if (dwc2_in_completer_mode(dev)) {
 		/* In Completer mode EP0 can always receive SETUP data */
 		return;
-	}
+	} else {
+		struct udc_dwc2_data *const priv = udc_get_private(dev);
 
-	if (!udc_buf_peek(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN))) {
-		dwc2_ctrl_feed_dout(dev, 8);
+		/* Enable EP0 OUT only if there is no pending EP0 IN transfer
+		 * after which the stack has to enable EP0 OUT.
+		 */
+		if (!priv->pending_dout_feed) {
+			dwc2_ctrl_feed_dout(dev, 8);
+		}
+	}
+}
+
+static void dwc2_clear_control_in_nak(const struct device *dev)
+{
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	mem_addr_t diepctl_reg = (mem_addr_t)&base->in_ep[0].diepctl;
+	uint32_t diepctl = sys_read32(diepctl_reg);
+
+	if (diepctl & USB_DWC2_DEPCTL_NAKSTS) {
+		diepctl &= ~USB_DWC2_DEPCTL_EPENA;
+		diepctl |= USB_DWC2_DEPCTL_CNAK;
+		sys_write32(diepctl, diepctl_reg);
 	}
 }
 
@@ -590,7 +609,11 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	}
 
 	/* Clear NAK and set endpoint enable */
-	diepctl |= USB_DWC2_DEPCTL_EPENA | USB_DWC2_DEPCTL_CNAK;
+	diepctl |= USB_DWC2_DEPCTL_EPENA;
+	if (cfg->addr != USB_CONTROL_EP_IN) {
+		/* Non-control endpoint, set CNAK for all transfers */
+		diepctl |= USB_DWC2_DEPCTL_CNAK;
+	}
 	sys_write32(diepctl, diepctl_reg);
 
 	/* Clear IN Endpoint NAK Effective interrupt in case it was set */
@@ -776,6 +799,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 static void dwc2_handle_xfer_next(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct net_buf *buf;
 
 	buf = udc_buf_peek(cfg);
@@ -803,7 +827,8 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 			 * avoid race condition where the next Control Write
 			 * Transfer Data Stage is received into the buffer.
 			 */
-			if (dwc2_in_buffer_dma_mode(dev)) {
+			if (dwc2_in_buffer_dma_mode(dev) && priv->pending_dout_feed) {
+				priv->pending_dout_feed = 0;
 				dwc2_ctrl_feed_dout(dev, 8);
 			}
 		}
@@ -872,6 +897,19 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 		/*  Allocate and feed buffer for data OUT stage */
 		LOG_DBG("s:%p|feed for -out-", buf);
 
+		priv->pending_dout_feed = 0;
+
+		if (dwc2_in_completer_mode(dev)) {
+			/* Programming Guide does not clearly describe to clear
+			 * control IN endpoint NAK for Control Write Transfers
+			 * when operating in Completer mode. Set CNAK here,
+			 * because IN endpoint is not armed at this point and
+			 * forced NAKs are not necessary. IN Status stage will
+			 * only finish after IN endpoint is armed.
+			 */
+			dwc2_clear_control_in_nak(dev);
+		}
+
 		err = dwc2_ctrl_feed_dout(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
 			err = udc_submit_ep_event(dev, buf, err);
@@ -879,11 +917,19 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 	} else if (udc_ctrl_stage_is_data_in(dev)) {
 		LOG_DBG("s:%p|feed for -in-status", buf);
 
+		dwc2_clear_control_in_nak(dev);
+
 		err = udc_ctrl_submit_s_in_status(dev);
+
+		priv->pending_dout_feed = 1;
 	} else {
 		LOG_DBG("s:%p|feed >setup", buf);
 
+		dwc2_clear_control_in_nak(dev);
+
 		err = udc_ctrl_submit_s_status(dev);
+
+		priv->pending_dout_feed = 1;
 	}
 
 	return err;
@@ -892,6 +938,7 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 static inline int dwc2_handle_evt_dout(const struct device *dev,
 				       struct udc_ep_config *const cfg)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_data *data = dev->data;
 	struct net_buf *buf;
 	int err = 0;
@@ -924,6 +971,8 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 
 		if (udc_ctrl_stage_is_status_in(dev)) {
 			err = udc_ctrl_submit_s_out_status(dev, buf);
+
+			priv->pending_dout_feed = 1;
 		}
 
 		if (data->stage == CTRL_PIPE_STAGE_ERROR) {
@@ -1623,6 +1672,15 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 			/* For IN endpoints STALL is set in addition to SNAK */
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
 		}
+
+		/* EP0 status stage enabled, but CNAK not yet written.
+		 * Set EPDIS to prevent timeout.
+		 */
+		if ((dxepctl & USB_DWC2_DEPCTL_NAKSTS) &&
+		    (dxepctl & USB_DWC2_DEPCTL_EPENA)) {
+			dxepctl |= USB_DWC2_DEPCTL_EPDIS;
+		}
+
 		sys_write32(dxepctl, dxepctl_reg);
 
 		/* Endpoint gets disabled in INEPNAKEFF handler */
@@ -2751,13 +2809,15 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		}
 
 		if (status & USB_DWC2_DOEPINT_STSPHSERCVD) {
-			/* Driver doesn't need any special handling, but it is
-			 * mandatory that the bit is cleared in Buffer DMA mode.
+			/* Allow IN Status stage after control transfer with
+			 * data stage from device to host. Clear the CNAK and
+			 * this interrupt bit is mandatory in Buffer DMA mode.
 			 * If the bit is not cleared (i.e. when this interrupt
 			 * bit is masked), then SETUP interrupts will cease
 			 * after first control transfer with data stage from
 			 * device to host.
 			 */
+			dwc2_clear_control_in_nak(dev);
 		}
 
 		if (status & USB_DWC2_DOEPINT_XFERCOMPL) {
