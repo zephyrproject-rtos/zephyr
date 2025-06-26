@@ -43,6 +43,7 @@
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
 		clock-names = "mclk";
 	};
+};
 
 &pinctrl {
 	/* removes pull on dat3 for card detect */
