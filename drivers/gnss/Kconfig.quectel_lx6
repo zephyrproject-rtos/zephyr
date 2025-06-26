@@ -1,0 +1,61 @@
+# Copyright (c) 2025 Nick Ward <nix.ward@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config GNSS_QUECTEL_LX6
+	bool "Quectel LX6 GNSS modem driver"
+	default y
+	depends on GNSS
+	depends on DT_HAS_QUECTEL_L96_ENABLED
+	depends on GNSS_REFERENCE_FRAME_WGS84
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),i2c)
+	select SERIAL if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),uart)
+	select MODEM_MODULES
+	select MODEM_BACKEND_QUECTEL_I2C if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),i2c)
+	select MODEM_BACKEND_UART if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),uart)
+	select MODEM_CHAT
+	select GNSS_PARSE
+	select GNSS_NMEA0183
+	select GNSS_NMEA0183_MATCH
+	help
+	  Enable Quectel LX6 series GNSS modem driver.
+
+if GNSS_QUECTEL_LX6
+
+config GNSS_QUECTEL_LX6_RX_BUF_SIZE
+	int "Size of backend receive buffer"
+	default 256
+
+config GNSS_QUECTEL_LX6_TX_BUF_SIZE
+	int "Size of backend transmit buffer"
+	default 64
+
+config GNSS_QUECTEL_LX6_I2C_POLL_MS
+	int "GNSS I2C polling interval (ms)"
+	range 2 500
+	default 500
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),i2c)
+	help
+	  The interval in milliseconds at which the GNSS module is polled via I2C
+	  to read NMEA data. This value should be less than the GNSS fix interval
+	  to avoid data loss.
+
+if GNSS_SATELLITES
+
+config GNSS_QUECTEL_LX6_SAT_ARRAY_SIZE
+	int "Size of GNSS satellites array"
+	default 24
+
+endif # GNSS_SATELLITES
+
+config GNSS_QUECTEL_LX6_RESET_ON_INIT
+	bool "Reset Quectel lx6 module during initialization"
+	depends on GPIO
+	help
+	  If enabled, the driver will toggle the reset pin during initialization.
+	  The reset pin must be defined in the device tree as reset-gpios.
+	  This will issue a hardware reset to the lx6 module by pulling the
+	  RESET pin low for at least 10ms, then releasing it. This may clear
+	  volatile RAM data but will preserve backup RAM content, allowing
+	  faster TTFF after reset.
+
+endif # GNSS_QUECTEL_LX6
