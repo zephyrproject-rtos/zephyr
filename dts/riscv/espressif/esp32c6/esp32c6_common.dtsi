@@ -81,6 +81,11 @@
 		status = "disabled";
 	};
 
+	rtc: rtc {
+		compatible = "espressif,esp32-rtc";
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

@@ -37,6 +37,7 @@ menu "RTC Clock Config"
 
 config RESERVE_RTC_MEM
 	int
+	default 32 if RTC_ESP32
 	default 0
 	help
 	  This option reserves an area in RTC FAST memory.

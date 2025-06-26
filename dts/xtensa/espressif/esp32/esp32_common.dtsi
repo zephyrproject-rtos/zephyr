@@ -102,6 +102,11 @@
 		status = "okay";
 	};
 
+	rtc: rtc {
+		compatible = "espressif,esp32-rtc";
+		status = "disabled";
+	};
+
 	soc {
 		sram0: memory@40070000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
@@ -194,7 +199,7 @@
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@3ff42000 {

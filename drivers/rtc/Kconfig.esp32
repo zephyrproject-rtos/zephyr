@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_ESP32
+	bool "ESP32 RTC driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_RTC_ENABLED
+	help
+	  Enables the ESP32 RTC driver using the internal RTC counter hardware.
+	  This provides basic timekeeping functionality based on the built-in
+	  RTC counter peripheral.

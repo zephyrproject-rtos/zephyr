@@ -80,6 +80,12 @@
 		#clock-cells = <1>;
 		status = "okay";
 	};
+
+	rtc: rtc {
+		compatible = "espressif,esp32-rtc";
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -145,7 +151,7 @@
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@3f402000 {
