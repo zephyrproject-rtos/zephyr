@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
 #include <kthread.h>
+#include "mailbox.h"
 
 LOG_MODULE_REGISTER(scmi_core);
 
@@ -88,12 +89,34 @@ static int scmi_core_setup_chan(const struct device *transport,
 	return 0;
 }
 
+static int scmi_interrupt_enable(struct scmi_channel *chan, bool enable)
+{
+	struct scmi_mbox_channel *mbox_chan;
+	struct mbox_dt_spec *tx_reply;
+	bool compInt;
+
+	mbox_chan = chan->data;
+	compInt = enable ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
+
+	if (mbox_chan->tx_reply.dev) {
+		tx_reply = &mbox_chan->tx_reply;
+	} else {
+		tx_reply = &mbox_chan->tx;
+	}
+
+	/* re-set completion interrupt */
+	scmi_shmem_update_flags(mbox_chan->shmem, SCMI_SHMEM_CHAN_FLAG_IRQ_BIT, compInt);
+
+	return mbox_set_enabled_dt(tx_reply, enable);
+}
+
 static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 					struct scmi_message *msg,
 					struct scmi_message *reply)
 {
 	int ret;
 
+	scmi_interrupt_enable(proto->tx, false);
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
 	if (ret < 0) {
 		return ret;
@@ -114,6 +137,7 @@ static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 		return ret;
 	}
 
+	scmi_interrupt_enable(proto->tx, true);
 	return ret;
 }
 
