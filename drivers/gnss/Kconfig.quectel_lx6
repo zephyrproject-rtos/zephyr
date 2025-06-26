@@ -9,6 +9,7 @@ config GNSS_QUECTEL_LX6
 	depends on GNSS_REFERENCE_FRAME_WGS84
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),i2c)
 	select SERIAL if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),uart)
+	select WARN_EXPERIMENTAL if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),uart)
 	select MODEM_MODULES
 	select MODEM_BACKEND_QUECTEL_I2C if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),i2c)
 	select MODEM_BACKEND_UART if $(dt_compat_on_bus,$(DT_COMPAT_QUECTEL_L96),uart)
