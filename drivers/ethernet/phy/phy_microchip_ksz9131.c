@@ -41,6 +41,9 @@ struct mchp_ksz9131_data {
 #define PHY_ID_KSZ9131     0x00221640
 #define PHY_ID_KSZ9131_MSK (~0xF)
 
+#define PHY_KSZ9131_MSS_ADVERTISE_1000_FULL BIT(11)
+#define PHY_KSZ9131_MSS_ADVERTISE_1000_HALF BIT(10)
+
 #define PHY_KSZ9131_ICS_REG               0x1B
 #define PHY_KSZ9131_ICS_LINK_DOWN_IE_MASK BIT(10)
 #define PHY_KSZ9131_ICS_LINK_UP_IE_MASK   BIT(8)
@@ -354,6 +357,8 @@ static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_s
 	struct phy_link_state old_state = data->state;
 	uint16_t mutual_capabilities = 0;
 	uint16_t bmsr = 0;
+	uint16_t mscr = 0;
+	uint16_t mssr = 0;
 	uint16_t anar = 0;
 	uint16_t anlpar = 0;
 	int ret = 0;
@@ -374,6 +379,31 @@ static int phy_mchp_ksz9131_get_link(const struct device *dev, struct phy_link_s
 	state->is_up = bmsr & MII_BMSR_LINK_STATUS;
 	if (!state->is_up) {
 		goto done;
+	}
+
+	/* Read AUTO-NEGOTIATION MASTER SLAVE CONTROL REGISTER */
+	ret = ksz9131_read(dev, MII_1KTCR, &mscr);
+	if (ret < 0) {
+		goto done;
+	}
+
+	/* Read AUTO-NEGOTIATION MASTER SLAVE STATUS REGISTER */
+	ret = ksz9131_read(dev, MII_1KSTSR, &mssr);
+	if (ret < 0) {
+		goto done;
+	}
+
+	if (mscr & MII_ADVERTISE_1000_FULL) {
+		if (mssr & PHY_KSZ9131_MSS_ADVERTISE_1000_FULL) {
+			state->speed = LINK_FULL_1000BASE;
+			goto done;
+		}
+	}
+	if (mscr & MII_ADVERTISE_1000_HALF) {
+		if (mssr & PHY_KSZ9131_MSS_ADVERTISE_1000_HALF) {
+			state->speed = LINK_HALF_1000BASE;
+			goto done;
+		}
 	}
 
 	/* Read currently configured advertising options */
