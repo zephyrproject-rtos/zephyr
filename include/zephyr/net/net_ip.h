@@ -146,7 +146,7 @@ struct in6_addr {
 		uint16_t s6_addr16[8]; /**< In big endian */
 		uint32_t s6_addr32[4]; /**< In big endian */
 	};
-};
+} __packed;
 
 /** Binary size of the IPv6 address */
 #define NET_IPV6_ADDR_SIZE 16
@@ -159,7 +159,7 @@ struct in_addr {
 		uint32_t s4_addr32[1]; /**< In big endian */
 		uint32_t s_addr; /**< In big endian, for POSIX compatibility. */
 	};
-};
+} __packed;
 
 /** Binary size of the IPv4 address */
 #define NET_IPV4_ADDR_SIZE 4
