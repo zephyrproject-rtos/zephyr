@@ -58,4 +58,12 @@
 			output-high;
 		};
 	};
+
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PB2>, <TIMER0_CC1_PD3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
 };
