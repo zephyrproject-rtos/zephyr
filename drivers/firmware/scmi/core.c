@@ -8,6 +8,7 @@
 #include <zephyr/drivers/firmware/scmi/transport.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
+#include "mailbox.h"
 
 LOG_MODULE_REGISTER(scmi_core);
 
@@ -87,15 +88,45 @@ static int scmi_core_setup_chan(const struct device *transport,
 	return 0;
 }
 
+static int scmi_interrupt_enable(struct scmi_channel *chan, bool enable)
+{
+	struct scmi_mbox_channel *mbox_chan;
+	struct mbox_dt_spec *tx_reply;
+	bool comp_int;
+
+	mbox_chan = chan->data;
+	comp_int = enable ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
+
+	if (mbox_chan->tx_reply.dev) {
+		tx_reply = &mbox_chan->tx_reply;
+	} else {
+		tx_reply = &mbox_chan->tx;
+	}
+
+	/* re-set completion interrupt */
+	scmi_shmem_update_flags(mbox_chan->shmem, SCMI_SHMEM_CHAN_FLAG_IRQ_BIT, comp_int);
+
+	return mbox_set_enabled_dt(tx_reply, enable);
+}
+
 static int scmi_send_message_polling(struct scmi_protocol *proto,
 					struct scmi_message *msg,
 					struct scmi_message *reply)
 {
 	int ret;
+	int status;
+
+	/*
+	 * SCMI communication interrupt is enabled by default during setup_chan
+	 * to support interrupt-driven communication. When using polling mode
+	 * it must be disabled to avoid unnecessary interrupts and
+	 * ensure proper polling behavior.
+	 */
+	status = scmi_interrupt_enable(proto->tx, false);
 
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
 	if (ret < 0) {
-		return ret;
+		goto cleanup;
 	}
 
 	/* no kernel primitives, we're forced to poll here.
@@ -114,6 +145,12 @@ static int scmi_send_message_polling(struct scmi_protocol *proto,
 	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
 	if (ret < 0) {
 		return ret;
+	}
+
+cleanup:
+	/* restore scmi interrupt enable status when disable it pass */
+	if (status >= 0) {
+		scmi_interrupt_enable(proto->tx, true);
 	}
 
 	return ret;
