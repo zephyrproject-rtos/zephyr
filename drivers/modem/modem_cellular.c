@@ -881,8 +881,17 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
-		net_if_set_link_addr(modem_ppp_get_iface(data->ppp), data->imei,
-				     ARRAY_SIZE(data->imei), NET_LINK_UNKNOWN);
+		/* Get link_addr_len least significant bytes from IMEI as a link address */
+		uint8_t imei_len = MODEM_CELLULAR_DATA_IMEI_LEN - 1; /* Exclude str end */
+		uint8_t link_addr_len = MIN(NET_LINK_ADDR_MAX_LENGTH, imei_len);
+		uint8_t *link_addr_ptr = data->imei + (imei_len - link_addr_len);
+		int err;
+
+		err = net_if_set_link_addr(modem_ppp_get_iface(data->ppp), link_addr_ptr,
+					   link_addr_len, NET_LINK_UNKNOWN);
+		if (err) {
+			LOG_WRN("Failed to set link address on PPP interface (%d)", err);
+		}
 
 		modem_chat_release(&data->chat);
 		modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
