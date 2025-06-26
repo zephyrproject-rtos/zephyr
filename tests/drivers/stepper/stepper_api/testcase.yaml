@@ -14,6 +14,8 @@ tests:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
       - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=20
+      - CONFIG_STEPPER_TEST_MICROSTEP_RESOLUTION=16
     platform_allow:
       - native_sim/native/64
   drivers.stepper.stepper_api.adi_tmc2209_work_q:
@@ -23,6 +25,7 @@ tests:
       - CONFIG_GPIO=y
       - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
       - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=30
+      - CONFIG_STEPPER_TEST_MICROSTEP_RESOLUTION=16
     platform_allow:
       - native_sim/native/64
   drivers.stepper.stepper_api.allegro_a4979:
@@ -32,6 +35,7 @@ tests:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
       - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=20
     platform_allow:
       - native_sim/native/64
   drivers.stepper.stepper_api.allegro_a4979_work_q:
@@ -50,6 +54,7 @@ tests:
       - CONFIG_GPIO=y
       - CONFIG_COUNTER=y
       - CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS=y
+      - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=20
     platform_allow:
       - native_sim/native/64
   drivers.stepper.stepper_api.ti_drv84xx_work_q:
@@ -67,6 +72,8 @@ tests:
       - platform:qemu_x86_64/atom:DTC_OVERLAY_FILE="boards/qemu_x86_64_zephyr_gpio_stepper.overlay"
     extra_configs:
       - CONFIG_GPIO=y
+      - CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT=20
+      - CONFIG_STEPPER_TEST_MICROSTEP_RESOLUTION=2
     platform_allow:
       - native_sim/native/64
       - qemu_x86_64/atom
