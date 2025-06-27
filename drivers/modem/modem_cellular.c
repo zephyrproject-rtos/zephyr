@@ -873,6 +873,10 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 {
 	const struct modem_cellular_config *config =
 		(const struct modem_cellular_config *)data->dev->config;
+	uint8_t imei_len;
+	uint8_t link_addr_len;
+	uint8_t *link_addr_ptr;
+	int err;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
@@ -882,10 +886,9 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		/* Get link_addr_len least significant bytes from IMEI as a link address */
-		uint8_t imei_len = MODEM_CELLULAR_DATA_IMEI_LEN - 1; /* Exclude str end */
-		uint8_t link_addr_len = MIN(NET_LINK_ADDR_MAX_LENGTH, imei_len);
-		uint8_t *link_addr_ptr = data->imei + (imei_len - link_addr_len);
-		int err;
+		imei_len = MODEM_CELLULAR_DATA_IMEI_LEN - 1; /* Exclude str end */
+		link_addr_len = MIN(NET_LINK_ADDR_MAX_LENGTH, imei_len);
+		link_addr_ptr = data->imei + (imei_len - link_addr_len);
 
 		err = net_if_set_link_addr(modem_ppp_get_iface(data->ppp), link_addr_ptr,
 					   link_addr_len, NET_LINK_UNKNOWN);
