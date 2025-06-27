@@ -39,7 +39,7 @@ Boards
   nRF Util (``nrfutil``) tool. This means that you may need to `install nRF Util
   <https://www.nordicsemi.com/Products/Development-tools/nrf-util>`_ or, if you
   prefer to continue using ``nrfjprog``, you can do so by invoking west while
-  specfying the runner: ``west flash -r nrfjprog``. The full documentation for
+  specifying the runner: ``west flash -r nrfjprog``. The full documentation for
   nRF Util can be found
   `here <https://docs.nordicsemi.com/bundle/nrfutil/page/README.html>`_.
 
@@ -175,7 +175,7 @@ Ethernet
   ``ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS``, ``ETH_STM32_AUTO_NEGOTIATION_ENABLE``,
   ``ETH_STM32_SPEED_10M``, ``ETH_STM32_MODE_HALFDUPLEX`` have been removed, as they are no longer
   needed, and the driver now uses the ethernet phy api to communicate with the phy driver, which
-  is resposible for configuring the phy settings (:github:`87593`).
+  is responsible for configuring the phy settings (:github:`87593`).
 
 * ``ethernet_native_posix`` has been renamed ``ethernet_native_tap``, and with it its
   kconfig options: :kconfig:option:`CONFIG_ETH_NATIVE_POSIX` and its related options have been
@@ -188,7 +188,7 @@ Ethernet
   :zephyr_file:`include/zephyr/net/ethernet.h` have been renamed
   to ``ETHERNET_DSA_CONDUIT_PORT`` and ``ETHERNET_DSA_USER_PORT``.
 
-* Enums for the Ethernet speed have been renamed to be more indepedent of the used medium.
+* Enums for the Ethernet speed have been renamed to be more independent of the used medium.
   ``LINK_HALF_10BASE_T``, ``LINK_FULL_10BASE_T``, ``LINK_HALF_100BASE_T``, ``LINK_FULL_100BASE_T``,
   ``LINK_HALF_1000BASE_T``, ``LINK_FULL_1000BASE_T``, ``LINK_FULL_2500BASE_T`` and
   ``LINK_FULL_5000BASE_T`` have been renamed to :c:enumerator:`LINK_HALF_10BASE`,
@@ -439,7 +439,7 @@ Bluetooth HCI
   have been deprecated, but are still usable, with the exception that they can only be
   called once per buffer.
 
-* The :c:func:`bt_hci_cmd_create` function has been depracated and the new :c:func:`bt_hci_cmd_alloc`
+* The :c:func:`bt_hci_cmd_create` function has been deprecated and the new :c:func:`bt_hci_cmd_alloc`
   function should be used instead. The new function takes no parameters because the command
   sending functions have been updated to do the command header encoding.
 

@@ -70,7 +70,7 @@ Configuring clang static analyzer
 *********************************
 
 Clang static analyzer can be controlled using specific options.
-To get an exaustive list of available options, report to the
+To get an exhaustive list of available options, report to the
 'analyze-build' helper and 'scan-build' helper.
 
 .. code-block:: shell
