@@ -60,7 +60,7 @@ config MSPI_AMBIQ_TIMING_SCAN_BUFFER_SIZE
 	help
 	  This option specifies the memory buffer size used for timing scan,
 	  carefully adjust this size between a few KBs to hundreds of KBs to achieve
-	  balance between time and accurary
+	  balance between time and accuracy
 
 config MSPI_AMBIQ_TIMING_SCAN_DATA_SIZE
 	int "Total data sizes in bytes used in timing scan"

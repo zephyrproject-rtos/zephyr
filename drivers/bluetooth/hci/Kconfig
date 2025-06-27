@@ -371,7 +371,7 @@ config BT_H4_NXP_CTLR
 	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
 	help
 	  Enables support for NXP Bluetooth Controller.
-	  More inforamtion about NXP Bluetooth profuct could be found on
+	  More information about NXP Bluetooth products could be found on
 	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4:WIFI-BLUETOOTH
 
 if BT_H4_NXP_CTLR
