@@ -16,6 +16,12 @@ config FLASH_BASE_ADDRESS
 config GIC_SAFE_CONFIG
 	default y
 
+config GIC_V3_RDIST_DMA_NONCOHERENT
+	default y
+
+config GIC_V3_ITS_DMA_NONCOHERENT
+	default y
+
 # Disable data cache until MMU is enabled when booting from EL2
 config ARM64_DCACHE_ALL_OPS
 	default y
