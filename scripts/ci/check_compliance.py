@@ -323,6 +323,8 @@ class CheckPatch(ComplianceTest):
             if len(matches) == 0:
                 self.failure(output)
 
+        diff.communicate()
+
 
 class BoardYmlCheck(ComplianceTest):
     """
