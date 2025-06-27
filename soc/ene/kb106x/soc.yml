@@ -1,0 +1,7 @@
+family:
+- name: kb106x
+  series:
+  - name: kb106x
+    socs:
+    - name: kb1062
+    - name: kb1064
