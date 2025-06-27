@@ -638,7 +638,7 @@ static int hawkbit_find_cancel_action_id(struct hawkbit_ctl_res *res,
 		return -EINVAL;
 	}
 
-	helper += sizeof("cancelAction/");
+	helper += sizeof("cancelAction/") - 1;
 
 	*cancel_action_id = strtol(helper, NULL, 10);
 	if (*cancel_action_id <= 0) {
