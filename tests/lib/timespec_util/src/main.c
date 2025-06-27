@@ -367,6 +367,7 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 
 static void *setup(void)
 {
+	printk("CONFIG_64BIT=%c\n", IS_ENABLED(CONFIG_64BIT) ? 'y' : 'n');
 	printk("CONFIG_TIMEOUT_64BIT=%c\n", CONFIG_TIMEOUT_64BIT ? 'y' : 'n');
 	printk("K_TICK_MAX: %lld\n", (long long)K_TICK_MAX);
 	printk("minimum timeout: {%lld, %lld}\n", (long long)k_timeout_limits[0].tv_sec,
