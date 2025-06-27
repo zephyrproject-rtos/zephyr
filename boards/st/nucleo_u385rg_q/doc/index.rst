@@ -180,7 +180,7 @@ Connections and IOs
 Nucleo U385RG Board has 14 GPIO controllers. These controllers are responsible
 for pin muxing, input/output, pull-up, etc.
 
-For more details please refer to `STM32U385 User Manual`_.
+For more details please refer to `STM32U385RG board user manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -286,14 +286,14 @@ Note: Check the ``build/tfm`` directory to ensure that the commands required by 
 .. _NUCLEO_U385RG website:
   https://www.st.com/en/evaluation-tools/nucleo-u385rg.html
 
-.. _STM32U385 User Manual:
-   https://www.st.com/resource/en/user_manual/um3261-stm32u3-series-safety-manual-stmicroelectronics.pdf
+.. _STM32U385RG board user manual:
+   https://www.st.com/resource/en/user_manual/um3062-stm32u3u5-nucleo64-board-mb1841-stmicroelectronics.pdf
 
 .. _STM32U385RG on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32u385rg
 
 .. _STM32U385RG reference manual:
-   https://www.st.com/resource/en/reference_manual/rm0503-stm32u3-series-advanced-armbased-32bit-mcus-stmicroelectronics.pdf
+   https://www.st.com/resource/en/reference_manual/rm0487-stm32u3-series-armbased-32bit-mcus-stmicroelectronics.pdf
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
