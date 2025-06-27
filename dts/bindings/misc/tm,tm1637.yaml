@@ -1,0 +1,17 @@
+description: |
+  TM1637 4-digit 7-segment display driver with serial interface.
+  This binding supports the TM1637 chip connected via two GPIO pins for CLK and DIO.
+compatible: "hw,tm1637"
+
+include: base.yaml
+
+properties:
+  clk-gpios:
+    type:  phandle-array
+    required:  true
+    description:  GPIO pin for TM1637 clock line.
+
+  dio-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin for TM1637 data line.
