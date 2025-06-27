@@ -2363,7 +2363,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 	periodic_us = conn_interval_us;
 
 	conn_interval_old_us = conn_interval_old * conn_interval_unit_old;
-	latency_upd = conn_interval_old_us / conn_interval_us;
+	latency_upd = DIV_ROUND_UP(conn_interval_old_us, conn_interval_us);
 	conn_interval_new_us = latency_upd * conn_interval_us;
 	if (conn_interval_new_us > conn_interval_old_us) {
 		ticks_at_expire += HAL_TICKER_US_TO_TICKS(
