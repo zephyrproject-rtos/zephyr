@@ -13,7 +13,6 @@ import subprocess
 import sys
 
 from elftools.elf.elffile import ELFFile
-
 from west import manifest
 from west.commands import Verbosity
 from west.util import quote_sh_list
@@ -79,6 +78,20 @@ You can also pass additional arguments to rimage thanks to [sign] and
 [rimage] sections in your west config file(s); this is especially useful
 when invoking west sign _indirectly_ through CMake/ninja. See how at
 https://docs.zephyrproject.org/latest/develop/west/sign.html
+
+silabs_commander
+-----
+
+To create a signed binary with the silabs_commander tool, run this from your build directory:
+
+   west sign -t silabs_commander
+
+For this to work, Silabs Commander tool must be installed in your PATH.
+
+The input binary (zephyr.bin.rps) is signed using the specified OTA key and private key,
+producing zephyr_signed.bin.rps by default. If CONFIG_SIWX91X_OTA_ENCRYPT_KEY and CONFIG_SIWX91X_OTA_SIGN_KEY are set
+in your build configuration, they will be used unless overridden by command-line arguments.
+Additional arguments after '--' are passed to silabs_commander directly.
 '''
 
 class ToggleAction(argparse.Action):
@@ -112,8 +125,8 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
-                           help='''image signing tool name; imgtool and rimage
+        group.add_argument('-t', '--tool', choices=['imgtool', 'rimage', 'silabs_commander'],
+                           help='''image signing tool name; imgtool , rimage and silabs_commander
                            are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
@@ -195,6 +208,8 @@ schema (rimage "target") is not defined in board.cmake.''')
             signer = ImgtoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
+        elif args.tool == 'silabs_commander':
+            signer = SilabsRPSSigner()
         # (Add support for other signers here in elif blocks)
         else:
             if args.tool is None:
@@ -633,3 +648,83 @@ class RimageSigner(Signer):
 
         os.remove(out_bin)
         os.rename(out_tmp, out_bin)
+
+class SilabsRPSSigner(Signer):
+    # Signer class for Silicon Labs Commander tool via west sign -t silabs_commander.
+    def find_commandertool(self, cmd, args):
+        if args.tool_path:
+            commandertool = args.tool_path
+            if not os.path.isfile(commandertool):
+                cmd.die(f'--tool-path {commandertool}: no such file')
+        else:
+            commandertool = shutil.which('commander')
+            if not commandertool:
+                cmd.die(f'SILABS "commander" not found in PATH, try "--tool-path"? Cannot sign {args}')
+        return commandertool
+
+    def get_security_configs(self, build_conf, args, command):
+
+        # Retrieve configurations, prioritizing command-line args, then build_conf
+        siwx91x_ota_encrypt_key = getattr(args, 'siwx91x-ota-encrypt-key', build_conf.get('CONFIG_SIWX91X_OTA_ENCRYPT_KEY'))
+        siwx91x_ota_sign_key = getattr(args, 'siwx91x-ota-sign-key', build_conf.get('CONFIG_SIWX91X_OTA_SIGN_KEY'))
+        siwx91x_ota_mic_enable = getattr(args, 'siwx91x-mic-enable', build_conf.get('CONFIG_SIWX91X_SILABS_OTA_MIC_ENABLE', False))
+        siwx91x_ota_encrypt_enable = getattr(args, 'siwx91x-encrypt-enable', build_conf.get('CONFIG_SIWX91X_SILABS_OTA_ENCRYPT_ENABLE', False))
+        siwx91x_ota_sign_enable = getattr(args, 'siwx91x-sign-enable', build_conf.get('CONFIG_SIWX91X_SILABS_OTA_SIGN_ENABLE', False))
+
+        # Refer find_commandertool() function to identify the Commander tool.
+        commander_path = self.find_commandertool(command, args)
+
+        # Validate required settings
+        if siwx91x_ota_encrypt_enable and not siwx91x_ota_encrypt_key:
+            command.die("SIWX91X_OTA_ENCRYPT_KEY not provided. Use --siwx91x-ota-encrypt-key=your_key or add CONFIG_SIWX91X_OTA_ENCRYPT_KEY in prj.conf.")
+        if siwx91x_ota_sign_enable and not siwx91x_ota_sign_key:
+            command.die("SIWX91X_OTA_SIGN_KEY not provided. Use --siwx91x-ota-sign-key=/path/to/key or add CONFIG_SIWX91X_OTA_SIGN_KEY in prj.conf.")
+
+        # Validate private key path
+        if not os.path.isfile(siwx91x_ota_sign_key):
+            command.die(f"Private key not found at {siwx91x_ota_sign_key}. Please ensure the path is correct.")
+
+        return commander_path,siwx91x_ota_encrypt_key, siwx91x_ota_sign_key, siwx91x_ota_mic_enable, siwx91x_ota_encrypt_enable, siwx91x_ota_sign_enable
+
+    def sign(self, command, build_dir, build_conf, formats):
+        """Sign the Zephyr binary using Silicon Labs Commander.
+        commander_path
+        :param command: The Sign instance (provides args and utility methods)
+        :param build_dir: The build directory path
+        :param build_conf: BuildConfiguration object for the build directory
+        :param formats: List of formats to generate (e.g., ['bin', 'rps'])
+        """
+        self.command = command
+        args = command.args
+        b = pathlib.Path(build_dir)
+        kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME')
+        # Setting the input and output paths
+        input_rps = b / 'zephyr' / f'{kernel_name}.bin.rps'
+        output_rps = args.sbin or (b / 'zephyr' / f'{kernel_name}_secure.bin.rps')
+        # Check if input binary exists
+        if not input_rps.is_file():
+            command.die(f"No .rps found at {input_rps}. Ensure the build generated kernel_name.bin.rps in {b / 'zephyr'}")
+        # Load configuration
+        commander_path,siwx91x_ota_encrypt_key, siwx91x_ota_sign_key, siwx91x_ota_mic_enable, siwx91x_ota_encrypt_enable, siwx91x_ota_sign_enable = self.get_security_configs(build_conf, args, command)
+        siwx91x_ota_mic_key = siwx91x_ota_encrypt_key
+        sign_base = [
+            commander_path,
+            "rps",
+            "convert",
+            str(output_rps),
+            "--app", str(input_rps)
+        ]
+
+        if siwx91x_ota_mic_enable:
+            sign_base.extend(["--mic", str(siwx91x_ota_mic_key)])
+
+        if siwx91x_ota_encrypt_enable:
+            sign_base.extend(["--encrypt", str(siwx91x_ota_encrypt_key)])
+
+        if siwx91x_ota_sign_enable:
+            sign_base.extend(["--sign", str(siwx91x_ota_sign_key)])
+
+        sign_base.extend(args.tool_args)
+
+        command.inf("Running command:", ' '.join(sign_base))
+        subprocess.run(sign_base, check=True)
