@@ -246,7 +246,7 @@ class Node:
         Returns some information about the Node instance. Called automatically
         if the Node instance is evaluated.
         """
-        return f"<Node {self.path} in '{self.dt.filename}'>"
+        return f"<Node {self.path} in '{self.filename}' line {self.lineno}>"
 
 # See Property.type
 class Type(enum.IntEnum):
@@ -436,7 +436,7 @@ class Property:
         """
         if self.type is not Type.NUM:
             _err(f"expected property '{self.name}' on {self.node.path} in "
-                 f"{self.node.dt.filename} to be assigned with "
+                 f"{self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = < (number) >;', not '{self}'")
 
         return int.from_bytes(self.value, "big", signed=signed)
@@ -456,7 +456,7 @@ class Property:
         """
         if self.type not in (Type.NUM, Type.NUMS):
             _err(f"expected property '{self.name}' on {self.node.path} in "
-                 f"{self.node.dt.filename} to be assigned with "
+                 f"{self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = < (number) (number) ... >;', not '{self}'")
 
         return [int.from_bytes(self.value[i:i + 4], "big", signed=signed)
@@ -474,7 +474,7 @@ class Property:
         """
         if self.type is not Type.BYTES:
             _err(f"expected property '{self.name}' on {self.node.path} "
-                 f"in {self.node.dt.filename} to be assigned with "
+                 f"in {self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = [ (byte) (byte) ... ];', not '{self}'")
 
         return self.value
@@ -493,14 +493,14 @@ class Property:
         """
         if self.type is not Type.STRING:
             _err(f"expected property '{self.name}' on {self.node.path} "
-                 f"in {self.node.dt.filename} to be assigned with "
+                 f"in {self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = \"string\";', not '{self}'")
 
         try:
             ret = self.value.decode("utf-8")[:-1]  # Strip null
         except UnicodeDecodeError:
             _err(f"value of property '{self.name}' ({self.value!r}) "
-                 f"on {self.node.path} in {self.node.dt.filename} "
+                 f"on {self.node.path} in {self.filename}:{self.lineno} "
                  "is not valid UTF-8")
 
         return ret  # The separate 'return' appeases the type checker.
@@ -518,14 +518,14 @@ class Property:
         """
         if self.type not in (Type.STRING, Type.STRINGS):
             _err(f"expected property '{self.name}' on {self.node.path} in "
-                 f"{self.node.dt.filename} to be assigned with "
+                 f"{self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = \"string\", \"string\", ... ;', not '{self}'")
 
         try:
             ret = self.value.decode("utf-8").split("\0")[:-1]
         except UnicodeDecodeError:
             _err(f"value of property '{self.name}' ({self.value!r}) "
-                 f"on {self.node.path} in {self.node.dt.filename} "
+                 f"on {self.node.path} in {self.filename}:{self.lineno} "
                  "is not valid UTF-8")
 
         return ret  # The separate 'return' appeases the type checker.
@@ -541,7 +541,7 @@ class Property:
         """
         if self.type is not Type.PHANDLE:
             _err(f"expected property '{self.name}' on {self.node.path} in "
-                 f"{self.node.dt.filename} to be assigned with "
+                 f"{self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = < &foo >;', not '{self}'")
 
         return self.node.dt.phandle2node[int.from_bytes(self.value, "big")]
@@ -566,7 +566,7 @@ class Property:
 
         if not type_ok():
             _err(f"expected property '{self.name}' on {self.node.path} in "
-                 f"{self.node.dt.filename} to be assigned with "
+                 f"{self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = < &foo &bar ... >;', not '{self}'")
 
         return [self.node.dt.phandle2node[int.from_bytes(self.value[i:i + 4],
@@ -587,7 +587,7 @@ class Property:
         """
         if self.type not in (Type.PATH, Type.STRING):
             _err(f"expected property '{self.name}' on {self.node.path} in "
-                 f"{self.node.dt.filename} to be assigned with either "
+                 f"{self.filename}:{self.lineno} to be assigned with either "
                  f"'{self.name} = &foo' or '{self.name} = \"/path/to/node\"', "
                  f"not '{self}'")
 
@@ -595,15 +595,15 @@ class Property:
             path = self.value.decode("utf-8")[:-1]
         except UnicodeDecodeError:
             _err(f"value of property '{self.name}' ({self.value!r}) "
-                 f"on {self.node.path} in {self.node.dt.filename} "
+                 f"on {self.node.path} in {self.filename}:{self.lineno} "
                  "is not valid UTF-8")
 
         try:
             ret = self.node.dt.get_node(path)
         except DTError:
             _err(f"property '{self.name}' on {self.node.path} in "
-                 f"{self.node.dt.filename} points to the non-existent node "
-                 f'"{path}"')
+                 f"{self.filename}:{self.lineno} points to the non-existent "
+                 f'node "{path}"')
 
         return ret  # The separate 'return' appeases the type checker.
 
@@ -670,7 +670,7 @@ class Property:
 
     def __repr__(self):
         return (f"<Property '{self.name}' at '{self.node.path}' in "
-                f"'{self.node.dt.filename}'>")
+                f"'{self.filename}' line {self.lineno}>")
 
     #
     # Internal functions
