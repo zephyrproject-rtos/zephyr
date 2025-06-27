@@ -497,7 +497,7 @@ static int adc_cc23x0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api adc_cc23x0_driver_api = {
+static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 	.channel_setup = adc_cc23x0_channel_setup,
 	.read = adc_cc23x0_read,
 #ifdef CONFIG_ADC_ASYNC
