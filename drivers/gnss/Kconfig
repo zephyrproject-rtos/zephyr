@@ -12,7 +12,7 @@ if GNSS
 config GNSS_SATELLITES
 	bool "GNSS satellites support"
 	help
-	  Enable GNSS sattelites callback.
+	  Enable GNSS satellites callback.
 
 config GNSS_DUMP
 	bool "GNSS dump support"

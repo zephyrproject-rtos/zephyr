@@ -9,7 +9,7 @@ menuconfig GPIO_MAX14906
 	default y
 	depends on DT_HAS_ADI_MAX14906_GPIO_ENABLED && SPI
 	help
-	  Enabe MAX14906 quad industrial digital
+	  Enable MAX14906 quad industrial digital
 	  input/output with diagnostics
 
 config GPIO_MAX14906_INIT_PRIORITY
