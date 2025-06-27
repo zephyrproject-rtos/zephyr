@@ -125,6 +125,38 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		pwm0: pwm@40210000 {
+			compatible = "ene,kb106x-pwm";
+			reg = <0x40210000 0x10>;
+			pwm-channel = <0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@40210010 {
+			compatible = "ene,kb106x-pwm";
+			reg = <0x40210010 0x10>;
+			pwm-channel = <1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@40210020 {
+			compatible = "ene,kb106x-pwm";
+			reg = <0x40210020 0x10>;
+			pwm-channel = <2>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@40210030 {
+			compatible = "ene,kb106x-pwm";
+			reg = <0x40210030 0x10>;
+			pwm-channel = <3>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
 
