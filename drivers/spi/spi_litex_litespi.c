@@ -13,22 +13,22 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #include <zephyr/sys/byteorder.h>
 #include "spi_litex_common.h"
 
-#define SPIFLASH_CORE_MASTER_PHYCONFIG_LEN_OFFSET   0x0
-#define SPIFLASH_CORE_MASTER_PHYCONFIG_WIDTH_OFFSET 0x1
-#define SPIFLASH_CORE_MASTER_PHYCONFIG_MASK_OFFSET  0x2
+#define SPIFLASH_MASTER_PHYCONFIG_LEN_OFFSET   0x0
+#define SPIFLASH_MASTER_PHYCONFIG_WIDTH_OFFSET 0x1
+#define SPIFLASH_MASTER_PHYCONFIG_MASK_OFFSET  0x2
 
-#define SPIFLASH_CORE_MASTER_STATUS_TX_READY_OFFSET 0x0
-#define SPIFLASH_CORE_MASTER_STATUS_RX_READY_OFFSET 0x1
+#define SPIFLASH_MASTER_STATUS_TX_READY_OFFSET 0x0
+#define SPIFLASH_MASTER_STATUS_RX_READY_OFFSET 0x1
 
 #define SPI_MAX_WORD_SIZE 32
 #define SPI_MAX_CS_SIZE   4
 
 struct spi_litex_dev_config {
-	uint32_t core_master_cs_addr;
-	uint32_t core_master_phyconfig_addr;
-	uint32_t core_master_rxtx_addr;
-	uint32_t core_master_rxtx_size;
-	uint32_t core_master_status_addr;
+	uint32_t master_cs_addr;
+	uint32_t master_phyconfig_addr;
+	uint32_t master_rxtx_addr;
+	uint32_t master_rxtx_size;
+	uint32_t master_status_addr;
 	uint32_t phy_clk_divisor_addr;
 	bool phy_clk_divisor_exists;
 };
@@ -125,12 +125,12 @@ static void spiflash_len_mask_width_write(uint32_t len, uint32_t width, uint32_t
 					  uint32_t addr)
 {
 	uint32_t tmp = len & BIT_MASK(8);
-	uint32_t word = tmp << (SPIFLASH_CORE_MASTER_PHYCONFIG_LEN_OFFSET * 8);
+	uint32_t word = tmp << (SPIFLASH_MASTER_PHYCONFIG_LEN_OFFSET * 8);
 
 	tmp = width & BIT_MASK(8);
-	word |= tmp << (SPIFLASH_CORE_MASTER_PHYCONFIG_WIDTH_OFFSET * 8);
+	word |= tmp << (SPIFLASH_MASTER_PHYCONFIG_WIDTH_OFFSET * 8);
 	tmp = mask & BIT_MASK(8);
-	word |= tmp << (SPIFLASH_CORE_MASTER_PHYCONFIG_MASK_OFFSET * 8);
+	word |= tmp << (SPIFLASH_MASTER_PHYCONFIG_MASK_OFFSET * 8);
 	litex_write32(word, addr);
 }
 
@@ -147,22 +147,22 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 	uint8_t width = BIT(0);  /* SPI Xfer width*/
 	uint8_t mask = BIT(0);   /* SPI Xfer mask*/
 
-	spiflash_len_mask_width_write(len * 8, width, mask, dev_config->core_master_phyconfig_addr);
+	spiflash_len_mask_width_write(len * 8, width, mask, dev_config->master_phyconfig_addr);
 
-	litex_write32(BIT(config->slave), dev_config->core_master_cs_addr);
+	litex_write32(BIT(config->slave), dev_config->master_cs_addr);
 
 	/* Flush RX buffer */
-	while ((litex_read8(dev_config->core_master_status_addr) &
-		BIT(SPIFLASH_CORE_MASTER_STATUS_RX_READY_OFFSET))) {
-		rxd = litex_read32(dev_config->core_master_rxtx_addr);
+	while ((litex_read8(dev_config->master_status_addr) &
+		BIT(SPIFLASH_MASTER_STATUS_RX_READY_OFFSET))) {
+		rxd = litex_read32(dev_config->master_rxtx_addr);
 		LOG_DBG("flushed rxd: 0x%x", rxd);
 	}
 
 	do {
-		len = MIN(spi_context_max_continuous_chunk(ctx), dev_config->core_master_rxtx_size);
+		len = MIN(spi_context_max_continuous_chunk(ctx), dev_config->master_rxtx_size);
 		if (len != old_len) {
 			spiflash_len_mask_width_write(len * 8, width, mask,
-						      dev_config->core_master_phyconfig_addr);
+						      dev_config->master_phyconfig_addr);
 			old_len = len;
 		}
 
@@ -172,22 +172,22 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 			txd = 0U;
 		}
 
-		while (!(litex_read8(dev_config->core_master_status_addr) &
-			 BIT(SPIFLASH_CORE_MASTER_STATUS_TX_READY_OFFSET))) {
+		while (!(litex_read8(dev_config->master_status_addr) &
+			 BIT(SPIFLASH_MASTER_STATUS_TX_READY_OFFSET))) {
 			;
 		}
 
 		LOG_DBG("txd: 0x%x", txd);
-		litex_write32(txd, dev_config->core_master_rxtx_addr);
+		litex_write32(txd, dev_config->master_rxtx_addr);
 
 		spi_context_update_tx(ctx, data->dfs, len / data->dfs);
 
-		while (!(litex_read8(dev_config->core_master_status_addr) &
-			 BIT(SPIFLASH_CORE_MASTER_STATUS_RX_READY_OFFSET))) {
+		while (!(litex_read8(dev_config->master_status_addr) &
+			 BIT(SPIFLASH_MASTER_STATUS_RX_READY_OFFSET))) {
 			;
 		}
 
-		rxd = litex_read32(dev_config->core_master_rxtx_addr);
+		rxd = litex_read32(dev_config->master_rxtx_addr);
 		LOG_DBG("rxd: 0x%x", rxd);
 
 		if (spi_context_rx_buf_on(ctx)) {
@@ -198,7 +198,7 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 
 	} while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx));
 
-	litex_write32(0, dev_config->core_master_cs_addr);
+	litex_write32(0, dev_config->master_cs_addr);
 
 	spi_context_complete(ctx, dev, 0);
 
@@ -262,11 +262,11 @@ static DEVICE_API(spi, spi_litex_api) = {
 		SPI_CONTEXT_INIT_SYNC(spi_litex_data_##n, ctx),                                    \
 	};                                                                                         \
 	static struct spi_litex_dev_config spi_litex_cfg_##n = {                                   \
-		.core_master_cs_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_cs),                \
-		.core_master_phyconfig_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_phyconfig),  \
-		.core_master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_rxtx),            \
-		.core_master_rxtx_size = DT_INST_REG_SIZE_BY_NAME(n, core_master_rxtx),            \
-		.core_master_status_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_status),        \
+		.master_cs_addr = DT_INST_REG_ADDR_BY_NAME(n, master_cs),                          \
+		.master_phyconfig_addr = DT_INST_REG_ADDR_BY_NAME(n, master_phyconfig),            \
+		.master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, master_rxtx),                      \
+		.master_rxtx_size = DT_INST_REG_SIZE_BY_NAME(n, master_rxtx),                      \
+		.master_status_addr = DT_INST_REG_ADDR_BY_NAME(n, master_status),                  \
 		.phy_clk_divisor_exists = DT_INST_REG_HAS_NAME(n, phy_clk_divisor),                \
 		.phy_clk_divisor_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0)         \
                                                                                                    \
