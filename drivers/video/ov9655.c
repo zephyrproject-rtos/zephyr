@@ -414,7 +414,7 @@ static int ov9655_enum_frmival(const struct device *dev, struct video_frmival_en
 	return 0;
 }
 
-static const struct video_driver_api ov9655_api = {
+static DEVICE_API(video, ov9655_api) = {
 	.set_format = ov9655_set_fmt,
 	.get_format = ov9655_get_fmt,
 	.get_caps = ov9655_get_caps,
