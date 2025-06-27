@@ -449,21 +449,27 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_I2S_MCUX_SAI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
 	case IMX_CCM_SAI1_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
 				/ (CLOCK_GetDiv(kCLOCK_Sai1PreDiv) + 1)
 				/ (CLOCK_GetDiv(kCLOCK_Sai1Div) + 1);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai2))
 	case IMX_CCM_SAI2_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
 				/ (CLOCK_GetDiv(kCLOCK_Sai2PreDiv) + 1)
 				/ (CLOCK_GetDiv(kCLOCK_Sai2Div) + 1);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai3))
 	case IMX_CCM_SAI3_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
 				/ (CLOCK_GetDiv(kCLOCK_Sai3PreDiv) + 1)
 				/ (CLOCK_GetDiv(kCLOCK_Sai3Div) + 1);
 		break;
+#endif
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
 	case IMX_CCM_FLEXSPI_CLK:
