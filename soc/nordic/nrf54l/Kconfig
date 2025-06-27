@@ -90,4 +90,10 @@ config SOC_NRF_FORCE_CONSTLAT
 	  of base resources on while in sleep. The advantage of having a constant
 	  and predictable latency will be at the cost of having increased power consumption.
 
+config SOC_NRF54L_ANOMALY_56_WORKAROUND
+	bool "Apply workaround 56 for nRF54L SoCs"
+	default y
+	help
+	   This option enables configuration workaround 56 for nRF54L Series SoCs.
+
 endif # SOC_SERIES_NRF54LX
