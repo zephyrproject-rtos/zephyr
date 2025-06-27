@@ -429,6 +429,9 @@
 			reg = <0x50200000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO0>;
+			interrupts = <15 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				    <16 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
 
@@ -437,6 +440,9 @@
 			reg = <0x50300000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
+			interrupts = <17 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				    <18 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
 
@@ -445,6 +451,9 @@
 			reg = <0x50400000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO2>;
+			interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				    <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
 	};
