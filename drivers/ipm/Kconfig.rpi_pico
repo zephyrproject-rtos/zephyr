@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Dan Collins
+
+config IPM_RPI_PICO
+	bool "Raspberry Pi Pico IPM Driver"
+	default y if DT_HAS_RPI_PICO_IPM_ENABLED
+	help
+	  This option enables the Raspberry Pi Pico Inter-process mailbox driver.
