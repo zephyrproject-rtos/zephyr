@@ -157,6 +157,13 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		wdt0: watchdog@40060000 {
+			compatible = "ene,kb106x-watchdog";
+			reg = <0x40060000 0x100>;
+			interrupts = <0 0>;
+			status = "disabled";
+		};
 	};
 };
 

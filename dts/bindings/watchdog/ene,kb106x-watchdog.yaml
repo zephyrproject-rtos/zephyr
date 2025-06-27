@@ -1,0 +1,15 @@
+# Copyright (c) 2025 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE watchdog timer
+
+include: [base.yaml]
+
+compatible: "ene,kb106x-watchdog"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

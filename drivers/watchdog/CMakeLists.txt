@@ -51,6 +51,7 @@ zephyr_library_sources_ifdef(CONFIG_WDT_OPENTITAN wdt_opentitan.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_AMBIQ wdt_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_XMC4XXX wdt_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_WWDT_NUMAKER wdt_wwdt_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_ENE_KB106X wdt_ene_kb106x.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_ENE_KB1200 wdt_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_IWDG_WCH wdt_iwdg_wch.c)
 
