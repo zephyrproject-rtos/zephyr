@@ -277,7 +277,7 @@ static int gpio_mspm0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_mspm0_driver_api = {
+static DEVICE_API(gpio, gpio_mspm0_driver_api) = {
 	.pin_configure = gpio_mspm0_pin_configure,
 	.port_get_raw = gpio_mspm0_port_get_raw,
 	.port_set_masked_raw = gpio_mspm0_port_set_masked_raw,
