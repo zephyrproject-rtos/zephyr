@@ -237,7 +237,7 @@ static int clock_mspm0_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api clock_mspm0_driver_api = {
+static DEVICE_API(clock_control, clock_mspm0_driver_api) = {
 	.on = clock_mspm0_on,
 	.off = clock_mspm0_off,
 	.get_rate = clock_mspm0_get_rate,
