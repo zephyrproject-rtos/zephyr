@@ -142,8 +142,8 @@ config XTENSA_WAITI_BUG
 config ADSP_IDLE_CLOCK_GATING
 	bool "DSP clock gating in Idle"
 	help
-	  When true, FW will run with enabled clock gating. This options change
-	  HW configuration of a DSP. Evry time core goes to the WAITI state
+	  When true, FW will run with enabled clock gating. This option changes
+	  HW configuration of a DSP. Every time core goes to the WAITI state
 	  (wait for interrupt) during idle, the clock can be gated (however, this
 	  does not mean that this will happen).
 
