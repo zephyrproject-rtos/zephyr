@@ -46,6 +46,10 @@ if(CONFIG_RISCV_ISA_EXT_C)
   string(CONCAT riscv_march ${riscv_march} "c")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_ZICNTR)
+  string(CONCAT riscv_march ${riscv_march} "_zicntr")
+endif()
+
 if(CONFIG_RISCV_ISA_EXT_ZICSR)
   string(CONCAT riscv_march ${riscv_march} "_zicsr")
 endif()
