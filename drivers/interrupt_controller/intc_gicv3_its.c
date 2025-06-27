@@ -337,7 +337,11 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 				rd_idx, idx, wr_idx);
 			return -ETIMEDOUT;
 		}
-		k_usleep(1);
+		if (k_is_pre_kernel()) {
+			k_busy_wait(1);
+		} else {
+			k_usleep(1);
+		}
 	}
 
 	return 0;
