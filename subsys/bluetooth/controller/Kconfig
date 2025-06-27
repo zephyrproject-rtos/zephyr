@@ -128,7 +128,7 @@ config BT_CTLR_SUBRATING_SUPPORT
 config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
 	bool
 
-# Virtual option that all local LL implemenations should select
+# Virtual option that all local LL implementations should select
 config HAS_BT_CTLR
 	bool
 

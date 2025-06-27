@@ -36,7 +36,7 @@ config STM32_ENABLE_DEBUG_SLEEP_STOP
 	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
 	  of power consumption. As a side-effects this prevents
 	  debuggers from attaching w/o resetting the target. This
-	  effectivly destroys the use-case of `west attach`. Also
+	  effectively destroys the use-case of `west attach`. Also
 	  SEGGER RTT and similar technologies need this.
 
 config SWJ_ANALOG_PRIORITY

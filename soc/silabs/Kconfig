@@ -9,7 +9,7 @@ if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 config SOC_GECKO_SDID
 	int
 	help
-	  Gecko SDK sometime refere to the chipset using the internal ID. This
+	  Sometimes, Gecko SDK refers to the chipset using the internal ID. This
 	  entry reflects this ID.
 
 config SOC_GECKO_BURTC

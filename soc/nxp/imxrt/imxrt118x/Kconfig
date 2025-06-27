@@ -39,11 +39,11 @@ config IMAGE_CONTAINER_OFFSET
 	default 0x1000
 	help
 	  Image container is a boot image format that is used by ROM. Container
-	  format consists container header, image arrary entry, signature block
+	  format consists of container header, image array entry, signature block
 	  and user program images and data. The boot ROM expects container data
 	  to be saved in external memory.
 
-# Note- This config present the offest between container header and user
+# Note- This config presents the offset between container header and user
 # image. If ROM_START_OFFSET changed, you also need to change CONTAINER_USER_IMAGE_OFFSET
 # value. CONTAINER_USER_IMAGE_OFFSET = ROM_START_OFFSET - IMAGE_CONTAINER_OFFSET.
 config CONTAINER_USER_IMAGE_OFFSET
