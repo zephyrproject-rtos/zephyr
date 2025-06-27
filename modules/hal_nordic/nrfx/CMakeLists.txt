@@ -200,6 +200,7 @@ endif()
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG NRF_SKIP_CLOCK_CONFIGURATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DISABLE_FICR_TRIMCNF)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
+zephyr_compile_definitions_ifndef(CONFIG_SOC_NRF54L_ANOMALY_56_WORKAROUND NRF54L_CONFIGURATION_56_ENABLE=0)
 
 # Inject code to skip TAMPC setup for nRF54L20 and nRF54L09. It is not supported for now.
 # It needs to be removed when support is provided.
