@@ -15,7 +15,7 @@ if	HAS_MCUX
 config MCUX_CORE_SUFFIX
 	string
 	help
-	  String describing the core identifer used by MCUX SDK when using
+	  String describing the core identifier used by MCUX SDK when using
 	  dual core parts
 
 config HAS_MCUX_ADC12
@@ -373,7 +373,7 @@ config HAS_NXP_MONOLITHIC_NBU
 config NXP_FW_LOADER
 	bool "Include firmware loader component"
 	help
-	   The firmware loader is used to load firmwares to embedded tranceivers.
+	   The firmware loader is used to load firmwares to embedded transceivers.
 	   It is needed to enable connectivity features.
 
 config NXP_MONOLITHIC_WIFI

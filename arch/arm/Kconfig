@@ -49,7 +49,7 @@ config ROMSTART_RELOCATION_ROM
 
 	  Most SOCs include an alias for the boot-vector at address 0x00000000
 	  so a default which might be supported by the corresponding Linux rproc driver.
-	  If it is not, additionnal options allows to specify the addresses.
+	  If it is not, additional options allow to specify the addresses.
 
 	  In general this option should be chosen if the zephyr,flash chosen node
 	  is not placed into the boot-vector memory area.

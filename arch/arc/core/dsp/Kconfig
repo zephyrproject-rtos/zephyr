@@ -39,7 +39,7 @@ config ARC_XY_ENABLE
 	bool "ARC address generation unit registers"
 	help
 	  Processors with XY memory and AGU registers can configure this
-	  option to accelerate DSP instrctions.
+	  option to accelerate DSP instructions.
 
 config ARC_AGU_SHARING
 	bool "ARC address generation unit register sharing"
