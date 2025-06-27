@@ -11,6 +11,7 @@ ExternalZephyrProject_Add(
 	APPLICATION remote
 	SOURCE_DIR  ${APP_DIR}/remote
 	BOARD       ${SB_CONFIG_REMOTE_BOARD}
+	BOARD_REVISION ${BOARD_REVISION}
 )
 
 native_simulator_set_child_images(${DEFAULT_IMAGE} remote)
