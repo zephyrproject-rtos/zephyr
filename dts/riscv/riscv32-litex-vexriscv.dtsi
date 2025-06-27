@@ -102,11 +102,11 @@
 				<0xe000c010 0x4>,
 				<0xe000c800 0x4>,
 				<0x60000000 0x1000000>;
-			reg-names = "core_mmap_dummy_bits",
-				"core_master_cs",
-				"core_master_phyconfig",
-				"core_master_rxtx",
-				"core_master_status",
+			reg-names = "mmap_dummy_bits",
+				"master_cs",
+				"master_phyconfig",
+				"master_rxtx",
+				"master_status",
 				"phy_clk_divisor",
 				"flash_mmap";
 			#address-cells = <1>;
