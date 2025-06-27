@@ -99,6 +99,16 @@ config RISCV_ISA_EXT_C
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
 
+config RISCV_ISA_EXT_ZICNTR
+	bool
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Zicntr) - Standard Extension for Base Counters and Timers
+
+	  The Zicntr standard extension comprises the three counters (CYCLE, TIME, and INSTRET),
+	  which have dedicated functions (cycle count, real-time clock and instructions retired,
+	  respectively).
+
 config RISCV_ISA_EXT_ZICSR
 	bool
 	help
