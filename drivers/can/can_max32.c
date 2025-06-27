@@ -682,7 +682,7 @@ static int can_max32_init(const struct device *dev)
 	return ret;
 }
 
-static const struct can_driver_api can_max32_api = {
+static DEVICE_API(can, can_max32_api) = {
 	.get_capabilities = can_max32_get_capabilities,
 	.set_mode = can_max32_set_mode,
 	.set_timing = can_max32_set_timing,
