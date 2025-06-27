@@ -26,6 +26,6 @@ config SDHC_BUFFER_ALIGNMENT
 	default 32 if DCACHE
 	default 16
 	help
-	  SDHC buffer should be 32bytes aligned when placed in cachable region.
+	  SDHC buffer should be 32bytes aligned when placed in cacheable region.
 
 endif
