@@ -354,7 +354,7 @@ Pull Request Guidelines
 When opening a new Pull Request, adhere to the following guidelines to ensure
 compliance with Zephyr standards and facilitate the review process.
 
-If in doubt, it's advisible to explore existing Pull Requests within the Zephyr
+If in doubt, it's advisable to explore existing Pull Requests within the Zephyr
 repository. Use the search filters and labels to locate PRs related to changes
 similar to the ones you are proposing.
 
