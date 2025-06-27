@@ -1,0 +1,24 @@
+/*
+ *==================================================================================================
+ * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *==================================================================================================
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&slot0_partition {
+	label = "image-0";
+	reg = <0x12000000 DT_SIZE_K(150)>; /* 150k for secure test application */
+};
+
+&slot0_ns_partition {
+	label = "image-1";
+	reg = <0x2025800 DT_SIZE_K(106)>; /* 106k for nonsecure test application */
+};
