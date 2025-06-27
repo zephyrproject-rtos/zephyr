@@ -243,10 +243,12 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 			__attribute__((section(sect)))                                             \
 			__used _MK_IRQ_ELEMENT_NAME(func, __COUNTER__) = ((uintptr_t)(func));      \
 		), (                                                                               \
-			static void __attribute__((section(sect))) __attribute__((naked))          \
-			__used _MK_IRQ_ELEMENT_NAME(func, __COUNTER__)(void) {                     \
+			void __attribute__((section(sect))) __attribute__((naked))                 \
+			/* clang-format off */                                                     \
+			__used _MK_IRQ_ELEMENT_NAME(func, __COUNTER__) (void) {                    \
 				__asm(ARCH_IRQ_VECTOR_JUMP_CODE(func));                            \
 			}                                                                          \
+			/* clang-format on */                                                      \
 		))
 
 #define Z_ISR_DECLARE_DIRECT_C(irq, flags, func, counter) \
