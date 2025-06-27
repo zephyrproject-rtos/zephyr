@@ -1,0 +1,68 @@
+board:
+  name: nrf54lm20pdk
+  full_name: nRF54LM20 PDK
+  vendor: nordic
+  socs:
+  - name: nrf54lm20a
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
+  revision:
+    format: custom
+    default: "0.2.0.csp"
+    revisions:
+    - name: "0.0.0"
+    - name: "0.2.0"
+    - name: "0.2.0.csp"
+runners:
+  run_once:
+    '--recover':
+    - runners:
+      - nrfjprog
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - nrf54lm20pdk/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.0.0/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.2.0/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.2.0.csp/nrf54lm20a/cpuapp
+        - nrf54lm20pdk/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.0.0/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.2.0/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.2.0.csp/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk/nrf54lm20a/cpuflpr/xip
+    '--erase':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - nrf54lm20pdk/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.0.0/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.2.0/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.2.0.csp/nrf54lm20a/cpuapp
+        - nrf54lm20pdk/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.0.0/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.2.0/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.2.0.csp/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk/nrf54lm20a/cpuflpr/xip
+    '--reset':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: last
+      groups:
+      - boards:
+        - nrf54lm20pdk/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.0.0/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.2.0/nrf54lm20a/cpuapp
+        - nrf54lm20pdk@0.2.0.csp/nrf54lm20a/cpuapp
+        - nrf54lm20pdk/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.0.0/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.2.0/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk@0.2.0.csp/nrf54lm20a/cpuflpr
+        - nrf54lm20pdk/nrf54lm20a/cpuflpr/xip

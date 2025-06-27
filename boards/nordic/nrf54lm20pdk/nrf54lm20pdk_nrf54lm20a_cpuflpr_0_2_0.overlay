@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1: led_1 {
+			gpios = <&gpio1 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		led2: led_2 {
+			gpios = <&gpio1 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		led3: led_3 {
+			gpios = <&gpio1 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio1 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+
+		button2: button_2 {
+			gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+
+		button3: button_3 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+	};
+};
+
+&gpio0 {
+	gpio-reserved-ranges = <0 3>;
+};
+
+&gpio1 {
+	gpio-reserved-ranges = <10 5>, <17 1>, <22 2>, <25 4>;
+};
+
+&gpio2 {
+	gpio-reserved-ranges = <6 4>;
+};
+
+&gpio3 {
+	gpio-reserved-ranges = <0 12>;
+};
+
+&pinctrl {
+	uart30_default: uart30_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 6)>,
+				<NRF_PSEL(UART_RTS, 0, 8)>;
+		};
+
+		group2 {
+			psels = <NRF_PSEL(UART_RX, 0, 7)>,
+				<NRF_PSEL(UART_CTS, 0, 9)>;
+			bias-pull-up;
+		};
+	};
+
+	uart30_sleep: uart30_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 6)>,
+				<NRF_PSEL(UART_RX, 0, 7)>,
+				<NRF_PSEL(UART_RTS, 0, 8)>,
+				<NRF_PSEL(UART_CTS, 0, 9)>;
+			low-power-enable;
+		};
+	};
+};
