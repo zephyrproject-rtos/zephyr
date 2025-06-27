@@ -260,7 +260,7 @@ static void virtio_mmio_finalize_init(const struct device *dev)
 	virtio_mmio_write_status_bit(dev, DEVICE_STATUS_DRIVER_OK);
 }
 
-static const struct virtio_driver_api virtio_mmio_driver_api = {
+static DEVICE_API(virtio, virtio_mmio_driver_api) = {
 	.get_virtqueue = virtio_mmio_get_virtqueue,
 	.notify_virtqueue = virtio_mmio_notify_queue,
 	.get_device_specific_config = virtio_mmio_get_device_specific_config,
