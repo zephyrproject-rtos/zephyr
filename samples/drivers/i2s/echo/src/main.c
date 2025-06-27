@@ -258,7 +258,7 @@ int main(void)
 		return 0;
 	}
 
-#else
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(audio_codec), okay)
 	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 	struct audio_codec_cfg audio_cfg;
 
@@ -273,7 +273,6 @@ int main(void)
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
 	audio_codec_configure(codec_dev, &audio_cfg);
 	k_msleep(1000);
-
 #endif
 
 	if (!init_buttons()) {
