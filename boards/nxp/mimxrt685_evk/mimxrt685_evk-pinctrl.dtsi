@@ -26,7 +26,9 @@
 
 	pinmux_flexcomm1_i2s: pinmux_flexcomm1_i2s {
 		group0 {
-			pinmux = <FC1_RXD_SDA_MOSI_DATA_PIO0_9>;
+			pinmux = <FC1_RXD_SDA_MOSI_DATA_PIO0_9>,
+				<FC1_TXD_SCL_MISO_WS_PIO0_8>,
+				<FC1_SCK_PIO0_7>;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "high";
