@@ -18,12 +18,12 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 
 #define SPI_LITEX_HAS_IRQ (SPI_LITEX_ALL_HAS_IRQ || dev_config->has_irq)
 
-#define SPIFLASH_CORE_MASTER_PHYCONFIG_LEN_OFFSET   0x0
-#define SPIFLASH_CORE_MASTER_PHYCONFIG_WIDTH_OFFSET 0x1
-#define SPIFLASH_CORE_MASTER_PHYCONFIG_MASK_OFFSET  0x2
+#define SPIFLASH_MASTER_PHYCONFIG_LEN_OFFSET   0x0
+#define SPIFLASH_MASTER_PHYCONFIG_WIDTH_OFFSET 0x1
+#define SPIFLASH_MASTER_PHYCONFIG_MASK_OFFSET  0x2
 
-#define SPIFLASH_CORE_MASTER_STATUS_TX_READY_OFFSET 0x0
-#define SPIFLASH_CORE_MASTER_STATUS_RX_READY_OFFSET 0x1
+#define SPIFLASH_MASTER_STATUS_TX_READY_OFFSET 0x0
+#define SPIFLASH_MASTER_STATUS_RX_READY_OFFSET 0x1
 
 #define SPI_MAX_WORD_SIZE 32
 #define SPI_MAX_CS_SIZE   4
@@ -32,18 +32,18 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #define SPI_LITEX_MASK    BIT(0)
 
 struct spi_litex_dev_config {
-	uint32_t core_master_cs_addr;
-	uint32_t core_master_phyconfig_addr;
-	uint32_t core_master_rxtx_addr;
-	uint32_t core_master_rxtx_size;
-	uint32_t core_master_status_addr;
+	uint32_t master_cs_addr;
+	uint32_t master_phyconfig_addr;
+	uint32_t master_rxtx_addr;
+	uint32_t master_rxtx_size;
+	uint32_t master_status_addr;
 	uint32_t phy_clk_divisor_addr;
 	bool phy_clk_divisor_exists;
 #if SPI_LITEX_ANY_HAS_IRQ
 	bool has_irq;
 	void (*irq_config_func)(const struct device *dev);
-	uint32_t core_master_ev_pending_addr;
-	uint32_t core_master_ev_enable_addr;
+	uint32_t master_ev_pending_addr;
+	uint32_t master_ev_enable_addr;
 #endif
 };
 
@@ -142,12 +142,12 @@ static void spiflash_len_mask_width_write(uint32_t len, uint32_t width, uint32_t
 					  uint32_t addr)
 {
 	uint32_t tmp = len & BIT_MASK(8);
-	uint32_t word = tmp << (SPIFLASH_CORE_MASTER_PHYCONFIG_LEN_OFFSET * 8);
+	uint32_t word = tmp << (SPIFLASH_MASTER_PHYCONFIG_LEN_OFFSET * 8);
 
 	tmp = width & BIT_MASK(8);
-	word |= tmp << (SPIFLASH_CORE_MASTER_PHYCONFIG_WIDTH_OFFSET * 8);
+	word |= tmp << (SPIFLASH_MASTER_PHYCONFIG_WIDTH_OFFSET * 8);
 	tmp = mask & BIT_MASK(8);
-	word |= tmp << (SPIFLASH_CORE_MASTER_PHYCONFIG_MASK_OFFSET * 8);
+	word |= tmp << (SPIFLASH_MASTER_PHYCONFIG_MASK_OFFSET * 8);
 	litex_write32(word, addr);
 }
 
@@ -159,10 +159,10 @@ static void spi_litex_spi_do_tx(const struct device *dev)
 	uint8_t len;
 	uint32_t txd = 0U;
 
-	len = MIN(spi_context_max_continuous_chunk(ctx), dev_config->core_master_rxtx_size);
+	len = MIN(spi_context_max_continuous_chunk(ctx), dev_config->master_rxtx_size);
 	if (len != data->len) {
 		spiflash_len_mask_width_write(len * 8, SPI_LITEX_WIDTH, SPI_LITEX_MASK,
-						dev_config->core_master_phyconfig_addr);
+						dev_config->master_phyconfig_addr);
 		data->len = len;
 	}
 
@@ -171,7 +171,7 @@ static void spi_litex_spi_do_tx(const struct device *dev)
 	}
 
 	LOG_DBG("txd: 0x%x", txd);
-	litex_write32(txd, dev_config->core_master_rxtx_addr);
+	litex_write32(txd, dev_config->master_rxtx_addr);
 
 	spi_context_update_tx(ctx, data->dfs, len / data->dfs);
 }
@@ -183,7 +183,7 @@ static void spi_litex_spi_do_rx(const struct device *dev)
 	struct spi_context *ctx = &data->ctx;
 	uint32_t rxd;
 
-	rxd = litex_read32(dev_config->core_master_rxtx_addr);
+	rxd = litex_read32(dev_config->master_rxtx_addr);
 	LOG_DBG("rxd: 0x%x", rxd);
 
 	if (spi_context_rx_buf_on(ctx)) {
@@ -200,24 +200,24 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 	struct spi_context *ctx = &data->ctx;
 	uint32_t rxd;
 
-	litex_write32(BIT(config->slave), dev_config->core_master_cs_addr);
+	litex_write32(BIT(config->slave), dev_config->master_cs_addr);
 
 	/* Flush RX buffer */
-	while ((litex_read8(dev_config->core_master_status_addr) &
-		BIT(SPIFLASH_CORE_MASTER_STATUS_RX_READY_OFFSET))) {
-		rxd = litex_read32(dev_config->core_master_rxtx_addr);
+	while ((litex_read8(dev_config->master_status_addr) &
+		BIT(SPIFLASH_MASTER_STATUS_RX_READY_OFFSET))) {
+		rxd = litex_read32(dev_config->master_rxtx_addr);
 		LOG_DBG("flushed rxd: 0x%x", rxd);
 	}
 
-	while (!(litex_read8(dev_config->core_master_status_addr) &
-			BIT(SPIFLASH_CORE_MASTER_STATUS_TX_READY_OFFSET))) {
+	while (!(litex_read8(dev_config->master_status_addr) &
+			BIT(SPIFLASH_MASTER_STATUS_TX_READY_OFFSET))) {
 		;
 	}
 
 #if SPI_LITEX_ANY_HAS_IRQ
 	if (SPI_LITEX_HAS_IRQ) {
-		litex_write8(BIT(0), dev_config->core_master_ev_enable_addr);
-		litex_write8(BIT(0), dev_config->core_master_ev_pending_addr);
+		litex_write8(BIT(0), dev_config->master_ev_enable_addr);
+		litex_write8(BIT(0), dev_config->master_ev_pending_addr);
 
 		spi_litex_spi_do_tx(dev);
 
@@ -228,15 +228,15 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 	do {
 		spi_litex_spi_do_tx(dev);
 
-		while (!(litex_read8(dev_config->core_master_status_addr) &
-			BIT(SPIFLASH_CORE_MASTER_STATUS_RX_READY_OFFSET))) {
+		while (!(litex_read8(dev_config->master_status_addr) &
+			 BIT(SPIFLASH_MASTER_STATUS_RX_READY_OFFSET))) {
 			;
 		}
 
 		spi_litex_spi_do_rx(dev);
 	} while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx));
 
-	litex_write32(0, dev_config->core_master_cs_addr);
+	litex_write32(0, dev_config->master_cs_addr);
 
 	spi_context_complete(ctx, dev, 0);
 
@@ -317,18 +317,18 @@ static void spi_litex_irq_handler(const struct device *dev)
 	const struct spi_litex_dev_config *dev_config = dev->config;
 	struct spi_context *ctx = &data->ctx;
 
-	if (litex_read8(dev_config->core_master_ev_pending_addr) & BIT(0)) {
+	if (litex_read8(dev_config->master_ev_pending_addr) & BIT(0)) {
 		spi_litex_spi_do_rx(dev);
 
 		/* ack reader irq */
-		litex_write8(BIT(0), dev_config->core_master_ev_pending_addr);
+		litex_write8(BIT(0), dev_config->master_ev_pending_addr);
 
 		if (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
 			spi_litex_spi_do_tx(dev);
 		} else {
-			litex_write8(0, dev_config->core_master_ev_enable_addr);
+			litex_write8(0, dev_config->master_ev_enable_addr);
 
-			litex_write32(0, dev_config->core_master_cs_addr);
+			litex_write32(0, dev_config->master_cs_addr);
 
 			spi_context_complete(ctx, dev, 0);
 		}
@@ -370,8 +370,8 @@ static DEVICE_API(spi, spi_litex_api) = {
 };
 
 #define SPI_LITEX_IRQ(n)									   \
-	BUILD_ASSERT(DT_INST_REG_HAS_NAME(n, core_master_ev_pending) &&				   \
-	DT_INST_REG_HAS_NAME(n, core_master_ev_enable), "registers for interrupts missing");	   \
+	BUILD_ASSERT(DT_INST_REG_HAS_NAME(n, master_ev_pending) &&				   \
+	DT_INST_REG_HAS_NAME(n, master_ev_enable), "registers for interrupts missing");		   \
 												   \
 	static void spi_litex_irq_config##n(const struct device *dev)	                           \
 	{                                                                                          \
@@ -385,8 +385,8 @@ static DEVICE_API(spi, spi_litex_api) = {
 	.has_irq = DT_INST_IRQ_HAS_IDX(n, 0),							   \
 	.irq_config_func = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),				   \
 					(spi_litex_irq_config##n), (NULL)),			   \
-	.core_master_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, core_master_ev_pending, 0),  \
-	.core_master_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, core_master_ev_enable, 0),
+	.master_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, master_ev_pending, 0),		   \
+	.master_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, master_ev_enable, 0),
 
 #define SPI_INIT(n)										   \
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (SPI_LITEX_IRQ(n)))				   \
@@ -396,16 +396,16 @@ static DEVICE_API(spi, spi_litex_api) = {
 		SPI_CONTEXT_INIT_SYNC(spi_litex_data_##n, ctx),					   \
 	};											   \
 												   \
-	static struct spi_litex_dev_config spi_litex_cfg_##n = {                                   \
-		.core_master_cs_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_cs),                \
-		.core_master_phyconfig_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_phyconfig),  \
-		.core_master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_rxtx),            \
-		.core_master_rxtx_size = DT_INST_REG_SIZE_BY_NAME(n, core_master_rxtx),            \
-		.core_master_status_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_status),        \
-		.phy_clk_divisor_exists = DT_INST_REG_HAS_NAME(n, phy_clk_divisor),                \
-		.phy_clk_divisor_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0),        \
+	static struct spi_litex_dev_config spi_litex_cfg_##n = {				   \
+		.master_cs_addr = DT_INST_REG_ADDR_BY_NAME(n, master_cs),			   \
+		.master_phyconfig_addr = DT_INST_REG_ADDR_BY_NAME(n, master_phyconfig),		   \
+		.master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, master_rxtx),			   \
+		.master_rxtx_size = DT_INST_REG_SIZE_BY_NAME(n, master_rxtx),			   \
+		.master_status_addr = DT_INST_REG_ADDR_BY_NAME(n, master_status),		   \
+		.phy_clk_divisor_exists = DT_INST_REG_HAS_NAME(n, phy_clk_divisor),		   \
+		.phy_clk_divisor_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0),	   \
 		IF_ENABLED(SPI_LITEX_ANY_HAS_IRQ, (SPI_LITEX_IRQ_CONFIG(n)))			   \
-	};                                                                                         \
+	};											   \
 												   \
 	SPI_DEVICE_DT_INST_DEFINE(n,								   \
 		spi_litex_init, NULL, &spi_litex_data_##n, &spi_litex_cfg_##n, POST_KERNEL,	   \
