@@ -97,7 +97,7 @@ static void uart_renesas_rx_sci_qemu_poll_out(const struct device *dev, unsigned
 	uart_renesas_rx_qemu_write_8(dev, TDR, c);
 }
 
-static const struct uart_driver_api uart_rx_driver_api = {
+static DEVICE_API(uart, uart_rx_driver_api) = {
 	.poll_in = uart_renesas_rx_sci_qemu_poll_in,
 	.poll_out = uart_renesas_rx_sci_qemu_poll_out,
 };
