@@ -13,7 +13,7 @@ config MAX17048
 	  Enable driver for the MAX17048 fuel gauge device.
 
 config EMUL_MAX17048
-	bool "Emulate an MAX17048 fuel gague"
+	bool "Emulate a MAX17048 fuel gauge"
 	default y
 	depends on EMUL
 	depends on MAX17048

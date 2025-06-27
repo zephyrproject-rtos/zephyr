@@ -132,7 +132,7 @@ config ESPI_IT8XXX2_PNPCFG_DEVICE_KBC_MOUSE
 # status bit to indicate which cycle triggered the interrupt and data registers
 # of these two ports are read only. Hence EC have to read these two data
 # registers at the same time in the ISR.
-# It means that the Host must alwasy write 2 bytes of data to port 80 otherwise
+# It means that the Host must always write 2 bytes of data to port 80 otherwise
 # port 81 data will not be updated.
 config ESPI_IT8XXX2_PORT_81_CYCLE
 	bool "EC accepts 0x81 I/O cycle from eSPI transaction"

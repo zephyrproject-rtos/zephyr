@@ -20,9 +20,9 @@ config SDHC_BUFFER_ALIGNMENT
 	default 32
 
 config HOST_ADMA2_DESC_SIZE
-	int "Max discripter SIZE"
+	int "Max descriptor SIZE"
 	default 32
 	help
-	  Set max number of discriptor support
+	  Set max number of descriptors supported
 
 endif

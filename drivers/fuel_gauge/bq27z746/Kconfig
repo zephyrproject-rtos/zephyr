@@ -12,7 +12,7 @@ config BQ27Z746
 	  Enable I2C-based driver for BQ27Z746 Fuel Gauge.
 
 config EMUL_BQ27Z746
-	bool "Emulate an BQ27Z746 fuel gague"
+	bool "Emulate a BQ27Z746 fuel gauge"
 	default y
 	depends on EMUL
 	depends on BQ27Z746
