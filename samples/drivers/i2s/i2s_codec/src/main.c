@@ -32,7 +32,9 @@
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
 #define BLOCK_COUNT (INITIAL_BLOCKS + 32)
-K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+
+__nocache struct k_mem_slab mem_slab;
+char __nocache __aligned(4) mem_slab_buf[BLOCK_SIZE * BLOCK_COUNT];
 
 static bool configure_tx_streams(const struct device *i2s_dev, struct i2s_config *config)
 {
@@ -62,6 +64,8 @@ static bool trigger_command(const struct device *i2s_dev_codec, enum i2s_trigger
 
 int main(void)
 {
+	k_mem_slab_init(&mem_slab, mem_slab_buf, BLOCK_SIZE, BLOCK_COUNT);
+
 	const struct device *const i2s_dev_codec = DEVICE_DT_GET(I2S_CODEC_TX);
 #if CONFIG_USE_DMIC
 	const struct device *const dmic_dev = DEVICE_DT_GET(DT_NODELABEL(dmic_dev));
