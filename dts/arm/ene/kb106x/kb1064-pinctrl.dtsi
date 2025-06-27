@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2025 ENE Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/ene/kb106x/kb106x-pinctrl.dtsi>
+
+&pinctrl {
+	/omit-if-no-ref/ pwm4_egpio00: pwm4_egpio00 {
+		pinmux = <ENE_KB106X_PINMUX(0x80, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm5_egpio01: pwm5_egpio01 {
+		pinmux = <ENE_KB106X_PINMUX(0x81, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm8_egpio04: pwm8_egpio04 {
+		pinmux = <ENE_KB106X_PINMUX(0x84, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm9_egpio05: pwm9_egpio05 {
+		pinmux = <ENE_KB106X_PINMUX(0x85, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm10_egpio06: pwm10_egpio06 {
+		pinmux = <ENE_KB106X_PINMUX(0x86, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm11_egpio07: pwm11_egpio07 {
+		pinmux = <ENE_KB106X_PINMUX(0x87, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm12_egpio08: pwm12_egpio08 {
+		pinmux = <ENE_KB106X_PINMUX(0x88, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm13_egpio09: pwm13_egpio09 {
+		pinmux = <ENE_KB106X_PINMUX(0x89, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm14_egpio0a: pwm14_egpio0a {
+		pinmux = <ENE_KB106X_PINMUX(0x8a, PINMUX_FUNC_B)>;
+	};
+
+	/omit-if-no-ref/ pwm15_egpio0b: pwm15_egpio0b {
+		pinmux = <ENE_KB106X_PINMUX(0x8b, PINMUX_FUNC_B)>;
+	};
+};
