@@ -3,7 +3,7 @@
 # Copyright (c) 2023 Linumiz
 
 menuconfig MC3419
-	bool "MC3419 acclerometer driver"
+	bool "MC3419 accelerometer driver"
 	default y
 	depends on DT_HAS_MEMSIC_MC3419_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_MEMSIC_MC3419),i2c)

@@ -24,6 +24,6 @@ config PDM_AMBIQ_BUFFER_ALIGNMENT
 	int "Set the PDM DMA TCB buffer alignment"
 	default DCACHE_LINE_SIZE if DCACHE
 	help
-	  PDM buffer should be 32bytes aligned when placed in cachable region.
+	  PDM buffer should be 32bytes aligned when placed in cacheable region.
 
 endif
