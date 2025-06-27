@@ -200,6 +200,7 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	select MBEDTLS_TLS_VERSION_1_2
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
+if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 config EAP_TLS
 	bool "EAP-TLS support"
 
@@ -258,7 +259,8 @@ config EAP_ALL
 	select EAP_GTC
 	select EAP_TTLS
 	select EAP_MSCHAPV2
-	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	default y
+endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 config WIFI_NM_WPA_SUPPLICANT_WPA3
 	bool "WPA3 support"
@@ -302,6 +304,7 @@ config WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 	bool "Hostapd crypto enterprise support"
 	depends on WIFI_NM_HOSTAPD_AP
 
+if WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 config EAP_SERVER_TLS
 	bool "EAP-TLS server support"
 
@@ -330,7 +333,9 @@ config EAP_SERVER_ALL
 	select EAP_SERVER_PEAP
 	select EAP_SERVER_GTC
 	select EAP_SERVER_TTLS
-	default y if WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+	default y
+
+endif # WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 
 config WIFI_NM_WPA_SUPPLICANT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
