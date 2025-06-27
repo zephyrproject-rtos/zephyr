@@ -411,6 +411,9 @@
 			reg = <0x50200000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO0>;
+			interrupts = <7 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				    <8 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
 
@@ -419,6 +422,9 @@
 			reg = <0x50300000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
+			interrupts = <9 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				    <10 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "irq0", "irq1";
 			status = "disabled";
 		};
 
