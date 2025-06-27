@@ -61,6 +61,9 @@ struct stream {
 #endif
 
 struct spi_stm32_data {
+#ifdef CONFIG_SPI_RTIO
+	struct spi_rtio *rtio_ctx;
+#endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
@@ -178,6 +181,11 @@ static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
 #else
 	LL_SPI_DisableIT_ERR(spi);
 #endif /* st_stm32h7_spi */
+}
+
+static inline bool ll_func_are_int_disabled(SPI_TypeDef *spi)
+{
+	return (spi->IER == 0U);
 }
 
 static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)

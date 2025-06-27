@@ -36,6 +36,11 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/arch/cache.h>
 
+#ifdef CONFIG_SPI_RTIO
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/drivers/spi/rtio.h>
+#endif
+
 #include "spi_ll_stm32.h"
 
 #if defined(CONFIG_DCACHE) &&                               \
@@ -100,12 +105,14 @@ static void spi_stm32_pm_policy_state_lock_put(const struct device *dev)
 	}
 }
 
-#ifdef CONFIG_SPI_STM32_DMA
+#if defined(CONFIG_SPI_STM32_DMA) || defined(CONFIG_SPI_RTIO)
 static uint32_t bits2bytes(uint32_t bits)
 {
 	return bits / 8;
 }
+#endif
 
+#ifdef CONFIG_SPI_STM32_DMA
 /* dummy buffer is used for transferring NOP when tx buf is null
  * and used as a dummy sink for when rx buf is null.
  */
@@ -487,12 +494,207 @@ static void spi_stm32_cs_control(const struct device *dev, bool on)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz) */
 }
 
+static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
+{
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
+
+	ARG_UNUSED(is_rx_empty);
+
+	LL_SPI_Enable(spi);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	/* With the STM32MP1, STM32U5 and the STM32H7,
+	 * if the device is the SPI master,
+	 * we need to enable the start of the transfer with
+	 * LL_SPI_StartMasterTransfer(spi)
+	 */
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_StartMasterTransfer(spi);
+		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+			/* NOP */
+		}
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	/*
+	 * Add a small delay after enabling to prevent transfer stalling at high
+	 * system clock frequency (see errata sheet ES0392).
+	 */
+	k_busy_wait(WAIT_1US);
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+	/* This is turned off in spi_stm32_complete(). */
+	spi_stm32_cs_control(dev, true);
+
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_EnableIT_EOT(spi);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+	ll_func_enable_int_errors(spi);
+
+	if (!is_rx_empty) {
+		ll_func_enable_int_rx_not_empty(spi);
+	}
+
+	ll_func_enable_int_tx_empty(spi);
+#endif /* CONFIG_SPI_STM32_INTERRUPT */
+}
+
+#ifdef CONFIG_SPI_RTIO
+static bool spi_stm32_iodev_complete(const struct device *dev, int status);
+static int spi_stm32_configure(const struct device *dev,
+			       const struct spi_config *config,
+			       bool write);
+
+static int spi_stm32_iodev_msg_start(const struct device *dev, struct spi_config *config,
+				     const uint8_t *tx_buf, uint8_t *rx_buf, uint32_t buf_len)
+{
+	struct spi_stm32_data *data = dev->data;
+	uint32_t size = buf_len / bits2bytes(SPI_WORD_SIZE_GET(config->operation));
+
+	const struct spi_buf current_tx = {.buf = NULL, .len = size};
+	const struct spi_buf current_rx = {.buf = NULL, .len = size};
+
+	data->ctx.current_tx = &current_tx;
+	data->ctx.current_rx = &current_rx;
+
+	data->ctx.tx_buf = tx_buf;
+	data->ctx.rx_buf = rx_buf;
+	data->ctx.tx_len = tx_buf != NULL ? size : 0;
+	data->ctx.rx_len = rx_buf != NULL ? size : 0;
+	data->ctx.tx_count = tx_buf != NULL ? 1 : 0;
+	data->ctx.rx_count = rx_buf != NULL ? 1 : 0;
+
+	data->ctx.sync_status = 0;
+
+#ifdef CONFIG_SPI_SLAVE
+	ctx->recv_frames = 0;
+#endif /* CONFIG_SPI_SLAVE */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
+
+	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		LL_SPI_SetTransferSize(spi, size);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
+	spi_stm32_msg_start(dev, rx_buf == NULL);
+
+	return 0;
+}
+
+static void spi_stm32_iodev_start(const struct device *dev)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_dt_spec *spi_dt_spec = rtio_ctx->txn_curr->sqe.iodev->data;
+	struct spi_config *spi_config = &spi_dt_spec->config;
+	struct rtio_sqe *sqe = &rtio_ctx->txn_curr->sqe;
+	int ret = 0;
+
+	switch (sqe->op) {
+	case RTIO_OP_RX:
+		ret = spi_stm32_iodev_msg_start(dev, spi_config, NULL,
+						sqe->rx.buf, sqe->rx.buf_len);
+		break;
+	case RTIO_OP_TX:
+		ret = spi_stm32_iodev_msg_start(dev, spi_config, sqe->tx.buf,
+						NULL, sqe->tx.buf_len);
+		break;
+	case RTIO_OP_TINY_TX:
+		ret = spi_stm32_iodev_msg_start(dev, spi_config, sqe->tiny_tx.buf,
+						NULL, sqe->tiny_tx.buf_len);
+		break;
+	case RTIO_OP_TXRX:
+		ret = spi_stm32_iodev_msg_start(dev, spi_config, sqe->txrx.tx_buf,
+						sqe->txrx.rx_buf, sqe->txrx.buf_len);
+		break;
+	default:
+		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+		spi_stm32_iodev_complete(dev, -EINVAL);
+		return;
+	}
+	if (ret != 0) {
+		spi_stm32_iodev_complete(dev, -EIO);
+	}
+}
+
+static inline int spi_stm32_iodev_prepare_start(const struct device *dev)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_dt_spec *spi_dt_spec = rtio_ctx->txn_curr->sqe.iodev->data;
+	struct spi_config *spi_config = &spi_dt_spec->config;
+	uint8_t op_code = rtio_ctx->txn_curr->sqe.op;
+	int err;
+	bool write = (op_code == RTIO_OP_TX) |
+		     (op_code == RTIO_OP_TINY_TX) |
+		     (op_code == RTIO_OP_TXRX);
+
+	err = spi_stm32_configure(dev, spi_config, write);
+
+	return err;
+}
+
+static bool spi_stm32_iodev_complete(const struct device *dev, int status)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	bool ret = false;
+	int err;
+
+	if (!status && rtio_ctx->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) {
+		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);
+		spi_stm32_iodev_start(dev);
+		ret = true;
+	} else {
+		spi_stm32_cs_control(dev, false);
+
+		if (spi_rtio_complete(rtio_ctx, status)) {
+			err = spi_stm32_iodev_prepare_start(dev);
+			if (err == 0) {
+				spi_stm32_iodev_start(dev);
+				ret = true;
+			}
+		}
+	}
+	return ret;
+}
+
+static void spi_stm32_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	int err;
+
+	if (spi_rtio_submit(rtio_ctx, iodev_sqe)) {
+		err = spi_stm32_iodev_prepare_start(dev);
+		if (err == 0) {
+			spi_stm32_iodev_start(dev);
+		} else {
+			spi_stm32_iodev_complete(dev, err);
+		}
+	}
+}
+#endif
+
 static void spi_stm32_complete(const struct device *dev, int status)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	SPI_TypeDef *spi = cfg->spi;
 	struct spi_stm32_data *data = dev->data;
 
+#ifdef CONFIG_SPI_RTIO
+	if (spi_stm32_iodev_complete(dev, status)) {
+		return;
+	}
+#endif
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	ll_func_disable_int_tx_empty(spi);
 	ll_func_disable_int_rx_not_empty(spi);
@@ -559,6 +761,15 @@ static void spi_stm32_isr(const struct device *dev)
 	SPI_TypeDef *spi = cfg->spi;
 	int err;
 
+#if defined(CONFIG_SPI_RTIO)
+	/* With RTIO, an interrupt can occur even though they
+	 * are all previously disabled. Ignore it then.
+	 */
+	if (ll_func_are_int_disabled(spi)) {
+		return;
+	}
+#endif
+
 	/* Some spurious interrupts are triggered when SPI is not enabled; ignore them.
 	 * Do it only when fifo is enabled to leave non-fifo functionality untouched for now
 	 */
@@ -620,6 +831,7 @@ static int spi_stm32_configure(const struct device *dev,
 	uint32_t clock;
 	int br;
 
+#ifndef CONFIG_SPI_RTIO
 	if (spi_context_configured(&data->ctx, config)) {
 		if (config->operation & SPI_HALF_DUPLEX) {
 			if (write) {
@@ -630,6 +842,7 @@ static int spi_stm32_configure(const struct device *dev,
 		}
 		return 0;
 	}
+#endif
 
 	if ((SPI_WORD_SIZE_GET(config->operation) != 8)
 	    && (SPI_WORD_SIZE_GET(config->operation) != 16)) {
@@ -909,6 +1122,7 @@ static int transceive(const struct device *dev,
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
+
 	if (!tx_bufs && !rx_bufs) {
 		return 0;
 	}
@@ -922,6 +1136,11 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	spi_stm32_pm_policy_state_lock_get(dev);
+
+#ifdef CONFIG_SPI_RTIO
+	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
+	goto end;
+#endif
 
 	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
 	if (ret) {
@@ -961,49 +1180,9 @@ static int transceive(const struct device *dev,
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-	LL_SPI_Enable(spi);
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	/* With the STM32MP1, STM32U5 and the STM32H7,
-	 * if the device is the SPI master,
-	 * we need to enable the start of the transfer with
-	 * LL_SPI_StartMasterTransfer(spi)
-	 */
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		LL_SPI_StartMasterTransfer(spi);
-		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
-			/* NOP */
-		}
-	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
-
-#ifdef CONFIG_SOC_SERIES_STM32H7X
-	/*
-	 * Add a small delay after enabling to prevent transfer stalling at high
-	 * system clock frequency (see errata sheet ES0392).
-	 */
-	k_busy_wait(WAIT_1US);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-
-	/* This is turned off in spi_stm32_complete(). */
-	spi_stm32_cs_control(dev, true);
+	spi_stm32_msg_start(dev, rx_bufs == NULL);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (cfg->fifo_enabled) {
-		LL_SPI_EnableIT_EOT(spi);
-	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
-
-	ll_func_enable_int_errors(spi);
-
-	if (rx_bufs) {
-		ll_func_enable_int_rx_not_empty(spi);
-	}
-
-	ll_func_enable_int_tx_empty(spi);
-
 	do {
 		ret = spi_context_wait_for_completion(&data->ctx);
 
@@ -1370,7 +1549,7 @@ static DEVICE_API(spi, api_funcs) = {
 	.transceive_async = spi_stm32_transceive_async,
 #endif
 #ifdef CONFIG_SPI_RTIO
-	.iodev_submit = spi_rtio_iodev_default_submit,
+	.iodev_submit = spi_stm32_iodev_submit,
 #endif
 	.release = spi_stm32_release,
 };
@@ -1449,6 +1628,10 @@ static int spi_stm32_init(const struct device *dev)
 	if (err < 0) {
 		return err;
 	}
+
+#ifdef CONFIG_SPI_RTIO
+	spi_rtio_init(data->rtio_ctx, dev);
+#endif
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -1577,6 +1760,10 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define SPI_GET_FIFO_PROP(id)	DT_INST_PROP(id, fifo_enable)
 #define SPI_FIFO_ENABLED(id)	COND_CODE_1(SPI_SUPPORTS_FIFO(id), (SPI_GET_FIFO_PROP(id)), (0))
 
+#define SPI_STM32_RTIO_DEFINE(id) SPI_RTIO_DEFINE(CONCAT(_spi, id, _stm32_rtio),		\
+						  CONFIG_SPI_STM32_RTIO_SQ_SIZE,		\
+						  CONFIG_SPI_STM32_RTIO_CQ_SIZE)
+
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
@@ -1603,6 +1790,8 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 			DT_INST_PROP(id, mssi_clock),))			\
 };									\
 									\
+COND_CODE_1(CONFIG_SPI_RTIO, (SPI_STM32_RTIO_DEFINE(id)), ());		\
+									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
@@ -1610,6 +1799,8 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
 	SPI_DMA_STATUS_SEM(id)						\
 	SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)		\
+	IF_ENABLED(CONFIG_SPI_RTIO,					\
+		(.rtio_ctx = &CONCAT(_spi, id, _stm32_rtio),))		\
 };									\
 									\
 PM_DEVICE_DT_INST_DEFINE(id, spi_stm32_pm_action);			\
