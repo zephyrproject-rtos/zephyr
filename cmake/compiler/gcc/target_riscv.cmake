@@ -66,6 +66,36 @@ if(NOT CONFIG_RISCV_ISA_EXT_A)
   endif()
 endif()
 
+# Zca is implied by C
+if(CONFIG_RISCV_ISA_EXT_ZCA AND
+   NOT CONFIG_RISCV_ISA_EXT_C)
+  string(CONCAT riscv_march ${riscv_march} "_zca")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZCB)
+  string(CONCAT riscv_march ${riscv_march} "_zcb")
+endif()
+
+# Zcd is implied by C+D
+if(CONFIG_RISCV_ISA_EXT_ZCD AND
+   NOT (CONFIG_RISCV_ISA_EXT_C AND CONFIG_RISCV_ISA_EXT_D))
+  string(CONCAT riscv_march ${riscv_march} "_zcd")
+endif()
+
+# Zcf is implied by C+F
+if(CONFIG_RISCV_ISA_EXT_ZCF AND
+   NOT (CONFIG_RISCV_ISA_EXT_C AND CONFIG_RISCV_ISA_EXT_F))
+  string(CONCAT riscv_march ${riscv_march} "_zcf")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZCMP)
+  string(CONCAT riscv_march ${riscv_march} "_zcmp")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZCMT)
+  string(CONCAT riscv_march ${riscv_march} "_zcmt")
+endif()
+
 if(CONFIG_RISCV_ISA_EXT_ZBA)
   string(CONCAT riscv_march ${riscv_march} "_zba")
 endif()
