@@ -54,6 +54,8 @@ else() # Linux.x86_64
     zephyr_compile_options(-m32)
     zephyr_link_libraries(-m32)
 
+    zephyr_compile_options(-D__USE_TIME_BITS64=1)
+
     target_link_options(native_simulator INTERFACE "-m32")
     target_compile_options(native_simulator INTERFACE "-m32")
 
