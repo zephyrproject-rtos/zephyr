@@ -75,6 +75,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Power management
+
+   * :c:func:`pm_device_driver_deinit`
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
