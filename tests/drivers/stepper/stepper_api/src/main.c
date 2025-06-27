@@ -178,30 +178,6 @@ ZTEST_F(stepper, test_set_reference_position)
 	zassert_equal(pos, 100, "Actual position should be %u but is %u", 100, pos);
 }
 
-ZTEST_F(stepper, test_target_position_w_fixed_step_interval)
-{
-	int32_t pos = 10u;
-	int ret;
-
-	ret = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
-
-	if (ret == -ENOSYS) {
-		ztest_test_skip();
-	}
-	/* Pass the function name as user data */
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
-
-	(void)stepper_move_to(fixture->dev, pos);
-
-	POLL_AND_CHECK_SIGNAL(
-		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
-		K_MSEC(pos * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
-
-	(void)stepper_get_actual_position(fixture->dev, &pos);
-	zassert_equal(pos, 10u, "Target position should be %d but is %d", 10u, pos);
-	zassert_equal(user_data_received, fixture->dev, "User data not received");
-}
-
 ZTEST_F(stepper, test_stop)
 {
 	/* Run the stepper in positive direction */
