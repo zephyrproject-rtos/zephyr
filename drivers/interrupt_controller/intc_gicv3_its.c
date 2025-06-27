@@ -352,7 +352,7 @@ static int its_send_sync_cmd(struct gicv3_its_data *data, uintptr_t rd_addr)
 	}
 
 	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_SYNC, GITS_CMD_ID);
-	cmd->raw_cmd[2] = MASK_SET(rd_addr >> GITS_CMD_RDBASE_ALIGN, GITS_CMD_RDBASE);
+	cmd->raw_cmd[2] = MASK_SET(rd_addr, GITS_CMD_RDBASE);
 
 	return its_post_command(data, cmd);
 }
@@ -367,8 +367,7 @@ static int its_send_mapc_cmd(struct gicv3_its_data *data, uint32_t icid,
 	}
 
 	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPC, GITS_CMD_ID);
-	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID) |
-			  MASK_SET(rd_addr >> GITS_CMD_RDBASE_ALIGN, GITS_CMD_RDBASE) |
+	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID) | MASK_SET(rd_addr, GITS_CMD_RDBASE) |
 			  MASK_SET(valid ? 1 : 0, GITS_CMD_VALID);
 
 	return its_post_command(data, cmd);
@@ -489,12 +488,18 @@ static uintptr_t gicv3_rdist_get_rdbase(const struct device *dev, unsigned int c
 {
 	struct gicv3_its_data *data = dev->data;
 	uint64_t typer = sys_read64(data->base + GITS_TYPER);
+	uintptr_t rdbase;
 
 	if (GITS_TYPER_PTA_GET(typer)) {
-		return gic_rdists[cpuid];
+		rdbase = gic_rdists[cpuid];
+		/* RDbase must be 64KB aligned, only return bits[51:16] of the address */
+		rdbase = rdbase >> GITS_CMD_RDBASE_ALIGN;
 	} else {
-		return GICR_TYPER_PROCESSOR_NUMBER_GET(sys_read64(gic_rdists[cpuid] + GICR_TYPER));
+		rdbase =
+			GICR_TYPER_PROCESSOR_NUMBER_GET(sys_read64(gic_rdists[cpuid] + GICR_TYPER));
 	}
+
+	return rdbase;
 }
 
 static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uint32_t event_id,
