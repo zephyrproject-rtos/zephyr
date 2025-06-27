@@ -78,7 +78,15 @@
 		      <0x48060000 0xc0000>; /* GICR (RD_base + SGI_base) */
 		interrupt-controller;
 		#interrupt-cells = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		status = "okay";
+
+		its: msi-controller@48040000 {
+			compatible = "arm,gic-v3-its";
+			reg = <0x48040000 0x20000>;
+			status = "okay";
+		};
 	};
 
 	reserved-memory {
