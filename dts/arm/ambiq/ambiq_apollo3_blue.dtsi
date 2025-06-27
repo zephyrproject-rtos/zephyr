@@ -149,23 +149,6 @@
 			};
 		};
 
-		timer3: timer@40008060 {
-			compatible = "ambiq,ctimer";
-			reg = <0x40008060 0x20>;
-			interrupts = <14 0>;
-			clk-source = "CLK_SELECT_HFRC_3MHZ";
-			status = "disabled";
-			counter {
-				compatible = "ambiq,counter";
-				status = "disabled";
-			};
-			pwm {
-				compatible = "ambiq,ctimer-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
-		};
-
 		timer4: timer@40008080 {
 			compatible = "ambiq,ctimer";
 			reg = <0x40008080 0x20>;

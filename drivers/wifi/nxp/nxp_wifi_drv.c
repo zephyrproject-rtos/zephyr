@@ -76,6 +76,8 @@ extern const rtos_wpa_supp_dev_ops wpa_supp_ops;
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_NXP_RW610)
 extern int is_hs_handshake_done;
 extern int wlan_host_sleep_state;
+extern bool skip_hs_handshake;
+extern void wlan_hs_hanshake_cfg(bool skip);
 #endif
 
 static int nxp_wifi_recv(struct net_if *iface, struct net_pkt *pkt);
@@ -1211,12 +1213,10 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 
 			if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 				status->iface_mode = WIFI_MODE_INFRA;
-			}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-			else if (if_handle->state.interface == WLAN_BSS_TYPE_UAP) {
+			} else if (IS_ENABLED(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) &&
+				   (if_handle->state.interface == WLAN_BSS_TYPE_UAP)) {
 				status->iface_mode = WIFI_MODE_AP;
 			}
-#endif
 
 #ifdef CONFIG_NXP_WIFI_11AX
 			if (nxp_wlan_network.dot11ax) {
@@ -1233,7 +1233,11 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 			} else {
 				status->link_mode = WIFI_3;
 			}
-
+#ifdef CONFIG_NXP_WIFI_11AX_TWT
+			status->twt_capable = nxp_wlan_network.twt_capab;
+#else
+			status->twt_capable = false;
+#endif
 			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
 								     : WIFI_FREQ_BAND_2_4_GHZ;
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
@@ -1271,12 +1275,11 @@ static int nxp_wifi_get_detail_stats(int bss_type, wlan_pkt_stats_t *stats)
 
 	if (bss_type == WLAN_BSS_TYPE_STA) {
 		ret = wlan_get_log(stats);
-	}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	else if (bss_type == WLAN_BSS_TYPE_UAP) {
+	} else if (IS_ENABLED(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) &&
+		   (bss_type == WLAN_BSS_TYPE_UAP)) {
 		ret = wlan_uap_get_log(stats);
 	}
-#endif
+
 	return ret;
 }
 #endif
@@ -1731,6 +1734,13 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain 
 			LOG_ERR("Unable to set country code: %s", reg_domain->country_code);
 			return -EAGAIN;
 		}
+
+		ret = wlan_create_dnld_countryinfo();
+		if (ret != WM_SUCCESS) {
+			LOG_ERR("Unable to create and download countryinfo");
+			return -EAGAIN;
+		}
+
 	}
 	return 0;
 }
@@ -2021,13 +2031,12 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 				LOG_ERR("Failed to set Wi-Fi MAC Address");
 				return -ENOEXEC;
 			}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-		} else if (if_handle->state.interface == WLAN_BSS_TYPE_UAP) {
+		} else if (IS_ENABLED(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) &&
+			   (if_handle->state.interface == WLAN_BSS_TYPE_UAP)) {
 			if (wlan_set_uap_mac_addr(if_handle->mac_address)) {
 				LOG_ERR("Failed to set Wi-Fi MAC Address");
 				return -ENOEXEC;
 			}
-#endif
 		} else {
 			LOG_ERR("Invalid Interface index");
 			return -ENOEXEC;
@@ -2095,16 +2104,33 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 		 * User can use this time to issue other commands.
 		 */
 		if (is_hs_handshake_done == WLAN_HOSTSLEEP_SUCCESS) {
-			ret = wlan_hs_send_event(HOST_SLEEP_EXIT, NULL);
-			if (ret != 0) {
-				return -EFAULT;
+			/* If we are not woken up by WLAN, skip posting host sleep exit event.
+			 * And skip host sleep handshake next time we are about to sleep.
+			 */
+			if (POWER_GetWakeupStatus(WL_MCI_WAKEUP0_IRQn)) {
+				ret = wlan_hs_send_event(HOST_SLEEP_EXIT, NULL);
+				if (ret != 0) {
+					return -EFAULT;
+				}
+				wlan_hs_hanshake_cfg(false);
+			} else {
+				wlan_hs_hanshake_cfg(true);
 			}
+
 			device_pm_dump_wakeup_source();
-			/* reset hs hanshake flag after waking up */
-			is_hs_handshake_done = 0;
 			if (wlan_host_sleep_state == HOST_SLEEP_ONESHOT) {
 				wlan_host_sleep_state = HOST_SLEEP_DISABLE;
+				wlan_hs_hanshake_cfg(false);
 			}
+#ifndef CONFIG_BT
+			if (skip_hs_handshake == true &&
+			    is_hs_handshake_done == WLAN_HOSTSLEEP_SUCCESS) {
+				ret = wlan_hs_send_event(HOST_SLEEP_HANDSHAKE_SKIP, NULL);
+				if (ret != 0) {
+					return -EFAULT;
+				}
+			}
+#endif
 		}
 		break;
 	default:
@@ -2180,6 +2206,7 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.sta_remove               = wifi_nxp_hostapd_sta_remove,
 	.sta_add                  = wifi_nxp_hostapd_sta_add,
 	.do_acs                   = wifi_nxp_hostapd_do_acs,
+	.get_inact_sec            = wifi_nxp_wpa_supp_sta_get_inact_sec,
 #endif
 	.dpp_listen               = wifi_nxp_wpa_dpp_listen,
 	.remain_on_channel        = wifi_nxp_wpa_supp_remain_on_channel,

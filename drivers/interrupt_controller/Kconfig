@@ -104,10 +104,14 @@ source "drivers/interrupt_controller/Kconfig.vim"
 
 source "drivers/interrupt_controller/Kconfig.renesas_rz"
 
+source "drivers/interrupt_controller/Kconfig.renesas_rx"
+
 source "drivers/interrupt_controller/Kconfig.nxp_irqsteer"
 
 source "drivers/interrupt_controller/Kconfig.mtk_adsp"
 
 source "drivers/interrupt_controller/Kconfig.wch_pfic"
+
+source "drivers/interrupt_controller/Kconfig.wch_exti"
 
 endmenu

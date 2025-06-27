@@ -18,7 +18,7 @@ ZTEST(adsp_cache, test_adsp_cache_flush_inv_all)
 	*cached = 42;
 	*uncached = 40;
 
-	/* Just some sanity checks */
+	/* Just some coherence checks */
 	zassert_equal(*cached, 42);
 	zassert_equal(*uncached, 40);
 

@@ -139,7 +139,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 127);
 
 static void dns_evt_handler(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event, struct net_if *iface)
+			      uint64_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_DNS_SERVER_ADD) {
 		k_sem_give(&dns_added);
@@ -466,7 +466,8 @@ ZTEST(dns_addremove, test_dns_reconfigure_callback)
 			     "Timeout while waiting for DNS added callback");
 	}
 
-	ret = dns_resolve_reconfigure(&resv_ipv4, dns2_servers_str, NULL);
+	ret = dns_resolve_reconfigure(&resv_ipv4, dns2_servers_str, NULL,
+				      DNS_SOURCE_MANUAL);
 	zassert_equal(ret, 0, "Cannot reconfigure DNS server");
 
 	/* Wait for DNS removed callback after reconfiguring DNS */

@@ -455,7 +455,9 @@ struct video_ctrl_range {
  * Used to query information about a control.
  */
 struct video_ctrl_query {
-	/** control id */
+	/** device being queried, application needs to set this field */
+	const struct device *dev;
+	/** control id, application needs to set this field */
 	uint32_t id;
 	/** control type */
 	uint32_t type;

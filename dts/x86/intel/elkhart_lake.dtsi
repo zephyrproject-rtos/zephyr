@@ -23,6 +23,10 @@
 
 	};
 
+	chosen {
+		zephyr,edac = &ibecc;
+	};
+
 	dram0: memory@0 {
 		device_type = "memory";
 		reg = <0x0 DT_DRAM_SIZE>;

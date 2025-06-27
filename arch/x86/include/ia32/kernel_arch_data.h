@@ -40,7 +40,7 @@
 /* Some configurations require that the stack/registers be adjusted before
  * z_thread_entry. See discussion in swap.S for z_x86_thread_entry_wrapper()
  */
-#if defined(CONFIG_DEBUG_INFO)
+#if defined(CONFIG_X86_DEBUG_INFO)
 #define _THREAD_WRAPPER_REQUIRED
 #endif
 

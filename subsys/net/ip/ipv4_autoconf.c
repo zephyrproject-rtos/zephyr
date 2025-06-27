@@ -55,7 +55,7 @@ static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 }
 
 static void acd_event_handler(struct net_mgmt_event_callback *cb,
-			      uint32_t mgmt_event, struct net_if *iface)
+			      uint64_t mgmt_event, struct net_if *iface)
 {
 	struct net_if_config *cfg;
 	struct in_addr *addr;

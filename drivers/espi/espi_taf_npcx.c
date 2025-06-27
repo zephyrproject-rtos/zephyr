@@ -391,19 +391,19 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 		} else {
 			rc = flash_read(npcx_espi_taf_data.low_dev_ptr, addr,
 					npcx_espi_taf_data.read_buf,
-					(npcx_espi_taf_data.low_dev_size.low_dev_size - addr));
+					(npcx_espi_taf_data.low_dev_size - addr));
 
 			if (rc) {
 				LOG_ERR("flash read fail 0x%x", rc);
 				return -EIO;
 			}
 
-			uint32_t index = low_dev_size - addr;
+			uint32_t index = npcx_espi_taf_data.low_dev_size - addr;
 
 			rc = flash_read(
 				npcx_espi_taf_data.high_dev_ptr, 0x0,
 				&npcx_espi_taf_data.read_buf[index],
-				(addr + len - npcx_espi_taf_data.low_dev_size.low_dev_size));
+				(addr + len - npcx_espi_taf_data.low_dev_size));
 		}
 #else
 		rc = flash_read(spi_dev, addr, npcx_espi_taf_data.read_buf, len);

@@ -8,6 +8,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/offsets.h>
+#include <zephyr/devicetree.h>
 #include "boot.h"
 #include "macro_priv.inc"
 
@@ -163,7 +164,7 @@ resetwait:
 	/* wait */
 	bne	2b
 	add	x5, x5, #1
-	cmp	x5, #CONFIG_MP_MAX_NUM_CPUS
+	cmp	x5, #DT_CHILD_NUM_STATUS_OKAY(DT_PATH(cpus))
 	bne	2b
 
 

@@ -685,7 +685,7 @@ config BT_CTLR_PRIVACY
 	  in the Controller.
 
 config BT_CTLR_FAL_SIZE
-	int "LE Controller-based Privacy White List size"
+	int "LE Controller-based Privacy Accept List size"
 	depends on BT_CTLR_FILTER_ACCEPT_LIST
 	default 8
 	range 1 8  if  (SOC_COMPATIBLE_NRF || SOC_OPENISA_RV32M1)

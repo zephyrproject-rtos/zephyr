@@ -64,6 +64,14 @@ config KERNEL_VM_SIZE
 
 endif
 
+if GDBSTUB
+
+# GDB expects 420 byte G-packet, so double for hexadecimal digits.
+config GDBSTUB_BUF_SZ
+	default 840 if GDBSTUB
+
+endif
+
 rsource "Kconfig.defconfig.ace*"
 
 endif # SOC_SERIES_INTEL_ADSP_ACE

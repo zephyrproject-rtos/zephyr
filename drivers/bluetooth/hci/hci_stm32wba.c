@@ -361,8 +361,6 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 
 	link_layer_register_isr();
 
-	ll_sys_config_params();
-
 	ret = bt_ble_ctlr_init();
 	if (ret == 0) {
 		data->recv = recv;
@@ -432,7 +430,7 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_create(ACI_HAL_WRITE_CONFIG_DATA, sizeof(*param));
+	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}

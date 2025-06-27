@@ -292,6 +292,19 @@
 			status = "disabled";
 		};
 
+		i3c0: i3c@40002000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x40002000 0x1000>;
+			interrupts = <24 0>;
+			clocks = <&syscon MCUX_I3C_CLK>;
+			clk-divider = <4>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
 		lpadc0: lpadc@400af000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x400af000 0x1000>;

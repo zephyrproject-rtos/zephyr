@@ -56,17 +56,33 @@ static inline const char *bt_hci_err_to_str(uint8_t hci_err)
   * of the parameters. Upon successful return the buffer is ready to have
   * the parameters encoded into it.
   *
+  * @deprecated Use bt_hci_cmd_alloc() instead.
+  *
   * @param opcode     Command OpCode.
   * @param param_len  Length of command parameters.
   *
   * @return Newly allocated buffer.
   */
-struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
+__deprecated struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
+
+/** Allocate an HCI command buffer.
+ *
+ * This function allocates a new buffer for an HCI command. Upon successful
+ * return the buffer is ready to have the command parameters encoded into it.
+ * Sufficient headroom gets automatically reserved in the buffer, allowing
+ * the actual command and H:4 headers to be encoded later, as part of
+ * calling bt_hci_cmd_send() or bt_hci_cmd_send_sync().
+ *
+ * @param timeout Timeout for the allocation.
+ *
+ * @return Newly allocated buffer or NULL if allocation failed.
+ */
+struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
 
 /** Send a HCI command asynchronously.
   *
   * This function is used for sending a HCI command asynchronously. It can
-  * either be called for a buffer created using bt_hci_cmd_create(), or
+  * either be called for a buffer created using bt_hci_cmd_alloc(), or
   * if the command has no parameters a NULL can be passed instead. The
   * sending of the command will happen asynchronously, i.e. upon successful
   * return from this function the caller only knows that it was queued
@@ -85,7 +101,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 /** Send a HCI command synchronously.
   *
   * This function is used for sending a HCI command synchronously. It can
-  * either be called for a buffer created using bt_hci_cmd_create(), or
+  * either be called for a buffer created using bt_hci_cmd_alloc(), or
   * if the command has no parameters a NULL can be passed instead.
   *
   * The function will block until a Command Status or a Command Complete

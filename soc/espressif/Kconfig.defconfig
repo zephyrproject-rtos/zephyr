@@ -5,4 +5,10 @@ if SOC_FAMILY_ESPRESSIF_ESP32
 
 rsource "*/Kconfig.defconfig"
 
+config HAS_FLASH_LOAD_OFFSET
+	default y
+
+config FLASH_LOAD_OFFSET
+	default $(dt_node_reg_addr_hex,$(dt_nodelabel_path,boot_partition)) if ESP_SIMPLE_BOOT
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32

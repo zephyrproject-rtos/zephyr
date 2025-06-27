@@ -47,8 +47,8 @@ The following CVEs are addressed by this release:
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
-
-* :cve:`2025-2962` Under embargo until 2025-06-07
+* :cve:`2025-2962` `Infinite loop in dns_copy_qname
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2qp5-c2vq-g2ww>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -111,6 +111,18 @@ Deprecated APIs and options
   was deprecated since Zephyr 4.0, and users were advised to migrate to alternative
   crypto backends.
 
+* The :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` Kconfig option has been removed. It
+  was deprecated since Zephyr 4.0. Users were advised to use
+  :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA` or
+  :kconfig:option:`CONFIG_BT_MESH_USES_TFM_PSA` instead.
+
+Stable API changes in this release
+==================================
+
+* The API signature of ``net_mgmt`` event handler :c:type:`net_mgmt_event_handler_t`
+  and request handler :c:type:`net_mgmt_request_handler_t` has changed. The event value
+  type is changed from ``uint32_t`` to ``uint64_t``.
+
 New APIs and options
 ====================
 
@@ -132,6 +144,7 @@ New APIs and options
  * :c:func:`timespec_normalize`
  * :c:func:`timespec_from_timeout`
  * :c:func:`timespec_to_timeout`
+ * :c:func:`k_heap_array_get`
 
 * I2C
 
@@ -246,6 +259,9 @@ New APIs and options
 
   * :c:func:`util_eq`
   * :c:func:`util_memeq`
+  * :c:func:`sys_clock_gettime`
+  * :c:func:`sys_clock_settime`
+  * :c:func:`sys_clock_nanosleep`
 
 * LoRaWAN
    * :c:func:`lorawan_request_link_check`
@@ -506,6 +522,14 @@ New Boards
 * Würth Elektronik GmbH.
 
    * :zephyr:board:`ophelia4ev` (``ophelia4ev``)
+
+.. _shields_added_in_zephyr_4_2:
+
+New shields
+============
+
+ * :ref:`MikroElektronika Stepper 18 Click <mikroe_stepper_18_click_shield>`
+ * :ref:`MikroElektronika Stepper 19 Click <mikroe_stepper_19_click_shield>`
 
 New Drivers
 ***********
@@ -895,6 +919,7 @@ New Drivers
 
 * Stepper
 
+   * :dtcompatible:`allegro,a4979`
    * :dtcompatible:`adi,tmc51xx`
 
 * System controller

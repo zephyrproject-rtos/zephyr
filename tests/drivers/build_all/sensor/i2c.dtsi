@@ -1331,3 +1331,54 @@ test_i2c_bh1730: bh1730@b4 {
 	compatible = "rohm,bh1730";
 	reg = <0xb4>;
 };
+
+test_i2c_npm1300: npm1300@b5 {
+	compatible = "nordic,npm1300";
+	reg = <0xb5>;
+
+	charger {
+		compatible = "nordic,npm1300-charger";
+		vbus-limit-microamp = <1000000>;
+		thermistor-ohms = <10000>;
+		thermistor-beta = <3380>;
+		term-microvolt = <4150000>;
+		current-microamp = <150000>;
+		dischg-limit-microamp = <1000000>;
+	};
+};
+
+test_i2c_npm1304: npm1304@b6 {
+	compatible = "nordic,npm1304";
+	reg = <0xb6>;
+
+	charger {
+		compatible = "nordic,npm1304-charger";
+		vbus-limit-microamp = <1000000>;
+		thermistor-ohms = <10000>;
+		thermistor-beta = <3380>;
+		term-microvolt = <4150000>;
+		current-microamp = <10000>;
+	};
+};
+
+test_i2c_ds3231: ds3231@b7 {
+	compatible = "maxim,ds3231-mfd";
+	reg = <0xb7>;
+
+	test_i2c_ds3231_sensor: ds3231_sensor {
+		compatible = "maxim,ds3231-sensor";
+	};
+};
+
+test_i2c_adxl366: adxl366@b8 {
+	compatible = "adi,adxl366";
+	reg = <0xb8>;
+	int1-gpios = <&test_gpio 0 0>;
+	odr = <4>;
+	fifo-mode = <0>;
+};
+
+test_i2c_lsm9ds1_mag: lsm9ds1_mag@b9 {
+	compatible = "st,lsm9ds1_mag";
+	reg = <0xb9>;
+};

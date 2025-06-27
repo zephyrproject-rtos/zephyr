@@ -51,6 +51,7 @@ tests:
       - nucleo_l152re
       - nucleo_l476rg
       - nucleo_u083rc
+      - nucleo_u385rg_q
       - nucleo_u575zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg

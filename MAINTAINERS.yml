@@ -183,6 +183,7 @@ Arduino Platforms:
     - facchinm
   files:
     - boards/arduino/
+    - boards/shields/arduino_*/
     - drivers/*/*modulino*
 
 ARM arch:
@@ -1828,6 +1829,8 @@ Release Notes:
   maintainers:
     - Mani-Sadhasivam
     - simonguinot
+  collaborators:
+    - jeppenodgaard
   files:
     - drivers/led/
     - include/zephyr/drivers/led/
@@ -1850,6 +1853,7 @@ Release Notes:
   collaborators:
     - soburi
     - thedjnK
+    - jeppenodgaard
   files:
     - drivers/led_strip/
     - dts/bindings/led_strip/
@@ -2583,7 +2587,6 @@ Utilities:
     - tests/unit/list/
     - tests/unit/intmath/
     - tests/unit/pot/
-    - tests/lib/time/
     - tests/lib/onoff/
     - tests/lib/sys_util/
     - tests/lib/sprintf/

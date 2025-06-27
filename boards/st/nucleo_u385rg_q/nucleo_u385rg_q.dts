@@ -43,6 +43,7 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -91,5 +92,54 @@
 };
 
 &clk_lsi {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pc0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb13 &i2c2_sda_pb14>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa7 &i2c3_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
+		     &spi3_miso_pb4 &spi3_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&wwdg {
 	status = "okay";
 };

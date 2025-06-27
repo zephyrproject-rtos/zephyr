@@ -56,6 +56,14 @@
 	};
 };
 
+&secure_proxy_main {
+	status = "okay";
+};
+
+&dmsc {
+	status = "okay";
+};
+
 /* system timer */
 &timer8 {
 	status = "okay";
@@ -78,12 +86,14 @@
 	pinctrl-0 = <&i2c0_scl &i2c0_sda>;
 	pinctrl-names = "default";
 	status = "okay";
+	power-domains = <&i2c0_pd>;
 };
 
 &adc0 {
 	ti,vrefp = <1800>;
 	ti,fifo = <0>;
 	status = "okay";
+	power-domains = <&adc0_pd>;
 
 	channel@0 {
 		reg = <0>;

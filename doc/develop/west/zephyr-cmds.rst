@@ -136,6 +136,13 @@ Each file in the bill-of-materials is scanned, so that its hashes (SHA256 and
 SHA1) can be recorded, along with any detected licenses if an
 ``SPDX-License-Identifier`` comment appears in the file.
 
+Copyright notices are extracted using the third-party :command:`reuse` tool from the REUSE group.
+When found, these notices are added to SPDX documents as ``FileCopyrightText`` fields.
+
+.. note::
+   Copyright extraction uses heuristics that may not capture complete notice text, so
+   ``FileCopyrightText`` content is best-effort. This aligns with SPDX specification recommendations.
+
 SPDX Relationships are created to indicate dependencies between
 CMake build targets, build targets that are linked together, and
 source files that are compiled to generate the built library files.
@@ -164,6 +171,10 @@ source files that are compiled to generate the built library files.
 
 - ``--include-sdk``: with ``--analyze-includes``, also create a fourth SPDX
   document, :file:`sdk.spdx`, which lists header files included from the SDK.
+
+.. warning::
+
+   The generation of SBOM documents for the ``native_sim`` platform is currently not supported.
 
 .. _SPDX specification clause 6:
    https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/

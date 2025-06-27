@@ -117,7 +117,7 @@ The skeleton of a simple SoC YAML file containing just one SoC is:
 .. code-block:: yaml
 
    socs:
-   - name: <soc1>
+     - name: <soc1>
 
 It is possible to have multiple SoC located in the SoC folder.
 For example if they belong to a common family or series it is recommended to
@@ -128,18 +128,18 @@ Multiple SoCs and SoC series in a common folder can be described in the
 .. code-block:: yaml
 
    family:
-     name: <family-name>
-     series:
-       - name: <series-1-name>
-         socs:
-           - name: <soc1>
-             cpuclusters:
-               - name: <coreA>
-               - name: <coreB>
-                 ...
-           - name: <soc2>
-       - name: <series-2-name>
-         ...
+     - name: <family-name>
+       series:
+         - name: <series-1-name>
+           socs:
+             - name: <soc1>
+               cpuclusters:
+                 - name: <coreA>
+                 - name: <coreB>
+                   ...
+             - name: <soc2>
+         - name: <series-2-name>
+           ...
 
 
 Write your SoC devicetree

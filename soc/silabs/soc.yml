@@ -53,6 +53,10 @@ family:
           - name: efr32mg24b310f1536im48
           - name: efr32mg24b210f1536im48
           - name: efr32mg24b020f1536im40
+      - name: mgm24
+        socs:
+          - name: mgm240sd22vna
+          - name: mgm240pb32vna
       - name: efr32bg27
         socs:
           - name: efr32bg27c140f768im40

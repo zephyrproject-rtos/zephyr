@@ -135,11 +135,16 @@
 		};
 
 		edma2: dma@42000000 {
-			compatible = "nxp,edma";
-			reg = <0x42000000 (DT_SIZE_K(64) * 33)>;
-			valid-channels = <30>, <31>;
-			interrupts = <143 0>, <143 0>;
+			compatible = "nxp,mcux-edma";
+			reg = <0x42000000 0x4000>;
 			#dma-cells = <2>;
+			nxp,version = <5>;
+			dma-channels = <64>;
+			dma-requests = <92>;
+			no-error-irq;
+			interrupts = <128 0>, <129 0>, <143 0>;
+			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000C 0x00000000
+						0x00000030 0x00000000>;
 			status = "disabled";
 		};
 
@@ -234,6 +239,8 @@
 			reg = <0x42570000 DT_SIZE_K(64)>;
 			interrupts = <64 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART3>;
+			dmas = <&edma2 0 17>, <&edma2 1 18>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -250,6 +257,8 @@
 			reg = <0x42590000 DT_SIZE_K(64)>;
 			interrupts = <66 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART5>;
+			dmas = <&edma2 2 21>, <&edma2 3 22>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -269,7 +278,7 @@
 			interrupts = <170 0>;
 			dai-index = <3>;
 			mclk-is-output;
-			dmas = <&edma2 30 60>, <&edma2 31 61>;
+			dmas = <&edma2 4 60>, <&edma2 5 61>;
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};

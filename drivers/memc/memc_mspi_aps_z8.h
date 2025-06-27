@@ -27,6 +27,7 @@ enum memc_mspi_aps_z8_wlc {
 	MEMC_MSPI_APS_Z8_WLC_10, /* reserved for APS25616N */
 };
 
+/* default for APS51216BA */
 #if CONFIG_MEMC_MSPI_APS25616N
 #define MEMC_MSPI_APS_Z8_RX_DUMMY_DEFAULT 5
 #define MEMC_MSPI_APS_Z8_TX_DUMMY_DEFAULT 5

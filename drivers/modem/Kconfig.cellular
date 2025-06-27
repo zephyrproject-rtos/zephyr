@@ -64,4 +64,26 @@ config MODEM_CELLULAR_NEW_BAUDRATE_DELAY
 	default 100 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 	default 300
 
-endif
+if DT_HAS_U_BLOX_LARA_R6_ENABLED
+
+choice MODEM_CELLULAR_RAT
+	prompt "Which Radio Access Technology to use"
+	default MODEM_CELLULAR_RAT_4G
+
+config MODEM_CELLULAR_RAT_4G
+	bool "Use only 4G"
+
+config MODEM_CELLULAR_RAT_4G_3G
+	bool "Use 4G & 3G"
+
+config MODEM_CELLULAR_RAT_4G_3G_2G
+	bool "Use 4G, 3G & 2G"
+
+endchoice
+
+config MODEM_CELLULAR_CLEAR_FORBIDDEN
+	bool "Clear forbidden networks from SIM-card on boot"
+
+endif #DT_HAS_U_BLOX_LARA_R6_ENABLED
+
+endif #MODEM_CELLULAR

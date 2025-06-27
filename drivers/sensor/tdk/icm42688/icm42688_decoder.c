@@ -202,6 +202,9 @@ int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *con
 	edata->header.is_fifo = false;
 	edata->header.accel_fs = data->cfg.accel_fs;
 	edata->header.gyro_fs = data->cfg.gyro_fs;
+	edata->header.axis_align[0] = data->cfg.axis_align[0];
+	edata->header.axis_align[1] = data->cfg.axis_align[1];
+	edata->header.axis_align[2] = data->cfg.axis_align[2];
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
@@ -286,7 +289,7 @@ static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 	return 0;
 }
 
-static uint32_t accel_period_ns[] = {
+static const uint32_t accel_period_ns[] = {
 	[ICM42688_DT_ACCEL_ODR_1_5625] = UINT32_C(10000000000000) / 15625,
 	[ICM42688_DT_ACCEL_ODR_3_125] = UINT32_C(10000000000000) / 31250,
 	[ICM42688_DT_ACCEL_ODR_6_25] = UINT32_C(10000000000000) / 62500,
@@ -304,7 +307,7 @@ static uint32_t accel_period_ns[] = {
 	[ICM42688_DT_ACCEL_ODR_32000] = UINT32_C(1000000) / 32,
 };
 
-static uint32_t gyro_period_ns[] = {
+static const uint32_t gyro_period_ns[] = {
 	[ICM42688_DT_GYRO_ODR_12_5] = UINT32_C(10000000000000) / 125000,
 	[ICM42688_DT_GYRO_ODR_25] = UINT32_C(1000000000) / 25,
 	[ICM42688_DT_GYRO_ODR_50] = UINT32_C(1000000000) / 50,
@@ -349,7 +352,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 	int accel_frame_count = 0;
 	int gyro_frame_count = 0;
 	int count = 0;
-	int rc;
+	int rc = 0;
 
 	if ((uintptr_t)buffer_end <= *fit || chan_spec.chan_idx != 0) {
 		return 0;
@@ -445,12 +448,19 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 
 			data->readings[count].timestamp_delta = ts_delta;
 
-			rc = icm42688_read_imu_from_packet(buffer, true, edata->header.accel_fs, 0,
-							   &data->readings[count].x);
-			rc |= icm42688_read_imu_from_packet(buffer, true, edata->header.accel_fs, 1,
-							    &data->readings[count].y);
-			rc |= icm42688_read_imu_from_packet(buffer, true, edata->header.accel_fs, 2,
-							    &data->readings[count].z);
+			q31_t reading[3];
+
+			for (int i = 0; i < 3; i++) {
+				rc |= icm42688_read_imu_from_packet(
+					buffer, true, edata->header.accel_fs, i, &reading[i]);
+			}
+
+			for (int i = 0; i < 3; i++) {
+				data->readings[count].values[i] =
+					edata->header.axis_align[i].sign*
+					reading[edata->header.axis_align[i].index];
+			}
+
 			if (rc != 0) {
 				accel_frame_count--;
 				buffer = frame_end;
@@ -485,12 +495,19 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 
 			data->readings[count].timestamp_delta = ts_delta;
 
-			rc = icm42688_read_imu_from_packet(buffer, false, edata->header.gyro_fs, 0,
-							   &data->readings[count].x);
-			rc |= icm42688_read_imu_from_packet(buffer, false, edata->header.gyro_fs, 1,
-							    &data->readings[count].y);
-			rc |= icm42688_read_imu_from_packet(buffer, false, edata->header.gyro_fs, 2,
-							    &data->readings[count].z);
+			q31_t reading[3];
+
+			for (int i = 0; i < 3; i++) {
+				rc |= icm42688_read_imu_from_packet(
+					buffer, false, edata->header.gyro_fs, i, &reading[i]);
+			}
+
+			for (int i = 0; i < 3; i++) {
+				data->readings[count].values[i] =
+					edata->header.axis_align[i].sign*
+					reading[edata->header.axis_align[i].index];
+			}
+
 			if (rc != 0) {
 				gyro_frame_count--;
 				buffer = frame_end;
@@ -707,11 +724,11 @@ static bool icm24688_decoder_has_trigger(const uint8_t *buffer, enum sensor_trig
 
 	switch (trigger) {
 	case SENSOR_TRIG_DATA_READY:
-		return FIELD_GET(BIT_INT_STATUS_DATA_RDY, edata->int_status);
+		return FIELD_GET(BIT_DATA_RDY_INT, edata->int_status);
 	case SENSOR_TRIG_FIFO_WATERMARK:
-		return FIELD_GET(BIT_INT_STATUS_FIFO_THS, edata->int_status);
+		return FIELD_GET(BIT_FIFO_THS_INT, edata->int_status);
 	case SENSOR_TRIG_FIFO_FULL:
-		return FIELD_GET(BIT_INT_STATUS_FIFO_FULL, edata->int_status);
+		return FIELD_GET(BIT_FIFO_FULL_INT, edata->int_status);
 	default:
 		return false;
 	}

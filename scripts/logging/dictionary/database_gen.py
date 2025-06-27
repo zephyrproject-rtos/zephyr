@@ -159,7 +159,7 @@ def find_log_const_symbols(elf):
             continue
 
         for symbol in section.iter_symbols():
-            if symbol.name.startswith("log_const_"):
+            if symbol.name.startswith("log_const_") or symbol.name.startswith("_log_const_"):
                 ret_list.append(symbol)
 
     return ret_list
@@ -204,6 +204,10 @@ def parse_log_const_symbols(database, log_const_area, log_const_symbols, string_
 
         if len(datum) != datum_size:
             # Not enough data to unpack
+            continue
+
+        if sym.entry['st_size'] == 0:
+            # Empty entry
             continue
 
         str_ptr, level = struct.unpack(formatter, datum)

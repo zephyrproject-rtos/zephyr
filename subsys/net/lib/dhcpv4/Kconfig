@@ -113,6 +113,14 @@ config NET_DHCPV4_DNS_SERVER_VIA_INTERFACE
 	  server 198.51.100.53 when sending DNS query to the Ethernet
 	  interface.
 
+config NET_DHCPV4_INIT_REBOOT
+	bool "Support INIT-REBOOT"
+	default y
+	help
+	  Initialization with a known network address, if the DHCPv4 client has
+	  been assigned an address before, it begins in INIT-REBOOT state and
+	  sends a DHCPREQUEST message.
+
 endif # NET_DHCPV4
 
 config NET_DHCPV4_SERVER

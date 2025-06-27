@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/net/net_offload.h>
@@ -70,13 +70,13 @@ void siwx91x_on_join_ipv4(struct siwx91x_dev *sidev)
 	}
 	/* FIXME: support for static IP configuration */
 	ret = sl_si91x_configure_ip_address(&ip_config4, SL_SI91X_WIFI_CLIENT_VAP_ID);
-	if (!ret) {
-		memcpy(addr4.s4_addr, ip_config4.ip.v4.ip_address.bytes, sizeof(addr4.s4_addr));
-		/* FIXME: also report gateway (net_if_ipv4_router_add()) */
-		net_if_ipv4_addr_add(sidev->iface, &addr4, NET_ADDR_DHCP, 0);
-	} else {
+	if (ret) {
 		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		return;
 	}
+	memcpy(addr4.s4_addr, ip_config4.ip.v4.ip_address.bytes, sizeof(addr4.s4_addr));
+	/* FIXME: also report gateway (net_if_ipv4_router_add()) */
+	net_if_ipv4_addr_add(sidev->iface, &addr4, NET_ADDR_DHCP, 0);
 }
 
 void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
@@ -93,19 +93,19 @@ void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
 	}
 	/* FIXME: support for static IP configuration */
 	ret = sl_si91x_configure_ip_address(&ip_config6, SL_SI91X_WIFI_CLIENT_VAP_ID);
-	if (!ret) {
-		ARRAY_FOR_EACH(addr6.s6_addr32, i) {
-			addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
-		}
-		/* SiWx91x already take care of DAD and sending ND is not
-		 * supported anyway.
-		 */
-		net_if_flag_set(sidev->iface, NET_IF_IPV6_NO_ND);
-		/* FIXME: also report gateway and link local address */
-		net_if_ipv6_addr_add(sidev->iface, &addr6, NET_ADDR_AUTOCONF, 0);
-	} else {
+	if (ret) {
 		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		return;
 	}
+	ARRAY_FOR_EACH(addr6.s6_addr32, i) {
+		addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
+	}
+	/* SiWx91x already take care of DAD and sending ND is not
+	 * supported anyway.
+	 */
+	net_if_flag_set(sidev->iface, NET_IF_IPV6_NO_ND);
+	/* FIXME: also report gateway and link local address */
+	net_if_ipv6_addr_add(sidev->iface, &addr6, NET_ADDR_AUTOCONF, 0);
 }
 
 static int siwx91x_sock_recv_sync(struct net_context *context,

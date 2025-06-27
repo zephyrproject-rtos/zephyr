@@ -24,7 +24,6 @@ struct a4979_config {
 struct a4979_data {
 	const struct step_dir_stepper_common_data common;
 	enum stepper_micro_step_resolution micro_step_res;
-	bool enabled;
 };
 
 STEP_DIR_STEPPER_STRUCT_CHECK(struct a4979_config, struct a4979_data);
@@ -54,7 +53,6 @@ static int a4979_stepper_enable(const struct device *dev)
 {
 	int ret;
 	const struct a4979_config *config = dev->config;
-	struct a4979_data *data = dev->data;
 	bool has_enable_pin = config->en_pin.port != NULL;
 
 	/* Check availability of enable pin, as it might be hardwired. */
@@ -69,8 +67,6 @@ static int a4979_stepper_enable(const struct device *dev)
 		return ret;
 	}
 
-	data->enabled = true;
-
 	return 0;
 }
 
@@ -78,7 +74,6 @@ static int a4979_stepper_disable(const struct device *dev)
 {
 	int ret;
 	const struct a4979_config *config = dev->config;
-	struct a4979_data *data = dev->data;
 	bool has_enable_pin = config->en_pin.port != NULL;
 
 	/* Check availability of enable pin, as it might be hardwired. */
@@ -92,9 +87,6 @@ static int a4979_stepper_disable(const struct device *dev)
 		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
 		return ret;
 	}
-
-	config->common.timing_source->stop(dev);
-	data->enabled = false;
 
 	return 0;
 }
@@ -151,42 +143,6 @@ static int a4979_stepper_get_micro_step_res(const struct device *dev,
 
 	*micro_step_res = data->micro_step_res;
 	return 0;
-}
-
-static int a4979_move_to(const struct device *dev, int32_t target)
-{
-	struct a4979_data *data = dev->data;
-
-	if (!data->enabled) {
-		LOG_ERR("Failed to move to target position, device is not enabled");
-		return -ECANCELED;
-	}
-
-	return step_dir_stepper_common_move_to(dev, target);
-}
-
-static int a4979_stepper_move_by(const struct device *dev, const int32_t micro_steps)
-{
-	struct a4979_data *data = dev->data;
-
-	if (!data->enabled) {
-		LOG_ERR("Failed to move by delta, device is not enabled");
-		return -ECANCELED;
-	}
-
-	return step_dir_stepper_common_move_by(dev, micro_steps);
-}
-
-static int a4979_run(const struct device *dev, enum stepper_direction direction)
-{
-	struct a4979_data *data = dev->data;
-
-	if (!data->enabled) {
-		LOG_ERR("Failed to run stepper, device is not enabled");
-		return -ECANCELED;
-	}
-
-	return step_dir_stepper_common_run(dev, direction);
 }
 
 static int a4979_init(const struct device *dev)
@@ -269,13 +225,13 @@ static int a4979_init(const struct device *dev)
 static DEVICE_API(stepper, a4979_stepper_api) = {
 	.enable = a4979_stepper_enable,
 	.disable = a4979_stepper_disable,
-	.move_by = a4979_stepper_move_by,
-	.move_to = a4979_move_to,
+	.move_by = step_dir_stepper_common_move_by,
+	.move_to = step_dir_stepper_common_move_to,
 	.is_moving = step_dir_stepper_common_is_moving,
 	.set_reference_position = step_dir_stepper_common_set_reference_position,
 	.get_actual_position = step_dir_stepper_common_get_actual_position,
 	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
-	.run = a4979_run,
+	.run = step_dir_stepper_common_run,
 	.stop = step_dir_stepper_common_stop,
 	.set_micro_step_res = a4979_stepper_set_micro_step_res,
 	.get_micro_step_res = a4979_stepper_get_micro_step_res,

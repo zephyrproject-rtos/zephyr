@@ -28,4 +28,4 @@ properties:
   pdm-buffer-size:
     type: int
     description: |
-      Define the PMD DMA buffer size in (4-byte) words
+      Define the PDM DMA buffer size in (4-byte) words

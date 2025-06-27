@@ -32,7 +32,7 @@
 
 	adc0_default: adc0_default{
 		group1 {
-			pinmux = <ADCSE4_P15>, <ADCSE7_P12>;
+			pinmux = <ADCSE5_P14>, <ADCSE6_P13>;
 			drive-strength = "0.1";
 		};
 	};
@@ -265,6 +265,31 @@
 		};
 	};
 
+	pdm0_default: pdm0_default {
+		group0 {
+			pinmux = <PDM0_CLK_P50>,
+				 <PDM0_DATA_P51>;
+		};
+	};
+
+	i2s0_default: i2s0_default {
+		group0 {
+			pinmux = <I2S0_SDIN_P4>,
+				 <I2S0_CLK_P5>,
+				 <I2S0_SDOUT_P6>,
+				 <I2S0_WS_P7>;
+		};
+	};
+
+	i2s1_default: i2s1_default {
+		group0 {
+			pinmux = <I2S1_CLK_P16>,
+				 <I2S1_SDOUT_P17>,
+				 <I2S1_WS_P18>,
+				 <I2S1_SDIN_P19>;
+		};
+	};
+
 	mspi0_default: mspi0_default {
 		group0 {
 			pinmux = <MSPI0_0_P64>,
@@ -452,31 +477,6 @@
 		group5 {
 			pinmux = <GPIO_P175>;
 				 ambiq,sdif-cdwp = <4>;
-		};
-	};
-
-	pdm0_default: pdm0_default {
-		group0 {
-			pinmux = <PDM0_CLK_P50>,
-					<PDM0_DATA_P51>;
-		};
-	};
-
-	i2s0_default: i2s0_default {
-		group0 {
-			pinmux = <I2S0_SDIN_P4>,
-					<I2S0_CLK_P5>,
-					<I2S0_SDOUT_P6>,
-					<I2S0_WS_P7>;
-		};
-	};
-
-	i2s1_default: i2s1_default {
-		group0 {
-			pinmux = <I2S1_CLK_P16>,
-					<I2S1_SDOUT_P17>,
-					<I2S1_WS_P18>,
-					<I2S1_SDIN_P19>;
 		};
 	};
 

@@ -64,6 +64,7 @@ struct memc_mspi_aps_z8_data {
 	struct mspi_xfer_packet        packet;
 
 	struct k_sem                   lock;
+	uint16_t                       dummy;
 };
 
 static int memc_mspi_aps_z8_command_write(const struct device *psram, uint8_t cmd,
@@ -220,11 +221,13 @@ static void release(const struct device *psram)
 
 static int memc_mspi_aps_z8_reset(const struct device *psram)
 {
+	struct memc_mspi_aps_z8_data *data = psram->data;
 	int ret = 0;
 
 	LOG_DBG("Resetting APS Z8/%u", __LINE__);
 
-	ret = memc_mspi_aps_z8_command_write(psram, APS_Z8_GLOBAL_RESET, 0, (uint8_t *)&ret, 2);
+	ret = memc_mspi_aps_z8_command_write(psram, APS_Z8_GLOBAL_RESET, 0,
+					     (uint8_t *)&data->dummy, 2);
 	if (ret) {
 		return ret;
 	}
@@ -365,7 +368,7 @@ static int memc_mspi_aps_z8_half_sleep_exit(const struct device *psram)
 	int ret = 0;
 
 	LOG_DBG("Waking up aps_z8 from half sleep/%u", __LINE__);
-	ret = memc_mspi_aps_z8_command_write(psram, 0, 0, (uint8_t *)&ret, 2);
+	ret = memc_mspi_aps_z8_command_write(psram, 0, 0, (uint8_t *)&data->dummy, 2);
 	if (ret) {
 		LOG_ERR("Failed to exit from half sleep/%u", __LINE__);
 		return ret;
@@ -619,7 +622,8 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	};                                                                                        \
 	static struct memc_mspi_aps_z8_data                                                       \
 		memc_mspi_aps_z8_data_##n = {                                                     \
-		.lock = Z_SEM_INITIALIZER(memc_mspi_aps_z8_data_##n.lock, 0, 1),                  \
+		.lock  = Z_SEM_INITIALIZER(memc_mspi_aps_z8_data_##n.lock, 0, 1),                 \
+		.dummy = 0,                                                                       \
 	};                                                                                        \
 	PM_DEVICE_DT_INST_DEFINE(n, memc_mspi_aps_z8_pm_action);                                  \
 	DEVICE_DT_INST_DEFINE(n,                                                                  \

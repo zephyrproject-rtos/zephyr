@@ -57,11 +57,11 @@ int main(void)
 	}
 
 	printk("Heap elements by order of priority:\n");
-	MIN_HEAP_FOREACH(&my_heap, elem, {
+	MIN_HEAP_FOREACH(&my_heap, elem) {
 		struct data *d = elem;
 
 		printk("key=%d value=%d\n", d->key, d->value);
-	});
+	}
 
 	printk("Top of heap: ");
 	top = min_heap_peek(&my_heap);
@@ -77,11 +77,11 @@ int main(void)
 	}
 
 	printk("Heap after removal:\n");
-	MIN_HEAP_FOREACH(&my_heap, elem, {
+	MIN_HEAP_FOREACH(&my_heap, elem) {
 		struct data *d = elem;
 
 		printk("key=%d value=%d\n", d->key, d->value);
-	});
+	}
 
 	return 0;
 }

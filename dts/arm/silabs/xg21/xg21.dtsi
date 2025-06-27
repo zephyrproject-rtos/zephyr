@@ -211,6 +211,70 @@
 			};
 		};
 
+		timer0: timer@50048000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50048000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <32>;
+			interrupts = <6 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer1: timer@5004c000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x5004c000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <7 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer2: timer@50050000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50050000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <8 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer3: timer@50054000 {
+			compatible = "silabs,series2-timer";
+			reg = <0x50054000 0x4000>;
+			channels = <3>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM01GRPACLK>;
+			counter-size = <16>;
+			interrupts = <9 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		usart0: usart@50058000 { /* USART0 */
 			compatible = "silabs,usart-uart";
 			reg = <0x50058000 0x400>;
@@ -358,6 +422,20 @@
 			interrupts = <44 2>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_WDOG1CLK>;
 			status = "disabled";
+		};
+
+		letimer0: letimer@5a000000 {
+			compatible = "silabs,series2-letimer";
+			reg = <0x5a000000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_EM23GRPACLK>;
+			interrupts = <19 2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,letimer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		acmp0: acmp@5a008000 {

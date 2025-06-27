@@ -16,6 +16,8 @@ config GNSS_LUATOS_AIR530Z
 	help
 	  Enable Luatos Air530z GNSS driver.
 
+if GNSS_LUATOS_AIR530Z
+
 config GNSS_LUATOS_AIR530Z_SATELLITES_COUNT
 	int "Maximum satellite count"
 	depends on GNSS_SATELLITES
@@ -25,3 +27,5 @@ config GNSS_LUATOS_AIR530Z_SATELLITES_COUNT
 	  GNSS device. This does not affect the number of devices that
 	  the device is actually tracking, just how many of those can
 	  be reported in the satellites callback.
+
+endif

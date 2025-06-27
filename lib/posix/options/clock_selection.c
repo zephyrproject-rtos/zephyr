@@ -13,15 +13,26 @@
 #include <errno.h>
 
 #include <zephyr/posix/time.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
-extern int z_clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
-			     struct timespec *rmtp);
-
-extern int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
-			   struct timespec *rmtp)
+int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+		    struct timespec *rmtp)
 {
-	return z_clock_nanosleep(clock_id, flags, rqtp, rmtp);
+	int ret;
+
+	if (rqtp == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	ret = sys_clock_nanosleep((int)clock_id, flags, rqtp, rmtp);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
 }
 
 int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,

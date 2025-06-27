@@ -285,4 +285,11 @@ static void *disk_driver_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, NULL);
+static void disk_driver_teardown(void *fixture)
+{
+#ifdef CONFIG_DISK_DRIVER_LOOPBACK
+	(void)loopback_disk_access_unregister(&lo_access);
+#endif
+}
+
+ZTEST_SUITE(disk_driver, NULL, disk_driver_setup, NULL, NULL, disk_driver_teardown);

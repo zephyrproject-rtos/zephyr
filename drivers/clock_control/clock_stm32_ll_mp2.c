@@ -46,10 +46,37 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
+	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+
 	ARG_UNUSED(dev);
-	ARG_UNUSED(sub_system);
-	ARG_UNUSED(rate);
-	return -ENOTSUP;
+
+	switch (pclken->bus) {
+	case STM32_CLOCK_PERIPH_USART1:
+		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART1_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_USART2:
+	case STM32_CLOCK_PERIPH_UART4:
+		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART24_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_USART3:
+	case STM32_CLOCK_PERIPH_UART5:
+		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART35_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_USART6:
+		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART6_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_UART7:
+	case STM32_CLOCK_PERIPH_UART8:
+		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART78_CLKSOURCE);
+		break;
+	case STM32_CLOCK_PERIPH_UART9:
+		*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART9_CLKSOURCE);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 static DEVICE_API(clock_control, stm32_clock_control_api) = {

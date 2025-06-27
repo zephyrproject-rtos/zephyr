@@ -108,7 +108,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 		/* Set port direction */
 		if (pin->cfg.output_enable) {
+			/* set output high*/
+			if (pin->cfg.output_high) {
+				R_GPIO_PinWrite(port_pin, GPIO_LEVEL_HIGH);
+			} else {
+				R_GPIO_PinWrite(port_pin, GPIO_LEVEL_LOW);
+			}
+
 			R_GPIO_PinDirectionSet(port_pin, GPIO_DIRECTION_OUTPUT);
+		} else {
+			R_GPIO_PinDirectionSet(port_pin, GPIO_DIRECTION_INPUT);
 		}
 
 		/* Set pull-up */

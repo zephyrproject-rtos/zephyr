@@ -53,7 +53,6 @@
 #include "controller/ll_sw/shell/ll.h"
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 #include "host/shell/bt.h"
-#include "mesh/shell/hci.h"
 
 static bool no_settings_load;
 
@@ -1432,7 +1431,7 @@ static int cmd_hci_cmd(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), len);
+		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
 			shell_error(sh, "Unable to allocate HCI buffer");
 			return -ENOMEM;
@@ -5181,9 +5180,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-	SHELL_CMD(mesh_adv, NULL, HELP_ONOFF, cmd_mesh_adv),
-#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	SHELL_CMD(ll-addr, NULL, "<random|public>", cmd_ll_addr_read),

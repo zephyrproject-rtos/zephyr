@@ -761,10 +761,10 @@ static void can_renesas_ra_set_state_change_callback(const struct device *dev,
 		/* Disable state change interrupt */
 		p_ctrl->p_reg->CFDC->CTR &= (uint32_t)~CANFD_CFG_ERR_IRQ;
 
-		/* Clear state change interrupt flags */
+		/* Clear error flags */
 		p_ctrl->p_reg->CFDC->ERFL &=
 			~(BIT(R_CANFD_CFDC_ERFL_BOEF_Pos) | BIT(R_CANFD_CFDC_ERFL_EWF_Pos) |
-			  BIT(R_CANFD_CFDC_ERFL_EPF_Pos) | BIT(R_CANFD_CFDC_ERFL_BOEF_Pos));
+			  BIT(R_CANFD_CFDC_ERFL_EPF_Pos) | BIT(R_CANFD_CFDC_ERFL_BEF_Pos));
 	}
 
 	data->common.state_change_cb = callback;
@@ -1051,7 +1051,7 @@ static DEVICE_API(can, can_renesas_ra_driver_api) = {
 		irq_enable(VECTOR_NUMBER_CAN_RXF);                                                 \
 		irq_enable(VECTOR_NUMBER_CAN_GLERR);                                               \
 	}                                                                                          \
-                                                                                                   \
+	                                                                                           \
 	static struct can_renesas_ra_global_data can_renesas_ra_global_data##id = {                \
 		.fsp_canfd_global_cfg =                                                            \
 			{                                                                          \
@@ -1064,7 +1064,7 @@ static DEVICE_API(can, can_renesas_ra_driver_api) = {
 				.common_fifo_config = CANFD_CFG_COMMONFIFO,                        \
 			},                                                                         \
 	};                                                                                         \
-                                                                                                   \
+	                                                                                           \
 	static const struct can_renesas_ra_global_cfg can_renesas_ra_global_cfg##id = {            \
 		.op_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(id, opclk)),                        \
 		.ram_clk = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(id, ramclk)),                      \
@@ -1082,7 +1082,7 @@ static DEVICE_API(can, can_renesas_ra_driver_api) = {
 		.dll_max_freq = DT_PROP_OR(id, dll_max_freq, UINT_MAX),                            \
 		.irq_configure = can_renesas_ra_global_irq_configure##id,                          \
 	};                                                                                         \
-                                                                                                   \
+	                                                                                           \
 	DEVICE_DT_DEFINE(id, can_renesas_ra_global_init, NULL, &can_renesas_ra_global_data##id,    \
 			 &can_renesas_ra_global_cfg##id, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY,   \
 			 NULL)
@@ -1106,7 +1106,7 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 			EVENT_CAN_TX(DT_INST_PROP(index, channel));                                \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, err, irq)].IELS =                        \
 			EVENT_CAN_CHERR(DT_INST_PROP(index, channel));                             \
-                                                                                                   \
+	                                                                                           \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
 			    DT_INST_IRQ_BY_NAME(index, rx, priority), canfd_common_fifo_rx_isr,    \
 			    NULL, 0);                                                              \
@@ -1115,7 +1115,7 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 			    0);                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, err, irq),                                  \
 			    DT_INST_IRQ_BY_NAME(index, err, priority), canfd_error_isr, NULL, 0);  \
-                                                                                                   \
+	                                                                                           \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, rx, irq));                                   \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, tx, irq));                                   \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, err, irq));                                  \

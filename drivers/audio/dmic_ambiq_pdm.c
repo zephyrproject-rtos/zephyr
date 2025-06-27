@@ -13,6 +13,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/audio/dmic.h>
 #include <zephyr/cache.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
 #include <am_mcu_apollo.h>
 
 #define DT_DRV_COMPAT ambiq_pdm
@@ -30,6 +33,7 @@ struct dmic_ambiq_pdm_data {
 	uint8_t frame_size_bytes;
 	am_hal_pdm_config_t pdm_cfg;
 	am_hal_pdm_transfer_t pdm_transfer;
+	bool pm_policy_state_on;
 
 	enum dmic_state dmic_state;
 };
@@ -38,6 +42,32 @@ struct dmic_ambiq_pdm_cfg {
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pcfg;
 };
+
+static void dmic_ambiq_pdm_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct dmic_ambiq_pdm_data *data = dev->data;
+
+		if (!data->pm_policy_state_on) {
+			data->pm_policy_state_on = true;
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			pm_device_runtime_get(dev);
+		}
+	}
+}
+
+static void dmic_ambiq_pdm_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct dmic_ambiq_pdm_data *data = dev->data;
+
+		if (data->pm_policy_state_on) {
+			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+	}
+}
 
 static void dmic_ambiq_pdm_isr(const struct device *dev)
 {
@@ -63,6 +93,7 @@ static int dmic_ambiq_pdm_init(const struct device *dev)
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		LOG_ERR("Fail to config PDM pins\n");
+		return ret;
 	}
 
 	am_hal_pdm_initialize(data->inst_idx, &data->pdm_handler);
@@ -93,7 +124,7 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 	}
 
 	if ((stream->pcm_width != 16) && (stream->pcm_width != 24)) {
- 		LOG_ERR("Only 16-bit or 24-bit samples are supported");
+		LOG_ERR("Only 16-bit or 24-bit samples are supported");
 		return -EINVAL;
 	}
 
@@ -144,13 +175,13 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 
 	data->block_size = stream->block_size;
 
- 	if (stream->pcm_width == 16) {
- 		data->frame_size_bytes = 2;
- 	} else if (stream->pcm_width == 24) {
- 		data->frame_size_bytes = 4;
- 	}
+	if (stream->pcm_width == 16) {
+		data->frame_size_bytes = 2;
+	} else if (stream->pcm_width == 24) {
+		data->frame_size_bytes = 4;
+	}
 
- 	data->sample_num = stream->block_size / data->frame_size_bytes;
+	data->sample_num = stream->block_size / data->frame_size_bytes;
 	data->mem_slab = stream->mem_slab;
 
 	data->dmic_state = DMIC_STATE_CONFIGURED;
@@ -216,6 +247,7 @@ static int dmic_ambiq_pdm_read(const struct device *dev, uint8_t stream, void **
 	}
 
 	ret = k_sem_take(&data->dma_done_sem, SYS_TIMEOUT_MS(timeout));
+	dmic_ambiq_pdm_pm_policy_state_lock_get(dev);
 
 	if (ret != 0) {
 		LOG_DBG("No audio data to be read %d", ret);
@@ -224,36 +256,68 @@ static int dmic_ambiq_pdm_read(const struct device *dev, uint8_t stream, void **
 
 		uint32_t *pdm_data_buf = (uint32_t *)am_hal_pdm_dma_get_buffer(data->pdm_handler);
 
-		/*
-		 * PDM DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
-		 * block_size
-		 */
-#if CONFIG_PDM_AMBIQ_HANDLE_CACHE
-		if (!buf_in_nocache((uintptr_t)pdm_data_buf, data->block_size * 2)) {
-			sys_cache_data_invd_range(pdm_data_buf, data->block_size * 2);
-		}
-#endif /* PDM_AMBIQ_HANDLE_CACHE */
-		/* Re-arrange data */
 		if (data->frame_size_bytes == 2) {
- 			uint8_t *temp1 = (uint8_t *)data->mem_slab_buffer;
- 			for (uint32_t i = 0; i < data->sample_num; i++) {
- 				temp1[2 * i] = (pdm_data_buf[i] & 0xFF00) >> 8U;
- 				temp1[2 * i + 1] = (pdm_data_buf[i] & 0xFF0000) >> 16U;
- 			}
- 			*buffer = temp1;
- 		} else if (data->frame_size_bytes == 4) {
- 			memcpy((void *)data->mem_slab_buffer, (void *)pdm_data_buf,
- 			       data->block_size);
- 			*buffer = (void *)data->mem_slab_buffer;
+			/*
+			 * PDM DMA is 32-bit datawidth for each sample, so we need to invalidate 2x
+			 * block_size on 16 bit PCM data.
+			 */
+#if CONFIG_PDM_AMBIQ_HANDLE_CACHE
+			if (!buf_in_nocache((uintptr_t)pdm_data_buf, data->block_size * 2)) {
+				sys_cache_data_invd_range(pdm_data_buf, data->block_size * 2);
+			}
+#endif /* PDM_AMBIQ_HANDLE_CACHE */
+			uint8_t *temp1 = (uint8_t *)data->mem_slab_buffer;
+			/* Re-arrange data */
+			for (uint32_t i = 0; i < data->sample_num; i++) {
+				temp1[2 * i] = (pdm_data_buf[i] & 0xFF00) >> 8U;
+				temp1[2 * i + 1] = (pdm_data_buf[i] & 0xFF0000) >> 16U;
+			}
+		} else if (data->frame_size_bytes == 4) {
+#if CONFIG_PDM_AMBIQ_HANDLE_CACHE
+			if (!buf_in_nocache((uintptr_t)pdm_data_buf, data->block_size)) {
+				sys_cache_data_invd_range(pdm_data_buf, data->block_size);
+			}
+#endif /* PDM_AMBIQ_HANDLE_CACHE */
+			memcpy((void *)data->mem_slab_buffer, (void *)pdm_data_buf,
+			       data->block_size);
 		}
-
-		/* LOG_DBG("Released buffer %p", *buffer); */
 
 		*size = data->block_size;
+		*buffer = data->mem_slab_buffer;
 	}
 
+	dmic_ambiq_pdm_pm_policy_state_lock_put(dev);
 	return ret;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int dmic_ambiq_pdm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct dmic_ambiq_pdm_data *data = dev->data;
+	uint32_t ret;
+	am_hal_sysctrl_power_state_e status;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		status = AM_HAL_SYSCTRL_WAKE;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		status = AM_HAL_SYSCTRL_DEEPSLEEP;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = am_hal_pdm_power_control(data->pdm_handler, status, true);
+
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("am_hal_pdm_power_control failed: %d", ret);
+		return -EPERM;
+	} else {
+		return 0;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct _dmic_ops dmic_ambiq_ops = {
 	.configure = dmic_ambiq_pdm_configure,
@@ -270,8 +334,8 @@ static const struct _dmic_ops dmic_ambiq_ops = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
 	static uint32_t pdm_dma_tcb_buf##n[DT_INST_PROP_OR(n, pdm_buffer_size, 1536)]              \
-	__attribute__((section(DT_INST_PROP_OR(n, pdm_buffer_location, ".data"))))                 \
-	__aligned(CONFIG_PDM_AMBIQ_BUFFER_ALIGNMENT);                                              \
+		__attribute__((section(DT_INST_PROP_OR(n, pdm_buffer_location, ".data"))))         \
+		__aligned(CONFIG_PDM_AMBIQ_BUFFER_ALIGNMENT);                                      \
 	static struct dmic_ambiq_pdm_data dmic_ambiq_pdm_data##n = {                               \
 		.dma_done_sem = Z_SEM_INITIALIZER(dmic_ambiq_pdm_data##n.dma_done_sem, 0, 1),      \
 		.inst_idx = n,                                                                     \
@@ -284,6 +348,7 @@ static const struct _dmic_ops dmic_ambiq_ops = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = pdm_irq_config_func_##n,                                        \
 	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, dmic_ambiq_pdm_pm_action);                                     \
 	DEVICE_DT_INST_DEFINE(n, dmic_ambiq_pdm_init, NULL, &dmic_ambiq_pdm_data##n,               \
 			      &dmic_ambiq_pdm_cfg##n, POST_KERNEL,                                 \
 			      CONFIG_AUDIO_DMIC_INIT_PRIORITY, &dmic_ambiq_ops);

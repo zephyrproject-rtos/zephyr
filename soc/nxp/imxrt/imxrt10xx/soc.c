@@ -209,7 +209,7 @@ __weak void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_Lpi2cDiv, 5); /* Set I2C divider to 6 */
 #endif
 
-#ifdef CONFIG_SPI_MCUX_LPSPI
+#ifdef CONFIG_SPI_NXP_LPSPI
 	/* Configure input clock to be able to reach the datasheet specified band rate. */
 	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 */
 	CLOCK_SetDiv(kCLOCK_LpspiDiv, 0); /* Set SPI divider to 1 */
@@ -326,9 +326,9 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 		CLOCK_SetDiv(kCLOCK_Sai2Div, clk_src_div);
 		break;
 	case IMX_CCM_SAI3_CLK:
-		CLOCK_SetMux(kCLOCK_Sai2Mux, clk_src);
-		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, clk_pre_div);
-		CLOCK_SetDiv(kCLOCK_Sai2Div, clk_src_div);
+		CLOCK_SetMux(kCLOCK_Sai3Mux, clk_src);
+		CLOCK_SetDiv(kCLOCK_Sai3PreDiv, clk_pre_div);
+		CLOCK_SetDiv(kCLOCK_Sai3Div, clk_src_div);
 		break;
 	default:
 		return;

@@ -20,6 +20,11 @@ the :ref:`release notes<zephyr_4.2>`.
     :local:
     :depth: 2
 
+Common
+******
+
+* The minimum required Python version is now 3.12 (from 3.10).
+
 Build System
 ************
 
@@ -53,7 +58,7 @@ Boards
 * The DT binding :dtcompatible:`zephyr,native-posix-cpu` has been deprecated in favor of
   :dtcompatible:`zephyr,native-sim-cpu`.
 
-* Zephyr now supports version 1.11.3 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
+* Zephyr now supports version 1.11.6 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
   implementations need to be updated to this version to be compatible with Zephyr v4.2.0.
 
 * The :zephyr:board:`neorv32` now targets NEORV32 processor (SoC) templates via board variants. The
@@ -102,7 +107,7 @@ Devicetree
 
 * Property names in devicetree and bindings use hyphens(``-``) as separators, and replacing
   all previously used underscores(``_``). For local code, you can migrate property names in
-  bindings to use hyphens by running the ``scripts/migrate_bindings_style.py`` script.
+  bindings to use hyphens by running the ``scripts/utils/migrate_bindings_style.py`` script.
 
 
 DAI
@@ -229,12 +234,41 @@ GPIO
 * ``arduino-nano-header-r3`` is renamed to :dtcompatible:`arduino-nano-header`.
   Because the R3 comes from the Arduino UNO R3, which has changed the connector from
   the former version, and is unrelated to the Arduino Nano.
+* Moved file ``include/zephyr/dt-bindings/gpio/nordic-npm1300-gpio.h`` to
+  :zephyr_file:`include/zephyr/dt-bindings/gpio/nordic-npm13xx-gpio.h` and renamed all instances of
+  ``NPM1300`` to ``NPM13XX`` in the defines
+* Renamed ``CONFIG_GPIO_NPM1300`` to :kconfig:option:`CONFIG_GPIO_NPM13XX`,
+  ``CONFIG_GPIO_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_GPIO_NPM13XX_INIT_PRIORITY`
 
 I2S
 ===
 * The :dtcompatible:`nxp,mcux-i2s` driver added property ``mclk-output``. Set this property to
 * configure the MCLK signal as an output.  Older driver versions used the macro
 * ``I2S_OPT_BIT_CLK_SLAVE`` to configure the MCLK signal direction. (:github:`88554`)
+
+LED
+===
+
+* Renamed ``CONFIG_LED_NPM1300`` to :kconfig:option:`CONFIG_LED_NPM13XX`
+
+MFD
+===
+
+* Moved file ``include/zephyr/drivers/mfd/npm1300.h`` to :zephyr_file:`include/zephyr/drivers/mfd/npm13xx.h`
+  and renamed all instances of ``npm1300``/``NPM1300`` to ``npm13xx``/``NPM13XX`` in the enums and
+  function names
+* Renamed ``CONFIG_MFD_NPM1300`` to :kconfig:option:`CONFIG_MFD_NPM13XX`,
+  ``CONFIG_MFD_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_MFD_NPM13XX_INIT_PRIORITY`
+
+Regulator
+=========
+
+* Moved file ``include/zephyr/dt-bindings/regulator/npm1300.h`` to
+  :zephyr_file:`include/zephyr/dt-bindings/regulator/npm13xx.h` and renamed all instances of
+  ``NPM1300`` to ``NPM13XX`` in the defines
+* Renamed ``CONFIG_REGULATOR_NPM1300`` to :kconfig:option:`CONFIG_REGULATOR_NPM13XX`,
+  ``CONFIG_REGULATOR_NPM1300_COMMON_INIT_PRIORITY`` to :kconfig:option:`REGULATOR_NPM13XX_COMMON_INIT_PRIORITY`,
+  ``CONFIG_REGULATOR_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_REGULATOR_NPM13XX_INIT_PRIORITY`
 
 Sensors
 =======
@@ -271,6 +305,12 @@ Sensors
 
 * The binding file for :dtcompatible:`raspberrypi,pico-temp.yaml` has been renamed to have a name
   matching the compatible string.
+
+* Moved file ``include/zephyr/drivers/sensor/npm1300_charger.h`` to
+  :zephyr_file:`include/zephyr/drivers/sensor/npm13xx_charger.h` and renamed all instances of
+  ``NPM1300`` to ``NPM13XX`` in the enums
+
+* Renamed ``CONFIG_NPM1300_CHARGER`` to :kconfig:option:`CONFIG_NPM13XX_CHARGER`
 
 Serial
 =======
@@ -321,6 +361,15 @@ Timer
         reg-names = "mtime", "mtimecmp";
     };
 
+* It is now possible to use a ``timebase-frequency`` property in the cpus DTS group to provide
+  the value for :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` instead of
+  using a value: :github:`91296`
+
+Watchdog
+========
+* Renamed ``CONFIG_WDT_NPM1300`` to :kconfig:option:`CONFIG_WDT_NPM13XX`,
+  ``CONFIG_WDT_NPM1300_INIT_PRIORITY`` to :kconfig:option:`CONFIG_WDT_NPM13XX_INIT_PRIORITY`
+
 Modem
 =====
 
@@ -364,6 +413,9 @@ Misc
 * All memc_flexram_* namespaced things including kconfigs and C API
   have been changed to just flexram_*.
 
+* Select ``CONFIG_ETHOS_U`` instead ``CONFIG_ARM_ETHOS_U`` to enable Ethos-U NPU driver.
+* Rename all configs that have prefix ``CONFIG_ARM_ETHOS_U_`` to ``CONFIG_ETHOS_U_``.
+
 Bluetooth
 *********
 
@@ -386,6 +438,10 @@ Bluetooth HCI
   bytes as part of the buffer payload itself. The bt_buf_set_type() and bt_buf_get_type() functions
   have been deprecated, but are still usable, with the exception that they can only be
   called once per buffer.
+
+* The :c:func:`bt_hci_cmd_create` function has been depracated and the new :c:func:`bt_hci_cmd_alloc`
+  function should be used instead. The new function takes no parameters because the command
+  sending functions have been updated to do the command header encoding.
 
 Bluetooth Host
 ==============
@@ -481,6 +537,34 @@ Networking
   allows the application to abort the HTTP connection. Existing applications
   need to update their response callback implementations. To retain current
   behavior, simply return 0 from the callback.
+
+* The API signature of ``net_mgmt`` event handler :c:type:`net_mgmt_event_handler_t` and
+  request handler :c:type:`net_mgmt_request_handler_t` has changed. The management event
+  type is changed from ``uint32_t`` to ``uint64_t``. The change allows event number values
+  to be bit masks instead of enum values. The layer code still stays as a enum value.
+  The :c:macro:`NET_MGMT_LAYER_CODE` and :c:macro:`NET_MGMT_GET_COMMAND` can be used to get
+  the layer code and management event command from the actual event value in the request or
+  event handlers if needed.
+
+* The socket options for ``net_mgmt`` type sockets cannot directly be network management
+  event types as those are now ``uint64_t`` and the socket option expects a normal 32 bit
+  integer value. Because of this, a new ``SO_NET_MGMT_ETHERNET_SET_QAV_PARAM``
+  and ``SO_NET_MGMT_ETHERNET_GET_QAV_PARAM`` socket options are created that will replace
+  the previously used ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` and
+  ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` options.
+
+* The DNS server resolver configuration functions :c:func:`dns_resolve_reconfigure` and
+  :c:func:`dns_resolve_reconfigure_with_interfaces` now require that the user supplies
+  the source of the DNS server information. For example when DNS server information is
+  received via DHCPv4, then :c:enumerator:`DNS_SOURCE_DHCPV4` needs to be specified.
+
+LwM2M
+=====
+
+* Accelerometer object: optional resources Y value, Z value, min range value,
+  max range value can now be used optionally as per the accelerometer object's
+  specification. Users of these resources will now need to provide a read
+  buffer.
 
 OpenThread
 ==========
@@ -582,13 +666,17 @@ OpenThread
 SPI
 ===
 
+* Renamed ``CONFIG_SPI_MCUX_LPSPI`` to :kconfig:option:`CONFIG_SPI_NXP_LPSPI`,
+  and similar for any child configs for that driver, including
+  :kconfig:option:`CONFIG_SPI_NXP_LPSPI_DMA` and :kconfig:option:`CONFIG_SPI_NXP_LPSPI_CPU`.
 * Renamed the device tree property ``port_sel`` to ``port-sel``.
 * Renamed the device tree property ``chip_select`` to ``chip-select``.
 * The binding file for :dtcompatible:`andestech,atcspi200` has been renamed to have a name
   matching the compatible string.
 
-xSPI
-====
+
+qSPI/oSPI/xSPI
+==============
 
 * On STM32 devices, external memories device tree descriptions for size and address are now split
   in two separate properties to comply with specification recommendations.
@@ -597,7 +685,7 @@ xSPI
   is changed to ``reg = <0>;`` ``size = <DT_SIZE_M(512)>; / 512 Mbits */``.
 
   Note that the property gives the actual size of the memory device in bits.
-  Previous mapping address information is now described in xspi node at SoC dtsi level.
+  Previous mapping address information is now described in xspi, ospi or qspi nodes at SoC dtsi level.
 
 Video
 =====
@@ -624,6 +712,11 @@ Video
   ``set_stream``
   ``video_stream_start``
   ``video_stream_stop``
+
+* ``video_format.pitch`` has been updated to be set explicitly by the driver, a task formerly
+  required by the application. This update enables the application to correctly allocate a buffer
+  size on a per driver basis. Existing applications will not be broken by this change but can be
+  simplified as performed in the sample in the commit ``33dcbe37cfd3593e8c6e9cfd218dd31fdd533598``.
 
 Audio
 =====
@@ -677,3 +770,5 @@ Architectures
   :kconfig:option:`CONFIG_ARCH_HAS_VECTOR_TABLE_RELOCATION` and
   :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM` to support relocation
   of vector table in RAM.
+* Renamed :kconfig:option:`CONFIG_DEBUG_INFO` to :kconfig:option:`CONFIG_X86_DEBUG_INFO` to
+  better reflect its purpose. This option is now only available for x86 architecture.

@@ -7,6 +7,26 @@
 #include <nxp/nxp_imx/mimx8ml8dvnlz-pinctrl.dtsi>
 
 &pinctrl {
+	flexcan1_default: flexcan1_default {
+		group0 {
+			pinmux = <&iomuxc_spdif_rx_can_rx_can1_rx>,
+				 <&iomuxc_spdif_tx_can_tx_can1_tx>;
+			bias-pull-up;
+			slew-rate = "fast";
+			drive-strength = "x2";
+		};
+	};
+
+	flexcan2_default: flexcan2_default {
+		group0 {
+			pinmux = <&iomuxc_sai5_mclk_can_rx_can2_rx>,
+				 <&iomuxc_sai5_rxd3_can_tx_can2_tx>;
+			bias-pull-up;
+			slew-rate = "fast";
+			drive-strength = "x2";
+		};
+	};
+
 	sai3_default: sai3_default {
 		group0 {
 			pinmux = <&iomuxc_sai3_txfs_sai_tx_sync_sai3_tx_sync>,

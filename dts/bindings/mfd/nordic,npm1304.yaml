@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nPM1304
+
+compatible: "nordic,npm1304"
+
+include: nordic,npm13xx-common.yaml

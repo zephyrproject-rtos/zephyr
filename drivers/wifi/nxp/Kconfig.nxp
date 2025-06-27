@@ -31,6 +31,12 @@ config NXP_WIFI_CUSTOM
 	help
 	  Customize NXP Wi-Fi chip support.
 
+config NXP_WIFI_AUTO_INIT
+	bool "Auto initialize NXP Wi-Fi"
+	default y
+	help
+	  Automatically initialize NXP Wi-Fi driver and FW.
+
 choice NXP_WIFI_PART
 	prompt "Select NXP Wi-Fi part"
 	depends on !NXP_WIFI_CUSTOM
@@ -659,7 +665,7 @@ config NXP_WIFI_CAPA
 	  This option enables uAP Wi-Fi Capability in the Wi-Fi driver.
 
 config NXP_WIFI_UAP_STA_MAC_ADDR_FILTER
-	bool "Wi-Fi SoftAP clients white/black list"
+	bool "Wi-Fi SoftAP clients allow/block list"
 	default y
 	help
 	  Allow/Block MAC addresses specified in the allowed list.
@@ -779,7 +785,7 @@ config NXP_WIFI_5GHz_SUPPORT
 
 config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
-	depends on NXP_RW610
+	depends on NXP_RW610 || NXP_WIFI_SDIO_MULTI_PORT_TX_AGGR
 	imply NET_IPV4_FRAGMENT
 	help
 	  This option enables the Zero memory copy of data packets in Wi-Fi driver data path.
@@ -830,6 +836,28 @@ config NXP_WIFI_RECOVERY
 	help
 	  This option is used to enable wifi recovery support.
 
+if NXP_RW610 || NXP_IW610
+
+config NXP_WIFI_NET_MONITOR
+	bool "Networking monitor"
+	default y
+	help
+	  This option is used to set/get network monitor configuration.
+
+config NXP_WIFI_HOST_TXRX_MGMT_FRAME
+	bool "Host send management and data frame in monitor mode"
+	default y
+	help
+	  This option is used to send management and data frame in monitor mode.
+
+config NXP_WIFI_MMSF
+	bool "11AX density config"
+	default y
+	help
+	  This option is used to specify/get 11ax density config in the Wi-Fi driver.
+
+endif # NXP_RW610 || NXP_IW610
+
 if NXP_RW610
 
 config NXP_WIFI_FW_VDLLV2
@@ -843,18 +871,6 @@ config NXP_WIFI_AUTO_NULL_TX
 	default y
 	help
 	  This option is to support sending null frame in period for CSI.
-
-config NXP_WIFI_NET_MONITOR
-	bool "Networking monitor"
-	default y
-	help
-	  This option is used to set/get network monitor configuration.
-
-config NXP_WIFI_HOST_TXRX_MGMT_FRAME
-	bool "Host send management and data frame in monitor mode"
-	default y
-	help
-	  This option is used to send management and data frame in monitor mode.
 
 config NXP_WIFI_CAU_TEMPERATURE
 	bool "Cau temperature"
@@ -899,12 +915,6 @@ config NXP_WIFI_COEX_DUTY_CYCLE
 	default y
 	help
 	  This option sets duty cycle in the Wi-Fi driver.
-
-config NXP_WIFI_MMSF
-	bool "11AX density config"
-	default y
-	help
-	  This option is used to specify/get 11ax density config in the Wi-Fi driver.
 
 config NXP_WIFI_IMD3_CFG
 	bool "Set imd validation parameters"
@@ -1055,7 +1065,7 @@ config NXP_WIFI_OWE
 
 config NXP_WIFI_TC_RELOCATE
 	bool "Traffic api relocate to RAM"
-	default y
+	default y if NXP_RW610
 	help
 	  Relocate Wi-Fi transmit and receive api to RAM to increase
 	  traffic throughput.

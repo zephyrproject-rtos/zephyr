@@ -168,6 +168,45 @@
 					x-powers,mode = "by-reg";
 				};
 			};
+
+			pmic@13 {
+				compatible = "nordic,npm1300";
+				reg = <0x13>;
+
+				leds {
+					compatible = "nordic,npm1300-led";
+					nordic,led0-mode = "error";
+					nordic,led1-mode = "charging";
+					nordic,led2-mode = "host";
+				};
+			};
+
+			pmic@14 {
+				compatible = "nordic,npm1304";
+				reg = <0x14>;
+
+				leds {
+					compatible = "nordic,npm1304-led";
+					nordic,led0-mode = "error";
+					nordic,led1-mode = "charging";
+					nordic,led2-mode = "host";
+				};
+			};
+		};
+
+		test_pwm: pwm@12341234 {
+			compatible = "vnd,pwm";
+			reg = <0x12341234 0x1000>;
+			#pwm-cells = <3>;
+			status = "okay";
+		};
+
+		test_pwm_leds {
+			compatible = "pwm-leds";
+			status = "okay";
+			test_pwm_led0: test_pwm_led_0 {
+				pwms = <&test_pwm 0 0 0>;
+			};
 		};
 	};
 };

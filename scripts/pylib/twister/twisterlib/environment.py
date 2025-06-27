@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Generator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib import metadata
 from pathlib import Path
 
@@ -222,6 +222,7 @@ Artificially long but functional example:
                         help="""Flash device before attaching to serial port.
                         This is useful for devices that share the same port for programming
                         and serial console, or use soft-USB, where flash must come first.
+                        Also, it skips reading remaining logs from the old image run.
                         """)
 
     test_or_build.add_argument(
@@ -971,10 +972,6 @@ def parse_arguments(
         logger.error("--device-flash-with-test does not apply when --flash-before is used")
         sys.exit(1)
 
-    if options.flash_before and options.device_serial_pty:
-        logger.error("--device-serial-pty cannot be used when --flash-before is set (for now)")
-        sys.exit(1)
-
     if options.shuffle_tests and options.subset is None:
         logger.error("--shuffle-tests requires --subset")
         sys.exit(1)
@@ -1107,7 +1104,7 @@ class TwisterEnv:
     def discover(self):
         self.check_zephyr_version()
         self.get_toolchain()
-        self.run_date = datetime.now(timezone.utc).isoformat(timespec='seconds')
+        self.run_date = datetime.now(UTC).isoformat(timespec='seconds')
 
     def check_zephyr_version(self):
         try:

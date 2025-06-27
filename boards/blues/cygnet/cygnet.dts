@@ -40,9 +40,23 @@
 		};
 	};
 
+	// PH1 can be used to discharge the 3v3 net. Disabled by default.
+	zephyr,user {
+		dischrg-gpios = <&gpioh 1 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+	};
+
+	supply-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "supply-3v3";
+		enable-gpios = <&gpioh 0 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
 	};
 };
 
@@ -135,4 +149,12 @@
 			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
 };
