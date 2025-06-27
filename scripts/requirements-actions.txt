@@ -475,9 +475,9 @@ jmespath==1.0.1 \
 junit2html==31.0.2 \
     --hash=sha256:c7fd1f253d423f0df031d0cee8ef7d4d98d9f8bf6383a2d40dca639686814866
     # via -r requirements-actions.in
-junitparser==3.2.0 \
-    --hash=sha256:b05e89c27e7b74b3c563a078d6e055d95cf397444f8f689b0ca616ebda0b3c65 \
-    --hash=sha256:e14fdc0a999edfc15889b637390e8ef6ca09a49532416d3bd562857d42d4b96d
+junitparser==4.0.2 \
+    --hash=sha256:94c3570e41fcaedc64cc3c634ca99457fe41a84dd1aa8ff74e9e12e66223a155 \
+    --hash=sha256:d5d07cece6d4a600ff3b7b96c8db5ffa45a91eed695cb86c45c3db113c1ca0f8
     # via -r requirements-actions.in
 license-expression==30.4.1 \
     --hash=sha256:679646bc3261a17690494a3e1cada446e5ee342dbd87dcfa4a0c24cc5dce13ee \
