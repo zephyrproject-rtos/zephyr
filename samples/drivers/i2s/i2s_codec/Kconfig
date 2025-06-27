@@ -17,6 +17,14 @@ config SAMPLE_FREQ
 	help
 	  Sample frequency of the system.
 
+config CODEC_MASTER
+	bool "Configure the selected codec device as a master device."
+	default true
+
+config I2S_MASTER
+	bool "Configure the selected I2S peripheral as a master device."
+	default true
+
 config USE_DMIC
 	bool "Use DMIC as an audio input"
 
