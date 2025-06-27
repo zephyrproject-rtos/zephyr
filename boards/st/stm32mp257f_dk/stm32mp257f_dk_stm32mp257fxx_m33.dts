@@ -1,0 +1,80 @@
+/*
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp2/stm32mp257_m33.dtsi>
+#include <st/mp2/stm32mp257faix-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32MP257F-DK board";
+	compatible = "st,stm32mp257f-dk", "st,stm32mp25";
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,flash = &ddr_code;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &ddr_sys;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		orange_led_9: led_9 {
+			gpios = <&gpioh 6 GPIO_ACTIVE_HIGH>;
+			label = "LD9";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_user2: button4 {
+			gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;
+			label = "User 2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &orange_led_9;
+		sw0 = &button_user2;
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pg9 &uart5_rx_pg10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pf13 &usart6_rx_pf14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
