@@ -299,6 +299,9 @@ struct nwb {
 	void (*cleanup_cb)();
 	unsigned char priority;
 	bool chksum_done;
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	void *raw_tx_hdr;
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
 #ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
 	struct net_pkt *pkt;
 #endif
@@ -423,6 +426,55 @@ static void zep_shim_nbuf_set_chksum_done(void *nbuf, unsigned char chksum_done)
 
 	nwb->chksum_done = (bool)chksum_done;
 }
+
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+static void *zep_shim_nbuf_set_raw_tx_hdr(void *nbuf, unsigned short raw_hdr_len)
+{
+	struct nwb *nwb = (struct nwb *)nbuf;
+
+	if (!nwb) {
+		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		return NULL;
+	}
+
+	nwb->raw_tx_hdr = zep_shim_nbuf_data_get(nwb);
+	if (!nwb->raw_tx_hdr) {
+		LOG_ERR("%s: Unable to set raw Tx header in network buffer", __func__);
+		return NULL;
+	}
+
+	zep_shim_nbuf_data_pull(nwb, raw_hdr_len);
+
+	return nwb->raw_tx_hdr;
+}
+
+static void *zep_shim_nbuf_get_raw_tx_hdr(void *nbuf)
+{
+	struct nwb *nwb = (struct nwb *)nbuf;
+
+	if (!nwb) {
+		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		return NULL;
+	}
+
+	return nwb->raw_tx_hdr;
+}
+
+static bool zep_shim_nbuf_is_raw_tx(void *nbuf)
+{
+	struct nwb *nwb = (struct nwb *)nbuf;
+
+	if (!nwb) {
+		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		return false;
+	}
+
+	return (nwb->raw_tx_hdr != NULL);
+}
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+
+
+
 
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
@@ -1216,6 +1268,11 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.nbuf_get_priority = zep_shim_nbuf_get_priority,
 	.nbuf_get_chksum_done = zep_shim_nbuf_get_chksum_done,
 	.nbuf_set_chksum_done = zep_shim_nbuf_set_chksum_done,
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+	.nbuf_set_raw_tx_hdr = zep_shim_nbuf_set_raw_tx_hdr,
+	.nbuf_get_raw_tx_hdr = zep_shim_nbuf_get_raw_tx_hdr,
+	.nbuf_is_raw_tx = zep_shim_nbuf_is_raw_tx,
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
 
 	.tasklet_alloc = zep_shim_work_alloc,
 	.tasklet_free = zep_shim_work_free,
