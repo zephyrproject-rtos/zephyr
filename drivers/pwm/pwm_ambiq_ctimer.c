@@ -16,11 +16,11 @@
 
 LOG_MODULE_REGISTER(ambiq_ctimer_pwm, CONFIG_PWM_LOG_LEVEL);
 
-struct pwm_ambiq_timer_data {
+struct pwm_ambiq_ctimer_data {
 	uint32_t cycles;
 };
 
-struct pwm_ambiq_timer_config {
+struct pwm_ambiq_ctimer_config {
 	uint32_t timer_num;
 	uint32_t timer_seg;
 	uint32_t pwm_type;
@@ -126,11 +126,11 @@ static void start_clock(uint32_t clock_sel)
 	}
 }
 
-static int ambiq_timer_pwm_set_cycles(const struct device *dev, uint32_t channel,
+static int ambiq_ctimer_pwm_set_cycles(const struct device *dev, uint32_t channel,
 				      uint32_t period_cycles, uint32_t pulse_cycles,
 				      pwm_flags_t flags)
 {
-	const struct pwm_ambiq_timer_config *config = dev->config;
+	const struct pwm_ambiq_ctimer_config *config = dev->config;
 
 	if (period_cycles == 0) {
 		LOG_ERR("period_cycles can not be set to zero");
@@ -171,10 +171,10 @@ static int ambiq_timer_pwm_set_cycles(const struct device *dev, uint32_t channel
 	return 0;
 }
 
-static int ambiq_timer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
+static int ambiq_ctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 					      uint64_t *cycles)
 {
-	struct pwm_ambiq_timer_data *data = dev->data;
+	struct pwm_ambiq_ctimer_data *data = dev->data;
 
 	/* cycles of the timer clock */
 	*cycles = (uint64_t)data->cycles;
@@ -182,10 +182,10 @@ static int ambiq_timer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t
 	return 0;
 }
 
-static int ambiq_timer_pwm_init(const struct device *dev)
+static int ambiq_ctimer_pwm_init(const struct device *dev)
 {
-	const struct pwm_ambiq_timer_config *config = dev->config;
-	struct pwm_ambiq_timer_data *data = dev->data;
+	const struct pwm_ambiq_ctimer_config *config = dev->config;
+	struct pwm_ambiq_ctimer_data *data = dev->data;
 	int err;
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -219,19 +219,19 @@ static int ambiq_timer_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(pwm, pwm_ambiq_timer_driver_api) = {
-	.set_cycles = ambiq_timer_pwm_set_cycles,
-	.get_cycles_per_sec = ambiq_timer_pwm_get_cycles_per_sec,
+static DEVICE_API(pwm, pwm_ambiq_ctimer_driver_api) = {
+	.set_cycles = ambiq_ctimer_pwm_set_cycles,
+	.get_cycles_per_sec = ambiq_ctimer_pwm_get_cycles_per_sec,
 };
 
-#define PWM_AMBIQ_TIMER_DEVICE_INIT(n)                                                             \
+#define PWM_AMBIQ_CTIMER_DEVICE_INIT(n)                                                            \
 	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(DT_INST_PARENT(n)) == 1,                             \
 		     "Too many children for Timer!");                                              \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	static struct pwm_ambiq_timer_data pwm_ambiq_timer_data_##n = {                            \
+	static struct pwm_ambiq_ctimer_data pwm_ambiq_ctimer_data_##n = {                          \
 		.cycles = 0,                                                                       \
 	};                                                                                         \
-	static const struct pwm_ambiq_timer_config pwm_ambiq_timer_config_##n = {                  \
+	static const struct pwm_ambiq_ctimer_config pwm_ambiq_ctimer_config_##n = {                \
 		.timer_num = (DT_REG_ADDR(DT_INST_PARENT(n)) - CTIMER_BASE) /                      \
 			     DT_REG_SIZE(DT_INST_PARENT(n)),                                       \
 		.timer_seg = DT_INST_ENUM_IDX(n, timer_segment),                                   \
@@ -239,8 +239,8 @@ static DEVICE_API(pwm, pwm_ambiq_timer_driver_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.pwm_type = DT_INST_ENUM_IDX(n, pwm_type)};                                        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ambiq_timer_pwm_init, NULL, &pwm_ambiq_timer_data_##n,            \
-			      &pwm_ambiq_timer_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,  \
-			      &pwm_ambiq_timer_driver_api);
+	DEVICE_DT_INST_DEFINE(n, ambiq_ctimer_pwm_init, NULL, &pwm_ambiq_ctimer_data_##n,          \
+			      &pwm_ambiq_ctimer_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
+			      &pwm_ambiq_ctimer_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(PWM_AMBIQ_TIMER_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(PWM_AMBIQ_CTIMER_DEVICE_INIT)
