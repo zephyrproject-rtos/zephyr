@@ -54,15 +54,15 @@ if(CONFIG_RISCV_ISA_EXT_ZIFENCEI)
   string(CONCAT riscv_march ${riscv_march} "_zifencei")
 endif()
 
-# Check whether we already imply Zaamo/Zlrsc by selecting the A extension; if not - check them
+# Check whether we already imply Zaamo/Zalrsc by selecting the A extension; if not - check them
 # individually and enable them as needed
 if(NOT CONFIG_RISCV_ISA_EXT_A)
   if(CONFIG_RISCV_ISA_EXT_ZAAMO)
     string(CONCAT riscv_march ${riscv_march} "_zaamo")
   endif()
 
-  if(CONFIG_RISCV_ISA_EXT_ZLRSC)
-    string(CONCAT riscv_march ${riscv_march} "_zlrsc")
+  if(CONFIG_RISCV_ISA_EXT_ZALRSC)
+    string(CONCAT riscv_march ${riscv_march} "_zalrsc")
   endif()
 endif()
 
