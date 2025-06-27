@@ -113,6 +113,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
 	/** SAE Extended key (uses group-dependent hashing) */
 	WIFI_SECURITY_TYPE_SAE_EXT_KEY,
+	/** DPP WPA-PSK security */
+	WIFI_SECURITY_TYPE_DPP_WPA_PSK,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
