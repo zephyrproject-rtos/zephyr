@@ -1,69 +1,70 @@
 # Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+title: Renesas RX Pin Controller
+
 description: |
-  description: |
-    The Renesas RX pin controller is a node responsible for controlling
-    pin function selection and pin properties
+  The Renesas RX pin controller is a node responsible for controlling
+  pin function selection and pin properties
 
-    The node has the 'pinctrl' node label set in your SoC's devicetree,
-    so you can modify it like this:
+  The node has the 'pinctrl' node label set in your SoC's devicetree,
+  so you can modify it like this:
 
-      &pinctrl {
-              /* your modifications go here */
-      };
+    &pinctrl {
+            /* your modifications go here */
+    };
 
-    All device pin configurations should be placed in child nodes of the
-    'pinctrl' node, as shown in this example:
+  All device pin configurations should be placed in child nodes of the
+  'pinctrl' node, as shown in this example:
 
-      /* You can put this in places like a board-pinctrl.dtsi file in
-       * your board directory, or a devicetree overlay in your application.
-       */
+    /* You can put this in places like a board-pinctrl.dtsi file in
+      * your board directory, or a devicetree overlay in your application.
+      */
 
-      /* include pre-defined combinations for the SoC variant used by the board */
-      #include <dt-bindings/pinctrl/renesas/rx-pinctrl.h>
+    /* include pre-defined combinations for the SoC variant used by the board */
+    #include <dt-bindings/pinctrl/renesas/rx-pinctrl.h>
 
-      &pinctrl {
-        sci1_default: sci1_default {
-          group1 {
-            psels = <RX_PSEL(RX_PSEL_SCI_1, 2, 6)>; /* TX */
-            drive-strength = "medium";
-          };
-          group2 {
-            psels = <RX_PSEL(RX_PSEL_SCI_1, 3, 0)>; /* RX */
-            drive-strength = "medium";
-          };
+    &pinctrl {
+      sci1_default: sci1_default {
+        group1 {
+          psels = <RX_PSEL(RX_PSEL_SCI_1, 2, 6)>; /* TX */
+          drive-strength = "medium";
+        };
+        group2 {
+          psels = <RX_PSEL(RX_PSEL_SCI_1, 3, 0)>; /* RX */
+          drive-strength = "medium";
         };
       };
+    };
 
-    The 'sci1_default' child node encodes the pin configurations for a
-    particular state of a device; in this case, the default (that is, active)
-    state.
+  The 'sci1_default' child node encodes the pin configurations for a
+  particular state of a device; in this case, the default (that is, active)
+  state.
 
-    As shown, pin configurations are organized in groups within each child node.
-    Each group can specify a list of pin function selections in the 'psels'
-    property.
+  As shown, pin configurations are organized in groups within each child node.
+  Each group can specify a list of pin function selections in the 'psels'
+  property.
 
-    A group can also specify shared pin properties common to all the specified
-    pins, such as the 'input-enable' property in group 2. Here is a list of
-    supported standard pin properties:
+  A group can also specify shared pin properties common to all the specified
+  pins, such as the 'input-enable' property in group 2. Here is a list of
+  supported standard pin properties:
 
-    - bias-disable: Disable pull-up/down (default, not required).
-    - bias-pull-up: Enable pull-up resistor.
-    - input-enable: Enable input from the pin.
-    - drive-strength: Set the drive strength of the pin. Possible
-      values are: normal, high.
+  - bias-disable: Disable pull-up/down (default, not required).
+  - bias-pull-up: Enable pull-up resistor.
+  - input-enable: Enable input from the pin.
+  - drive-strength: Set the drive strength of the pin. Possible
+    values are: normal, high.
 
-    To link pin configurations with a device, use a pinctrl-N property for some
-    number N, like this example you could place in your board's DTS file:
+  To link pin configurations with a device, use a pinctrl-N property for some
+  number N, like this example you could place in your board's DTS file:
 
-       #include "board-pinctrl.dtsi"
+      #include "board-pinctrl.dtsi"
 
-       &sci1 {
-             pinctrl-0 = <&uart0_default>;
-             pinctrl-1 = <&uart0_sleep>;
-             pinctrl-names = "default", "sleep";
-       };
+      &sci1 {
+            pinctrl-0 = <&uart0_default>;
+            pinctrl-1 = <&uart0_sleep>;
+            pinctrl-names = "default", "sleep";
+      };
 
 compatible: "renesas,rx-pinctrl"
 
