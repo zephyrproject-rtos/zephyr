@@ -268,7 +268,7 @@ ZTEST(timeutil_api, test_timespec_equal)
 	zexpect_false(timespec_equal(&a, &b));
 }
 
-#define K_TICK_MAX  ((uint64_t)(CONFIG_TIMEOUT_64BIT ? (INT64_MAX) : (UINT32_MAX)))
+#define K_TICK_MAX  ((uint64_t)(IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? (INT64_MAX) : (UINT32_MAX)))
 #define NS_PER_TICK (NSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* 0 := lower limit, 2 := upper limit */
@@ -365,10 +365,10 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 	}
 }
 
-static void *setup(void)
+void *setup(void)
 {
 	printk("CONFIG_64BIT=%c\n", IS_ENABLED(CONFIG_64BIT) ? 'y' : 'n');
-	printk("CONFIG_TIMEOUT_64BIT=%c\n", CONFIG_TIMEOUT_64BIT ? 'y' : 'n');
+	printk("CONFIG_TIMEOUT_64BIT=%c\n", IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? 'y' : 'n');
 	printk("K_TICK_MAX: %lld\n", (long long)K_TICK_MAX);
 	printk("minimum timeout: {%lld, %lld}\n", (long long)k_timeout_limits[0].tv_sec,
 	       (long long)k_timeout_limits[0].tv_nsec);
@@ -377,5 +377,3 @@ static void *setup(void)
 
 	return NULL;
 }
-
-ZTEST_SUITE(timeutil_api, NULL, setup, NULL, NULL, NULL);
