@@ -243,7 +243,7 @@ static int counter_cc23x0_lgpt_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api cc23x0_lgpt_api = {
+static DEVICE_API(counter, cc23x0_lgpt_api) = {
 	.start = counter_cc23x0_lgpt_start,
 	.stop = counter_cc23x0_lgpt_stop,
 	.get_value = counter_cc23x0_lgpt_get_value,
