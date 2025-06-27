@@ -1124,7 +1124,8 @@ class Ctest(Harness):
             self.instance.reason = 'No tests collected'
             return
 
-        assert isinstance(suite, junit.TestSuite)
+        if not isinstance(suite, junit.TestSuite):
+            suite = junit.TestSuite.fromelem(suite)
 
         if suite.failures and suite.failures > 0:
             self.status = TwisterStatus.FAIL
