@@ -1294,7 +1294,7 @@ static int xlnx_sdhc_init(const struct device *dev)
 	return xlnx_sdhc_host_reset(dev);
 }
 
-static const struct sdhc_driver_api xlnx_sdhc_api = {
+static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 	.reset = xlnx_sdhc_host_reset,
 	.request = xlnx_sdhc_request,
 	.set_io = xlnx_sdhc_set_io,
