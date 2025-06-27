@@ -91,7 +91,7 @@ config MCUBOOT_MODE_DIRECT_XIP
 	  can boot from either partition and will select one with higher application image version,
 	  which usually means major.minor.patch triple, unless BOOT_VERSION_CMP_USE_BUILD_NUMBER is
 	  also selected in MCUboot that enables comparison of build number.
-	  This option automatically selectes MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
+	  This option automatically selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as it is not possible
 	  to swap back to older version of application.
 
 config MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT

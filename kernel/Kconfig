@@ -943,7 +943,7 @@ config STACK_CANARIES_STRONG
 	select REQUIRES_STACK_CANARIES
 	help
 	  This option enables compiler stack canaries in functions that call alloca,
-	  functions that have local array definitiion or have references to local
+	  functions that have local array definition or have references to local
 	  frame addresses.
 
 config STACK_CANARIES_ALL
