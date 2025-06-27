@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <realtek/fingerprint/rts5817/rts5817_base.dtsi>
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+	};
+
+	flash0: memory@1800000 {
+		compatible = "soc-nv-flash";
+		reg = <0x1800000 DT_SIZE_K(121)>;
+	};
+};
