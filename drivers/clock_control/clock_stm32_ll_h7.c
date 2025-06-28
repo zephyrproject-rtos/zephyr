@@ -263,9 +263,16 @@ static uint32_t get_hclk_frequency(void)
 
 static int32_t prepare_regulator_voltage_scale(void)
 {
-	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
+
+/* Make sure to put the CPU in highest Voltage scale during clock configuration */
+#if defined(PWR_CPUCR_PDDS_D2) && !defined(SYSCFG_PWRCR_ODEN)
+	/* STM32H72xxx and STM32H73xxx Highest voltage is SCALE1 */
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+#else
 	/* Highest voltage is SCALE0 */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+#endif
+
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 #else
@@ -286,7 +293,12 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 	/* LL_PWR_REGULATOR_SCALE3 is lowest power consumption */
 	/* Must be done in accordance to the Maximum allowed frequency vs VOS*/
 	/* See RM0433 page 352 for more details */
+#if defined(PWR_CPUCR_PDDS_D2) && !defined(SYSCFG_PWRCR_ODEN)
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+#else
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+#endif
+
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 #else
