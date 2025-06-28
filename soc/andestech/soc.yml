@@ -4,3 +4,4 @@ family:
   - name: ae350
     socs:
     - name: ae350
+    - name: et171
