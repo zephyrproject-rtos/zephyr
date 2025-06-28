@@ -295,6 +295,10 @@ New APIs and options
 
   * :c:func:`updatehub_report_error`
 
+* USB
+
+  * :c:func:`uvc_set_video_dev`
+
 * Other
 
   * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
@@ -965,6 +969,7 @@ New Drivers
    * :dtcompatible:`nxp,uhc-khci`
    * :dtcompatible:`nxp,uhc-ohci`
    * :dtcompatible:`st,stm32n6-otghs`
+   * :dtcompatible:`zephyr,uvc-device`
 
 * Video
 
@@ -1023,6 +1028,7 @@ New Samples
 * :zephyr:code-sample:`uart_async`
 * :zephyr:code-sample:`usb-cdc-acm-bridge`
 * :zephyr:code-sample:`uuid`
+* :zephyr:code-sample:`uvc`
 * :zephyr:code-sample:`veml6031`
 
 Other notable changes
