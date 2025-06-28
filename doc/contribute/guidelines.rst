@@ -102,7 +102,7 @@ this contributing and review process for imported components.
 .. _copyrights:
 
 Copyrights Notices
-*******************
+******************
 
 The Zephyr Project follows the `Community Best Practice`_ for Copyright Notices from the Linux
 Foundation.
