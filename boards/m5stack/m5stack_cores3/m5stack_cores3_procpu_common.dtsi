@@ -19,7 +19,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,rtc = &bm8563_rtc;
 		zephyr,bt-hci = &esp32_bt_hci;
-		zephyr,touch = &ft6336_touch;
 	};
 
 	aliases {
@@ -32,6 +31,7 @@
 		rtc = &bm8563_rtc;
 		sdhc0 = &sd0;
 		led0 = &axp2101_led;
+		touch = &ft6336_touch;
 	};
 
 	lvgl_pointer {

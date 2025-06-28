@@ -10,7 +10,6 @@
 / {
 	chosen {
 		zephyr,display = &gc9a01_xiao_round_display;
-		zephyr,touch = &chsc6x_xiao_round_display;
 	};
 
 	vbatt {
@@ -27,6 +26,7 @@
 
 	aliases {
 		rtc = &pcf8563_xiao_round_display;
+		touch = &chsc6x_xiao_round_display;
 	};
 
 	xiao_round_display_mipi_dbi {
