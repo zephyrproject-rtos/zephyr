@@ -1025,6 +1025,38 @@ New Samples
 * :zephyr:code-sample:`uuid`
 * :zephyr:code-sample:`veml6031`
 
+Libraries / Subsystems
+**********************
+
+* Tracing
+
+  * Add the :c:macro:`SYS_PORT_TRACK_FOREACH` macro for iterating over
+    a tracking list.
+
+  * Add the following wrapper for the :c:macro:`SYS_PORT_TRACK_NEXT` macro to
+    provide a more visible way to access the global tracking list:
+
+    * :c:macro:`SYS_PORT_TRACK_K_TIMER_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_timer)``.
+    * :c:macro:`SYS_PORT_TRACK_K_MEM_SLAB_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_mem_slab)``.
+    * :c:macro:`SYS_PORT_TRACK_K_SEM_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_sem)``.
+    * :c:macro:`SYS_PORT_TRACK_K_MUTEX_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_mutex)``.
+    * :c:macro:`SYS_PORT_TRACK_K_STACK_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_stack)``.
+    * :c:macro:`SYS_PORT_TRACK_K_MSGQ_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_msgq)``.
+    * :c:macro:`SYS_PORT_TRACK_K_MBOX_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_mbox)``.
+    * :c:macro:`SYS_PORT_TRACK_K_PIPE_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_pipe)``.
+    * :c:macro:`SYS_PORT_TRACK_K_QUEUE_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_queue)``.
+    * :c:macro:`SYS_PORT_TRACK_K_EVENT_NEXT` is equivalent to
+      ``SYS_PORT_TRACK_NEXT(_track_list_k_event)``.
+
 Other notable changes
 *********************
 
