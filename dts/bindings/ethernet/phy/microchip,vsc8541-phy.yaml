@@ -5,7 +5,7 @@ description: Single Port Gigabit Ethernet Copper PHY with GMII/RGMII/MII/RMII In
 
 compatible: "microchip,vsc8541"
 
-include: [ethernet-phy.yaml]
+include: [ethernet-phy-common.yaml]
 
 on-bus: mdio
 
@@ -42,3 +42,7 @@ properties:
     description: |
       Used to configure the TX clock delay for RGMII interface. The value can be
       0 to 7. Refer to the datasheet for more details on the delay settings.
+
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
