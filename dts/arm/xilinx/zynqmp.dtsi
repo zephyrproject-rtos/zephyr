@@ -304,6 +304,31 @@
 					IRQ_DEFAULT_PRIORITY>;
 			reg = <0xfd070000 0x30000>;
 		};
-	};
 
+		spi0: spi@ff040000 {
+			compatible = "cdns,spi";
+			reg = <0xff040000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+		};
+
+		spi1: spi@ff050000 {
+			compatible = "cdns,spi";
+			reg = <0xff050000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+		};
+	};
 };
