@@ -40,6 +40,10 @@ extern const uintptr_t _irq_vector_table[];
 #error "Target not supported"
 #endif
 
+#elif defined(CONFIG_VEXRISCV_LITEX_IRQ) && defined(CONFIG_LITEX_TIMER)
+#define ISR3_OFFSET	10
+#define TRIG_CHECK_SIZE	11
+
 #elif defined(CONFIG_RISCV_HAS_CLIC)
 #define ISR1_OFFSET	3
 #define ISR3_OFFSET	17

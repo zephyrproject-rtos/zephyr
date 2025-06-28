@@ -10,6 +10,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	default n
+
 config 2ND_LVL_ISR_TBL_OFFSET
 	default 12
 
