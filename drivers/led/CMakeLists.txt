@@ -25,6 +25,8 @@ zephyr_library_sources_ifdef(CONFIG_PCA9633 pca9633.c)
 zephyr_library_sources_ifdef(CONFIG_TLC59108 tlc59108.c)
 # zephyr-keep-sorted-stop
 
+zephyr_library_sources(led_core.c)
+
 zephyr_library_sources_ifdef(CONFIG_LED_SHELL   led_shell.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   led_handlers.c)
