@@ -168,10 +168,17 @@ struct virtq {
 	struct virtq_used *used;
 
 	/**
-	 * last seen idx in used ring, used to determine first descriptor to process
-	 * after receiving virtqueue interrupt
+	 * This is used to determine the first descriptor to process after receiving
+	 * a virtqueue interrupt. Using `last_used_idx` used for last seen index
+	 * in 'used' ring, and `last_avail_idx` is also for 'avail' ring.
+	 * This is just an alias; use last_used_idx for processing as a virtio frontend,
+	 * and also last_avail_idx for a virtio backend.
 	 */
-	uint16_t last_used_idx;
+	union {
+		uint16_t last_used_idx;
+		uint16_t last_avail_idx;
+	};
+
 	/**
 	 * Stack containing indexes of free descriptors. Because virtio devices are
 	 * not required to use received descriptors in order (see 2.7.9) unless

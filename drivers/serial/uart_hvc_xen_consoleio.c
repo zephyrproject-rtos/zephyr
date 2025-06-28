@@ -10,7 +10,7 @@
  */
 
 #include <zephyr/arch/arm64/hypercall.h>
-#include <zephyr/xen/public/xen.h>
+#include <xen/public/xen.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
