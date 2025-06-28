@@ -37,8 +37,18 @@ static void *read_cb(uint16_t obj_inst_id,
 		     uint16_t res_inst_id,
 		     size_t *data_len)
 {
+	static double value = 42.0;
+
 	callback_checker |= 0x04;
-	return 0;
+	*data_len = sizeof(value);
+	return &value;
+}
+
+/* A read callback with error returns NULL. */
+static void *read_cb_with_error(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
+				size_t *data_len)
+{
+	return NULL;
 }
 
 static int validate_cb(uint16_t obj_inst_id, uint16_t res_id,
@@ -205,9 +215,9 @@ ZTEST(lwm2m_registry, test_get_set)
 	/* get all resources */
 	zassert_ok(lwm2m_get_bool(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL), &b.in));
 	zassert_ok(lwm2m_get_opaque(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OPAQUE), opaque.in,
-				    sizeof(opaque.in)));
+				    sizeof(opaque.in), NULL));
 	zassert_ok(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), string.in,
-				    sizeof(string.in)));
+				    sizeof(string.in), NULL));
 	zassert_ok(lwm2m_get_u8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U8), &u8.in));
 	zassert_ok(lwm2m_get_s8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S8), &s8.in));
 	zassert_ok(lwm2m_get_u16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U16), &u16.in));
@@ -237,7 +247,8 @@ ZTEST(lwm2m_registry, test_get_set)
 	/* set string resource to zero length */
 	zassert_ok(lwm2m_set_res_data_len(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), 0));
 	char buf[10];
-	zassert_ok(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), buf, sizeof(buf)));
+	zassert_ok(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), buf, sizeof(buf),
+				    NULL));
 	zassert_equal(strlen(buf), 0);
 }
 
@@ -253,6 +264,8 @@ ZTEST(lwm2m_registry, test_temp_sensor)
 	time_t time_getbuf = 0;
 	double dbl_getbuf = 0;
 	char char_getbuf[10];
+
+	static const char text[] = "test";
 
 	ret = lwm2m_create_object_inst(&LWM2M_OBJ(3303, 0));
 	zassert_equal(ret, 0);
@@ -276,13 +289,26 @@ ZTEST(lwm2m_registry, test_temp_sensor)
 	zassert_equal(ret, 0);
 	ret = lwm2m_set_f64(&LWM2M_OBJ(3303, 0, 5601), 5.89);
 	zassert_equal(ret, 0);
-	ret = lwm2m_set_string(&LWM2M_OBJ(3303, 0, 5701), "test");
+	memset(char_buf, 0xFF, sizeof(char_buf));
+	ret = lwm2m_set_string(&LWM2M_OBJ(3303, 0, 5701), text);
 	zassert_equal(ret, 0);
 
 	zassert_equal(u8_buf, 0x5A);
 	zassert_equal(time_buf, 1674118825);
 	zassert_within(dbl_buf, 5.89, 0.01);
-	zassert_equal(strncmp(char_buf, "test", 10), 0);
+	/* The LwM2M string resource is not a zero-terminated C string. */
+	zassert_not_ok(strncmp(char_buf, text, sizeof(char_buf)));
+	zassert_ok(strncmp(char_buf, text, strlen(text)));
+
+	void *get_ptr = NULL;
+	uint16_t get_maxlen = 0;
+	uint16_t get_datalen = 0;
+
+	zassert_ok(lwm2m_get_res_buf(&LWM2M_OBJ(3303, 0, 5701), &get_ptr, &get_maxlen, &get_datalen,
+				     NULL));
+	zassert_equal_ptr(get_ptr, char_buf);
+	zassert_equal(get_maxlen, sizeof(char_buf));
+	zassert_equal(get_datalen, strlen(text));
 
 	ret = lwm2m_get_u8(&LWM2M_OBJ(3303, 0, 6042), &u8_getbuf);
 	zassert_equal(ret, 0);
@@ -290,13 +316,14 @@ ZTEST(lwm2m_registry, test_temp_sensor)
 	zassert_equal(ret, 0);
 	ret = lwm2m_get_f64(&LWM2M_OBJ(3303, 0, 5601), &dbl_getbuf);
 	zassert_equal(ret, 0);
-	ret = lwm2m_get_string(&LWM2M_OBJ(3303, 0, 5701), &char_getbuf, 10);
+	memset(char_getbuf, 0xFF, sizeof(char_getbuf));
+	ret = lwm2m_get_string(&LWM2M_OBJ(3303, 0, 5701), char_getbuf, 10, NULL);
 	zassert_equal(ret, 0);
 
 	zassert_equal(u8_buf, u8_getbuf);
 	zassert_equal(time_buf, time_getbuf);
 	zassert_within(dbl_buf, dbl_getbuf, 0.01);
-	zassert_equal(strncmp(char_buf, char_getbuf, 10), 0);
+	zassert_str_equal(char_getbuf, text);
 
 	ret = lwm2m_delete_object_inst(&LWM2M_OBJ(3303, 0));
 	zassert_equal(ret, 0);
@@ -337,11 +364,11 @@ ZTEST(lwm2m_registry, test_resource_instance_strings)
 	ret = lwm2m_set_string(&path_b, string_b);
 	zassert_equal(ret, 0);
 
-	ret = lwm2m_get_string(&path_a, buf, sizeof(buf));
+	ret = lwm2m_get_string(&path_a, buf, sizeof(buf), NULL);
 	zassert_equal(ret, 0);
 	zassert_equal(0, memcmp(buf, string_a, sizeof(string_a)));
 
-	ret = lwm2m_get_string(&path_b, buf, sizeof(buf));
+	ret = lwm2m_get_string(&path_b, buf, sizeof(buf), NULL);
 	zassert_equal(ret, 0);
 	zassert_equal(0, memcmp(buf, string_b, sizeof(string_b)));
 
@@ -387,6 +414,10 @@ ZTEST(lwm2m_registry, test_callbacks)
 	zassert_equal(ret, 0);
 	zassert_equal(callback_checker, 0x5F);
 
+	zassert_ok(lwm2m_register_read_callback(&LWM2M_OBJ(3303, 0, 5700), read_cb_with_error));
+	ret = lwm2m_get_f64(&LWM2M_OBJ(3303, 0, 5700), &sensor_val);
+	zassert_equal(ret, -ENOMEM);
+
 	ret = lwm2m_delete_object_inst(&LWM2M_OBJ(3303, 0));
 	zassert_equal(ret, 0);
 	zassert_equal(callback_checker, 0x7F);
@@ -400,26 +431,28 @@ ZTEST(lwm2m_registry, test_strings)
 	static const char uri[] = "coap://127.0.0.1";
 	uint16_t len;
 	uint8_t *p;
+	uint16_t reslen;
 
 	ret = lwm2m_get_res_buf(&path, (void **)&p, &len, NULL, NULL);
 	zassert_equal(ret, 0);
 	memset(p, 0xff, len); /* Pre-fill buffer to check */
 
-	/* Handle strings in string resources */
+	/* Handle strings in string resources. */
 	ret = lwm2m_set_string(&path, uri);
 	zassert_equal(ret, 0);
 	ret = lwm2m_get_res_buf(&path, (void **)&p, NULL, &len, NULL);
 	zassert_equal(ret, 0);
-	zassert_equal(len, sizeof(uri));
-	zassert_equal(p[len - 1], '\0'); /* string terminator in buffer */
+	zassert_equal(len, strlen(uri));
+	/* C string terminator is not copied by `lwm2m_set_string` into LwM2M resource. */
 	zassert_equal(p[len], 0xff);
 
-	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	ret = lwm2m_get_string(&path, buf, sizeof(buf), &reslen);
 	zassert_equal(ret, 0);
 	zassert_equal(memcmp(uri, buf, sizeof(uri)), 0);
-	ret = lwm2m_get_string(&path, buf, sizeof(uri));
+	zassert_equal(reslen, strlen(uri));
+	ret = lwm2m_get_string(&path, buf, sizeof(uri), NULL);
 	zassert_equal(ret, 0);
-	ret = lwm2m_get_string(&path, buf, strlen(uri));
+	ret = lwm2m_get_string(&path, buf, strlen(uri), NULL);
 	zassert_equal(ret, -ENOMEM);
 
 	/* Handle strings in opaque resources (no terminator) */
@@ -436,17 +469,140 @@ ZTEST(lwm2m_registry, test_strings)
 	zassert_equal(p[len - 1], '1'); /* Last character in buffer is not terminator */
 	zassert_equal(p[len], 0xff);
 	memset(buf, 0xff, sizeof(buf));
-	ret = lwm2m_get_string(&path, buf, sizeof(buf)); /* get_string ensures termination */
+	ret = lwm2m_get_string(&path, buf, sizeof(buf), NULL); /* get_string ensures termination */
 	zassert_equal(ret, 0);
 	zassert_equal(memcmp(uri, buf, sizeof(uri)), 0);
-	ret = lwm2m_get_string(&path, buf, sizeof(uri));
+	ret = lwm2m_get_string(&path, buf, sizeof(buf), NULL);
 	zassert_equal(ret, 0);
-	ret = lwm2m_get_string(&path, buf, strlen(uri));
+	ret = lwm2m_get_string(&path, buf, strlen(uri), NULL);
 	zassert_equal(ret, -ENOMEM);
 	/* Corner case: we request exactly as much is stored in opaque resource, */
 	/* but because we request as a string, it must have room for terminator. */
-	ret = lwm2m_get_string(&path, buf, len);
+	ret = lwm2m_get_string(&path, buf, len, NULL);
 	zassert_equal(ret, -ENOMEM);
+}
+
+ZTEST(lwm2m_registry, test_opaque)
+{
+	int ret;
+	struct lwm2m_obj_path path = LWM2M_OBJ(0, 0, 0);
+
+	uint16_t res_maxlen;
+	uint16_t res_len;
+	void *res_buf;
+
+	zassert_ok(lwm2m_get_res_buf(&path, (void **)&res_buf, &res_maxlen, &res_len, NULL));
+	/* test cases are not useful when the resource is too small */
+	zassert_true(res_maxlen >= 6);
+
+	const char pattern_set = 0xA5;
+	char buf_set[res_maxlen];
+	const char pattern_get = 0x5A;
+	char buf_get[res_maxlen];
+
+	struct testcases {
+		char *name;
+		uint16_t set_len;
+		int set_ret;
+		uint16_t get_len;
+		int get_ret;
+		bool res_len_null;
+		bool set_ptr_null;
+		bool get_ptr_null;
+		uint32_t checks;
+	};
+
+	const struct testcases tc[] = {
+		/* upper buffer boarder */
+		{.name = "max buffer",
+		 .set_len = sizeof(buf_set),
+		 .get_len = sizeof(buf_get),
+		 .checks = 0x17},
+		{.name = "set overflow",
+		 .set_len = sizeof(buf_set) + 1,
+		 .set_ret = -ENOMEM,
+		 .checks = 0x1},
+		{.name = "get underflow",
+		 .set_len = sizeof(buf_set),
+		 .get_len = sizeof(buf_get) - 1,
+		 .get_ret = -ENOMEM,
+		 .checks = 0x3},
+		/* lower buffer boundary */
+		{.name = "min buffer", .set_len = 0, .get_len = sizeof(buf_get), .checks = 0x1F},
+		/* edge case: zero sized resource fits into zero sized buffer */
+		{.name = "zero buffer", .set_len = 0, .get_len = 0, .checks = 0x1F},
+		/* edge case 2: zero sized resource fits into a null pointer */
+		{.name = "null get buffer",
+		 .set_len = 0,
+		 .get_len = 0,
+		 .get_ptr_null = true,
+		 .checks = 0x1F},
+		{.name = "null set buffer",
+		 .set_len = 0,
+		 .get_len = 0,
+		 .set_ptr_null = true,
+		 .checks = 0x1F},
+		/* something in between the buffer boundary */
+		{.name = "mid buffer",
+		 .set_len = sizeof(buf_set) / 2,
+		 .get_len = sizeof(buf_get),
+		 .checks = 0x1F},
+		/* The `res_len` is optional an can be null */
+		{.name = "null resource len",
+		 .set_len = sizeof(buf_set) / 3,
+		 .get_len = sizeof(buf_get),
+		 .res_len_null = true,
+		 .checks = 0xF},
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(tc); i++) {
+		/* reset  */
+		uint32_t checks = 0;
+		const uint16_t buf_set_len = tc[i].set_len;
+		char *tc_buf_set = tc[i].set_ptr_null ? NULL : buf_set;
+		char *tc_buf_get = tc[i].get_ptr_null ? NULL : buf_get;
+		uint16_t buf_get_len = UINT16_MAX;
+		uint16_t *tc_buf_get_len = tc[i].res_len_null ? NULL : &buf_get_len;
+
+		memset(res_buf, 0, res_maxlen);
+		memset(buf_set, pattern_set, res_maxlen);
+		memset(buf_get, pattern_get, res_maxlen);
+
+		/* set */
+		ret = lwm2m_set_opaque(&path, tc_buf_set, buf_set_len);
+		zassert_equal(ret, tc[i].set_ret, "case %d: %s", i, tc[i].name);
+		WRITE_BIT(checks, 0, 1);
+		if (tc[i].set_ret != 0) {
+			goto finally;
+		}
+
+		/* get */
+		ret = lwm2m_get_opaque(&path, tc_buf_get, tc[i].get_len, tc_buf_get_len);
+		zassert_equal(ret, tc[i].get_ret, "case %d: %s", i, tc[i].name);
+		WRITE_BIT(checks, 1, 1);
+		if (tc[i].get_ret != 0) {
+			goto finally;
+		}
+
+		/* check memory */
+		zassert_mem_equal(buf_set, buf_get, buf_set_len, "case %d: %s", i, tc[i].name);
+		WRITE_BIT(checks, 2, 1);
+		if (buf_set_len < sizeof(buf_set)) {
+			/* written too much? */
+			zassert_equal(buf_get[buf_set_len], pattern_get, "case %d: %s", i,
+				      tc[i].name);
+			WRITE_BIT(checks, 3, 1);
+		}
+
+		/* check resource length */
+		if (!tc[i].res_len_null) {
+			zassert_equal(buf_get_len, tc[i].set_len, "case %d: %s", i, tc[i].name);
+			WRITE_BIT(checks, 4, 1);
+		}
+finally:
+		zassert_equal(checks, tc[i].checks, "case %d: %s: checks: %x != %x", i, tc[i].name,
+			      checks, tc[i].checks);
+	}
 }
 
 ZTEST(lwm2m_registry, test_lock_unlock)
@@ -510,7 +666,7 @@ ZTEST(lwm2m_registry, test_null_strings)
 	ret = lwm2m_set_string(&path, "string");
 	zassert_equal(ret, 0);
 	zassert_equal(callback_checker, 0x02);
-	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	ret = lwm2m_get_string(&path, buf, sizeof(buf), NULL);
 	zassert_equal(ret, 0);
 	zassert_equal(strlen(buf), strlen("string"));
 
@@ -518,7 +674,7 @@ ZTEST(lwm2m_registry, test_null_strings)
 	ret = lwm2m_set_string(&path, "");
 	zassert_equal(ret, 0);
 	zassert_equal(callback_checker, 0x02);
-	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	ret = lwm2m_get_string(&path, buf, sizeof(buf), NULL);
 	zassert_equal(ret, 0);
 	zassert_equal(strlen(buf), 0);
 
@@ -526,7 +682,7 @@ ZTEST(lwm2m_registry, test_null_strings)
 	ret = lwm2m_set_opaque(&path, NULL, 0);
 	zassert_equal(ret, 0);
 	zassert_equal(callback_checker, 0x02);
-	ret = lwm2m_get_string(&path, buf, sizeof(buf));
+	ret = lwm2m_get_string(&path, buf, sizeof(buf), NULL);
 	zassert_equal(ret, 0);
 	zassert_equal(strlen(buf), 0);
 }
@@ -578,7 +734,9 @@ ZTEST(lwm2m_registry, test_set_bulk)
 	struct lwm2m_res_item res_items[] = {
 		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_BOOL), &b.out, sizeof(b.out)},
 		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_OPAQUE), opaque.out, sizeof(opaque.out)},
-		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_STRING), string.out, sizeof(string.out)},
+		/* Take care here: an LwM2M string resource is not a zero-terminated C string. */
+		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_STRING), string.out,
+		 sizeof(string.out) - 1},
 		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U8), &u8.out, sizeof(u8.out)},
 		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_S8), &s8.out, sizeof(s8.out)},
 		{&LWM2M_OBJ(TEST_OBJ_ID, 0, LWM2M_RES_TYPE_U16), &u16.out, sizeof(u16.out)},
@@ -595,9 +753,9 @@ ZTEST(lwm2m_registry, test_set_bulk)
 	/* get all resources */
 	zassert_ok(lwm2m_get_bool(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL), &b.in));
 	zassert_ok(lwm2m_get_opaque(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_OPAQUE), opaque.in,
-				    sizeof(opaque.in)));
+				    sizeof(opaque.in), NULL));
 	zassert_ok(lwm2m_get_string(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_STRING), string.in,
-				    sizeof(string.in)));
+				    sizeof(string.in), NULL));
 	zassert_ok(lwm2m_get_u8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U8), &u8.in));
 	zassert_ok(lwm2m_get_s8(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S8), &s8.in));
 	zassert_ok(lwm2m_get_u16(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_U16), &u16.in));
