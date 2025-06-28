@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Texas Instruments
+# Copyright (c) 2026 Linumiz
+
+config SOC_FLASH_TI_MSPM0
+	bool "Texas Instruments MSPM0 Flash driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select USE_MSPM0_DL_FLASHCTL
+	help
+	  Texas Instruments Flash driver for MSPM0 SoC series.
