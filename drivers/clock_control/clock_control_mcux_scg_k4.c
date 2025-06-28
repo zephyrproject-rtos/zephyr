@@ -64,6 +64,9 @@ static int mcux_scg_k4_get_rate(const struct device *dev, clock_control_subsys_t
 	case SCG_K4_RTCOSC_CLK:
 		clock_name = kCLOCK_RtcOscClk;
 		break;
+	case SCG_K4_FLEXIO_CLK:
+		*rate = CLOCK_GetIpFreq(kCLOCK_Flexio0);
+		return 0;
 	default:
 		LOG_ERR("Unsupported clock name");
 		return -EINVAL;
