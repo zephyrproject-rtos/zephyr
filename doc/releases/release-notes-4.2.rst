@@ -86,7 +86,7 @@ Removed APIs and options
 * Removed :dtcompatible:`meas,ms5837` and replaced with :dtcompatible:`meas,ms5837-30ba`
   and :dtcompatible:`meas,ms5837-02ba`.
 
-* Removed the ``get_ctrl`` video driver API
+* Removed the ``get_ctrl`` driver API from :c:struct:`video_driver_api`.
 
 Deprecated APIs and options
 ===========================
@@ -291,7 +291,7 @@ New APIs and options
 
 * Video
 
-  * :c:func:`video_api_ctrl_t`
+  * :c:type:`video_api_ctrl_t`
   * :c:func:`video_query_ctrl`
   * :c:func:`video_print_ctrl`
   * :c:func:`video_set_selection`
