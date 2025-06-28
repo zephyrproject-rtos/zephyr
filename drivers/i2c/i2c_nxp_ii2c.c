@@ -207,7 +207,6 @@ static int nxp_ii2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 		 * successfully. e.g., nak, timeout, lost arbitration
 		 */
 		if (data->callback_status != kStatus_Success) {
-			I2C_MasterTransferAbort(base, &data->handle);
 			ret = -EIO;
 			break;
 		}
