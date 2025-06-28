@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(dma_cc23x0, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 
 #include <driverlib/clkctl.h>
@@ -45,10 +46,19 @@ LOG_MODULE_REGISTER(dma_cc23x0, CONFIG_DMA_LOG_LEVEL);
 #define DMA_CC23_IPID_MASK	GENMASK(2, 0)
 #define DMA_CC23_CHXSEL_REG(ch)	HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + sizeof(uint32_t) * (ch))
 
+#ifdef CONFIG_PM_DEVICE
+#define DMA_CC23_ALL_CH_MASK	GENMASK(DMA_CC23_SW_CH_MAX, 0)
+#endif
+
 struct dma_cc23x0_channel {
 	uint8_t data_size;
 	dma_callback_t cb;
 	void *user_data;
+#ifdef CONFIG_PM_DEVICE
+	bool configured;
+	struct dma_block_config dma_blk_cfg;
+	struct dma_config dma_cfg;
+#endif
 };
 
 struct dma_cc23x0_data {
@@ -117,6 +127,9 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 	uint32_t xfer_size;
 	uint32_t burst_len;
 	int ret;
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state pm_state;
+#endif
 
 	if (channel >= UDMA_NUM_CHANNELS) {
 		LOG_ERR("Invalid channel (%u)", channel);
@@ -233,11 +246,45 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 			       (void *)block->dest_address,
 			       xfer_size);
 
+#ifdef CONFIG_PM_DEVICE
+	pm_device_state_get(dev, &pm_state);
+
+	/*
+	 * Save context only if current function is not being called
+	 * from resume operation for restoring channel configuration
+	 */
+	if (pm_state == PM_DEVICE_STATE_ACTIVE) {
+		ch_data->configured = true;
+
+		ch_data->dma_blk_cfg.source_address = block->source_address;
+		ch_data->dma_blk_cfg.dest_address = block->dest_address;
+		ch_data->dma_blk_cfg.source_addr_adj = block->source_addr_adj;
+		ch_data->dma_blk_cfg.dest_addr_adj = block->dest_addr_adj;
+		ch_data->dma_blk_cfg.block_size = block->block_size;
+
+		ch_data->dma_cfg.dma_slot = config->dma_slot;
+		ch_data->dma_cfg.channel_direction = config->channel_direction;
+		ch_data->dma_cfg.block_count = config->block_count;
+		ch_data->dma_cfg.head_block = &ch_data->dma_blk_cfg;
+		ch_data->dma_cfg.source_data_size = config->source_data_size;
+		ch_data->dma_cfg.dest_data_size = config->dest_data_size;
+		ch_data->dma_cfg.source_burst_length = config->source_burst_length;
+		ch_data->dma_cfg.dma_callback = config->dma_callback;
+		ch_data->dma_cfg.user_data = config->user_data;
+
+		LOG_DBG("Configured channel %u for %08x to %08x (%u bytes)",
+			channel,
+			block->source_address,
+			block->dest_address,
+			block->block_size);
+	}
+#else
 	LOG_DBG("Configured channel %u for %08x to %08x (%u bytes)",
 		channel,
 		block->source_address,
 		block->dest_address,
 		block->block_size);
+#endif
 
 	return 0;
 }
@@ -278,6 +325,13 @@ static int dma_cc23x0_reload(const struct device *dev, uint32_t channel,
 
 	uDMASetChannelTransfer(&data->desc[channel], DMA_CC23_MODE(channel),
 			       (void *)src, (void *)dst, xfer_size);
+
+#ifdef CONFIG_PM_DEVICE
+	/* Save context */
+	ch_data->dma_blk_cfg.source_address = src;
+	ch_data->dma_blk_cfg.dest_address = dst;
+	ch_data->dma_blk_cfg.block_size = size;
+#endif
 
 	LOG_DBG("Reloaded channel %u for %08x to %08x (%u bytes)",
 		channel, src, dst, size);
@@ -343,21 +397,10 @@ static int dma_cc23x0_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_cc23x0_init(const struct device *dev)
+static int dma_cc23x0_enable(struct dma_cc23x0_data *data)
 {
-	struct dma_cc23x0_data *data = dev->data;
-
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    dma_cc23x0_isr,
-		    DEVICE_DT_INST_GET(0),
-		    0);
-	irq_enable(DT_INST_IRQN(0));
-
-	/* Enable clock */
 	CLKCTLEnable(CLKCTL_BASE, CLKCTL_DMA);
 
-	/* Enable DMA */
 	uDMAEnable();
 
 	/* Set base address for channel control table (descriptors) */
@@ -365,6 +408,71 @@ static int dma_cc23x0_init(const struct device *dev)
 
 	return 0;
 }
+
+static int dma_cc23x0_init(const struct device *dev)
+{
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    dma_cc23x0_isr,
+		    DEVICE_DT_INST_GET(0),
+		    0);
+	irq_enable(DT_INST_IRQN(0));
+
+	return dma_cc23x0_enable(dev->data);
+}
+
+#ifdef CONFIG_PM_DEVICE
+
+static int dma_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct dma_cc23x0_data *data = dev->data;
+	int i = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * We assume that DMA clients (peripheral drivers or applications)
+		 * should take care of PM lock/unlock (pm_policy_state_lock_get/put).
+		 * This assumption is made for that SoC because:
+		 * - If a peripheral channel is used, then the transfer completion is
+		 * signaled on the peripheral's interrupt (handled in the DMA client
+		 * driver). This operating mode is specific to this SoC.
+		 * - If a software channel is used (memory-to-memory transfer), then
+		 * the transfer completion can be signaled to the application through
+		 * a callback.
+		 * Thus, in both cases, the PM can be unlocked at the right time by the
+		 * DMA client. When this point is reached, there should not be ongoing
+		 * transfer.
+		 *
+		 * Despite this assumption, ensure that none transfer is ongoing in case
+		 * PM state lock was not properly handled by DMA clients.
+		 */
+		if (uDMAIsChannelEnabled(DMA_CC23_ALL_CH_MASK)) {
+			return -EBUSY;
+		}
+
+		uDMADisable();
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_DMA);
+
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		dma_cc23x0_enable(data);
+
+		/* Restore context for the channels that were configured before */
+		ARRAY_FOR_EACH_PTR(data->channels, ch_data) {
+			if (ch_data->configured) {
+				dma_cc23x0_config(dev, i, &ch_data->dma_cfg);
+			}
+			i++;
+		}
+
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
 
 static struct dma_cc23x0_data cc23x0_data;
 
@@ -376,7 +484,10 @@ static DEVICE_API(dma, dma_cc23x0_api) = {
 	.get_status = dma_cc23x0_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, dma_cc23x0_init, NULL,
+PM_DEVICE_DT_INST_DEFINE(0, dma_cc23x0_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, dma_cc23x0_init,
+		      PM_DEVICE_DT_INST_GET(0),
 		      &cc23x0_data, NULL,
 		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,
 		      &dma_cc23x0_api);
