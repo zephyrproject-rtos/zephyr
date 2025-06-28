@@ -273,7 +273,7 @@ config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	default 0
 	depends on GEN_ISR_TABLES
 	help
-	  On some RISCV platform the first interrupt vectors are primarly
+	  On some RISCV platform the first interrupt vectors are primarily
 	  intended for inter-hart interrupt signaling and so retained for that
 	  purpose and not available. When this option is set, all the IRQ
 	  vectors are shifted by this offset value when installed into the

@@ -24,7 +24,7 @@ config I2S_AMBIQ_BUFFER_ALIGNMENT
 	int "Set the I2S DMA TCB buffer alignment"
 	default DCACHE_LINE_SIZE if DCACHE
 	help
-	  I2S buffer should be 32bytes aligned when placed in cachable region.
+	  I2S buffer should be 32bytes aligned when placed in cacheable region.
 
 config I2S_AMBIQ_RX_BLOCK_COUNT
 	int "RX queue length"

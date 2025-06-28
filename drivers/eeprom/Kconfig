@@ -68,7 +68,7 @@ config EEPROM_AT24
 	  - ST M24xxx
 
 config EEPROM_AT25
-	bool "SPI EEPROMs compatibile with Atmel's AT25 family"
+	bool "SPI EEPROMs compatible with Atmel's AT25 family"
 	default y
 	depends on DT_HAS_ATMEL_AT25_ENABLED
 	select SPI

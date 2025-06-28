@@ -31,7 +31,7 @@ config MCUMGR_SMP_CBOR_MIN_DECODING_LEVELS
 	help
 	  Minimal decoding levels, map/list encapsulation, required
 	  to be supported by zcbor decoding of SMP responses
-	  is auto genereated from MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_? options.
+	  is auto generated from MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_? options.
 	  A group or command that adds additional maps/lists above the
 	  base map, which is already taken into account, should
 	  select one of the MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_?.
@@ -87,7 +87,7 @@ config MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS
 	help
 	  Minimal encoding levels, map/list encapsulation, required
 	  to be supported by zcbor encoding of SMP responses
-	  is auto genereated from MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_? options.
+	  is auto generated from MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_? options.
 	  A group or command that adds additional maps/lists above the
 	  base map, which is already taken into account, should
 	  select one of the MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_?.

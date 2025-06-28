@@ -6,7 +6,7 @@
 menuconfig AUXDISPLAY
 	bool "Auxiliary (textual) Display Drivers"
 	help
-	  Enable auxiliary/texual display drivers (e.g. alphanumerical displays)
+	  Enable auxiliary/textual display drivers (e.g. alphanumerical displays)
 
 if AUXDISPLAY
 
