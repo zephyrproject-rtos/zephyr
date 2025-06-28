@@ -216,7 +216,7 @@ if (CONFIG_LOG)
 endif()
 
 if (CONFIG_MULTI_LEVEL_INTERRUPTS)
-  zephyr_iterable_section(NAME intc_table KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+  zephyr_iterable_section(NAME intc_table KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
 if (CONFIG_HTTP_SERVER)
