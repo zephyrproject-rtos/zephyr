@@ -348,6 +348,7 @@ static void init_le_chan_private(struct bt_l2cap_le_chan *le_chan)
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	le_chan->_sdu = NULL;
 	le_chan->_sdu_len = 0;
+	le_chan->_sdu_remaining = 0;
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 	le_chan->_sdu_len_done = 0;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
@@ -838,7 +839,7 @@ static struct bt_l2cap_le_chan *get_ready_chan(struct bt_conn *conn)
 	return NULL;
 }
 
-static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
+static void l2cap_chan_buf_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct bt_l2cap_chan *chan;
 	uint16_t cid = POINTER_TO_UINT(user_data);
@@ -846,14 +847,14 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 	LOG_DBG("conn %p CID 0x%04x err %d", conn, cid, err);
 
 	if (err) {
-		LOG_DBG("error %d when sending SDU", err);
+		LOG_DBG("error %d when sending buf", err);
 
 		return;
 	}
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
 	if (!chan) {
-		LOG_DBG("got SDU sent cb for disconnected chan (CID %u)", cid);
+		LOG_DBG("got buf sent cb for disconnected chan (CID %u)", cid);
 
 		return;
 	}
@@ -946,6 +947,69 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		return NULL;
 	}
 
+	bool last_sdu = true;
+
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+
+	/* Add SDU header if dynamic channel */
+	if (L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
+		if (lechan->_sdu_remaining == 0) {
+			uint16_t buf_len = pdu->len;
+
+			if (buf_len > lechan->tx.mtu) {
+				LOG_DBG("buf->len %u > tx.mtu %u, not last SDU",
+					buf_len, lechan->tx.mtu);
+				/* if tx.mtu == tx.mps, it's better to use
+				 * an SDU size of tx.mps minus the SDU header
+				 * otherwise once we add the SDU header, the
+				 * SDU won't fit into one PDU.
+				 */
+				if (lechan->tx.mtu == lechan->tx.mps) {
+					buf_len = lechan->tx.mtu - BT_L2CAP_SDU_HDR_SIZE;
+				} else {
+					buf_len = lechan->tx.mtu;
+				}
+				last_sdu = false;
+			} else {
+				LOG_DBG("buf->len %u <= tx.mtu %u, last SDU",
+					buf_len, lechan->tx.mtu);
+				last_sdu = true;
+			}
+
+			/* L2CAP LE CoC SDUs are segmented and put into K-frames PDUs which have
+			 * their own L2CAP header (i.e. PDU length, channel id).
+			 *
+			 * The SDU length is right before the data that will be segmented and is
+			 * only present in the first PDU. Here's an example:
+			 *
+			 * Sent data payload of 50 bytes over channel 0x4040 with MPS of 30 bytes:
+			 * First PDU (K-frame):
+			 * | L2CAP K-frame header        | K-frame payload                 |
+			 * | PDU length  | Channel ID    | SDU length   | SDU payload      |
+			 * | 0x001e      | 0x4040        | 0x0032       | 28 bytes of data |
+			 *
+			 * Second and last PDU (K-frame):
+			 * | L2CAP K-frame header        | K-frame payload     |
+			 * | PDU length  | Channel ID    | rest of SDU payload |
+			 * | 0x0016      | 0x4040        | 22 bytes of data    |
+			 */
+			LOG_DBG("Adding L2CAP SDU header: buf %p chan %p len %u / %u",
+				pdu, lechan, buf_len, pdu->len);
+			net_buf_push_le16(pdu, buf_len);
+			/* set _sdu_remaining to the payload len + SDU_HDR_SIZE */
+			lechan->_sdu_remaining = buf_len + BT_L2CAP_SDU_HDR_SIZE;
+			LOG_DBG("_sdu_remaining set to %u", lechan->_sdu_remaining);
+		}
+
+		if (lechan->_pdu_remaining == 0) {
+			/* add PDU header to _sdu_remaining */
+			lechan->_sdu_remaining += sizeof(struct bt_l2cap_hdr);
+			LOG_DBG("Adding PDU header size to _sdu_remaining, now %u",
+				lechan->_sdu_remaining);
+		}
+	}
+#endif
+
 	/* Add PDU header */
 	if (lechan->_pdu_remaining == 0) {
 		struct bt_l2cap_hdr *hdr;
@@ -961,6 +1025,7 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		hdr->cid = sys_cpu_to_le16(lechan->tx.cid);
 
 		lechan->_pdu_remaining = pdu_len + sizeof(*hdr);
+		LOG_DBG("_pdu_remaining set to %u", lechan->_pdu_remaining);
 		chan_take_credit(lechan);
 	}
 
@@ -973,21 +1038,26 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	 */
 	bool last_seg = lechan->_pdu_remaining == pdu->len;
 
-	if (last_frag && last_seg) {
-		LOG_DBG("last frag of last seg, dequeuing %p", pdu);
+	/* Whether this buf will be done when its data is sent */
+	bool buf_end = last_frag && last_seg && last_sdu;
+
+	if (buf_end) {
+		LOG_DBG("dequeuing %p, pdu_remaining = %u, len = %u",
+			(void *)pdu, lechan->_pdu_remaining, pdu->len);
 		__maybe_unused struct net_buf *b = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
 
 		__ASSERT_NO_MSG(b == pdu);
+	} else {
+		LOG_DBG("returning buf %p (len %u) but not removed from tx_queue",
+			(void *)pdu, pdu->len);
 	}
 
 	if (last_frag && L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
-		bool sdu_end = last_frag && last_seg;
-
-		LOG_DBG("adding %s callback", sdu_end ? "`sdu_sent`" : "NULL");
+		LOG_DBG("adding %s callback", buf_end ? "`buf_sent`" : "NULL");
 		/* No user callbacks for SDUs */
 		make_closure(pdu->user_data,
-			     sdu_end ? l2cap_chan_sdu_sent : NULL,
-			     sdu_end ? UINT_TO_POINTER(lechan->tx.cid) : NULL);
+			     buf_end ? l2cap_chan_buf_sent : NULL,
+			     buf_end ? UINT_TO_POINTER(lechan->tx.cid) : NULL);
 	}
 
 	if (last_frag) {
@@ -1019,6 +1089,23 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	} else {
 		lechan->_pdu_remaining = 0;
 	}
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	size_t bytes_sent;
+
+	if (*length > amount) {
+		bytes_sent = amount;
+	} else {
+		bytes_sent = *length;
+	}
+
+	if (lechan->_sdu_remaining > bytes_sent) {
+		lechan->_sdu_remaining -= bytes_sent;
+	} else {
+		lechan->_sdu_remaining = 0;
+	}
+	LOG_DBG("%s done: amount %u, bytes_sent = %u, _pdu_remaining %u, _sdu_remaining %u",
+		__func__, amount, bytes_sent, lechan->_pdu_remaining, lechan->_sdu_remaining);
+#endif
 
 	return pdu;
 }
@@ -3234,18 +3321,10 @@ __maybe_unused static bool user_data_not_empty(const struct net_buf *buf)
 
 static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
-	uint16_t sdu_len = buf->len;
-
 	LOG_DBG("chan %p buf %p", le_chan, buf);
 
 	/* Frags are not supported. */
 	__ASSERT_NO_MSG(buf->frags == NULL);
-
-	if (sdu_len > le_chan->tx.mtu) {
-		LOG_ERR("attempt to send %u bytes on %u MTU chan",
-			sdu_len, le_chan->tx.mtu);
-		return -EMSGSIZE;
-	}
 
 	if (buf->ref != 1) {
 		/* The host may alter the buf contents when segmenting. Higher
@@ -3269,27 +3348,6 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		/* There may be issues if user_data is not empty. */
 		LOG_WRN("user_data is not empty");
 	}
-
-	/* Prepend SDU length.
-	 *
-	 * L2CAP LE CoC SDUs are segmented and put into K-frames PDUs which have
-	 * their own L2CAP header (i.e. PDU length, channel id).
-	 *
-	 * The SDU length is right before the data that will be segmented and is
-	 * only present in the first PDU. Here's an example:
-	 *
-	 * Sent data payload of 50 bytes over channel 0x4040 with MPS of 30 bytes:
-	 * First PDU (K-frame):
-	 * | L2CAP K-frame header        | K-frame payload                 |
-	 * | PDU length  | Channel ID    | SDU length   | SDU payload      |
-	 * | 0x001e      | 0x4040        | 0x0032       | 28 bytes of data |
-	 *
-	 * Second and last PDU (K-frame):
-	 * | L2CAP K-frame header        | K-frame payload     |
-	 * | PDU length  | Channel ID    | rest of SDU payload |
-	 * | 0x0016      | 0x4040        | 22 bytes of data    |
-	 */
-	net_buf_push_le16(buf, sdu_len);
 
 	/* Put buffer on TX queue */
 	k_fifo_put(&le_chan->tx_queue, buf);
