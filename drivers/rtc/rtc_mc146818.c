@@ -15,6 +15,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/rtc/mc146818.h>
 
 #define RTC_STD_INDEX (DT_INST_REG_ADDR_BY_IDX(0, 0))
 #define RTC_STD_TARGET (DT_INST_REG_ADDR_BY_IDX(0, 1))
@@ -117,15 +118,6 @@
 #define RTC_IN_CLK_DIV_BITS_4194304 (0)
 #define RTC_IN_CLK_DIV_BITS_1048576 (1 << 4)
 #define RTC_IN_CLK_DIV_BITS_32768   (2 << 4)
-
-struct rtc_mc146818_data {
-	struct k_spinlock lock;
-	bool alarm_pending;
-	rtc_alarm_callback cb;
-	void *cb_data;
-	rtc_update_callback update_cb;
-	void *update_cb_data;
-};
 
 static uint8_t rtc_read(int reg)
 {
