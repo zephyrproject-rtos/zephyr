@@ -294,9 +294,19 @@ New APIs and options
   * :c:type:`video_api_ctrl_t`
   * :c:func:`video_query_ctrl`
   * :c:func:`video_print_ctrl`
+  * :c:type:`video_api_selection_t`
   * :c:func:`video_set_selection`
   * :c:func:`video_get_selection`
   * :ref:`video-sw-generator <snippet-video-sw-generator>`
+  * :c:func:`video_get_csi_link_freq`
+  * :c:macro:`VIDEO_CID_LINK_FREQ`
+  * :c:macro:`VIDEO_CID_AUTO_WHITE_BALANCE` and other controls from the BASE control class.
+  * :c:macro:`VIDEO_CID_EXPOSURE_ABSOLUTE` and other controls from the CAMERA control class.
+  * :c:macro:`VIDEO_PIX_FMT_Y10` and ``Y12``, ``Y14``, ``Y16`` variants
+  * :c:macro:`VIDEO_PIX_FMT_SRGGB10P` and ``12P``, ``14P`` variants, for all 4 bayer variants.
+  * ``video_buffer.index`` field
+  * ``video_ctrl_query.int_menu`` field
+  * :c:macro:`VIDEO_MIPI_CSI2_DT_NULL` and other MIPI standard values
 
 * PCIe
 
