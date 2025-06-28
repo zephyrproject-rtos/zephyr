@@ -17,6 +17,12 @@ set_property(TARGET linker PROPERTY lto_arguments)
 
 check_set_linker_property(TARGET linker PROPERTY sort_alignment ${LINKERFLAGPREFIX},--sort-section=alignment)
 
+check_set_linker_property(TARGET linker PROPERTY no_error_rwx_segments
+  ${LINKERFLAGPREFIX},--no-warn-rwx-segments ${LINKERFLAGPREFIX},--no-error-rwx-segments)
+
+check_set_linker_property(TARGET linker PROPERTY error_rwx_segments
+  ${LINKERFLAGPREFIX},--warn-rwx-segments ${LINKERFLAGPREFIX},--error-rwx-segments)
+
 if(CONFIG_RISCV_GP)
   check_set_linker_property(TARGET linker PROPERTY relax ${LINKERFLAGPREFIX},--relax-gp)
 endif()
