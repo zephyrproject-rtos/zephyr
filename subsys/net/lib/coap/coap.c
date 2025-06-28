@@ -1469,14 +1469,19 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 }
 
 static int update_control_block1(struct coap_block_context *ctx,
-				     int block, int size)
+				 int block, int size)
 {
-	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+	size_t new_current;
 
 	if (block == -ENOENT) {
 		return 0;
 	}
 
+	if (block < 0) {
+		return -EINVAL;
+	}
+
+	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 	if (new_current != ctx->current) {
 		return -EINVAL;
 	}
@@ -1497,11 +1502,17 @@ static int update_control_block1(struct coap_block_context *ctx,
 static int update_control_block2(struct coap_block_context *ctx,
 				 int block, int size)
 {
-	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+	size_t new_current;
 
 	if (block == -ENOENT) {
 		return 0;
 	}
+
+	if (block < 0) {
+		return -EINVAL;
+	}
+
+	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 
 	if (GET_MORE(block)) {
 		return -EINVAL;
