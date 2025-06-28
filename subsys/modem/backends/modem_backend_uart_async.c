@@ -198,7 +198,7 @@ static void advertise_receive_buf_stats(struct modem_backend_uart *backend)
 
 static uint32_t get_transmit_buf_size(struct modem_backend_uart *backend)
 {
-	return backend->async.common.transmit_buf_size;
+	return backend->async.transmit_buf_size;
 }
 
 static int modem_backend_uart_async_transmit(void *data, const uint8_t *buf, size_t size)
@@ -218,9 +218,9 @@ static int modem_backend_uart_async_transmit(void *data, const uint8_t *buf, siz
 	bytes_to_transmit = MIN(size, get_transmit_buf_size(backend));
 
 	/* Copy buf to transmit buffer which is passed to UART */
-	memcpy(backend->async.common.transmit_buf, buf, bytes_to_transmit);
+	memcpy(backend->async.transmit_buf, buf, bytes_to_transmit);
 
-	ret = uart_tx(backend->uart, backend->async.common.transmit_buf, bytes_to_transmit,
+	ret = uart_tx(backend->uart, backend->async.transmit_buf, bytes_to_transmit,
 		      CONFIG_MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS * 1000L);
 
 #if CONFIG_MODEM_STATS
@@ -328,8 +328,8 @@ int modem_backend_uart_async_init(struct modem_backend_uart *backend,
 	ring_buf_init(&backend->async.receive_rb, (receive_buf_size_quarter * 2),
 		      &config->receive_buf[receive_buf_size_quarter * 2]);
 
-	backend->async.common.transmit_buf = config->transmit_buf;
-	backend->async.common.transmit_buf_size = config->transmit_buf_size;
+	backend->async.transmit_buf = config->transmit_buf;
+	backend->async.transmit_buf_size = config->transmit_buf_size;
 	k_work_init(&backend->async.common.rx_disabled_work,
 		    modem_backend_uart_async_notify_closed);
 	modem_pipe_init(&backend->pipe, backend, &modem_backend_uart_async_api);
