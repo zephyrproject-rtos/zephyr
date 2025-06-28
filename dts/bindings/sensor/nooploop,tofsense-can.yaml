@@ -1,0 +1,21 @@
+# Copyright (c) 2025 Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nooploop TOFSense Time Of Flight Sensor through CAN bus.
+
+compatible: "nooploop,tofsense"
+
+include: "nooploop,tofsense-common.yaml"
+
+properties:
+  id:
+    type: int
+    required: true
+    description: Device ID on CAN network
+
+  can-bus:
+    type: boolean
+    description: |
+      This property is used by the driver to distinguish between
+      uart binding and CAN binding, given that CAN controllers
+      have no property 'bus: can'.
