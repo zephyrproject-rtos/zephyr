@@ -53,3 +53,18 @@ set_property(TARGET linker PROPERTY relax)
 # Linker flag for defining specs. Defined only by gcc, when gcc is used as
 # front-end for ld.
 set_compiler_property(PROPERTY specs)
+
+#####################################################
+# This section covers flags related to optimization #
+#####################################################
+set_property(TARGET linker PROPERTY no_optimization)
+
+set_property(TARGET linker PROPERTY optimization_debug)
+
+set_property(TARGET linker PROPERTY optimization_speed)
+
+set_property(TARGET linker PROPERTY optimization_size)
+
+set_property(TARGET linker PROPERTY optimization_size_aggressive)
+
+set_property(TARGET linker PROPERTY optimization_fast)
