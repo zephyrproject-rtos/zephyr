@@ -293,6 +293,10 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: libpldm
+      revision: zephyr
+      url: git@github.com:teburd/libpldm.git
+      path: modules/lib/libpldm
     - name: littlefs
       path: modules/fs/littlefs
       groups:
