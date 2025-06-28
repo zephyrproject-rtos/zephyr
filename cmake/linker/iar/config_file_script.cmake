@@ -98,7 +98,7 @@ function(process_region)
         )
     endif()
     # Treat BSS to be noinit
-    if(type STREQUAL BSS)
+    if(CONFIG_IAR_ZEPHYR_INIT AND type STREQUAL BSS)
       set_property(GLOBAL PROPERTY ${section}_NOINIT TRUE)
     endif()
   endforeach() # all sections
