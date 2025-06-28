@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SWIR_HL78XX_EV_KIT
+	def_bool $(shields_list_contains,swir_hl78xx_ev_kit)
