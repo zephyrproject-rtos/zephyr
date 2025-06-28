@@ -69,6 +69,8 @@ class Filters:
     MODULE = 'Module filter'
     # in case of missing env. variable required for a platform
     ENVIRONMENT = 'Environment filter'
+    # filtered by an exclude test plan
+    EXCLUDE_TESTPLAN = 'Exclusion testplan filter'
 
 
 class TestLevel:
@@ -118,6 +120,37 @@ class TestPlan:
         self.warnings = 0
 
         self.scenarios = []
+
+        self.exclusion_plans = {
+          'exact': {
+             'key_ts': lambda ts: ('EXACT', (ts['name'], ts['platform'], ts['runnable']), \
+                                             ['status']),
+             'key_inst': lambda inst: (inst.testsuite.name, inst.platform.name, inst.run),
+             'files': vars(self.options).get('exclude_plan_exact', []),
+             'filters': {}
+          },
+          'run': {
+             'key_ts': lambda ts: ('RUN', (ts['name'], None, ts['runnable']), \
+                                             ['platform', 'status']),
+             'key_inst': lambda inst: (inst.testsuite.name, None, inst.run),
+             'files': vars(self.options).get('exclude_plan_run', []),
+             'filters': {}
+          },
+          'platform': {
+             'key_ts': lambda ts: ('PLATFORM', (ts['name'], ts['platform'], None), \
+                                             ['runnable', 'status']),
+             'key_inst': lambda inst: (inst.testsuite.name, inst.platform.name, None),
+             'files': vars(self.options).get('exclude_plan_platform', []),
+             'filters': {}
+          },
+          'name': {
+             'key_ts': lambda ts: ('NAME', (ts['name'], None, None), \
+                                             ['platform', 'runnable', 'status']),
+             'key_inst': lambda inst: (inst.testsuite.name, None, None),
+             'files': vars(self.options).get('exclude_plan_name', []),
+             'filters': {}
+          }
+        }
 
         self.hwm = env.hwm
         # used during creating shorter build paths
@@ -229,6 +262,8 @@ class TestPlan:
             )
         else:
             last_run = os.path.join(self.options.outdir, "twister.json")
+
+        self.load_exclusion_plans()
 
         if self.options.only_failed or self.options.report_summary is not None:
             self.load_from_file(last_run)
@@ -610,6 +645,53 @@ class TestPlan:
                 instance.status = TwisterStatus.SKIP
                 instance.reason = "Not under quarantine"
 
+    def load_exclusion_plan(self, filename, rule):
+        ts_template = rule['key_ts']
+        ts_res = rule['filters']
+        try:
+            with open(filename) as json_test_plan:
+                jtp = json.load(json_test_plan)
+                for ts in jtp.get("testsuites", []):
+                    # compose exclusion plan specific key
+                    _, ts_key, ts_item_names = ts_template(ts)
+                    if ts_key not in ts_res:
+                        ts_res[ts_key] = []
+                    # get test suite properties needed for this filter type
+                    ts_item = { item_name: ts.get(item_name, None) for item_name in ts_item_names }
+                    ts_item['filename'] = filename
+                    ts_res[ts_key].append(ts_item)
+            return ts_res
+        except FileNotFoundError as e:
+            logger.error(f"{e}")
+            return None
+
+    def load_exclusion_plans(self):
+        for r_name_, rule_ in self.exclusion_plans.items():
+            for excl_tp_ in rule_['files']:
+                logger.debug(f"Loading test plan for {r_name_.upper()} exclude from: {excl_tp_}")
+                if self.load_exclusion_plan(excl_tp_, rule_) is None:
+                    raise TwisterRuntimeError(f"{r_name_.upper()} exclude test plan: "
+                                              f"load failed from {excl_tp_}")
+
+    def handle_exclusion_plans(self, instance: TestInstance):
+        # Apply exclusion test plans in the exact order:
+        excl_st_ = set(self.options.exclude_plan_status)
+        for r_name_ in ['exact', 'platform', 'run', 'name']:
+            rule_ = self.exclusion_plans[r_name_]
+            excl_key = rule_['key_inst'](instance)
+            if rule_['filters'] and excl_key in rule_['filters']:
+                excl_plans = [ pl_['filename'] for pl_ in rule_['filters'][excl_key] ]
+                excl_statuses = { pl_['status'] for pl_ in rule_['filters'][excl_key] }
+                log_str = f"Excluded by '{r_name_.upper()}' testplans:{excl_plans}"
+                if excl_st_:
+                    log_str += f", statuses:{excl_statuses} rule_status:'{excl_st_}'"
+                if excl_st_ and not excl_st_.intersection(excl_statuses):
+                    logger.debug(f"{instance.name}: NOT " + log_str)
+                    continue
+                logger.debug(f"{instance.name}: " + log_str)
+                instance.add_filter(log_str, Filters.EXCLUDE_TESTPLAN)
+                break
+
     def load_from_file(self, file, filter_platform=None):
         if filter_platform is None:
             filter_platform = []
@@ -666,6 +748,9 @@ class TestPlan:
                         instance.reason = reason
 
                     self.handle_quarantined_tests(instance, platform)
+
+                    # Filter with exclusion test plans as the last instance filter at this point.
+                    self.handle_exclusion_plans(instance)
 
                     for tc in ts.get('testcases', []):
                         identifier = tc['identifier']
@@ -1075,6 +1160,9 @@ class TestPlan:
                             if not instance.filters:
                                 keyed_tests[test_keys] = {'plat': plat, 'ts': ts}
 
+                # Filter with exclusion test plans as the last instance filter at this point.
+                self.handle_exclusion_plans(instance)
+
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
                 instance_list.append(instance)
@@ -1249,7 +1337,7 @@ def change_skip_to_error_if_integration(options, instance):
         filters = {t['type'] for t in instance.filters}
         ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
                          Filters.TOOLCHAIN, Filters.MODULE, Filters.TESTPLAN,
-                         Filters.ENVIRONMENT}
+                         Filters.ENVIRONMENT, Filters.EXCLUDE_TESTPLAN}
         if filters.intersection(ignore_filters):
             return
         if "quarantine" in instance.reason.lower():
