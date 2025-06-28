@@ -83,8 +83,7 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   nocache.ld
 )
 
-# Only ARM, X86 and RISCV use ROM_START_OFFSET.
-if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86 OR DEFINED CONFIG_ARM64 OR DEFINED CONFIG_RISCV)
+if (DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
   # Exclamation mark is printable character with lowest number in ASCII table.
   # We are sure that this file will be included as a first.
   zephyr_linker_sources(ROM_START SORT_KEY ! rom_start_address.ld)
