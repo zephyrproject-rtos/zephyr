@@ -118,7 +118,7 @@ if(CONFIG_SENSING)
 endif()
 
 if(CONFIG_ZBUS)
-  zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 1)
+  zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
 if(CONFIG_UVB)

@@ -59,10 +59,8 @@ endif()
 if(CONFIG_NET_SAMPLE_HTTPS_SERVICE)
   zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE NAME
 			      http_resource_desc_wss_console_service
-			      KVMA RAM_REGION GROUP RODATA_REGION
-			      SUBALIGN Z_LINK_ITERABLE_SUBALIGN)
+			      KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE NAME
 			    http_resource_desc_ws_console_service
-			    KVMA RAM_REGION GROUP RODATA_REGION
-			    SUBALIGN Z_LINK_ITERABLE_SUBALIGN)
+			    KVMA RAM_REGION GROUP RODATA_REGION)
