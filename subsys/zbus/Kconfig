@@ -114,6 +114,31 @@ config HEAP_MEM_POOL_ADD_SIZE_ZBUS
 	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 
+config ZBUS_PUBLISHER_MAX_WAIT_MS
+	int "Max delay a publisher will wait on a channel in milliseconds"
+	default -1
+	help
+	  Defaults to -1 (K_FOREVER)
+
+config ZBUS_WQ_ENABLE
+	bool "Use to enable zbus to use its own workqueue instead of the system work queue"
+
+if ZBUS_WQ_ENABLE
+
+config ZBUS_WQ_STACK_SIZE
+	int "Size of zbus work queue stack"
+	default 1024
+	help
+	  Size of stack used for the zbus work queue thread.
+
+config ZBUS_WQ_PRIORITY
+	int "Priority of RX work queue thread"
+	default 5
+	range -256 15
+	help
+	  Priority of the zbus work queue thread.
+
+endif # ZBUS_WQ_ENABLE
 
 module = ZBUS
 module-str = zbus
