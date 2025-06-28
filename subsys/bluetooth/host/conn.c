@@ -63,14 +63,18 @@
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
 LOG_MODULE_REGISTER(bt_conn);
 
-K_FIFO_DEFINE(free_tx);
+static K_FIFO_DEFINE(free_tx);
 
 #if defined(CONFIG_BT_CONN_TX_NOTIFY_WQ)
 static struct k_work_q conn_tx_workq;
 static K_KERNEL_STACK_DEFINE(conn_tx_workq_thread_stack, CONFIG_BT_CONN_TX_NOTIFY_WQ_STACK_SIZE);
 #endif /* CONFIG_BT_CONN_TX_NOTIFY_WQ */
 
-static void tx_free(struct bt_conn_tx *tx);
+static void tx_free(struct bt_conn *conn, struct bt_conn_tx *tx);
+
+#if defined(CONFIG_BT_ISO)
+static K_FIFO_DEFINE(free_iso_tx);
+#endif
 
 static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
 {
@@ -84,7 +88,7 @@ static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
 	/* Free up TX metadata before calling callback in case the callback
 	 * tries to allocate metadata
 	 */
-	tx_free(tx);
+	tx_free(conn, tx);
 
 	if (cb) {
 		cb(conn, user_data, -ESHUTDOWN);
@@ -197,8 +201,9 @@ static struct bt_conn_tx iso_tx[CONFIG_BT_ISO_TX_BUF_COUNT];
 
 int bt_conn_iso_init(void)
 {
+	k_fifo_init(&free_iso_tx);
 	for (size_t i = 0; i < ARRAY_SIZE(iso_tx); i++) {
-		k_fifo_put(&free_tx, &iso_tx[i]);
+		k_fifo_put(&free_iso_tx, &iso_tx[i]);
 	}
 
 	return 0;
@@ -261,11 +266,17 @@ static inline const char *state2str(bt_conn_state_t state)
 	}
 }
 
-static void tx_free(struct bt_conn_tx *tx)
+static void tx_free(struct bt_conn *conn, struct bt_conn_tx *tx)
 {
 	LOG_DBG("%p", tx);
 	tx->cb = NULL;
 	tx->user_data = NULL;
+#if defined(CONFIG_BT_ISO)
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		k_fifo_put(&free_iso_tx, tx);
+		return;
+	}
+#endif /* CONFIG_BT_ISO */
 	k_fifo_put(&free_tx, tx);
 }
 
@@ -311,7 +322,7 @@ static void tx_notify_process(struct bt_conn *conn)
 		user_data = tx->user_data;
 
 		/* Free up TX notify since there may be user waiting */
-		tx_free(tx);
+		tx_free(conn, tx);
 
 		/* Run the callback, at this point it should be safe to
 		 * allocate new buffers since the TX should have been
@@ -503,11 +514,25 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 static bool dont_have_tx_context(struct bt_conn *conn)
 {
+#if defined(CONFIG_BT_ISO)
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		return k_fifo_is_empty(&free_iso_tx);
+	}
+#endif
 	return k_fifo_is_empty(&free_tx);
 }
 
-static struct bt_conn_tx *conn_tx_alloc(void)
+static struct bt_conn_tx *conn_tx_alloc(struct bt_conn *conn)
 {
+#if defined(CONFIG_BT_ISO)
+	if (conn->type == BT_CONN_TYPE_ISO) {
+		struct bt_conn_tx *ret = k_fifo_get(&free_iso_tx, K_NO_WAIT);
+
+		LOG_DBG("%p", ret);
+
+		return ret;
+	}
+#endif
 	struct bt_conn_tx *ret = k_fifo_get(&free_tx, K_NO_WAIT);
 
 	LOG_DBG("%p", ret);
@@ -684,7 +709,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	/* Allocate and set the TX context */
-	tx = conn_tx_alloc();
+	tx = conn_tx_alloc(conn);
 
 	/* See big comment above */
 	if (!tx) {
@@ -866,8 +891,17 @@ void bt_conn_data_ready(struct bt_conn *conn)
 		 */
 		bt_conn_ref(conn);
 		k_sched_lock();
-		sys_slist_append(&bt_dev.le.conn_ready,
-				 &conn->_conn_ready);
+
+#if defined(CONFIG_BT_ISO)
+		if (conn->type == BT_CONN_TYPE_ISO) {
+			sys_slist_append(&bt_dev.le.iso_conn_ready, &conn->_conn_ready);
+		} else {
+			sys_slist_append(&bt_dev.le.conn_ready, &conn->_conn_ready);
+		}
+#else /* !CONFIG_BT_ISO */
+		sys_slist_append(&bt_dev.le.conn_ready, &conn->_conn_ready);
+#endif /* CONFIG_BT_ISO */
+
 		k_sched_unlock();
 		LOG_DBG("raised");
 	} else {
@@ -909,20 +943,12 @@ __maybe_unused static bool dont_have_methods(struct bt_conn *conn)
 		(conn->has_data == NULL);
 }
 
-struct bt_conn *get_conn_ready(void)
+static struct bt_conn *get_conn_ready_from_sys_slist(sys_slist_t *ready_list)
 {
 	struct bt_conn *conn, *tmp;
 	sys_snode_t *prev = NULL;
 
-	if (dont_have_viewbufs()) {
-		/* We will get scheduled again when the (view) buffers are freed. If you
-		 * hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
-		 */
-		LOG_DBG("no view bufs");
-		return NULL;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_dev.le.conn_ready, conn, tmp, _conn_ready) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(ready_list, conn, tmp, _conn_ready) {
 		__ASSERT_NO_MSG(tmp != conn);
 
 		/* Iterate over the list of connections that have data to send
@@ -953,7 +979,7 @@ struct bt_conn *get_conn_ready(void)
 		if (should_stop_tx(conn)) {
 			/* Move reference off the list */
 			__ASSERT_NO_MSG(prev != &conn->_conn_ready);
-			sys_slist_remove(&bt_dev.le.conn_ready, prev, &conn->_conn_ready);
+			sys_slist_remove(ready_list, prev, &conn->_conn_ready);
 			(void)atomic_set(&conn->_conn_ready_lock, 0);
 
 			/* Append connection to list if it still has data */
@@ -970,6 +996,27 @@ struct bt_conn *get_conn_ready(void)
 
 	/* No connection has data to send */
 	return NULL;
+}
+
+struct bt_conn *get_conn_ready(void)
+{
+	if (dont_have_viewbufs()) {
+		/* We will get scheduled again when the (view) buffers are freed. If you
+		 * hit this a lot, try increasing `CONFIG_BT_CONN_FRAG_COUNT`
+		 */
+		LOG_DBG("no view bufs");
+		return NULL;
+	}
+
+#if defined(CONFIG_BT_ISO)
+	/* check for ISO connections first because ISO can be time sensitive */
+	struct bt_conn *conn = get_conn_ready_from_sys_slist(&bt_dev.le.iso_conn_ready);
+
+	if (conn != NULL) {
+		return conn;
+	}
+#endif
+	return get_conn_ready_from_sys_slist(&bt_dev.le.conn_ready);
 }
 
 /* Crazy that this file is compiled even if this is not true, but here we are. */
