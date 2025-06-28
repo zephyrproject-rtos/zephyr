@@ -202,6 +202,10 @@ New APIs and options
 
   * :c:func:`display_clear`
 
+* Logging
+
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
+
 * Networking:
 
   * IPv4
