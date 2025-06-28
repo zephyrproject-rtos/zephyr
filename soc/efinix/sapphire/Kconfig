@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_EFINIX_SAPPHIRE
-	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M

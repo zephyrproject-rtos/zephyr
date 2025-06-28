@@ -7,7 +7,6 @@ config SOC_CV64A6
 	bool
 	select RISCV
 	select RISCV_PRIVILEGED
-	select ATOMIC_OPERATIONS_BUILTIN
 	select RISCV_HAS_PLIC
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
