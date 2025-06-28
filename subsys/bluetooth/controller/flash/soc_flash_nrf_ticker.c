@@ -250,14 +250,24 @@ void nrf_flash_sync_get_timestamp_begin(void)
 
 bool nrf_flash_sync_check_time_limit(uint32_t iteration)
 {
-	uint32_t ticks_diff;
+	if (IS_ENABLED(CONFIG_SOC_COMPATIBLE_NRF54LX)) {
+		/* Write operations are not constant time depending on the previous value present
+		 * versus new value to be written. Hence, perform no more than one iteration.
+		 */
 
-	ticks_diff = ticker_ticks_diff_get(ticker_ticks_now_get(),
-					   _ticker_sync_context.ticks_begin);
-	if (ticks_diff + ticks_diff/iteration >
-	    HAL_TICKER_US_TO_TICKS(_ticker_sync_context.slot)) {
+		ARG_UNUSED(iteration);
+
 		return true;
-	}
+	} else {
+		uint32_t ticks_diff;
 
-	return false;
+		ticks_diff = ticker_ticks_diff_get(ticker_ticks_now_get(),
+						   _ticker_sync_context.ticks_begin);
+		if (ticks_diff + ticks_diff/iteration >
+		    HAL_TICKER_US_TO_TICKS(_ticker_sync_context.slot)) {
+			return true;
+		}
+
+		return false;
+	}
 }
