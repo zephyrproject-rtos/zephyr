@@ -426,7 +426,7 @@ deliberate."
 -doc_begin="Uses of a macro parameter for ordinary expansion and as an operand
 to the # or ## operators within the following macros are deliberate, to provide
 useful diagnostic messages to the user."
--config=MC3A2.R20.12,macros+={deliberate, "name(__ASSERT||__ASSERT_NO_MSG||BUILD_ASSERT"}
+-config=MC3A2.R20.12,macros+={deliberate, "name(__ASSERT||__ASSERT_NO_MSG||BUILD_ASSERT)"}
 -doc_end
 
 #
