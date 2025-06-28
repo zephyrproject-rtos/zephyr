@@ -305,21 +305,27 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 					uint32_t clk_pre_div, uint32_t clk_src_div)
 {
 	switch (clock_name) {
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
 	case IMX_CCM_SAI1_CLK:
 		CLOCK_SetMux(kCLOCK_Sai1Mux, clk_src);
 		CLOCK_SetDiv(kCLOCK_Sai1PreDiv, clk_pre_div);
 		CLOCK_SetDiv(kCLOCK_Sai1Div, clk_src_div);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai2))
 	case IMX_CCM_SAI2_CLK:
 		CLOCK_SetMux(kCLOCK_Sai2Mux, clk_src);
 		CLOCK_SetDiv(kCLOCK_Sai2PreDiv, clk_pre_div);
 		CLOCK_SetDiv(kCLOCK_Sai2Div, clk_src_div);
 		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai3))
 	case IMX_CCM_SAI3_CLK:
 		CLOCK_SetMux(kCLOCK_Sai3Mux, clk_src);
 		CLOCK_SetDiv(kCLOCK_Sai3PreDiv, clk_pre_div);
 		CLOCK_SetDiv(kCLOCK_Sai3Div, clk_src_div);
 		break;
+#endif
 	default:
 		return;
 	}
