@@ -11,3 +11,18 @@ config STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT
 	help
 	  Additional margin (%) added to step timing during test timeouts.
 	  Accounts for execution and scheduling jitter.
+
+config STEPPER_TEST_MICROSTEP_RESOLUTION
+	int "Test microstep resolution"
+	default 4
+	help
+	  Microstep resolution used to test setting the microstep resolution.
+	  As not all drivers support all microstep resolutions, so this needs to be adjusted
+	  on a per drvier basis.
+
+config STEPPER_TEST_ACCELERATION
+	bool "Disables some tests when acceleration is used"
+	default n
+	help
+	  This flag disables several tests cases that can not run correctly if the stepper uses
+	  an acceleration curve.
