@@ -8,3 +8,11 @@ tests:
 
   utilities.time.64bit:
     extra_args: M64_MODE=1
+
+  utilities.time.timeout32:
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+
+  utilities.time.timeout64:
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y

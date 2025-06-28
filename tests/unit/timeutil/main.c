@@ -8,6 +8,8 @@
 #include "timeutil_test.h"
 #include "../../../lib/utils/timeutil.c"
 
+extern void *setup(void);
+
 void timeutil_check(const struct timeutil_test_data *tp,
 		    size_t count)
 {
@@ -52,4 +54,4 @@ void timeutil_check(const struct timeutil_test_data *tp,
 	}
 }
 
-ZTEST_SUITE(timeutil_api, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(timeutil_api, NULL, setup, NULL, NULL, NULL);
