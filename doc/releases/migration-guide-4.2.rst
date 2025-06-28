@@ -772,3 +772,9 @@ Architectures
   of vector table in RAM.
 * Renamed :kconfig:option:`CONFIG_DEBUG_INFO` to :kconfig:option:`CONFIG_X86_DEBUG_INFO` to
   better reflect its purpose. This option is now only available for x86 architecture.
+
+* RISCV
+
+  * :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` has been removed, the ``*csf`` pointer will be
+    available in the ``struct arch_esf`` when :kconfig:option:`CONFIG_EXCEPTION_DEBUG` is
+    enabled.
