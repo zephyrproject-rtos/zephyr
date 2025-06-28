@@ -545,6 +545,10 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	int ret = 0;
 	bool changed = false;
 
+	if (value == NULL && len > 0) {
+		return -EINVAL;
+	}
+
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
 		LOG_ERR("path must have at least 3 parts");
 		return -EINVAL;
@@ -600,7 +604,7 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 		return ret;
 	}
 
-	if (memcmp(data_ptr, value, len) != 0 || res_inst->data_len != len) {
+	if ((value != NULL && memcmp(data_ptr, value, len) != 0) || res_inst->data_len != len) {
 		changed = true;
 	}
 
