@@ -50,6 +50,10 @@ extern "C" {
 #define MAX_FILE_NAME 255
 #endif
 
+#if !defined(MAX_FILE_NAME) && defined(CONFIG_FILE_SYSTEM_VIRTIOFS)
+#define MAX_FILE_NAME 255
+#endif
+
 #if !defined(MAX_FILE_NAME) /* filesystem selection */
 /* Use standard 8.3 when no filesystem is explicitly selected */
 #define MAX_FILE_NAME 12
