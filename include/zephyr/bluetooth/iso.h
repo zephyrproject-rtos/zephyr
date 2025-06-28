@@ -203,6 +203,9 @@ struct bt_iso_chan {
 	struct bt_iso_chan_qos		*qos;
 	/** Channel state */
 	enum bt_iso_state		state;
+	/** BIS Index 1..31 */
+	uint8_t		bis_index;
+
 #if (defined(CONFIG_BT_SMP) && defined(CONFIG_BT_ISO_UNICAST)) || defined(__DOXYGEN__)
 	/**
 	 * @brief The required security level of the channel
