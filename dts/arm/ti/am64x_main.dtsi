@@ -215,6 +215,16 @@
 		status = "disabled";
 	};
 
+	mcspi0: spi@20100000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20100000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	adc0: adc@28001000 {
 		compatible = "ti,am335x-adc";
 		reg = <0x28001000 DT_SIZE_K(1)>;
