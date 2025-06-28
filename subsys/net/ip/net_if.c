@@ -3623,7 +3623,7 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			continue;
 		}
 
-		subnet = UNALIGNED_GET(&addr->s_addr) &
+		subnet = addr->s_addr &
 			 ipv4->unicast[i].netmask.s_addr;
 
 		if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr &
@@ -3663,7 +3663,7 @@ static bool ipv4_is_broadcast_address(struct net_if *iface,
 		bcast.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr |
 			       ~ipv4->unicast[i].netmask.s_addr;
 
-		if (bcast.s_addr == UNALIGNED_GET(&addr->s_addr)) {
+		if (bcast.s_addr == addr->s_addr) {
 			ret = true;
 			goto out;
 		}
@@ -3991,7 +3991,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 				continue;
 			}
 
-			if (UNALIGNED_GET(&addr->s4_addr32[0]) ==
+			if (addr->s4_addr32[0] ==
 			    ipv4->unicast[i].ipv4.address.in_addr.s_addr) {
 
 				if (ret) {
@@ -4061,7 +4061,7 @@ struct in_addr net_if_ipv4_get_netmask_by_addr(struct net_if *iface,
 			continue;
 		}
 
-		subnet = UNALIGNED_GET(&addr->s_addr) &
+		subnet = addr->s_addr &
 			 ipv4->unicast[i].netmask.s_addr;
 
 		if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr &
@@ -4102,7 +4102,7 @@ bool net_if_ipv4_set_netmask_by_addr(struct net_if *iface,
 			continue;
 		}
 
-		subnet = UNALIGNED_GET(&addr->s_addr) &
+		subnet = addr->s_addr &
 			 ipv4->unicast[i].netmask.s_addr;
 
 		if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr &

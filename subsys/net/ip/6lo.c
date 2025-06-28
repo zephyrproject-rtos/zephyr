@@ -122,36 +122,36 @@ static int get_ihpc_inlined_size(uint16_t iphc)
 static inline bool net_6lo_ll_prefix_padded_with_zeros(struct in6_addr *addr)
 {
 	return (net_ipv6_is_ll_addr(addr) &&
-		(UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
-		(UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00));
+		(addr->s6_addr16[1] == 0x00) &&
+		(addr->s6_addr32[1] == 0x00));
 }
 
 static inline bool net_6lo_addr_16_bit_compressible(struct in6_addr *addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0xFFu)) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[6]) == htons(0xFE00u)));
+	return ((addr->s6_addr32[2] == htonl(0xFFu)) &&
+		 (addr->s6_addr16[6] == htons(0xFE00u)));
 }
 
 static inline bool net_6lo_maddr_8_bit_compressible(struct in6_addr *addr)
 {
 	return ((addr->s6_addr[1] == 0x02) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
+		 (addr->s6_addr16[1] == 0x00) &&
+		 (addr->s6_addr32[1] == 0x00) &&
+		 (addr->s6_addr32[2] == 0x00) &&
 		 (addr->s6_addr[14] == 0x00));
 }
 
 static inline bool net_6lo_maddr_32_bit_compressible(struct in6_addr *addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr32[2]) == 0x00) &&
+	return ((addr->s6_addr32[1] == 0x00) &&
+		 (addr->s6_addr32[2] == 0x00) &&
 		 (addr->s6_addr[12] == 0x00));
 }
 
 static inline bool net_6lo_maddr_48_bit_compressible(struct in6_addr *addr)
 {
-	return ((UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00) &&
-		 (UNALIGNED_GET(&addr->s6_addr16[4]) == 0x00) &&
+	return ((addr->s6_addr32[1] == 0x00) &&
+		 (addr->s6_addr16[4] == 0x00) &&
 		 (addr->s6_addr[10] == 0x00));
 }
 
