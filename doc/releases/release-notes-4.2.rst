@@ -297,6 +297,10 @@ New APIs and options
 
   * :c:func:`updatehub_report_error`
 
+* USB
+
+  * :c:func:`uvc_set_video_dev`
+
 * Other
 
   * :kconfig:option:`CONFIG_LV_Z_COLOR_MONO_HW_INVERSION`
