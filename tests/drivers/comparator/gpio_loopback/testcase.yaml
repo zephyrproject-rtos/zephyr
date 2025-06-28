@@ -32,3 +32,8 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf5340dk/nrf5340/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+  drivers.comparator.gpio_loopback.stm32_comp:
+    platform_allow:
+      - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h743zi/stm32h743xx
+      - nucleo_g474re/stm32g474xx
