@@ -11,6 +11,7 @@ supported:
   - adc
   - clock
   - counter
+  - crypto
   - dma
   - gpio
   - hwinfo

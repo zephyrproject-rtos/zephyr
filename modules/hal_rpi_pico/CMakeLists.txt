@@ -155,6 +155,12 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
           ${common_dir}/hardware_claim/include)
 
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_SHA256
+          ${rp2_common_dir}/pico_sha256/sha256.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_SHA256
+          ${rp2_common_dir}/hardware_sha256/include
+          ${rp2_common_dir}/pico_sha256/include)
+
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_RP2350
           ${rp2_common_dir}/pico_runtime_init/runtime_init.c)
   zephyr_include_directories_ifdef(CONFIG_SOC_SERIES_RP2350
