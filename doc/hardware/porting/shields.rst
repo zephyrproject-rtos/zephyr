@@ -99,6 +99,9 @@ areas of Zephyr, e.g: boards).
 Board compatibility
 *******************
 
+Devicetree Nodelabel Convention for Common Connectors
+-----------------------------------------------------
+
 Hardware shield-to-board compatibility depends on the use of well-known
 connectors used on popular boards (such as Arduino and 96boards).  For
 software compatibility, boards must also provide a configuration matching
@@ -115,6 +118,66 @@ This should be done at two different level:
 .. code-block:: devicetree
 
         arduino_i2c: &i2c1 {};
+
+Devicetree Nodelabel Convention for Common Protocols
+-----------------------------------------------------
+
+When adding shields or board support for Zephyr, it is often necessary to reference common
+communication interfaces like I2C, SPI, or MIPI DSI in a generic way. To facilitate this, Zephyr
+has adopted a convention of adding extra devicetree nodelabels in the board's DTS file for these
+common protocols.
+
+These labels follow the pattern:
+
+    zephyr_[protocol]
+
+Where ``[protocol]`` is the name of the communication interface, such as ``i2c``, ``spi``, or
+``mipi_dsi``.
+
+This allows shields to reference the appropriate controller node in a portable and generic manner,
+regardless of the specific hardware instance.
+
+**Example:**
+
+In your board's DTS file, you can add an extra nodelabel as follows:
+
+.. code-block:: devicetree
+
+        zephyr_i2c: &i2c0 {
+            status = "okay";
+            clock-frequency = ...;
+        };
+
+.. code-block:: devicetree
+
+        zephyr_mipi_dsi: &mipi_dsi {};
+
+**Why use these labels?**
+
+- They enable shields to reference communication buses without hard-coding instance names.
+- This convention improves portability and simplifies shield and driver development across boards.
+
+**How to use in shields or overlays?**
+
+When writing a shield devicetree overlay, use the nodelabel for maximum portability:
+
+.. code-block:: devicetree
+
+        &zephyr_i2c {
+            /* shield-specific configuration */
+        };
+
+**Supported Protocols**
+
+Common protocols using this convention include, but are not limited to:
+
+- I2C (``zephyr_i2c``)
+- MIPI DSI (``zephyr_mipi_dsi``)
+- SPI (``zephyr_spi``)
+- USB (``zephyr_udc0``)
+
+When adding board support or shields, check existing board DTS files for these labels, and add them
+if missing for the protocols your shield depends on.
 
 Board specific shield configuration
 -----------------------------------
