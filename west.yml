@@ -310,7 +310,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 07222c1929e1d79d303baa8fde7f977a79e48e9a
+      revision: pull/131/head
       path: bootloader/mcuboot
       groups:
         - bootloader
