@@ -718,6 +718,9 @@ Video
   size on a per driver basis. Existing applications will not be broken by this change but can be
   simplified as performed in the sample in the commit ``33dcbe37cfd3593e8c6e9cfd218dd31fdd533598``.
 
+* Samples and projects using the :ref:`native simulator <native_sim>` now require specifying the
+  ``--snippet`` :ref:`video-sw-generator <snippet-video-sw-generator>` to build correctly.
+
 Audio
 =====
 
