@@ -44,6 +44,10 @@ config NRFX_LPCOMP_LOG
 	bool "LPCOMP driver logging"
 	depends on NRFX_LPCOMP
 
+config NRFX_MRAMC_LOG
+	bool "MRAMC driver logging"
+	depends on NRFX_MRAMC
+
 config NRFX_NFCT_LOG
 	bool "NFCT driver logging"
 	depends on NRFX_NFCT
