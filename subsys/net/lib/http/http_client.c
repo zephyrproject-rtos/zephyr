@@ -517,9 +517,6 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 		} else if (fds[0].revents & ZSOCK_POLLNVAL) {
 			ret = -EBADF;
 			goto error;
-		} else if (fds[0].revents & ZSOCK_POLLHUP) {
-			/* Connection closed */
-			goto closed;
 		} else if (fds[0].revents & ZSOCK_POLLIN) {
 			received = zsock_recv(sock, req->internal.response.recv_buf + offset,
 					      req->internal.response.recv_buf_len - offset, 0);
@@ -593,6 +590,9 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 					req->internal.response.recv_buf + processed,
 					offset);
 			}
+		} else if (fds[0].revents & ZSOCK_POLLHUP) {
+			/* Connection closed */
+			goto closed;
 		}
 
 	} while (!req->internal.response.message_complete);
