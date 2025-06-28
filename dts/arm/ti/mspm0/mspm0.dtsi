@@ -156,10 +156,6 @@
 			compatible = "mmio-sram";
 		};
 
-		flash0: serial-flash@0 {
-			compatible = "serial-flash";
-		};
-
 		wdt0: wdt0@40080000 {
 			compatible = "ti,mspm0-watchdog";
 			reg = <0x40080000 0x2000>;
@@ -210,6 +206,24 @@
 				status = "disabled";
 				gpio-controller;
 				#gpio-cells = <2>;
+			};
+		};
+
+		flashctl: flash-controller@400cd000 {
+			compatible = "ti,mspm0-flash-controller";
+			reg = <0x400cd000 0x2000>;
+			interrupts = <0 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				erase-block-size = <1024>;
+				write-block-size = <8>; /* 64-bit */
 			};
 		};
 
