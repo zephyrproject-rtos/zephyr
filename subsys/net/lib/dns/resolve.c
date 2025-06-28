@@ -427,7 +427,7 @@ static bool is_server_name_found(struct dns_resolve_context *ctx,
 
 			if (net_addr_ntop(ctx->servers[i].dns_server.sa_family,
 					  &net_sin(&ctx->servers[i].dns_server)->sin_addr,
-					  addr_str, sizeof(addr_str)) < 0) {
+					  addr_str, sizeof(addr_str)) == NULL) {
 				continue;
 			}
 
