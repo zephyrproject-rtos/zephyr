@@ -55,17 +55,6 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
   endif()
 endforeach()
 
-# This libgcc code is partially duplicated in compiler/*/target.cmake
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_FILE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
-get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
-
-list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
 # link a dummy C file.
