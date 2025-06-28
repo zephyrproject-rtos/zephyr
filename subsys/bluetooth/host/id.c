@@ -1838,20 +1838,22 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 		 * (through Kconfig).
 		 * Use same RPA as legacy advertiser if advertising.
 		 */
-		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-		    !is_adv_using_rand_addr()) {
-			err = bt_id_set_private_addr(BT_ID_DEFAULT);
-			if (err) {
-				if (active_scan || !is_adv_using_rand_addr()) {
+		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
+			if (is_adv_using_rand_addr()) {
+				if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
+					*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+				} else {
+					*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
+				}
+			} else {
+				err = bt_id_set_private_addr(BT_ID_DEFAULT);
+				if (err) {
 					return err;
 				}
 
-				LOG_WRN("Ignoring failure to set address for passive scan (%d)",
-					err);
+				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 			}
-
-			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
-		} else if (IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
+		} else {
 			if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
 				/* If scanning with Identity Address we must set the
 				 * random identity address for both active and passive
@@ -1967,21 +1969,31 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			 * problem.
 			 */
 #if defined(CONFIG_BT_OBSERVER)
-			bool scan_enabled = false;
+			bool scan_disabled = false;
 
 			/* If active scan with NRPA is ongoing refresh NRPA */
 			if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
 			    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-				scan_enabled = true;
+				scan_disabled = true;
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
 			}
-#endif /* defined(CONFIG_BT_OBSERVER) */
+
+			/* If we are scanning with the identity address, it does
+			 * not make sense to set an NRPA.
+			 */
+			if (!(IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+			    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING))) {
+				err = bt_id_set_adv_private_addr(adv);
+			}
+#else
 			err = bt_id_set_adv_private_addr(adv);
+#endif /* defined(CONFIG_BT_OBSERVER) */
+
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
 #if defined(CONFIG_BT_OBSERVER)
-			if (scan_enabled) {
+			if (scan_disabled) {
 				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 			}
 #endif /* defined(CONFIG_BT_OBSERVER) */
