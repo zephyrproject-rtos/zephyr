@@ -3,20 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_BOOT_REPORT_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_BOOT_REPORT_H_
+#ifndef ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_BOOT_REPORT_H_
+#define ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_BOOT_REPORT_H_
 
 #include <stdint.h>
 #include <stddef.h>
 
-/** Constant used to check if an Nordic IRONside SE boot report has been written. */
+/** Constant used to check if an Nordic IronSide SE boot report has been written. */
 #define IRONSIDE_BOOT_REPORT_MAGIC                     (0x4d69546fUL)
 /** Length of the local domain context buffer in bytes. */
 #define IRONSIDE_BOOT_REPORT_LOCAL_DOMAIN_CONTEXT_SIZE (16UL)
 /** Length of the random data buffer in bytes. */
 #define IRONSIDE_BOOT_REPORT_RANDOM_DATA_SIZE          (32UL)
 
-/** @brief IRONside version structure. */
+/** @brief IronSide version structure. */
 struct ironside_version {
 	/** Wrapping sequence number ranging from 1-126, incremented for each release. */
 	uint8_t seqnum;
@@ -43,13 +43,13 @@ struct ironside_boot_report_uicr_error {
 	} description;
 };
 
-/** @brief IRONside boot report. */
+/** @brief IronSide boot report. */
 struct ironside_boot_report {
 	/** Magic value used to identify valid boot report */
 	uint32_t magic;
-	/** Firmware version of IRONside SE. */
+	/** Firmware version of IronSide SE. */
 	struct ironside_version ironside_se_version;
-	/** Firmware version of IRONside SE recovery firmware. */
+	/** Firmware version of IronSide SE recovery firmware. */
 	struct ironside_version ironside_se_recovery_version;
 	/** Copy of SICR.UROT.UPDATE.STATUS.*/
 	uint32_t ironside_update_status;
@@ -64,9 +64,9 @@ struct ironside_boot_report {
 };
 
 /**
- * @brief Get a pointer to the IRONside boot report.
+ * @brief Get a pointer to the IronSide boot report.
  *
- * @param[out] report Will be set to point to the IRONside boot report.
+ * @param[out] report Will be set to point to the IronSide boot report.
  *
  * @retval 0 if successful.
  * @retval -EFAULT if the magic field in the report is incorrect.
@@ -74,4 +74,4 @@ struct ironside_boot_report {
  */
 int ironside_boot_report_get(const struct ironside_boot_report **report);
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_BOOT_REPORT_H_ */
+#endif /* ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_BOOT_REPORT_H_ */

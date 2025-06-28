@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_UPDATE_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_UPDATE_H_
+#ifndef ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_UPDATE_H_
+#define ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_UPDATE_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -30,10 +30,10 @@
 /** Length of the update signature in bytes. */
 #define IRONSIDE_UPDATE_SIGNATURE_LENGTH (64)
 
-/* IRONside call identifiers with implicit versions.
+/* IronSide call identifiers with implicit versions.
  *
  * With the initial "version 0", the service ABI is allowed to break until the
- * first production release of IRONside SE.
+ * first production release of IronSide SE.
  */
 #define IRONSIDE_CALL_ID_UPDATE_SERVICE_V0 1
 
@@ -43,7 +43,7 @@
 #define IRONSIDE_UPDATE_SERVICE_RETCODE_IDX (0)
 
 /**
- * @brief IRONside update blob.
+ * @brief IronSide update blob.
  */
 struct ironside_update_blob {
 	uint8_t manifest[IRONSIDE_UPDATE_MANIFEST_LENGTH];
@@ -53,9 +53,9 @@ struct ironside_update_blob {
 };
 
 /**
- * @brief Request a firmware upgrade of the IRONside SE.
+ * @brief Request a firmware upgrade of the IronSide SE.
  *
- * This invokes the IRONside SE update service. The device must be restarted for the update
+ * This invokes the IronSide SE update service. The device must be restarted for the update
  * to be installed. Check the update status in the application boot report to see if the update
  * was successfully installed.
  *
@@ -63,10 +63,10 @@ struct ironside_update_blob {
  *
  * @retval -IRONSIDE_UPDATE_ERROR_NOT_PERMITTED if missing access to the update candidate.
  * @retval -IRONSIDE_UPDATE_ERROR_SICR_WRITE_FAILED if writing update parameters to SICR failed.
- * @returns Positive non-0 error status if reported by IRONside call.
+ * @returns Positive non-0 error status if reported by IronSide call.
  * @returns 0 on a successful request (although the update itself may still fail).
  *
  */
 int ironside_update(const struct ironside_update_blob *update);
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_NRF_IRONSIDE_UPDATE_H_ */
+#endif /* ZEPHYR_SOC_NORDIC_IRONSIDE_INCLUDE_NRF_IRONSIDE_UPDATE_H_ */
