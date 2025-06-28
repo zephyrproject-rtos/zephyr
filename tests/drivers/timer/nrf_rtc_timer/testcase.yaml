@@ -23,3 +23,15 @@ tests:
       - nrf5340bsim/nrf5340/cpunet
     integration_platforms:
       - nrf52dk/nrf52832
+
+  drivers.timer.nrf_rtc_timer_16_bits:
+    tags:
+      - drivers
+      - timer
+    platform_allow:
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - nrf52dk/nrf52832
+    extra_configs:
+      - CONFIG_ZERO_LATENCY_IRQS=y
+      - CONFIG_NRF_RTC_COUNTER_BIT_WIDTH=16

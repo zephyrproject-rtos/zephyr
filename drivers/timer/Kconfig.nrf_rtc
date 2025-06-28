@@ -42,4 +42,12 @@ config NRF_RTC_TIMER_TRIGGER_OVERFLOW
 	  When enabled, a function can be used to trigger RTC overflow and
 	  effectively shift time into the future.
 
+config NRF_RTC_COUNTER_BIT_WIDTH
+	int "Bit width of RTC counter"
+	default 24
+	help
+	  Use custom bit width of RTC counter. If bit width other than 24 bits
+	  is used then one RTC channel will be reserved to control wrapping via
+	  PPI connections.
+
 endif # NRF_RTC_TIMER
