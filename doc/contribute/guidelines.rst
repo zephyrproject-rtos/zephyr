@@ -111,7 +111,7 @@ We recommend using the following copyright notice:
 
 .. code-block:: C
 
-    Copyright The Zephyr Project Contributors
+    SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 
 .. _Community Best Practice:
    https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
