@@ -1518,40 +1518,49 @@ static K_WORK_DEFINE(recycled_work, recycled_work_handler);
 void bt_conn_unref(struct bt_conn *conn)
 {
 	atomic_val_t old;
-	bool deallocated;
 	enum bt_conn_type conn_type;
 	uint8_t conn_role;
 	uint16_t conn_handle;
 
 	__ASSERT(conn, "Invalid connection reference");
 
-	/* Storing parameters of interest so we don't access the object
-	 * after decrementing its ref-count
+	/* If we're removing the last reference, the connection object will be
+	 * considered recycled and possibly reused by the Bluetooth Host stack
+	 * as soon as we decrement the counter.
+	 * To prevent access to a recycled connection object, we store
+	 * the parameters of interest before updating the reference count,
+	 * then unset the connection pointer.
 	 */
 	conn_type = conn->type;
 	conn_role = conn->role;
 	conn_handle = conn->handle;
 
 	old = atomic_dec(&conn->ref);
-	/* Prevent from accessing connection object */
 	conn = NULL;
-	deallocated = (atomic_get(&old) == 1);
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
 
-	/* Slot has been freed and can be taken. No guarantees are made on requests
-	 * to claim connection object as only the first claim will be served.
-	 */
-	if (deallocated) {
+	if (old - 1 == 0) {
+		/* We removed the last reference: notify listeners that a slot has been
+		 * freed and can be taken. No guarantees are made on requests
+		 * to claim the connection object, the first claim will be served.
+		 */
 		k_sem_give(&pending_recycled_events);
 		k_work_submit(&recycled_work);
-	}
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
-	    conn_role == BT_CONN_ROLE_PERIPHERAL && deallocated) {
-		bt_le_adv_resume();
+		/* Use the freed slot to automatically resume LE peripheral advertising.
+		 *
+		 * This behavior is deprecated:
+		 * - 8cfad44: Bluetooth: Deprecate adv auto-resume
+		 * - #72567: Bluetooth: Advertising resume functionality is broken
+		 * - Migration guide to Zephyr v4.0.0, Automatic advertiser resumption is deprecated
+		 */
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
+		    conn_role == BT_CONN_ROLE_PERIPHERAL) {
+			bt_le_adv_resume();
+		}
 	}
 }
 
@@ -2291,6 +2300,10 @@ static void deferred_work(struct k_work *work)
 				err);
 		}
 #endif
+	} else {
+		/* Neither the application nor the configuration
+		 * set LE connection parameters.
+		 */
 	}
 
 	atomic_set_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_UPDATE);
@@ -2393,6 +2406,8 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 	} else if (link_type == BT_HCI_ESCO) {
 		sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
 					  ~EDR_ESCO_PKT_MASK);
+	} else {
+		/* Ignoring unexpected link type BT_HCI_ACL. */
 	}
 
 	return sco_conn;
