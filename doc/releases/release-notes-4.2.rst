@@ -278,6 +278,8 @@ New APIs and options
   * :c:func:`video_api_ctrl_t`
   * :c:func:`video_query_ctrl`
   * :c:func:`video_print_ctrl`
+  * :c:func:`video_set_selection`
+  * :c:func:`video_get_selection`
 
 * PCIe
 
