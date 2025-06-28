@@ -132,6 +132,19 @@
 			};
 		};
 
+		flashctl: flash-controller@400cd000 {
+			compatible = "ti,mspm0-flash-controller";
+			reg = <0x400cd000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nvmflash: nvm-flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <1024>;
+				write-block-size = <8>; /* 64-bit */
+			};
+		};
+
 		uart0: uart@40108000 {
 			compatible = "ti,mspm0-uart";
 			reg = <0x40108000 0x2000>;
