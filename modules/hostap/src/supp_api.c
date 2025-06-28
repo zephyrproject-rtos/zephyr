@@ -421,6 +421,8 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
 	case WPA_KEY_MGMT_SAE_EXT_KEY:
 		return WIFI_SECURITY_TYPE_SAE_EXT_KEY;
+	case WPA_KEY_MGMT_DPP | WPA_KEY_MGMT_PSK:
+		return WIFI_SECURITY_TYPE_DPP;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
