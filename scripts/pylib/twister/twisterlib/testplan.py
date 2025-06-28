@@ -607,7 +607,7 @@ class TestPlan:
                 instance.reason = "Quarantine: " + matched_quarantine
                 return
             if not matched_quarantine and self.options.quarantine_verify:
-                instance.status = TwisterStatus.SKIP
+                instance.status = TwisterStatus.FILTER
                 instance.reason = "Not under quarantine"
 
     def load_from_file(self, file, filter_platform=None):
