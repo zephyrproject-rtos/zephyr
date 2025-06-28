@@ -226,6 +226,7 @@ New APIs and options
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
     * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
+    * :c:func:`pm_device_driver_deinit`
 
   * Sockets
 
