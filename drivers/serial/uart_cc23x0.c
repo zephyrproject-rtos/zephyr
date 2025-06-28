@@ -12,6 +12,9 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 
 #include <errno.h>
 
@@ -52,6 +55,12 @@ struct uart_cc23x0_config {
 #endif
 };
 
+enum uart_cc23x0_pm_locks {
+	UART_CC23X0_PM_LOCK_TX,
+	UART_CC23X0_PM_LOCK_RX,
+	UART_CC23X0_PM_LOCK_COUNT,
+};
+
 struct uart_cc23x0_data {
 	struct uart_config uart_config;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -74,7 +83,32 @@ struct uart_cc23x0_data {
 	uint8_t *rx_next_buf;
 	size_t rx_next_len;
 #endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
+#ifdef CONFIG_PM
+	ATOMIC_DEFINE(pm_lock, UART_CC23X0_PM_LOCK_COUNT);
+#endif
 };
+
+static inline void uart_cc23x0_pm_policy_state_lock_get(struct uart_cc23x0_data *data,
+							enum uart_cc23x0_pm_locks pm_lock_type)
+{
+#ifdef CONFIG_PM_DEVICE
+	if (!atomic_test_and_set_bit(data->pm_lock, pm_lock_type)) {
+		pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
+#endif
+}
+
+static inline void uart_cc23x0_pm_policy_state_lock_put(struct uart_cc23x0_data *data,
+							enum uart_cc23x0_pm_locks pm_lock_type)
+{
+#ifdef CONFIG_PM_DEVICE
+	if (atomic_test_and_clear_bit(data->pm_lock, pm_lock_type)) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	}
+#endif
+}
 
 static int uart_cc23x0_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -94,6 +128,14 @@ static void uart_cc23x0_poll_out(const struct device *dev, unsigned char c)
 	const struct uart_cc23x0_config *config = dev->config;
 
 	UARTPutChar(config->reg, c);
+
+#ifdef CONFIG_PM_DEVICE
+	/* Wait for character to be transmitted to ensure CPU
+	 * does not enter standby when UART is busy
+	 */
+	while (UARTBusy(config->reg)) {
+	}
+#endif
 }
 
 static int uart_cc23x0_err_check(const struct device *dev)
@@ -254,6 +296,11 @@ static void uart_cc23x0_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_cc23x0_config *config = dev->config;
 
+	/* When TX IRQ is enabled, it is implicit that we are expecting to transmit
+	 * using the UART, hence we should no longer go into standby
+	 */
+	uart_cc23x0_pm_policy_state_lock_get(dev->data, UART_CC23X0_PM_LOCK_TX);
+
 	UARTEnableInt(config->reg, UART_INT_TX);
 }
 
@@ -262,6 +309,8 @@ static void uart_cc23x0_irq_tx_disable(const struct device *dev)
 	const struct uart_cc23x0_config *config = dev->config;
 
 	UARTDisableInt(config->reg, UART_INT_TX);
+
+	uart_cc23x0_pm_policy_state_lock_put(dev->data, UART_CC23X0_PM_LOCK_TX);
 }
 
 static int uart_cc23x0_irq_tx_ready(const struct device *dev)
@@ -275,6 +324,11 @@ static void uart_cc23x0_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_cc23x0_config *config = dev->config;
 
+	/* When RX IRQ is enabled, it is implicit that we are expecting to receive
+	 * from the UART, hence we can no longer go into standby
+	 */
+	uart_cc23x0_pm_policy_state_lock_get(dev->data, UART_CC23X0_PM_LOCK_RX);
+
 	/* Trigger the ISR on both RX and Receive Timeout. This is to allow
 	 * the use of the hardware FIFOs for more efficient operation
 	 */
@@ -286,6 +340,8 @@ static void uart_cc23x0_irq_rx_disable(const struct device *dev)
 	const struct uart_cc23x0_config *config = dev->config;
 
 	UARTDisableInt(config->reg, UART_INT_RX | UART_INT_RT);
+
+	uart_cc23x0_pm_policy_state_lock_put(dev->data, UART_CC23X0_PM_LOCK_RX);
 }
 
 static int uart_cc23x0_irq_tx_complete(const struct device *dev)
@@ -420,6 +476,9 @@ static int uart_cc23x0_async_tx(const struct device *dev, const uint8_t *buf, si
 		return ret;
 	}
 
+	/* Lock PM */
+	uart_cc23x0_pm_policy_state_lock_get(data, UART_CC23X0_PM_LOCK_TX);
+
 	/* Enable DMA trigger to start the transfer */
 	UARTEnableDMA(config->reg, UART_DMA_TX);
 
@@ -457,6 +516,9 @@ static int uart_cc23x0_tx_halt(struct uart_cc23x0_data *data)
 		if (data->async_callback) {
 			data->async_callback(data->dev, &evt, data->async_user_data);
 		}
+
+		/* Unlock PM */
+		uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_TX);
 	} else {
 		return -EINVAL;
 	}
@@ -535,6 +597,9 @@ static int uart_cc23x0_async_rx_enable(const struct device *dev, uint8_t *buf, s
 	if (ret) {
 		goto unlock;
 	}
+
+	/* Lock PM */
+	uart_cc23x0_pm_policy_state_lock_get(data, UART_CC23X0_PM_LOCK_RX);
 
 	/* Enable DMA trigger to start the transfer */
 	UARTEnableDMA(config->reg, UART_DMA_RX);
@@ -621,6 +686,9 @@ static int uart_cc23x0_async_rx_disable(const struct device *dev)
 
 	dma_stop(config->dma_dev, config->dma_channel_rx);
 
+	/* Unlock PM */
+	uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_RX);
+
 	if (dma_get_status(config->dma_dev, config->dma_channel_rx, &status) == 0 &&
 	    status.pending_length) {
 		rx_processed = data->rx_len - status.pending_length;
@@ -704,6 +772,9 @@ static void uart_cc23x0_isr(const struct device *dev)
 		data->tx_buf = NULL;
 		data->tx_len = 0;
 
+		/* Unlock PM */
+		uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_TX);
+
 		irq_unlock(key);
 
 		UARTClearInt(config->reg, UART_INT_TXDMADONE);
@@ -731,6 +802,9 @@ static void uart_cc23x0_isr(const struct device *dev)
 
 				data->async_callback(dev, &evt, data->async_user_data);
 			}
+
+			/* Unlock PM */
+			uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_RX);
 		} else {
 			/* Otherwise, load next buffer and start the transfer */
 			data->rx_buf = data->rx_next_buf;
@@ -798,8 +872,6 @@ static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN
 #define UART_CC23X0_IRQ_CFG(n)                                                                     \
-	const struct uart_cc23x0_config *config = dev->config;                                     \
-                                                                                                   \
 	do {                                                                                       \
 		UARTClearInt(config->reg, UART_INT_RX);                                            \
 		UARTClearInt(config->reg, UART_INT_RT);                                            \
@@ -832,16 +904,12 @@ static DEVICE_API(uart, uart_cc23x0_driver_api) = {
 
 static int uart_cc23x0_init_common(const struct device *dev)
 {
+#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
 	const struct uart_cc23x0_config *config = dev->config;
+#endif
 	struct uart_cc23x0_data *data = dev->data;
-	int ret;
 
 	CLKCTLEnable(CLKCTL_BASE, CLKCTL_UART0);
-
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
-	}
 
 #ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
 	if (!device_is_ready(config->dma_dev)) {
@@ -855,34 +923,66 @@ static int uart_cc23x0_init_common(const struct device *dev)
 	data->dev = dev;
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+	atomic_clear_bit(data->pm_lock, UART_CC23X0_PM_LOCK_RX);
+	atomic_clear_bit(data->pm_lock, UART_CC23X0_PM_LOCK_TX);
+#endif
+
 	/* Configure and enable UART */
 	return uart_cc23x0_configure(dev, &data->uart_config);
 }
 
+#ifdef CONFIG_PM_DEVICE
+
+static int uart_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct uart_cc23x0_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		UARTDisable(config->reg);
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_UART0);
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		return uart_cc23x0_init_common(dev);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
 #define UART_CC23X0_DEVICE_DEFINE(n)                                                               \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, uart_cc23x0_init_##n, NULL, &uart_cc23x0_data_##n,                \
-			      &uart_cc23x0_config_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
-			      &uart_cc23x0_driver_api)
+	DEVICE_DT_INST_DEFINE(n, uart_cc23x0_init_##n, PM_DEVICE_DT_INST_GET(n),                   \
+			      &uart_cc23x0_data_##n,  &uart_cc23x0_config_##n,                     \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_cc23x0_driver_api)
 
 #define UART_CC23X0_INIT_FUNC(n)                                                                   \
 	static int uart_cc23x0_init_##n(const struct device *dev)                                  \
 	{                                                                                          \
+		const struct uart_cc23x0_config *config = dev->config;                             \
 		int ret;                                                                           \
                                                                                                    \
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                    \
+		if (ret) {                                                                         \
+			return ret;                                                                \
+		}                                                                                  \
+                                                                                                   \
 		ret = uart_cc23x0_init_common(dev);                                                \
-		if (ret < 0) {                                                                     \
+		if (ret) {                                                                         \
 			return ret;                                                                \
 		}                                                                                  \
                                                                                                    \
 		/* Enable interrupts */                                                            \
 		UART_CC23X0_IRQ_CFG(n);                                                            \
                                                                                                    \
-		return ret;                                                                        \
+		return 0;                                                                          \
 	}
 
 #define UART_CC23X0_INIT(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(n, uart_cc23x0_pm_action);                                        \
 	UART_CC23X0_INIT_FUNC(n);                                                                  \
                                                                                                    \
 	static struct uart_cc23x0_config uart_cc23x0_config_##n = {                                \
