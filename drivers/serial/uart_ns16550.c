@@ -708,6 +708,11 @@ static int uart_ns16550_configure(const struct device *dev,
 #endif
 			);
 
+	/* Xilinx 16550 core (at least) needs a dummy read of IIR here in order for the
+	 * following read to return valid data (instead of reading back FCR).
+	 */
+	ns16550_inbyte(dev_cfg, IIR(dev));
+
 	if ((ns16550_inbyte(dev_cfg, IIR(dev)) & IIR_FE) == IIR_FE) {
 #ifdef CONFIG_UART_NS16550_VARIANT_NS16750
 		dev_data->fifo_size = 64;
