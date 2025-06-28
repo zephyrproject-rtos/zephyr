@@ -375,21 +375,22 @@ class Patch(WestCommand):
                 failed_patch = pth
                 break
 
-            self.dbg("checking patch integrity... ", end="")
-            expect_sha256 = patch_info["sha256sum"]
-            hasher = hashlib.sha256()
-            hasher.update(patch_file_data)
-            actual_sha256 = hasher.hexdigest()
-            if actual_sha256 != expect_sha256:
-                self.dbg("FAIL")
-                self.err(
-                    f"sha256 mismatch for {pth}:\n"
-                    f"expect: {expect_sha256}\n"
-                    f"actual: {actual_sha256}"
-                )
-                failed_patch = pth
-                break
-            self.dbg("OK")
+            expect_sha256 = patch_info.get("sha256sum")
+            if expect_sha256 is not None:
+                self.dbg("checking patch integrity... ", end="")
+                hasher = hashlib.sha256()
+                hasher.update(patch_file_data)
+                actual_sha256 = hasher.hexdigest()
+                if actual_sha256 != expect_sha256:
+                    self.dbg("FAIL")
+                    self.err(
+                        f"sha256 mismatch for {pth}:\n"
+                        f"expect: {expect_sha256}\n"
+                        f"actual: {actual_sha256}"
+                    )
+                    failed_patch = pth
+                    break
+                self.dbg("OK")
             patch_count += 1
             patch_file_data = None
 
@@ -551,6 +552,9 @@ class Patch(WestCommand):
 
         if (topdir / module_name_or_path).is_dir():
             return Path(module_name_or_path)
+
+        if module_name_or_path == "zephyr":
+            return ZEPHYR_BASE
 
         all_modules = zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest)
         for m in all_modules:
