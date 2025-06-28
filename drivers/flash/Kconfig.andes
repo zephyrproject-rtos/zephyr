@@ -39,6 +39,27 @@ config FLASH_ANDES_QSPI_SFDP_RUNTIME
 
 endchoice
 
+endif
+
+config FLASH_ANDES_QSPI_XIP
+	bool "Andes FLASH driver for XIP chip"
+	default y
+	depends on DT_HAS_ANDESTECH_QSPI_NOR_XIP_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	depends on XIP
+	depends on !SPI_NOR
+	depends on ARCH_HAS_RAMFUNC_SUPPORT
+	depends on !SMP
+	help
+	  Enable minimalistic driver for Andes QSPI that can be used with a
+	  flash chip that is used for XIP execution. The driver places necessary
+	  code in RAM, because code can not be fetched from flash while
+	  performing erase/write operations.
+
+if FLASH_ANDES_QSPI || FLASH_ANDES_QSPI_XIP
+
 config FLASH_ANDES_QSPI_INIT_PRIORITY
 	int
 	default 80
@@ -54,5 +75,14 @@ config FLASH_ANDES_QSPI_LAYOUT_PAGE_SIZE
 	  size (65536).  Other options include the 32K-byte erase size
 	  (32768), the sector size (4096), or any non-zero multiple of the
 	  sector size.
+
+endif
+
+if FLASH_ANDES_QSPI_XIP
+
+config FLASH_ANDES_QSPI_XIP_COUNT_REGS
+	bool "Use separated write/read count registers"
+	help
+	  The Andes qspi module has separated write/read count registers.
 
 endif
