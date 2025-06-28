@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Ethernet parent platform device.
+
+compatible: "intel,eth-plat"
+
+include: [base.yaml, ethernet-controller.yaml, pcie-device.yaml]
