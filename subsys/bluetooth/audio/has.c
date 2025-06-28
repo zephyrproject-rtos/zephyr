@@ -196,6 +196,8 @@ static struct client_context {
 
 	/* Pending notification flags */
 	ATOMIC_DEFINE(flags, FLAG_NUM);
+	/* Bitfield (preset indexes) of pending preset nofications */
+	ATOMIC_DEFINE(preset_changed_index_bitfield, BT_HAS_PRESET_INDEX_LAST);
 
 	/* Last notified preset index */
 	uint8_t last_preset_index_known;
@@ -784,7 +786,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 	return -ECANCELED;
 }
 
-static int control_point_send_all(struct net_buf_simple *buf)
+static int control_point_send_all(struct net_buf_simple *buf, uint8_t index)
 {
 	int result = 0;
 
@@ -803,6 +805,8 @@ static int control_point_send_all(struct net_buf_simple *buf)
 		if (client == NULL || client->conn == NULL) {
 			/* Mark preset changed operation as pending */
 			atomic_set_bit(context->flags, FLAG_NOTIFY_PRESET_LIST);
+			/* Mark preset index that has changed */
+			atomic_set_bit(context->preset_changed_index_bitfield, index);
 			continue;
 		}
 
@@ -878,7 +882,7 @@ static int bt_has_cp_generic_update(struct has_client *client, uint8_t prev_inde
 	if (client) {
 		return control_point_send(client, &buf);
 	} else {
-		return control_point_send_all(&buf);
+		return control_point_send_all(&buf, index);
 	}
 }
 
@@ -1033,7 +1037,7 @@ static int bt_has_cp_preset_record_deleted(struct has_client *client, uint8_t in
 	if (client != NULL) {
 		return control_point_send(client, &buf);
 	} else {
-		return control_point_send_all(&buf);
+		return control_point_send_all(&buf, index);
 	}
 }
 
@@ -1091,6 +1095,7 @@ static int preset_list_changed(struct has_client *client)
 	const struct has_preset *preset = NULL;
 	const struct has_preset *next = NULL;
 	bool is_last = true;
+	int index, next_index;
 	int err;
 
 	if (sys_slist_is_empty(&preset_list)) {
@@ -1104,14 +1109,28 @@ static int preset_list_changed(struct has_client *client)
 		return 0;
 	}
 
-	preset_foreach(client->preset_changed_index_next, BT_HAS_PRESET_INDEX_LAST,
-		       preset_found, &preset);
+	for (index = client->preset_changed_index_next; index <= BT_HAS_PRESET_INDEX_LAST;
+	     index++) {
+		if (atomic_test_bit(client->context->preset_changed_index_bitfield, index)) {
+			preset = preset_lookup_index(index);
+			if (preset != NULL) {
+				break; /* Found the first preset that has changed */
+			}
+		}
+	}
 
 	if (preset == NULL) {
 		return 0;
 	}
 
-	preset_foreach(preset->index + 1, BT_HAS_PRESET_INDEX_LAST, preset_found, &next);
+	for (next_index = index + 1; next_index <= BT_HAS_PRESET_INDEX_LAST; next_index++) {
+		if (atomic_test_bit(client->context->preset_changed_index_bitfield, next_index)) {
+			next = preset_lookup_index(next_index);
+			if (next != NULL) {
+				break; /* Found the next preset that has changed */
+			}
+		}
+	}
 
 	/* It is last Preset Changed notification if there are no presets left to notify and the
 	 * currently notified preset have the highest index known to the client.
@@ -1123,6 +1142,8 @@ static int preset_list_changed(struct has_client *client)
 	if (err != 0) {
 		return err;
 	}
+
+	atomic_clear_bit(client->context->preset_changed_index_bitfield, index);
 
 	if (is_last) {
 		client->preset_changed_index_next = 0;
@@ -1146,8 +1167,7 @@ static int preset_list_changed(struct has_client *client)
 		atomic_set_bit(client->context->flags,
 			       FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST);
 	} else {
-		client->preset_changed_index_next = preset->index + 1;
-
+		client->preset_changed_index_next = next->index;
 		atomic_set_bit(client->context->flags, FLAG_NOTIFY_PRESET_LIST);
 	}
 
@@ -1604,7 +1624,7 @@ static int set_preset_availability(uint8_t index, bool available)
 	preset_changed_prepare(&buf, change_id, BT_HAS_IS_LAST);
 	net_buf_simple_add_u8(&buf, preset->index);
 
-	return control_point_send_all(&buf);
+	return control_point_send_all(&buf, index);
 }
 
 int bt_has_preset_available(uint8_t index)
