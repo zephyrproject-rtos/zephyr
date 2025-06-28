@@ -91,8 +91,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         if args.esp_tool:
             espidf = args.esp_tool
         else:
-            espidf = path.join(args.esp_idf_path, 'tools', 'esptool_py',
-                               'esptool.py')
+            espidf = os.path.normpath(path.join(args.esp_idf_path, 'tools', 'esptool_py', 'esptool.py')).replace('\\', '/')
 
         return Esp32BinaryRunner(
             cfg, args.esp_device, boot_address=args.esp_boot_address,
@@ -105,7 +104,10 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             encrypt=args.esp_encrypt, no_stub=args.esp_no_stub)
 
     def do_run(self, command, **kwargs):
-        self.require(self.espidf)
+        if not os.path.exists(self.espidf):
+            self.logger.error(f"Expected esptool.py at: {self.espidf}")
+            raise RuntimeError("Cannot continue without esptool.py")
+
 
         # Add Python interpreter
         cmd_flash = [sys.executable, self.espidf, '--chip', 'auto']
@@ -140,3 +142,4 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
         self.logger.info(f"Flashing esp32 chip on {self.device} ({self.baud}bps)")
         self.check_call(cmd_flash)
+

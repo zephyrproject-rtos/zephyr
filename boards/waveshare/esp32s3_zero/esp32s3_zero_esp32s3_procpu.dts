@@ -9,18 +9,14 @@
 #include <espressif/esp32s3/esp32s3_fh4r2.dtsi>
 #include <espressif/partitions_0x0_amp_4M.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/led/led.h>
-#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
-#include "esp32s3_matrix-pinctrl.dtsi"
 
 / {
-	model = "ESP32-S3-Matrix PROCPU";
-	compatible = "waveshare,esp32-s3-matrix";
+	model = "ESP32-S3-Zero PROCPU";
+	compatible = "waveshare,esp32-s3-zero";
 
 	aliases {
 		sw0 = &button0;
 		watchdog0 = &wdt0;
-		led-strip = &led_strip;
 	};
 
 	chosen {
@@ -29,7 +25,6 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,display = &rgb_matrix;
 		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
@@ -42,15 +37,6 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
-
-	rgb_matrix: rgb-matrix {
-		compatible = "led-strip-matrix";
-		status = "okay";
-		width = <8>;
-		height = <8>;
-		circulative;
-		led-strips = <&led_strip>;
-	};
 };
 
 &gpio0 {
@@ -61,26 +47,6 @@
 	status = "okay";
 };
 
-&spi2 {
-	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
-	pinctrl-0 = <&spim2_ws2812_led>;
-	pinctrl-names = "default";
-	line-idle-low;
-
-	led_strip: ws2812@0 {
-		compatible = "worldsemi,ws2812-spi";
-		reg = <0>;
-		spi-max-frequency = <WS2812C_SPI_FREQ>;
-		chain-length = <64>;
-		color-mapping =	<LED_COLOR_ID_RED>,
-				<LED_COLOR_ID_GREEN>,
-				<LED_COLOR_ID_BLUE>;
-		spi-one-frame = <WS2812C_ONE_FRAME>;
-		spi-zero-frame = <WS2812C_ZERO_FRAME>;
-	};
-};
 
 &usb_serial {
 	status = "okay";
