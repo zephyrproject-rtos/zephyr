@@ -5,7 +5,7 @@ description: Microchip MEC5 UART
 
 compatible: "microchip,mec5-uart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, "microchip,dmec-ecia-girq.yaml"]
 
 properties:
   reg:
