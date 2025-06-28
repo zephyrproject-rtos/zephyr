@@ -280,6 +280,14 @@ New APIs and options
   * :c:func:`video_print_ctrl`
   * :c:func:`video_set_selection`
   * :c:func:`video_get_selection`
+  * :c:func:`video_get_csi_link_freq`
+  * :c:macro:`VIDEO_PIX_FMT_Y10` and ``Y12``, ``Y14``, ``Y16`` variants
+  * ``video_buffer.index`` field
+  * :c:macro:`VIDEO_CID_LINK_FREQ`
+  * ``video_ctrl_query.int_menu`` field
+  * :c:macro:`VIDEO_MIPI_CSI2_DT_NULL` and other MIPI standard values
+  * :c:macro:`VIDEO_CID_AUTO_WHITE_BALANCE` and other controls from the BASE control class.
+  * :c:macro:`VIDEO_CID_EXPOSURE_ABSOLUTE` and other controls from the CAMERA control class.
 
 * PCIe
 
