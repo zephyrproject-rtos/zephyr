@@ -18,13 +18,6 @@
 #include "dns_sd.h"
 
 #define BUFSZ 256
-#define IP_ADDR(a, b, c, d) ((uint32_t)		  \
-			     0			  \
-			     | ((a & 0xff) << 24) \
-			     | ((b & 0xff) << 16) \
-			     | ((c & 0xff) <<  8) \
-			     | ((d & 0xff) <<  0) \
-			     )
 
 extern bool label_is_valid(const char *label, size_t label_size);
 extern int add_a_record(const struct dns_sd_rec *inst, uint32_t ttl,
@@ -441,7 +434,7 @@ ZTEST(dns_sd, test_add_a_record)
 	const uint32_t offset = 0;
 	const uint16_t host_offset = 0x59;
 	/* this one is made up */
-	const uint32_t addr = IP_ADDR(177, 5, 240, 13);
+	const struct in_addr addr = { { { 177, 5, 240, 13 } } };
 
 	static uint8_t actual_buf[BUFSZ];
 	static const uint8_t expected_buf[] = {
@@ -451,7 +444,7 @@ ZTEST(dns_sd, test_add_a_record)
 
 	int expected_int = sizeof(expected_buf);
 	int actual_int = add_a_record(&nasxxxxxx, ttl, host_offset,
-				      addr, actual_buf, offset,
+				      ntohl(addr.s_addr), actual_buf, offset,
 				      sizeof(actual_buf));
 
 	zassert_equal(actual_int, expected_int, "");
@@ -462,12 +455,12 @@ ZTEST(dns_sd, test_add_a_record)
 	/* test offset too large */
 	zassert_equal(-E2BIG,
 		      add_a_record(&nasxxxxxx, ttl, DNS_SD_PTR_MASK,
-				   addr, actual_buf, offset,
+				   ntohl(addr.s_addr), actual_buf, offset,
 				   sizeof(actual_buf)), "");
 
 	/* test buffer too small */
 	zassert_equal(-ENOSPC, add_a_record(&nasxxxxxx, ttl,
-					    host_offset, addr,
+					    host_offset, ntohl(addr.s_addr),
 					    actual_buf, offset,
 					    0), "");
 }
@@ -518,9 +511,7 @@ ZTEST(dns_sd, test_add_aaaa_record)
 /** Test for @ref dns_sd_handle_ptr_query */
 ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 {
-	struct in_addr addr = {
-		.s_addr = htonl(IP_ADDR(177, 5, 240, 13)),
-	};
+	struct in_addr addr = { { { 177, 5, 240, 13 } } };
 	static uint8_t actual_rsp[512];
 	static uint8_t expected_rsp[] = {
 		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -586,9 +577,7 @@ ZTEST(dns_sd, test_dns_sd_handle_service_type_enum)
 				DNS_SD_EMPTY_TXT,
 				CONST_PORT);
 
-	struct in_addr addr = {
-		.s_addr = htonl(IP_ADDR(177, 5, 240, 13)),
-	};
+	struct in_addr addr = { { { 177, 5, 240, 13 } } };
 	static uint8_t actual_rsp[512];
 	static uint8_t expected_rsp[] = {
 		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
