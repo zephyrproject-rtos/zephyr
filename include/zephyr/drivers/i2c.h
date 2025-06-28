@@ -1086,6 +1086,8 @@ static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 
 extern const struct rtio_iodev_api i2c_iodev_api;
 
+#define I2C_CAT2(x, y) x ## y
+
 /**
  * @brief Define an iodev for a given dt node on the bus
  *
@@ -1111,11 +1113,11 @@ extern const struct rtio_iodev_api i2c_iodev_api;
  * @param _addr I2C target address
  */
 #define I2C_IODEV_DEFINE(name, _bus, _addr)                                     \
-	const struct i2c_dt_spec _i2c_dt_spec_##name = {                        \
+	const struct i2c_dt_spec I2C_CAT2(_i2c_dt_spec_, name) = {     \
 		.bus = DEVICE_DT_GET(_bus),                                     \
 		.addr = _addr,                                                  \
 	};                                                                      \
-	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
+	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&I2C_CAT2(_i2c_dt_spec_, name))
 
 /**
  * @brief Validate that I2C bus is ready.
