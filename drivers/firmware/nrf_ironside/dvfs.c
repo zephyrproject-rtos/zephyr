@@ -122,8 +122,8 @@ static inline bool ironside_dvfs_is_abb_locked(NRF_ABB_Type *abb)
 }
 
 /**
- * @brief Request DVFS oppoint change from IRONside secure domain.
- * This function will send a request over IPC to the IRONside secure domain
+ * @brief Request DVFS oppoint change from IronSide secure domain.
+ * This function will send a request over IPC to the IronSide secure domain
  * This function is synchronous and will return when the request is completed.
  *
  * @param oppoint @ref enum ironside_dvfs_oppoint
