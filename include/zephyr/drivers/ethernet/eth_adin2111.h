@@ -16,31 +16,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Locks device access
- *
- * @param[in] dev ADIN2111 device.
- * @param timeout Waiting period to lock the device,
- *                or one of the special values K_NO_WAIT and
- *                K_FOREVER.
- *
- * @retval 0 Device locked.
- * @retval -EBUSY Returned without waiting.
- * @retval -EAGAIN Waiting period timed out.
- */
-int eth_adin2111_lock(const struct device *dev, k_timeout_t timeout);
-
-/**
- * @brief Unlocks device access
- *
- * @param[in] dev ADIN2111 device.
- *
- * @retval 0 Device unlocked.
- * @retval -EPERM The current thread does not own the device lock.
- * @retval -EINVAL The device is not locked.
- */
-int eth_adin2111_unlock(const struct device *dev);
-
-/**
  * @brief Writes host MAC interface register over SPI
  *
  * @note The caller is responsible for device lock.
