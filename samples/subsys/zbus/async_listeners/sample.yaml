@@ -1,0 +1,40 @@
+sample:
+  name: Async Listeners
+tests:
+  sample.zbus.async_listeners:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "^.*?I: Output                       \\| Thread Context"
+        - "^.*?I: ============================================="
+        - "^.*?I: From listener -> Evt=0       \\| main"
+        - "^.*?I: From async listener -> Evt=0 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=0 \\| My work queue"
+        - "^.*?I: From listener -> Evt=1       \\| main"
+        - "^.*?I: From async listener -> Evt=1 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=1 \\| My work queue"
+        - "^.*?I: From listener -> Evt=2       \\| main"
+        - "^.*?I: From async listener -> Evt=2 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=2 \\| My work queue"
+        - "^.*?I: From listener -> Evt=3       \\| main"
+        - "^.*?I: From async listener -> Evt=3 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=3 \\| My work queue"
+        - "^.*?I: From listener -> Evt=10       \\| main"
+        - "^.*?I: From async listener -> Evt=10 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=10 \\| My work queue"
+        - "^.*?I: From listener -> Evt=11       \\| main"
+        - "^.*?I: From async listener -> Evt=11 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=11 \\| My work queue"
+        - "^.*?I: From listener -> Evt=12       \\| main"
+        - "^.*?I: From async listener -> Evt=12 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=12 \\| My work queue"
+        - "^.*?I: From listener -> Evt=13       \\| main"
+        - "^.*?I: From async listener -> Evt=13 \\| sysworkq"
+        - "^.*?I: From async listener -> Evt=13 \\| My work queue"
+    platform_exclude:
+      - qemu_leon3
+    tags: zbus
+    integration_platforms:
+      - qemu_x86

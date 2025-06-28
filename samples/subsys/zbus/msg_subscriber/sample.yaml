@@ -95,8 +95,8 @@ tests:
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
+      - CONFIG_ZBUS_MSG_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_BUF_STATIC_DATA_SIZE=16
     harness_config:
       type: multi_line
       ordered: false
@@ -186,7 +186,7 @@ tests:
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+      - CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION=y
     harness_config:
       type: multi_line
       ordered: false
@@ -277,7 +277,7 @@ tests:
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+      - CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION=y
       - CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE=2
     harness_config:
       type: multi_line
@@ -296,9 +296,9 @@ tests:
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+      - CONFIG_ZBUS_MSG_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_BUF_STATIC_DATA_SIZE=16
+      - CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION=y
       - CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE=32
     harness_config:
       type: multi_line
@@ -388,9 +388,9 @@ tests:
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+      - CONFIG_ZBUS_MSG_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_BUF_STATIC_DATA_SIZE=16
+      - CONFIG_ZBUS_MSG_BUF_POOL_ISOLATION=y
       - CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE=2
     harness_config:
       type: multi_line
