@@ -727,6 +727,10 @@ Video
 * Samples and projects using the :ref:`native simulator <native_sim>` now require specifying the
   ``--snippet`` :ref:`video-sw-generator <snippet-video-sw-generator>` to build correctly.
 
+* :c:func:`video_query_ctrl` now takes a single argument with the :c:struct:`video_ctrl_query`,
+  which now contains a ``video_ctrl_query.dev`` field to specify and read back which device is
+  being queried (:github:`91265`).
+
 Audio
 =====
 
