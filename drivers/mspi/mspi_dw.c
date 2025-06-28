@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +9,15 @@
 
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/gpio.h>
+#if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/mspi/mspi_dw.h>
 
 #include "mspi_dw.h"
 
@@ -102,7 +106,9 @@ DEFINE_MM_REG_RD(sr,		0x28)
 DEFINE_MM_REG_WR(imr,		0x2c)
 DEFINE_MM_REG_RD(isr,		0x30)
 DEFINE_MM_REG_RD(risr,		0x34)
+DEFINE_MM_REG_RD(icr,		0x48)
 DEFINE_MM_REG_RD_WR(dr,		0x60)
+DEFINE_MM_REG_WR(rx_sample_dly,	0xf0)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
 
 #if defined(CONFIG_MSPI_XIP)
@@ -304,7 +310,9 @@ static void mspi_dw_isr(const struct device *dev)
 		k_sem_give(&dev_data->finished);
 	}
 
+	read_icr(dev);
 	vendor_specific_irq_clear(dev);
+
 }
 
 static int api_config(const struct mspi_dt_spec *spec)
@@ -790,7 +798,8 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	dev_data->bytes_to_discard = 0;
 
 	dev_data->ctrlr0 &= ~CTRLR0_TMOD_MASK
-			 &  ~CTRLR0_DFS_MASK;
+			 &  ~CTRLR0_DFS_MASK
+			 &  ~CTRLR0_DFS32_MASK;
 
 	dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_WAIT_CYCLES_MASK;
 
@@ -799,16 +808,20 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	     dev_data->xfer.addr_length != 0)) {
 		dev_data->bytes_per_frame_exp = 0;
 		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
+		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 7);
 	} else {
 		if ((packet->num_bytes % 4) == 0) {
 			dev_data->bytes_per_frame_exp = 2;
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 31);
+			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 31);
 		} else if ((packet->num_bytes % 2) == 0) {
 			dev_data->bytes_per_frame_exp = 1;
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 15);
+			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 15);
 		} else {
 			dev_data->bytes_per_frame_exp = 0;
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
+			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 7);
 		}
 	}
 
@@ -1223,6 +1236,17 @@ static int _api_xip_config(const struct device *dev,
 	return 0;
 }
 
+static int api_timing_config(const struct device *dev,
+			     const struct mspi_dev_id *dev_id,
+			     const uint32_t param_mask, void *cfg)
+{
+	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
+		write_rx_sample_dly(dev, (uint32_t)(uintptr_t)cfg);
+		return 0;
+	}
+	return -ENOTSUP;
+}
+
 static int api_xip_config(const struct device *dev,
 			  const struct mspi_dev_id *dev_id,
 			  const struct mspi_xip_cfg *cfg)
@@ -1368,16 +1392,17 @@ static DEVICE_API(mspi, drv_api) = {
 	.dev_config         = api_dev_config,
 	.get_channel_status = api_get_channel_status,
 	.transceive         = api_transceive,
+	.timing_config      = api_timing_config,
 #if defined(CONFIG_MSPI_XIP)
 	.xip_config         = api_xip_config,
 #endif
 };
 
 #define MSPI_DW_INST_IRQ(idx, inst)					\
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq),			\
+	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(inst, idx),			\
 		    DT_INST_IRQ_BY_IDX(inst, idx, priority),		\
 		    mspi_dw_isr, DEVICE_DT_INST_GET(inst), 0);		\
-	irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq))
+	irq_enable(DT_INST_IRQN_BY_IDX(inst, idx))
 
 #define MSPI_DW_MMIO_ROM_INIT(node_id)					\
 	COND_CODE_1(DT_REG_HAS_NAME(node_id, core),			\
