@@ -278,7 +278,8 @@ uint64_t rpi_pico_frequency_count(const struct device *dev, clock_control_subsys
 	       ((fc0->result & CLOCKS_FC0_RESULT_FRAC_BITS) * 1000 / CLOCKS_FC0_RESULT_FRAC_BITS);
 }
 
-static int rpi_pico_rosc_write(const struct device *dev, io_rw_32 *addr, uint32_t value)
+__maybe_unused static int rpi_pico_rosc_write(const struct device *dev, io_rw_32 *addr,
+					      uint32_t value)
 {
 	hw_clear_bits(&rosc_hw->status, ROSC_STATUS_BADWRITE_BITS);
 
@@ -621,14 +622,16 @@ static int clock_control_rpi_pico_get_rate(const struct device *dev, clock_contr
 	return 0;
 }
 
-void rpi_pico_clkid_tuple_swap(struct rpi_pico_clkid_tuple *lhs, struct rpi_pico_clkid_tuple *rhs)
+__maybe_unused static void rpi_pico_clkid_tuple_swap(struct rpi_pico_clkid_tuple *lhs,
+						     struct rpi_pico_clkid_tuple *rhs)
 {
 	struct rpi_pico_clkid_tuple tmp = *lhs;
 	*lhs = *rhs;
 	*rhs = tmp;
 }
 
-void rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *tuples, size_t len)
+__maybe_unused static void
+rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *tuples, size_t len)
 {
 	uint32_t sorted_idx = 0;
 	uint32_t checked_idx = 0;
@@ -647,6 +650,7 @@ void rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *t
 
 static int clock_control_rpi_pico_init(const struct device *dev)
 {
+#if !defined(CONFIG_RPI_PICO_SKIP_CLOCK_INIT)
 	const uint32_t cycles_per_tick = CLOCK_FREQ_xosc / 1000000;
 	const struct clock_control_rpi_pico_config *config = dev->config;
 	struct clock_control_rpi_pico_data *data = dev->data;
@@ -778,6 +782,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 		return ret;
 	}
 
+#endif /* CONFIG_RPI_PICO_SKIP_CLOCK_INIT */
 	return 0;
 }
 
