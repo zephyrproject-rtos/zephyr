@@ -56,7 +56,7 @@ config MINIMAL_LIBC_TIME
 config MINIMAL_LIBC_STRING_ERROR_TABLE
 	bool "String error table for strerror() and strerror_r()"
 	help
-	  Select this option to ensure that streror(), strerror_r()
+	  Select this option to ensure that strerror(), strerror_r()
 	  produce strings corresponding to the descriptions in errno.h.
 
 	  The string error table can add ~2kiB to ROM. As such, it is
