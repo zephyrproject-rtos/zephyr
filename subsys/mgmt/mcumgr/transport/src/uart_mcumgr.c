@@ -10,10 +10,10 @@
  */
 
 #include <string.h>
+#include <mgmt/mcumgr/transport/uart_mcumgr.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/mgmt/mcumgr/transport/serial.h>
-#include <zephyr/drivers/console/uart_mcumgr.h>
 
 static const struct device *const uart_mcumgr_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
@@ -32,7 +32,7 @@ static bool uart_mcumgr_ignoring;
 
 /** Contains buffers to hold incoming request fragments. */
 K_MEM_SLAB_DEFINE(uart_mcumgr_slab, sizeof(struct uart_mcumgr_rx_buf),
-		  CONFIG_UART_MCUMGR_RX_BUF_COUNT, 1);
+		  CONFIG_MCUMGR_TRANSPORT_UART_RX_BUF_COUNT, 1);
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 uint8_t async_buffer[CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS]

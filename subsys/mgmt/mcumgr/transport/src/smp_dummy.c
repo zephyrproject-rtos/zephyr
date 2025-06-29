@@ -10,16 +10,16 @@
  */
 
 /* Define required for uart_mcumgr.h functionality reuse */
-#define CONFIG_UART_MCUMGR_RX_BUF_SIZE CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE
+#define CONFIG_MCUMGR_TRANSPORT_UART_RX_BUF_SIZE CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE
 #define MCUMGR_DUMMY_MAX_FRAME CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE
 
+#include <mgmt/mcumgr/transport/uart_mcumgr.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/base64.h>
-#include <zephyr/drivers/console/uart_mcumgr.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
