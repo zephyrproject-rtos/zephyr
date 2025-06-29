@@ -258,8 +258,19 @@ ZTEST(device, test_device_list)
 {
 	struct device const *devices;
 	size_t devcount = z_device_get_all_static(&devices);
+	bool found = false;
 
-	zassert_false((devcount == 0));
+	zassert_true(devcount > 0, "Should have at least one static device");
+	zassert_not_null(devices);
+	for (size_t i = 0; i < devcount; i++) {
+		struct device const *dev = devices + i;
+
+		if (strcmp(dev->name, DUMMY_NOINIT) == 0) {
+			found = true;
+			break;
+		}
+	}
+	zassert_true(found, "%s should be present in static device list", DUMMY_NOINIT);
 }
 
 static int sys_init_counter;
