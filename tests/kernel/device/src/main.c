@@ -26,6 +26,9 @@
 #define FAKEDEFERDRIVER0	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e7000000))
 #define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
 
+#define FAKEDRIVER0_NODEID    DT_PATH(fakedriver_e0000000)
+#define FAKEDRIVER0_NODELABEL "fake_driver_label"
+
 /* A device without init call */
 DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
@@ -475,6 +478,26 @@ ZTEST(device, test_deinit_success_and_redeinit)
 	ret = device_deinit(dev);
 	zassert_equal(ret, -EPERM, "device_deinit should fail when not init or already deinit");
 }
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+DEVICE_DT_DEFINE(FAKEDRIVER0_NODEID, NULL, NULL, NULL, NULL, POST_KERNEL,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+ZTEST(device, test_device_get_by_dt_nodelabel)
+{
+	const struct device *dev = DEVICE_DT_GET(FAKEDRIVER0_NODEID);
+
+	zassert_not_null(dev);
+
+	const struct device *valid = device_get_by_dt_nodelabel(FAKEDRIVER0_NODELABEL);
+
+	zassert_not_null(valid, "Valid DT nodelabel should return a device");
+
+	const struct device *invalid = device_get_by_dt_nodelabel("does_not_exist");
+
+	zassert_is_null(invalid, "Invalid DT nodelabel should return NULL");
+}
+#endif
 
 void *user_setup(void)
 {
