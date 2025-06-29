@@ -7,9 +7,18 @@ config SOC_SERIES_RP2350
 	select HAS_RPI_PICO
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select SOC_RESET_HOOK
+
+config SOC_RP2350A_M33_CPU0
+	select ARM
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
 	select XIP
 
-config SOC_RP2350A_M33
+config SOC_RP2350A_M33_CPU1
 	select ARM
 	select ARM_TRUSTZONE_M
 	select CPU_CORTEX_M_HAS_SYSTICK
@@ -38,3 +47,15 @@ config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	help
 	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
 	  RP23XX devices to consider this a valid image in flash.
+
+if SOC_RP2350A_M33_CPU0
+
+config SOC_RP2350A_BOOT_CPU1
+	bool "Apply boot sequence for CPU1 during system init"
+	help
+	  Applies the boot sequence required to start the second CPU core. The
+	  partition table in the device tree defines the flash address used
+	  for the CPU1 image. The vector table, initial stack pointer and
+	  entry point are loaded from the image at this address.
+
+endif

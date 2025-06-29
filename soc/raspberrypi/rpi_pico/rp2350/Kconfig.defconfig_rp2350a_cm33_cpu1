@@ -1,0 +1,19 @@
+# Raspberry Pi RP2350 MCU line
+# ARM Cortex M33, CPU1
+
+# Copyright (c) 2025 Dan Collins
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RP2350A_M33_CPU1
+
+# For CPU1, we need to use both the base address of flash as well as the
+# offset - as our partition table puts the code section well above the
+# base address of the flash.
+
+config BUILD_OUTPUT_UF2_USE_FLASH_BASE
+	default y
+
+config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
+	default y
+
+endif # SOC_RP2350A_M33_CPU1
