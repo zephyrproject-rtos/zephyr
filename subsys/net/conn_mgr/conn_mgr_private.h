@@ -63,6 +63,9 @@ void conn_mgr_init_events_handler(void);
 /* Cause conn_mgr_connectivity to Initialize all connectivity implementation bindings */
 void conn_mgr_conn_init(void);
 
+/* Retrieve the raw pointer to the state array of size CONN_MGR_IFACE_MAX */
+uint16_t *conn_mgr_if_state_internal(void);
+
 /* Internal helper function to allow the shell net cm command to safely read conn_mgr state. */
 uint16_t conn_mgr_if_state(struct net_if *iface);
 
