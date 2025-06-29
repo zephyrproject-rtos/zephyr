@@ -12,7 +12,7 @@ config SEMIHOST
 	  a host computer that is running a debugger.
 	  Additional information can be found in:
 	  https://developer.arm.com/documentation/dui0471/m/what-is-semihosting-
-	  https://github.com/riscv/riscv-semihosting-spec/blob/main/riscv-semihosting-spec.adoc
+	  https://github.com/riscv-non-isa/riscv-semihosting/blob/main/riscv-semihosting.adoc
 	  This option is compatible with hardware and with QEMU, through the
 	  (automatic) use of the -semihosting-config switch when invoking it.
 
