@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Linumiz GmbH
+# Author : Sri Surya  <srisurya@linumiz.com>
+
+if SOC_APOLLO2
+
+config NUM_IRQS
+	default 32
+
+DT_CLK_SYS_PATH := $(dt_nodelabel_path,sys_clk)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_CLK_SYS_PATH),clock-frequency)
+
+endif
