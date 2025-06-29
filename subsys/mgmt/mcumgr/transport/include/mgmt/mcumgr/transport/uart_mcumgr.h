@@ -10,8 +10,8 @@
  * @see include/mgmt/serial.h
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_MCUMGR_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_MCUMGR_H_
+#ifndef ZEPHYR_INCLUDE_MGMT_SMP_UART_MCUMGR_H_
+#define ZEPHYR_INCLUDE_MGMT_SMP_UART_MCUMGR_H_
 
 #include <stdlib.h>
 #include <zephyr/types.h>
@@ -25,7 +25,7 @@ extern "C" {
  */
 struct uart_mcumgr_rx_buf {
 	void *fifo_reserved;   /* 1st word reserved for use by fifo */
-	uint8_t data[CONFIG_UART_MCUMGR_RX_BUF_SIZE];
+	uint8_t data[CONFIG_MCUMGR_TRANSPORT_UART_RX_BUF_SIZE];
 	int length;
 };
 
