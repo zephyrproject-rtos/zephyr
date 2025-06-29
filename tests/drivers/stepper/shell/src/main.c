@@ -16,7 +16,7 @@
 
 #define FAKE_STEPPER_CONTROLLER DEVICE_DT_NAME(DT_NODELABEL(fake_stepper_controller))
 #define FAKE_STEPPER_NAME       DEVICE_DT_NAME(DT_NODELABEL(fake_stepper))
-#define FAKE_STEPPER_INDEX      STRINGIFY(0)
+#define FAKE_STEPPER_IDX        STRINGIFY(0)
 
 /* Global variables */
 static const struct device *const fake_stepper_dev = DEVICE_DT_GET(DT_NODELABEL(fake_stepper));
@@ -65,8 +65,8 @@ ZTEST(stepper_shell, test_stepper_disable)
 ZTEST(stepper_shell, test_stepper_move_by)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(
-		sh, "stepper move_by " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX " 1000");
+	int err = shell_execute_cmd(sh, "stepper move_by " FAKE_STEPPER_CONTROLLER
+					" " FAKE_STEPPER_IDX " 1000");
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_move_by_fake, fake_stepper_controller_dev, err);
 	zassert_equal(fake_stepper_move_by_fake.arg2_val, 1000, "wrong microsteps value");
@@ -75,12 +75,11 @@ ZTEST(stepper_shell, test_stepper_move_by)
 ZTEST(stepper_shell, test_stepper_set_microstep_interval)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(
-		sh, "stepper set_microstep_interval " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX
-		    " 200");
+	int err = shell_execute_cmd(sh, "stepper set_microstep_interval " FAKE_STEPPER_CONTROLLER
+					" " FAKE_STEPPER_IDX " 200");
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_set_microstep_interval_fake,
-		fake_stepper_controller_dev, err);
+				   fake_stepper_controller_dev, err);
 	zassert_equal(fake_stepper_set_microstep_interval_fake.arg2_val, 200,
 		      "wrong step_interval value");
 }
@@ -114,12 +113,11 @@ ZTEST(stepper_shell, test_stepper_get_micro_step_res)
 ZTEST(stepper_shell, test_stepper_set_reference_position)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(
-		sh, "stepper set_reference_position " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX
-		    " 100");
+	int err = shell_execute_cmd(sh, "stepper set_reference_position " FAKE_STEPPER_CONTROLLER
+					" " FAKE_STEPPER_IDX " 100");
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_set_reference_position_fake,
-		fake_stepper_controller_dev, err);
+				   fake_stepper_controller_dev, err);
 	zassert_equal(fake_stepper_set_reference_position_fake.arg2_val, 100,
 		      "wrong actual position value");
 }
@@ -127,18 +125,18 @@ ZTEST(stepper_shell, test_stepper_set_reference_position)
 ZTEST(stepper_shell, test_stepper_get_actual_position)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(
-		sh, "stepper get_actual_position " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX);
+	int err = shell_execute_cmd(sh, "stepper get_actual_position " FAKE_STEPPER_CONTROLLER
+					" " FAKE_STEPPER_IDX);
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_get_actual_position_fake,
-		fake_stepper_controller_dev, err);
+				   fake_stepper_controller_dev, err);
 }
 
 ZTEST(stepper_shell, test_stepper_move_to)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(
-		sh, "stepper move_to " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX " 200");
+	int err = shell_execute_cmd(sh, "stepper move_to " FAKE_STEPPER_CONTROLLER
+					" " FAKE_STEPPER_IDX " 200");
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_move_to_fake, fake_stepper_controller_dev, err);
 	zassert_equal(fake_stepper_move_to_fake.arg2_val, 200, "wrong target position value");
@@ -147,7 +145,7 @@ ZTEST(stepper_shell, test_stepper_move_to)
 ZTEST(stepper_shell, test_stepper_run)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(sh, "stepper run " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX
+	int err = shell_execute_cmd(sh, "stepper run " FAKE_STEPPER_CONTROLLER " " FAKE_STEPPER_IDX
 					" positive");
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_run_fake, fake_stepper_controller_dev, err);
@@ -158,7 +156,7 @@ ZTEST(stepper_shell, test_stepper_run)
 ZTEST(stepper_shell, test_stepper_run_invalid_direction)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(sh, "stepper run " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX
+	int err = shell_execute_cmd(sh, "stepper run " FAKE_STEPPER_CONTROLLER " " FAKE_STEPPER_IDX
 					" foo");
 
 	zassert_not_equal(err, 0, " executed run with invalid direction value");
@@ -167,7 +165,8 @@ ZTEST(stepper_shell, test_stepper_run_invalid_direction)
 ZTEST(stepper_shell, test_stepper_stop)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(sh, "stepper stop " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX);
+	int err = shell_execute_cmd(sh, "stepper stop " FAKE_STEPPER_CONTROLLER
+					" " FAKE_STEPPER_IDX);
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_stop_fake, fake_stepper_controller_dev, err);
 	zassert_equal(err, 0, "stepper stop could not be executed");
@@ -176,8 +175,8 @@ ZTEST(stepper_shell, test_stepper_stop)
 ZTEST(stepper_shell, test_stepper_controller_info)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(
-		sh, "stepper control info " FAKE_STEPPER_CONTROLLER FAKE_STEPPER_INDEX);
+	int err = shell_execute_cmd(sh, "stepper control_info " FAKE_STEPPER_CONTROLLER
+					" " FAKE_STEPPER_IDX);
 
 	zassert_ok(err, "failed to execute shell command (err %d)", err);
 
