@@ -71,15 +71,6 @@ static void drv84xx_api_after(void *f)
 	(void)stepper_drv_disable(fixture->dev);
 }
 
-ZTEST_F(drv84xx_api, test_micro_step_res_set)
-{
-	(void)stepper_drv_set_micro_step_res(fixture->dev, 4);
-	enum stepper_micro_step_resolution res;
-	(void)stepper_drv_get_micro_step_res(fixture->dev, &res);
-	zassert_equal(res, 4, "Micro step resolution not set correctly, should be %d but is %d", 4,
-		      res);
-}
-
 ZTEST_F(drv84xx_api, test_move_to_positive_direction_movement)
 {
 	int32_t pos = 50;

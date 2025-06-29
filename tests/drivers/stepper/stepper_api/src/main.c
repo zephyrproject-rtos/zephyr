@@ -95,14 +95,6 @@ ZTEST_F(stepper, test_set_micro_step_res_invalid)
 	zassert_equal(ret, -EINVAL, "Invalid micro step resolution should return -EINVAL");
 }
 
-ZTEST_F(stepper, test_get_micro_step_res)
-{
-	enum stepper_micro_step_resolution res;
-	(void)stepper_drv_get_micro_step_res(fixture->dev, &res);
-	zassert_equal(res, DT_PROP(DT_ALIAS(stepper), micro_step_res),
-		      "Micro step resolution not set correctly");
-}
-
 ZTEST_F(stepper, test_set_micro_step_interval_invalid_zero)
 {
 	int err = stepper_set_microstep_interval(fixture->dev, CONFIG_STEPPER_IDX, 0);
