@@ -57,6 +57,20 @@ enum video_buf_type {
 };
 
 /**
+ * @brief video_buf_state enum
+ *
+ * Current state of a video buffer.
+ * This helps to keep track of state of a buffer for debugging or to do some guard
+ * checks, e.g. prevents re-enqueuing a buffer already queued, etc.
+ */
+enum video_buf_state {
+	/** buffer queued in video subsystem and driver */
+	VIDEO_BUF_STATE_QUEUED,
+	/** buffer filled and can be dequeued by application */
+	VIDEO_BUF_STATE_DONE,
+};
+
+/**
  * @struct video_format
  * @brief Video format structure
  *
@@ -146,6 +160,8 @@ struct video_caps {
 struct video_buffer {
 	/** type of the buffer */
 	enum video_buf_type type;
+	/** current state of the buffer */
+	enum video_buf_state state;
 	/** pointer to driver specific data. */
 	void *driver_data;
 	/** pointer to the start of the buffer. */
@@ -591,6 +607,7 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 				k_timeout_t timeout)
 {
 	const struct video_driver_api *api;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(buf != NULL);
@@ -600,7 +617,13 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 		return -ENOSYS;
 	}
 
-	return api->dequeue(dev, buf, timeout);
+	ret = api->dequeue(dev, buf, timeout);
+	
+	if (ret == 0) {
+		(*buf)->state = VIDEO_BUF_STATE_DONE;
+	}
+
+	return ret;
 }
 
 /**
