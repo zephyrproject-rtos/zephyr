@@ -1076,7 +1076,6 @@
 			reg = <0x40814000 0x4000>;
 			interrupts = <57 0>;
 			status = "disabled";
-			#dma-cells = <0>;
 		};
 
 		iomuxcgpr: iomuxcgpr@400e4000 {
