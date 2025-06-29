@@ -5,8 +5,8 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/xen/public/arch-arm.h>
-#include <zephyr/xen/public/xen.h>
+#include <xen/public/arch-arm.h>
+#include <xen/public/xen.h>
 
 #define HYPERCALL(hypercall)			\
 GTEXT(HYPERVISOR_##hypercall);			\
