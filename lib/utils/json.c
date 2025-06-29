@@ -1218,6 +1218,10 @@ static int json_escape_internal(const char *str,
 	const char *cur;
 	int ret = 0;
 
+	if (str == NULL) {
+		return ret;
+	}
+
 	for (cur = str; ret == 0 && *cur; cur++) {
 		char escaped = escape_as(*cur);
 
