@@ -3,6 +3,13 @@
 
 if SOC_MIMX9596_A55
 
+if ETH_NXP_IMX_NETC
+
+config GIC_V3_ITS
+	default y
+
+endif # ETH_NXP_IMX_NETC
+
 # GIC ITS depends on kernel heap which init priority is 30, so set
 # GIC to be 31, mailbox and SCMI will be initialized by the order
 # according to dts dependency although they use the same init priority.
@@ -21,4 +28,4 @@ config ARM_SCMI_TRANSPORT_INIT_PRIORITY
 config CLOCK_CONTROL_INIT_PRIORITY
 	default 31
 
-endif
+endif # SOC_MIMX9596_A55
