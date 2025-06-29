@@ -52,7 +52,7 @@ struct video_sw_generator_data {
 		.width_min = 64,                                                                   \
 		.width_max = 1920,                                                                 \
 		.height_min = 64,                                                                  \
-		.height_max = 1080,                                                                \
+		.height_max = 1280,                                                                \
 		.width_step = 1,                                                                   \
 		.height_step = 1,                                                                  \
 	}
