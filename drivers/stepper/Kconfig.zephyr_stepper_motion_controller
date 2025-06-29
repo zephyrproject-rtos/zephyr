@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_STEPPER_MOTION_CONTROL
+	bool "Zephyr CPU based Stepper motion control"
+	depends on DT_HAS_ZEPHYR_STEPPER_MOTION_CONTROL_ENABLED
+	select STEPPER_TIMING_SOURCES
+	default y
+
+
+module = ZEPHYR_STEPPER_MOTION_CONTROL
+module-str = zephyr_stepper_motion_control
+
+rsource "Kconfig.stepper_event_template"

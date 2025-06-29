@@ -22,11 +22,10 @@ struct a4979_config {
 };
 
 struct a4979_data {
-	const struct step_dir_stepper_common_data common;
 	enum stepper_micro_step_resolution micro_step_res;
 };
 
-STEP_DIR_STEPPER_STRUCT_CHECK(struct a4979_config, struct a4979_data);
+STEP_DIR_STEPPER_STRUCT_CHECK(struct a4979_config);
 
 static int a4979_set_microstep_pin(const struct device *dev, const struct gpio_dt_spec *pin,
 				   int value)
@@ -222,20 +221,13 @@ static int a4979_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper, a4979_stepper_api) = {
+static DEVICE_API(stepper_drv, a4979_stepper_api) = {
 	.enable = a4979_stepper_enable,
 	.disable = a4979_stepper_disable,
-	.move_by = step_dir_stepper_common_move_by,
-	.move_to = step_dir_stepper_common_move_to,
-	.is_moving = step_dir_stepper_common_is_moving,
-	.set_reference_position = step_dir_stepper_common_set_reference_position,
-	.get_actual_position = step_dir_stepper_common_get_actual_position,
-	.set_microstep_interval = step_dir_stepper_common_set_microstep_interval,
-	.run = step_dir_stepper_common_run,
-	.stop = step_dir_stepper_common_stop,
 	.set_micro_step_res = a4979_stepper_set_micro_step_res,
 	.get_micro_step_res = a4979_stepper_get_micro_step_res,
-	.set_event_callback = step_dir_stepper_common_set_event_callback,
+	.step = step_dir_stepper_common_step,
+	.set_direction = step_dir_stepper_common_set_direction,
 };
 
 #define A4979_DEVICE(inst)                                                                         \
@@ -249,7 +241,6 @@ static DEVICE_API(stepper, a4979_stepper_api) = {
 	};                                                                                         \
                                                                                                    \
 	static struct a4979_data a4979_data_##inst = {                                             \
-		.common = STEP_DIR_STEPPER_DT_INST_COMMON_DATA_INIT(inst),                         \
 		.micro_step_res = DT_INST_PROP(inst, micro_step_res),                              \
 	};                                                                                         \
                                                                                                    \

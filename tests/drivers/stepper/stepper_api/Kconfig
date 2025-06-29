@@ -11,3 +11,9 @@ config STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT
 	help
 	  Additional margin (%) added to step timing during test timeouts.
 	  Accounts for execution and scheduling jitter.
+
+config STEPPER_IDX
+	int "Stepper index"
+	default 0
+	help
+	  Index of the stepper device to test.

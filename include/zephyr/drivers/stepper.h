@@ -102,8 +102,6 @@ enum stepper_event {
 	STEPPER_EVENT_RIGHT_END_STOP_DETECTED = 3,
 	/** Stepper has stopped */
 	STEPPER_EVENT_STOPPED = 4,
-	/** Fault with the stepper controller detected */
-	STEPPER_EVENT_FAULT_DETECTED = 5,
 };
 
 /**
@@ -114,111 +112,86 @@ enum stepper_event {
  */
 
 /**
- * @brief Enable the stepper driver.
- *
- * @see stepper_enable() for details.
- */
-typedef int (*stepper_enable_t)(const struct device *dev);
-
-/**
- * @brief Disable the stepper driver.
- *
- * @see stepper_disable() for details.
- */
-typedef int (*stepper_disable_t)(const struct device *dev);
-
-/**
- * @brief Set the micro-step resolution
- *
- * @see stepper_set_micro_step_res() for details.
- */
-typedef int (*stepper_set_micro_step_res_t)(const struct device *dev,
-					    const enum stepper_micro_step_resolution resolution);
-
-/**
- * @brief Get the micro-step resolution
- *
- * @see stepper_get_micro_step_res() for details.
- */
-typedef int (*stepper_get_micro_step_res_t)(const struct device *dev,
-					    enum stepper_micro_step_resolution *resolution);
-/**
  * @brief Set the reference position of the stepper
  *
  * @see stepper_set_actual_position() for details.
  */
-typedef int (*stepper_set_reference_position_t)(const struct device *dev, const int32_t value);
+typedef int (*stepper_set_reference_position_t)(const struct device *dev,
+						const uint8_t stepper_index, const int32_t value);
 
 /**
  * @brief Get the actual a.k.a reference position of the stepper
  *
  * @see stepper_get_actual_position() for details.
  */
-typedef int (*stepper_get_actual_position_t)(const struct device *dev, int32_t *value);
+typedef int (*stepper_get_actual_position_t)(const struct device *dev, const uint8_t stepper_index,
+					     int32_t *value);
 
 /**
  * @brief Callback function for stepper events
  */
-typedef void (*stepper_event_callback_t)(const struct device *dev, const enum stepper_event event,
-					 void *user_data);
+typedef void (*stepper_event_callback_t)(const struct device *dev, const uint8_t stepper_index,
+					 const enum stepper_event event, void *user_data);
 
 /**
  * @brief Set the callback function to be called when a stepper event occurs
  *
  * @see stepper_set_event_callback() for details.
  */
-typedef int (*stepper_set_event_callback_t)(const struct device *dev,
+typedef int (*stepper_set_event_callback_t)(const struct device *dev, const uint8_t stepper_index,
 					    stepper_event_callback_t callback, void *user_data);
+
 /**
  * @brief Set the time interval between steps in nanoseconds.
  *
  * @see stepper_set_microstep_interval() for details.
  */
 typedef int (*stepper_set_microstep_interval_t)(const struct device *dev,
+						const uint8_t stepper_index,
 						const uint64_t microstep_interval_ns);
 /**
  * @brief Move the stepper relatively by a given number of micro-steps.
  *
  * @see stepper_move_by() for details.
  */
-typedef int (*stepper_move_by_t)(const struct device *dev, const int32_t micro_steps);
+typedef int (*stepper_move_by_t)(const struct device *dev, const uint8_t stepper_index,
+				 const int32_t micro_steps);
 
 /**
  * @brief Move the stepper to an absolute position in micro-steps.
  *
  * @see stepper_move_to() for details.
  */
-typedef int (*stepper_move_to_t)(const struct device *dev, const int32_t micro_steps);
+typedef int (*stepper_move_to_t)(const struct device *dev, const uint8_t stepper_index,
+				 const int32_t micro_steps);
 
 /**
  * @brief Run the stepper with a given step interval in a given direction
  *
  * @see stepper_run() for details.
  */
-typedef int (*stepper_run_t)(const struct device *dev, const enum stepper_direction direction);
+typedef int (*stepper_run_t)(const struct device *dev, const uint8_t stepper_index,
+			     const enum stepper_direction direction);
 
 /**
  * @brief Stop the stepper
  *
  * @see stepper_stop() for details.
  */
-typedef int (*stepper_stop_t)(const struct device *dev);
+typedef int (*stepper_stop_t)(const struct device *dev, const uint8_t stepper_index);
 
 /**
  * @brief Is the target position fo the stepper reached
  *
  * @see stepper_is_moving() for details.
  */
-typedef int (*stepper_is_moving_t)(const struct device *dev, bool *is_moving);
+typedef int (*stepper_is_moving_t)(const struct device *dev, const uint8_t stepper_index,
+				   bool *is_moving);
 
 /**
  * @brief Stepper Driver API
  */
 __subsystem struct stepper_driver_api {
-	stepper_enable_t enable;
-	stepper_disable_t disable;
-	stepper_set_micro_step_res_t set_micro_step_res;
-	stepper_get_micro_step_res_t get_micro_step_res;
 	stepper_set_reference_position_t set_reference_position;
 	stepper_get_actual_position_t get_actual_position;
 	stepper_set_event_callback_t set_event_callback;
@@ -235,113 +208,21 @@ __subsystem struct stepper_driver_api {
  */
 
 /**
- * @brief Enable stepper driver
- *
- * @details Enabling the driver shall switch on the power stage and energize the coils.
- *
- * @param dev pointer to the stepper driver instance
- *
- * @retval -EIO Error during Enabling
- * @retval 0 Success
- */
-__syscall int stepper_enable(const struct device *dev);
-
-static inline int z_impl_stepper_enable(const struct device *dev)
-{
-	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
-
-	return api->enable(dev);
-}
-
-/**
- * @brief Disable stepper driver
- *
- * @details Disabling the driver shall switch off the power stage and de-energize the coils.
- * Disabling the stepper does not implicitly stop the stepper. If the motor shall not move after
- * re-enabling the stepper than consider calling stepper_stop() before.
- *
- * @param dev pointer to the stepper driver instance
- *
- * @retval  -ENOTSUP Disabling of driver is not supported.
- * @retval -EIO Error during Disabling
- * @retval 0 Success
- */
-__syscall int stepper_disable(const struct device *dev);
-
-static inline int z_impl_stepper_disable(const struct device *dev)
-{
-	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
-
-	return api->disable(dev);
-}
-
-/**
- * @brief Set the micro-step resolution in stepper driver
- *
- * @param dev pointer to the stepper driver instance
- * @param resolution micro-step resolution
- *
- * @retval -EIO General input / output error
- * @retval -ENOSYS If not implemented by device driver
- * @retval -EINVAL If the requested resolution is invalid
- * @retval -ENOTSUP If the requested resolution is not supported
- * @retval 0 Success
- */
-__syscall int stepper_set_micro_step_res(const struct device *dev,
-					 enum stepper_micro_step_resolution resolution);
-
-static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
-						    enum stepper_micro_step_resolution resolution)
-{
-	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
-
-	if (api->set_micro_step_res == NULL) {
-		return -ENOSYS;
-	}
-
-	if (!VALID_MICRO_STEP_RES(resolution)) {
-		return -EINVAL;
-	}
-	return api->set_micro_step_res(dev, resolution);
-}
-
-/**
- * @brief Get the micro-step resolution in stepper driver
- *
- * @param dev pointer to the stepper driver instance
- * @param resolution micro-step resolution
- *
- * @retval -EIO General input / output error
- * @retval -ENOSYS If not implemented by device driver
- * @retval 0 Success
- */
-__syscall int stepper_get_micro_step_res(const struct device *dev,
-					 enum stepper_micro_step_resolution *resolution);
-
-static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
-						    enum stepper_micro_step_resolution *resolution)
-{
-	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
-
-	if (api->get_micro_step_res == NULL) {
-		return -ENOSYS;
-	}
-	return api->get_micro_step_res(dev, resolution);
-}
-
-/**
  * @brief Set the reference position of the stepper
  *
  * @param dev Pointer to the stepper driver instance.
+ * @param stepper_index The index of the stepper to set the reference position for.
  * @param value The reference position to set in micro-steps.
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_reference_position(const struct device *dev, int32_t value);
+__syscall int stepper_set_reference_position(const struct device *dev, const uint8_t stepper_index,
+					     int32_t value);
 
 static inline int z_impl_stepper_set_reference_position(const struct device *dev,
+							const uint8_t stepper_index,
 							const int32_t value)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
@@ -349,35 +230,39 @@ static inline int z_impl_stepper_set_reference_position(const struct device *dev
 	if (api->set_reference_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_reference_position(dev, value);
+	return api->set_reference_position(dev, stepper_index, value);
 }
 
 /**
  * @brief Get the actual a.k.a reference position of the stepper
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to get the actual position for.
  * @param value The actual position to get in micro-steps
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_get_actual_position(const struct device *dev, int32_t *value);
+__syscall int stepper_get_actual_position(const struct device *dev, const uint8_t stepper_index,
+					  int32_t *value);
 
-static inline int z_impl_stepper_get_actual_position(const struct device *dev, int32_t *value)
+static inline int z_impl_stepper_get_actual_position(const struct device *dev,
+						     const uint8_t stepper_index, int32_t *value)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->get_actual_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->get_actual_position(dev, value);
+	return api->get_actual_position(dev, stepper_index, value);
 }
 
 /**
  * @brief Set the callback function to be called when a stepper event occurs
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to set the event callback for.
  * @param callback Callback function to be called when a stepper event occurs
  * passing NULL will disable the callback
  * @param user_data User data to be passed to the callback function
@@ -385,10 +270,11 @@ static inline int z_impl_stepper_get_actual_position(const struct device *dev, i
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_event_callback(const struct device *dev,
+__syscall int stepper_set_event_callback(const struct device *dev, const uint8_t stepper_index,
 					 stepper_event_callback_t callback, void *user_data);
 
 static inline int z_impl_stepper_set_event_callback(const struct device *dev,
+						    const uint8_t stepper_index,
 						    stepper_event_callback_t callback,
 						    void *user_data)
 {
@@ -397,7 +283,7 @@ static inline int z_impl_stepper_set_event_callback(const struct device *dev,
 	if (api->set_event_callback == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_event_callback(dev, callback, user_data);
+	return api->set_event_callback(dev, stepper_index, callback, user_data);
 }
 
 /**
@@ -407,6 +293,7 @@ static inline int z_impl_stepper_set_event_callback(const struct device *dev,
  * set_microstep_interval and move is required to set the stepper into motion.
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to set the microstep interval for.
  * @param microstep_interval_ns time interval between steps in nanoseconds
  *
  * @retval -EIO General input / output error
@@ -414,10 +301,11 @@ static inline int z_impl_stepper_set_event_callback(const struct device *dev,
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_microstep_interval(const struct device *dev,
+__syscall int stepper_set_microstep_interval(const struct device *dev, const uint8_t stepper_index,
 					     uint64_t microstep_interval_ns);
 
 static inline int z_impl_stepper_set_microstep_interval(const struct device *dev,
+							const uint8_t stepper_index,
 							const uint64_t microstep_interval_ns)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
@@ -425,7 +313,7 @@ static inline int z_impl_stepper_set_microstep_interval(const struct device *dev
 	if (api->set_microstep_interval == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_microstep_interval(dev, microstep_interval_ns);
+	return api->set_microstep_interval(dev, stepper_index, microstep_interval_ns);
 }
 
 /**
@@ -435,18 +323,21 @@ static inline int z_impl_stepper_set_microstep_interval(const struct device *dev
  * This function is non-blocking.
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to set the micro-steps for.
  * @param micro_steps target micro-steps to be moved from the current position
  *
  * @retval -EIO General input / output error
  * @retval 0 Success
  */
-__syscall int stepper_move_by(const struct device *dev, int32_t micro_steps);
+__syscall int stepper_move_by(const struct device *dev, const uint8_t stepper_index,
+			      int32_t micro_steps);
 
-static inline int z_impl_stepper_move_by(const struct device *dev, const int32_t micro_steps)
+static inline int z_impl_stepper_move_by(const struct device *dev, const uint8_t stepper_index,
+					 const int32_t micro_steps)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	return api->move_by(dev, micro_steps);
+	return api->move_by(dev, stepper_index, micro_steps);
 }
 
 /**
@@ -456,22 +347,25 @@ static inline int z_impl_stepper_move_by(const struct device *dev, const int32_t
  * This function is non-blocking.
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to set the target position for.
  * @param micro_steps target position to set in micro-steps
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_move_to(const struct device *dev, int32_t micro_steps);
+__syscall int stepper_move_to(const struct device *dev, const uint8_t stepper_index,
+			      int32_t micro_steps);
 
-static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t micro_steps)
+static inline int z_impl_stepper_move_to(const struct device *dev, const uint8_t stepper_index,
+					 const int32_t micro_steps)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->move_to == NULL) {
 		return -ENOSYS;
 	}
-	return api->move_to(dev, micro_steps);
+	return api->move_to(dev, stepper_index, micro_steps);
 }
 
 /**
@@ -482,15 +376,17 @@ static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t
  * function is non-blocking.
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to run.
  * @param direction The direction to set
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_run(const struct device *dev, enum stepper_direction direction);
+__syscall int stepper_run(const struct device *dev, const uint8_t stepper_index,
+			  enum stepper_direction direction);
 
-static inline int z_impl_stepper_run(const struct device *dev,
+static inline int z_impl_stepper_run(const struct device *dev, const uint8_t stepper_index,
 				     const enum stepper_direction direction)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
@@ -498,7 +394,7 @@ static inline int z_impl_stepper_run(const struct device *dev,
 	if (api->run == NULL) {
 		return -ENOSYS;
 	}
-	return api->run(dev, direction);
+	return api->run(dev, stepper_index, direction);
 }
 
 /**
@@ -506,43 +402,306 @@ static inline int z_impl_stepper_run(const struct device *dev,
  * @details Cancel all active movements, however keep the coils energized.
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to stop.
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_stop(const struct device *dev);
+__syscall int stepper_stop(const struct device *dev, const uint8_t stepper_index);
 
-static inline int z_impl_stepper_stop(const struct device *dev)
+static inline int z_impl_stepper_stop(const struct device *dev, const uint8_t stepper_index)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->stop == NULL) {
 		return -ENOSYS;
 	}
-	return api->stop(dev);
+	return api->stop(dev, stepper_index);
 }
 
 /**
  * @brief Check if the stepper is currently moving
  *
  * @param dev pointer to the stepper driver instance
+ * @param stepper_index The index of the stepper to check if it is moving.
  * @param is_moving Pointer to a boolean to store the moving status of the stepper
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_is_moving(const struct device *dev, bool *is_moving);
+__syscall int stepper_is_moving(const struct device *dev, const uint8_t stepper_index,
+				bool *is_moving);
 
-static inline int z_impl_stepper_is_moving(const struct device *dev, bool *is_moving)
+static inline int z_impl_stepper_is_moving(const struct device *dev, const uint8_t stepper_index,
+					   bool *is_moving)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->is_moving == NULL) {
 		return -ENOSYS;
 	}
-	return api->is_moving(dev, is_moving);
+	return api->is_moving(dev, stepper_index, is_moving);
+}
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Stepper-Drv Driver Interface
+ * @defgroup stepper_drv_interface Stepper Drv Driver Interface
+ * @since 4.3
+ * @version 0.1.0
+ * @ingroup io_interfaces
+ * @{
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * Stepper Drv driver API definition and system call entry points.
+ *
+ */
+
+/**
+ * @brief Enable the stepper driver
+ *
+ * @see stepper_drv_enable() for details.
+ */
+typedef int (*stepper_drv_enable_t)(const struct device *dev);
+
+/**
+ * @brief Disable the stepper driver
+ *
+ * @see stepper_drv_disable() for details.
+ */
+typedef int (*stepper_drv_disable_t)(const struct device *dev);
+
+/**
+ * @brief Set the stepper direction
+ *
+ * @see stepper_drv_set_direction() for details.
+ */
+typedef int (*stepper_drv_direction_t)(const struct device *dev,
+				       const enum stepper_direction direction);
+
+/**
+ * @brief Do a step
+ *
+ * @see stepper_drv_step() for details.
+ */
+typedef int (*stepper_drv_step_t)(const struct device *dev);
+
+/**
+ * @brief Set the stepper micro-step resolution
+ *
+ * @see stepper_drv_set_micro_step_res() for details.
+ */
+typedef int (*stepper_drv_set_micro_step_res_t)(
+	const struct device *dev, const enum stepper_micro_step_resolution resolution);
+
+/**
+ * @brief Get the stepper micro-step resolution
+ *
+ * @see stepper_drv_get_micro_step_res() for details.
+ */
+typedef int (*stepper_drv_get_micro_step_res_t)(const struct device *dev,
+						enum stepper_micro_step_resolution *resolution);
+
+/**
+ * @brief Callback function for stepper fault events
+ */
+typedef int (*stepper_drv_fault_cb_t)(const struct device *dev, void *user_data);
+
+/**
+ * @brief Set the callback function to be called when a stepper driver fault occurs
+ *
+ * @see stepper_drv_set_fault_callback() for details.
+ */
+typedef int (*stepper_drv_set_fault_callback_t)(const struct device *dev,
+						stepper_drv_fault_cb_t callback, void *user_data);
+
+/**
+ * @brief Stepper DRV Driver API
+ */
+__subsystem struct stepper_drv_driver_api {
+	stepper_drv_enable_t enable;
+	stepper_drv_disable_t disable;
+	stepper_drv_direction_t set_direction;
+	stepper_drv_step_t step;
+	stepper_drv_set_micro_step_res_t set_micro_step_res;
+	stepper_drv_get_micro_step_res_t get_micro_step_res;
+	stepper_drv_set_fault_callback_t set_fault_cb;
+};
+
+/**
+ * @endcond
+ */
+
+/**
+ * @brief Enable stepper driver
+ *
+ * @details Enabling the driver shall switch on the power stage and energize the coils.
+ *
+ * @param dev pointer to the stepper_drv driver instance
+ *
+ * @retval -EIO Error during Enabling
+ * @retval 0 Success
+ */
+__syscall int stepper_drv_enable(const struct device *dev);
+
+static inline int z_impl_stepper_drv_enable(const struct device *dev)
+{
+	const struct stepper_drv_driver_api *api = (const struct stepper_drv_driver_api *)dev->api;
+
+	return api->enable(dev);
+}
+
+/**
+ * @brief Disable stepper driver
+ *
+ * @details Disabling the driver shall switch off the power stage and de-energize the coils.
+ *
+ * @param dev pointer to the stepper_drv driver instance
+ *
+ * @retval  -ENOTSUP Disabling of driver is not supported.
+ * @retval -EIO Error during Disabling
+ * @retval 0 Success
+ */
+__syscall int stepper_drv_disable(const struct device *dev);
+
+static inline int z_impl_stepper_drv_disable(const struct device *dev)
+{
+	const struct stepper_drv_driver_api *api = (const struct stepper_drv_driver_api *)dev->api;
+
+	return api->disable(dev);
+}
+
+/**
+ * @brief Do a step.
+ * @details This function will cause the stepper to do one micro-step.
+ * This function is typically used in stepper_drv stepper drivers where
+ * an external stepper motion controller is used to control the stepper.
+ * This function will not increment/decrement any position related data. Doing so
+ * is responsibility of the caller (e.g. stepper motion controller).
+ *
+ * @param dev pointer to the stepper_drv driver instance
+ *
+ * @retval -EIO General input / output error
+ * @retval 0 Success
+ */
+__syscall int stepper_drv_step(const struct device *dev);
+
+static inline int z_impl_stepper_drv_step(const struct device *dev)
+{
+	const struct stepper_drv_driver_api *api = (const struct stepper_drv_driver_api *)dev->api;
+
+	return api->step(dev);
+}
+
+/**
+ * @brief Set the stepper direction
+ * @details This function sets the direction of the stepper motor.
+ *
+ * @param dev pointer to the stepper_drv driver instance
+ * @param direction The direction to set
+ *
+ * @retval -EINVAL If the requested direction is invalid
+ * @retval -EIO General input / output error
+ * @retval 0 Success
+ */
+__syscall int stepper_drv_set_direction(const struct device *dev,
+					const enum stepper_direction direction);
+
+static inline int z_impl_stepper_drv_set_direction(const struct device *dev,
+						   const enum stepper_direction direction)
+{
+	const struct stepper_drv_driver_api *api = (const struct stepper_drv_driver_api *)dev->api;
+
+	if ((direction != STEPPER_DIRECTION_POSITIVE) &&
+	    (direction != STEPPER_DIRECTION_NEGATIVE)) {
+		return -EINVAL;
+	}
+
+	return api->set_direction(dev, direction);
+}
+/**
+ * @brief Set the micro-step resolution in stepper driver
+ *
+ * @param dev pointer to the step dir driver instance
+ * @param res micro-step resolution
+ *
+ * @retval -EIO General input / output error
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval -EINVAL If the requested resolution is invalid
+ * @retval -ENOTSUP If the requested resolution is not supported
+ * @retval 0 Success
+ */
+__syscall int stepper_drv_set_micro_step_res(const struct device *dev,
+						enum stepper_micro_step_resolution res);
+
+static inline int z_impl_stepper_drv_set_micro_step_res(const struct device *dev,
+							   enum stepper_micro_step_resolution res)
+{
+	const struct stepper_drv_driver_api *api = (const struct stepper_drv_driver_api *)dev->api;
+
+	if (api->set_micro_step_res == NULL) {
+		return -ENOSYS;
+	}
+
+	if (!VALID_MICRO_STEP_RES(res)) {
+		return -EINVAL;
+	}
+	return api->set_micro_step_res(dev, res);
+}
+
+/**
+ * @brief Get the micro-step resolution in stepper driver
+ *
+ * @param dev pointer to the stepper_drv driver instance
+ * @param res micro-step resolution
+ *
+ * @retval -EIO General input / output error
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval 0 Success
+ */
+__syscall int stepper_drv_get_micro_step_res(const struct device *dev,
+					     enum stepper_micro_step_resolution *res);
+
+static inline int z_impl_stepper_drv_get_micro_step_res(const struct device *dev,
+							enum stepper_micro_step_resolution *res)
+{
+	const struct stepper_drv_driver_api *api = (const struct stepper_drv_driver_api *)dev->api;
+
+	return api->get_micro_step_res(dev, res);
+}
+
+/**
+ * @brief Set the callback function to be called when a stepper fault occurs
+ *
+ * @param dev pointer to the stepper_drv driver instance
+ * @param callback Callback function to be called when a stepper fault occurs
+ * passing NULL will disable the callback
+ * @param user_data User data to be passed to the callback function
+ *
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval 0 Success
+ */
+__syscall int stepper_drv_set_fault_cb(const struct device *dev, stepper_drv_fault_cb_t callback,
+				       void *user_data);
+
+static inline int z_impl_stepper_drv_set_fault_cb(const struct device *dev,
+						  stepper_drv_fault_cb_t callback, void *user_data)
+{
+	const struct stepper_drv_driver_api *api = (const struct stepper_drv_driver_api *)dev->api;
+
+	if (api->set_fault_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_fault_cb(dev, callback, user_data);
 }
 
 /**
