@@ -18,6 +18,7 @@
 #define DUMMY_PORT_2    "dummy_driver"
 #define DUMMY_NOINIT    "dummy_noinit"
 #define BAD_DRIVER	"bad_driver"
+#define DUMMY_DEINIT    "dummy_deinit"
 
 #define MY_DRIVER_A     "my_driver_A"
 #define MY_DRIVER_B     "my_driver_B"
@@ -439,6 +440,40 @@ ZTEST_USER(device, test_deferred_init_user)
 	zassert_true(ret == 0);
 
 	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
+}
+
+ZTEST(device, test_deinit_not_supported)
+{
+	const struct device *dev = device_get_binding(DUMMY_NOINIT);
+	int ret;
+
+	zassert_not_null(dev);
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, -ENOTSUP, "Expected -ENOTSUP for device_deinit when not supported");
+}
+
+static int dummy_deinit(const struct device *dev)
+{
+	return 0;
+}
+
+/* A device with de-initialization function */
+DEVICE_DEINIT_DEFINE(dummy_deinit, DUMMY_DEINIT, NULL, dummy_deinit, NULL, NULL, NULL, POST_KERNEL,
+		     CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+ZTEST(device, test_deinit_success_and_redeinit)
+{
+	const struct device *dev = device_get_binding(DUMMY_DEINIT);
+	int ret;
+
+	zassert_not_null(dev);
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, 0, "device_deinit should succeed");
+
+	ret = device_deinit(dev);
+	zassert_equal(ret, -EPERM, "device_deinit should fail when not init or already deinit");
 }
 
 void *user_setup(void)
