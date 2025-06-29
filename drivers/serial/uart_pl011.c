@@ -34,18 +34,6 @@
 
 #include "uart_pl011_registers.h"
 
-#if defined(CONFIG_SOC_FAMILY_AMBIQ)
-#include "uart_pl011_ambiq.h"
-#endif
-
-#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
-#define PM_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
-#else
-#define PM_INST_GET(n) NULL
-#endif
-
-#include "uart_pl011_raspberrypi_pico.h"
-
 struct pl011_config {
 	DEVICE_MMIO_ROM;
 #if defined(CONFIG_PINCTRL)
@@ -63,7 +51,7 @@ struct pl011_config {
 #endif
 	bool fifo_disable;
 	int (*clk_enable_func)(const struct device *dev, uint32_t clk);
-	int (*pwr_on_func)(void);
+	int (*pwr_on_func)(const struct device *dev);
 };
 
 /* Device data structure */
@@ -79,6 +67,49 @@ struct pl011_data {
 	void *irq_cb_data;
 #endif
 };
+
+/*
+ * Include headers based on the presence of each specific compatible.
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(ambiq_pl011_uart)
+#include "uart_pl011_ambiq.h"
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_uart)
+#include "uart_pl011_raspberrypi_pico.h"
+#endif
+
+/*
+ * Define generic helper functions only if the generic "arm,pl011"
+ * compatible is found.
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(arm_pl011)
+static inline int pwr_on_arm_pl011(const struct device *dev)
+{
+	return 0;
+}
+
+static inline int clk_enable_arm_pl011(const struct device *dev, uint32_t clk)
+{
+	return 0;
+}
+#endif
+
+/*
+ * Conditionally define power management (PM) macros.
+ */
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
+
+/* For Apollo 3x and 5x, enable PM by defining macros that create and retrieve the PM device */
+#define PM_INST_DEFINE(n) PM_DEVICE_DT_INST_DEFINE(n, uart_ambiq_pm_action);
+#define PM_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
+
+#else
+
+/* For all others, define these macros to be empty and NULL, as there is no PM support for them*/
+#define PM_INST_DEFINE(n)
+#define PM_INST_GET(n) NULL
+#endif
 
 static void pl011_enable(const struct device *dev)
 {
@@ -526,7 +557,7 @@ static int pl011_init(const struct device *dev)
 #endif
 		/* Call vendor-specific function to power on the peripheral */
 		if (config->pwr_on_func != NULL) {
-			ret = config->pwr_on_func();
+			ret = config->pwr_on_func(dev);
 		}
 
 		/* disable the uart */
@@ -574,33 +605,23 @@ static int pl011_init(const struct device *dev)
 	return 0;
 }
 
-#define COMPAT_SPECIFIC_FUNC_NAME(prefix, name) _CONCAT(_CONCAT(prefix, name), _)
+#define COMPAT_SPECIFIC_FUNC_NAME(prefix, name) _CONCAT(prefix, name)
 
 /*
  * The first element of compatible is used to determine the type.
- * When compatible defines as "ambiq,uart", "arm,pl011",
- * this macro expands to pwr_on_ambiq_uart_[n].
+ * When compatible defines as "ambiq,pl011-uart", "arm,pl011",
+ * this macro expands to pwr_on_ambiq_pl011_uart.
  */
 #define COMPAT_SPECIFIC_PWR_ON_FUNC(n)                                                             \
-	_CONCAT(COMPAT_SPECIFIC_FUNC_NAME(pwr_on_, DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0)), \
-		n)
+		COMPAT_SPECIFIC_FUNC_NAME(pwr_on_, DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0))
 
 /*
  * The first element of compatible is used to determine the type.
- * When compatible defines as "ambiq,uart", "arm,pl011",
- * this macro expands to clk_enable_ambiq_uart_[n].
+ * When compatible defines as "ambiq,pl011-uart", "arm,pl011",
+ * this macro expands to clk_enable_ambiq_pl011_uart.
  */
 #define COMPAT_SPECIFIC_CLK_ENABLE_FUNC(n)                                                         \
-	_CONCAT(COMPAT_SPECIFIC_FUNC_NAME(clk_enable_,                                             \
-					  DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0)), n)
-
-/*
- * The first element of compatible is used to determine the type.
- * When compatible defines as "ambiq,uart", "arm,pl011",
- * this macro expands to AMBIQ_UART_DEFINE(n).
- */
-#define COMPAT_SPECIFIC_DEFINE(n)                                                                  \
-	_CONCAT(DT_INST_STRING_UPPER_TOKEN_BY_IDX(n, compatible, 0), _DEFINE)(n)
+	COMPAT_SPECIFIC_FUNC_NAME(clk_enable_, DT_INST_STRING_TOKEN_BY_IDX(n, compatible, 0))
 
 #define COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)                                                  \
 	_CONCAT(DT_INST_STRING_UPPER_TOKEN_BY_IDX(n, compatible, 0), _CLOCK_CTLR_SUBSYS_CELL)
@@ -625,16 +646,6 @@ static int pl011_init(const struct device *dev)
 		    (.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                           \
 		     .clock_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n,                    \
 				  COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)),))
-
-#define ARM_PL011_DEFINE(n)                                                                        \
-	static inline int pwr_on_arm_pl011_##n(void)                                               \
-	{                                                                                          \
-		return 0;                                                                          \
-	}                                                                                          \
-	static inline int clk_enable_arm_pl011_##n(const struct device *dev, uint32_t clk)         \
-	{                                                                                          \
-		return 0;                                                                          \
-	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 void pl011_isr(const struct device *dev)
@@ -688,8 +699,8 @@ void pl011_isr(const struct device *dev)
 
 #define PL011_INIT(n)                                                                              \
 	PINCTRL_DEFINE(n)                                                                          \
-	COMPAT_SPECIFIC_DEFINE(n)                                                                  \
 	PL011_CONFIG_PORT(n)                                                                       \
+	PM_INST_DEFINE(n)									   \
                                                                                                    \
 	static struct pl011_data pl011_data_port_##n = {                                           \
 		.uart_cfg =                                                                        \
@@ -707,7 +718,7 @@ void pl011_isr(const struct device *dev)
 				    (DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,       \
+	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,		\
 			      &pl011_cfg_port_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
 			      &pl011_driver_api);
 
