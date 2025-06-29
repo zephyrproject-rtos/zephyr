@@ -70,6 +70,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	vbuf->buffer = block->data;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
+	vbuf->state = VIDEO_BUF_STATE_DONE;
 
 	return vbuf;
 }
@@ -112,6 +113,12 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 	if (api->enqueue == NULL) {
 		return -ENOSYS;
 	}
+
+	if (video_buf[buf->index].state != VIDEO_BUF_STATE_DONE) {
+		return -EINVAL;
+	}
+
+	video_buf[buf->index].state = VIDEO_BUF_STATE_QUEUED;
 
 	return api->enqueue(dev, &video_buf[buf->index]);
 }
