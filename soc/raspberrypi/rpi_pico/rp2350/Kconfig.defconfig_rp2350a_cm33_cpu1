@@ -16,4 +16,8 @@ config BUILD_OUTPUT_UF2_USE_FLASH_BASE
 config BUILD_OUTPUT_UF2_USE_FLASH_OFFSET
 	default y
 
+# Don't initialise the clock controller on CPU1 as this is handled by CPU0!
+config RPI_PICO_SKIP_CLOCK_INIT
+	default y if SOC_RP2350A_M33_CPU1
+
 endif # SOC_RP2350A_M33_CPU1
