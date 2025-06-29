@@ -14,7 +14,6 @@ menuconfig MCUMGR_TRANSPORT_UART
 	depends on CONSOLE
 	depends on BASE64
 	depends on CRC
-	select UART_MCUMGR
 	help
 	  Enables handling of SMP commands received over UART.  This is a
 	  lightweight alternative to MCUMGR_TRANSPORT_SHELL.  It allows mcumgr
@@ -59,5 +58,23 @@ config MCUMGR_TRANSPORT_UART_MTU
 	  Maximum size of SMP frames sent and received over UART, in bytes.
 	  This value must satisfy the following relation:
 	  MCUMGR_TRANSPORT_UART_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
+
+config MCUMGR_TRANSPORT_UART_RX_BUF_SIZE
+	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
+	default 128
+	help
+	  Specifies the size of the mcumgr UART receive buffer, in bytes. This
+	  value must be large enough to accommodate any line sent by an mcumgr
+	  client.
+
+config MCUMGR_TRANSPORT_UART_RX_BUF_COUNT
+	int "Number of receive buffers for mcumgr fragments received over UART"
+	default 2
+	help
+	  Specifies the number of the mcumgr UART receive buffers.  Receive
+	  buffers hold received mcumgr fragments prior to reassembly.  This
+	  setting's value must satisfy the following relation:
+	  MCUMGR_TRANSPORT_UART_RX_BUF_COUNT * MCUMGR_TRANSPORT_UART_RX_BUF_SIZE >=
+	  MCUMGR_TRANSPORT_UART_MTU
 
 endif # MCUMGR_TRANSPORT_UART
