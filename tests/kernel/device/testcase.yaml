@@ -13,6 +13,7 @@ tests:
   kernel.device.metadata:
     platform_allow:
       - qemu_x86
+      - native_sim
     extra_configs:
       - CONFIG_DEVICE_DT_METADATA=y
   kernel.device.minimallibc:
