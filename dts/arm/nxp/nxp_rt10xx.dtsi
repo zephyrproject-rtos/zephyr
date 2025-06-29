@@ -1024,7 +1024,6 @@
 			reg = <0x402b4000 0x4000>;
 			interrupts = <44 0>;
 			status = "disabled";
-			#dma-cells = <0>;
 		};
 
 		sai1: sai@40384000 {
