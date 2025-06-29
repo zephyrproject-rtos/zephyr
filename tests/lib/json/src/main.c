@@ -2178,4 +2178,24 @@ ZTEST(lib_json_test, test_json_enums)
 		     "Enums not decoded correctly");
 }
 
+ZTEST(lib_json_test, test_json_string_nullptr)
+{
+	int ret = 0;
+
+	struct test_struct ts = {0};
+	char *buffer;
+	size_t len;
+
+	len = json_calc_encoded_len(test_descr, ARRAY_SIZE(test_descr), &ts);
+	zassert(len > 0, "encoded size incorrect");
+
+	buffer = alloca(len + 1);
+	ret = json_obj_encode_buf(test_descr, ARRAY_SIZE(test_descr), &ts, buffer, len + 1);
+	zassert_equal(ret, 0, "Encoding function failed");
+
+	ret = json_obj_parse(buffer, len, test_descr, ARRAY_SIZE(test_descr), &ts);
+	zassert_equal(ret, (1 << ARRAY_SIZE(test_descr)) - 1, "Not all fields decoded correctly");
+	zassert_str_equal(ts.some_string, "", "String not decoded correctly");
+}
+
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
