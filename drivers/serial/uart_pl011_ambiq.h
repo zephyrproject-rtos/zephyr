@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2025 Linumiz GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +38,7 @@ static inline int pl011_ambiq_clk_set(const struct device *dev, uint32_t clk)
 	case 24000000:
 		clksel = PL011_CR_AMBIQ_CLKSEL_24MHZ;
 		break;
-#if !defined(CONFIG_SOC_SERIES_APOLLO3X)
+#if !defined(CONFIG_SOC_SERIES_APOLLO2X) && !defined(CONFIG_SOC_SERIES_APOLLO3X)
 	case 48000000:
 		clksel = PL011_CR_AMBIQ_CLKSEL_48MHZ;
 		break;
@@ -61,6 +62,7 @@ static inline int clk_enable_ambiq_uart(const struct device *dev, uint32_t clk)
 	return pl011_ambiq_clk_set(dev, clk);
 }
 
+#if !defined(CONFIG_SOC_SERIES_APOLLO2X)
 #ifdef CONFIG_PM_DEVICE
 
 /* Register status record.
@@ -167,19 +169,40 @@ static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action 
 	}
 }
 #endif /* CONFIG_PM_DEVICE */
+#endif /* !defined(CONFIG_SOC_SERIES_APOLLO2X) */
 
-#define AMBIQ_PL011_UART_DEFINE(n)                                                                 \
-	PM_DEVICE_DT_INST_DEFINE(n, uart_ambiq_pm_action);                                         \
-	static int pwr_on_ambiq_pl011_uart_##n(void)                                               \
-	{                                                                                          \
-		uint32_t module = (DT_INST_REG_ADDR(n) - UART0_BASE) / (UART1_BASE - UART0_BASE);  \
-		am_hal_pwrctrl_periph_e eUARTPowerModule =                                         \
-			((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_UART0 + module));         \
-		return am_hal_pwrctrl_periph_enable(eUARTPowerModule);                             \
-	}                                                                                          \
-	static inline int clk_enable_ambiq_pl011_uart_##n(const struct device *dev, uint32_t clk)  \
-	{                                                                                          \
-		return clk_enable_ambiq_uart(dev, clk);                                            \
-	}
+
+static inline uint32_t uart_get_module_index(const struct device *dev)
+{
+	uintptr_t base = ((const struct pl011_config *)dev->config)->_mmio.addr;
+
+	return (uint32_t)((base - UART0_BASE) / (UART1_BASE - UART0_BASE));
+}
+
+static int pwr_on_ambiq_pl011_uart(const struct device *dev)
+{
+	uint32_t module = uart_get_module_index(dev);
+
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	uint32_t eUARTPowerModule = (AM_HAL_PWRCTRL_UART0 << module);
+
+	am_hal_pwrctrl_periph_enable(eUARTPowerModule);
+	return 0;
+#else
+	am_hal_pwrctrl_periph_e eUARTPowerModule = AM_HAL_PWRCTRL_PERIPH_UART0 + module;
+
+	return am_hal_pwrctrl_periph_enable(eUARTPowerModule);
+#endif
+}
+
+static inline int clk_enable_ambiq_pl011_uart(const struct device *dev, uint32_t clk)
+{
+#if defined(CONFIG_SOC_SERIES_APOLLO2X)
+	uint32_t module = uart_get_module_index(dev);
+
+	am_hal_clkgen_uarten_set(module, AM_HAL_CLKGEN_UARTEN_EN);
+#endif
+	return clk_enable_ambiq_uart(dev, clk);
+}
 
 #endif /* ZEPHYR_DRIVERS_SERIAL_UART_PL011_AMBIQ_H_ */
