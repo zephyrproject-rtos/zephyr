@@ -802,7 +802,7 @@ static void zep_shim_work_kill(void *item)
 
 static unsigned long zep_shim_time_get_curr_us(void)
 {
-	return k_uptime_get() * USEC_PER_MSEC;
+	return k_ticks_to_us_floor64(k_uptime_ticks());
 }
 
 static unsigned int zep_shim_time_elapsed_us(unsigned long start_time_us)
