@@ -1962,10 +1962,38 @@ static void pa_sync_recv_cb(struct bt_le_per_adv_sync *sync,
 		     ev, sizeof(*ev) + ev->data_len);
 }
 
+static void pa_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
+			       const struct bt_iso_biginfo *biginfo)
+{
+	struct btp_gap_periodic_biginfo_ev ev;
+
+	LOG_DBG("");
+
+	bt_addr_le_copy(&ev.address, biginfo->addr);
+	ev.sync_handle = sys_cpu_to_le16(sync->handle);
+	ev.sid = biginfo->sid;
+	ev.num_bis = biginfo->num_bis;
+	ev.nse = biginfo->sub_evt_count;
+	ev.iso_interval = sys_cpu_to_le16(biginfo->iso_interval);
+	ev.bn = biginfo->burst_number;
+	ev.pto = biginfo->offset;
+	ev.irc = biginfo->rep_count;
+	ev.max_pdu = sys_cpu_to_le16(biginfo->max_pdu);
+	ev.sdu_interval = sys_cpu_to_le32(biginfo->sdu_interval);
+	ev.max_sdu = sys_cpu_to_le16(biginfo->max_sdu);
+	ev.phy = biginfo->phy;
+	ev.framing = biginfo->framing;
+	ev.encryption = biginfo->encryption ? BTP_GAP_EV_PERIODIC_BIGINFO_ENC_ENABLE :
+					      BTP_GAP_EV_PERIODIC_BIGINFO_ENC_DISABLE;
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_BIGINFO, &ev, sizeof(ev));
+}
+
 static struct bt_le_per_adv_sync_cb pa_sync_cb = {
 	.synced = pa_sync_synced_cb,
 	.term = pa_sync_terminated_cb,
 	.recv = pa_sync_recv_cb,
+	.biginfo = pa_sync_biginfo_cb,
 };
 
 #if defined(CONFIG_BT_PER_ADV)
