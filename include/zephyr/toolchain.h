@@ -48,6 +48,8 @@
 #include <zephyr/toolchain/iar.h>
 #elif defined(__llvm__) || (defined(_LINKER) && defined(__LLD_LINKER_CMD__))
 #include <zephyr/toolchain/llvm.h>
+#elif defined(__XC_DSC__) || defined(__XCDSC_LINKER_CMD__)
+#include <zephyr/toolchain/xcdsc.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <zephyr/toolchain/gcc.h>
 #else

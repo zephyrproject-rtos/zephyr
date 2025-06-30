@@ -1,0 +1,14 @@
+menu "DSPIC Options"
+	depends on DSPIC
+
+config ARCH
+	string
+	default "dspic"
+
+config NUM_IRQS
+	default 287
+
+config GEN_IRQ_START_VECTOR
+	default 8
+
+endmenu

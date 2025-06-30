@@ -1,0 +1,7 @@
+config SOC_FAMILY_MICROCHIP_DSPIC33
+	bool
+
+config SOC_FAMILY
+	default "microchip_dspic33" if SOC_FAMILY_MICROCHIP_DSPIC33
+
+rsource "*/Kconfig.soc"

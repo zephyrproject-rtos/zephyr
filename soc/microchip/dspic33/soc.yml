@@ -1,0 +1,9 @@
+family:
+- name: microchip_dspic33
+  series:
+  - name: dspic33a
+    socs:
+    - name: p33ak128mc106
+    - name: p33ak256mc506
+      cpuclusters:
+      - name: cpu0

@@ -1,0 +1,12 @@
+config SOC_SERIES_DSPIC33A
+	select DSPIC
+	select CPU_HAS_FPU
+	select CPU_HAS_DSP
+	select FPU
+	select SOC_EARLY_INIT_HOOK
+	select BOARD_EARLY_INIT_HOOK
+	# select GEN_ISR_TABLES
+	# select GEN_IRQ_VECTOR_TABLE
+	# select GEN_SW_ISR_TABLE
+	select HAS_PM
+	select PM
