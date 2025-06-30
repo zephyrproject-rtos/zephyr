@@ -30,3 +30,5 @@ zephyr_linker_sources_ifdef(CONFIG_MEMC_STM32_SDRAM SECTIONS     memc_stm32_sdra
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_XSPI_PSRAM        memc_stm32_xspi_psram.c)
 zephyr_linker_sources_ifdef(CONFIG_MEMC_STM32_XSPI_PSRAM SECTIONS memc_stm32_xspi_psram.ld)
+zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_OSPI_PSRAM        memc_stm32_ospi_psram.c)
+zephyr_linker_sources_ifdef(CONFIG_MEMC_STM32_OSPI_PSRAM SECTIONS memc_stm32_ospi_psram.ld)
