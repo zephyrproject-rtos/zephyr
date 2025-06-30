@@ -247,7 +247,6 @@ endif # NET_CAN
 menuconfig NET_NATIVE_OFFLOADED_SOCKETS
 	bool "Native Simulator offloaded sockets"
 	depends on ARCH_POSIX
-	depends on NATIVE_LIBRARY
 	depends on NET_SOCKETS_OFFLOAD
 	select NATIVE_USE_NSI_ERRNO
 	help
