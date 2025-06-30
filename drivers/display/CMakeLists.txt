@@ -49,9 +49,5 @@ zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 
 if (CONFIG_SDL_DISPLAY)
 	zephyr_library_sources(display_sdl.c)
-	if (CONFIG_NATIVE_APPLICATION)
-		zephyr_library_sources(display_sdl_bottom.c)
-	else()
-		target_sources(native_simulator INTERFACE display_sdl_bottom.c)
-	endif()
+	target_sources(native_simulator INTERFACE display_sdl_bottom.c)
 endif()
