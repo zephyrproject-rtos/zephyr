@@ -893,7 +893,7 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 
 			NET_DBG("interface %p router %s lifetime %u default %d "
 				"added", iface,
-				net_sprint_ipv6_addr((struct in6_addr *)addr),
+				net_sprint_ipv6_addr(addr),
 				lifetime, routers[i].is_default);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 			memcpy(net_if_router_ipv4(&routers[i]), addr,

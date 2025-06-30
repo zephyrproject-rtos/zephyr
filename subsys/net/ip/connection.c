@@ -581,8 +581,7 @@ static bool conn_are_endpoints_valid(struct net_pkt *pkt, uint8_t family,
 		is_same_src_and_dst_addr = net_ipv4_addr_cmp_raw(
 			ip_hdr->ipv4->src, ip_hdr->ipv4->dst);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		is_my_src_addr = net_ipv6_is_my_addr(
-			(struct in6_addr *)ip_hdr->ipv6->src);
+		is_my_src_addr = net_ipv6_is_my_addr_raw(ip_hdr->ipv6->src);
 		is_same_src_and_dst_addr = net_ipv6_addr_cmp_raw(
 			ip_hdr->ipv6->src, ip_hdr->ipv6->dst);
 	} else {
@@ -933,7 +932,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			is_bcast_pkt = true;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == AF_INET6) {
-		is_mcast_pkt = net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->ipv6->dst);
+		is_mcast_pkt = net_ipv6_is_addr_mcast_raw(ip_hdr->ipv6->dst);
 	}
 
 	k_mutex_lock(&conn_lock, K_FOREVER);

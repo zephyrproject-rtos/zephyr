@@ -1360,10 +1360,8 @@ static bool is_destination_local(struct net_pkt *pkt)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_is_addr_loopback(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst) ||
-		    net_ipv6_is_my_addr(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_loopback_raw(NET_IPV6_HDR(pkt)->dst) ||
+		    net_ipv6_is_my_addr_raw(NET_IPV6_HDR(pkt)->dst)) {
 			return true;
 		}
 	}
@@ -1396,9 +1394,12 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 				      (struct in_addr *)NET_IPV4_HDR(pkt)->dst,
 				      (struct in_addr *)NET_IPV4_HDR(pkt)->src);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		ret =  net_ipv6_create(rst,
-				      (struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
-				      (struct in6_addr *)NET_IPV6_HDR(pkt)->src);
+		struct in6_addr src, dst;
+
+		net_ipv6_addr_copy_raw(src.s6_addr, NET_IPV6_HDR(pkt)->src);
+		net_ipv6_addr_copy_raw(dst.s6_addr, NET_IPV6_HDR(pkt)->dst);
+
+		ret =  net_ipv6_create(rst, &dst, &src);
 	} else {
 		ret = -EINVAL;
 	}
@@ -2976,7 +2977,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 				break;
 			}
 
-			net_ipaddr_copy(&conn->context->remote, &conn->dst.sa);
+			memcpy(&conn->context->remote, &conn->dst.sa, sizeof(conn->dst.sa));
 
 			/* Check if v4-mapping-to-v6 needs to be done for
 			 * the accepted socket.
