@@ -546,6 +546,15 @@ struct btp_gap_ev_bis_stream_received_ev {
 	uint8_t data[];
 } __packed;
 
+#define BTP_GAP_EV_PERIODIC_BIGINFO		0x96
+struct btp_gap_ev_periodic_biginfo_ev {
+	bt_addr_le_t address;
+	uint16_t sync_handle;
+	uint8_t sid;
+	uint8_t num_bis;
+	uint8_t encryption;
+} __packed;
+
 #if defined(CONFIG_BT_EXT_ADV)
 struct bt_le_per_adv_param;
 struct bt_le_per_adv_sync_param;

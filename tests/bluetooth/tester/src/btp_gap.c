@@ -1962,10 +1962,35 @@ static void pa_sync_recv_cb(struct bt_le_per_adv_sync *sync,
 		     ev, sizeof(*ev) + ev->data_len);
 }
 
+static struct net_buf_simple *periodic_biginfo_buf =
+	NET_BUF_SIMPLE(sizeof(struct btp_gap_ev_periodic_biginfo_ev));
+
+static void pa_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
+			       const struct bt_iso_biginfo *biginfo)
+{
+	struct btp_gap_ev_periodic_biginfo_ev *ev;
+
+	LOG_DBG("");
+
+	/* cleanup */
+	net_buf_simple_init(periodic_biginfo_buf, 0);
+
+	ev = net_buf_simple_add(periodic_biginfo_buf, sizeof(*ev));
+
+	bt_addr_le_copy(&ev->address, biginfo->addr);
+	ev->sync_handle = sys_cpu_to_le16(sync->handle);
+	ev->sid = biginfo->sid;
+	ev->num_bis = biginfo->num_bis;
+	ev->encryption = biginfo->encryption ? 1 : 0;
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_BIGINFO, ev, sizeof(*ev));
+}
+
 static struct bt_le_per_adv_sync_cb pa_sync_cb = {
 	.synced = pa_sync_synced_cb,
 	.term = pa_sync_terminated_cb,
 	.recv = pa_sync_recv_cb,
+	.biginfo = pa_sync_biginfo_cb,
 };
 
 #if defined(CONFIG_BT_PER_ADV)
