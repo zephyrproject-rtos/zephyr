@@ -17,7 +17,7 @@ nvic: &cpuapp_nvic {};
 
 / {
 	chosen {
-		zephyr,entropy = &prng;
+		zephyr,entropy = &rng;
 	};
 
 	soc {
@@ -31,9 +31,9 @@ nvic: &cpuapp_nvic {};
 		status = "disabled";
 	};
 
-	prng: prng {
-		compatible = "nordic,entropy-prng";
+	rng: rng {
 		status = "okay";
+		compatible = "nordic,nrf-cracen-ctrdrbg";
 	};
 };
 
