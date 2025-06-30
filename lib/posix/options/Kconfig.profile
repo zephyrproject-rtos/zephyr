@@ -4,14 +4,12 @@
 
 config POSIX_SYSTEM_HEADERS
 	bool
-	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
 	help
 	  Make POSIX headers available to the system without the "zephyr/posix" prefix.
 
 config POSIX_API
 	bool "POSIX APIs"
-	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_SYSTEM_HEADERS
 	select POSIX_BASE_DEFINITIONS # clock_gettime(), pthread_create(), sem_get(), etc
@@ -46,7 +44,6 @@ config POSIX_AEP_CHOICE_NONE
 
 config POSIX_AEP_CHOICE_BASE
 	bool "Base definitions (system interfaces)"
-	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	help
@@ -57,7 +54,6 @@ config POSIX_AEP_CHOICE_BASE
 
 config POSIX_AEP_CHOICE_PSE51
 	bool "Minimal Realtime System Profile (PSE51)"
-	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
@@ -71,7 +67,6 @@ config POSIX_AEP_CHOICE_PSE51
 
 config POSIX_AEP_CHOICE_PSE52
 	bool "Realtime Controller System Profile (PSE52)"
-	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
@@ -86,7 +81,6 @@ config POSIX_AEP_CHOICE_PSE52
 
 config POSIX_AEP_CHOICE_PSE53
 	bool "Dedicated Realtime System Profile (PSE53)"
-	depends on !NATIVE_APPLICATION
 	select NATIVE_LIBC_INCOMPATIBLE
 	select POSIX_BASE_DEFINITIONS
 	select POSIX_AEP_REALTIME_MINIMAL
