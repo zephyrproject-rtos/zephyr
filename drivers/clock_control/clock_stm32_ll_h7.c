@@ -1011,14 +1011,14 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
+	/* Configure Voltage scale to comply with the desired system frequency */
+	prepare_regulator_voltage_scale();
+
 	/* Set up PLLs */
 	r = set_up_plls();
 	if (r < 0) {
 		return r;
 	}
-
-	/* Configure Voltage scale to comply with the desired system frequency */
-	prepare_regulator_voltage_scale();
 
 	/* Current hclk value */
 	old_hclk_freq = get_hclk_frequency();
