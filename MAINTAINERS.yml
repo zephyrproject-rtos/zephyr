@@ -371,7 +371,6 @@ Bluetooth HCI:
     - hermabe
     - Thalley
     - sjanc
-    - theob-pro
     - HoZHel
     - cvinayak
   files:
@@ -424,7 +423,6 @@ Bluetooth Host:
     - rugeGerritsen
     - sjanc
     - Thalley
-    - theob-pro
     - cvinayak
   files:
     - doc/connectivity/bluetooth/
