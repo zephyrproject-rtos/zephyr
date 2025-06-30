@@ -2,7 +2,11 @@
 # Copyright (c) 2020 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Orise Tech OTM8009A Panel
+title: Orisetech OTM8009A display controller
+
+description: |
+    The Orisetech OTM8009A is a 16.7M colors TFT-LCD controller
+    with a maximum 480RGBx864 resolution.
 
 compatible: "orisetech,otm8009a"
 
