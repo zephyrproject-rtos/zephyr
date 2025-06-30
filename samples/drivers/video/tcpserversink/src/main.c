@@ -340,7 +340,11 @@ int main(void)
 
 	/* Size to allocate for each buffer */
 	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
-		bsize = fmt.pitch * fmt.height;
+		if (fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+			bsize = fmt.width * fmt.height * 3 / 2;
+		} else {
+			bsize = fmt.pitch * fmt.height;
+		}
 	} else {
 		bsize = fmt.pitch * caps.min_line_count;
 	}
