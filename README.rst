@@ -21,47 +21,72 @@ innovative battery-power endpoint devices for their end-users. `Ambiq Products`_
 
 Status
 ***************
-Ambiq SoCs that support zephyr now include:
-
-  | Apollo3 Blue
-  | Apollo3 Blue Plus
-  | Apollo4 Plus
-  | Apollo4 Blue Plus KXR
-  | Apollo510
-
-As well as the following Evaluation Kits:
-
-  | Apollo3 Blue EVB
-  | Apollo3 Blue Plus EVB
-  | Apollo4 Plus EVB
-  | Apollo4 Blue Plus KXR EVB
-  | Apollo510 EVB
 
 As of now, Ambiq provides zephyr support for a set of peripherals/drivers:
 
-  | ADC
-  | Bluetooth HCI
-  | Counter
-  | Flash Controller
-  | GPIO Controller
-  | HW Info
-  | I2C Controller
-  | I2S
-  | ITM
-  | PDM
-  | Power Management
-  | PWM
-  | RTC
-  | SDIO Host
-  | SPI Controller
-  | SPI Device
-  | MSPI Controller
-  | System Timer
-  | UART
-  | USB device
-  | Watchdog
++--------+--------------------+--------------------+------------------------------------------+
+| Driver |     Apollo510      |   Stable codes at  |              Sample                      |
++========+====================+====================+==========================================+
+|   ADC  |         -          |        main        | samples\\drivers\\adc\\adc\_dt           |
++--------+--------------------+--------------------+------------------------------------------+
+| AUDADC |    comming soon    |                    |                                          |
++--------+--------------------+--------------------+------------------------------------------+
+| COUNTER|         -          |        main        | samples\\drivers\\counter\\alarm         |
++--------+--------------------+--------------------+------------------------------------------+
+| CRYPTO |    comming soon    |                    |                                          |
++--------+--------------------+--------------------+------------------------------------------+
+| DISPLAY|    comming soon    |                    |                                          |
++--------+--------------------+--------------------+------------------------------------------+
+| FLASH  |         -          |        main        |  tests\\drivers\\flash\_api              |
++--------+--------------------+--------------------+------------------------------------------+
+| HWINFO |         -          |        main        |  tests\\drivers\\hwinfo\\api             |
++--------+--------------------+--------------------+------------------------------------------+
+|   I2C  |         -          |        main        |  samples\\drivers\\eeprom                |
++--------+--------------------+--------------------+------------------------------------------+
+|   I2S  |         -          |        main        |  samples\\drivers\\i2s\\dmic\_i2s        |
++--------+--------------------+--------------------+------------------------------------------+
+|MIPI_DSI|    comming soon    |                    |                                          |
++--------+--------------------+--------------------+------------------------------------------+
+|  MSPI  |         -          |        main        |   samples\\drivers\\mspi\\mspi\_flash    |
++--------+--------------------+--------------------+------------------------------------------+
+|   PDM  |         -          |        main        |    samples\\drivers\\audio\\dmic         |
++--------+--------------------+--------------------+------------------------------------------+
+|   PM   |         -          |        main        |    samples\\subsys\\pm\\device\_pm       |
++--------+--------------------+--------------------+------------------------------------------+
+|   PWM  |         -          |    apollo510-dev   |    samples\\drivers\\led\\pwm            |
++--------+--------------------+--------------------+------------------------------------------+
+|   RTC  |         -          |        main        |    samples\\drivers\\rtc                 |
++--------+--------------------+--------------------+------------------------------------------+
+|  SDHC  |         -          |    apollo510-dev   |samples\\drivers\\subsys\\fs\\fs\_sample  |
++--------+--------------------+--------------------+------------------------------------------+
+|   SPI  |         -          |        main        |samples\\boards\\ambiq\\spi\_serial\_flash|
++--------+--------------------+--------------------+------------------------------------------+
+|  TIMER |         -          |        main        |    samples\\philosophers                 |
++--------+--------------------+--------------------+------------------------------------------+
+|  UART  |         -          |        main        |   samples\\drivers\\uart\\echo\_bot      |
++--------+--------------------+--------------------+------------------------------------------+
+|   USB  |         -          |        main        |  samples\\drivers\\subsys\\usb\\mass     |
++--------+--------------------+--------------------+------------------------------------------+
+
+And also there are supports for some third-party libs:
+
++----------+------------------+--------------------+------------------------------------------+
+|    Lib   |     Apollo510    |   Stable codes at  |              Sample                      |
++==========+==================+====================+==========================================+
+| coremark |         -        |    ambiq-coremark  | samples\\benchmarks\\coremark            |
++----------+------------------+--------------------+------------------------------------------+
+|   fatfs  |         -        |        main        | samples\\drivers\\subsys\\fs\\fs\_sample |
++----------+------------------+--------------------+------------------------------------------+
+|  mbedtls |    comming soon  |                    |                                          |
++----------+------------------+--------------------+------------------------------------------+
+|   lvgl   |    comming soon  |                    |                                          |
++----------+------------------+--------------------+------------------------------------------+
+
 
 Together with generic support for ARM Cortex-M peripherals like cache, interrupt controller, etc.
+
+And please note that apollo510_eb board is only available at apollo510-dev branch, some samples
+rely on the devices on the EB board, for example I2C and SPI.
 
 .. below included in doc/introduction/introduction.rst
 
@@ -71,7 +96,114 @@ Getting Started
 
 Welcome to Ambiq Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
 and the documentation's `Getting Started Guide`_ to start developing.
+
 Check `Ambiq SoC`_ for Ambiq Apollo SoCs documents.
+
+
+Setup Development Environment
+-----------------------------
+
+Follow `Getting Started Guide`_ to install denpendencies and use west tool to get the Zephyr source code to local.
+Install Zephyr SDK and check whether the environment variables are set properly.
+
+
+Upstream Repository Synchronization
+-----------------------------------
+
+Execute ``git remote -v`` to check if upstream has been configured.
+
+If not, execute ``git remote add upstream https://github.com/AmbiqMicro/ambiqzephyr`` to configure the ambiqzephyr base to your upstream repository.
+
+Execute ``git remote -v`` again to check if it configures successfully.
+
+Execute ``git fetch upstream`` to fetch the upstream repository.
+
+Execute ``git checkout apollo510-dev`` to get the latest apollo510 development branch.
+
+
+Get to Know Ambiq Components
+----------------------------
+
+.. code-block:: text
+
+  zephyr/
+  │
+  ├── boards/
+  │   └── ambiq/
+  │       └── apollo510_evb
+  ├── drivers/
+  │   ├── adc/
+  │   │   └── adc_ambiq.c
+  │   ├── audio/
+  │   │   └── dmic_ambiq_pdm.c
+  │   ├── bluetooth/
+  │   │   └── hci/
+  │   │       ├── apollox_blue.c
+  │   │       └── hci_ambiq.c
+  │   ├── clock_control/
+  │   │   └── clock_control_ambiq.c
+  │   ├── counter/
+  │   │   └── counter_ambiq_timer.c
+  │   ├── flash/
+  │   │   └── flash_ambiq.c
+  │   ├── gpio/
+  │   │   └── gpio_ambiq.c
+  │   ├── hwinfo/
+  │   │   └── hwinfo_ambiq.c
+  │   ├── i2c/
+  │   │   └── i2c_ambiq.c
+  │   ├── i2s/
+  │   │   └── i2s_ambiq.c
+  │   ├── mspi/
+  │   │   └── mspi_ambiq_ap5.c
+  │   ├── pinctrl/
+  │   │   └── pinctrl_ambiq.c
+  │   ├── pwm/
+  │   │   └── pwm_ambiq_timer.c
+  │   ├── rtc/
+  │   │   └── rtc_ambiq.c
+  │   ├── sdhc/
+  │   │   └── sdhc_ambiq.c
+  │   ├── serial/
+  │   │   └── uart_ambiq.c
+  │   ├── spi/
+  │   │   ├── spi_ambiq_spic.c
+  │   │   └── spi_ambiq_spid.c
+  │   ├── timer/
+  │   │   └── ambiq_stimer.c
+  │   ├── usb/
+  │   │   └── udc/
+  │   │       └── udc_ambiq.c
+  │   ├── watchdog/
+  │   │   └── wdt_ambiq.c
+  ├── dts/
+  │   └── arm/
+  │       └── ambiq/
+  │           └── ambiq_apollo510.dtsi
+  └── soc/
+      └── ambiq/
+          └── apollo5x
+
+
+Build and Flash the Samples
+---------------------------
+
+Make sure you have already installed proper version of JLINK which supports corresponding ambiq SoC, and
+added the path of JLINK.exe (e.g. C:\Program Files\SEGGER\JLink) to the environment variables.
+
+Go the Zephyr root path, execute ``west build -b <your-board-name> <samples> -p always`` to build the samples for your board.
+For example, build zephyr/samples/hello_world for apollo510_evb: ``west build -b apollo510_evb ./samples/hello_world -p always``.
+
+Execute ``west flash`` to flash the binary to the EVB if the zephyr.bin has been generated by west build.
+
+In default we use UART COM for console, and the default baudrate is 115200, so after west flash, open the serial terminal and set proper baudrate for the UART COM of plugged EVB.
+
+You should be able to see the logs in the serial terminal.
+
+``*** Booting Zephyr OS build v4.1.0-7246-gad4c3e3e9afe ***``
+
+``Hello World! apollo510_evb/apollo510``
+
 
 .. start_include_here
 
