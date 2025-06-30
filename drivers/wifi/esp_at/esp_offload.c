@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(wifi_esp_at_offload, CONFIG_WIFI_LOG_LEVEL);
 
 #include "esp.h"
 
+#define TCP_SEND_TIMEOUT                                        \
+	K_MSEC(CONFIG_WIFI_ESP_AT_TCP_SEND_TIMEOUT)
+
 static int esp_listen(struct net_context *context, int backlog)
 {
 	return -ENOTSUP;
@@ -330,7 +333,11 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	}
 
 	/* Wait for 'SEND OK' or 'SEND FAIL' */
-	ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
+	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
+		ret = k_sem_take(&dev->sem_response, TCP_SEND_TIMEOUT);
+	} else {
+		ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
+	}
 	if (ret < 0) {
 		LOG_DBG("No send response");
 		goto out;
