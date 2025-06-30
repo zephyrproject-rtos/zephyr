@@ -285,6 +285,13 @@
 			};
 		};
 
+		crc: crc@40074000{
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x1000>;
+			clocks = <&pclkb MSTPC 1>;
+			status = "disabled";
+		};
+
 		id_code: id_code@1010018 {
 			compatible = "zephyr,memory-region";
 			reg = <0x01010018 0x20>;
