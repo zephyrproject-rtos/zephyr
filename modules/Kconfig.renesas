@@ -270,6 +270,21 @@ config USE_RZ_FSP_SCI_UART
 	help
 	  Enable RZ FSP SCI UART driver
 
+menuconfig BUILD_WITH_RZA_IPL
+	bool "Build with RZ/A Initial Program Loader (IPL)"
+	help
+	  When enabled, this option instructs the Zephyr build process to
+	  additionally generate IPL image for Renesas RZ/A series.
+
+if BUILD_WITH_RZA_IPL
+
+config RZA_IPL_BUILD_DEBUG
+	bool "Debug build"
+	help
+	  When enabled, the build type of IPL would be debug.
+
+endif # BUILD_WITH_RZA_IPL
+
 endif
 
 config HAS_RENESAS_RX_RDP
