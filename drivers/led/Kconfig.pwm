@@ -4,6 +4,7 @@
 config LED_PWM
 	bool "PWM LED driver"
 	default y
-	depends on PWM && DT_HAS_PWM_LEDS_ENABLED
+	depends on DT_HAS_PWM_LEDS_ENABLED
+	select PWM
 	help
 	  Enable driver for PWM LEDs.
