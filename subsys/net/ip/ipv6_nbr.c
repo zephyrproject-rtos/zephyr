@@ -340,7 +340,11 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
+#define NS_REPLY_TIMEOUT CONFIG_NET_IPV6_NS_TIMEOUT
+#else
 #define NS_REPLY_TIMEOUT (1 * MSEC_PER_SEC)
+#endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 static void ipv6_ns_reply_timeout(struct k_work *work)
 {
