@@ -1,6 +1,175 @@
 __constant U32 _CPUCONF_ADDR = 0x52011000;
 __constant U32 _CPUCONF_CPUWAIT_OFFSET = 0x50C;
 
+// ATBFUNNEL
+__constant U32 _ATBFUNNEL211_ADDR = 0xBF04D000;
+__constant U32 _ATBFUNNEL212_ADDR = 0xBF04E000;
+__constant U32 _ATBFUNNEL_CTRLREG_OFFSET = 0x0;
+__constant U32 _HOLDTIME_4 = 0x300;
+__constant U32 _ENS0 = 0x1;
+__constant U32 _ENS1 = 0x2;
+__constant U32 _ENS2 = 0x4;
+
+// ATBREPLICATOR
+__constant U32 _ATBREPLICATOR212_ADDR = 0xBF04A000;
+__constant U32 _ATBREPLICATOR213_ADDR = 0xBF04B000;
+__constant U32 _ATBREPLICATOR_IDFILTER0_OFFSET = 0x0;
+__constant U32 _ATBREPLICATOR_IDFILTER1_OFFSET = 0x4;
+__constant U32 _ID_NONE = 0xFFFFFFFF;
+__constant U32 _ID1x = 0xFFFFFFFD;
+
+// TSGEN
+__constant U32 _TSGEN_ADDR = 0xBF041000;
+__constant U32 _TSGEN_CNTCR_OFFSET = 0x0;
+__constant U32 _TSGEN_CNTFID0_OFFSET = 0x20;
+// Clock rate = TDD Freq. / 8
+__constant U32 _TS_CLOCKRATE = 40000000;
+
+// CTI
+__constant U32 _CTI210_ADDR = 0xBF046000;
+__constant U32 _CTICONTROL_OFFSET = 0x0;
+__constant U32 _CTIOUTEN_OFFSET = 0xA0;
+__constant U32 _CTIGATE_OFFSET = 0x140;
+__constant U32 _TPIU_FLUSH_TRIG = 0x2;
+
+// TPIU
+__constant U32 _TPIU_ADDR = 0xBF043000;
+__constant U32 _CURRENTPORTSIZE_OFFSET = 0x4;
+__constant U32 _FFCR_OFFSET = 0x304;
+__constant U32 _FSCR_OFFSET = 0x308;
+__constant U32 _ENFCONT = 0x02;
+__constant U32 _FONFLIN = 0x10;
+__constant U32 _ENFTC = 0x1;
+__constant U32 _TPIU_SYNC_FRAME_COUNT = 0x8;
+__constant U32 _CURRENTPORTSIZE_4 = 0x8;
+
+// TDDCONF
+__constant U32 _TDDCONF_ADDR = 0xBF001000;
+__constant U32 _TRACEPORTSPEED_OFFSET = 0x408;
+__constant U32 _SPEED80MHZ = 0x0;
+
+// CoreSight general
+__constant U32 _CORESIGHT_CLAIMSET_OFFSET = 0xFA0;
+__constant U32 _CORESIGHT_CLAIMCLR_OFFSET = 0xFA4;
+__constant U32 _CORESIGHT_LAR_OFFSET = 0xFB0;
+__constant U32 _CORESIGHT_UNLOCK_KEY = 0xC5ACCE55;
+
+// GPIO P7
+__constant U32 _P7_ADDR = 0x5F938E00;
+__constant U32 _PIN_CNF3_OFFSET = 0x8C;
+__constant U32 _PIN_CNF4_OFFSET = 0x90;
+__constant U32 _PIN_CNF5_OFFSET = 0x94;
+__constant U32 _PIN_CNF6_OFFSET = 0x98;
+__constant U32 _PIN_CNF7_OFFSET = 0x9C;
+__constant U32 _PIN_CNF_TPIU_CLOCK_VALUE = 0x80000503;
+__constant U32 _PIN_CNF_TPIU_DATA_VALUE = 0x00000503;
+
+// Settings
+__constant U32 _DEBUGGER_CLAIM_MASK = 0x2;
+
+// Used to check if we have already set up tracing
+int _needCoresightSetup = 1;
+
+// Unlock a CoreSight peripheral
+void _CSUnlock(U32 addr)
+{
+	JLINK_MEM_WriteU32(addr + _CORESIGHT_LAR_OFFSET, _CORESIGHT_UNLOCK_KEY);
+}
+
+// Lock a CoreSight peripheral
+void _CSLock(U32 addr)
+{
+	JLINK_MEM_WriteU32(addr + _CORESIGHT_LAR_OFFSET, 0);
+}
+
+// Set claim bits in the CoreSight peripheral to indicate to the firmware that it
+// has been configured by the host debugger
+void _CSClaim(U32 addr)
+{
+	JLINK_MEM_WriteU32(addr + _CORESIGHT_CLAIMSET_OFFSET, _DEBUGGER_CLAIM_MASK);
+}
+
+// Set up CoreSight and other necessary configuration so to enable ETM -> TPIU tracing.
+int _SetupETMTPIUTrace(void)
+{
+	// Set up ATB funnels/replicators to route ApplicationDomain ETM to TPIU
+	_CSUnlock(_ATBFUNNEL212_ADDR);
+	JLINK_MEM_WriteU32(_ATBFUNNEL212_ADDR + _ATBFUNNEL_CTRLREG_OFFSET, _HOLDTIME_4 | _ENS0);
+	_CSClaim(_ATBFUNNEL212_ADDR);
+	_CSLock(_ATBFUNNEL212_ADDR);
+
+	_CSUnlock(_ATBREPLICATOR212_ADDR);
+	JLINK_MEM_WriteU32(_ATBREPLICATOR212_ADDR + _ATBREPLICATOR_IDFILTER0_OFFSET, _ID_NONE);
+	JLINK_MEM_WriteU32(_ATBREPLICATOR212_ADDR + _ATBREPLICATOR_IDFILTER1_OFFSET, _ID1x);
+	_CSLock(_ATBREPLICATOR212_ADDR);
+	_CSClaim(_ATBREPLICATOR212_ADDR);
+	_CSLock(_ATBREPLICATOR212_ADDR);
+
+	_CSUnlock(_ATBFUNNEL211_ADDR);
+	JLINK_MEM_WriteU32(_ATBFUNNEL211_ADDR + _ATBFUNNEL_CTRLREG_OFFSET, _HOLDTIME_4 | _ENS0);
+	_CSClaim(_ATBFUNNEL211_ADDR);
+	_CSLock(_ATBFUNNEL211_ADDR);
+
+	_CSUnlock(_ATBREPLICATOR213_ADDR);
+	JLINK_MEM_WriteU32(_ATBREPLICATOR213_ADDR + _ATBREPLICATOR_IDFILTER0_OFFSET, _ID1x);
+	JLINK_MEM_WriteU32(_ATBREPLICATOR213_ADDR + _ATBREPLICATOR_IDFILTER1_OFFSET, _ID_NONE);
+	_CSClaim(_ATBREPLICATOR213_ADDR);
+	_CSLock(_ATBREPLICATOR213_ADDR);
+
+	// Configure timestamp generator for the correct clock rate
+	JLINK_MEM_WriteU32(_TSGEN_ADDR + _TSGEN_CNTFID0_OFFSET, _TS_CLOCKRATE);
+	JLINK_MEM_WriteU32(_TSGEN_ADDR + _TSGEN_CNTCR_OFFSET, 1);
+	_CSClaim(_TSGEN_ADDR);
+
+	// Configure CTI1 for TPIU formatter flushing
+	_CSUnlock(_CTI210_ADDR);
+	JLINK_MEM_WriteU32(_CTI210_ADDR + _CTIOUTEN_OFFSET, _TPIU_FLUSH_TRIG);
+	JLINK_MEM_WriteU32(_CTI210_ADDR + _CTIGATE_OFFSET, _TPIU_FLUSH_TRIG);
+	JLINK_MEM_WriteU32(_CTI210_ADDR + _CTICONTROL_OFFSET, 1);
+	_CSClaim(_CTI210_ADDR);
+	_CSLock(_CTI210_ADDR);
+
+	// Configure TPIU for port size 4, continuous formatting
+	_CSUnlock(_TPIU_ADDR);
+	JLINK_MEM_WriteU32(_TPIU_ADDR + _CURRENTPORTSIZE_OFFSET, _CURRENTPORTSIZE_4);
+	JLINK_MEM_WriteU32(_TPIU_ADDR + _FFCR_OFFSET, _ENFCONT | _FONFLIN | _ENFTC);
+	JLINK_MEM_WriteU32(_TPIU_ADDR + _FSCR_OFFSET, _TPIU_SYNC_FRAME_COUNT);
+	_CSClaim(_TPIU_ADDR);
+	_CSLock(_TPIU_ADDR);
+
+	// Configure the trace pins
+	JLINK_MEM_WriteU32(_P7_ADDR + _PIN_CNF3_OFFSET, _PIN_CNF_TPIU_CLOCK_VALUE);
+	JLINK_MEM_WriteU32(_P7_ADDR + _PIN_CNF4_OFFSET, _PIN_CNF_TPIU_DATA_VALUE);
+	JLINK_MEM_WriteU32(_P7_ADDR + _PIN_CNF5_OFFSET, _PIN_CNF_TPIU_DATA_VALUE);
+	JLINK_MEM_WriteU32(_P7_ADDR + _PIN_CNF6_OFFSET, _PIN_CNF_TPIU_DATA_VALUE);
+	JLINK_MEM_WriteU32(_P7_ADDR + _PIN_CNF7_OFFSET, _PIN_CNF_TPIU_DATA_VALUE);
+
+	return 0;
+}
+
+int ConfigTargetSettings(void)
+{
+	JLINK_ExecCommand("CORESIGHT_AddAP = Index=0 Type=AHB-AP");
+	CORESIGHT_IndexAHBAPToUse = 0;
+
+	// Adjust trace sample delay to compensate for timing when using 320MHz
+	JLINK_ExecCommand("TraceSampleAdjust TD = 1000");
+
+	return 0;
+}
+
+int OnTraceStart(void)
+{
+	// Set up CoreSight if not already configured
+	if (_needCoresightSetup) {
+		_SetupETMTPIUTrace();
+		_needCoresightSetup = 0;
+	}
+
+	return 0;
+}
+
+
 int SetupTarget(void)
 {
 	JLINK_TARGET_Halt();
