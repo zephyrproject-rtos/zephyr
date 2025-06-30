@@ -76,8 +76,8 @@ void uart_bridge_settings_update(const struct device *dev,
 		return;
 	}
 
-	LOG_INF("uart settings: baudrate=%d parity=%d", cfg.baudrate,
-		cfg.parity);
+	LOG_INF("uart settings: baudrate=%d parity=%d dev=%s",
+		cfg.baudrate, cfg.parity, bridge_dev->name);
 }
 
 static uint8_t uart_bridge_get_idx(const struct device *dev,
