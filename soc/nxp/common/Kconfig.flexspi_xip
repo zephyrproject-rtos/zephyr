@@ -21,7 +21,7 @@ config FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 
 config FLASH_MCUX_FLEXSPI_XIP
-	bool
+	bool "XIP compatibility for FlexSPI"
 	default $(DT_FLASH_PARENT_IS_FLEXSPI)
 	select XIP
 	help

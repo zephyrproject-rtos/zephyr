@@ -19,7 +19,7 @@ config FLASH_SIZE
 	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb)
 
 config FLASH_MCUX_XSPI_XIP
-	bool
+	bool "XIP compatibility for XSPI"
 	default $(DT_FLASH_PARENT_IS_XSPI)
 	select XIP
 	help
