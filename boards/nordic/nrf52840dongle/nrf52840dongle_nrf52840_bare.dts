@@ -1,10 +1,14 @@
 /*
- * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2017 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Flash partition table without support for Nordic nRF5 bootloader */
+/dts-v1/;
+#include "nrf52840dongle_nrf52840_common.dtsi"
+
+/* Flash partition table without support for the onboard USB bootloader */
 
 &flash0 {
 	partitions {
