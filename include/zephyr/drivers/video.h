@@ -52,6 +52,7 @@ enum video_buf_type {
 };
 
 /**
+ * @struct video_format
  * @brief Video format structure
  *
  * Used to configure frame format.
@@ -154,6 +155,22 @@ struct video_buffer {
 	 * the frame in bytes.
 	 */
 	uint16_t line_offset;
+};
+
+/**
+ * @brief Video buffer request structure
+ *
+ * Represents a buffer request from application
+ */
+struct video_buffer_request {
+	/** number of requested buffers */
+	uint8_t count;
+	/** size of a requested buffer */
+	size_t size;
+	/** timeout when allocating buffers */
+	k_timeout_t timeout;
+	/** index of the 1st succesfully requested buffer, returned to application */
+	uint16_t start_index;
 };
 
 /**
@@ -538,6 +555,17 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 }
 
 /**
+ * @brief Request a number of video buffers.
+ *
+ * Request a number of @ref video_buffer from the video buffer pool
+ *
+ * @param vbr Pointer to the @ref video_buffer_request.
+ *
+ * @retval 0 on success, otherwise a negative errno code.
+ */
+int video_request_buffers(struct video_buffer_request *const vbr);
+
+/**
  * @brief Enqueue a video buffer.
  *
  * Enqueue an empty (capturing) or filled (output) video buffer in the driver’s
@@ -550,7 +578,7 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-int video_enqueue(const struct device *dev, struct video_buffer *buf);
+int video_enqueue(const struct device *const dev, const struct video_buffer *const buf);
 
 /**
  * @brief Dequeue a video buffer.
@@ -559,7 +587,7 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf);
  * endpoint outgoing queue.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param buf Pointer a video buffer pointer.
+ * @param buf Pointer to a video buffer structure.
  * @param timeout Timeout
  *
  * @retval 0 Is successful.
@@ -848,34 +876,6 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 
 	return api->get_selection(dev, sel);
 }
-
-/**
- * @brief Allocate aligned video buffer.
- *
- * @param size Size of the video buffer (in bytes).
- * @param align Alignment of the requested memory, must be a power of two.
- * @param timeout Timeout duration or K_NO_WAIT
- *
- * @return pointer to allocated video buffer
- */
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout);
-
-/**
- * @brief Allocate video buffer.
- *
- * @param size Size of the video buffer (in bytes).
- * @param timeout Timeout duration or K_NO_WAIT
- *
- * @return pointer to allocated video buffer
- */
-struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
-
-/**
- * @brief Release a video buffer.
- *
- * @param buf Pointer to the video buffer to release.
- */
-void video_buffer_release(struct video_buffer *buf);
 
 /**
  * @brief Search for a format that matches in a list of capabilities

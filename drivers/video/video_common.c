@@ -36,76 +36,140 @@ K_HEAP_DEFINE(video_buffer_pool,
 
 static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
-{
-	struct video_buffer *vbuf = NULL;
-	int i;
+static K_MUTEX_DEFINE(video_buffer_mutex);
 
-	/* find available video buffer */
-	for (i = 0; i < ARRAY_SIZE(video_buf); i++) {
+/* 
+ * Find "count" contiguously availalble buffer slots in the video buffer pool.
+ * Return the index of the 1st slot or -1 if failed.
+ */
+static int find_contig_free_buffers(uint8_t count)
+{
+	uint8_t idx = 0, start = 0;
+
+	for (uint16_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
 		if (video_buf[i].buffer == NULL) {
-			vbuf = &video_buf[i];
-			vbuf->index = i;
-			break;
+			if (idx == 0) {
+				start = i;
+			}
+			if (++idx == count) {
+				return (int)start;
+			}
+		} else {
+			idx = 0;
 		}
 	}
 
-	if (vbuf == NULL) {
-		return NULL;
-	}
-
-	/* Alloc buffer memory */
-	vbuf->buffer = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
-	if (vbuf->buffer == NULL) {
-		return NULL;
-	}
-
-	vbuf->size = size;
-	vbuf->bytesused = 0;
-
-	return vbuf;
+	return -1;
 }
 
-struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
+/* Release a buffer via its index */
+static void release_buffer(uint16_t idx)
 {
-	return video_buffer_aligned_alloc(size, sizeof(void *), timeout);
+	if (video_buf[idx].buffer != NULL) {
+		VIDEO_COMMON_FREE(video_buf[idx].buffer);
+		video_buf[idx].buffer = NULL;
+	}
+
+	video_buf[idx].size = 0;
+	video_buf[idx].bytesused = 0;
+	video_buf[idx].timestamp = 0;
 }
 
-void video_buffer_release(struct video_buffer *vbuf)
+/* Release a range [start, start + count) of buffers */
+static void release_buffers_range(uint16_t start, uint8_t count)
 {
-	__ASSERT_NO_MSG(vbuf != NULL);
-
-	for (uint8_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
-		if (video_buf[i].buffer == vbuf->buffer) {
-			video_buf[i].buffer = NULL;
-			video_buf[i].size = 0;
-			video_buf[i].bytesused = 0;
+	for (uint8_t i = 0; i < count; i++) {
+		uint16_t idx = start + i;
+		if (idx >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
 			break;
 		}
-	}
-
-	if (vbuf->buffer != NULL) {
-		VIDEO_COMMON_FREE(vbuf->buffer);
-		vbuf->buffer = NULL;
+		release_buffer(idx);
 	}
 }
 
-int video_enqueue(const struct device *dev, struct video_buffer *buf)
+int video_release_buffers(uint16_t start_idx, uint8_t count)
 {
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	if (count == 0 || start_idx >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
+	    start_idx + count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+		return -EINVAL;
+	}
 
+	k_mutex_lock(&video_buffer_mutex, K_FOREVER);
+
+	release_buffers_range(start_idx, count);
+
+	k_mutex_unlock(&video_buffer_mutex);
+
+	return 0;
+}
+
+int video_request_buffers(struct video_buffer_request *const vbr)
+{
+	if (vbr == NULL || vbr->size == 0 || vbr->count == 0 ||
+	    vbr->size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX ||
+	    vbr->count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+		return -EINVAL;
+	}
+
+	uint16_t idx;
+	int start_idx = 0;
+	uint8_t *mem = NULL;
+
+	k_mutex_lock(&video_buffer_mutex, K_FOREVER);
+
+	start_idx = find_contig_free_buffers(vbr->count);
+
+	if (start_idx < 0) {
+		k_mutex_unlock(&video_buffer_mutex);
+
+		return -ENOBUFS;
+	}
+
+	for (uint8_t i = 0; i < vbr->count; i++) {
+		mem = VIDEO_COMMON_HEAP_ALLOC(CONFIG_VIDEO_BUFFER_POOL_ALIGN, vbr->size,
+							vbr->timeout);
+		if (mem == NULL) {
+			release_buffers_range((uint16_t)start_idx, i);
+			k_mutex_unlock(&video_buffer_mutex);
+
+			return -ENOMEM;
+		}
+
+		idx = (uint16_t)start_idx + i;
+
+		video_buf[idx].index = (uint16_t)idx;
+		video_buf[idx].buffer = mem;
+		video_buf[idx].size = vbr->size;
+		video_buf[idx].bytesused = 0;
+		video_buf[idx].timestamp = 0;
+	}
+
+	k_mutex_unlock(&video_buffer_mutex);
+
+	vbr->start_index = (uint16_t)start_idx;
+
+	return 0;
+}
+
+int video_enqueue(const struct device *const dev, const struct video_buffer *const buf)
+{
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(buf != NULL);
-	__ASSERT_NO_MSG(buf->buffer != NULL);
 
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	if (api == NULL || api->enqueue == NULL) {
 		return -ENOSYS;
 	}
 
 	video_buf[buf->index].type = buf->type;
 
-	return api->enqueue(dev, &video_buf[buf->index]);
+	int ret = api->enqueue(dev, &video_buf[buf->index]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,

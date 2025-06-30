@@ -300,35 +300,25 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 				   struct video_format *const fmt)
 {
 	int ret;
+	struct video_buffer vbuf = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
-	/* Alloc video buffers and enqueue for capture */
-	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    fmt->size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-		LOG_ERR("Not enough buffers or memory to start streaming");
-		return -EINVAL;
+	/* Request buffers */
+	struct video_buffer_request vbr = {
+		.count = CONFIG_VIDEO_BUFFER_POOL_NUM_MAX,
+		.size = fmt->size,
+		.timeout = K_NO_WAIT,
+	};
+
+	ret = video_request_buffers(&vbr);
+	if (ret || vbr.count < caps->min_vbuf_count) {
+		LOG_ERR("Unable to request buffers or not enough buffers to start streaming");
+		return 0;
 	}
 
-	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
-		struct video_buffer *vbuf;
-
-		/*
-		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
-		 * buffer alignment is needed in order to achieve the best performance
-		 */
-		vbuf = video_buffer_aligned_alloc(fmt->size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-						  K_NO_WAIT);
-		if (vbuf == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
-			return -ENOMEM;
-		}
-
-		vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
-
-		ret = video_enqueue(video_dev, vbuf);
-		if (ret < 0) {
-			LOG_ERR("Failed to enqueue video buffer");
-			return ret;
-		}
+	/* Enqueue buffers */
+	for (uint8_t i = 0; i < vbr.count; i++) {
+		vbuf.index = vbr.start_index++;
+		video_enqueue(video_dev, &vbuf);
 	}
 
 	return 0;
