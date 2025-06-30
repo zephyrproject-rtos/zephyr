@@ -121,6 +121,11 @@ config AMBIQ_HAL_USE_PDM
 	help
 	  Use the PDM driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_AUDADC
+	bool
+	help
+	  Use the AUDADC driver from Ambiq HAL
+
 config AMBIQ_HAL_USE_I2S
 	bool
 	help

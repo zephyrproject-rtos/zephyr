@@ -70,4 +70,24 @@ source "drivers/audio/Kconfig.dmic_ambiq_pdm"
 
 endif # AUDIO_DMIC
 
+menuconfig AUDIO_AMIC
+	bool "Analog Microphone (Audio) Drivers"
+	help
+	  Enable Analog Microphone Driver Configuration
+
+if AUDIO_AMIC
+
+config AUDIO_AMIC_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Audio Analog Microphone device driver initialization priority.
+
+module = AUDIO_AMIC
+module-str = audio_amic
+source "subsys/logging/Kconfig.template.log_config"
+source "drivers/audio/Kconfig.amic_ambiq_audadc"
+
+endif # AUDIO_AMIC
+
 endif # AUDIO

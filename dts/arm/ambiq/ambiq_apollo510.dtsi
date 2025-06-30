@@ -630,6 +630,13 @@
 			status = "disabled";
 		};
 
+		audadc0: audadc@AUDADC_BASE_NAME {
+			compatible = "ambiq,audadc";
+			reg = <AUDADC_REG_BASE AUDADC_REG_SIZE>;
+			interrupts = <42 0>;
+			status = "disabled";
+		};
+
 		i2s0: i2s0@I2S0_BASE_NAME {
 			compatible = "ambiq,i2s";
 			reg = <I2S0_REG_BASE I2S0_REG_SIZE>;

@@ -145,26 +145,6 @@
 	status = "okay";
 };
 
-&sdio0 {
-	pinctrl-0 = <&sdio0_default>;
-	pinctrl-names = "default";
-	txdelay = <0>;
-	rxdelay = <0>;
-	status = "disabled";
-	mmc {
-		compatible = "zephyr,mmc-disk";
-		disk-name = "SD2";
-		status = "disabled";
-	};
-};
-
-&sdio1 {
-	pinctrl-0 = <&sdio1_default>;
-	pinctrl-names = "default";
-	txdelay = <9>;
-	rxdelay = <11>;
-	status = "okay";
-};
 
 &mspi0 {
 	pinctrl-0 = <&mspi0_default>;
@@ -276,6 +256,10 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&pdm0_default>;
 	pinctrl-names = "default";
 	status = "disabled";
+};
+
+&audadc0 {
+	status = "okay";
 };
 
 &i2s0 {

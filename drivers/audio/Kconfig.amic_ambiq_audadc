@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_AMIC_AMBIQ_AUDADC
+	bool "Ambiq AUDADC driver"
+	default y
+	depends on DT_HAS_AMBIQ_AUDADC_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_AUDADC
+	help
+	  Enable support for Ambiq AUDADC driver for Apollo 5 MCU.
+
+if AUDIO_AMIC_AMBIQ_AUDADC
+
+config AUDADC_AMBIQ_HANDLE_CACHE
+	bool "Turn on cache handling in AUDADC driver"
+	default y
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  Disable this if cache has been handled in upper layers.
+
+config AUDADC_AMBIQ_BUFFER_ALIGNMENT
+	int "Set the AUDADC DMA TCB buffer alignment"
+	default DCACHE_LINE_SIZE if DCACHE
+	help
+	  AUDADC buffer should be 32bytes aligned when placed in cachable region.
+
+config AUDADC_AMBIQ_DC_OFFSET_CALIBRATION
+	bool "Turn on DC offset calibration in AUDADC driver"
+	default y
+	help
+	  Disable this if AUDADC slot DC offset calibration is not needed.
+
+endif
