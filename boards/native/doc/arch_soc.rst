@@ -302,13 +302,6 @@ Architecture and design
 
 .. note::
 
-   This section does not describe anymore the old
-   :kconfig:option:`CONFIG_NATIVE_APPLICATION` based architecture.
-   It only describes the new native simulator based architecture used by targets built with the
-   :kconfig:option:`CONFIG_NATIVE_LIBRARY` option.
-
-.. note::
-
    This description applies to the boards on the tree,
    but it is not a requirement for other POSIX arch based boards to follow what is described here.
 
