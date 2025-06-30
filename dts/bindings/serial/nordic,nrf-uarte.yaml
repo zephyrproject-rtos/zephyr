@@ -24,3 +24,11 @@ properties:
     type: boolean
     description: |
       UARTE allows usage of cross domain pins with constant latency mode required.
+
+  timer:
+    type: phandle
+    description: |
+      Timer instance used to count received bytes. Due to issues with frame timeout
+      feature it is required to reliably receive data in cases where flow control
+      is not used and new byte can appear on the line when frame timeout expires
+      but before it is handled.
