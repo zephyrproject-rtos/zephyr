@@ -1,7 +1,7 @@
-# Sierra Wireless HL78XX driver driver options
+#Sierra Wireless HL78XX driver driver options
 
-# Copyright (c) 2025 Netfeasa Ltd.
-# SPDX-License-Identifier: Apache-2.0
+#Copyright(c) 2025 Netfeasa Ltd.
+#SPDX - License - Identifier : Apache - 2.0
 
 config MODEM_HL78XX
 	bool "HL78XX modem driver"
@@ -492,15 +492,36 @@ config MODEM_HL78XX_PSM
 	help
 	  Enable Power Save Mode (PSM)
 
+if !MODEM_HL78XX_EDRX && !MODEM_HL78XX_PSM
+
+config MODEM_HL78XX_POWER_DOWN
+	bool "Turn OFF"
+	depends on MODEM_HL78XX_LOW_POWER_MODE
+	help
+	  Power off modem
+
+endif # If eDRX or PSM is enabled, the modem will not power down.
+
 if MODEM_HL78XX_EDRX
 
 config MODEM_HL78XX_EDRX_VALUE
-	string "Requested eDRX timer"
-	default "0101"
+	int "Requested eDRX timer"
+	default 5
+	range 0 15
 	help
 	  Half a byte in a 4-bit format. The eDRX value refers to bit 4 to 1
 	  of octet 3 of the Extended DRX parameters information element.
-	  Default value is 81.92 seconds.
+	  Default value is 5 (81.92) seconds.
+	  refer to Requested_eDRX_value
+
+config MODEM_HL78XX_PTW_VALUE
+	int "Requested eDRX Paging Time Window (PTW) timer"
+	default 0
+	help
+	  The PTW value refers to bits 8 to 5 of octet 3 of the Extended DRX
+	  parameters information element
+	  · CAT-M1 - actual PTW length = 1.28 sec x (1 + PTW)
+	  · NB-IoT - actual PTW length = 2.56 sec x (1 + PTW)
 
 endif # MODEM_HL78XX_EDRX
 
@@ -508,11 +529,11 @@ if MODEM_HL78XX_PSM
 
 config MODEM_HL78XX_PSM_PERIODIC_TAU
 	string "Requested extended periodic TAU timer"
-	default "10000010"
+	default "10101111"
 	help
 	  Requested extended periodic TAU (tracking area update) value (T3412)
 	  to be allocated to the UE in E-UTRAN. One byte in an 8-bit format.
-	  Default value is 1 minute.
+	  Default value is 15 minute.
 
 config MODEM_HL78XX_PSM_ACTIVE_TIME
 	string "Requested active time"
@@ -522,6 +543,62 @@ config MODEM_HL78XX_PSM_ACTIVE_TIME
 	  One byte in an 8-bit format. Default value is 30 seconds.
 
 endif # MODEM_HL78XX_PSM
+
+if MODEM_HL78XX_POWER_DOWN
+
+choice MODEM_HL78XX_POWER_DOWN_MODE
+	prompt "Power Down Mode"
+	default MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	help
+	  Choose the logic used to determine when the HL78XX modem powers down.
+	  Only one method can be selected:
+	  - 'Use delay after last data activity'
+	  - 'Use active time after RRC connection'
+
+config MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	bool "Use delay after last data activity"
+	help
+	  Power down the modem after a specified delay (MODEM_HL78XX_POWER_DOWN_DELAY)
+	  following the last socket closure or data transmission.
+
+config MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+	bool "Use active time after RRC connection"
+	help
+	  Power down the modem based on a PSM-like active time (MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME)
+	  starting after establishing an RRC connection.
+	  * This timer is reset only when a new RRC connection is established.
+
+endchoice
+
+if MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+
+config MODEM_HL78XX_POWER_DOWN_DELAY
+	int "Delay in seconds before power down"
+	default 15
+	range 10 600
+	help
+	  Delay in seconds before powering down the modem after the last
+	  data transfer.
+
+endif # MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+
+if MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+
+config MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME
+	int "Modem active time before power down"
+	default 30
+	range 20 600
+	help
+	  The active time value to be allocated to the UE before
+	  powering down the modem. One byte in an 8-bit format.
+	  Default value is 30 seconds.
+	  This setting is used to keep the modem active for a short period
+	  before powering it down.
+
+endif # MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+endif # MODEM_HL78XX_POWER_DOWN
+
+if !MODEM_HL78XX_POWER_DOWN
 
 choice MODEM_DEFAULT_SLEEP_LEVEL
 	prompt "Default Sleep Level"
@@ -555,8 +632,110 @@ endchoice
 config MODEM_HL78XX_SLEEP_DELAY_AFTER_REBOOT
 	int "Delay in seconds before sleep after reboot"
 	default 10
-
+endif # !MODEM_HL78XX_POWER_DOWN
 endif # MODEM_HL78XX_LOW_POWER_MODE
+
+choice MODEM_HL78XX_NETWORK_REG_STATUS_REPORT_CFG
+	prompt "Network Registration Status Report Configuration"
+	default MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM_AND_CAUSE
+	help
+	  · 0 — Disable network registration unsolicited result code.
+	  · 1 — Enable network registration unsolicited result code +CEREG: <stat>
+	  · 2 — Enable network registration and location information unsolicited result
+	  code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+	  · 3 — Enable network registration, location information and EMM cause value
+	  information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>, <reject_cause>]]
+	  · 4 — For a UE that wants to apply PSM, enable network registration and
+	  location information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active- Time>],[<PeriodicTAU>]]]]
+	  · 5 — For a UE that wants to apply PSM, enable network registration, location
+	  information and EMM cause value information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_-
+	  cause>][,[<Active-Time>] [<Periodic-TAU>]]]]
+
+config MODEM_HL78XX_DISABLE_NETWORK_STATUS_URC_REPORT
+	bool "Disable network status URC report"
+	help
+	  Disable network registration unsolicited result code.
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT
+	bool "Network status URC report"
+	help
+	  Enable network registration unsolicited result code +CEREG: <stat>
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION
+	bool "Network status URC report with location"
+	help
+	  Enable network registration and location information unsolicited result
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION_AND_CAUSE
+	bool "Network status URC report with location and cause"
+	help
+	  Enable network registration, location information and EMM cause value
+	  information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,<cause_type>, <reject_cause>]]
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM
+	bool "Network status URC report with PSM"
+	help
+	  For a UE that wants to apply PSM, enable network registration and
+	  location information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,,[,[<Active- Time>],[<PeriodicTAU>]]]]
+
+config MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM_AND_CAUSE
+	bool "Network status URC report with PSM and cause"
+	help
+	  For a UE that wants to apply PSM, enable network registration, location
+	  information and EMM cause value information unsolicited result code:
+	  +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>][,[<cause_type>],[<reject_-
+	  cause>][,[<Active-Time>] [<Periodic-TAU>]]]]
+
+endchoice
+
+config MODEM_HL78XX_NETWORK_REG_STATUS_REPORT_CFG_CODE
+	string
+	default "5" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM_AND_CAUSE
+	default "4" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_PSM
+	default "3" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION_AND_CAUSE
+	default "2" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION
+	default "1" if MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT
+	default "0" if MODEM_HL78XX_DISABLE_NETWORK_STATUS_URC_REPORT
+	help
+	  This setting is used to configure the network registration status report
+	  configuration code. It is used in the AT+CREG/CEREG command to set the network
+	  registration status report configuration.
+
+config MODEM_MIN_ALLOWED_SIGNAL_STRENGTH
+	int "Minimum allowed RSRP signal strength (dBm)"
+	default -140
+	range -140 0
+	help
+	  The average power received from a single Reference signal,
+	  and Its typical range is around -44dbm (good) to -140dbm(bad).
+	  Note: (Anything < - 115 dBm unusable/unreliable)
+	  EXCELLENT_SIGNAL_STRENGTH
+	  bool ">= -80(dBm)"
+	    default -80
+	    range - 80 0
+	  GOOD_SIGNAL_STRENGTH
+	  bool ">= -90(dBm)"
+	    default -90
+	    range - 90 0
+	  MID_CELL_SIGNAL_STRENGTH
+	  bool ">= -100(dBm)"
+	    default -100
+	    range - 100 0
+	  CELL_EDGE_SIGNAL_STRENGTH
+	  bool "<= -100(dBm)"
+	    default -110
+	    range - 110 0
+	  POOR_SIGNAL_STRENGTH
+	  bool ">= -140(dBm)"
+	    default -140
+	    range - 140 0
 
 config MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
 	bool "Advanced socket configuration"
@@ -602,6 +781,34 @@ bool "Verbose debug output in the HL78xx"
 	help
 	  Enabling this setting will turn on VERY heavy debugging from the
 	  modem.  Do NOT leave on for production.
+
+config MODEM_HL78XX_DEV_POWER_PULSE_DURATION
+	int "Duration of the power-on pulse in milliseconds."
+	default 1500
+	help
+	  Trigger a power-on sequence by setting a power on GPIO pin high
+	  for a specific amount of time.
+
+config MODEM_HL78XX_DEV_RESET_PULSE_DURATION
+	int "Duration of the power-reset pulse in milliseconds."
+	default 100
+	help
+	  Trigger a power-reset sequence by setting a reset GPIO pin high
+	  for a specific amount of time.
+
+config MODEM_HL78XX_DEV_STARTUP_TIME
+	int "Wait before assuming the device is ready."
+	default 1000
+	help
+	  The expected time (in milliseconds) the modem needs to fully power on
+	  and become operational.
+
+config MODEM_HL78XX_DEV_SHUTDOWN_TIME
+	int "Wait before assuming the device is completely off."
+	default 1000
+	help
+	  The amount of time (in milliseconds) the system should wait for the modem
+	  to fully shut down
 
 config MODEM_HL78XX_DEV_INIT_PRIORITY
 	int "Sierra Wireless HL78XX device driver init priority"

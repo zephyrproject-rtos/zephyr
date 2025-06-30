@@ -114,11 +114,18 @@ enum hl78xx_registration_status {
 	HL78XX_REGISTRATION_REGISTERED_ROAMING,
 };
 
+enum hl78xx_psmev_event {
+	HL78XX_PSM_EVENT_EXIT = 0,
+	HL78XX_PSM_EVENT_ENTER,
+	HL78XX_PSM_EVENT_NONE,
+};
+
 enum hl78xx_evt_type {
 	HL78XX_RAT_UPDATE,
 	HL78XX_LTE_REGISTRATION_STAT_UPDATE,
 	HL78XX_LTE_SIM_REGISTRATION,
 	HL78XX_LTE_PSMEV,
+	HL78XX_LTE_MODEM_STARTUP,
 };
 
 struct hl78xx_evt {
@@ -127,6 +134,10 @@ struct hl78xx_evt {
 	union {
 		enum hl78xx_registration_status reg_status;
 		enum hl78xx_cell_rat_mode rat_mode;
+		enum hl78xx_psmev_event psm_event;
+		bool status;
+		int value;
+
 	} content;
 };
 /** API for configuring networks */
@@ -465,7 +476,7 @@ static inline int hl78xx_parse_rssi(uint8_t rssi, int16_t *value)
  * and converts it into a corresponding signal strength in dBm, typically based on
  * 3GPP TS 36.133 specifications.
  *
- * @param rsrp Raw RSRP value (commonly in the range 0–97, or 255 if unknown).
+ * @param rsrp Raw RSRP value (commonly in the range = -140.0 dBm to 0.0 dBm, or 255 if unknown).
  * @param value Pointer to store the converted RSRP in dBm.
  *
  * @retval 0 on successful conversion.

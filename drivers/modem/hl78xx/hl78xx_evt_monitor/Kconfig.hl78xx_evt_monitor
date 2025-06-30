@@ -5,7 +5,7 @@
 #
 
 menuconfig HL78XX_EVT_MONITOR
-	bool "HL78XX AT notification monitor"
+	bool "HL78XX event notification monitor"
 
 if HL78XX_EVT_MONITOR
 
