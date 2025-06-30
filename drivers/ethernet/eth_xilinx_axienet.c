@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(eth_xilinx_axienet, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/phy.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
+#include "eth.h"
 
 #include "../dma/dma_xilinx_axi_dma.h"
 
@@ -47,6 +48,11 @@ LOG_MODULE_REGISTER(eth_xilinx_axienet, CONFIG_ETHERNET_LOG_LEVEL);
 
 #define XILINX_AXIENET_UNICAST_ADDRESS_WORD_0_OFFSET 0x00000700
 #define XILINX_AXIENET_UNICAST_ADDRESS_WORD_1_OFFSET 0x00000704
+
+/* Xilinx OUI (Organizationally Unique Identifier) for MAC */
+#define XILINX_OUI_BYTE_0  0x00
+#define XILINX_OUI_BYTE_1  0x0A
+#define XILINX_OUI_BYTE_2  0x35
 
 #if (CONFIG_DCACHE_LINE_SIZE > 0)
 /* cache-line aligned to allow selective cache-line invalidation on the buffer */
@@ -95,6 +101,8 @@ struct xilinx_axienet_config {
 
 	bool have_rx_csum_offload;
 	bool have_tx_csum_offload;
+
+	bool have_random_mac;
 };
 
 static void xilinx_axienet_write_register(const struct xilinx_axienet_config *config,
@@ -538,6 +546,11 @@ static int xilinx_axienet_probe(const struct device *dev)
 	LOG_INF("TX Checksum offloading %s",
 		config->have_tx_csum_offload ? "requested" : "disabled");
 
+	if (config->have_random_mac) {
+		gen_random_mac(data->mac_addr,
+			      XILINX_OUI_BYTE_0, XILINX_OUI_BYTE_1, XILINX_OUI_BYTE_2);
+	}
+
 	xilinx_axienet_set_mac_address(config, data);
 
 	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_RX - 1; i++) {
@@ -595,6 +608,7 @@ static const struct ethernet_api xilinx_axienet_api = {
 		.have_irq = DT_INST_NODE_HAS_PROP(inst, interrupts),                               \
 		.have_tx_csum_offload = DT_INST_PROP_OR(inst, xlnx_txcsum, 0x0) == 0x2,            \
 		.have_rx_csum_offload = DT_INST_PROP_OR(inst, xlnx_rxcsum, 0x0) == 0x2,            \
+		.have_random_mac = DT_INST_PROP(inst, zephyr_random_mac_address),                  \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, xilinx_axienet_probe, NULL, &data_##inst,              \
