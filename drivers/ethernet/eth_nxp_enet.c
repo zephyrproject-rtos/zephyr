@@ -474,17 +474,18 @@ static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 	/* Configure the PHY */
 	ret = phy_configure_link(phy, speeds, 0);
 
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		phy_get_link_state(phy, &state);
 
 		if (state.is_up) {
-			LOG_WRN("phy_configure_link returned -ENOTSUP, but link is up. "
+			LOG_WRN("phy_configure_link returned %d, but link is up. "
 				"Speed: %s, %s-duplex",
+				ret,
 				PHY_LINK_IS_SPEED_1000M(state.speed) ? "1 Gbits" :
 				PHY_LINK_IS_SPEED_100M(state.speed) ? "100 Mbits" : "10 Mbits",
 				PHY_LINK_IS_FULL_DUPLEX(state.speed) ? "full" : "half");
 		} else {
-			LOG_ERR("phy_configure_link returned -ENOTSUP and link is down.");
+			LOG_ERR("phy_configure_link returned %d and link is down.", ret);
 			return -ENETDOWN;
 		}
 	} else if (ret) {
