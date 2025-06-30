@@ -8,7 +8,7 @@
 /dts-v1/;
 #include "nrf52840dongle_nrf52840_common.dtsi"
 
-/* Include flash partition table that is compatible with Nordic onboard USB
- * bootloader.
+/* Include flash partition table that is not compatible with Nordic nRF5
+ * bootloader. Use an external debugger to program the device.
  */
-#include "fstab-stock.dtsi"
+#include "fstab-debugger.dtsi"
