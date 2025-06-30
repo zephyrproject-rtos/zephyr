@@ -173,9 +173,11 @@ static struct k_sem wait_data;
 static bool recv_cb_called;
 struct net_if_addr *ifaddr_record;
 static struct test_ns_handler *ns_handler;
+static int pkt_num;
 
 #define WAIT_TIME 250
-#define WAIT_TIME_LONG MSEC_PER_SEC
+#define WAIT_TIME_LONG CONFIG_NET_IPV6_NS_TIMEOUT
+#define WAIT_TIME_NS_TIMEOUT (WAIT_TIME_LONG + WAIT_TIME)
 #define SENDING 93244
 #define MY_PORT 1969
 #define PEER_PORT 16233
@@ -336,6 +338,8 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	icmp = get_icmp_hdr(pkt);
+
+	pkt_num++;
 
 	/* Reply with RA message */
 	if (icmp->type == NET_ICMPV6_RS) {
@@ -764,6 +768,8 @@ static void expect_nd_ns(struct net_pkt *pkt, void *user_data)
 	}
 }
 
+extern int net_ipv6_nbr_test_cancel(void);
+
 ZTEST(net_ipv6, test_send_neighbor_discovery)
 {
 	static struct test_nd_context ctx = {
@@ -776,17 +782,37 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 	};
 	enum net_verdict verdict;
 	struct net_nbr *nbr;
+	struct k_mem_slab *tx;
+	struct net_buf_pool *tx_data;
+	int avail_buf_count;
+	int avail_pkt_count;
+	int ret;
+
+	net_pkt_get_info(NULL, &tx, NULL, &tx_data);
 
 	k_sem_init(&ctx.wait_ns, 0, 1);
 	ns_handler = &handler;
 
 	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
 
+	/* Make sure we can queue two packets */
+	pkt_num = 0;
+
+	avail_buf_count = atomic_get(&tx_data->avail_count);
+	avail_pkt_count = k_mem_slab_num_free_get(tx);
+
 	verdict = send_msg(&my_addr, &test_router_addr);
 	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
+
+	/* Second attempt should be queued and give no NS. */
+	verdict = send_msg(&my_addr, &test_router_addr);
+	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
+
+	/* At this point we should have sent one NS and queued one packet. */
+	zassert_equal(pkt_num, 1, "Unexpected number of packets sent (%d)", pkt_num);
+
 	zassert_ok(k_sem_take(&ctx.wait_ns, K_MSEC(WAIT_TIME)),
 		   "Timeout while waiting for expected NS");
-
 	k_sleep(K_MSEC(10));
 
 	/* Neighbor should be here now. */
@@ -795,11 +821,77 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 	zassert_equal(net_ipv6_nbr_data(nbr)->state, NET_IPV6_NBR_STATE_REACHABLE,
 		      "Neighbor should be reachable at this point.");
 
-	/* Second attempt (neighbor valid) should give no NS. */
+	/* Packet count should now be 3, one for the first NS and two
+	 * for the queued packets.
+	 */
+	zassert_equal(pkt_num, 3, "Unexpected number of packets sent (%d)", pkt_num);
+
+	/* Third attempt (neighbor valid) should give no NS. */
 	verdict = send_msg(&my_addr, &test_router_addr);
 	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
 	zassert_equal(k_sem_take(&ctx.wait_ns, K_MSEC(10)), -EAGAIN,
 		      "Should not get NS");
+
+	/* Packet count should be 4 as we sent one more packet. */
+	zassert_equal(pkt_num, 4, "Unexpected number of packets sent (%d)", pkt_num);
+
+	/* If there are anything pending by the NS reply timer, then
+	 * then 1 is returned and we can update the buffer and packet
+	 * counts.
+	 */
+	ret = net_ipv6_nbr_test_cancel();
+	avail_pkt_count -= ret;
+	avail_buf_count -= ret;
+
+	zassert_equal(k_mem_slab_num_free_get(tx), avail_pkt_count,
+		      "Unexpected tx packet pool free count (%d vs %d)",
+		      k_mem_slab_num_free_get(tx), avail_pkt_count);
+
+	zassert_equal(atomic_get(&tx_data->avail_count), avail_buf_count,
+		      "Unexpected tx data pool available count (%d vs %d)",
+		      atomic_get(&tx_data->avail_count), avail_buf_count);
+}
+
+ZTEST(net_ipv6, test_send_neighbor_discovery_timeout)
+{
+	static struct test_nd_context ctx = {
+		.exp_ns_addr = &test_router_addr,
+		.reply = true
+	};
+	enum net_verdict verdict;
+	struct net_nbr *nbr;
+
+	k_sem_init(&ctx.wait_ns, 0, 1);
+
+	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
+
+	/* Make sure we can queue two packets */
+	pkt_num = 0;
+
+	verdict = send_msg(&my_addr, &test_router_addr);
+	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
+
+	/* Second attempt should be queued and give no NS. */
+	verdict = send_msg(&my_addr, &test_router_addr);
+	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
+
+	/* At this point we should have sent one NS and queued one packet. */
+	zassert_equal(pkt_num, 1, "Unexpected number of packets sent (%d)", pkt_num);
+
+	k_sleep(K_MSEC(10));
+
+	zassert_not_ok(k_sem_take(&ctx.wait_ns, K_MSEC(WAIT_TIME_NS_TIMEOUT)),
+		       "Timeout while waiting for expected NS");
+
+	nbr = net_ipv6_nbr_lookup(TEST_NET_IF, &test_router_addr);
+	zassert_not_null(nbr, "Neighbor not found.");
+
+	/* Packet count should be 2, one for the first NS and second for the
+	 * timeouted NS packet.
+	 */
+	zassert_equal(pkt_num, 2, "Unexpected number of packets sent (%d)", pkt_num);
+
+	(void)net_ipv6_nbr_rm(TEST_NET_IF, &test_router_addr);
 }
 
 /**
