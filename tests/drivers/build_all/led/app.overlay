@@ -207,6 +207,14 @@
 			test_pwm_led0: test_pwm_led_0 {
 				pwms = <&test_pwm 0 0 0>;
 			};
+			test_pwm_led1: test_pwm_led_1 {
+				pwms = <&test_pwm 1 0 0>;
+			};
+		};
+
+		multi-led {
+			compatible = "leds-group-multicolor";
+			leds = <&test_pwm_led0>, <&test_pwm_led1>;
 		};
 	};
 };
