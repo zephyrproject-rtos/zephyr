@@ -186,7 +186,11 @@ foreach(target flash debug debugserver attach rtt)
     set(RUNNER_VERBOSE)
   endif()
 
-  if(WEST)
+  if(NOT FLASH_COMMAND)
+      set(FLASH_COMMAND ${WEST})
+  endif()
+
+  if(FLASH_COMMAND)
     add_custom_target(${target}
       # This script will print an error message and fail if <target> has added
       # dependencies. This is done using dedicated CMake script, as
@@ -197,7 +201,7 @@ foreach(target flash debug debugserver attach rtt)
         -P ${CMAKE_CURRENT_LIST_DIR}/check_runner_dependencies.cmake
       COMMAND
         ${CMAKE_COMMAND} -E env ZEPHYR_BASE=${ZEPHYR_BASE}
-        ${WEST}
+        ${FLASH_COMMAND}
         ${RUNNER_VERBOSE}
         ${target}
       WORKING_DIRECTORY
@@ -208,9 +212,11 @@ foreach(target flash debug debugserver attach rtt)
     )
   else()
     add_custom_target(${target}
-      COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path. To support
-          '${CMAKE_MAKE_PROGRAM} ${target}', please create a west workspace.\"
+      COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path and no
+          FLASH_COMMAND set. To support '${CMAKE_MAKE_PROGRAM} ${target}',
+          please create a west workspace or specify a custom flashing script
+          path in FLASH_COMMAND.\"
       USES_TERMINAL
       )
-  endif(WEST)
+  endif(FLASH_COMMAND)
 endforeach()
