@@ -10,6 +10,12 @@ compatible: "pwm-leds"
 
 child-binding:
   description: PWM LED child node
+
+  include:
+    - name: led-node.yaml
+      property-allowlist:
+        - label
+
   properties:
     pwms:
       required: true
@@ -22,10 +28,3 @@ child-binding:
         brigtness granularity) and lesser than 50 milliseconds (average visual
         persistence time of the human eye). Typical values for the PWM period
         are 10 or 20 milliseconds.
-
-    label:
-      type: string
-      description: |
-        Human readable string describing the LED. It can be used by an
-        application to identify this LED or to retrieve its number/index
-        (i.e. child node number) on the parent device.
