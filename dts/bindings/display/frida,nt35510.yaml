@@ -1,7 +1,13 @@
 # Copyright (c) 2024 Erik Andersson <erian747@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Frida Techshine Panel
+title: Novatek NT35510 Display Driver
+
+description: |
+    The Novatek NT35510 is a 16.7M colors TFT-LCD controller
+    with a maximum 480RGBx864 resolution.
+
+    It supports display panels such as Shenzhen Frida LCD FRD397B2509.
 
 compatible: "frida,nt35510"
 

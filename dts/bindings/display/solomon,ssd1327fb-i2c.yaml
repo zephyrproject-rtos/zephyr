@@ -1,7 +1,11 @@
 # Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
 # SPDX-License-Identifier: Apache-2.0
 
-description: SSD1327 128x128 dot-matrix display controller on I2C bus
+title: Solomon SSD1327 display controller on I2C bus
+
+description: |
+    The Solomon SSD1327 is a 4-bit greyscale OLED controller
+    with a maximum 128x128 resolution.
 
 include: ["solomon,ssd1327fb-common.yaml", "i2c-device.yaml"]
 

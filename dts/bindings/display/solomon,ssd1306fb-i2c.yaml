@@ -1,7 +1,11 @@
 # Copyright (c) 2020, Marco Peter
 # SPDX-License-Identifier: Apache-2.0
 
-description: SSD1306 128x64 dot-matrix display controller on I2C bus
+title: Solomon SSD1306 display controller on I2C bus
+
+description: |
+    The Solomon SSD1306 is a monochrome OLED controller
+    with a maximum 128x64 resolution.
 
 compatible: "solomon,ssd1306fb"
 
