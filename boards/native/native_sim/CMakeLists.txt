@@ -15,11 +15,7 @@ zephyr_library_sources(
 
 if(CONFIG_NATIVE_SIM_REBOOT)
   zephyr_library_sources(reboot.c)
-  if(CONFIG_NATIVE_LIBRARY)
-    target_sources(native_simulator INTERFACE reboot_bottom.c)
-  else()
-    zephyr_library_sources(reboot_bottom.c)
-  endif()
+  target_sources(native_simulator INTERFACE reboot_bottom.c)
 endif()
 
 zephyr_include_directories(
