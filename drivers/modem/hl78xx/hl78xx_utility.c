@@ -50,11 +50,41 @@ int modem_atoi(const char *s, const int err_value, const char *desc, const char 
 
 	return ret;
 }
+double modem_atod(const char *s, const double err_value, const char *desc, const char *func)
+{
+	double ret;
+	char *endptr;
 
+	ret = strtod(s, &endptr);
+	if (!endptr || *endptr != '\0') {
+		LOG_ERR("bad %s '%s' in %s", s, desc, func);
+		return err_value;
+	}
+
+	return ret;
+}
 bool hl78xx_is_registered(struct hl78xx_data *data)
 {
-	return (data->status.registration.network_state == HL78XX_REGISTRATION_REGISTERED_HOME) ||
-	       (data->status.registration.network_state == HL78XX_REGISTRATION_REGISTERED_ROAMING);
+	return (data->status.registration.network_state_current ==
+		HL78XX_REGISTRATION_REGISTERED_HOME) ||
+	       (data->status.registration.network_state_current ==
+		HL78XX_REGISTRATION_REGISTERED_ROAMING);
+}
+
+bool hl78xx_is_rsrp_valid(struct hl78xx_data *data)
+{
+	return (data->status.rsrp >= CONFIG_MODEM_MIN_ALLOWED_SIGNAL_STRENGTH);
+}
+
+bool hl78xx_is_in_psm(struct hl78xx_data *data)
+{
+	return (data->status.psm.psmev_current == HL78XX_PSM_EVENT_ENTER);
+}
+
+bool hl78xx_is_in_pwr_dwn(struct hl78xx_data *data)
+{
+	return (data->status.pmc_power_down.requested_currently == true &&
+		data->status.pmc_power_down.status_currently == true);
 }
 
 #define HASH_MULTIPLIER 37
@@ -488,4 +518,39 @@ void hl78xx_extract_essential_part_apn(const char *full_apn, char *essential_apn
 		strncpy(essential_apn, apn_buf, max_len - 1);
 		essential_apn[max_len - 1] = '\0';
 	}
+}
+
+/* Convert 8-character binary string to byte (0–255) */
+int binary_str_to_byte(const char *bin_str)
+{
+	if (strlen(bin_str) != 8) {
+		return -EINVAL; /*  Invalid input length */
+	}
+
+	int value = 0;
+
+	for (int i = 0; i < 8; i++) {
+		if (bin_str[i] == '1') {
+			value = (value << 1) | 1;
+		} else if (bin_str[i] == '0') {
+			value = value << 1;
+		} else {
+			return -EINVAL; /*  Invalid character */
+		}
+	}
+
+	return value;
+}
+
+/* Convert byte to 8-character binary string */
+void byte_to_binary_str(uint8_t byte, char *output)
+{
+	if (output == NULL) {
+		return; /*  Invalid output pointer */
+	}
+
+	for (int i = 7; i >= 0; i--) {
+		output[7 - i] = (byte & (1 << i)) ? '1' : '0';
+	}
+	output[8] = '\0';
 }
