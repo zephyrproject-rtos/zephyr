@@ -44,14 +44,7 @@ if(CONFIG_CAN_NATIVE_LINUX)
     zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
     zephyr_library_sources(can_native_linux.c)
 
-    if (CONFIG_NATIVE_APPLICATION)
-      set_source_files_properties(can_native_linux_adapt.c
-        PROPERTIES COMPILE_DEFINITIONS
-        "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE")
-      zephyr_library_sources(can_native_linux_adapt.c)
-    else()
-      target_sources(native_simulator INTERFACE can_native_linux_adapt.c)
-    endif()
+    target_sources(native_simulator INTERFACE can_native_linux_adapt.c)
   else()
     message(FATAL_ERROR "CONFIG_CAN_NATIVE_LINUX is only available on Linux")
   endif()
