@@ -19,6 +19,12 @@ extern const uintptr_t _irq_vector_table[];
 #endif
 
 #if defined(CONFIG_RISCV)
+
+/* litex_timer0 (drivers/timer/litex_timer.c) uses IRQ 1, so the test can't use it. */
+#if defined(CONFIG_LITEX_TIMER)
+#define IRQ1_USED
+#endif
+
 #if defined(CONFIG_NRFX_CLIC)
 
 #if defined(CONFIG_SOC_SERIES_NRF54LX) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
@@ -47,8 +53,10 @@ extern const uintptr_t _irq_vector_table[];
 #define TRIG_CHECK_SIZE	19
 #else
 
+#if !defined(IRQ1_USED)
 /* RISC-V has very few IRQ lines which can be triggered from software */
 #define ISR3_OFFSET	1
+#endif
 
 /* Since we have so few lines we have to share the same line for two different
  * tests
