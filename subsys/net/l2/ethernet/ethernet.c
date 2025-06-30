@@ -524,7 +524,7 @@ static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_ipv6_is_addr_mcast((struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+	    net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst)) {
 		memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);
 		memcpy((uint8_t *)dst + 2,
