@@ -85,7 +85,7 @@ const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state);
  */
 struct net_ipv6_nbr_data {
 	/** Any pending packet waiting ND to finish. */
-	struct net_pkt *pending;
+	struct k_fifo pending_queue;
 
 	/** IPv6 address. */
 	struct in6_addr addr;
@@ -109,7 +109,10 @@ struct net_ipv6_nbr_data {
 	uint8_t ns_count;
 
 	/** Is the neighbor a router */
-	bool is_router;
+	bool is_router : 1;
+
+	/** Have we initialized the pending queue */
+	bool pending_queue_initialized : 1;
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE) || defined(CONFIG_NET_IPV6_ND)
 	/** Stale counter used to removed oldest nbr in STALE state,
