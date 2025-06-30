@@ -1,0 +1,12 @@
+sample:
+  name: BLE Shell
+  description: Demonstrates BLE Zephyr shell backend
+tests:
+  sample.shell_ble:
+    harness: bluetooth
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    tags: bluetooth
+    build_only: true
