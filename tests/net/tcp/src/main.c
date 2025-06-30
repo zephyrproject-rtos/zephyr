@@ -293,7 +293,7 @@ static struct net_pkt *tester_prepare_tcp_pkt(sa_family_t af,
 	}
 
 	th->th_flags = flags;
-	th->th_win = NET_IPV6_MTU;
+	th->th_win = htons(NET_IPV6_MTU);
 	th->th_seq = htonl(seq);
 
 	if (ACK & flags) {
