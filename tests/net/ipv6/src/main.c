@@ -766,11 +766,11 @@ static void expect_nd_ns(struct net_pkt *pkt, void *user_data)
 
 ZTEST(net_ipv6, test_send_neighbor_discovery)
 {
-	struct test_nd_context ctx = {
+	static struct test_nd_context ctx = {
 		.exp_ns_addr = &test_router_addr,
 		.reply = true
 	};
-	struct test_ns_handler handler = {
+	static struct test_ns_handler handler = {
 		.fn = expect_nd_ns,
 		.user_data = &ctx
 	};
@@ -972,10 +972,10 @@ static void expect_dad_ns(struct net_pkt *pkt, void *user_data)
 static void verify_rs_on_iface_event(void (*action)(void))
 {
 	struct net_if_router *router;
-	struct test_dad_context ctx = {
+	static struct test_dad_context ctx = {
 		.exp_dad_addr = &test_ra_autoconf_addr
 	};
-	struct test_ns_handler handler = {
+	static struct test_ns_handler handler = {
 		.fn = expect_dad_ns,
 		.user_data = &ctx
 	};
@@ -1485,10 +1485,11 @@ ZTEST(net_ipv6, test_dad_timeout)
  */
 static void verify_dad_on_static_addr_on_iface_event(void (*action)(void))
 {
-	struct test_dad_context ctx = {
+	static struct test_dad_context ctx = {
 		.exp_dad_addr = &my_addr
 	};
-	struct test_ns_handler handler = {
+
+	static struct test_ns_handler handler = {
 		.fn = expect_dad_ns,
 		.user_data = &ctx
 	};
@@ -1523,11 +1524,11 @@ ZTEST(net_ipv6, test_dad_on_static_addr_after_carrier_toggle)
  */
 static void verify_dad_on_ll_addr_on_iface_event(void (*action)(void))
 {
-	struct in6_addr link_local_addr;
-	struct test_dad_context ctx = {
+	static struct in6_addr link_local_addr;
+	static struct test_dad_context ctx = {
 		.exp_dad_addr = &link_local_addr
 	};
-	struct test_ns_handler handler = {
+	static struct test_ns_handler handler = {
 		.fn = expect_dad_ns,
 		.user_data = &ctx
 	};
@@ -1562,13 +1563,13 @@ ZTEST(net_ipv6, test_dad_on_ll_addr_after_carrier_toggle)
 /* Verify that in case of DAD conflict, address is not used on the interface. */
 ZTEST(net_ipv6, test_dad_conflict)
 {
-	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+	static struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0x99, 0x4 } } };
-	struct test_dad_context ctx = {
+	static struct test_dad_context ctx = {
 		.exp_dad_addr = &addr,
 		.reply = true
 	};
-	struct test_ns_handler handler = {
+	static struct test_ns_handler handler = {
 		.fn = expect_dad_ns,
 		.user_data = &ctx
 	};
