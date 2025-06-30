@@ -57,6 +57,20 @@ enum video_buf_type {
 };
 
 /**
+ * @brief video_buf_state enum
+ *
+ * Current state of a video buffer.
+ * This helps to keep track of state of a buffer for debugging or to do some guard
+ * checks, e.g. prevents re-enqueuing a buffer already queued, etc.
+ */
+enum video_buf_state {
+	/** buffer queued in video subsystem and driver */
+	VIDEO_BUF_STATE_QUEUED,
+	/** buffer filled and can be dequeued by application */
+	VIDEO_BUF_STATE_DONE,
+};
+
+/**
  * @struct video_format
  * @brief Video format structure
  *
@@ -146,6 +160,8 @@ struct video_caps {
 struct video_buffer {
 	/** type of the buffer */
 	enum video_buf_type type;
+	/** current state of the buffer */
+	enum video_buf_state state;
 	/** pointer to driver specific data. */
 	void *driver_data;
 	/** pointer to the start of the buffer. */
@@ -565,27 +581,13 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
  * endpoint incoming queue.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param buf Pointer to the video buffer.
+ * @param index Index of the buffer to be queued
  *
  * @retval 0 Is successful.
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_enqueue(const struct device *dev, struct video_buffer *buf)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-	__ASSERT_NO_MSG(buf->buffer != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enqueue(dev, buf);
-}
+int video_enqueue(const struct device *dev, uint8_t index);
 
 /**
  * @brief Dequeue a video buffer.
@@ -605,6 +607,7 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 				k_timeout_t timeout)
 {
 	const struct video_driver_api *api;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(buf != NULL);
@@ -614,7 +617,13 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 		return -ENOSYS;
 	}
 
-	return api->dequeue(dev, buf, timeout);
+	ret = api->dequeue(dev, buf, timeout);
+	
+	if (ret == 0) {
+		(*buf)->state = VIDEO_BUF_STATE_DONE;
+	}
+
+	return ret;
 }
 
 /**
@@ -884,33 +893,7 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 	return api->get_selection(dev, sel);
 }
 
-/**
- * @brief Allocate aligned video buffer.
- *
- * @param size Size of the video buffer (in bytes).
- * @param align Alignment of the requested memory, must be a power of two.
- * @param timeout Timeout duration or K_NO_WAIT
- *
- * @retval pointer to allocated video buffer
- */
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout);
-
-/**
- * @brief Allocate video buffer.
- *
- * @param size Size of the video buffer (in bytes).
- * @param timeout Timeout duration or K_NO_WAIT
- *
- * @retval pointer to allocated video buffer
- */
-struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
-
-/**
- * @brief Release a video buffer.
- *
- * @param buf Pointer to the video buffer to release.
- */
-void video_buffer_release(struct video_buffer *buf);
+int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type);
 
 /**
  * @brief Search for a format that matches in a list of capabilities

@@ -279,20 +279,15 @@ int main(void)
 		bsize = fmt.pitch * caps.min_line_count;
 	}
 
-	/* Alloc video buffers and enqueue for capture */
+	err = video_request_buffers(ARRAY_SIZE(buffers), bsize, VIDEO_BUF_TYPE_OUTPUT);
+	if (err) {
+		LOG_ERR("Unable to request video buf");
+		return 0;
+	}
+
+	/* Enqueue buffers for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		/*
-		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
-		 * buffer alignment is needed in order to achieve the best performance
-		 */
-		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_FOREVER);
-		if (buffers[i] == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
-			return 0;
-		}
-		buffers[i]->type = type;
-		video_enqueue(video_dev, buffers[i]);
+		video_enqueue(video_dev, i);
 	}
 
 	/* Start video capture */
@@ -325,7 +320,7 @@ int main(void)
 		video_display_frame(display_dev, vbuf, fmt);
 #endif
 
-		err = video_enqueue(video_dev, vbuf);
+		err = video_enqueue(video_dev, vbuf->index);
 		if (err) {
 			LOG_ERR("Unable to requeue video buf");
 			return 0;
