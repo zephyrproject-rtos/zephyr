@@ -76,8 +76,6 @@ if(CONFIG_FLASH_SIMULATOR)
   zephyr_library_sources(flash_simulator.c)
   if(CONFIG_NATIVE_LIBRARY)
     target_sources(native_simulator INTERFACE flash_simulator_native.c)
-  elseif(CONFIG_ARCH_POSIX)
-    zephyr_library_sources(flash_simulator_native.c)
   endif()
 endif()
 
