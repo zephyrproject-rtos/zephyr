@@ -38,6 +38,10 @@
 	};
 };
 
+&timer21 {
+	status = "reserved";
+};
+
 dut: &uart21 {
 	status = "okay";
 	current-speed = <115200>;
@@ -45,6 +49,8 @@ dut: &uart21 {
 	pinctrl-1 = <&uart21_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+	timer = <&timer21>;
+	zephyr,pm-device-runtime-auto;
 };
 
 dut_aux: &uart22 {
@@ -54,6 +60,7 @@ dut_aux: &uart22 {
 	pinctrl-1 = <&uart22_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+	zephyr,pm-device-runtime-auto;
 };
 
 &timer20 {
