@@ -48,8 +48,11 @@ hl78xx_evt_monitor_handler_t event_dispatcher;
 
 static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt);
 static int hl78xx_on_idle_state_enter(struct hl78xx_data *data);
-static void hl78xx_begin_power_off_pulse(struct hl78xx_data *data);
-
+static int hl78xx_on_state_enter(struct hl78xx_data *data);
+static int hl78xx_on_state_leave(struct hl78xx_data *data);
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+static int hl78xx_pwr_dwn_feed_timer(struct hl78xx_data *data);
+#endif
 static void event_dispatcher_dispatch(struct hl78xx_evt *notif)
 {
 	if (event_dispatcher != NULL) {
@@ -74,12 +77,16 @@ static const char *hl78xx_state_str(enum hl78xx_state state)
 		return "run init script";
 	case MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT:
 		return "init fail diagnostic script ";
-	case MODEM_HL78XX_STATE_AWAIT_REGISTERED:
-		return "await registered";
+	case MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT:
+		return "run pmc cfg script";
 	case MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT:
 		return "run rat cfg script";
 	case MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT:
 		return "run enable gprs script";
+	case MODEM_HL78XX_STATE_AWAIT_WAKEUP:
+		return "await wakeup";
+	case MODEM_HL78XX_STATE_AWAIT_REGISTERED:
+		return "await registered";
 	case MODEM_HL78XX_STATE_CARRIER_ON:
 		return "carrier on";
 	case MODEM_HL78XX_STATE_CARRIER_OFF:
@@ -126,6 +133,12 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 		return "bus closed";
 	case MODEM_HL78XX_EVENT_SOCKET_READY:
 		return "socket ready";
+	case MODEM_HL78XX_EVENT_SOCKET_CLOSED:
+		return "socket closed";
+	case MODEM_HL78XX_EVENT_DEVICE_AWAKE:
+		return "device awake";
+	case MODEM_HL78XX_EVENT_DEVICE_ASLEEP:
+		return "device asleep";
 	default:
 		return "unknown event";
 	}
@@ -230,26 +243,49 @@ static void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 	enum hl78xx_registration_status registration_status = 0;
 
-	if (argc >= 2) {
-		/* +CEREG: <stat>[,<tac>[...]] */
-		registration_status = atoi(argv[1]);
-	} else {
+	if (argc < 2) {
 		return;
 	}
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	LOG_DBG("%d %s %d %s:%d", __LINE__, __func__, argc, argv[0], registration_status);
+	LOG_DBG("%d %s %d %s", __LINE__, __func__, argc, argv[0]);
 #endif
-	data->status.registration.network_state = registration_status;
+	if (argc > 2 && strlen(argv[1]) == 1 && strlen(argv[2]) == 1) {
+		/* This is a condition to distinguish received message between URC message and User
+		 * request network status request. If the message is User message, then argv[1] and
+		 * argv[2] will be 1 character long. If the message is URC request network status
+		 * request, then argv[1] will be 1 character long while argv[2] will be 2 characters
+		 * long.
+		 */
+		registration_status = atoi(argv[2]);
+	} else {
+		registration_status = atoi(argv[1]);
+	}
+
+	if (registration_status == data->status.registration.network_state_current) {
+		LOG_DBG("Registration status unchanged: %d", registration_status);
+		return;
+	}
+
+	data->status.registration.network_state_previous =
+		data->status.registration.network_state_current;
+	/* Update the current registration state */
+	data->status.registration.network_state_current = registration_status;
 	struct hl78xx_evt event = {.type = HL78XX_LTE_REGISTRATION_STAT_UPDATE,
-				   .content.reg_status = data->status.registration.network_state};
+				   .content.reg_status =
+					   data->status.registration.network_state_current};
 
 	event_dispatcher_dispatch(&event);
-
+	data->status.registration.is_registered_previously =
+		data->status.registration.is_registered_currently;
 	if (hl78xx_is_registered(data)) {
-		data->status.registration.is_registered = true;
+		data->status.registration.is_registered_currently = true;
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_REGISTERED);
+#if defined CONFIG_MODEM_HL78XX_POWER_DOWN &&                                                      \
+	defined CONFIG_MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+		hl78xx_pwr_dwn_feed_timer(data);
+#endif
 	} else {
-		data->status.registration.is_registered = false;
+		data->status.registration.is_registered_currently = false;
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEREGISTERED);
 	}
 }
@@ -257,25 +293,36 @@ static void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
 static void hl78xx_on_psmev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-
 	LOG_DBG("%d %s %d", __LINE__, __func__, argc);
-	if (argc >= 2) {
-		/* +CEREG: <stat>[,<tac>[...]] */
-		LOG_DBG("%d %s %s", __LINE__, __func__, argv[1]);
-	} else {
-		LOG_DBG("%d %s %s", __LINE__, __func__, argv[0]);
-	}
 #endif
+	if (argc < 2) {
+		return;
+	}
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+
+	data->status.psm.psmev_previous = data->status.psm.psmev_current;
+	data->status.psm.psmev_current = ATOI(argv[1], 0, "psmev");
+	struct hl78xx_evt event = {.type = HL78XX_LTE_PSMEV,
+				   .content.psm_event = data->status.psm.psmev_current};
+
+	event_dispatcher_dispatch(&event);
 }
 
 static void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
-	char ksup_data[2] = {0};
+	if (argc != 2) {
+		return;
+	}
 
-	strncpy(ksup_data, argv[1], sizeof(ksup_data) - 1);
+	int module_status = ATOI(argv[1], 0, "ksup");
+
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	LOG_DBG("Module status: %s", ksup_data);
+	LOG_DBG("Module status: %d", module_status);
 #endif
+	struct hl78xx_evt event = {.type = HL78XX_LTE_MODEM_STARTUP,
+				   .content.value = module_status};
+
+	event_dispatcher_dispatch(&event);
 }
 
 static void hl78xx_on_imei(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -407,12 +454,34 @@ static void hl78xx_on_socknotifydata(struct modem_chat *chat, char **argv, uint1
 	if (argc < 2) {
 		return;
 	}
-	socket_id = ATOI(argv[1], 0, "socket_id");
-	new_total = ATOI(argv[2], 0, "length");
+	socket_id = ATOI(argv[1], -1, "socket_id");
+	new_total = ATOI(argv[2], -1, "length");
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	LOG_DBG("%d %s %d %d", __LINE__, __func__, socket_id, new_total);
+	LOG_DBG("%d %d %d", __LINE__, socket_id, new_total);
 #endif
-	socknotifydata(socket_id, new_total);
+	socket_notify_data(socket_id, new_total);
+}
+
+static void hl78xx_on_ktcpnotif(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data)
+{
+	int socket_id = -1;
+	int tcp_notif = -1;
+
+	if (argc < 2) {
+		return;
+	}
+	socket_id = ATOI(argv[1], -1, "socket_id");
+	tcp_notif = ATOI(argv[2], -1, "tcp_notif");
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	LOG_DBG("%d %d %d", __LINE__, socket_id, tcp_notif);
+#endif
+
+	if (tcp_notif == -1) {
+		return;
+	}
+
+	tcp_notify_data(socket_id, tcp_notif);
 }
 
 static void hl78xx_on_ksrep(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -448,8 +517,7 @@ static void hl78xx_on_ksrat(struct modem_chat *chat, char **argv, uint16_t argc,
 	LOG_DBG("KSRAT: %s %s", argv[0], argv[1]);
 #endif
 }
-#endif /* MODEM_HL78XX_RAT */
-
+#else
 static void hl78xx_on_kselacq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	if (argc < 2) {
@@ -474,6 +542,7 @@ static void hl78xx_on_kselacq(struct modem_chat *chat, char **argv, uint16_t arg
 		data->kselacq_data.rat1, data->kselacq_data.rat2, data->kselacq_data.rat3);
 #endif
 }
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 static void hl78xx_on_kbndcfg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
@@ -498,6 +567,7 @@ static void hl78xx_on_kbndcfg(struct modem_chat *chat, char **argv, uint16_t arg
 	if (rat_id >= HL78XX_RAT_COUNT) {
 		return;
 	}
+
 	data->status.kbndcfg[rat_id].rat = rat_id;
 	strncpy(data->status.kbndcfg[rat_id].bnd_bitmap, argv[2], kbnd_bitmap_size);
 	data->status.kbndcfg[rat_id].bnd_bitmap[kbnd_bitmap_size] = '\0';
@@ -528,8 +598,28 @@ static void hl78xx_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc, 
 	LOG_DBG("%d %d [%s] [%s] [%s]", __LINE__, argc, argv[0], argv[1], argv[2]);
 #endif
 
-	data->status.rsrq = ATOI(argv[5], 0, "rssi");
-	data->status.rsrp = ATOI(argv[6], 0, "rssi");
+	data->status.rsrq = ATOI(argv[5], 0, "rssq");
+	data->status.rsrp = ATOI(argv[6], 0, "rssp");
+}
+
+static void hl78xx_on_kcellmeas(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data)
+{
+	if (argc < 5) {
+		return;
+	}
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	LOG_DBG("%d %d [%s] [%s] [%s]", __LINE__, argc, argv[0], argv[1], argv[2]);
+#endif
+	data->status.rsrp = (int)ATOD(argv[1], 0, "rsrp");
+	LOG_DBG("%d %s RSRP: %d", __LINE__, __func__, data->status.rsrp);
+	if (hl78xx_is_rsrp_valid(data)) {
+		data->status.registration.is_registered_currently = true;
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_REGISTERED);
+		hl78xx_release_socket_comms();
+	}
 }
 
 static void hl78xx_on_cfun(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -546,6 +636,84 @@ static void hl78xx_on_cfun(struct modem_chat *chat, char **argv, uint16_t argc, 
 	data->status.phone_functionality = ATOI(argv[1], 0, "phone_func");
 }
 
+static void hl78xx_on_ksleep(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	if (argc < 2) {
+		return;
+	}
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	LOG_DBG("%d %d [%s] [%s] ", __LINE__, argc, argv[0], argv[1]);
+#endif
+	if (argc > 3) {
+		data->status.pmc_sleep.mngt = ATOI(argv[1], 0, "mngt");
+		data->status.pmc_sleep.level = ATOI(argv[2], 0, "level");
+		data->status.pmc_sleep.delay = ATOI(argv[3], 0, "delay");
+	} else {
+		/* only the case when the modem sleep mode is always disabled
+		 * AT+KSLEEP?
+		 * +KSLEEP: 2
+		 * OK
+		 */
+		data->status.pmc_sleep.mngt = ATOI(argv[1], 0, "mngt");
+		data->status.pmc_sleep.level = 0;
+		data->status.pmc_sleep.delay = 0;
+	}
+}
+static void hl78xx_on_cpsms(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	if (argc < 2) {
+		return;
+	}
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	LOG_DBG("%d %d [%s] [%s] [%s] [%s]", __LINE__, argc, argv[0], argv[1], argv[4], argv[5]);
+#endif
+	if (argc > 3) {
+		data->status.pmc_cpsms.mode = ATOI(argv[1], 0, "mode");
+		int8_t active_time = binary_str_to_byte(argv[5]);
+		int8_t periodic_tau = binary_str_to_byte(argv[4]);
+
+		data->status.pmc_cpsms.active_time = (active_time == -EINVAL) ? 0 : active_time;
+		data->status.pmc_cpsms.periodic_tau = (periodic_tau == -EINVAL) ? 0 : periodic_tau;
+	} else {
+		data->status.pmc_cpsms.mode = ATOI(argv[1], 0, "mode");
+		data->status.pmc_cpsms.active_time = 0;
+		data->status.pmc_cpsms.periodic_tau = 0;
+	}
+}
+static void hl78xx_on_kedrxcfg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	if (argc < 3) {
+		return;
+	}
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+	int act_type = ATOI(argv[2], -1, "act_type");
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	LOG_DBG("%d %d [%s] [%s] ", __LINE__, argc, argv[0], argv[1]);
+#endif
+	if (act_type < 3 || act_type > 5) {
+		LOG_ERR("Invalid act_type %d", act_type);
+		return;
+	}
+
+	if (argc > 3) {
+		data->status.pmc_kedrxcfg[act_type - HL78XX_ACT_TYPE_RAT_MASK].mode =
+			ATOI(argv[1], 0, "mode");
+		data->status.pmc_kedrxcfg[act_type - HL78XX_ACT_TYPE_RAT_MASK].ack_type =
+			ATOI(argv[2], 0, "ack_type");
+		data->status.pmc_kedrxcfg[act_type - HL78XX_ACT_TYPE_RAT_MASK].requested_edrx =
+			ATOI(argv[3], 0, "r_edrx");
+	} else {
+		data->status.pmc_kedrxcfg[act_type - HL78XX_ACT_TYPE_RAT_MASK].mode =
+			ATOI(argv[1], 0, "mode");
+		data->status.pmc_kedrxcfg[act_type - HL78XX_ACT_TYPE_RAT_MASK].ack_type =
+			ATOI(argv[2], 0, "ack_type");
+		data->status.pmc_kedrxcfg[act_type - HL78XX_ACT_TYPE_RAT_MASK].requested_edrx = 0;
+	}
+}
 MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(allow_match, MODEM_CHAT_MATCH("OK", "", NULL),
 			  MODEM_CHAT_MATCH("+CME ERROR: ", "", NULL));
@@ -557,11 +725,14 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches, MODEM_CHAT_MATCH("+CREG: ", ",", hl78xx
 			  MODEM_CHAT_MATCH("+KSTATEV: ", ",", hl78xx_on_kstatev),
 			  MODEM_CHAT_MATCH("+KUDP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_DATA: ", ",", hl78xx_on_socknotifydata),
+			  MODEM_CHAT_MATCH("+KTCP_NOTIF: ", ",", hl78xx_on_ktcpnotif),
 			  MODEM_CHAT_MATCH("+KUDP_RCV: ", ",", hl78xx_on_udprcv),
 			  MODEM_CHAT_MATCH("+KBNDCFG: ", ",", hl78xx_on_kbndcfg),
 			  MODEM_CHAT_MATCH("+CSQ: ", ",", hl78xx_on_csq),
 			  MODEM_CHAT_MATCH("+CESQ: ", ",", hl78xx_on_cesq),
-			  MODEM_CHAT_MATCH("+CFUN: ", "", hl78xx_on_cfun));
+			  MODEM_CHAT_MATCH("+KCELLMEAS: ", ",", hl78xx_on_kcellmeas),
+			  MODEM_CHAT_MATCH("+CFUN: ", "", hl78xx_on_cfun),
+			  MODEM_CHAT_MATCH("+KEDRXCFG: ", ",", hl78xx_on_kedrxcfg));
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
 MODEM_CHAT_MATCH_DEFINE(at_ready_match, "+KSUP: ", "", hl78xx_on_ksup);
@@ -574,8 +745,11 @@ MODEM_CHAT_MATCH_DEFINE(iccid_match, "+CCID: ", "", hl78xx_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(ksrep_match, "+KSREP: ", ",", hl78xx_on_ksrep);
 #ifndef CONFIG_MODEM_HL78XX_AUTORAT
 MODEM_CHAT_MATCH_DEFINE(ksrat_match, "+KSRAT: ", "", hl78xx_on_ksrat);
-#endif /* CONFIG_MODEM_HL78XX_RAT */
+#else
 MODEM_CHAT_MATCH_DEFINE(kselacq_match, "+KSELACQ: ", ",", hl78xx_on_kselacq);
+#endif /* CONFIG_MODEM_HL78XX_RAT */
+MODEM_CHAT_MATCH_DEFINE(ksleep_match, "+KSLEEP: ", ",", hl78xx_on_ksleep);
+MODEM_CHAT_MATCH_DEFINE(cpsms_match, "+CPSMS: ", ",", hl78xx_on_cpsms);
 
 static void hl78xx_init_pipe(const struct device *dev)
 {
@@ -613,38 +787,55 @@ static int modem_init_chat(const struct device *dev)
 
 	return modem_chat_init(&data->chat, &chat_config);
 }
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSIMDET?", ok_match),
+			      /*  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match) */);
+
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_periodic_chat_script, hl78xx_periodic_chat_script_cmds,
+			 abort_matches, hl78xx_chat_callback_handler, 4);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	swir_hl78xx_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("", at_ready_match),
+	hl78xx_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("", at_ready_match),
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KHWIOCFG=3,1,6", ok_match),
+#endif
 	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0", allow_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSLEEP=2", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS=0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEDRXS=0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSLEEP?", ksleep_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS?", cpsms_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KEDRXCFG?", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KPATTERN="
 				   "\"" EOF_PATTERN "\"",
 				   ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CCID", iccid_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+GNSSCONF=10,1", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+GNSSNMEA=0,1000,0,4F", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+GNSSNMEA=0,1000,0,104F", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", ok_match),
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KPSMEV=1", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KCELLMEAS=1,35", ok_match),
+#endif
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=2", ok_match),
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSELACQ?", kselacq_match),
+#else
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", ksrat_match),
+#endif
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KBNDCFG?", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGACT?", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=5", ok_match));
+	MODEM_CHAT_SCRIPT_CMD_RESP(
+		"AT+CEREG=" CONFIG_MODEM_HL78XX_NETWORK_REG_STATUS_REPORT_CFG_CODE, ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(swir_hl78xx_init_chat_script, swir_hl78xx_init_chat_script_cmds,
-			 abort_matches, hl78xx_chat_callback_handler, 10);
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds, abort_matches,
+			 hl78xx_chat_callback_handler, 100);
 
 int modem_cmd_send_int(struct hl78xx_data *data, modem_chat_script_callback script_user_callback,
 		       const uint8_t *cmd, uint16_t cmd_size,
@@ -652,7 +843,11 @@ int modem_cmd_send_int(struct hl78xx_data *data, modem_chat_script_callback scri
 		       bool user_cmd)
 {
 	int ret = 0;
-
+#if defined CONFIG_MODEM_HL78XX_POWER_DOWN && defined CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	if (data->status.state == MODEM_HL78XX_STATE_CARRIER_ON) {
+		hl78xx_pwr_dwn_feed_timer(data);
+	}
+#endif
 	ret = k_mutex_lock(&data->tx_lock, K_NO_WAIT);
 	if (ret < 0) {
 		if (user_cmd == false) {
@@ -694,48 +889,95 @@ int modem_cmd_send_int(struct hl78xx_data *data, modem_chat_script_callback scri
 
 void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
-	ARG_UNUSED(port);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(pins);
+	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.vgpio_cb);
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct gpio_dt_spec *spec = &config->mdm_gpio_vgpio;
 
-	const struct gpio_dt_spec spec = {.port = port, .pin = pins};
+	if (spec == NULL || spec->port == NULL) {
+		LOG_ERR("VGPIO GPIO spec is not configured properly");
+		return;
+	}
 
-	LOG_DBG("VGPIO ISR callback %d", gpio_pin_get_dt(&spec));
+	if (!(pins & BIT(spec->pin))) {
+		return; /*  not our pin */
+	}
+
+	LOG_DBG("VGPIO ISR callback %s %d %d", spec->port->name, spec->pin, gpio_pin_get_dt(spec));
 }
 
-#if DT_INST_NODE_HAS_PROP(0, mdm_uart_dsr_gpios)
+#if HAS_UART_DSR_GPIO
 void mdm_uart_dsr_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
-	ARG_UNUSED(port);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(pins);
+	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.vgpio_cb);
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct gpio_dt_spec *spec = &config->mdm_gpio_uart_dsr;
 
-	const struct gpio_dt_spec spec = {.port = port, .pin = pins};
+	if (spec == NULL || spec->port == NULL) {
+		LOG_ERR("DSR GPIO spec is not configured properly");
+		return;
+	}
+	if (!(pins & BIT(spec->pin))) {
+		return; /*  not our pin */
+	}
 
-	LOG_DBG("DSR ISR callback %d", gpio_pin_get_dt(&spec));
+	LOG_DBG("DSR ISR callback %d", gpio_pin_get_dt(spec));
 }
 #endif
 
 void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
-	ARG_UNUSED(port);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(pins);
+	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.gpio6_cb);
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct gpio_dt_spec *spec = &config->mdm_gpio_gpio6;
+	enum pm_device_state state;
+	int rc = 0;
 
-	const struct gpio_dt_spec spec = {.port = port, .pin = pins};
+	if (spec == NULL || spec->port == NULL) {
+		LOG_ERR("GPIO6 GPIO spec is not configured properly");
+		return;
+	}
 
-	LOG_DBG("GPIO6 ISR callback %d", gpio_pin_get_dt(&spec));
+	if (!(pins & BIT(spec->pin))) {
+		return; /*  not our pin */
+	}
+
+	bool pin_state = gpio_pin_get_dt(spec);
+
+	LOG_DBG("GPIO6 ISR callback %s %d %d", spec->port->name, spec->pin, pin_state);
+
+	rc = pm_device_state_get(config->uart, &state);
+	if (rc == 0) {
+		LOG_DBG("PM state %d ret: %d", state, rc);
+	}
+
+	if (!pin_state) {
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEVICE_ASLEEP);
+		data->status.pmc_power_down.status_previously =
+			data->status.pmc_power_down.status_currently;
+		data->status.pmc_power_down.status_currently = true;
+	} else {
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEVICE_AWAKE);
+		data->status.pmc_power_down.status_previously =
+			data->status.pmc_power_down.status_currently;
+		data->status.pmc_power_down.status_currently = false;
+	}
 }
 
 void mdm_uart_cts_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
-	ARG_UNUSED(port);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(pins);
+	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.gpio6_cb);
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct gpio_dt_spec *spec = &config->mdm_gpio_uart_cts;
 
-	const struct gpio_dt_spec spec = {.port = port, .pin = pins};
+	if (spec == NULL || spec->port == NULL) {
+		LOG_ERR("CTS GPIO spec is not configured properly");
+		return;
+	}
+	if (!(pins & BIT(spec->pin))) {
+		return; /*  not our pin */
+	}
 
-	LOG_DBG("CTS ISR callback %d", gpio_pin_get_dt(&spec));
+	LOG_DBG("CTS ISR callback %d", gpio_pin_get_dt(spec));
 }
 
 static int hl78xx_on_reset_pulse_state_enter(struct hl78xx_data *data)
@@ -860,7 +1102,7 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 		break;
 
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT);
 
 		break;
 
@@ -1024,6 +1266,7 @@ static int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 
 		*rat_request = HL78XX_RAT_GSM;
 	}
+
 #ifdef CONFIG_MODEM_FW_R6
 	else if (IS_ENABLED(CONFIG_MODEM_HL78XX_RAT_NBNTN)) {
 		cmd_set_rat = (const char *)SET_RAT_NBNTN_CMD_LEGACY;
@@ -1031,6 +1274,7 @@ static int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		*rat_request = HL78XX_RAT_NBNTN;
 	}
 #endif /* CONFIG_MODEM_FW_R6 */
+
 #endif
 	else {
 		LOG_ERR("%d %s No rat has been selected.", __LINE__, __func__);
@@ -1052,6 +1296,7 @@ static int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	}
 
 #endif /*  CONFIG_MODEM_HL78XX_AUTORAT  */
+
 error:
 	return ret;
 }
@@ -1184,6 +1429,211 @@ static int hl78xx_on_run_rat_cfg_script_state_leave(struct hl78xx_data *data)
 {
 	return 0;
 }
+#ifndef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_disable_pmc_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSLEEP=2", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS=0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KEDRXCFG=0", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_disable_pmc_chat_script, hl78xx_disable_pmc_chat_script_cmds,
+			 abort_matches, hl78xx_chat_callback_handler, 10);
+
+static int hl78xx_disabe_pmc(struct hl78xx_data *data)
+{
+	LOG_DBG("%d Disabling Power Management Config", __LINE__);
+	return modem_chat_run_script_async(&data->chat, &hl78xx_disable_pmc_chat_script);
+}
+#else
+static int hl78xx_enable_pmc(struct hl78xx_data *data)
+{
+	const char *turn_on_pmc_cmd = "AT+KSLEEP=1,2,0";
+
+	LOG_DBG("%d Enabling Power Management Config", __LINE__);
+	return modem_cmd_send_int(data, NULL, turn_on_pmc_cmd, strlen(turn_on_pmc_cmd), &ok_match,
+				  1, false);
+}
+
+static int hl78xx_psm_settings(struct hl78xx_data *data)
+{
+	if (data->status.registration.rat_mode != HL78XX_RAT_NB1 &&
+	    data->status.registration.rat_mode != HL78XX_RAT_CAT_M1) {
+		LOG_DBG("PSM is not supported for RAT mode: %d",
+			data->status.registration.rat_mode);
+		return 0;
+	}
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	if (data->status.pmc_cpsms.mode == false) {
+		const char *turn_on_psm_cmd = "AT+CPSMS=1,,,\"" CONFIG_MODEM_HL78XX_PSM_PERIODIC_TAU
+					      "\",\"" CONFIG_MODEM_HL78XX_PSM_ACTIVE_TIME "\"";
+
+		return modem_cmd_send_int(data, NULL, turn_on_psm_cmd, strlen(turn_on_psm_cmd),
+					  &ok_match, 1, false);
+	}
+#else
+	if (data->status.pmc_cpsms.mode == true) {
+		const char *turn_off_psm_cmd = "AT+CPSMS=0";
+
+		return modem_cmd_send_int(data, NULL, turn_off_psm_cmd, strlen(turn_off_psm_cmd),
+					  &ok_match, 1, false);
+	}
+#endif
+	LOG_DBG("PSM is already configured for RAT mode: %d", data->status.registration.rat_mode);
+	return 0; /* PSM already disabled */
+}
+
+static int hl78xx_edrx_settings(struct hl78xx_data *data)
+{
+	if (data->status.registration.rat_mode != HL78XX_RAT_NB1 &&
+	    data->status.registration.rat_mode != HL78XX_RAT_CAT_M1) {
+		LOG_DBG("eDRX is not supported for RAT mode: %d",
+			data->status.registration.rat_mode);
+		return 0;
+	}
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	if (data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_DISABLE ||
+	    data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_DISABLE_AND_ERASE_CFG) {
+		char turn_on_edrx_cmd[sizeof("AT+KEDRXCFG=1,X,XXXX,XXXX")] = {0};
+		uint8_t ack_type = 4;
+
+		ack_type = (data->status.registration.rat_mode == HL78XX_RAT_NB1) ? 5 : ack_type;
+
+		snprintf(turn_on_edrx_cmd, sizeof(turn_on_edrx_cmd), "AT+KEDRXCFG=1,%hhu,%d,%d",
+			 ack_type, CONFIG_MODEM_HL78XX_EDRX_VALUE, CONFIG_MODEM_HL78XX_PTW_VALUE);
+
+		return modem_cmd_send_int(data, NULL, turn_on_edrx_cmd, strlen(turn_on_edrx_cmd),
+					  &ok_match, 1, false);
+	}
+#else
+	if (data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_ENABLE ||
+	    data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_ENABLE_W_URC) {
+		char *turn_off_edrx_cmd = "AT+KEDRXCFG=0";
+
+		return modem_cmd_send_int(data, NULL, turn_off_edrx_cmd, strlen(turn_off_edrx_cmd),
+					  &ok_match, 1, false);
+	}
+#endif
+
+	LOG_DBG("eDRX is already configured for RAT mode: %d", data->status.registration.rat_mode);
+	return 0;
+}
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+void hl78xx_pwr_dwn_work_handler(struct k_work *work_item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
+	struct hl78xx_data *data = CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_pwr_dwn_work);
+
+	LOG_DBG("%d %s: Power down work handler called", __LINE__, __func__);
+	hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
+	data->status.pmc_power_down.requested_previously =
+		data->status.pmc_power_down.requested_currently;
+	data->status.pmc_power_down.requested_currently = true;
+}
+
+static int hl78xx_pwr_dwn_feed_timer(struct hl78xx_data *data)
+{
+#ifdef CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	k_work_reschedule(&data->hl78xx_pwr_dwn_work,
+			  K_SECONDS(CONFIG_MODEM_HL78XX_POWER_DOWN_DELAY));
+#else
+	k_work_reschedule(&data->hl78xx_pwr_dwn_work,
+			  K_SECONDS(CONFIG_MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME));
+#endif
+	data->status.pmc_power_down.requested_previously =
+		data->status.pmc_power_down.requested_currently;
+	data->status.pmc_power_down.requested_currently = false;
+
+	return 0;
+}
+
+static int hl78xx_pwr_dwn_settings(struct hl78xx_data *data)
+{
+	LOG_DBG("%d Modem Power Down Settings", __LINE__);
+	return 0;
+}
+#endif
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+static int hl78xx_on_pmc_cfg_script_state_enter(struct hl78xx_data *data)
+{
+	int ret = 0;
+	bool modem_require_restart = false;
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	hl78xx_enable_pmc(data);
+	hl78xx_psm_settings(data);
+	hl78xx_edrx_settings(data);
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	hl78xx_pwr_dwn_settings(data);
+#endif
+#else
+	hl78xx_disabe_pmc(data);
+	LOG_DBG("%d Disabling Power Management Config", __LINE__);
+#endif
+	if (modem_require_restart) {
+		const char *cmd_restart = (const char *)SET_AIRPLANE_MODE_CMD;
+
+		LOG_DBG("%d Reset required", __LINE__);
+
+		ret = modem_cmd_send_int(data, NULL, cmd_restart, strlen(cmd_restart), &ok_match, 1,
+					 false);
+		if (ret < 0) {
+			goto error;
+		}
+		hl78xx_start_timer(data, K_MSEC(100));
+		return 0;
+	}
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	hl78xx_chat_callback_handler(&data->chat, MODEM_CHAT_SCRIPT_RESULT_SUCCESS, data);
+#endif
+	return 0;
+error:
+	hl78xx_chat_callback_handler(&data->chat, MODEM_CHAT_SCRIPT_RESULT_ABORT, data);
+	LOG_ERR("Failed to send command: %d", ret);
+	return ret;
+}
+
+static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
+{
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+
+	switch (evt) {
+	case MODEM_HL78XX_EVENT_TIMEOUT:
+		LOG_DBG("Rebooting modem to apply new RAT settings");
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_REQUIRE_RESTART);
+		break;
+
+	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT);
+		break;
+
+	case MODEM_HL78XX_EVENT_SUSPEND:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
+		break;
+	case MODEM_HL78XX_EVENT_SCRIPT_REQUIRE_RESTART:
+		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
+			break;
+		}
+
+		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RESET_PULSE);
+			break;
+		}
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		break;
+	default:
+		break;
+	}
+}
+
+static int hl78xx_on_run_pmc_cfg_script_state_leave(struct hl78xx_data *data)
+{
+	return 0;
+}
 
 static int hl78xx_on_await_power_off_state_enter(struct hl78xx_data *data)
 {
@@ -1264,9 +1714,52 @@ static void hl78xx_enable_gprs_event_handler(struct hl78xx_data *data, enum hl78
 		break;
 	}
 }
+static int hl78xx_on_await_wakeup_state_enter(struct hl78xx_data *data)
+{
+	hl78xx_start_timer(data, MODEM_HL78XX_PERIODIC_SCRIPT_TIMEOUT);
+	return 0;
+}
+
+static void hl78xx_await_wakeup_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
+{
+	switch (evt) {
+	case MODEM_HL78XX_EVENT_BUS_OPENED:
+		modem_chat_attach(&data->chat, data->uart_pipe);
+		break;
+	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+		break;
+	case MODEM_HL78XX_EVENT_DEVICE_ASLEEP:
+		break;
+	case MODEM_HL78XX_EVENT_DEVICE_AWAKE:
+		hl78xx_stop_timer(data);
+		modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
+		modem_pipe_open_async(data->uart_pipe);
+		break;
+	case MODEM_HL78XX_EVENT_TIMEOUT:
+		/* If timeout occurs, that means the device could not be waken up for
+		 * MODEM_HL78XX_PERIODIC_SCRIPT_TIMEOUT,
+		 * so take some action here
+		 */
+		break;
+
+	case MODEM_HL78XX_EVENT_REGISTERED:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_ON);
+		break;
+
+	case MODEM_HL78XX_EVENT_SUSPEND:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
+		break;
+
+	default:
+		break;
+	}
+}
 
 static int hl78xx_on_await_registered_state_enter(struct hl78xx_data *data)
 {
+	/* Start timer to check if psm event received */
+	hl78xx_start_timer(data, K_MSEC(MDM_PSMEVT_RECEIVE_TIMEOUT));
 	return 0;
 }
 
@@ -1275,14 +1768,36 @@ static void hl78xx_await_registered_event_handler(struct hl78xx_data *data, enum
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
-		hl78xx_start_timer(data, MODEM_HL78XX_PERIODIC_SCRIPT_TIMEOUT);
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (data->status.psm.psmev_current == HL78XX_PSM_EVENT_ENTER) {
+			/* Just confirm the previous state was registered */
+			if (data->status.registration.is_registered_previously) {
+				LOG_DBG("%d: PSM event received, modem is in PSM mode", __LINE__);
+				hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+			}
+		} else {
+			if (data->status.registration.is_registered_previously) {
+				if (data->status.psm.psmev_current == HL78XX_PSM_EVENT_ENTER) {
+					LOG_DBG("%d: PSM exit requested, waiting for "
+						"registration",
+						__LINE__);
+				}
+				/* Most likely out of coverage. take a action here */
+			} else {
+				/* There was no previous registration state */
+				/* Do nothing wait for it if searching is in progress */
+				LOG_DBG("%d waiting for registration : Current network "
+					"state: %d",
+					__LINE__, data->status.registration.network_state_current);
+			}
+		}
 		break;
 
 	case MODEM_HL78XX_EVENT_REGISTERED:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_ON);
+
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
@@ -1302,7 +1817,19 @@ static int hl78xx_on_await_registered_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 {
-	iface_status_work_cb(data, hl78xx_chat_callback_handler);
+	LOG_DBG("%d %s: Entering carrier on state %d %d %d %d", __LINE__, __func__,
+		data->status.registration.is_registered_previously,
+		data->status.registration.is_registered_currently,
+		data->status.registration.network_state_current,
+		data->status.registration.network_state_previous);
+	if (!data->status.psm.psmev_previous && !data->status.psm.psmev_current &&
+	    data->status.registration.network_state_previous != HL78XX_REGISTRATION_UNKNOWN) {
+		iface_status_work_cb(data, hl78xx_chat_callback_handler);
+	}
+
+	notif_carrier_on();
+	LOG_DBG("%d psm %d %d", __LINE__, data->status.psm.psmev_previous,
+		data->status.psm.psmev_current);
 	return 0;
 }
 
@@ -1310,20 +1837,42 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 {
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
-		hl78xx_start_timer(data, K_SECONDS(2));
+		if (!data->status.psm.psmev_previous && !data->status.psm.psmev_current &&
+		    data->status.registration.network_state_previous !=
+			    HL78XX_REGISTRATION_UNKNOWN) {
+			hl78xx_start_timer(data, K_SECONDS(2));
+		}
 		break;
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
 		break;
 	case MODEM_HL78XX_EVENT_TIMEOUT:
-		dns_work_cb();
+		LOG_DBG("%d %d %d %d", __LINE__, data->status.psm.psmev_previous,
+			data->status.psm.psmev_current,
+			data->status.registration.network_state_previous);
+		LOG_DBG("%d %d %d", __LINE__, data->status.pmc_power_down.requested_previously,
+			data->status.pmc_power_down.requested_currently);
+		if (data->status.pmc_power_down.requested_previously &&
+		    !data->status.pmc_power_down.requested_currently) {
+			dns_work_cb(true);
+			hl78xx_release_socket_comms();
+
+		} else if ((!data->status.psm.psmev_previous && !data->status.psm.psmev_current &&
+			    data->status.registration.network_state_previous !=
+				    HL78XX_REGISTRATION_UNKNOWN)) {
+			dns_work_cb(false);
+		} else {
+			LOG_DBG("%d Unexpected condition in carrier on state: %d", __LINE__, evt);
+		}
 		break;
 	case MODEM_HL78XX_EVENT_DEREGISTERED:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
 		break;
 	case MODEM_HL78XX_EVENT_SUSPEND:
+		LOG_DBG("%d %s: Modem is suspended, entering power off state", __LINE__, __func__);
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
 		break;
-
+	case MODEM_HL78XX_EVENT_SOCKET_CLOSED:
+		break;
 	default:
 		break;
 	}
@@ -1337,12 +1886,14 @@ static int hl78xx_on_carrier_on_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_carrier_off_state_enter(struct hl78xx_data *data)
 {
+	LOG_DBG("%d carrier off", __LINE__);
 	notif_carrier_off();
 	/* Check whether or not there is any sockets are connected,
 	 * if true, wait until sockets are closed properly
 	 */
+	hl78xx_start_timer(data, K_MSEC(100));
 	if (check_if_any_socket_connected() == false) {
-		hl78xx_start_timer(data, K_MSEC(100));
+		LOG_DBG("%d THERE is socket connected", __LINE__);
 	}
 	return 0;
 }
@@ -1353,7 +1904,8 @@ static void hl78xx_carrier_off_event_handler(struct hl78xx_data *data, enum hl78
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
 	case MODEM_HL78XX_EVENT_TIMEOUT:
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
+		notif_carrier_on();
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_ON);
 		break;
 	case MODEM_HL78XX_EVENT_DEREGISTERED:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
@@ -1374,16 +1926,33 @@ static int hl78xx_on_carrier_off_state_leave(struct hl78xx_data *data)
 	return 0;
 }
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl78xx_pwroff_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP(SET_AIRPLANE_MODE_CMD_LEGACY, ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPWROFF", ok_match),
+			      /*  MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSREP?", ksrep_match) */);
+
+MODEM_CHAT_SCRIPT_DEFINE(swir_hl78xx_pwroff_script, swir_hl78xx_pwroff_cmds, abort_matches,
+			 hl78xx_chat_callback_handler, 4);
+
 static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
 {
-	hl78xx_start_timer(data, K_MSEC(2000));
-	return 0;
+	return modem_chat_run_script_async(&data->chat, &swir_hl78xx_pwroff_script);
 }
 
 static void hl78xx_init_power_off_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	if (evt == MODEM_HL78XX_EVENT_TIMEOUT) {
-		hl78xx_begin_power_off_pulse(data);
+	switch (evt) {
+	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		notif_carrier_off();
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		break;
+	case MODEM_HL78XX_EVENT_TIMEOUT:
+		break;
+	case MODEM_HL78XX_EVENT_DEREGISTERED:
+		hl78xx_stop_timer(data);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -1427,13 +1996,12 @@ static int hl78xx_on_idle_state_enter(struct hl78xx_data *data)
 	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
+		LOG_DBG("%d: Wake pin is enabled, setting it to low", __LINE__);
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
 	}
 
-	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
-		gpio_pin_set_dt(&config->mdm_gpio_reset, 1);
-	}
 	modem_chat_release(&data->chat);
+	modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
 	modem_pipe_close_async(data->uart_pipe);
 	k_sem_give(&data->suspended_sem);
 	return 0;
@@ -1442,9 +2010,37 @@ static int hl78xx_on_idle_state_enter(struct hl78xx_data *data)
 static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
-
+#if defined CONFIG_MODEM_HL78XX_LOW_POWER_MODE && defined CONFIG_PM_DEVICE
+	enum pm_device_state state;
+	enum pm_device_action action;
+	int rc;
+#endif
 	switch (evt) {
+	case MODEM_HL78XX_EVENT_BUS_CLOSED:
+#if defined CONFIG_MODEM_HL78XX_LOW_POWER_MODE && defined CONFIG_PM_DEVICE
+		rc = pm_device_state_get(config->uart, &state);
+		if (rc == 0) {
+			LOG_DBG("PM state %d ret: %d", state, rc);
+		}
+		action = PM_DEVICE_ACTION_SUSPEND;
+		uart_irq_rx_disable(config->uart);
+		rc = pm_device_action_run(config->uart, action);
+		if (rc == 0 || rc == -EALREADY) {
+			LOG_DBG("PM action run: %d", rc);
+		} else {
+			LOG_DBG("PM action run failed: %d", rc);
+		}
+#else
+		LOG_DBG("%d: Bus closed, entering idle state", __LINE__);
+#endif
+		break;
+
 	case MODEM_HL78XX_EVENT_RESUME:
+		if (data->status.psm.psmev_current == HL78XX_PSM_EVENT_ENTER) {
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_WAKEUP);
+
+			break;
+		}
 		if (config->autostarts) {
 			hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_POWER_ON);
 			break;
@@ -1474,7 +2070,11 @@ static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_even
 static int hl78xx_on_idle_state_leave(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
-
+#if defined CONFIG_MODEM_HL78XX_LOW_POWER_MODE && defined CONFIG_PM_DEVICE
+	enum pm_device_state state;
+	enum pm_device_action action;
+	int rc = 0;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE && CONFIG_PM_DEVICE */
 	k_sem_take(&data->suspended_sem, K_NO_WAIT);
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
@@ -1484,14 +2084,31 @@ static int hl78xx_on_idle_state_leave(struct hl78xx_data *data)
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 	}
-
+#if defined CONFIG_MODEM_HL78XX_LOW_POWER_MODE && defined CONFIG_PM_DEVICE
+	rc = pm_device_state_get(config->uart, &state);
+	if (rc == 0) {
+		LOG_DBG("PM state: %d ret: %d", state, rc);
+	} else {
+		LOG_DBG("PM state get failed: %d", rc);
+	}
+	action = PM_DEVICE_ACTION_RESUME;
+	rc = pm_device_action_run(config->uart, action);
+	if (rc == 0 || rc == -EALREADY) {
+		LOG_DBG("PM action run: %d", rc);
+	} else {
+		LOG_DBG("PM action run failed: %d", rc);
+	}
+	uart_irq_rx_enable(config->uart);
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE && CONFIG_PM_DEVICE */
 	return 0;
 }
 
 static int hl78xx_on_state_enter(struct hl78xx_data *data)
 {
 	int ret = 0;
-
+#ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
+	LOG_DBG("%d %d", __LINE__, data->status.state);
+#endif
 	switch (data->status.state) {
 	case MODEM_HL78XX_STATE_IDLE:
 		ret = hl78xx_on_idle_state_enter(data);
@@ -1522,9 +2139,16 @@ static int hl78xx_on_state_enter(struct hl78xx_data *data)
 	case MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT:
 		ret = hl78xx_on_rat_cfg_script_state_enter(data);
 		break;
+	case MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT:
+		ret = hl78xx_on_pmc_cfg_script_state_enter(data);
+		break;
 
 	case MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT:
 		ret = hl78xx_on_enable_gprs_state_enter(data);
+		break;
+
+	case MODEM_HL78XX_STATE_AWAIT_WAKEUP:
+		ret = hl78xx_on_await_wakeup_state_enter(data);
 		break;
 
 	case MODEM_HL78XX_STATE_AWAIT_REGISTERED:
@@ -1564,7 +2188,7 @@ static int hl78xx_on_state_leave(struct hl78xx_data *data)
 	int ret = 0;
 
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-	LOG_DBG("%d %s %d", __LINE__, __func__, data->status.state);
+	LOG_DBG("%d %d", __LINE__, data->status.state);
 #endif
 	switch (data->status.state) {
 	case MODEM_HL78XX_STATE_IDLE:
@@ -1581,6 +2205,10 @@ static int hl78xx_on_state_leave(struct hl78xx_data *data)
 
 	case MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT:
 		ret = hl78xx_on_run_rat_cfg_script_state_leave(data);
+		break;
+
+	case MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT:
+		ret = hl78xx_on_run_pmc_cfg_script_state_leave(data);
 		break;
 
 	case MODEM_HL78XX_STATE_AWAIT_REGISTERED:
@@ -1631,17 +2259,6 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state)
 	}
 }
 
-static void hl78xx_begin_power_off_pulse(struct hl78xx_data *data)
-{
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
-
-	modem_pipe_close_async(data->uart_pipe);
-
-	hl78xx_enter_state(data, hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)
-					 ? MODEM_HL78XX_STATE_POWER_OFF_PULSE
-					 : MODEM_HL78XX_STATE_IDLE);
-}
-
 static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	enum hl78xx_state state;
@@ -1682,8 +2299,16 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 		hl78xx_run_rat_cfg_script_event_handler(data, evt);
 		break;
 
+	case MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT:
+		hl78xx_run_pmc_cfg_script_event_handler(data, evt);
+		break;
+
 	case MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT:
 		hl78xx_enable_gprs_event_handler(data, evt);
+		break;
+
+	case MODEM_HL78XX_STATE_AWAIT_WAKEUP:
+		hl78xx_await_wakeup_event_handler(data, evt);
 		break;
 
 	case MODEM_HL78XX_STATE_AWAIT_REGISTERED:
@@ -1780,6 +2405,9 @@ static int hl78xx_init(const struct device *dev)
 	k_sem_init(&data->suspended_sem, 0, 1);
 	k_sem_init(&data->script_stopped_sem_tx_int, 0, 1);
 	k_sem_init(&data->script_stopped_sem_rx_int, 0, 1);
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	k_work_init_delayable(&data->hl78xx_pwr_dwn_work, hl78xx_pwr_dwn_work_handler);
+#endif
 	/* reset to default  */
 	data->buffers.eof_pattern_size = strlen(data->buffers.eof_pattern);
 	memset(data->identity.apn, 0, MDM_APN_MAX_LENGTH);
@@ -1814,20 +2442,20 @@ static int hl78xx_init(const struct device *dev)
 		gpio_flags_t flags;
 		const char *name;
 	} gpio_config[GPIO_CONFIG_LEN] = {
-		{&config->mdm_gpio_reset, GPIO_OUTPUT_LOW, "reset"},
-		{&config->mdm_gpio_wake, GPIO_OUTPUT_HIGH, "wake"},
+		{&config->mdm_gpio_reset, GPIO_OUTPUT, "reset"},
+		{&config->mdm_gpio_wake, GPIO_OUTPUT, "wake"},
 		{&config->mdm_gpio_vgpio, GPIO_INPUT, "VGPIO"},
 #if HAS_PWR_ON_GPIO
-		{&config->mdm_gpio_pwr_on, GPIO_OUTPUT_HIGH, "pwr_on"},
+		{&config->mdm_gpio_pwr_on, GPIO_OUTPUT, "pwr_on"},
 #endif
 #if HAS_FAST_SHUTD_GPIO
-		{&config->mdm_gpio_fast_shtdown, GPIO_OUTPUT_LOW, "fast_shutdown"},
+		{&config->mdm_gpio_fast_shtdown, GPIO_OUTPUT, "fast_shutdown"},
 #endif
 #if HAS_UART_DTR_GPIO
 		{&config->mdm_gpio_uart_dtr, GPIO_OUTPUT, "DTR"},
 #endif
 #if HAS_GPIO6_GPIO
-		{&config->mdm_gpio_gpio6, GPIO_OUTPUT, "GPIO6"},
+		{&config->mdm_gpio_gpio6, GPIO_INPUT, "GPIO6"},
 #endif
 	};
 
@@ -1854,7 +2482,24 @@ static int hl78xx_init(const struct device *dev)
 		LOG_ERR("Error configuring VGPIO interrupt! (%d)", ret);
 		goto error;
 	}
+#if HAS_GPIO6_GPIO
+	LOG_DBG("%d %s: GPIO6 is enabled", __LINE__, __func__);
+	/* GPIO6 interrupt setup */
+	gpio_init_callback(&data->gpio_cbs.gpio6_cb, mdm_gpio6_callback_isr,
+			   BIT(config->mdm_gpio_gpio6.pin));
 
+	ret = gpio_add_callback(config->mdm_gpio_gpio6.port, &data->gpio_cbs.gpio6_cb);
+	if (ret) {
+		LOG_ERR("Cannot setup GPIO6 callback! (%d)", ret);
+		goto error;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&config->mdm_gpio_gpio6, GPIO_INT_EDGE_BOTH);
+	if (ret) {
+		LOG_ERR("Error configuring GPIO6 interrupt! (%d)", ret);
+		goto error;
+	}
+#endif /* HAS_GPIO6_GPIO */
 	(void)hl78xx_init_pipe(dev);
 
 	ret = modem_init_chat(dev);
@@ -1894,7 +2539,7 @@ static DEVICE_API(hl78xx, hl78xx_api) = {
 };
 
 #define MODEM_HL78XX_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,     \
-				     init_script)                                                  \
+				     init_script, periodic_script)                                 \
 	static const struct hl78xx_config hl78xx_cfg_##inst = {                                    \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.mdm_gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),             \
@@ -1914,6 +2559,7 @@ static DEVICE_API(hl78xx, hl78xx_api) = {
 		.shutdown_time_ms = (shutdown_ms),                                                 \
 		.autostarts = (start),                                                             \
 		.init_chat_script = (init_script),                                                 \
+		.periodic_chat_script = (periodic_script),                                         \
 	};                                                                                         \
 	static struct hl78xx_data hl78xx_data_##inst = {                                           \
 		.buffers.delimiter = "\r\n",                                                       \
@@ -1925,8 +2571,11 @@ static DEVICE_API(hl78xx, hl78xx_api) = {
 			      CONFIG_MODEM_HL78XX_DEV_INIT_PRIORITY, &hl78xx_api);
 
 #define MODEM_DEVICE_SWIR_HL78XX(inst)                                                             \
-	MODEM_HL78XX_DEFINE_INSTANCE(inst, 1500, 100, 1000, 1000, false,                           \
-				     &swir_hl78xx_init_chat_script)
+	MODEM_HL78XX_DEFINE_INSTANCE(inst, CONFIG_MODEM_HL78XX_DEV_POWER_PULSE_DURATION,           \
+				     CONFIG_MODEM_HL78XX_DEV_RESET_PULSE_DURATION,                 \
+				     CONFIG_MODEM_HL78XX_DEV_STARTUP_TIME,                         \
+				     CONFIG_MODEM_HL78XX_DEV_SHUTDOWN_TIME, false,                 \
+				     &hl78xx_init_chat_script, &hl78xx_periodic_chat_script)
 
 #define DT_DRV_COMPAT swir_hl7812
 DT_INST_FOREACH_STATUS_OKAY(MODEM_DEVICE_SWIR_HL78XX)

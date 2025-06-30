@@ -121,7 +121,7 @@ int hl78xx_api_func_get_registration_status(const struct device *dev,
 	}
 
 	*tech = data->status.registration.rat_mode;
-	*status = data->status.registration.network_state;
+	*status = data->status.registration.network_state_current;
 
 	return 0;
 }
