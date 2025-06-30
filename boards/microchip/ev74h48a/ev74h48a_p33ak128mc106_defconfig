@@ -1,0 +1,20 @@
+# Enables the RAM-based console backend for logging output.
+CONFIG_CONSOLE=y
+CONFIG_RAM_CONSOLE=y
+
+# Enables support for GPIO drivers on the target platform.
+# CONFIG_GPIO=y
+
+# Defines the system hardware clock frequency as 8 MHz.
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=8000000
+
+# Configures the system tick rate to 1000 ticks per second (1 ms tick interval).
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+
+# Specifies a single-core configuration for the SoC.
+CONFIG_MP_MAX_NUM_CPUS=1
+
+# For XC-DSC toolchain the default check init script of zephyr will fail
+# because of an extra prepended underscore on symbols generated,
+# For this reason keeping it disabled
+CONFIG_CHECK_INIT_PRIORITIES=n

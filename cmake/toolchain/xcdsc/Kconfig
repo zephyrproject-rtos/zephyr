@@ -1,0 +1,16 @@
+config TOOLCHAIN_XCDSC
+	bool "MPLAB XC-DSC toolchain"
+	select HAVE_CUSTOM_LINKER_SCRIPT
+	help
+	  Enable support for compiling with MPLAB XC-DSC toolchain for dsPIC.
+config PICOLIBC_SUPPORTED
+	def_bool y
+	help
+	  XC-DSC toolchain supports picolib for C development.
+config TOOLCHAIN_XCDSC_SUPPORTS_THREAD_LOCAL_STORAGE
+	bool "XC-DSC toolchain supports TLS"
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	help
+	  Set this if the XC-DSC toolchain being used for the build supports
+	  thread local storage.

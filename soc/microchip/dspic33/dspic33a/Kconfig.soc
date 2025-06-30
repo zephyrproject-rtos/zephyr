@@ -1,0 +1,21 @@
+config SOC_SERIES_DSPIC33A
+	bool
+
+select SOC_FAMILY_MICROCHIP_DSPIC33
+	help
+	Enable support for Microchip DSPIC33 DSC series
+
+config SOC_SERIES
+	default "dspic33a" if SOC_SERIES_DSPIC33A
+
+config SOC_P33AK128MC106
+	bool
+	select SOC_SERIES_DSPIC33A
+
+config SOC_P33AK256MC506
+	bool
+	select SOC_SERIES_DSPIC33A
+
+config SOC
+	default "p33ak128mc106" if SOC_P33AK128MC106
+	default "p33ak256mc506" if SOC_P33AK256MC506

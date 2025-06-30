@@ -167,6 +167,28 @@ config RX
 	help
 	  Renesas RX architecture
 
+config DSPIC
+	bool
+	select ARCH_IS_SET
+	select STACK_GROWS_UP
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select LITTLE_ENDIAN
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	select THREAD_LOCAL_STORAGE
+	select INIT_STACKS
+	select STACK_SENTINAL
+	select ATOMIC_OPERATIONS_C
+	select ARCH_HAS_VECTOR_TABLE_RELOCATION
+	select CPU_HAS_ICACHE
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	select DYNAMIC_INTERRUPTS
+	select CACHE_MANAGEMENT
+	select TICKLESS_CAPABLE
+	help
+	  dspic architecture
+
 config ARCH_IS_SET
 	bool
 	help
@@ -395,6 +417,11 @@ config STACK_GROWS_UP
 	help
 	  Select this option if the architecture has upward growing thread
 	  stacks. This is not common.
+
+config STACK_SENTINAL
+	bool
+	help
+	  It is a debugging and safety feature at the boundaries of the stack.
 
 config NO_UNUSED_STACK_INSPECTION
 	bool

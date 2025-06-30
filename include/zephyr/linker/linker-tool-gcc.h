@@ -59,6 +59,9 @@
 	OUTPUT_FORMAT("elf32-sparc")
 #elif defined(CONFIG_RX)
 	OUTPUT_FORMAT("elf32-rx-le")
+#elif defined(CONFIG_DSPIC)
+	OUTPUT_FORMAT("elf32-pic30")
+	OUTPUT_ARCH("33AK128MC106")
 #else
 	#error Arch not supported.
 #endif

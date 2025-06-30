@@ -1,0 +1,3 @@
+if SOC_SERIES_DSPIC33A
+	rsource "Kconfig.defconfig.p33ak*"
+endif # SOC_SERIES_DSPIC33A
