@@ -116,6 +116,7 @@ function(toolchain_ld_link_elf)
     # Do not remove symbols
     #--no_remove
     ${ILINK_XCL}
+    --initializer_prefix=.iar.init.
 
     ${TOOLCHAIN_LIBS_OBJECTS}
 
