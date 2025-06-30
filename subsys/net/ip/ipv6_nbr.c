@@ -2948,6 +2948,26 @@ static struct net_icmp_ctx ra_ctx;
 static struct net_icmp_ctx ptb_ctx;
 #endif /* CONFIG_NET_IPV6_PMTU */
 
+#if defined(CONFIG_NET_TEST) && defined(CONFIG_NET_IPV6_NBR_CACHE)
+/* Check if the NS reply timer is pending and cancel it if so.
+ * Returns 1 if the timer was cancelled, 0 if it was not pending.
+ * This is only used by the tests to verify that we are not leaking
+ * any net_pkt/buf.
+ */
+int net_ipv6_nbr_test_cancel(void)
+{
+	if (k_work_delayable_is_pending(&ipv6_ns_reply_timer)) {
+		NET_DBG("Cancelling NS reply timer");
+
+		(void)k_work_cancel_delayable(&ipv6_ns_reply_timer);
+
+		return 1;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_TEST */
+
 void net_ipv6_nbr_init(void)
 {
 	int ret;
