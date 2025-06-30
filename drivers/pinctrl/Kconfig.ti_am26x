@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_TI_AM26X
+	bool "TI AM26x pinctrl driver"
+	default y
+	depends on DT_HAS_TI_AM26X_PINCTRL_ENABLED
+	help
+	  Enable the TI AM26x pinctrl driver
