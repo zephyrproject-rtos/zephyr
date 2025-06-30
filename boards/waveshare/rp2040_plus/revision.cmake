@@ -1,0 +1,8 @@
+set(BOARD_REVISIONS "4M" "16M")
+if(NOT DEFINED BOARD_REVISION)
+  set(BOARD_REVISION "4M")
+else()
+  if(NOT BOARD_REVISION IN_LIST BOARD_REVISIONS)
+    message(FATAL_ERROR "${BOARD_REVISION} is not a valid revision for rp2040_plus. Accepted revisions: ${BOARD_REVISIONS}")
+  endif()
+endif()
