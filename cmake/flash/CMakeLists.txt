@@ -186,7 +186,19 @@ foreach(target flash debug debugserver attach rtt)
     set(RUNNER_VERBOSE)
   endif()
 
-  if(WEST)
+  if(FLASH_COMMAND)
+    add_custom_target(${target}
+      COMMAND
+	${FLASH_COMMAND}
+        ${RUNNER_VERBOSE}
+        ${target}
+      WORKING_DIRECTORY
+        ${APPLICATION_BINARY_DIR}
+      COMMENT
+        ${comment}
+      USES_TERMINAL
+    )
+  elseif(WEST)
     add_custom_target(${target}
       # This script will print an error message and fail if <target> has added
       # dependencies. This is done using dedicated CMake script, as
@@ -212,5 +224,5 @@ foreach(target flash debug debugserver attach rtt)
           '${CMAKE_MAKE_PROGRAM} ${target}', please create a west workspace.\"
       USES_TERMINAL
       )
-  endif(WEST)
+  endif()
 endforeach()
