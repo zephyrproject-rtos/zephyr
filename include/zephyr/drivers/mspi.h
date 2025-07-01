@@ -814,8 +814,6 @@ static inline int mspi_register_callback(const struct device *controller,
 
 #include <zephyr/drivers/mspi/devicetree.h>
 
-/** @} */
-
 /**
  * @addtogroup mspi_util
  * @{

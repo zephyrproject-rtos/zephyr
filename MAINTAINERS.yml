@@ -5017,7 +5017,7 @@ West:
   labels:
     - "platform: Broadcom"
 
-"West project: hal_ambiq":
+"West project: ambiqhal_ambiq":
   status: odd fixes
   collaborators:
     - aaronyegx

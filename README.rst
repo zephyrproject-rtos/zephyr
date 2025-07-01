@@ -278,4 +278,4 @@ Additional Resources
 .. _Zephyr Tech Talks: https://www.zephyrproject.org/tech-talks
 .. _Ambiq SoC: https://contentportal.ambiq.com/soc
 .. _Ambiq Products: https://ambiq.com/products/
-.. _Source Code Repository: https://github.com/AmbiqMicro/ambiqhal_ambiq
+.. _Ambiq HAL Repository: https://github.com/AmbiqMicro/ambiqhal_ambiq

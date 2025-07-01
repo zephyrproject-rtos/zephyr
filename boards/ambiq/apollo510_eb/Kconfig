@@ -3,4 +3,4 @@
 # Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
 
 config BOARD_APOLLO510_EB
-	select SOC_APOLLO510
+	select BOARD_EARLY_INIT_HOOK

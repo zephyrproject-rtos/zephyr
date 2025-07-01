@@ -1,7 +1,7 @@
 .. _ap4_evb_disp_shield_rev2:
 
 Apollo4 Plus EVB Display Shield Rev2
-###############
+####################################
 
 Overview
 ********
