@@ -88,6 +88,12 @@ Boards
   instead of ``openocd.board.cmake``. The ``openocd-stm32.board.cmake`` file extends the default
   OpenOCD runner with manufacturer-specific configuration like STM32 mass erase commands.
 
+* STM32N6570-DK boards's default variant (``stm32n6570_dk/stm32n657xx``) is now supposed to be a
+  chainloaded application and should be built using ``--sysbuild``. The old default,
+  which built applications to run as First Stage BootLoader, is now available as a dedicated
+  variant (``stm32n6570_dk/stm32n657xx/fsbl``) that must be selected explicitly.
+  See board documentation for more information about these variants.
+
 Device Drivers and Devicetree
 *****************************
 
