@@ -9,13 +9,11 @@
 #define ZEPHYR_LIB_POSIX_POSIX_CLOCK_H_
 
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <time.h>
 
-#include <zephyr/sys_clock.h>
-#include <zephyr/sys/__assert.h>
 #include <zephyr/posix/sys/time.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/timeutil.h>
 
 #ifdef __cplusplus
@@ -59,7 +57,7 @@ static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct ti
 	return diff >= lo && diff < hi;
 }
 
-uint32_t timespec_to_timeoutms(clockid_t clock_id, const struct timespec *abstime);
+uint32_t timespec_to_timeoutms(int clock_id, const struct timespec *abstime);
 
 /** INTERNAL_HIDDEN @endcond */
 
