@@ -404,26 +404,28 @@ struct cmsghdr {
 
 /** @endcond */
 
+#define SOCKADDR_ALIGN (4)
+
 /** Generic sockaddr struct. Must be cast to proper type. */
 struct sockaddr {
 	sa_family_t sa_family; /**< Address family */
 /** @cond INTERNAL_HIDDEN */
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 /** @endcond */
-};
+} __aligned(SOCKADDR_ALIGN);
 
 /** @cond INTERNAL_HIDDEN */
 
 struct sockaddr_ptr {
 	sa_family_t family;
 	char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
-};
+} __aligned(SOCKADDR_ALIGN);
 
 /* Same as sockaddr in our case */
 struct sockaddr_storage {
 	sa_family_t ss_family;
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
-};
+} __aligned(SOCKADDR_ALIGN);
 
 /* Socket address struct for UNIX domain sockets */
 struct sockaddr_un {
