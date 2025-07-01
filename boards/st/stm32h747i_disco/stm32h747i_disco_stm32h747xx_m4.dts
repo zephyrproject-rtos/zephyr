@@ -57,3 +57,7 @@
 };
 
 arduino_serial: &uart8 {};
+
+st_cam_i2c: &i2c4 {};
+
+st_cam_dvp: &dcmi {};
