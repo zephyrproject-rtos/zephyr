@@ -297,6 +297,13 @@
 				status = "disabled";
 			};
 		};
+
+		ceu: ceu@40348000 {
+			compatible = "renesas,ra-ceu";
+			reg = <0x40348000 0x8000>;
+			clocks = <&pclka MSTPC 16>;
+			status = "disabled";
+		};
 	};
 
 	usbhs_phy: usbhs-phy {
