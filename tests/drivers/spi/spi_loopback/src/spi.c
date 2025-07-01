@@ -1017,6 +1017,8 @@ ZTEST(spi_extra_api_features, test_spi_hold_on_cs)
 early_exit:
 	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
 	zassert_false(ret, "SPI transceive failed, code %d", ret);
+	/* if there was no error then it was meant to be a skip at this point */
+	ztest_test_skip();
 }
 
 /*
