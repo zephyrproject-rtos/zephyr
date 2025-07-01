@@ -599,18 +599,17 @@ ZTEST(spi_loopback, test_nop_nil_bufs)
 	/* nothing really to check here, check is done in spi_loopback_transceive */
 }
 
-/* test using the same buffer for RX and TX will write same data back */
+/* test using the same buffer set for RX and TX will write same data back */
 ZTEST(spi_loopback, test_spi_write_back)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
-							      buffer_rx, BUF_SIZE);
-	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
-							      buffer_rx, BUF_SIZE);
+
+	struct spi_buf buf = {.buf = buffer_rx, .len = BUF_SIZE};
+	struct spi_buf_set set = {.buffers = &buf, .count = 1};
 
 	memcpy(buffer_rx, tx_data, sizeof(tx_data));
 
-	spi_loopback_transceive(spec, &tx, &rx);
+	spi_loopback_transceive(spec, &set, &set);
 
 	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
 				  buffer_print_tx, buffer_print_rx);
@@ -620,19 +619,25 @@ ZTEST(spi_loopback, test_spi_write_back)
 ZTEST(spi_loopback, test_spi_same_buf_cmd)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
-	const struct spi_buf_set tx = spi_loopback_setup_xfer(rx_bufs_pool, 2,
-							      buffer_rx, 1,
-							      NULL, BUF_SIZE - 1);
-	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
-							      NULL, BUF_SIZE - 1,
-							      buffer_rx+(BUF_SIZE - 1), 1);
 
-	memcpy(buffer_rx, tx_data, sizeof(tx_data));
+	struct spi_buf buf[2] = {
+		{.buf = buffer_rx, .len = 1},
+		{.buf = buffer_rx+1, .len = BUF_SIZE - 1}
+	};
+
+	const struct spi_buf_set tx = {.buffers = buf, .count = 1};
+	const struct spi_buf_set rx = {.buffers = buf, .count = 2};
+
+	memcpy(buffer_rx, tx_data, BUF_SIZE);
 
 	spi_loopback_transceive(spec, &tx, &rx);
 
-	spi_loopback_compare_bufs(tx_data, buffer_rx, BUF_SIZE,
+	spi_loopback_compare_bufs(tx_data, buffer_rx, 1,
 				  buffer_print_tx, buffer_print_rx);
+
+	char zeros[BUF_SIZE - 1] = {0};
+
+	zassert_ok(memcmp(buffer_rx+1, zeros, BUF_SIZE - 1));
 }
 
 
