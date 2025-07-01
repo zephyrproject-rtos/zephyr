@@ -48,6 +48,7 @@ zephyr_include_directories(
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/CMSIS/Driver/Include
+  ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/inc
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade
 )
 
@@ -165,7 +166,6 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/sl_net/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/socket/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
-    ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/inc
     ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/config
     ${WISECONNECT_DIR}/components/protocol/wifi/inc
     ${WISECONNECT_DIR}/components/service/network_manager/inc
