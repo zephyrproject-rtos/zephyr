@@ -514,14 +514,12 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 		i2c_esp32_master_start(dev);
 		ret = i2c_esp32_write_addr(dev, addr);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
 
 	ret = i2c_esp32_master_read(dev, msg);
 	if (ret < 0) {
-		LOG_ERR("I2C transfer error: %d", ret);
 		return ret;
 	}
 
@@ -529,7 +527,6 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 		i2c_esp32_master_stop(dev);
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
@@ -587,14 +584,12 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		i2c_esp32_master_start(dev);
 		ret = i2c_esp32_write_addr(dev, addr);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
 
 	ret = i2c_esp32_master_write(dev, msg);
 	if (ret < 0) {
-		LOG_ERR("I2C transfer error: %d", ret);
 		return ret;
 	}
 
@@ -602,7 +597,6 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 		i2c_esp32_master_stop(dev);
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
-			LOG_ERR("I2C transfer error: %d", ret);
 			return ret;
 		}
 	}
