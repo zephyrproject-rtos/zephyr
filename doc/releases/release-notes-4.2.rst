@@ -216,6 +216,7 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
     * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
+    * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
 
 * Power management
 
