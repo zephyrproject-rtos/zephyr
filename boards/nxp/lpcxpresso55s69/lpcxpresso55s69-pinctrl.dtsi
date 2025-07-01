@@ -47,7 +47,8 @@
 		group0 {
 			pinmux = <FC7_TXD_SCL_MISO_WS_PIO0_19>,
 				<FC7_RXD_SDA_MOSI_DATA_PIO0_20>,
-				<FC7_SCK_PIO0_21>;
+				<FC7_SCK_PIO0_21>,
+				<MCLK_PIO1_31>;
 			bias-pull-up;
 			slew-rate = "standard";
 		};
