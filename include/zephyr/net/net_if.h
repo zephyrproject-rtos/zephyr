@@ -1522,6 +1522,12 @@ int net_if_config_ipv6_get(struct net_if *iface,
  */
 int net_if_config_ipv6_put(struct net_if *iface);
 
+
+/** @cond INTERNAL_HIDDEN */
+struct net_if_addr *net_if_ipv6_addr_lookup_raw(const uint8_t *addr,
+						struct net_if **ret);
+/** @endcond */
+
 /**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
  *
@@ -1532,6 +1538,11 @@ int net_if_config_ipv6_put(struct net_if *iface);
  */
 struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 					    struct net_if **iface);
+
+/** @cond INTERNAL_HIDDEN */
+struct net_if_addr *net_if_ipv6_addr_lookup_by_iface_raw(struct net_if *iface,
+							 const uint8_t *addr);
+/** @endcond */
 
 /**
  * @brief Check if this IPv6 address belongs to this specific interfaces.
@@ -1680,6 +1691,12 @@ typedef void (*net_if_ip_maddr_cb_t)(struct net_if *iface,
  */
 void net_if_ipv6_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
 			       void *user_data);
+
+
+/** @cond INTERNAL_HIDDEN */
+struct net_if_mcast_addr *net_if_ipv6_maddr_lookup_raw(const uint8_t *maddr,
+						       struct net_if **ret);
+/** @endcond */
 
 /**
  * @brief Check if this IPv6 multicast address belongs to a specific interface

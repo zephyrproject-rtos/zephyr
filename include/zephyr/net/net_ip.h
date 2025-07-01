@@ -673,6 +673,16 @@ union net_proto_header {
 
 /** @endcond */
 
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_loopback_raw(const uint8_t *addr)
+{
+	return UNALIGNED_GET((uint32_t *)addr) == 0 &&
+	       UNALIGNED_GET((uint32_t *)addr + 1) == 0 &&
+	       UNALIGNED_GET((uint32_t *)addr + 2) == 0 &&
+	       ntohl(UNALIGNED_GET((uint32_t *)addr + 3)) == 1;
+}
+/** @endcond */
+
 /**
  * @brief Check if the IPv6 address is a loopback address (::1).
  *
@@ -682,11 +692,15 @@ union net_proto_header {
  */
 static inline bool net_ipv6_is_addr_loopback(struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
-		ntohl(UNALIGNED_GET(&addr->s6_addr32[3])) == 1;
+	return net_ipv6_is_addr_loopback_raw(addr->s6_addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_mcast_raw(const uint8_t *addr)
+{
+	return addr[0] == 0xff;
+}
+/** @endcond */
 
 /**
  * @brief Check if the IPv6 address is a multicast address.
@@ -697,11 +711,21 @@ static inline bool net_ipv6_is_addr_loopback(struct in6_addr *addr)
  */
 static inline bool net_ipv6_is_addr_mcast(const struct in6_addr *addr)
 {
-	return addr->s6_addr[0] == 0xFF;
+	return net_ipv6_is_addr_mcast_raw(addr->s6_addr);
 }
 
 struct net_if;
 struct net_if_config;
+
+/** @cond INTERNAL_HIDDEN */
+extern struct net_if_addr *net_if_ipv6_addr_lookup_raw(const uint8_t *addr,
+						       struct net_if **ret);
+
+static inline bool net_ipv6_is_my_addr_raw(const uint8_t *addr)
+{
+	return net_if_ipv6_addr_lookup_raw(addr, NULL) != NULL;
+}
+/** @endcond */
 
 extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface);
@@ -974,6 +998,13 @@ static inline bool net_ipv6_addr_cmp_raw(const uint8_t *addr1,
 				 (const struct in6_addr *)addr2);
 }
 
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_ll_addr_raw(const uint8_t *addr)
+{
+	return UNALIGNED_GET((uint16_t *)addr) == htons(0xFE80);
+}
+/** @endcond */
+
 /**
  * @brief Check if the given IPv6 address is a link local address.
  *
@@ -983,7 +1014,7 @@ static inline bool net_ipv6_addr_cmp_raw(const uint8_t *addr1,
  */
 static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFE80);
+	return net_ipv6_is_ll_addr_raw(addr->s6_addr);
 }
 
 /**
@@ -1139,6 +1170,16 @@ static inline bool net_ipv4_is_my_addr(const struct in_addr *addr)
 	return ret;
 }
 
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_unspecified_raw(const uint8_t *addr)
+{
+	return UNALIGNED_GET((uint32_t *)addr) == 0 &&
+	       UNALIGNED_GET((uint32_t *)addr + 1) == 0 &&
+	       UNALIGNED_GET((uint32_t *)addr + 2) == 0 &&
+	       UNALIGNED_GET((uint32_t *)addr + 3) == 0;
+}
+/** @endcond */
+
 /**
  *  @brief Check if the IPv6 address is unspecified (all bits zero)
  *
@@ -1148,11 +1189,19 @@ static inline bool net_ipv4_is_my_addr(const struct in_addr *addr)
  */
 static inline bool net_ipv6_is_addr_unspecified(const struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
-		UNALIGNED_GET(&addr->s6_addr32[3]) == 0;
+	return net_ipv6_is_addr_unspecified_raw(addr->s6_addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_solicited_node_raw(const uint8_t *addr)
+{
+	return UNALIGNED_GET((uint32_t *)addr) == htonl(0xff020000) &&
+	       UNALIGNED_GET((uint32_t *)addr + 1) == 0x00000000 &&
+	       UNALIGNED_GET((uint32_t *)addr + 2) == htonl(0x00000001) &&
+	       ((UNALIGNED_GET((uint32_t *)addr + 3) & htonl(0xff000000)) ==
+		htonl(0xff000000));
+}
+/** @endcond */
 
 /**
  *  @brief Check if the IPv6 address is solicited node multicast address
@@ -1164,12 +1213,16 @@ static inline bool net_ipv6_is_addr_unspecified(const struct in6_addr *addr)
  */
 static inline bool net_ipv6_is_addr_solicited_node(const struct in6_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s6_addr32[0]) == htonl(0xff020000) &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00000000 &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0x00000001) &&
-		((UNALIGNED_GET(&addr->s6_addr32[3]) & htonl(0xff000000)) ==
-		 htonl(0xff000000));
+	return net_ipv6_is_addr_solicited_node_raw(addr->s6_addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_mcast_scope_raw(const uint8_t *addr,
+						    int scope)
+{
+	return (addr[0] == 0xff) && ((addr[1] & 0xF) == scope);
+}
+/** @endcond */
 
 /**
  * @brief Check if the IPv6 address is a given scope multicast
@@ -1184,7 +1237,7 @@ static inline bool net_ipv6_is_addr_solicited_node(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
 						int scope)
 {
-	return (addr->s6_addr[0] == 0xff) && ((addr->s6_addr[1] & 0xF) == scope);
+	return net_ipv6_is_addr_mcast_scope_raw(addr->s6_addr, scope);
 }
 
 /**
@@ -1202,6 +1255,33 @@ static inline bool net_ipv6_is_same_mcast_scope(const struct in6_addr *addr_1,
 	return (addr_1->s6_addr[0] == 0xff) && (addr_2->s6_addr[0] == 0xff) &&
 			(addr_1->s6_addr[1] == addr_2->s6_addr[1]);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_mcast_iface_raw(const uint8_t *addr)
+{
+	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x01);
+}
+
+static inline bool net_ipv6_is_addr_mcast_link_raw(const uint8_t *addr)
+{
+	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x02);
+}
+
+static inline bool net_ipv6_is_addr_mcast_mesh_raw(const uint8_t *addr)
+{
+	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x03);
+}
+
+static inline bool net_ipv6_is_addr_mcast_site_raw(const uint8_t *addr)
+{
+	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x05);
+}
+
+static inline bool net_ipv6_is_addr_mcast_org_raw(const uint8_t *addr)
+{
+	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x08);
+}
+/** @endcond */
 
 /**
  * @brief Check if the IPv6 address is a global multicast address (FFxE::/16).
@@ -1285,6 +1365,17 @@ static inline bool net_ipv6_is_addr_mcast_org(const struct in6_addr *addr)
 	return net_ipv6_is_addr_mcast_scope(addr, 0x08);
 }
 
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_mcast_group_raw(const uint8_t *addr,
+						    const uint8_t *group)
+{
+	return UNALIGNED_GET((uint16_t *)addr + 1) == UNALIGNED_GET((uint16_t *)group + 1) &&
+	       UNALIGNED_GET((uint32_t *)addr + 1) == UNALIGNED_GET((uint32_t *)group + 1) &&
+	       UNALIGNED_GET((uint32_t *)addr + 2) == UNALIGNED_GET((uint32_t *)group + 2) &&
+	       UNALIGNED_GET((uint32_t *)addr + 3) == UNALIGNED_GET((uint32_t *)group + 3);
+}
+/** @endcond */
+
 /**
  * @brief Check if the IPv6 address belongs to certain multicast group
  *
@@ -1298,11 +1389,20 @@ static inline bool net_ipv6_is_addr_mcast_org(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_group(const struct in6_addr *addr,
 						const struct in6_addr *group)
 {
-	return UNALIGNED_GET(&addr->s6_addr16[1]) == group->s6_addr16[1] &&
-		UNALIGNED_GET(&addr->s6_addr32[1]) == group->s6_addr32[1] &&
-		UNALIGNED_GET(&addr->s6_addr32[2]) == group->s6_addr32[2] &&
-		UNALIGNED_GET(&addr->s6_addr32[3]) == group->s6_addr32[3];
+	return net_ipv6_is_addr_mcast_group_raw(addr->s6_addr, group->s6_addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_mcast_all_nodes_group_raw(const uint8_t *addr)
+{
+	static const uint8_t all_nodes_mcast_group[NET_IPV6_ADDR_SIZE] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	};
+
+	return net_ipv6_is_addr_mcast_group_raw(addr, all_nodes_mcast_group);
+}
+/** @endcond */
 
 /**
  * @brief Check if the IPv6 address belongs to the all nodes multicast group
@@ -1315,12 +1415,7 @@ static inline bool net_ipv6_is_addr_mcast_group(const struct in6_addr *addr,
 static inline bool
 net_ipv6_is_addr_mcast_all_nodes_group(const struct in6_addr *addr)
 {
-	static const struct in6_addr all_nodes_mcast_group = {
-		{ { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		    0x00, 0x00, 0x00, 0x00, 0x00, 0x01 } }
-	};
-
-	return net_ipv6_is_addr_mcast_group(addr, &all_nodes_mcast_group);
+	return net_ipv6_is_addr_mcast_all_nodes_group_raw(addr->s6_addr);
 }
 
 /**
@@ -1338,6 +1433,14 @@ net_ipv6_is_addr_mcast_iface_all_nodes(const struct in6_addr *addr)
 	return net_ipv6_is_addr_mcast_iface(addr) &&
 	       net_ipv6_is_addr_mcast_all_nodes_group(addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_is_addr_mcast_link_all_nodes_raw(const uint8_t *addr)
+{
+	return net_ipv6_is_addr_mcast_link_raw(addr) &&
+	       net_ipv6_is_addr_mcast_all_nodes_group_raw(addr);
+}
+/** @endcond */
 
 /**
  * @brief Check if the IPv6 address is a link local scope all nodes multicast
@@ -1497,37 +1600,33 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 	(void)net_ipv6_addr_generate_iid(NULL, NULL, NULL, 0, 0, addr, lladdr);
 }
 
-/**
- *  @brief Check if given address is based on link layer address
- *
- *  @return True if it is, False otherwise
- */
-static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
-					     const struct net_linkaddr *lladdr)
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv6_addr_based_on_ll_raw(const uint8_t *addr,
+						 const struct net_linkaddr *lladdr)
 {
-	if (!addr || !lladdr) {
+	if (addr == NULL || lladdr == NULL) {
 		return false;
 	}
 
 	switch (lladdr->len) {
 	case 2:
-		if (!memcmp(&addr->s6_addr[14], lladdr->addr, lladdr->len) &&
-		    addr->s6_addr[8]  == 0U &&
-		    addr->s6_addr[9]  == 0U &&
-		    addr->s6_addr[10] == 0U &&
-		    addr->s6_addr[11] == 0xff &&
-		    addr->s6_addr[12] == 0xfe) {
+		if (!memcmp(&addr[14], lladdr->addr, lladdr->len) &&
+		    addr[8]  == 0U &&
+		    addr[9]  == 0U &&
+		    addr[10] == 0U &&
+		    addr[11] == 0xff &&
+		    addr[12] == 0xfe) {
 			return true;
 		}
 
 		break;
 	case 6:
 		if (lladdr->type == NET_LINK_ETHERNET) {
-			if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1], 2) &&
-			    !memcmp(&addr->s6_addr[13], &lladdr->addr[3], 3) &&
-			    addr->s6_addr[11] == 0xff &&
-			    addr->s6_addr[12] == 0xfe &&
-			    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
+			if (!memcmp(&addr[9], &lladdr->addr[1], 2) &&
+			    !memcmp(&addr[13], &lladdr->addr[3], 3) &&
+			    addr[11] == 0xff &&
+			    addr[12] == 0xfe &&
+			    (addr[8] ^ 0x02) == lladdr->addr[0]) {
 				return true;
 			}
 		}
@@ -1538,9 +1637,9 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 			return false;
 		}
 
-		if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1],
+		if (!memcmp(&addr[9], &lladdr->addr[1],
 			    lladdr->len - 1) &&
-		    (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
+		    (addr[8] ^ 0x02) == lladdr->addr[0]) {
 			return true;
 		}
 
@@ -1550,6 +1649,22 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 	}
 
 	return false;
+}
+/** @endcond */
+
+/**
+ *  @brief Check if given address is based on link layer address
+ *
+ *  @return True if it is, False otherwise
+ */
+static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
+					     const struct net_linkaddr *lladdr)
+{
+	if (addr == NULL || lladdr == NULL) {
+		return false;
+	}
+
+	return net_ipv6_addr_based_on_ll_raw(addr->s6_addr, lladdr);
 }
 
 /**
