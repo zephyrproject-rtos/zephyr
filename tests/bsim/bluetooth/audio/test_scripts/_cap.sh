@@ -10,3 +10,4 @@ set -e # Exit on error
 
 $dir_path/_cap_broadcast.sh
 $dir_path/_cap_unicast.sh
+$dir_path/_cap_handover.sh

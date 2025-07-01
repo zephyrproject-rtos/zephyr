@@ -140,9 +140,7 @@ static bool cap_initiator_valid_metadata(const uint8_t meta[], size_t meta_len)
 }
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-static struct bt_cap_broadcast_source {
-	struct bt_bap_broadcast_source *bap_broadcast;
-} broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
+static struct bt_cap_broadcast_source broadcast_sources[CONFIG_BT_BAP_BROADCAST_SRC_COUNT];
 
 bool bt_cap_initiator_broadcast_audio_start_valid_param(
 	const struct bt_cap_initiator_broadcast_create_param *param)
@@ -317,7 +315,7 @@ static void broadcast_source_started_cb(struct bt_bap_broadcast_source *bap_broa
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active() &&
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) &&
 	    bt_cap_handover_is_handover_broadcast_source(source)) {
 		bt_cap_handover_unicast_to_broadcast_reception_start();
 		return;
@@ -339,7 +337,7 @@ static void broadcast_source_stopped_cb(struct bt_bap_broadcast_source *bap_broa
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active() &&
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) &&
 	    bt_cap_handover_is_handover_broadcast_source(source)) {
 		bt_cap_handover_broadcast_source_stopped(reason);
 		return;
@@ -488,7 +486,7 @@ int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *br
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 static struct bt_cap_unicast_group unicast_groups[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_COUNT];
 
-static enum bt_bap_ep_state stream_get_state(const struct bt_bap_stream *bap_stream)
+enum bt_bap_ep_state bt_cap_initiator_stream_get_state(const struct bt_bap_stream *bap_stream)
 {
 	struct bt_bap_ep_info ep_info;
 	int err;
@@ -507,13 +505,10 @@ static enum bt_bap_ep_state stream_get_state(const struct bt_bap_stream *bap_str
 	return ep_info.state;
 }
 
-static bool stream_is_in_state(const struct bt_bap_stream *bap_stream, enum bt_bap_ep_state state)
+bool bt_cap_initiator_stream_is_in_state(const struct bt_bap_stream *bap_stream,
+					 enum bt_bap_ep_state state)
 {
-	if (bap_stream->conn == NULL) {
-		return state == BT_BAP_EP_STATE_IDLE;
-	}
-
-	return stream_get_state(bap_stream) == state;
+	return bt_cap_initiator_stream_get_state(bap_stream) == state;
 }
 
 static bool stream_is_dir(const struct bt_bap_stream *bap_stream, enum bt_audio_dir dir)
@@ -618,7 +613,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 			cap_stream = proc_param->stream;
 			bap_stream = &cap_stream->bap_stream;
 
-			state = stream_get_state(bap_stream);
+			state = bt_cap_initiator_stream_get_state(bap_stream);
 
 			switch (subproc_type) {
 			case BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG:
@@ -679,7 +674,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 			cap_stream = proc_param->stream;
 			bap_stream = &cap_stream->bap_stream;
 
-			state = stream_get_state(bap_stream);
+			state = bt_cap_initiator_stream_get_state(bap_stream);
 
 			switch (subproc_type) {
 			case BT_CAP_COMMON_SUBPROC_TYPE_DISABLE:
@@ -717,7 +712,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 		cap_stream = proc_param->stream;
 		bap_stream = &cap_stream->bap_stream;
 
-		state = stream_get_state(bap_stream);
+		state = bt_cap_initiator_stream_get_state(bap_stream);
 
 		switch (subproc_type) {
 		case BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE:
@@ -764,7 +759,7 @@ get_next_proc_param(struct bt_cap_common_proc *active_proc)
 
 		cap_stream = proc_param->stream;
 		bap_stream = &cap_stream->bap_stream;
-		state = stream_get_state(bap_stream);
+		state = bt_cap_initiator_stream_get_state(bap_stream);
 
 		switch (subproc_type) {
 		case BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG:
@@ -873,7 +868,7 @@ valid_group_stream_pair_param(const struct bt_cap_unicast_group_stream_pair_para
 	return true;
 }
 
-static bool valid_unicast_group_param(const struct bt_cap_unicast_group_param *param)
+bool bt_cap_initiator_valid_unicast_group_param(const struct bt_cap_unicast_group_param *param)
 {
 	if (param == NULL) {
 		LOG_DBG("param is NULL");
@@ -968,7 +963,7 @@ int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
 		return -EINVAL;
 	}
 
-	if (!valid_unicast_group_param(param)) {
+	if (!bt_cap_initiator_valid_unicast_group_param(param)) {
 		return -EINVAL;
 	}
 
@@ -1011,7 +1006,7 @@ int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
 		return -EINVAL;
 	}
 
-	if (!valid_unicast_group_param(param)) {
+	if (!bt_cap_initiator_valid_unicast_group_param(param)) {
 		return -EINVAL;
 	}
 
@@ -1129,9 +1124,11 @@ int bt_cap_unicast_group_get_info(const struct bt_cap_unicast_group *unicast_gro
 	return 0;
 }
 
-static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_start_param *param)
+bool bt_cap_initiator_valid_unicast_audio_start_param(
+	const struct bt_cap_unicast_audio_start_param *param)
 {
-	struct bt_bap_unicast_group *unicast_group = NULL;
+	/* Group can either be a unicast group or a broadcast source (in the case of handover) */
+	void *group = NULL;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -1203,17 +1200,18 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		bap_stream = &cap_stream->bap_stream;
 
 		CHECKIF(bap_stream->group == NULL) {
-			LOG_DBG("param->streams[%zu] is not in a unicast group", i);
+			LOG_DBG("param->streams[%zu] (%p) is not in a unicast group", i,
+				bap_stream);
 			return false;
 		}
 
 		/* Use the group of the first stream for comparison */
-		if (unicast_group == NULL) {
-			unicast_group = bap_stream->group;
+		if (group == NULL) {
+			group = bap_stream->group;
 		} else {
-			CHECKIF(bap_stream->group != unicast_group) {
-				LOG_DBG("param->streams[%zu] is not in this group %p", i,
-					unicast_group);
+			CHECKIF(bap_stream->group != group) {
+				LOG_DBG("param->streams[%zu] (%p) is not in this group %p", i,
+					group, bap_stream);
 				return false;
 			}
 		}
@@ -1244,7 +1242,7 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 	proc_type = active_proc->proc_type;
 
 	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
-		bt_cap_handover_unicast_audio_stopped();
+		bt_cap_handover_unicast_proc_complete();
 		return;
 	}
 
@@ -1378,19 +1376,38 @@ cap_initiator_unicast_audio_configure(const struct bt_cap_unicast_audio_start_pa
 	err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Failed to config stream %p: %d", proc_param->stream, err);
-
-		bt_cap_common_clear_active_proc();
 	}
 
 	return err;
 }
 
-int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
+int cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
 	bool all_streaming = true;
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_bap_stream *bap_stream =
+			&param->stream_params[i].stream->bap_stream;
+
+		if (!bt_cap_initiator_stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
+			all_streaming = false;
+		}
+	}
+
+	if (all_streaming) {
+		LOG_DBG("All streams are already in the streaming state");
+
+		return -EALREADY;
+	}
+
+	return cap_initiator_unicast_audio_configure(param);
+}
+
+int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
+{
 	int err;
 
-	if (!valid_unicast_audio_start_param(param)) {
+	if (!bt_cap_initiator_valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
 	}
 
@@ -1400,24 +1417,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 		return -EBUSY;
 	}
 
-	for (size_t i = 0U; i < param->count; i++) {
-		const struct bt_bap_stream *bap_stream =
-			&param->stream_params[i].stream->bap_stream;
-
-		if (!stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
-			all_streaming = false;
-		}
-	}
-
-	if (all_streaming) {
-		LOG_DBG("All streams are already in the streaming state");
-
-		bt_cap_common_clear_active_proc();
-
-		return -EALREADY;
-	}
-
-	err = cap_initiator_unicast_audio_configure(param);
+	err = cap_initiator_unicast_audio_start(param);
 	if (err != 0) {
 		bt_cap_common_clear_active_proc();
 	}
@@ -1933,8 +1933,8 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 
 static bool can_update_metadata(const struct bt_bap_stream *bap_stream)
 {
-	return stream_is_in_state(bap_stream, BT_BAP_EP_STATE_ENABLING) ||
-	       stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING);
+	return bt_cap_initiator_stream_is_in_state(bap_stream, BT_BAP_EP_STATE_ENABLING) ||
+	       bt_cap_initiator_stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING);
 }
 
 static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_update_param *param)
@@ -2163,7 +2163,7 @@ static bool can_release_stream(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	state = stream_get_state(bap_stream);
+	state = bt_cap_initiator_stream_get_state(bap_stream);
 
 	/* We cannot release idle endpoints.
 	 * We do not know if we can release endpoints in the Codec Configured state as servers may
@@ -2180,7 +2180,7 @@ static bool can_disable_stream(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	state = stream_get_state(bap_stream);
+	state = bt_cap_initiator_stream_get_state(bap_stream);
 
 	return state == BT_BAP_EP_STATE_STREAMING || state == BT_BAP_EP_STATE_ENABLING;
 }
@@ -2202,7 +2202,7 @@ static bool can_stop_stream(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	return stream_is_in_state(bap_stream, BT_BAP_EP_STATE_DISABLING);
+	return bt_cap_initiator_stream_is_in_state(bap_stream, BT_BAP_EP_STATE_DISABLING);
 }
 
 bool bt_cap_initiator_valid_unicast_audio_stop_param(
@@ -2328,8 +2328,6 @@ int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_para
 						 : !can_stop  ? "stop"
 							      : "release");
 
-		bt_cap_common_clear_active_proc();
-
 		return -EALREADY;
 	}
 
@@ -2355,8 +2353,6 @@ int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_para
 		err = bt_bap_stream_disable(bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to disable bap_stream %p: %d", proc_param->stream, err);
-
-			bt_cap_common_clear_active_proc();
 		}
 	} else if (can_stop) {
 		struct bt_cap_initiator_proc_param *proc_param;
@@ -2374,8 +2370,6 @@ int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_para
 		err = bt_bap_stream_stop(bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to stop bap_stream %p: %d", proc_param->stream, err);
-
-			bt_cap_common_clear_active_proc();
 		}
 	} else {
 		struct bt_cap_initiator_proc_param *proc_param;
@@ -2393,8 +2387,6 @@ int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_para
 		err = bt_bap_stream_release(bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to release bap_stream %p: %d", proc_param->stream, err);
-
-			bt_cap_common_clear_active_proc();
 		}
 	}
 
@@ -2403,6 +2395,8 @@ int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_para
 
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param)
 {
+	int err;
+
 	if (!bt_cap_initiator_valid_unicast_audio_stop_param(param)) {
 		return -EINVAL;
 	}
@@ -2413,7 +2407,12 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 		return -EBUSY;
 	}
 
-	return cap_initiator_unicast_audio_stop(param);
+	err = cap_initiator_unicast_audio_stop(param);
+	if (err != 0) {
+		bt_cap_common_clear_active_proc();
+	}
+
+	return err;
 }
 
 void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
