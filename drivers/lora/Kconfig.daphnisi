@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config WSEN_DAPHNISI
+	bool "Daphnis-I driver"
+	default y
+	depends on DT_HAS_WE_WSEN_DAPHNIS_I_ENABLED && !LORAWAN
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	select HAS_WEMODULES
+	select GPIO
+	help
+	  Enable the Daphnis-I driver
+
+	  Although this driver exposes the LoRa Device API, this will
+	  not allow you to send raw LoRa packets therefore the packets
+	  sent using this driver will only be able to be received by another
+	  Daphnis-I module.
