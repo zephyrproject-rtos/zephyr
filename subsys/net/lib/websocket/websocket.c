@@ -842,7 +842,8 @@ static int websocket_parse(struct websocket_context *ctx, struct websocket_buffe
 				break;
 			case WEBSOCKET_PARSER_STATE_MASK:
 				ctx->parser_remaining--;
-				ctx->masking_value |= (data << (ctx->parser_remaining * 8));
+				ctx->masking_value |=
+					(uint32_t)((uint64_t)data << (ctx->parser_remaining * 8));
 				if (ctx->parser_remaining == 0) {
 					if (ctx->message_len == 0) {
 						ctx->parser_remaining = 0;
