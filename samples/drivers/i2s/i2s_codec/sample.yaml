@@ -11,6 +11,7 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
       - mcx_n5xx_evk/mcxn547/cpu0
+      - lpcxpresso55s69/lpc55s69/cpu0
     harness: console
     harness_config:
       type: one_line
