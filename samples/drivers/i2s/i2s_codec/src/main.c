@@ -9,11 +9,8 @@
 #include <zephyr/audio/dmic.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/audio/codec.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
-
-#ifndef CONFIG_USE_DMIC
-#include "sine.h"
-#endif
 
 #define I2S_CODEC_TX DT_ALIAS(i2s_codec_tx)
 
@@ -32,6 +29,10 @@
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
 #define BLOCK_COUNT (INITIAL_BLOCKS + 32)
+
+#ifndef CONFIG_USE_DMIC
+#include "sine.h"
+#endif
 
 static __nocache struct k_mem_slab mem_slab;
 static char __nocache __aligned(4) mem_slab_buf[BLOCK_SIZE * BLOCK_COUNT];
@@ -193,7 +194,6 @@ int main(void)
 #else
 				/* If not using DMIC, play a sine wave 440Hz */
 				mem_block = (void *)&__16kHz16bit_stereo_sine_pcm;
-				block_size = __16kHz16bit_stereo_sine_pcm_len;
 
 				ret = i2s_buf_write(i2s_dev_codec, mem_block, block_size);
 #endif
