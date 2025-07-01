@@ -13,11 +13,11 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
-printf "\n\n======== Running CAP handover unicast to broadcast =========\n\n"
+printf "\n\n======== Running CAP handover unicast to broadcast with reception stop =========\n\n"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 \
-  -testid=cap_handover_central \
+  -testid=cap_handover_central_reception_stop \
   -RealEncryption=1 -rs=23 -D=${NR_OF_DEVICES}
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
