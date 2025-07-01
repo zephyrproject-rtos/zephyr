@@ -57,7 +57,7 @@ struct video_stm32_dcmi_config {
 
 void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi)
 {
-	LOG_WRN("%s", __func__);
+	LOG_WRN("DCMI Error: 0x%02X", hdcmi->ErrorCode);
 }
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
