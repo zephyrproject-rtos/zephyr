@@ -902,6 +902,10 @@ struct bt_cap_broadcast_to_unicast_param {
 
 	/** Coordinated or ad-hoc set members. */
 	union bt_cap_set_member **members;
+
+	struct bt_cap_unicast_group_param *unicast_group_param;
+
+	struct bt_cap_unicast_audio_start_param *unicast_start_param;
 };
 
 /**

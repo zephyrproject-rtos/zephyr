@@ -1110,7 +1110,8 @@ int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_gro
 
 static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_start_param *param)
 {
-	struct bt_bap_unicast_group *unicast_group = NULL;
+	/* Group can either be a unicast group or a broadcast source (in the case of handover) */
+	void *group = NULL;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -1187,12 +1188,11 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		}
 
 		/* Use the group of the first stream for comparison */
-		if (unicast_group == NULL) {
-			unicast_group = bap_stream->group;
+		if (group == NULL) {
+			group = bap_stream->group;
 		} else {
-			CHECKIF(bap_stream->group != unicast_group) {
-				LOG_DBG("param->streams[%zu] is not in this group %p", i,
-					unicast_group);
+			CHECKIF(bap_stream->group != group) {
+				LOG_DBG("param->streams[%zu] is not in this group %p", i, group);
 				return false;
 			}
 		}
@@ -3181,9 +3181,78 @@ int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadca
 	return 0;
 }
 
+static bool valid_broadcast_to_unicast_param(const struct bt_cap_broadcast_to_unicast_param *param)
+{
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	if (param->broadcast_source == NULL) {
+		LOG_DBG("param->broadcast_source is NULL");
+		return false;
+	}
+
+	if (param->count == 0U) {
+		LOG_DBG("param->count is 0");
+		return false;
+	}
+
+	if (param->members == NULL) {
+		LOG_DBG("param->members is NULL");
+		return false;
+	}
+
+	if (!valid_unicast_group_param(param->unicast_group_param)) {
+		LOG_DBG("param->unicast_group_param is invalid");
+		return false;
+	}
+
+	if (!valid_unicast_audio_start_param(param->unicast_start_param)) {
+		LOG_DBG("param->unicast_start_param is invalid");
+		return false;
+	}
+
+	for (size_t i = 0U; i < param->unicast_start_param->count; i++) {
+		const struct bt_cap_unicast_audio_start_stream_param *stream_param =
+			&param->unicast_start_param->stream_params[i];
+		const struct bt_cap_stream *cap_stream = stream_param->stream;
+		const struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+
+		if (!stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
+			LOG_DBG("Stream %p is not streaming", cap_stream);
+			return false;
+		}
+
+		if (bap_stream->group != param->broadcast_source->bap_broadcast) {
+			LOG_DBG("Stream %p is not in the broadcast source", cap_stream);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
 					  struct bt_bap_unicast_group **unicast_group)
 {
+	if (!valid_broadcast_to_unicast_param(param)) {
+		return -EINVAL;
+	}
+
+	/**
+	 * 1) Check parameters
+	 * 	All broadcast streams should be handed over as they will be terminated
+	 * 	TBD: Can we just hand over a subset of broadcast streams? I guess so?
+	 * 	TBD: Can a single broadcast stream become 2 unicast streams? I guess not
+	 * 	Verify that all acceptors get a least 1 stream - We don't know who the acceptors
+	 * 	are for a broadcast...
+	 * 2) Broadcast Reception Stop
+	 * 3) Broadcast Source Stop
+	 * 4) Broadcast Source Delete
+	 * 5) Unicast Group create
+	 * 6) Unicast Audio Start
+	 */
 	return -ENOSYS;
 }
 
