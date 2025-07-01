@@ -938,10 +938,13 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	struct i3c_ccc_address dyn_addr;
 	int ret;
 
-	/* check if the addressed is free */
-	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
-		LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name, dynamic_addr);
-		return -EADDRNOTAVAIL;
+	/* check if the addressed is free, if the requested DA is different from the SA */
+	if (desc->static_addr != dynamic_addr) {
+		if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
+			LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name,
+				dynamic_addr);
+			return -EADDRNOTAVAIL;
+		}
 	}
 
 	/*
@@ -978,10 +981,13 @@ int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	uint8_t old_da;
 	int ret;
 
-	/* check if the addressed is free */
-	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
-		LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name, dynamic_addr);
-		return -EADDRNOTAVAIL;
+	/* check if the addressed is free, also a 'clown' could set the same DA */
+	if (desc->dynamic_addr != dynamic_addr) {
+		if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
+			LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name,
+				dynamic_addr);
+			return -EADDRNOTAVAIL;
+		}
 	}
 
 	/*
