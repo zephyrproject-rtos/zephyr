@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2024-2025 Wimansha Wijekoon <Wimanshahb@gmail.com>
  *
+ * Copyright (c) 2023 Alvaro Garcia Gomez <maxpowel@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  *
  * Following is the driver for max31329 RTC from Analog Devices
@@ -18,11 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/util_macro.h>
 
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
@@ -101,7 +98,7 @@ struct max31329_data {
 #endif
 };
 
-int max31329_set_time(const struct device *dev, const struct rtc_time *new_time)
+static int max31329_set_time(const struct device *dev, const struct rtc_time *new_time)
 {
 	const struct max31329_config *config = dev->config;
 	int ret = 0;
@@ -140,7 +137,7 @@ int max31329_set_time(const struct device *dev, const struct rtc_time *new_time)
 	return 0;
 }
 
-int max31329_get_time(const struct device *dev, struct rtc_time *dest_time)
+static int max31329_get_time(const struct device *dev, struct rtc_time *dest_time)
 {
 	const struct max31329_config *config = dev->config;
 	int ret = 0;

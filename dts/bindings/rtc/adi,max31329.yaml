@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Analog Device MAX31329 RTC
+  Analog Devices MAX31329 RTC
 
   Example of DT segment
 
