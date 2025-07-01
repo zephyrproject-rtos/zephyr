@@ -514,6 +514,7 @@ static int lc709203f_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	int rc = 0;
 	uint16_t tmp_val = 0;
 	const struct lc709203f_config *config = dev->config;
+	enum lc709203f_battery_apa apa = LC709203F_APA_100MAH;
 
 	switch (prop) {
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
@@ -534,8 +535,6 @@ static int lc709203f_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		rc = lc709203f_get_power_mode(dev, (enum lc709203f_power_mode *)&val->sbs_mode);
 		break;
 	case FUEL_GAUGE_DESIGN_CAPACITY:
-		enum lc709203f_battery_apa apa = LC709203F_APA_100MAH;
-
 		rc = lc709203f_get_apa(dev, &apa);
 
 		switch (apa) {
