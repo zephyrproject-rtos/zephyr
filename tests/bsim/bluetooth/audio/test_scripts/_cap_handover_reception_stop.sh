@@ -4,6 +4,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Temporarily been disabled due to assert in the controller
+# ASSERTION FAIL [instant_latency == 0U] @
+# WEST_TOPDIR/zephyr/subsys/bluetooth/controller/ll_sw/ull_conn_iso.c:1025
+# See https://github.com/zephyrproject-rtos/zephyr/issues/82399
+
 SIMULATION_ID="cap_handover_central"
 VERBOSITY_LEVEL=2
 NR_OF_DEVICES=3
@@ -13,11 +18,11 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
-printf "\n\n======== Running CAP handover unicast to broadcast =========\n\n"
+printf "\n\n======== Running CAP handover unicast to broadcast with reception stop =========\n\n"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 \
-  -testid=cap_handover_central \
+  -testid=cap_handover_central_reception_stop \
   -RealEncryption=1 -rs=23 -D=${NR_OF_DEVICES}
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
