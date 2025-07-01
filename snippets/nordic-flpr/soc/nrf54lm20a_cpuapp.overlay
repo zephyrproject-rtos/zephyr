@@ -9,20 +9,25 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuflpr_code_partition: image@1ed000 {
+			cpuflpr_code_partition: image@1e5000 {
 				/* FLPR core code partition */
-				reg = <0x1ed000 DT_SIZE_K(64)>;
+				reg = <0x1e5000 DT_SIZE_K(96)>;
 			};
 		};
 
-		cpuflpr_sram_code_data: memory@2006fc00 {
+		cpuflpr_sram_code_data: memory@20067c00 {
 			compatible = "mmio-sram";
-			reg = <0x2006fc00 DT_SIZE_K(64)>;
+			reg = <0x20067c00 DT_SIZE_K(96)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2006fc00 0x10000>;
+			ranges = <0x0 0x20067c00 DT_SIZE_K(96)>;
 		};
 	};
+};
+
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(415)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(415)>;
 };
 
 &uart30 {
