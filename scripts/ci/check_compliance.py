@@ -1254,6 +1254,7 @@ flagged.
         "SRAM2",  # Referenced in a comment in samples/application_development
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
+        "SYSTEM_WORKQUEUE_MIN_STACK_SIZE_", # Used as an option matching prefix
         "TEST1",
         "TOOLCHAIN", # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
                      # It is used by MCUX SDK cmake functions to add content
