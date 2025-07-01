@@ -300,8 +300,8 @@ static inline int check_ip(struct net_pkt *pkt)
 			return 0;
 		}
 #endif
-		if (net_ipv4_addr_cmp((struct in_addr *)NET_IPV4_HDR(pkt)->dst,
-				      net_ipv4_unspecified_address())) {
+		if (net_ipv4_addr_cmp_raw(NET_IPV4_HDR(pkt)->dst,
+					  net_ipv4_unspecified_address()->s4_addr)) {
 			NET_DBG("DROP: IPv4 dst address missing");
 			ret = -EADDRNOTAVAIL;
 			goto drop;
@@ -310,10 +310,10 @@ static inline int check_ip(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_ipv4_is_addr_loopback((struct in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-		    (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				     (struct in_addr *)NET_IPV4_HDR(pkt)->dst) == false &&
-		     net_ipv4_is_my_addr((struct in_addr *)NET_IPV4_HDR(pkt)->dst))) {
+		if (net_ipv4_is_addr_loopback_raw(NET_IPV4_HDR(pkt)->dst) ||
+		    (net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
+						NET_IPV4_HDR(pkt)->dst) == false &&
+		     net_ipv4_is_my_addr_raw(NET_IPV4_HDR(pkt)->dst))) {
 			struct in_addr addr;
 
 			/* Swap the addresses so that in receiving side
@@ -334,7 +334,7 @@ static inline int check_ip(struct net_pkt *pkt)
 		 * as having src 127.0.0.0/8 is perfectly ok if dst is in
 		 * localhost subnet too.
 		 */
-		if (net_ipv4_is_addr_loopback((struct in_addr *)NET_IPV4_HDR(pkt)->src)) {
+		if (net_ipv4_is_addr_loopback_raw(NET_IPV4_HDR(pkt)->src)) {
 			NET_DBG("DROP: IPv4 loopback src address");
 			ret = -EADDRNOTAVAIL;
 			goto drop;
