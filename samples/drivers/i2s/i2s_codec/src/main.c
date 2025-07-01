@@ -194,7 +194,6 @@ int main(void)
 #else
 				/* If not using DMIC, play a sine wave 440Hz */
 				mem_block = (void *)&__16kHz16bit_stereo_sine_pcm;
-				block_size = __16kHz16bit_stereo_sine_pcm_len;
 
 				ret = i2s_buf_write(i2s_dev_codec, mem_block, block_size);
 #endif
