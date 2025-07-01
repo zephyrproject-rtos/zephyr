@@ -96,4 +96,6 @@ source "drivers/video/Kconfig.st_mipid02"
 
 source "drivers/video/Kconfig.stm32_dcmipp"
 
+source "drivers/video/Kconfig.renesas_ra_ceu"
+
 endif # VIDEO
