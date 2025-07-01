@@ -14,6 +14,16 @@ properties:
   interrupts:
     required: true
 
+  enable-internal-timer:
+    type: boolean
+    description: |
+      Enable the internal timer for the SAADC to improve interval accuracy.
+      When enabled, the SAADC will utilize its built-in local timer for sampling.
+      If disabled, the SAADC will rely on the kernel timer.
+      WARNING: The internal timer is only applicable for sequences with a single channel.
+               It can be used only for intervals between consecutive samplings ranging
+               from 500 ns to 128 us.
+
   "#io-channel-cells":
     const: 1
 
