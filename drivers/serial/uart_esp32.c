@@ -271,6 +271,7 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	struct uart_esp32_data *data = dev->data;
 	uart_sclk_t src_clk;
 	uint32_t sclk_freq;
+	uint32_t inv_mask = 0;
 
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
@@ -359,12 +360,16 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
 
 	if (config->tx_invert) {
-		uart_hal_inverse_signal(&data->hal, UART_SIGNAL_TXD_INV);
+		inv_mask |= UART_SIGNAL_TXD_INV;
+	}
+	if (config->rx_invert) {
+		inv_mask |= UART_SIGNAL_RXD_INV;
 	}
 
-	if (config->rx_invert) {
-		uart_hal_inverse_signal(&data->hal, UART_SIGNAL_RXD_INV);
+	if (inv_mask) {
+		uart_hal_inverse_signal(&data->hal, inv_mask);
 	}
+
 	return 0;
 }
 
