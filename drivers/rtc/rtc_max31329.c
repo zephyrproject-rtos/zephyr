@@ -6,7 +6,7 @@
  * Following is the driver for max31329 RTC from Analog Devices
  * rtc_pcf8563.c has been used as a reference to develop the base code
  *
- * with this driver following features been supported
+ * with this driver following features are supported
  *
  * - RTC Alarm 1 interrupt
  * - Trickle charging
