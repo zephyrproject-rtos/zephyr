@@ -329,6 +329,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
 	stream->qos = qos;
+	stream->group = source;
 	ep->broadcast_source = source;
 
 	return 0;
