@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Following is the Driver for max31329 RTC from analog device
+ * Following is the driver for max31329 RTC from Analog Devices
  * rtc_pcf8563.c has been used as a reference to develop the base code
  *
  * with this driver following features been supported
