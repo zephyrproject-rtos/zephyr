@@ -782,6 +782,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	struct in6_addr *nexthop = NULL;
 	struct net_if *iface = NULL;
 	struct net_ipv6_hdr *ip_hdr;
+	struct in6_addr dst_ip;
 	struct net_nbr *nbr;
 	int ret;
 
@@ -791,6 +792,8 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	if (!ip_hdr) {
 		return NET_DROP;
 	}
+
+	net_ipv6_addr_copy_raw(dst_ip.s6_addr, ip_hdr->dst);
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 	/* If we have already fragmented the packet, the fragment id will
@@ -849,11 +852,11 @@ use_interface_mtu:
 	 */
 	if ((net_pkt_lladdr_dst(pkt)->len > 0 &&
 	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
-	      (net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->dst) ||
-	       net_if_ipv6_addr_onlink(NULL, (struct in6_addr *)ip_hdr->dst) ||
+	      (net_ipv6_is_ll_addr(&dst_ip) ||
+	       net_if_ipv6_addr_onlink(NULL, &dst_ip) ||
 	       net_pkt_forwarding(pkt))) ||
 	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
-	    net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst) ||
+	    net_ipv6_is_addr_mcast(&dst_ip) ||
 	    /* Workaround Linux bug, see:
 	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	     */
@@ -862,19 +865,18 @@ use_interface_mtu:
 		return NET_OK;
 	}
 
-	if (net_if_ipv6_addr_onlink(&iface, (struct in6_addr *)ip_hdr->dst)) {
-		nexthop = (struct in6_addr *)ip_hdr->dst;
+	if (net_if_ipv6_addr_onlink(&iface, &dst_ip)) {
+		nexthop = &dst_ip;
 		net_pkt_set_iface(pkt, iface);
-	} else if (net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->dst)) {
-		nexthop = (struct in6_addr *)ip_hdr->dst;
+	} else if (net_ipv6_is_ll_addr(&dst_ip)) {
+		nexthop = &dst_ip;
 	} else {
 		/* We need to figure out where the destination
 		 * host is located.
 		 */
 		bool try_route = false;
 
-		nexthop = check_route(NULL, (struct in6_addr *)ip_hdr->dst,
-				      &try_route);
+		nexthop = check_route(NULL, &dst_ip, &try_route);
 		if (!nexthop) {
 			return NET_DROP;
 		}
@@ -969,11 +971,15 @@ try_send:
 	net_ipv6_nbr_unlock();
 
 #if defined(CONFIG_NET_IPV6_ND)
+	struct in6_addr src_ip;
+
+	net_ipv6_addr_copy_raw(src_ip.s6_addr, ip_hdr->src);
+
 	/* We need to send NS and wait for NA before sending the packet. If the packet was
 	 * forwarded from another interface do not use the original source address.
 	 */
 	ret = net_ipv6_send_ns(net_pkt_iface(pkt), pkt,
-			       net_pkt_forwarding(pkt) ? NULL : (struct in6_addr *)ip_hdr->src,
+			       net_pkt_forwarding(pkt) ? NULL : &src_ip,
 			       NULL, nexthop, false);
 	if (ret < 0) {
 		/* In case of an error, the NS send function will unref
@@ -1212,6 +1218,7 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 	const struct in6_addr *na_src;
 	const struct in6_addr *na_dst;
 	struct in6_addr *tgt;
+	struct in6_addr ns_tgt, ns_src, ns_dst;
 	struct net_linkaddr src_lladdr;
 
 	src_lladdr.len = 0;
@@ -1229,13 +1236,17 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 	dbg_addr_recv_tgt("Neighbor Solicitation",
 			  &ip_hdr->src, &ip_hdr->dst, &ns_hdr->tgt, pkt);
 
+	net_ipv6_addr_copy_raw(ns_tgt.s6_addr, ns_hdr->tgt);
+	net_ipv6_addr_copy_raw(ns_src.s6_addr, ip_hdr->src);
+	net_ipv6_addr_copy_raw(ns_dst.s6_addr, ip_hdr->dst);
+
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
 	if (((length < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
 			  sizeof(struct net_icmpv6_ns_hdr))) ||
 	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) &&
-	    (net_ipv6_is_addr_mcast((struct in6_addr *)ns_hdr->tgt) &&
+	    (net_ipv6_is_addr_mcast(&ns_tgt) &&
 	     icmp_hdr->code != 0U)) {
 		goto drop;
 	}
@@ -1256,8 +1267,7 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 
 		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
-			if (net_ipv6_is_addr_unspecified(
-					(struct in6_addr *)ip_hdr->src)) {
+			if (net_ipv6_is_addr_unspecified(&ns_src)) {
 				goto drop;
 			}
 
@@ -1288,29 +1298,25 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		ifaddr = net_if_ipv6_addr_lookup((struct in6_addr *)ns_hdr->tgt,
-						 NULL);
+		ifaddr = net_if_ipv6_addr_lookup(&ns_tgt, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(
-			    net_pkt_iface(pkt), (struct in6_addr *)ns_hdr->tgt);
+			    net_pkt_iface(pkt), &ns_tgt);
 	}
 
 	if (!ifaddr) {
 		if (IS_ENABLED(CONFIG_NET_ROUTING)) {
 			struct in6_addr *nexthop;
 
-			nexthop = check_route(NULL,
-					      (struct in6_addr *)ns_hdr->tgt,
-					      NULL);
+			nexthop = check_route(NULL, &ns_tgt, NULL);
 			if (nexthop) {
-				ns_routing_info(pkt, nexthop,
-						(struct in6_addr *)ns_hdr->tgt);
-				na_dst = (struct in6_addr *)ip_hdr->dst;
+				ns_routing_info(pkt, nexthop, &ns_tgt);
+				na_dst = &ns_dst;
 				/* Note that the target is not the address of
 				 * the "nethop" as that is a link-local address
 				 * which is not routable.
 				 */
-				tgt = (struct in6_addr *)ns_hdr->tgt;
+				tgt = &ns_tgt;
 
 				/* Source address must be one of our real
 				 * interface address where the packet was
@@ -1318,11 +1324,11 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 				 */
 				na_src = net_if_ipv6_select_src_addr(
 						net_pkt_iface(pkt),
-						(struct in6_addr *)ip_hdr->src);
+						&ns_src);
 				if (!na_src) {
 					NET_DBG("DROP: No interface address "
 						"for dst %s iface %p/%d",
-						net_sprint_ipv6_addr(&ip_hdr->src),
+						net_sprint_ipv6_addr(&ns_src),
 						net_pkt_iface(pkt),
 						net_if_get_by_iface(
 							net_pkt_iface(pkt)));
@@ -1335,28 +1341,28 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 		}
 
 		NET_DBG("DROP: No such interface address %s",
-			net_sprint_ipv6_addr(&ns_hdr->tgt));
+			net_sprint_ipv6_addr(&ns_tgt));
 		goto silent_drop;
 	} else {
 		tgt = &ifaddr->address.in6_addr;
-		na_src = (struct in6_addr *)ip_hdr->dst;
+		na_src = &ns_dst;
 	}
 
 nexthop_found:
 
 #if !defined(CONFIG_NET_IPV6_DAD)
-	if (net_ipv6_is_addr_unspecified((struct in6_addr *)ip_hdr->src)) {
+	if (net_ipv6_is_addr_unspecified(&ns_src)) {
 		goto drop;
 	}
 
 #else /* CONFIG_NET_IPV6_DAD */
 
 	/* Do DAD */
-	if (net_ipv6_is_addr_unspecified((struct in6_addr *)ip_hdr->src)) {
+	if (net_ipv6_is_addr_unspecified(&ns_src)) {
 
-		if (!net_ipv6_is_addr_solicited_node((struct in6_addr *)ip_hdr->dst)) {
+		if (!net_ipv6_is_addr_solicited_node(&ns_dst)) {
 			NET_DBG("DROP: Not solicited node addr %s",
-				net_sprint_ipv6_addr(&ip_hdr->dst));
+				net_sprint_ipv6_addr(&ns_dst));
 			goto silent_drop;
 		}
 
@@ -1372,30 +1378,28 @@ nexthop_found:
 		}
 
 		/* We reuse the received packet for the NA addresses*/
-		net_ipv6_addr_create_ll_allnodes_mcast(
-					(struct in6_addr *)ip_hdr->dst);
+		net_ipv6_addr_create_ll_allnodes_mcast(&ns_dst);
 		net_ipaddr_copy((struct in6_addr *)ip_hdr->src,
 				net_if_ipv6_select_src_addr(
-					net_pkt_iface(pkt),
-					(struct in6_addr *)ip_hdr->dst));
+					net_pkt_iface(pkt), &ns_dst));
 
-		na_src = (struct in6_addr *)ip_hdr->src;
-		na_dst = (struct in6_addr *)ip_hdr->dst;
+		na_src = &ns_src;
+		na_dst = &ns_dst;
 		flags = NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
 	}
 #endif /* CONFIG_NET_IPV6_DAD */
 
-	if (net_ipv6_is_my_addr((struct in6_addr *)ip_hdr->src)) {
+	if (net_ipv6_is_my_addr(&ns_src)) {
 		NET_DBG("DROP: Duplicate IPv6 %s address",
-			net_sprint_ipv6_addr(&ip_hdr->src));
+			net_sprint_ipv6_addr(&ns_src));
 		goto silent_drop;
 	}
 
 	/* Address resolution */
-	if (net_ipv6_is_addr_solicited_node((struct in6_addr *)ip_hdr->dst)) {
-		na_src = (struct in6_addr *)ns_hdr->tgt;
-		na_dst = (struct in6_addr *)ip_hdr->src;
+	if (net_ipv6_is_addr_solicited_node(&ns_dst)) {
+		na_src = &ns_tgt;
+		na_dst = &ns_src;
 		flags = NET_ICMPV6_NA_FLAG_SOLICITED |
 			NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
@@ -1408,17 +1412,16 @@ nexthop_found:
 
 	/* Neighbor Unreachability Detection (NUD) */
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		ifaddr = net_if_ipv6_addr_lookup((struct in6_addr *)ip_hdr->dst,
-						 NULL);
+		ifaddr = net_if_ipv6_addr_lookup(&ns_dst, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(
 						net_pkt_iface(pkt),
-						(struct in6_addr *)ip_hdr->dst);
+						&ns_dst);
 	}
 
 	if (ifaddr) {
-		na_src = (struct in6_addr *)ns_hdr->tgt;
-		na_dst = (struct in6_addr *)ip_hdr->src;
+		na_src = &ns_tgt;
+		na_dst = &ns_src;
 		tgt = &ifaddr->address.in6_addr;
 		flags = NET_ICMPV6_NA_FLAG_SOLICITED |
 			NET_ICMPV6_NA_FLAG_OVERRIDE;
@@ -1431,8 +1434,7 @@ nexthop_found:
 send_na:
 	if (src_lladdr.len > 0) {
 		if (!net_ipv6_nbr_add(net_pkt_iface(pkt),
-				      (struct in6_addr *)ip_hdr->src,
-				      &src_lladdr, false,
+				      &ns_src, &src_lladdr, false,
 				      NET_IPV6_NBR_STATE_INCOMPLETE)) {
 			goto drop;
 		}
@@ -1635,6 +1637,7 @@ void net_ipv6_nbr_reachability_hint(struct net_if *iface,
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static inline bool handle_na_neighbor(struct net_pkt *pkt,
 				      struct net_icmpv6_na_hdr *na_hdr,
+				      struct in6_addr *na_tgt,
 				      uint16_t tllao_offset)
 {
 	struct net_linkaddr lladdr = { 0 };
@@ -1645,12 +1648,11 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 	net_ipv6_nbr_lock();
 
-	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt),
-			 (struct in6_addr *)na_hdr->tgt);
+	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt), na_tgt);
 
 	NET_DBG("Neighbor lookup %p iface %p/%d addr %s", nbr,
 		net_pkt_iface(pkt), net_if_get_by_iface(net_pkt_iface(pkt)),
-		net_sprint_ipv6_addr(&na_hdr->tgt));
+		net_sprint_ipv6_addr(na_tgt));
 
 	if (!nbr) {
 		nbr_print();
@@ -1687,7 +1689,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 		NET_DBG("[%d] nbr %p state %d IPv6 %s ll %s",
 			nbr->idx, nbr, net_ipv6_nbr_data(nbr)->state,
-			net_sprint_ipv6_addr(&na_hdr->tgt),
+			net_sprint_ipv6_addr(na_tgt),
 			net_sprint_ll_addr(nbr_lladdr.addr, nbr_lladdr.len));
 	}
 
@@ -1711,8 +1713,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 		if (lladdr_changed) {
 			dbg_update_neighbor_lladdr_raw(
-				lladdr.addr, cached_lladdr,
-				(struct in6_addr *)na_hdr->tgt);
+				lladdr.addr, cached_lladdr, na_tgt);
 
 			net_linkaddr_set(cached_lladdr, lladdr.addr,
 					 cached_lladdr->len);
@@ -1756,8 +1757,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 		if (lladdr_changed) {
 			dbg_update_neighbor_lladdr_raw(
-				lladdr.addr, cached_lladdr,
-				(struct in6_addr *)na_hdr->tgt);
+				lladdr.addr, cached_lladdr, na_tgt);
 
 			net_linkaddr_set(cached_lladdr, lladdr.addr,
 					 cached_lladdr->len);
@@ -1829,6 +1829,7 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 	uint16_t tllao_offset = 0U;
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_na_hdr *na_hdr;
+	struct in6_addr na_tgt, na_dst;
 	struct net_if_addr *ifaddr;
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
@@ -1846,14 +1847,17 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
+	net_ipv6_addr_copy_raw(na_tgt.s6_addr, na_hdr->tgt);
+	net_ipv6_addr_copy_raw(na_dst.s6_addr, ip_hdr->dst);
+
 	if (((length < (sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_icmp_hdr) +
 			sizeof(struct net_icmpv6_na_hdr) +
 			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
 	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     net_ipv6_is_addr_mcast((struct in6_addr *)na_hdr->tgt) ||
+	     net_ipv6_is_addr_mcast(&na_tgt) ||
 	     (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED &&
-	      net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst))) &&
+	      net_ipv6_is_addr_mcast(&na_dst))) &&
 	    (icmp_hdr->code != 0U)) {
 		goto drop;
 	}
@@ -1899,25 +1903,23 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 					net_pkt_get_data(pkt, &nd_access);
 	}
 
-	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-						  (struct in6_addr *)na_hdr->tgt);
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt), &na_tgt);
 	if (ifaddr) {
 		NET_DBG("Interface %p/%d already has address %s",
 			net_pkt_iface(pkt),
 			net_if_get_by_iface(net_pkt_iface(pkt)),
-			net_sprint_ipv6_addr(&na_hdr->tgt));
+			net_sprint_ipv6_addr(&na_tgt));
 
 #if defined(CONFIG_NET_IPV6_DAD)
 		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
-			dad_failed(net_pkt_iface(pkt),
-				   (struct in6_addr *)na_hdr->tgt);
+			dad_failed(net_pkt_iface(pkt), &na_tgt);
 		}
 #endif /* CONFIG_NET_IPV6_DAD */
 
 		goto drop;
 	}
 
-	if (!handle_na_neighbor(pkt, na_hdr, tllao_offset)) {
+	if (!handle_na_neighbor(pkt, na_hdr, &na_tgt, tllao_offset)) {
 		/* Update the statistics but silently drop NA msg if the sender
 		 * is not known or if there was an error in the message.
 		 * Returning <0 will cause error message to be printed which
@@ -2155,7 +2157,8 @@ int net_ipv6_start_rs(struct net_if *iface)
 	return net_ipv6_send_rs(iface);
 }
 
-static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, uint8_t len)
+static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, uint8_t len,
+						 struct in6_addr *ra_src)
 {
 	struct net_linkaddr lladdr;
 
@@ -2163,8 +2166,7 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, uint8_t le
 		return NULL;
 	}
 
-	return net_ipv6_nbr_add(net_pkt_iface(pkt),
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->src,
+	return net_ipv6_nbr_add(net_pkt_iface(pkt), ra_src,
 				&lladdr, true,
 				NET_IPV6_NBR_STATE_STALE);
 }
@@ -2173,9 +2175,11 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 			struct net_icmpv6_nd_opt_prefix_info *prefix_info)
 {
 	struct net_if_ipv6_prefix *prefix;
+	struct in6_addr received_prefix;
 
-	prefix = net_if_ipv6_prefix_lookup(net_pkt_iface(pkt),
-					   (struct in6_addr *)prefix_info->prefix,
+	net_ipv6_addr_copy_raw(received_prefix.s6_addr, prefix_info->prefix);
+
+	prefix = net_if_ipv6_prefix_lookup(net_pkt_iface(pkt), &received_prefix,
 					   prefix_info->prefix_len);
 	if (!prefix) {
 		if (!prefix_info->valid_lifetime) {
@@ -2253,14 +2257,16 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 			struct net_icmpv6_nd_opt_prefix_info *prefix_info)
 {
 	struct net_if *iface = net_pkt_iface(pkt);
+	struct in6_addr received_prefix;
 	struct in6_addr addr = { };
 	struct net_if_addr *ifaddr;
 	int ret;
 
+	net_ipv6_addr_copy_raw(received_prefix.s6_addr, prefix_info->prefix);
+
 	/* Create IPv6 address using the given prefix and iid.
 	 */
-	ret = net_ipv6_addr_generate_iid(iface,
-			 (struct in6_addr *)prefix_info->prefix,
+	ret = net_ipv6_addr_generate_iid(iface, &received_prefix,
 			 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
 				     ((uint8_t *)&iface->config.ip.ipv6->network_counter),
 				     (NULL)),
@@ -2318,8 +2324,7 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 	 * too.
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV6_PE) && iface->pe_enabled) {
-		net_ipv6_pe_start(iface,
-				  (const struct in6_addr *)prefix_info->prefix,
+		net_ipv6_pe_start(iface, &received_prefix,
 				  prefix_info->valid_lifetime,
 				  prefix_info->preferred_lifetime);
 	}
@@ -2344,7 +2349,7 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 	preferred_lifetime = ntohl(pfx_info->preferred_lifetime);
 
 	if (valid_lifetime >= preferred_lifetime &&
-	    !net_ipv6_is_ll_addr((struct in6_addr *)pfx_info->prefix)) {
+	    !net_ipv6_is_ll_addr_raw(pfx_info->prefix)) {
 		if (pfx_info->flags & NET_ICMPV6_RA_FLAG_ONLINK) {
 			handle_prefix_onlink(pkt, pfx_info);
 		}
@@ -2400,7 +2405,8 @@ static inline bool handle_ra_6co(struct net_pkt *pkt, uint8_t len)
 }
 #endif
 
-static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len)
+static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len,
+					struct in6_addr *ra_src)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(routeinfo_access,
 				   struct net_icmpv6_nd_opt_route_info);
@@ -2446,7 +2452,7 @@ static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len)
 		route = net_route_add(net_pkt_orig_iface(pkt),
 				      &prefix_buf,
 				      prefix_len,
-				      (struct in6_addr *)NET_IPV6_HDR(pkt)->src,
+				      ra_src,
 				      route_lifetime,
 				      preference);
 		if (route == NULL) {
@@ -2536,6 +2542,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	struct net_if_router *router;
 	uint32_t mtu, reachable_time, retrans_timer;
 	uint16_t router_lifetime;
+	struct in6_addr ra_src;
 
 	ARG_UNUSED(user_data);
 
@@ -2553,12 +2560,14 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
+	net_ipv6_addr_copy_raw(ra_src.s6_addr, ip_hdr->src);
+
 	if (((length < (sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_icmp_hdr) +
 			sizeof(struct net_icmpv6_ra_hdr) +
 			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
 	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     !net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->src)) &&
+	     !net_ipv6_is_ll_addr(&ra_src)) &&
 		icmp_hdr->code != 0U) {
 		goto drop;
 	}
@@ -2602,7 +2611,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
 			/* Update existing neighbor cache entry with link layer address. */
-			nbr = handle_ra_neighbor(pkt, nd_opt_hdr->len);
+			nbr = handle_ra_neighbor(pkt, nd_opt_hdr->len, &ra_src);
 			if (!nbr) {
 				goto drop;
 			}
@@ -2665,7 +2674,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 				goto drop;
 			}
 
-			if (!handle_ra_route_info(pkt, nd_opt_hdr->len)) {
+			if (!handle_ra_route_info(pkt, nd_opt_hdr->len, &ra_src)) {
 				goto drop;
 			}
 
@@ -2700,13 +2709,11 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 		/* Add neighbor cache entry using link local address, regardless
 		 * of link layer address presence in Router Advertisement.
 		 */
-		nbr = net_ipv6_nbr_add(net_pkt_iface(pkt),
-				       (struct in6_addr *)NET_IPV6_HDR(pkt)->src,
+		nbr = net_ipv6_nbr_add(net_pkt_iface(pkt), &ra_src,
 				       NULL, true, NET_IPV6_NBR_STATE_INCOMPLETE);
 	}
 
-	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt),
-					   (struct in6_addr *)ip_hdr->src);
+	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt), &ra_src);
 	if (router) {
 		if (!router_lifetime) {
 			/* TODO: Start rs_timer on iface if no routers
@@ -2722,8 +2729,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 					router, router_lifetime);
 		}
 	} else {
-		net_if_ipv6_router_add(net_pkt_iface(pkt),
-				       (struct in6_addr *)ip_hdr->src,
+		net_if_ipv6_router_add(net_pkt_iface(pkt), &ra_src,
 				       router_lifetime);
 	}
 
