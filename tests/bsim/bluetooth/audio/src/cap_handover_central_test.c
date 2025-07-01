@@ -53,6 +53,8 @@ static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESE
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_bap_lc3_preset broadcast_preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+static struct bt_cap_unicast_audio_start_param unicast_audio_start_param;
+static struct bt_cap_unicast_group_param unicast_group_param;
 
 static struct cap_acceptor {
 	struct audio_test_stream sink_stream;
@@ -64,6 +66,7 @@ static struct cap_acceptor {
 
 static size_t connected_conn_cnt;
 static struct bt_cap_broadcast_source *broadcast_source;
+static struct bt_cap_unicast_group *unicast_group;
 static bt_addr_le_t remote_dev_addr;
 
 CREATE_FLAG(flag_dev_found);
@@ -73,6 +76,7 @@ CREATE_FLAG(flag_endpoint_found);
 CREATE_FLAG(flag_started);
 CREATE_FLAG(flag_stopped);
 CREATE_FLAG(flag_handover_unicast_to_broadcast);
+CREATE_FLAG(flag_handover_broadcast_to_unicast);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_source_discovered);
@@ -137,7 +141,7 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 }
 
 static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
-					     struct bt_cap_unicast_group *unicast_group,
+					     struct bt_cap_unicast_group *group,
 					     struct bt_cap_broadcast_source *source)
 {
 	if (err != 0) {
@@ -146,8 +150,26 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 		return;
 	}
 
+	LOG_DBG("Unicast to broadcast handover completed with new source %p", source);
+
 	broadcast_source = source;
 	SET_FLAG(flag_handover_unicast_to_broadcast);
+}
+
+static void broadcast_to_unicast_complete_cb(int err, struct bt_conn *conn,
+					     struct bt_cap_broadcast_source *source,
+					     struct bt_cap_unicast_group *group)
+{
+	if (err != 0) {
+		FAIL("Failed to handover broadcast to unicast (failing conn %p): %d", conn, err);
+
+		return;
+	}
+
+	LOG_DBG("Broadcast to unicast handover completed with new unicast group %p", group);
+
+	unicast_group = group;
+	SET_FLAG(flag_handover_broadcast_to_unicast);
 }
 
 static void add_remote_sink(const struct bt_conn *conn, struct bt_bap_ep *ep)
@@ -345,6 +367,7 @@ static void init(void)
 	};
 	static struct bt_cap_handover_cb cap_handover_cb = {
 		.unicast_to_broadcast_complete = unicast_to_broadcast_complete_cb,
+		.broadcast_to_unicast_complete = broadcast_to_unicast_complete_cb,
 	};
 	static struct bt_cap_initiator_cb cap_initiator_cb = {
 		.unicast_discovery_complete = cap_discovery_complete_cb,
@@ -526,12 +549,13 @@ static void discover_bass(struct bt_conn *conn)
 	WAIT_FOR_FLAG(flag_discovered);
 }
 
-static void unicast_group_create(struct bt_cap_unicast_group **out_unicast_group)
+static void unicast_group_create(void)
 {
-	struct bt_cap_unicast_group_stream_param group_source_stream_params[CONFIG_BT_MAX_CONN];
-	struct bt_cap_unicast_group_stream_param group_sink_stream_params[CONFIG_BT_MAX_CONN];
-	struct bt_cap_unicast_group_stream_pair_param pair_params[CONFIG_BT_MAX_CONN];
-	struct bt_cap_unicast_group_param group_param;
+	static struct bt_cap_unicast_group_stream_param
+		group_source_stream_params[CONFIG_BT_MAX_CONN];
+	static struct bt_cap_unicast_group_stream_param
+		group_sink_stream_params[CONFIG_BT_MAX_CONN];
+	static struct bt_cap_unicast_group_stream_pair_param pair_params[CONFIG_BT_MAX_CONN];
 	int err;
 
 	for (size_t i = 0U; i < connected_conn_cnt; i++) {
@@ -545,21 +569,21 @@ static void unicast_group_create(struct bt_cap_unicast_group **out_unicast_group
 		pair_params[i].rx_param = &group_source_stream_params[i];
 	}
 
-	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
-	group_param.params_count = connected_conn_cnt;
-	group_param.params = pair_params;
+	unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	unicast_group_param.params_count = connected_conn_cnt;
+	unicast_group_param.params = pair_params;
 
-	err = bt_cap_unicast_group_create(&group_param, out_unicast_group);
+	err = bt_cap_unicast_group_create(&unicast_group_param, &unicast_group);
 	if (err != 0) {
 		FAIL("Failed to create group: %d\n", err);
 		return;
 	}
 }
 
-static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group)
+static void unicast_audio_start(void)
 {
-	struct bt_cap_unicast_audio_start_stream_param stream_param[2 * ARRAY_SIZE(cap_acceptors)];
-	struct bt_cap_unicast_audio_start_param param;
+	static struct bt_cap_unicast_audio_start_stream_param
+		stream_param[2 * ARRAY_SIZE(cap_acceptors)];
 	size_t stream_param_cnt = 0U;
 	int err;
 
@@ -581,13 +605,13 @@ static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group)
 		stream_param_cnt++;
 	}
 
-	param.type = BT_CAP_SET_TYPE_AD_HOC;
-	param.count = stream_param_cnt;
-	param.stream_params = stream_param;
+	unicast_audio_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
+	unicast_audio_start_param.count = stream_param_cnt;
+	unicast_audio_start_param.stream_params = stream_param;
 
 	UNSET_FLAG(flag_started);
 
-	err = bt_cap_initiator_unicast_audio_start(&param);
+	err = bt_cap_initiator_unicast_audio_start(&unicast_audio_start_param);
 	if (err != 0) {
 		FAIL("Failed to start unicast audio: %d\n", err);
 		return;
@@ -598,8 +622,37 @@ static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group)
 	backchannel_sync_send_all();
 }
 
-static void handover_unicast_to_broadcast(struct bt_cap_unicast_group *unicast_group,
-					  struct bt_le_ext_adv *ext_adv)
+static void unicast_audio_stop(void)
+{
+	struct bt_cap_stream *streams_to_stop[ARRAY_SIZE(cap_acceptors)];
+	struct bt_cap_unicast_audio_stop_param param = {0};
+	int err;
+
+	for (size_t i = 0U; i < connected_conn_cnt; i++) {
+		/* Sink param */
+		streams_to_stop[param.count++] =
+			cap_stream_from_audio_test_stream(&cap_acceptors[i].sink_stream);
+	}
+
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
+	param.streams = streams_to_stop;
+	param.release = true;
+
+	/* Stop without release first to verify that we enter the QoS Configured state */
+	UNSET_FLAG(flag_stopped);
+	LOG_DBG("Stopping");
+
+	err = bt_cap_initiator_unicast_audio_stop(&param);
+	if (err != 0) {
+		FAIL("Failed to stop unicast audio: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_stopped);
+}
+
+static void handover_unicast_to_broadcast(struct bt_le_ext_adv *ext_adv, uint8_t adv_sid,
+					  uint32_t broadcast_id)
 {
 	static struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(cap_acceptors)];
@@ -659,9 +712,9 @@ static void handover_unicast_to_broadcast(struct bt_cap_unicast_group *unicast_g
 	param.unicast_group = unicast_group;
 	param.broadcast_create_param = &create_param;
 	param.ext_adv = ext_adv;
-	param.sid = 0x00;
+	param.sid = adv_sid;
 	param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
-	param.broadcast_id = 0x123456;
+	param.broadcast_id = broadcast_id;
 
 	UNSET_FLAG(flag_handover_unicast_to_broadcast);
 
@@ -672,6 +725,59 @@ static void handover_unicast_to_broadcast(struct bt_cap_unicast_group *unicast_g
 	}
 
 	WAIT_FOR_FLAG(flag_handover_unicast_to_broadcast);
+}
+
+static void handover_broadcast_to_unicast(const struct bt_le_ext_adv *ext_adv, uint8_t adv_sid,
+					  uint32_t broadcast_id)
+{
+	struct bt_cap_unicast_audio_start_stream_param stream_params[ARRAY_SIZE(cap_acceptors)] = {
+		0};
+	struct bt_cap_unicast_audio_start_param audio_start_param = {0};
+	struct bt_cap_broadcast_to_unicast_param param = {0};
+	struct bt_le_ext_adv_info adv_info;
+	size_t stream_param_cnt = 0U;
+	int err;
+
+	err = bt_le_ext_adv_get_info(ext_adv, &adv_info);
+	if (err != 0) {
+		FAIL("Failed to get adv info: %d\n", err);
+		return;
+	}
+
+	/* We use the previous unicast audio start parameters restart it for sinks only */
+	for (size_t i = 0U; i < unicast_audio_start_param.count; i++) {
+		const struct bt_cap_unicast_audio_start_stream_param *stream_param =
+			&unicast_audio_start_param.stream_params[i];
+
+		/* A NULL group Indicates that is/was a source stream - Ignore source streams as
+		 * they cannot be handed over from broadcast
+		 */
+		if (stream_param->stream->bap_stream.group != NULL) {
+			(void)memcpy(&stream_params[stream_param_cnt++], stream_param,
+				     sizeof(*stream_param));
+		}
+	}
+
+	audio_start_param.type = unicast_audio_start_param.type;
+	audio_start_param.count = stream_param_cnt;
+	audio_start_param.stream_params = stream_params;
+
+	param.adv_type = adv_info.addr->type;
+	param.adv_sid = adv_sid;
+	param.broadcast_id = broadcast_id;
+	param.broadcast_source = broadcast_source;
+	param.unicast_group_param = &unicast_group_param;
+	param.unicast_start_param = &audio_start_param;
+
+	UNSET_FLAG(flag_handover_broadcast_to_unicast);
+
+	err = bt_cap_handover_broadcast_to_unicast(&param);
+	if (err != 0) {
+		FAIL("Failed to handover unicast audio to broadcast: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_handover_broadcast_to_unicast);
 	LOG_DBG("Handover procedure completed");
 }
 
@@ -698,33 +804,12 @@ static void set_base_data(struct bt_le_ext_adv *ext_adv)
 	}
 }
 
-static void stop_broadcast(void)
-{
-	int err;
-
-	/* Verify that it cannot be stopped twice */
-	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
-	if (err != 0) {
-		FAIL("Failed to stop broadcast source: %d\n", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG(flag_broadcast_stopped);
-
-	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
-	if (err != 0) {
-		FAIL("Failed to delete broadcast source: %d\n", err);
-		return;
-	}
-
-	broadcast_source = NULL;
-}
-
-static void test_main_cap_handover_unicast_to_broadcast(void)
+static void test_main_cap_handover_central(void)
 {
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors */
-	struct bt_cap_unicast_group *unicast_group;
+	uint32_t broadcast_id = 0x123456;
 	struct bt_le_ext_adv *ext_adv;
+	uint8_t adv_sid = 0x00;
 
 	if (acceptor_cnt > CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT) {
 		FAIL("Cannot run test with %zu acceptors and maximum %d broadcast streams",
@@ -746,23 +831,30 @@ static void test_main_cap_handover_unicast_to_broadcast(void)
 		discover_source(cap_acceptors[i].conn);
 	}
 
-	unicast_group_create(&unicast_group);
+	unicast_group_create();
 
-	unicast_audio_start(unicast_group);
+	unicast_audio_start();
 
 	/* Wait for acceptors to receive some data */
 	backchannel_sync_wait_all();
 
 	setup_broadcast_adv(&ext_adv);
 
-	handover_unicast_to_broadcast(unicast_group, ext_adv);
+	handover_unicast_to_broadcast(ext_adv, adv_sid, broadcast_id);
+	unicast_group = NULL;
 	set_base_data(ext_adv);
 	start_broadcast_adv(ext_adv);
 
 	/* Wait for acceptors to receive some data */
 	backchannel_sync_wait_all();
 
-	stop_broadcast();
+	handover_broadcast_to_unicast(ext_adv, adv_sid, broadcast_id);
+	broadcast_source = NULL;
+
+	/* Wait for acceptors to receive some data */
+	backchannel_sync_wait_all();
+
+	unicast_audio_stop();
 
 	PASS("CAP initiator handover unicast to broadcast passed\n");
 }
@@ -772,7 +864,7 @@ static const struct bst_test_instance test_cap_handover_central[] = {
 		.test_id = "cap_handover_central",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main_cap_handover_unicast_to_broadcast,
+		.test_main_f = test_main_cap_handover_central,
 	},
 	BSTEST_END_MARKER,
 };
