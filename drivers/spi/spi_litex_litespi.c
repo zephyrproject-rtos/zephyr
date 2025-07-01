@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #define SPIFLASH_MASTER_STATUS_RX_READY_OFFSET 0x1
 
 #define SPI_MAX_WORD_SIZE 32
-#define SPI_MAX_CS_SIZE   4
+#define SPI_MAX_CS_SIZE   32
 
 #define SPI_LITEX_WIDTH   BIT(0)
 #define SPI_LITEX_MASK    BIT(0)
