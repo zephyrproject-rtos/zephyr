@@ -192,6 +192,16 @@ static void sx12xx_ev_rx_error(void)
 	}
 }
 
+uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
+{
+	return Radio.TimeOnAir(MODEM_LORA,
+			       dev_data.tx_cfg.bandwidth,
+			       dev_data.tx_cfg.datarate,
+			       dev_data.tx_cfg.coding_rate,
+			       dev_data.tx_cfg.preamble_len,
+			       0, data_len, !dev_data.tx_cfg.packet_crc_disable);
+}
+
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
@@ -214,13 +224,8 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 	}
 
 	/* Calculate expected airtime of the packet */
-	air_time = Radio.TimeOnAir(MODEM_LORA,
-				   dev_data.tx_cfg.bandwidth,
-				   dev_data.tx_cfg.datarate,
-				   dev_data.tx_cfg.coding_rate,
-				   dev_data.tx_cfg.preamble_len,
-				   0, data_len, true);
-	LOG_DBG("Expected air time of %d bytes = %dms", data_len, air_time);
+	air_time = sx12xx_airtime(dev, data_len);
+	LOG_DBG("Expected air time of %u bytes = %u ms", data_len, air_time);
 
 	/* Wait for the packet to finish transmitting.
 	 * Use twice the tx duration to ensure that we are actually detecting
