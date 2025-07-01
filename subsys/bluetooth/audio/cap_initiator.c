@@ -42,10 +42,10 @@ LOG_MODULE_REGISTER(bt_cap_initiator, CONFIG_BT_CAP_INITIATOR_LOG_LEVEL);
 
 #include "common/bt_str.h"
 
-#if defined(CONFIG_BT_CAP_HANDOVER)
-static void handover_unicast_to_broadcast_reception_start(void);
-static void handover_unicast_to_broadcast_setup_broadcast(void);
-#endif /* CONFIG_BT_CAP_HANDOVER */
+__maybe_unused static void handover_unicast_to_broadcast_reception_start(void);
+__maybe_unused static void handover_unicast_to_broadcast_setup_broadcast(void);
+__maybe_unused static int
+cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
 
 static const struct bt_cap_initiator_cb *cap_cb;
 
@@ -311,15 +311,25 @@ static struct bt_cap_broadcast_source *get_cap_broadcast_source_by_bap_broadcast
 	return NULL;
 }
 
-#if defined(CONFIG_BT_CAP_HANDOVER)
 static bool is_handover_broadcast_source(const struct bt_cap_broadcast_source *cap_broadcast_source)
 {
+#if defined(CONFIG_BT_CAP_HANDOVER)
+	if (!bt_cap_common_handover_is_active()) {
+		return false;
+	}
+
 	const struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
 	const struct bt_cap_handover_proc_param *proc_param = &active_proc->proc_param.handover;
 
-	return cap_broadcast_source == proc_param->unicast_to_broadcast.broadcast_source;
-}
+	if (proc_param->is_unicast_to_broadcast) {
+		return cap_broadcast_source == proc_param->unicast_to_broadcast.broadcast_source;
+	} else {
+		return cap_broadcast_source == proc_param->broadcast_to_unicast.broadcast_source;
+	}
+#else  /* !CONFIG_BT_CAP_HANDOVER */
+	return false;
 #endif /* CONFIG_BT_CAP_HANDOVER */
+}
 
 static void broadcast_source_started_cb(struct bt_bap_broadcast_source *bap_broadcast_source)
 {
@@ -331,12 +341,10 @@ static void broadcast_source_started_cb(struct bt_bap_broadcast_source *bap_broa
 		return;
 	}
 
-#if defined(CONFIG_BT_CAP_HANDOVER)
-	if (bt_cap_common_handover_is_active() && is_handover_broadcast_source(source)) {
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && is_handover_broadcast_source(source)) {
 		handover_unicast_to_broadcast_reception_start();
 		return;
 	}
-#endif /* CONFIG_BT_CAP_HANDOVER */
 
 	if (cap_cb != NULL && cap_cb->broadcast_started != NULL) {
 		cap_cb->broadcast_started(source);
@@ -354,30 +362,36 @@ static void broadcast_source_stopped_cb(struct bt_bap_broadcast_source *bap_broa
 		return;
 	}
 
-#if defined(CONFIG_BT_CAP_HANDOVER)
-	if (bt_cap_common_handover_is_active() && is_handover_broadcast_source(source)) {
-		if (reason == BT_HCI_ERR_LOCALHOST_TERM_CONN) {
-			/* TODO: This will be the case when we do broadcast to unicast handover and
-			 * it successfully stops the broadcast
-			 */
-		} else {
-			struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-			struct bt_cap_handover_proc_param *proc_param =
-				&active_proc->proc_param.handover;
-			int err;
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && is_handover_broadcast_source(source)) {
+		struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+		struct bt_cap_handover_proc_param *proc_param = &active_proc->proc_param.handover;
 
-			err = bt_cap_initiator_broadcast_audio_delete(
+		if (proc_param->is_unicast_to_broadcast) {
+			LOG_DBG("Unexpected broadcast source stop with reason 0x%02x", reason);
+
+			const int err = bt_cap_initiator_broadcast_audio_delete(
 				proc_param->unicast_to_broadcast.broadcast_source);
+
 			__ASSERT_NO_MSG(err == 0);
 			proc_param->unicast_to_broadcast.broadcast_source = NULL;
 
 			active_proc->err = reason;
-			active_proc->failed_conn = NULL;
-			bt_cap_handover_proc_complete();
+			bt_cap_handover_complete();
+		} else {
+			if (reason == BT_HCI_ERR_LOCALHOST_TERM_CONN) {
+				/* Successfully stopped the broadcast source */
+				proc_param->broadcast_to_unicast.broadcast_stopped = true;
+				if (proc_param->broadcast_to_unicast.reception_stopped) {
+					cap_initiator_handover_broadcast_audio_stopped();
+				}
+			} else {
+				proc_param->unicast_to_broadcast.broadcast_source = NULL;
+				active_proc->err = reason;
+				bt_cap_handover_complete();
+			}
 		}
 		return;
 	}
-#endif /* CONFIG_BT_CAP_HANDOVER */
 
 	if (cap_cb && cap_cb->broadcast_stopped) {
 		cap_cb->broadcast_stopped(source, reason);
@@ -505,10 +519,6 @@ static enum bt_bap_ep_state stream_get_state(const struct bt_bap_stream *bap_str
 
 static bool stream_is_in_state(const struct bt_bap_stream *bap_stream, enum bt_bap_ep_state state)
 {
-	if (bap_stream->conn == NULL) {
-		return state == BT_BAP_EP_STATE_IDLE;
-	}
-
 	return stream_get_state(bap_stream) == state;
 }
 
@@ -1110,7 +1120,8 @@ int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_gro
 
 static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_start_param *param)
 {
-	struct bt_bap_unicast_group *unicast_group = NULL;
+	/* Group can either be a unicast group or a broadcast source (in the case of handover) */
+	void *group = NULL;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -1182,17 +1193,18 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		bap_stream = &cap_stream->bap_stream;
 
 		CHECKIF(bap_stream->group == NULL) {
-			LOG_DBG("param->streams[%zu] is not in a unicast group", i);
+			LOG_DBG("param->streams[%zu] (%p) is not in a unicast group", i,
+				bap_stream);
 			return false;
 		}
 
 		/* Use the group of the first stream for comparison */
-		if (unicast_group == NULL) {
-			unicast_group = bap_stream->group;
+		if (group == NULL) {
+			group = bap_stream->group;
 		} else {
-			CHECKIF(bap_stream->group != unicast_group) {
-				LOG_DBG("param->streams[%zu] is not in this group %p", i,
-					unicast_group);
+			CHECKIF(bap_stream->group != group) {
+				LOG_DBG("param->streams[%zu] (%p) is not in this group %p", i,
+					group, bap_stream);
 				return false;
 			}
 		}
@@ -1224,19 +1236,22 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 
 	LOG_DBG("conn %p err %d proc_type %d", (void *)failed_conn, err, proc_type);
 
-#if defined(CONFIG_BT_CAP_HANDOVER)
-	if (bt_cap_common_handover_is_active()) {
-		__ASSERT_NO_MSG(proc_type == BT_CAP_COMMON_PROC_TYPE_STOP);
-
-		if (err != 0) {
-			bt_cap_handover_proc_complete();
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
+		if (proc_type == BT_CAP_COMMON_PROC_TYPE_STOP) {
+			if (err != 0) {
+				bt_cap_handover_complete();
+			} else {
+				/* continue */
+				handover_unicast_to_broadcast_setup_broadcast();
+			}
+		} else if (proc_type == BT_CAP_COMMON_PROC_TYPE_START) {
+			bt_cap_handover_complete();
 		} else {
-			/* continue */
-			handover_unicast_to_broadcast_setup_broadcast();
+			__ASSERT(false, "invalid proc_type %d", proc_type);
 		}
+
 		return;
 	}
-#endif /* CONFIG_BT_CAP_HANDOVER */
 
 	bt_cap_common_clear_active_proc();
 
@@ -1368,27 +1383,14 @@ cap_initiator_unicast_audio_configure(const struct bt_cap_unicast_audio_start_pa
 	err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Failed to config stream %p: %d", proc_param->stream, err);
-
-		bt_cap_common_clear_active_proc();
 	}
 
 	return err;
 }
 
-int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
+static int cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
 	bool all_streaming = true;
-	int err;
-
-	if (!valid_unicast_audio_start_param(param)) {
-		return -EINVAL;
-	}
-
-	if (bt_cap_common_test_and_set_proc_active()) {
-		LOG_DBG("A CAP procedure is already in progress");
-
-		return -EBUSY;
-	}
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const struct bt_bap_stream *bap_stream =
@@ -1402,12 +1404,27 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 	if (all_streaming) {
 		LOG_DBG("All streams are already in the streaming state");
 
-		bt_cap_common_clear_active_proc();
-
 		return -EALREADY;
 	}
 
-	err = cap_initiator_unicast_audio_configure(param);
+	return cap_initiator_unicast_audio_configure(param);
+}
+
+int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
+{
+	int err;
+
+	if (!valid_unicast_audio_start_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	err = cap_initiator_unicast_audio_start(param);
 	if (err != 0) {
 		bt_cap_common_clear_active_proc();
 	}
@@ -2309,8 +2326,6 @@ static int unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *para
 						 : !can_stop  ? "stop"
 							      : "release");
 
-		bt_cap_common_clear_active_proc();
-
 		return -EALREADY;
 	}
 
@@ -2336,8 +2351,6 @@ static int unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *para
 		err = bt_bap_stream_disable(bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to disable bap_stream %p: %d", proc_param->stream, err);
-
-			bt_cap_common_clear_active_proc();
 		}
 	} else if (can_stop) {
 		struct bt_cap_initiator_proc_param *proc_param;
@@ -2355,8 +2368,6 @@ static int unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *para
 		err = bt_bap_stream_stop(bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to stop bap_stream %p: %d", proc_param->stream, err);
-
-			bt_cap_common_clear_active_proc();
 		}
 	} else {
 		struct bt_cap_initiator_proc_param *proc_param;
@@ -2374,8 +2385,6 @@ static int unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *para
 		err = bt_bap_stream_release(bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to release bap_stream %p: %d", proc_param->stream, err);
-
-			bt_cap_common_clear_active_proc();
 		}
 	}
 
@@ -2384,6 +2393,8 @@ static int unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *para
 
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param)
 {
+	int err;
+
 	if (!valid_unicast_audio_stop_param(param)) {
 		return -EINVAL;
 	}
@@ -2394,7 +2405,12 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 		return -EBUSY;
 	}
 
-	return unicast_audio_stop(param);
+	err = unicast_audio_stop(param);
+	if (err != 0) {
+		bt_cap_common_clear_active_proc();
+	}
+
+	return err;
 }
 
 void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
@@ -2654,21 +2670,39 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 	return false;
 }
 
-void bt_cap_handover_proc_complete(void)
+void bt_cap_handover_complete(void)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
 	struct bt_cap_handover_proc_param *proc_param = &active_proc->proc_param.handover;
-	struct bt_cap_broadcast_source *broadcast_source =
-		proc_param->unicast_to_broadcast.broadcast_source;
-	struct bt_cap_unicast_group *unicast_group = proc_param->unicast_to_broadcast.unicast_group;
+	const bool is_unicast_to_broadcast = proc_param->is_unicast_to_broadcast;
 	struct bt_conn *failed_conn = active_proc->failed_conn;
+	struct bt_cap_broadcast_source *broadcast_source;
+	struct bt_cap_unicast_group *unicast_group;
 	const int err = active_proc->err;
+
+	if (is_unicast_to_broadcast) {
+		unicast_group = proc_param->unicast_to_broadcast.unicast_group;
+		broadcast_source = proc_param->unicast_to_broadcast.broadcast_source;
+
+	} else {
+		unicast_group = proc_param->broadcast_to_unicast.unicast_group;
+		broadcast_source = proc_param->broadcast_to_unicast.broadcast_source;
+	}
 
 	bt_cap_common_clear_active_proc();
 
-	if (cap_cb != NULL && cap_cb->unicast_to_broadcast_complete != NULL) {
-		cap_cb->unicast_to_broadcast_complete(err, failed_conn, unicast_group,
-						      broadcast_source);
+	if (cap_cb != NULL) {
+		if (is_unicast_to_broadcast) {
+			if (cap_cb->unicast_to_broadcast_complete != NULL) {
+				cap_cb->unicast_to_broadcast_complete(
+					err, failed_conn, unicast_group, broadcast_source);
+			}
+		} else {
+			if (cap_cb->broadcast_to_unicast_complete != NULL) {
+				cap_cb->broadcast_to_unicast_complete(
+					err, failed_conn, broadcast_source, unicast_group);
+			}
+		}
 	}
 }
 
@@ -2693,9 +2727,8 @@ static void handover_unicast_to_broadcast_reception_start(void)
 		/* May happen if the advertising set was deleted while in this procedure */
 		LOG_DBG("Failed to get adv info: %d", err);
 		active_proc->err = err;
-		active_proc->failed_conn = NULL;
 
-		bt_cap_handover_proc_complete();
+		bt_cap_handover_complete();
 		return;
 	}
 
@@ -2707,9 +2740,8 @@ static void handover_unicast_to_broadcast_reception_start(void)
 			LOG_DBG("Failed to start advertising set (err %d)\n", err);
 
 			active_proc->err = err;
-			active_proc->failed_conn = NULL;
 
-			bt_cap_handover_proc_complete();
+			bt_cap_handover_complete();
 
 			return;
 		}
@@ -2762,9 +2794,8 @@ static void handover_unicast_to_broadcast_reception_start(void)
 	if (err != 0) {
 		LOG_DBG("Failed to start reception start: %d", err);
 		active_proc->err = err;
-		active_proc->failed_conn = NULL;
 
-		bt_cap_handover_proc_complete();
+		bt_cap_handover_complete();
 	}
 }
 
@@ -2791,9 +2822,8 @@ static void handover_unicast_to_broadcast_setup_broadcast(void)
 	if (err != 0) {
 		LOG_DBG("Failed to create broadcast source: %d", err);
 		active_proc->err = err;
-		active_proc->failed_conn = NULL;
 
-		bt_cap_handover_proc_complete();
+		bt_cap_handover_complete();
 
 		return;
 	}
@@ -2803,12 +2833,11 @@ static void handover_unicast_to_broadcast_setup_broadcast(void)
 	if (err != 0) {
 		LOG_DBG("Failed to start broadcast source: %d", err);
 		active_proc->err = err;
-		active_proc->failed_conn = NULL;
 
 		err = bt_cap_initiator_broadcast_audio_delete(*broadcast_source);
 		__ASSERT_NO_MSG(err == 0);
 
-		bt_cap_handover_proc_complete();
+		bt_cap_handover_complete();
 
 		return;
 	}
@@ -3164,6 +3193,7 @@ int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadca
 	stop_param.count = lookup_data.cnt;
 
 	bt_cap_common_set_handover_active();
+	proc_param->is_unicast_to_broadcast = true;
 
 	__ASSERT_NO_MSG(valid_unicast_audio_stop_param(&stop_param));
 
@@ -3181,10 +3211,225 @@ int bt_cap_initiator_unicast_to_broadcast(const struct bt_cap_unicast_to_broadca
 	return 0;
 }
 
-int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
-					  struct bt_bap_unicast_group **unicast_group)
+static bool valid_broadcast_to_unicast_param(const struct bt_cap_broadcast_to_unicast_param *param)
 {
-	return -ENOSYS;
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	if (param->broadcast_source == NULL) {
+		LOG_DBG("param->broadcast_source is NULL");
+		return false;
+	}
+
+	if (!valid_unicast_group_param(param->unicast_group_param)) {
+		LOG_DBG("param->unicast_group_param is invalid");
+		return false;
+	}
+
+	if (!valid_unicast_audio_start_param(param->unicast_start_param)) {
+		LOG_DBG("param->unicast_start_param is invalid");
+		return false;
+	}
+
+	if (param->reception_stop_param == NULL) {
+		if (param->broadcast_id > BT_AUDIO_BROADCAST_ID_MAX) {
+			LOG_DBG("param->broadcast_id is invalid: 0x%08X", param->broadcast_id);
+			return false;
+		}
+
+		if (param->adv_sid > BT_GAP_SID_MAX) {
+			LOG_DBG("param->adv_sid is larger than %d", BT_GAP_SID_MAX);
+			return false;
+		}
+
+		if (param->adv_type != BT_ADDR_LE_PUBLIC && param->adv_type != BT_ADDR_LE_RANDOM) {
+			LOG_DBG("Invalid address type %u", param->adv_type);
+			return false;
+		}
+	} else {
+		if (!valid_broadcast_reception_stop_param(param->reception_stop_param)) {
+			LOG_DBG("param->reception_stop_param is invalid");
+			return false;
+		}
+
+		if (param->unicast_start_param->type != param->reception_stop_param->type) {
+			LOG_DBG("Mismatching types for param->unicast_start_param (%d) and "
+				"param->reception_stop_param (%d)",
+				param->unicast_start_param->type,
+				param->reception_stop_param->type);
+			return false;
+		}
+	}
+
+	for (size_t i = 0U; i < param->unicast_start_param->count; i++) {
+		const struct bt_cap_unicast_audio_start_stream_param *stream_param =
+			&param->unicast_start_param->stream_params[i];
+		const struct bt_cap_stream *cap_stream = stream_param->stream;
+		const struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+
+		if (!stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
+			LOG_DBG("Stream %p is in invalid state %s", cap_stream,
+				bt_bap_ep_state_str(stream_get_state(bap_stream)));
+			return false;
+		}
+
+		if (bap_stream->group != param->broadcast_source->bap_broadcast) {
+			LOG_DBG("Stream %p is not in the broadcast source", cap_stream);
+			return false;
+		}
+
+		/* If we are doing reception stop, verify that all unicast streams being started are
+		 * also stopping a broadcast reception
+		 */
+		if (param->reception_stop_param != NULL) {
+			bool reception_stopped = false;
+
+			for (size_t j = 0U; j < param->reception_stop_param->count; j++) {
+				if (param->reception_stop_param->type == BT_CAP_SET_TYPE_AD_HOC &&
+				    stream_param->member.member ==
+					    param->reception_stop_param->param[j].member.member) {
+					reception_stopped = true;
+					break;
+				}
+
+				if (param->reception_stop_param->type == BT_CAP_SET_TYPE_CSIP &&
+				    stream_param->member.csip ==
+					    param->reception_stop_param->param[j].member.csip) {
+					reception_stopped = true;
+					break;
+				}
+			}
+
+			if (!reception_stopped) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+int cap_initiator_handover_broadcast_reception_stopped(void)
+{
+	struct bt_cap_handover_proc_param *proc_param;
+	struct bt_cap_common_proc *active_proc;
+	int err;
+
+	active_proc = bt_cap_common_get_active_proc();
+	proc_param = &active_proc->proc_param.handover;
+
+	err = bt_cap_initiator_broadcast_audio_stop(
+		proc_param->broadcast_to_unicast.broadcast_source);
+	if (err != 0) {
+		LOG_DBG("Failed to stop broadcast source: %d", err);
+		active_proc->err = err;
+	} /* Else wait for broadcast stopped */
+
+	return err;
+}
+
+void cap_initiator_handover_broadcast_audio_stopped(void)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_cap_handover_proc_param *proc_param = &active_proc->proc_param.handover;
+	int err;
+
+	/* This will be the case when we do broadcast to unicast handover and
+	 * it successfully stops the broadcast
+	 */
+
+	err = bt_cap_initiator_broadcast_audio_delete(
+		proc_param->broadcast_to_unicast.broadcast_source);
+	if (err != 0) {
+		LOG_DBG("Failed to delete broadcast source: %d", err);
+		active_proc->err = err;
+
+		bt_cap_handover_complete();
+
+		return;
+	}
+	proc_param->broadcast_to_unicast.broadcast_source = NULL;
+
+	err = bt_cap_unicast_group_create(proc_param->broadcast_to_unicast.unicast_group_param,
+					  &proc_param->broadcast_to_unicast.unicast_group);
+	if (err != 0) {
+		LOG_DBG("Failed to create unicast group: %d", err);
+		active_proc->err = err;
+
+		bt_cap_handover_complete();
+
+		return;
+	}
+
+	err = cap_initiator_unicast_audio_start(
+		proc_param->broadcast_to_unicast.unicast_start_param);
+	if (err != 0) {
+		LOG_DBG("Failed to start unicast audio: %d", err);
+		active_proc->err = err;
+
+		bt_cap_handover_complete();
+
+		return;
+	}
+}
+
+int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param)
+{
+	struct bt_cap_handover_proc_param *proc_param;
+	struct bt_cap_common_proc *active_proc;
+	int err;
+
+	/**
+	 * This will perform the following operations
+	 * 1) Check parameters
+	 * 2) Broadcast Reception Stop (optional)
+	 * 3) Broadcast Source Stop
+	 * 4) Broadcast Source Delete
+	 * 5) Unicast Group create
+	 * 6) Unicast Audio Start
+	 */
+
+	if (!valid_broadcast_to_unicast_param(param)) {
+		return -EINVAL;
+	}
+
+	if (bt_cap_common_test_and_set_proc_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	active_proc = bt_cap_common_get_active_proc();
+	proc_param = &active_proc->proc_param.handover;
+	proc_param->broadcast_to_unicast.unicast_group_param = param->unicast_group_param;
+	proc_param->broadcast_to_unicast.unicast_start_param = param->unicast_start_param;
+	proc_param->broadcast_to_unicast.broadcast_source = param->broadcast_source;
+
+	bt_cap_common_set_handover_active();
+	proc_param->is_unicast_to_broadcast = false;
+
+	if (param->reception_stop_param == NULL) {
+		/* Register the broadcast assistant callbacks to receive the BASS receive states */
+		cap_commander_register_broadcast_assistant_callbacks();
+
+		proc_param->broadcast_to_unicast.broadcast_id = param->broadcast_id;
+		proc_param->broadcast_to_unicast.adv_sid = param->adv_sid;
+		proc_param->broadcast_to_unicast.adv_type = param->adv_type;
+
+		/* TODO: Populate proc_param->broadcast_to_unicast.pending_recv_state_conns
+		 */
+		err = cap_initiator_handover_broadcast_reception_stopped();
+	} else {
+		err = cap_commander_broadcast_reception_stop(param->reception_stop_param);
+	}
+
+	if (err != 0) {
+		bt_cap_common_clear_active_proc();
+	}
+
+	return err;
 }
 
 #endif /* CONFIG_BT_CAP_HANDOVER */

@@ -763,7 +763,7 @@ static void test_cap_handover_peripheral_unicast_to_broadcast(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	/* Wait until initiator is done starting streams */
+	/* Wait until initiator is done starting unicast streams */
 	WAIT_FOR_FLAG(flag_stream_started);
 	backchannel_sync_wait(CAP_INITIATOR_DEV_ID);
 
@@ -789,15 +789,25 @@ static void test_cap_handover_peripheral_unicast_to_broadcast(void)
 	/* let initiator know we have received what we wanted */
 	backchannel_sync_send(CAP_INITIATOR_DEV_ID);
 
+	/* Unset flag to reuse for new unicast streams */
+	UNSET_FLAG(flag_stream_started);
+
 	/* Wait for broadcast to be stopped */
 	WAIT_FOR_FLAG(flag_broadcast_stopped);
+
+	/* Wait for unicast to be started again */
+	WAIT_FOR_FLAG(flag_stream_started);
+
+	/* let initiator know we have received what we wanted */
+	wait_for_data();
+	backchannel_sync_send(CAP_INITIATOR_DEV_ID);
 
 	PASS("CAP acceptor unicast passed\n");
 }
 
 static const struct bst_test_instance test_cap_handover_peripheral[] = {
 	{
-		.test_id = "cap_handover_peripheral_unicast_to_broadcast",
+		.test_id = "cap_handover_peripheral",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_handover_peripheral_unicast_to_broadcast,

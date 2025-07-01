@@ -85,6 +85,22 @@ bool bt_cap_common_handover_is_active(void)
 {
 	return atomic_test_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
 }
+
+bool bt_cap_common_handover_broadcast_to_unicast_all_stopped(void)
+{
+	bool all_stopped = true;
+
+	ARRAY_FOR_EACH(
+		active_proc.proc_param.handover.broadcast_to_unicast.pending_recv_state_conns, i) {
+		if (active_proc.proc_param.handover.broadcast_to_unicast
+			    .pending_recv_state_conns[i] != NULL) {
+			all_stopped = false;
+			break;
+		}
+	}
+
+	return all_stopped;
+}
 #endif /* CONFIG_BT_CAP_HANDOVER */
 
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,

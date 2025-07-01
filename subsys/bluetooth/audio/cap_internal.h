@@ -196,8 +196,43 @@ struct bt_cap_handover_proc_param {
 			struct bt_cap_commander_broadcast_reception_start_member_param
 				reception_start_member_params[CONFIG_BT_MAX_CONN];
 		} unicast_to_broadcast;
-		/* TODO: Add unicast broadcast_to_unicast params */
+		struct {
+			/* The existing broadcast source */
+			struct bt_cap_broadcast_source *broadcast_source;
+
+			/* The resulting unicast group */
+			struct bt_cap_unicast_group *unicast_group;
+
+			/* Broadcast ID of broadcast_source*/
+			uint32_t broadcast_id;
+
+			/* Advertising SID of broadcast_source*/
+			uint8_t adv_sid;
+
+			/* Advertising type of broadcast_source*/
+			uint8_t adv_type;
+
+			/* States used to determine when the broadcast source can be deleted */
+			bool broadcast_stopped;
+			bool reception_stopped;
+
+			/* Array of connection objects that we are waiting for a receive state with
+			 * a BIG sync lost event
+			 */
+			struct bt_conn *pending_recv_state_conns[MIN(
+				CONFIG_BT_MAX_CONN,
+				CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT)];
+
+			/* Unicast group create param from caller */
+			struct bt_cap_unicast_group_param *unicast_group_param;
+
+			/* Unicast start param from caller */
+			struct bt_cap_unicast_audio_start_param *unicast_start_param;
+		} broadcast_to_unicast;
 	};
+
+	/* Flag to determine which of the two structs above to use */
+	bool is_unicast_to_broadcast;
 };
 #endif /* CONFIG_BT_CAP_HANDOVER */
 
@@ -254,6 +289,7 @@ void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
 void bt_cap_common_set_handover_active(void);
 bool bt_cap_common_handover_is_active(void);
+bool bt_cap_common_handover_broadcast_to_unicast_all_stopped(void);
 bool bt_cap_common_proc_is_type(enum bt_cap_common_proc_type proc_type);
 bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type);
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
@@ -272,6 +308,13 @@ struct bt_cap_common_client *
 bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst *csis_inst);
 int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t func);
 
-void bt_cap_handover_proc_complete(void);
+void bt_cap_handover_complete(void);
 int cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
+int cap_commander_broadcast_reception_stop(
+	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+void cap_commander_register_broadcast_assistant_callbacks(void);
+int cap_initiator_handover_broadcast_reception_stopped(void);
+bool valid_broadcast_reception_stop_param(
+	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+void cap_initiator_handover_broadcast_audio_stopped(void);
