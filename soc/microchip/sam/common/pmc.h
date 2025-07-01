@@ -68,6 +68,7 @@ struct clk_pll_characteristics {
 	uint16_t *icpll;
 	uint8_t *out;
 	uint8_t upll : 1;
+	uint32_t acr;
 };
 
 struct clk_programmable_layout {
