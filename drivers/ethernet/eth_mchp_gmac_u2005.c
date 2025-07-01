@@ -250,16 +250,10 @@ typedef struct mchp_eth_clock {
 	const struct device *clock_dev;
 
 	/* Main APB clock subsystem. */
-	clock_control_mchp_subsys_t mclk_apb_sys;
+	clock_control_subsys_t mclk_apb_sys;
 
 	/* Main AHB clock subsystem. */
-	clock_control_mchp_subsys_t mclk_ahb_sys;
-
-	/* Generic clock subsystem. */
-	clock_control_mchp_subsys_t gclk_sys;
-
-	/* Osc clock subsystem. */
-	clock_control_mchp_subsys_t oscctrl_sys;
+	clock_control_subsys_t mclk_ahb_sys;
 } mchp_eth_clock_t;
 
 /* Device constant configuration parameters */
@@ -289,28 +283,16 @@ typedef struct eth_mchp_dev_config {
 
 #define ETH_MCHP_CLOCK_DEFN(n)                                                                     \
 	.eth_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                                 \
-	.eth_clock.mclk_apb_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk_apb)), \
-				   .id = DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_apb, id)},            \
-	.eth_clock.mclk_ahb_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk_ahb)), \
-				   .id = DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_ahb, id)},            \
-	.eth_clock.gclk_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, gclk)),         \
-			       .id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id)},                    \
-	.eth_clock.oscctrl_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, oscctrl)),   \
-				  .id = DT_INST_CLOCKS_CELL_BY_NAME(n, oscctrl, id)}
+	.eth_clock.mclk_apb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_apb, subsystem),     \
+	.eth_clock.mclk_ahb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_ahb, subsystem)
 
-#define ETH_MCHP_CONFIGURE_CLOCK(dev, subsys, data) clock_control_configure(dev, &subsys, &data)
-
-#define ETH_MCHP_GET_CLOCK_FREQ(dev, subsys, rate) clock_control_get_rate(dev, &subsys, &rate)
+#define ETH_MCHP_GET_CLOCK_FREQ(dev, subsys, rate) clock_control_get_rate(dev, subsys, &rate)
 
 #define ETH_MCHP_ENABLE_CLOCK(dev)                                                                 \
 	clock_control_on(((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,      \
-			 &(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_apb_sys));     \
+			 (((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_apb_sys));      \
 	clock_control_on(((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,      \
-			 &(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_ahb_sys));     \
-	clock_control_on(((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,      \
-			 &(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.gclk_sys));         \
-	clock_control_on(((const eth_mchp_dev_config_t *)(dev->config))->eth_clock.clock_dev,      \
-			 &(((eth_mchp_dev_config_t *)(dev->config))->eth_clock.oscctrl_sys))
+			 (((eth_mchp_dev_config_t *)(dev->config))->eth_clock.mclk_ahb_sys))
 
 /*
  * Verify Kconfig configuration
@@ -901,7 +883,7 @@ static void hal_mchp_eth_get_mac_addr_from_i2c_eeprom(uint8_t mac_addr[6])
 
 	/* Check if the I2C bus is ready */
 	if (!device_is_ready(i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR("I2C Bus is not ready");
 		return;
 	}
 
@@ -1405,6 +1387,9 @@ static int eth_mchp_initialize(const struct device *dev)
 	int retval;
 
 	cfg->config_func();
+
+	/* Enable clocks */
+	ETH_MCHP_ENABLE_CLOCK(dev);
 
 	/* Connect pins to the peripheral */
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);

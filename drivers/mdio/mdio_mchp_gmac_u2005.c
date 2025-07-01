@@ -46,16 +46,10 @@ typedef struct mchp_mdio_clock {
 	const struct device *clock_dev;
 
 	/* Main APB clock subsystem. */
-	clock_control_mchp_subsys_t mclk_apb_sys;
+	clock_control_subsys_t mclk_apb_sys;
 
 	/* Main AHB clock subsystem. */
-	clock_control_mchp_subsys_t mclk_ahb_sys;
-
-	/* Generic clock subsystem. */
-	clock_control_mchp_subsys_t gclk_sys;
-
-	/* Osc clock subsystem. */
-	clock_control_mchp_subsys_t oscctrl_sys;
+	clock_control_subsys_t mclk_ahb_sys;
 } mchp_mdio_clock_t;
 
 /**
@@ -88,20 +82,14 @@ typedef struct mdio_mchp_dev_config {
 /* clang-format off */
 #define MDIO_MCHP_CLOCK_DEFN(n)                                                                \
 	.mdio_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                                \
-	.mdio_clock.mclk_ahb_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk_ahb)),\
-				   .id = DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_ahb, id)},            \
-	.mdio_clock.mclk_apb_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk_apb)),\
-				   .id = DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_apb, id)},            \
-	.mdio_clock.gclk_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, gclk)),       \
-			       .id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id)},                    \
-	.mdio_clock.oscctrl_sys = {.dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, oscctrl)), \
-				  .id = DT_INST_CLOCKS_CELL_BY_NAME(n, oscctrl, id)}
+	.mdio_clock.mclk_apb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_apb, subsystem),     \
+	.mdio_clock.mclk_ahb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk_ahb, subsystem)
 
 #define MDIO_MCHP_ENABLE_CLOCK(dev)                                                           \
 	clock_control_on(((const mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.clock_dev,   \
-			 &(((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_apb_sys));   \
+			 (((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_apb_sys));   \
 	clock_control_on(((const mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.clock_dev,   \
-			 &(((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_ahb_sys))
+			 (((mdio_mchp_dev_config_t *)(dev->config))->mdio_clock.mclk_ahb_sys))
 /* clang-format on */
 
 /**
