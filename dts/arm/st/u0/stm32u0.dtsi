@@ -573,6 +573,7 @@
 			reg = <0x40009400 0x400>;
 			interrupts = <18 1>;
 			interrupt-names = "combined";
+			status = "disabled";
 		};
 
 		tsc: tsc@40024000 {
