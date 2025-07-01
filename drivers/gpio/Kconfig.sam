@@ -17,3 +17,11 @@ config GPIO_SAM4L
 	depends on DT_HAS_ATMEL_SAM4L_GPIO_ENABLED
 	help
 	  Enable support for the Atmel SAM4L 'PORT' GPIO controllers.
+
+config GPIO_SAM_PIO4
+	bool "Microchip SAM PIO4 GPIO driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SAM_PIO4_ENABLED
+	help
+	  Microchip Parallel Input/Output Controller is used on SAMA5D2 and
+	  SAMA7G5 SoC series
