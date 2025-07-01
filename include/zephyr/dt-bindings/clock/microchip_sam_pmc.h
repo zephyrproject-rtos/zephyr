@@ -33,4 +33,9 @@
 #define UTMI2			1
 #define UTMI3			2
 
+/* SAMA7D65 */
+#define PMC_LVDSPLL		(PMC_MAIN + 12)
+#define PMC_MCK3		(PMC_MAIN + 20)
+#define PMC_MCK5		(PMC_MAIN + 21)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MICROCHIP_SAM_PMC_H_ */
