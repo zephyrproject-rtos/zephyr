@@ -153,6 +153,14 @@ Counter
   And :kconfig:option:`CONFIG_COUNTER_NATIVE_POSIX` and its related options with
   :kconfig:option:`CONFIG_COUNTER_NATIVE_SIM` (:github:`86616`).
 
+Display
+=======
+
+* On STM32 devices, the LTDC driver (:dtcompatible:`st,stm32-ltdc`) RGB565 format
+  ``PIXEL_FORMAT_RGB565`` has been replaced by ``PIXEL_FORMAT_BGR565`` to match
+  the format expected by Zephyr. This change ensures proper behavior of both
+  display and video capture samples.
+
 Entropy
 =======
 
