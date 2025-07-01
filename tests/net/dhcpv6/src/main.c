@@ -109,8 +109,10 @@ static void generate_fake_server_duid(void)
 
 	memset(serverid, 0, sizeof(*serverid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL), &serverid->duid.type);
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE), &duid_ll->hw_type);
+	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL),
+		      UNALIGNED_MEMBER_ADDR(serverid, duid.type));
+	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, fake_mac, sizeof(fake_mac));
 
 	serverid->length = DHCPV6_DUID_LL_HEADER_SIZE + sizeof(fake_mac);
