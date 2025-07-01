@@ -8,15 +8,16 @@
 
 #include <limits.h>
 #include <stdint.h>
+#include <time.h>
 
-#include <zephyr/posix/time.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 
-uint32_t timespec_to_timeoutms(clockid_t clock_id, const struct timespec *abstime)
+uint32_t timespec_to_timeoutms(int clock_id, const struct timespec *abstime)
 {
 	struct timespec curtime;
 
-	if (clock_gettime(clock_id, &curtime) < 0) {
+	if (sys_clock_gettime(clock_id, &curtime) < 0) {
 		return 0;
 	}
 
