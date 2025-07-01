@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <zephyr/posix/posix_types.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/posix/sys/time.h>
