@@ -152,6 +152,14 @@ typedef int (*lora_api_config)(const struct device *dev,
 			       struct lora_modem_config *config);
 
 /**
+ * @typedef lora_api_airtime()
+ * @brief Callback API for querying packet airtime
+ *
+ * @see lora_airtime() for argument descriptions.
+ */
+typedef uint32_t (*lora_api_airtime)(const struct device *dev, uint32_t data_len);
+
+/**
  * @typedef lora_api_send()
  * @brief Callback API for sending data over LoRa
  *
@@ -201,6 +209,7 @@ typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 
 __subsystem struct lora_driver_api {
 	lora_api_config config;
+	lora_api_airtime airtime;
 	lora_api_send send;
 	lora_api_send_async send_async;
 	lora_api_recv recv;
@@ -225,6 +234,23 @@ static inline int lora_config(const struct device *dev,
 		(const struct lora_driver_api *)dev->api;
 
 	return api->config(dev, config);
+}
+
+/**
+ * @brief Query the airtime of a packet with a given length
+ *
+ * @note Uses the current radio configuration from @ref lora_config
+ *
+ * @param dev       LoRa device
+ * @param data_len  Length of the data
+ * @return Airtime of packet in milliseconds
+ */
+static inline uint32_t lora_airtime(const struct device *dev, uint32_t data_len)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	return api->airtime(dev, data_len);
 }
 
 /**
