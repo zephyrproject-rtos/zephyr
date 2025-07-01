@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #define SPIFLASH_MASTER_STATUS_RX_READY_OFFSET 0x1
 
 #define SPI_MAX_WORD_SIZE 32
-#define SPI_MAX_CS_SIZE   4
+#define SPI_MAX_CS_SIZE   32
 
 struct spi_litex_dev_config {
 	uint32_t master_cs_addr;
@@ -60,11 +60,9 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_litex_data *dev_data = dev->data;
 
-	if (config->slave != 0) {
-		if (config->slave >= SPI_MAX_CS_SIZE) {
-			LOG_ERR("More slaves than supported");
-			return -ENOTSUP;
-		}
+	if (config->slave >= SPI_MAX_CS_SIZE) {
+		LOG_ERR("More slaves than supported");
+		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
