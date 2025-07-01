@@ -3658,7 +3658,7 @@ out:
 }
 
 static bool ipv4_is_broadcast_address(struct net_if *iface,
-				      const struct in_addr *addr)
+				      const uint8_t *addr)
 {
 	struct net_if_ipv4 *ipv4;
 	bool ret = false;
@@ -3681,7 +3681,7 @@ static bool ipv4_is_broadcast_address(struct net_if *iface,
 		bcast.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr |
 			       ~ipv4->unicast[i].netmask.s_addr;
 
-		if (bcast.s_addr == UNALIGNED_GET(&addr->s_addr)) {
+		if (bcast.s_addr == UNALIGNED_GET((uint32_t *)addr)) {
 			ret = true;
 			goto out;
 		}
@@ -3692,8 +3692,8 @@ out:
 	return ret;
 }
 
-bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
-			       const struct in_addr *addr)
+bool net_if_ipv4_is_addr_bcast_raw(struct net_if *iface,
+				   const uint8_t *addr)
 {
 	bool ret = false;
 
@@ -3711,6 +3711,12 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 
 out:
 	return ret;
+}
+
+bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
+			       const struct in_addr *addr)
+{
+	return net_if_ipv4_is_addr_bcast_raw(iface, addr->s4_addr);
 }
 
 struct net_if *net_if_ipv4_select_src_iface_addr(const struct in_addr *dst,
@@ -3987,8 +3993,8 @@ out:
 	return ifaddr;
 }
 
-struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
-					    struct net_if **ret)
+struct net_if_addr *net_if_ipv4_addr_lookup_raw(const uint8_t *addr,
+						struct net_if **ret)
 {
 	struct net_if_addr *ifaddr = NULL;
 
@@ -4009,7 +4015,7 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 				continue;
 			}
 
-			if (UNALIGNED_GET(&addr->s4_addr32[0]) ==
+			if (UNALIGNED_GET((uint32_t *)addr) ==
 			    ipv4->unicast[i].ipv4.address.in_addr.s_addr) {
 
 				if (ret) {
@@ -4027,6 +4033,12 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 
 out:
 	return ifaddr;
+}
+
+struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
+					    struct net_if **ret)
+{
+	return net_if_ipv4_addr_lookup_raw(addr->s4_addr, ret);
 }
 
 int z_impl_net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr)
