@@ -6,7 +6,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_AXIS_ALIGN_H_
 
 /**
- * @defgroup SENSOR_AXIS_ALIGN DT Options
+ * @defgroup SENSOR_AXIS_ALIGN Sensor axis alignment DT Options
  * @ingroup sensor_interface
  * @{
  */
