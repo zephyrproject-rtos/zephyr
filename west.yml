@@ -270,7 +270,7 @@ manifest:
       groups:
         - hal
     - name: hal_wurthelektronik
-      revision: e3e2797b224fc48fdef1bc3e5a12a7c73108bba2
+      revision: pull/3/head
       path: modules/hal/wurthelektronik
       groups:
         - hal
