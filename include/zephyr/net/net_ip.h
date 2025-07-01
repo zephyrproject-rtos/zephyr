@@ -829,6 +829,13 @@ static inline void net_ipv6_addr_prefix_mask(const uint8_t *inaddr,
 	outaddr[bytes] = inaddr[bytes] & mask;
 }
 
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv4_is_addr_loopback_raw(const uint8_t *addr)
+{
+	return addr[0] == 127U;
+}
+/** @endcond */
+
 /**
  * @brief Check if the IPv4 address is a loopback address (127.0.0.0/8).
  *
@@ -838,8 +845,15 @@ static inline void net_ipv6_addr_prefix_mask(const uint8_t *inaddr,
  */
 static inline bool net_ipv4_is_addr_loopback(struct in_addr *addr)
 {
-	return addr->s4_addr[0] == 127U;
+	return net_ipv4_is_addr_loopback_raw(addr->s4_addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv4_is_addr_unspecified_raw(const uint8_t *addr)
+{
+	return UNALIGNED_GET((uint32_t *)addr) == 0;
+}
+/** @endcond */
 
 /**
  *  @brief Check if the IPv4 address is unspecified (all bits zero)
@@ -850,8 +864,15 @@ static inline bool net_ipv4_is_addr_loopback(struct in_addr *addr)
  */
 static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
 {
-	return UNALIGNED_GET(&addr->s_addr) == 0;
+	return net_ipv4_is_addr_unspecified_raw(addr->s4_addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv4_is_addr_mcast_raw(const uint8_t *addr)
+{
+	return (ntohl(UNALIGNED_GET((uint32_t *)addr)) & 0xF0000000) == 0xE0000000;
+}
+/** @endcond */
 
 /**
  * @brief Check if the IPv4 address is a multicast address.
@@ -862,8 +883,15 @@ static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
  */
 static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
 {
-	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xF0000000) == 0xE0000000;
+	return net_ipv4_is_addr_mcast_raw(addr->s4_addr);
 }
+
+/** @cond INTERNAL_HIDDEN */
+static inline bool net_ipv4_is_ll_addr_raw(const uint8_t *addr)
+{
+	return (ntohl(UNALIGNED_GET((uint32_t *)addr)) & 0xFFFF0000) == 0xA9FE0000;
+}
+/** @endcond */
 
 /**
  * @brief Check if the given IPv4 address is a link local address.
@@ -874,7 +902,7 @@ static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
  */
 static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 {
-	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xFFFF0000) == 0xA9FE0000;
+	return net_ipv4_is_ll_addr_raw(addr->s4_addr);
 }
 
 /**
@@ -941,20 +969,6 @@ static inline void net_ipv6_addr_copy_raw(uint8_t *dest,
 }
 
 /**
- *  @brief Compare two IPv4 addresses
- *
- *  @param addr1 Pointer to IPv4 address.
- *  @param addr2 Pointer to IPv4 address.
- *
- *  @return True if the addresses are the same, false otherwise.
- */
-static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
-				     const struct in_addr *addr2)
-{
-	return UNALIGNED_GET(&addr1->s_addr) == UNALIGNED_GET(&addr2->s_addr);
-}
-
-/**
  *  @brief Compare two raw IPv4 address buffers
  *
  *  @param addr1 Pointer to IPv4 address buffer.
@@ -965,8 +979,21 @@ static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 static inline bool net_ipv4_addr_cmp_raw(const uint8_t *addr1,
 					 const uint8_t *addr2)
 {
-	return net_ipv4_addr_cmp((const struct in_addr *)addr1,
-				 (const struct in_addr *)addr2);
+	return UNALIGNED_GET((uint32_t *)addr1) == UNALIGNED_GET((uint32_t *)addr2);
+}
+
+/**
+ *  @brief Compare two IPv4 addresses
+ *
+ *  @param addr1 Pointer to IPv4 address.
+ *  @param addr2 Pointer to IPv4 address.
+ *
+ *  @return True if the addresses are the same, false otherwise.
+ */
+static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
+				     const struct in_addr *addr2)
+{
+	return net_ipv4_addr_cmp_raw(addr1->s4_addr, addr2->s4_addr);
 }
 
 /**
@@ -1114,6 +1141,32 @@ static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
 	return net_if_ipv4_addr_mask_cmp(iface, addr);
 }
 
+/** @cond INTERNAL_HIDDEN */
+extern bool net_if_ipv4_is_addr_bcast_raw(struct net_if *iface,
+					  const uint8_t *addr);
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+static inline bool net_ipv4_is_addr_bcast_raw(struct net_if *iface,
+					      const uint8_t *addr)
+{
+	if (net_ipv4_addr_cmp_raw(addr, net_ipv4_broadcast_address()->s4_addr)) {
+		return true;
+	}
+
+	return net_if_ipv4_is_addr_bcast_raw(iface, addr);
+}
+#else
+static inline bool net_ipv4_is_addr_bcast_raw(struct net_if *iface,
+					      const uint8_t *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return false;
+}
+#endif
+/** @endcond */
+
 extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 				      const struct in_addr *addr);
 
@@ -1145,6 +1198,23 @@ static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
 	return false;
 }
 #endif
+
+/** @cond INTERNAL_HIDDEN */
+extern struct net_if_addr *net_if_ipv4_addr_lookup_raw(const uint8_t *addr,
+						       struct net_if **ret);
+
+static inline bool net_ipv4_is_my_addr_raw(const uint8_t *addr)
+{
+	bool ret;
+
+	ret = net_if_ipv4_addr_lookup_raw(addr, NULL) != NULL;
+	if (!ret) {
+		ret = net_ipv4_is_addr_bcast_raw(NULL, addr);
+	}
+
+	return ret;
+}
+/** @endcond */
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
