@@ -115,6 +115,7 @@ static enum test_case_no {
 	TEST_CLIENT_FIN_WAIT_2_IPV4_FAILURE = 17,
 	TEST_CLIENT_FIN_ACK_WITH_DATA = 18,
 	TEST_CLIENT_SEQ_VALIDATION = 19,
+	TEST_SERVER_ACK_VALIDATION = 20,
 } test_case_no;
 
 static enum test_state t_state;
@@ -140,6 +141,7 @@ static void handle_server_rst_on_listening_port(sa_family_t af, struct tcphdr *t
 static void handle_syn_invalid_ack(sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_ack_with_data_test(sa_family_t af, struct tcphdr *th);
 static void handle_client_seq_validation_test(sa_family_t af, struct tcphdr *th);
+static void handle_server_ack_validation_test(struct net_pkt *pkt);
 
 static void verify_flags(struct tcphdr *th, uint8_t flags,
 			 const char *fun, int line)
@@ -488,6 +490,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_CLIENT_SEQ_VALIDATION:
 		handle_client_seq_validation_test(net_pkt_family(pkt), &th);
+		break;
+	case TEST_SERVER_ACK_VALIDATION:
+		handle_server_ack_validation_test(pkt);
 		break;
 	default:
 		zassert_true(false, "Undefined test case");
@@ -2854,6 +2859,147 @@ ZTEST(net_tcp, test_client_seq_validation)
 	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
 	 */
 	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+struct ack_check_struct {
+	uint32_t s_data_len;
+	uint32_t c_ack;
+	uint32_t c_exp_seq;
+};
+
+/* The Congestion Window is by default enabled to be small (e.g. 67B),
+ * so DONT set the s_data_len bigger than it or the expected_seq will
+ * fail the check.
+ */
+static struct ack_check_struct ack_check_list[] = {
+	{10, 20, 10},
+	{20, 9, 30},
+	{30, -2000, 60},
+	{50, 111, 110},
+};
+
+static int ack_check_index;
+static uint32_t expected_seq;
+static uint32_t svr_seq_base;
+static int ackerr;
+
+static void handle_server_ack_validation_test(struct net_pkt *pkt)
+{
+	struct tcphdr th;
+	struct net_pkt *reply;
+	int ret;
+
+	ret = read_tcp_header(pkt, &th);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	if (FL(&th.th_flags, &, PSH)) {
+		/* If server data packet, then return with c_ack in the ack_check_list[] */
+		uint32_t old_ack = ack;
+
+		ack = svr_seq_base + ack_check_list[ack_check_index].c_ack;
+		reply = prepare_ack_packet(net_pkt_family(pkt), htons(MY_PORT), htons(PEER_PORT));
+		zassert_not_null(reply, "Cannot create pkt");
+		ack = old_ack;
+
+		expected_seq = svr_seq_base + ack_check_list[ack_check_index].c_exp_seq;
+		ackerr = GET_STAT(net_iface, tcp.ackerr);
+
+		ret = net_recv_data(net_iface, reply);
+		zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+		/* Let the IP stack to process the packet properly */
+		k_yield();
+	} else {
+		int ackerr_after;
+
+		/* For all non-data packets, we assume it is ACK-only because we use RST to
+		 * close the TCP connection later.
+		 */
+		test_verify_flags(&th, ACK);
+		/* Verify that we received the ACK-only packet with the expected seqnum */
+		zassert_equal(expected_seq, ntohl(th.th_seq),
+			      "Wrong seqnum received from server. "
+			      "Expected SEQ %u but got %u",
+			      expected_seq, ntohl(th.th_seq));
+
+		ackerr_after = GET_STAT(net_iface, tcp.ackerr);
+		zassert_equal(ackerr + 1, ackerr_after,
+			      "Wrong ACK number not detected (before %d, after %d)", ackerr,
+			      ackerr_after);
+
+		/* send valid ACK to server to avoid retransmission */
+		ack += ack_check_list[ack_check_index].s_data_len;
+		reply = prepare_ack_packet(net_pkt_family(pkt), htons(MY_PORT), htons(PEER_PORT));
+		zassert_not_null(reply, "Cannot create pkt");
+
+		ret = net_recv_data(net_iface, reply);
+		zassert_true(ret == 0, "recv data failed (%d)", ret);
+		k_yield();
+
+		test_sem_give();
+	}
+
+	return;
+
+fail:
+	zassert_true(false, "%s failed", __func__);
+	net_pkt_unref(pkt);
+}
+
+static void checklist_based_ack_val_test(struct ack_check_struct *list, int num)
+{
+	const uint8_t *data = lorem_ipsum + 10;
+	int ret;
+	struct ack_check_struct *ptr;
+
+	/* Server sends data and client ACKs data */
+	for (ack_check_index = 0; ack_check_index < num; ack_check_index++) {
+		ptr = &list[ack_check_index];
+		ret = net_context_send(accepted_ctx, data, ptr->s_data_len, NULL, K_NO_WAIT, NULL);
+		if (ret < 0) {
+			zassert_true(false, "Failed to send data to peer %d", ret);
+		}
+
+		/* Peer will release the semaphore after the valid ACK for data */
+		test_sem_take(K_MSEC(2000), __LINE__);
+	}
+}
+
+ZTEST(net_tcp, test_server_ack_validation)
+{
+	struct net_pkt *rst;
+	struct net_context *ctx;
+	int ret;
+
+	k_sem_reset(&test_sem);
+
+	ctx = create_server_socket(0, 0);
+	svr_seq_base = ack;
+
+	/* This will force the packet to be routed to our checker func
+	 * handle_server_ack_validation_test()
+	 */
+	test_case_no = TEST_SERVER_ACK_VALIDATION;
+
+	/* Run over the checklist to complete the test */
+	checklist_based_ack_val_test(ack_check_list, ARRAY_SIZE(ack_check_list));
+
+	/* Just send a RST packet to abort the underlying connection, so that
+	 * the testcase does not need to implement full TCP closing handshake.
+	 */
+	rst = tester_prepare_tcp_pkt(AF_INET6, htons(MY_PORT), htons(PEER_PORT), RST, NULL, 0);
+	zassert_not_null(rst, "Cannot create pkt");
+
+	ret = net_recv_data(net_iface, rst);
+	zassert_true(ret == 0, "recv data failed (%d)", ret);
+
+	/* Let the receiving thread run */
+	k_msleep(50);
+
+	net_context_put(ctx);
+	net_context_put(accepted_ctx);
 }
 
 ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
