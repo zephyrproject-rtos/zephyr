@@ -47,6 +47,8 @@ tests:
       regex:
         - "No file system selected"
         - "The device is put in USB mass storage mode."
+        - "usbd_msc: Enable"
+        - "usbd_msc: Bulk-Only Mass Storage Reset"
   sample.usb.mass_ram_fat:
     min_ram: 128
     depends_on: usb_device
@@ -117,6 +119,8 @@ tests:
       regex:
         - "End of files"
         - "The device is put in USB mass storage mode."
+        - "usbd_msc: Enable"
+        - "usbd_msc: Bulk-Only Mass Storage Reset"
   sample.usb.mass_sdhc_fatfs:
     min_ram: 32
     filter: dt_compat_enabled("zephyr,sdmmc-disk")
