@@ -576,8 +576,7 @@ static bool conn_are_endpoints_valid(struct net_pkt *pkt, uint8_t family,
 	bool is_same_src_and_dst_addr;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		is_my_src_addr = net_ipv4_is_my_addr(
-			(struct in_addr *)ip_hdr->ipv4->src);
+		is_my_src_addr = net_ipv4_is_my_addr_raw(ip_hdr->ipv4->src);
 		is_same_src_and_dst_addr = net_ipv4_addr_cmp_raw(
 			ip_hdr->ipv4->src, ip_hdr->ipv4->dst);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
@@ -925,10 +924,10 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	 * need to deliver the packet to multiple recipients.
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == AF_INET) {
-		if (net_ipv4_is_addr_mcast((struct in_addr *)ip_hdr->ipv4->dst)) {
+		if (net_ipv4_is_addr_mcast_raw(ip_hdr->ipv4->dst)) {
 			is_mcast_pkt = true;
-		} else if (net_if_ipv4_is_addr_bcast(pkt_iface,
-						     (struct in_addr *)ip_hdr->ipv4->dst)) {
+		} else if (net_if_ipv4_is_addr_bcast_raw(pkt_iface,
+							 ip_hdr->ipv4->dst)) {
 			is_bcast_pkt = true;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == AF_INET6) {
