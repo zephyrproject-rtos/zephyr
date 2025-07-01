@@ -210,13 +210,16 @@
 			status = "disabled";
 		};
 		rtimer: timer@40007400 {
+			compatible = "microchip,xec-rtos-timer";
 			reg = <0x40007400 0x10>;
 			interrupts = <111 0>;
+			girqs = <23 10>;
 			clock-frequency = <32768>;
-			max-value = <0xffffffff>;
+			busy-wait-timer = <&timer5>;
 			status = "disabled";
 		};
 		timer0: timer@40000c00 {
+			compatible = "microchip,xec-basic-timer";
 			reg = <0x40000c00 0x20>;
 			interrupts = <136 0>;
 			clock-frequency = <48000000>;
@@ -225,6 +228,7 @@
 			status = "disabled";
 		};
 		timer1: timer@40000c20 {
+			compatible = "microchip,xec-basic-timer";
 			reg = <0x40000c20 0x20>;
 			interrupts = <137 0>;
 			clock-frequency = <48000000>;
@@ -233,6 +237,7 @@
 			status = "disabled";
 		};
 		timer2: timer@40000c40 {
+			compatible = "microchip,xec-basic-timer";
 			reg = <0x40000c40 0x20>;
 			interrupts = <138 0>;
 			clock-frequency = <48000000>;
@@ -241,6 +246,7 @@
 			status = "disabled";
 		};
 		timer3: timer@40000c60 {
+			compatible = "microchip,xec-basic-timer";
 			reg = <0x40000c60 0x20>;
 			interrupts = <139 0>;
 			clock-frequency = <48000000>;
@@ -249,6 +255,7 @@
 			status = "disabled";
 		};
 		timer4: timer@40000c80 {
+			compatible = "microchip,xec-basic-timer";
 			reg = <0x40000c80 0x20>;
 			interrupts = <140 0>;
 			clock-frequency = <48000000>;
@@ -257,6 +264,7 @@
 			status = "disabled";
 		};
 		timer5: timer@40000ca0 {
+			compatible = "microchip,xec-basic-timer";
 			reg = <0x40000ca0 0x20>;
 			interrupts = <141 0>;
 			clock-frequency = <48000000>;

@@ -285,7 +285,3 @@
 	pinctrl-1 = <&ps2_clk0a_gpio114_sleep &ps2_dat0a_gpio115_sleep>;
 	pinctrl-names = "default", "sleep";
 };
-
-&timer5 {
-	status = "okay";
-};
