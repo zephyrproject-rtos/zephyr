@@ -429,6 +429,60 @@
 		pinctrl: pinctrl@e0014000 {
 			compatible = "microchip,sama7g5-pinctrl";
 			reg = <0xe0014000 0x800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0xe0014000 0xe0014000 0x800>;
+
+			pioa: gpio@e0014000 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014000 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			piob: gpio@e0014040 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014040 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			pioc: gpio@e0014080 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014080 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			piod: gpio@e00140c0 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe00140c0 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+			};
+
+			pioe: gpio@e0014100 {
+				compatible = "microchip,sam-pio4";
+				reg = <0xe0014100 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+				gpio-reserved-ranges = <8 24>;
+			};
 		};
 
 		pit64b0: timer@e1800000 {
