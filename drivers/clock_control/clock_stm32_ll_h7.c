@@ -217,17 +217,12 @@ static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 __unused
 static uint32_t get_pllsrc_frequency(void)
 {
-	switch (LL_RCC_PLL_GetSource()) {
-	case LL_RCC_PLLSOURCE_HSI:
-		return STM32_HSI_FREQ;
-	case LL_RCC_PLLSOURCE_CSI:
-		return STM32_CSI_FREQ;
-	case LL_RCC_PLLSOURCE_HSE:
-		return STM32_HSE_FREQ;
-	case LL_RCC_PLLSOURCE_NONE:
-	default:
-		return 0;
-	}
+/* M4 is not expected to call this function */
+#ifdef CONFIG_CPU_CORTEX_M7
+	return PLLSRC_FREQ;
+#else
+	return 0;
+#endif
 }
 
 __unused
