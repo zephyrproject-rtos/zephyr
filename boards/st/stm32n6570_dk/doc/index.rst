@@ -182,9 +182,10 @@ Board variants
 Three variants are available with STM32N6570_DK:
 
 - Default variant. Available as a chainloaded application which should be loaded by a
-  Boot Loader, it has access to the whole AXISRAM1 and AXISRAM2 regions.
+  bootloader, it has access to the whole AXISRAM1 and AXISRAM2 regions. It is expected to
+  be built using ``--sysbuild`` option exclusively.
 - ``fsbl``: First Stage Boot Loader (FSBL) which is available as an application loaded by the
-  Boot ROM and flashed using ST-Link. This is typically a Boot Loader image. It runs
+  Boot ROM and flashed using ST-Link. This is typically a bootloader image. It runs
   in RAM LOAD mode on second half of AXISRAM2. 511K are available for the whole image.
 - ``sb``: First Stage Boot Loader - Serial Boot. Equivalent to the FSBL image, but could be
   loaded using USB and doesn't require switching the bootpins. This is the most practical
