@@ -9,6 +9,7 @@
 #include <zephyr/audio/dmic.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/audio/codec.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
 
 #ifndef CONFIG_USE_DMIC
@@ -189,8 +190,12 @@ int main(void)
 				ret = i2s_write(i2s_dev_codec, mem_block, block_size);
 #else
 				/* If not using DMIC, play a sine wave 440Hz */
+
+				BUILD_ASSERT(
+					BLOCK_SIZE <= __16kHz16bit_stereo_sine_pcm_len,
+					"BLOCK_SIZE is bigger than test sine wave buffer size."
+				);
 				mem_block = (void *)&__16kHz16bit_stereo_sine_pcm;
-				block_size = __16kHz16bit_stereo_sine_pcm_len;
 
 				ret = i2s_buf_write(i2s_dev_codec, mem_block, block_size);
 #endif
