@@ -1328,12 +1328,6 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 			dwc2_unset_unused_fifo(dev);
 		}
 
-		if (priv->txf_set & ~BIT_MASK(ep_idx)) {
-			LOG_WRN("Some of the FIFOs higher than %u are set, %lx",
-				ep_idx, priv->txf_set & ~BIT_MASK(ep_idx));
-			return -EIO;
-		}
-
 		if ((ep_idx - 1) != 0U) {
 			txfaddr = dwc2_get_txfdep(dev, ep_idx - 2) +
 				  dwc2_get_txfaddr(dev, ep_idx - 2);
@@ -1342,8 +1336,21 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 				MIN(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
 		}
 
+		if (priv->txf_set & BIT(ep_idx)) {
+			uint32_t curaddr;
+
+			curaddr = dwc2_get_txfaddr(dev, ep_idx - 1);
+			txfdep = dwc2_get_txfdep(dev, ep_idx - 1);
+			if (txfaddr != curaddr || reqdep > txfdep) {
+				LOG_ERR("FIFO%u cannot be reused, new addr 0x%04x depth %u",
+					ep_idx, txfaddr, reqdep);
+				return -ENOMEM;
+			}
+		} else {
+			txfdep = reqdep;
+		}
+
 		/* Make sure to not set TxFIFO greater than hardware allows */
-		txfdep = reqdep;
 		if (txfdep > priv->max_txfifo_depth[ep_idx]) {
 			return -ENOMEM;
 		}
