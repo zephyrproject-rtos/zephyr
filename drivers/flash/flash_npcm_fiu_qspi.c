@@ -73,13 +73,12 @@ static inline void qspi_npcm_uma_write_byte(const struct device *dev, uint8_t da
 	}
 }
 
-static inline void qspi_npcm_uma_write_bytes(const struct device *dev, uint8_t* data, uint32_t len)
+static inline void qspi_npcm_uma_write_bytes(const struct device *dev, uint8_t *data, uint32_t len)
 {
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t wr_len;
 
-	while(len)
-	{
+	while(len) {
 		wr_len = (len > 16)?(16):(len);
 		len -= wr_len;
 
@@ -103,8 +102,7 @@ static inline void qspi_npcm_uma_read_bytes(const struct device *dev, uint8_t *d
 	struct fiu_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t rd_len;
 
-	while(len)
-	{
+	while(len) {
 		rd_len = (len > 4)?(4):(len);
 		len -= rd_len;
 
@@ -115,17 +113,14 @@ static inline void qspi_npcm_uma_read_bytes(const struct device *dev, uint8_t *d
 			continue;
 		}
 
-		if(rd_len == 4)
-		{
-			*((uint32_t*)data) = inst->UMA_DB0_3;
+		if(rd_len == 4) {
+			*((uint32_t *)data) = inst->UMA_DB0_3;
 			data += rd_len;
 		}
-		else
-		{
+		else {
 			uint32_t dat = inst->UMA_DB0_3;
 
-			while(rd_len--)
-			{
+			while(rd_len--) {
 				*data++ = dat & 0xFF;
 				dat >>= 8;
 			}
@@ -190,7 +185,7 @@ static inline void qspi_npcm_config_dra_mode(const struct device *dev,
 					NPCM_SPI_FL_CFG_RD_MODE_NORMAL);
 			SET_FIELD(host_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
 					NPCM_SPI_FL_CFG_RD_MODE_NORMAL);
-             break;
+			break;
 		case NPCM_RD_MODE_FAST:
 			SET_FIELD(core_inst->SPI_FL_CFG, NPCM_SPI_FL_CFG_RD_MODE,
 					NPCM_SPI_FL_CFG_RD_MODE_FAST);
@@ -285,8 +280,9 @@ static int qspi_npcm_fiu_uma_transceive(const struct device *dev, struct npcm_tr
 	qspi_npcm_uma_write_byte(dev, cfg->opcode);
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_ADDR) != 0) {
-		qspi_npcm_uma_write_bytes(dev, &cfg->addr.u8[(data->cur_cfg->enter_4ba != 0) ? 0 : 1],
-									(data->cur_cfg->enter_4ba != 0) ? 4 : 3);
+		qspi_npcm_uma_write_bytes(dev,
+						&cfg->addr.u8[(data->cur_cfg->enter_4ba != 0) ? 0 : 1],
+						(data->cur_cfg->enter_4ba != 0) ? 4 : 3);
 	}
 
 	if ((flags & NPCM_TRANSCEIVE_ACCESS_WRITE) != 0) {

@@ -338,6 +338,7 @@ static int qspi_npcm_spip_init(const struct device *dev)
 	const struct npcm_qspi_spip_config *const config = (void *)dev->config;
 	struct npcm_qspi_data *const data = dev->data;
 	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
+	struct spip_reg *const inst = HAL_INSTANCE(dev);
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
@@ -351,6 +352,13 @@ static int qspi_npcm_spip_init(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Turn on SPIP clock fail %d", ret);
 		return ret;
+	}
+
+	/* SPIP clock must be small or equal to apb3 clock frequency */
+	inst->SPIP_CLKDIV = (DT_PROP(DT_NODELABEL(pcc), apb3_prescaler) - 1);
+	if(inst->SPIP_CLKDIV == 0) {
+		/* SPIP not support 96MHz */
+		inst->SPIP_CLKDIV = 1;
 	}
 
 	/* initialize mutex for qspi controller */

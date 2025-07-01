@@ -5,7 +5,7 @@
 
 menuconfig SPI_NCT_SPIP
 	bool "Nuvoton NCT Enhanced Super I/O (eSIO) SPI driver"
-	default y
+	default n
 	depends on DT_HAS_NUVOTON_NCT_SPIP_ENABLED
 	help
 	  Enable the SPI peripherals on NCT MCU.

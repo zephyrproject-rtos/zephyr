@@ -12,6 +12,8 @@ extern "C"
 {
 #endif
 
+#include <stdint.h>
+
 typedef void (*ptr_rom_hook)(void);
 
 /* Firmware header definition */

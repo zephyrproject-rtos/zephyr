@@ -31,10 +31,11 @@
 		size = <DT_SIZE_M(2 * 8)>;
 		reg = <0>;
 		status = "okay";
+		quad-enable-requirements = "S2B1v1";
+		rd-mode = "NPCM_RD_MODE_QUAD";
 
 		/* quad spi bus configuration of nor flash device */
 		qspi-flags = <NPCM_QSPI_SW_CS0>;
-		rd-mode = "NPCM_RD_MODE_QUAD";
 		mapped-addr = <0x80000>;
         };
 };

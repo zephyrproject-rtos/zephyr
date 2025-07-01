@@ -13,19 +13,19 @@ zephyr_sources(
 set(NPCM_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}_signed.bin)
 string(TOUPPER "${SOC_NAME}" soc_name_upper)
 
-# if(CONFIG_ESIO_EXT_SIGN)
+if(CONFIG_ESIO_EXT_SIGN)
   # 1. "NuveSIOBinGenTool" is called in bat, and exection tool and bat are in project folder
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${CMAKE_COMMAND} -E env cmd /c ${CMAKE_SOURCE_DIR}/esio_signing.bat ${KERNEL_BIN_NAME} ${NPCM_BIN_NAME})
-# else()
-#   # 2. Signed tool is called "esiost.py" in zephyr kernel.
-#   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-#     COMMAND ${PYTHON_EXECUTABLE} ${SOC_${soc_name_upper}_DIR}/common/esiost/esiost.py
-#     -i ${KERNEL_BIN_NAME}
-#     -o ${NPCM_BIN_NAME}
-#     -v
-#     )  
-# endif()
+else()
+   # 2. Signed tool is called "esiost.py" in zephyr kernel.
+   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+     COMMAND ${PYTHON_EXECUTABLE} ${SOC_${soc_name_upper}_DIR}/common/esiost/esiost.py
+     -i ${KERNEL_BIN_NAME}
+     -o ${NPCM_BIN_NAME}
+     -v
+     )  
+Endif()
 
 # 3. "NuveSIOBinGenTool" in zephyr/soc/nuvoton/npcm/common/esiost 
 

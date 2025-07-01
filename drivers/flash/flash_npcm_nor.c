@@ -296,19 +296,19 @@ RAMFUNC static int flash_npcm_nor_read(const struct device *dev, off_t addr,
 		switch (config->qspi_cfg.rd_mode) {
 			case NPCM_RD_MODE_FAST:
 				return flash_npcm_transceive_read_by_addr(dev,
-								SPI_NOR_CMD_DREAD, data, size, addr);
+							SPI_NOR_CMD_DREAD, data, size, addr);
 				break;
 			case NPCM_RD_MODE_FAST_DUAL:
 				return flash_npcm_transceive_read_by_addr(dev,
-								SPI_NOR_CMD_2READ, data, size, addr);
+							SPI_NOR_CMD_2READ, data, size, addr);
 				break;
 			case NPCM_RD_MODE_QUAD:
 				return flash_npcm_transceive_read_by_addr(dev,
-								SPI_NOR_CMD_4READ, data, size, addr);
+							SPI_NOR_CMD_4READ, data, size, addr);
 				break;
 			default:
 				return flash_npcm_transceive_read_by_addr(dev,
-								SPI_NOR_CMD_READ, data, size, addr);
+							SPI_NOR_CMD_READ, data, size, addr);
 				break;
 		}
 	}
@@ -659,10 +659,9 @@ RAMFUNC static int flash_npcm_nor_init(const struct device *dev)
 			return -ENOTSUP;
 		}
 		/* Set QE bit in status register */
-		if(sts_reg[qe_idx - 1] & BIT(qe_bit)) {
+		if (sts_reg[qe_idx - 1] & BIT(qe_bit)) {
 			ret = 0;
-		}
-		else {
+		} else {
 			sts_reg[qe_idx - 1] |= BIT(qe_bit);
 			ret = flash_npcm_nor_write_status_regs(dev, sts_reg);
 			if (ret != 0) {
@@ -700,7 +699,8 @@ BUILD_ASSERT(!(DT_INST_QUAD_EN_PROP_OR(n) == JESD216_DW15_QER_NONE &&		\
 BUILD_ASSERT(!((DT_REG_ADDR(DT_INST_PARENT(n)) == 0x40020000 || \
 			  DT_REG_ADDR(DT_INST_PARENT(n)) == 0x40017000) && \
 			  DT_INST_STRING_TOKEN(n, rd_mode) != NPCM_RD_MODE_NORMAL && \
-			  DT_INST_PROP_OR(n, mapped_addr, MAPPED_ADDR_NOT_SUPPORT) == MAPPED_ADDR_NOT_SUPPORT),	\
+			  DT_INST_PROP_OR(n, mapped_addr, MAPPED_ADDR_NOT_SUPPORT) == \
+												  MAPPED_ADDR_NOT_SUPPORT),	\
 			  "FIU and SPIM only supports normal mode in non-DMM mode!"); \
 PINCTRL_DT_INST_DEFINE(n);							\
 static struct flash_npcm_nor_config flash_npcm_nor_config_##n = {		\
