@@ -38,8 +38,9 @@ To use the shield, below requirements needs to be satisfied.
 Integration Platform
 ********************
 
-This shield is validated and tested for use with the host platform listed below. It can be used with
-other host platforms, but the functionality is not guaranteed.
+This shield is validated and tested for use with the host platform listed below.
+While the shield can be used with other host platforms, other combinations
+are not actively tested or validated.
 
 - :zephyr:board:`mimxrt1060_evk` Rev-C.
 
