@@ -7,6 +7,10 @@
 #include "mocks/crypto.h"
 #include "mocks/scan.h"
 #include "mocks/scan_expects.h"
+#include "mocks/hci_core.h"
+#include "mocks/hci_core_expects.h"
+#include "mocks/net_buf.h"
+#include "mocks/net_buf_expects.h"
 #include "testing_common_defs.h"
 
 #include <zephyr/bluetooth/hci.h>
@@ -24,6 +28,7 @@ static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixt
 	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
 
 	CRYPTO_FFF_FAKES_LIST(RESET_FAKE);
+	HCI_CORE_FFF_FAKES_LIST(RESET_FAKE);
 }
 
 ZTEST_RULE(fff_reset_rule, fff_reset_rule_before, NULL);
@@ -232,6 +237,7 @@ ZTEST(bt_id_set_adv_own_addr, test_observer_scanning_re_enabled_after_updating_a
 
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
 
 	options &= ~BT_LE_ADV_OPT_CONN;
@@ -241,6 +247,102 @@ ZTEST(bt_id_set_adv_own_addr, test_observer_scanning_re_enabled_after_updating_a
 	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
 
 	bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
+		     "Address type reference was incorrectly set");
 
 	expect_call_count_bt_le_scan_set_enable(2, expected_args_history);
+}
+
+/*
+ *  Test setting the advertiser address while 'CONFIG_BT_SCAN_WITH_IDENTITY' is enabled
+ *  and scanning is ongoing. The scanner is using a random identity address.
+ *
+ *  Constraints:
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit isn't set
+ *
+ *  Expected behaviour:
+ *   - Scanning is not disabled.
+ *   - The advertiser doesn't attempt to change the identity addr with bt_id_set_adv_private_addr()
+ *   - The advertiser uses the same identity address as the scanner.
+ */
+ZTEST(bt_id_set_adv_own_addr, test_set_adv_own_addr_while_scanning_with_identity_random)
+{
+	uint32_t options = 0;
+	struct bt_le_ext_adv adv = {0};
+	struct net_buf net_buff;
+	int err;
+	uint8_t scan_own_addr_type = BT_ADDR_LE_ANONYMOUS;
+	uint8_t adv_own_addr_type = BT_ADDR_LE_ANONYMOUS;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
+
+	bt_hci_cmd_alloc_fake.return_val = &net_buff;
+	bt_hci_cmd_send_sync_fake.return_val = 0;
+
+	options &= ~BT_LE_ADV_OPT_CONN;
+	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_STATIC_RANDOM_LE_ADDR_1);
+
+	err = bt_id_set_scan_own_addr(false, &scan_own_addr_type);
+
+	expect_single_call_bt_hci_cmd_alloc();
+	expect_single_call_bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS);
+
+	zassert_ok(err, "Unexpected error code '%d' was returned", err);
+	zassert_true(scan_own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
+		     "Address type reference was incorrectly set");
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+
+	bt_id_set_adv_own_addr(&adv, options, true, &adv_own_addr_type);
+	zassert_true(adv_own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
+		     "Address type reference was incorrectly set");
+
+	expect_call_count_bt_le_scan_set_enable(0, NULL);
+}
+
+/*
+ *  Test setting the advertiser address while 'CONFIG_BT_SCAN_WITH_IDENTITY' is enabled
+ *  and scanning is ongoing. The scanner is using a public identity address.
+ *
+ *  Constraints:
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit isn't set
+ *
+ *  Expected behaviour:
+ *   - Scanning is not disabled.
+ *   - The advertiser doesn't attempt to change the identity addr with bt_id_set_adv_private_addr()
+ *   - The advertiser uses the same identity address as the scanner.
+ */
+ZTEST(bt_id_set_adv_own_addr, test_set_adv_own_addr_while_scanning_with_identity_public)
+{
+	uint32_t options = 0;
+	struct bt_le_ext_adv adv = {0};
+	int err;
+	uint8_t scan_own_addr_type = BT_ADDR_LE_ANONYMOUS;
+	uint8_t adv_own_addr_type = BT_ADDR_LE_ANONYMOUS;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
+	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
+
+	options &= ~BT_LE_ADV_OPT_CONN;
+
+	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
+
+	err = bt_id_set_scan_own_addr(false, &scan_own_addr_type);
+
+	zassert_ok(err, "Unexpected error code '%d' was returned", err);
+	zassert_true(scan_own_addr_type == BT_HCI_OWN_ADDR_PUBLIC,
+		     "Address type reference was incorrectly set");
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+
+	bt_id_set_adv_own_addr(&adv, options, true, &adv_own_addr_type);
+	zassert_true(adv_own_addr_type == BT_HCI_OWN_ADDR_PUBLIC,
+		     "Address type reference was incorrectly set");
+
+	expect_call_count_bt_le_scan_set_enable(0, NULL);
 }
