@@ -33,7 +33,7 @@ test suite name ('dot separated' format).
 
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import argparse
 import os
 import sys
@@ -163,7 +163,7 @@ def main():
     skipped = 0
     filtered = 0
 
-    run_date = datetime.now(UTC).isoformat(timespec='seconds')
+    run_date = datetime.now(timezone.utc).isoformat(timespec='seconds')
 
     init_logs()
 
@@ -251,7 +251,7 @@ def main():
         res['environment'] = {
             'zephyr_version': data_id['version'],
             'commit_date':
-                git_commit.committed_datetime.astimezone(UTC).isoformat(timespec='seconds'),
+                git_commit.committed_datetime.astimezone(timezone.utc).isoformat(timespec='seconds'),
             'run_date': run_date,
             'options': {
                 'testsuite_root': [ plan[r_plan]['application'] ],
