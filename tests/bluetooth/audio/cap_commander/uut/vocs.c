@@ -57,9 +57,14 @@ struct bt_vocs *bt_vocs_client_free_instance_get(void)
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 		     const struct bt_vocs_discover_param *param)
 {
+
+	if (vocs == NULL) {
+		return -EINVAL;
+	}
+
 	vocs->conn = conn;
 
-	if (vocs != NULL && vocs->cb != NULL && vocs->cb->discover != NULL) {
+	if (vocs->cb != NULL && vocs->cb->discover != NULL) {
 		vocs->cb->discover(vocs, 0);
 	}
 
