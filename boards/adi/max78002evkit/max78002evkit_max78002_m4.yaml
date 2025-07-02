@@ -9,6 +9,7 @@ toolchain:
 supported:
   - gpio
   - serial
+  - hwinfo
   - trng
   - i2c
   - dma
