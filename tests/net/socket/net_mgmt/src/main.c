@@ -263,8 +263,12 @@ ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
 		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 /* A test thread that spits out events that we can catch and show to user */
-static void trigger_events(void)
+static void trigger_events(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int operation = 0;
 	struct net_if_addr *ifaddr_v6, *ifaddr_v4;
 	struct net_if *iface;
