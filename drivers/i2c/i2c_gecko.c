@@ -192,7 +192,7 @@ static int i2c_gecko_target_register(const struct device *dev, struct i2c_target
 
 	I2C_SlaveAddressSet(config->base, cfg->address << _I2C_SADDR_ADDR_SHIFT);
 	/* Match with specified address, no wildcards in address */
-	I2C_SlaveAddressMaskSet(config->base, _I2C_SADDRMASK_SADDRMASK_MASK);
+	I2C_SlaveAddressMaskSet(config->base, _I2C_SADDRMASK_MASK);
 
 	I2C_IntDisable(config->base, _I2C_IEN_MASK);
 	I2C_IntEnable(config->base, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_ACK | I2C_IEN_SSTOP |
