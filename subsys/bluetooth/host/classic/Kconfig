@@ -492,6 +492,32 @@ config BT_AVRCP_CONTROLLER
 
 endif # BT_AVRCP
 
+config BT_DID
+	bool "Bluetooth DID Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the DID profile
+
+if BT_DID
+config BT_DEVICE_VEDNOR_ID
+	hex "Bluetooth Device Vendor ID"
+	default 0x0000
+	help
+	  This option sets the device vendor id
+
+config BT_DEVICE_PRODUCT_ID
+	hex "Bluetooth Device Product ID"
+	default 0x0000
+	help
+	  This option sets the device product id
+
+config BT_DEVICE_PROTOCOL_ID
+	hex "Bluetooth Device Protocol ID"
+	default 0x0000
+	help
+	  This option sets the device protocol id
+endif # BT_DID
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000
