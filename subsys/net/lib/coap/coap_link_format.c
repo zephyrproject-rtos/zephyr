@@ -695,12 +695,14 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			     struct coap_packet *response,
 			     uint8_t *data, uint16_t data_len)
 {
-	struct coap_resource *resources = resource + 1;
+	struct coap_resource *resources;
 	size_t resources_len = 0;
 
 	if (resource == NULL) {
 		return -EINVAL;
 	}
+
+	resources = resource + 1;
 
 	while (resources[resources_len].path) {
 		resources_len++;
