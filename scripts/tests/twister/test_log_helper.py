@@ -7,7 +7,7 @@ Tests for log_helper.py functions
 """
 
 import logging
-import mock
+from unittest import mock
 import pytest
 
 from importlib import reload

@@ -7,7 +7,7 @@ Tests for scl.py functions
 """
 
 import logging
-import mock
+from unittest import mock
 import os
 import pytest
 import sys

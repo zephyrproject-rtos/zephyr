@@ -6,7 +6,7 @@
 Tests for check_init_priorities
 """
 
-import mock
+from unittest import mock
 import pathlib
 import unittest
 
