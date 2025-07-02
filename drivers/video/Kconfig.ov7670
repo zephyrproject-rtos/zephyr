@@ -1,4 +1,5 @@
 # Copyright 2024 NXP
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config VIDEO_OV7670
@@ -8,3 +9,13 @@ config VIDEO_OV7670
 	default y
 	help
 	  Enable driver for OV7670 CMOS digital image sensor device.
+
+if VIDEO_OV7670
+
+config VIDEO_OV7670_PCLK_FREE_RUN
+	bool "OV7670 PCLK free-run mode"
+	help
+	  Clear COM10 bit 5 to allow the pixel clock (PCLK) to free-run continuously,
+	  even during horizontal blanking. By default, PCLK is gated during H-blank.
+
+endif

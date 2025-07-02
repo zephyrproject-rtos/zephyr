@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2025 Renesas Electronics Co.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -218,9 +219,13 @@ static const struct video_format_cap fmts[] = {
 static const struct ov7670_reg ov7670_init_regtbl[] = {
 	{OV7670_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
-	/* configure the output timing */
+#ifdef CONFIG_VIDEO_OV7670_PCLK_FREE_RUN
+	/* Free running PCLK, default VSYNC, HSYNC and PCLK */
+	{OV7670_COM10, 0x00}, /* COM10 */
+#else
 	/* PCLK does not toggle during horizontal blank, one PCLK, one pixel */
 	{OV7670_COM10, 0x20}, /* COM10 */
+#endif
 	{OV7670_COM12, 0x00}, /* COM12,No HREF when VSYNC is low */
 	/* Brightness Control, with signal -128 to +128, 0x00 is middle value */
 	{OV7670_BRIGHT, 0x2f},
