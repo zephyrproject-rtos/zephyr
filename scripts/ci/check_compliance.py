@@ -2251,14 +2251,6 @@ def main(argv=None):
     args = parse_args(argv)
 
     try:
-        # pylint: disable=unused-import
-        from lxml import etree
-    except ImportError:
-        print("\nERROR: Python module lxml not installed, unable to proceed")
-        print("See https://github.com/weiwei/junitparser/issues/99")
-        return 1
-
-    try:
         n_fails = _main(args)
     except BaseException:
         # Catch BaseException instead of Exception to include stuff like
