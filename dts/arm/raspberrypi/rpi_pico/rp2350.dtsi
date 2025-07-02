@@ -447,6 +447,22 @@
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO2>;
 			status = "disabled";
 		};
+
+		ipm0: sio-fifo@d0000000 {
+			compatible = "raspberrypi,pico-sio-fifo";
+			reg = <0xd0000000 DT_SIZE_K(4) 0x40018000 DT_SIZE_K(4)>;
+			reg-names = "sio", "psm";
+			interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+						 <26 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+						 <27 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+			i			 <28 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+						 <29 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "sio_irq_fifo", "sio_irq_bell",
+						      "sio_irq_fifo_ns", "sio_irq_bell_ns",
+							  "sio_irq_mtimecmp";
+			// Accesses go through a bus interface paired to the core, so SIO can be shared
+			status = "okay";
+		};
 	};
 
 	pinctrl: pin-controller {
