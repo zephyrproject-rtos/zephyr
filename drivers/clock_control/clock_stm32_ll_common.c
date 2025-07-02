@@ -456,7 +456,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 #endif
 #if defined(STM32_SRC_HSI)
 	case STM32_SRC_HSI:
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		*rate = STM32_HSI_FREQ / STM32_HSI_DIVISOR;
+#else
 		*rate = STM32_HSI_FREQ;
+#endif
 		break;
 #endif
 #if defined(STM32_SRC_MSI)
@@ -662,7 +666,15 @@ static void set_up_fixed_clock_sources(void)
 			}
 		}
 #if STM32_HSI_DIV_ENABLED
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		if (STM32_HSI_DIVISOR == 4) {
+			LL_RCC_HSI_EnableDivider();
+		} else {
+			LL_RCC_HSI_DisableDivider();
+		}
+#else
 		LL_RCC_SetHSIDiv(hsi_divider(STM32_HSI_DIVISOR));
+#endif
 #endif
 	}
 
