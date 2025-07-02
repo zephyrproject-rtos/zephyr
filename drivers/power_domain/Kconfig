@@ -100,5 +100,6 @@ config POWER_DOMAIN_SOC_PM_STATE
 	  PM subsystem transitions in and out certain power states.
 
 rsource "Kconfig.nrfs_gdpwr"
+rsource "Kconfig.nrf_gpio_pad_group"
 
 endif

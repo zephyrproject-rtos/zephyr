@@ -1,0 +1,7 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config POWER_DOMAIN_NRF_GPIO_PAD_GROUP
+	bool "NRFS Global Domain Power Request driver"
+	depends on DT_HAS_NORDIC_NRF_GPIO_PAD_GROUP_ENABLED
+	default y
