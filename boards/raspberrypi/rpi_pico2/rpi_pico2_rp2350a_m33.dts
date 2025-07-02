@@ -17,3 +17,7 @@
 #include <raspberrypi/rpi_pico/m33.dtsi>
 #include "rpi_pico2.dtsi"
 #include "../common/rpi_pico-led.dtsi"
+
+&led0 {
+	status = "okay";
+};
