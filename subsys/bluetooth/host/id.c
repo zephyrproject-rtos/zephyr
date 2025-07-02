@@ -2005,8 +2005,8 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
 			    dev_scanning) {
-				scan_disabled = true;
-				bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
+				err = bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
+				scan_disabled = err == 0;
 			}
 
 			/* If we are scanning with the identity address, it does
