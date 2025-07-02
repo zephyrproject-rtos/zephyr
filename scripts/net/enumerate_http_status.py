@@ -25,25 +25,43 @@ Usage:
 	HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511, /**< Network Authentication Required */
 """
 
-from lxml import html
+from html.parser import HTMLParser
 import requests
 import re
 
+class HTTPStatusParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.status_codes = {}
+        self.in_code_tag = False
+        self.current_data = ""
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'code':
+            self.in_code_tag = True
+            self.current_data = ""
+
+    def handle_endtag(self, tag):
+        if tag == 'code' and self.in_code_tag:
+            self.in_code_tag = False
+            if self.current_data.strip():
+                match = re.match(r'([0-9]{3}) ([a-zA-Z].*)', self.current_data.strip())
+                if match:
+                    code = int(match.group(1))
+                    description = match.group(2)
+                    self.status_codes[code] = description
+
+    def handle_data(self, data):
+        if self.in_code_tag:
+            self.current_data += data
+
 page = requests.get('https://developer.mozilla.org/en-US/docs/Web/HTTP/Status')
-tree = html.fromstring(page.content)
 
-codes = tree.xpath('//code/text()')
+parser = HTTPStatusParser()
+parser.feed(page.text)
 
-codes2 = {}
-for c in codes:
-    if re.match('[0-9][0-9][0-9] [a-zA-Z].*', c):
-        key = int(c[0:3])
-        val = c[4:]
-        codes2[key] = val
-
-keys = sorted(codes2.keys())
-for key in keys:
-    val = codes2[key]
+for key in sorted(parser.status_codes.keys()):
+    val = parser.status_codes[key]
     enum_head = 'HTTP'
     enum_body = f'{key}'
     enum_tail = val.upper().replace(' ', '_').replace("'", '').replace('-', '_')
