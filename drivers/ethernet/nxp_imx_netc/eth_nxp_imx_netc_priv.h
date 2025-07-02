@@ -86,6 +86,7 @@
 	}
 
 struct netc_eth_config {
+	DEVICE_MMIO_NAMED_ROM(base);
 	uint16_t si_idx;
 	const struct device *phy_dev;
 	netc_hw_mii_mode_t phy_mode;
@@ -109,6 +110,7 @@ struct netc_eth_config {
 typedef uint8_t rx_buffer_t[NETC_RX_RING_BUF_SIZE_ALIGN];
 
 struct netc_eth_data {
+	DEVICE_MMIO_NAMED_RAM(base);
 	ep_handle_t handle;
 	struct net_if *iface;
 	uint8_t mac_addr[6];

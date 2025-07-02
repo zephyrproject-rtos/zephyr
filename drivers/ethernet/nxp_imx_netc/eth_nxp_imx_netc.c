@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define DT_DRV_COMPAT nxp_imx_netc
 
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -31,6 +32,17 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 	defined(CONFIG_NET_DSA)
 #define NETC_HAS_NO_SWITCH_TAG_SUPPORT 1
 #endif
+
+#define DEV_CFG(_dev)  ((const struct eth_nxp_imx_netc_ecam_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct eth_nxp_imx_netc_ecam_data *)(_dev)->data)
+
+struct eth_nxp_imx_netc_ecam_config {
+	DEVICE_MMIO_NAMED_ROM(base);
+};
+
+struct eth_nxp_imx_netc_ecam_data {
+	DEVICE_MMIO_NAMED_RAM(base);
+};
 
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];
 
@@ -529,3 +541,22 @@ int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type
 
 	return ret;
 }
+
+static int eth_nxp_imx_netc_ecam_init(const struct device *dev)
+{
+	DEVICE_MMIO_NAMED_MAP(dev, base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	return 0;
+}
+
+#define ETH_NXP_IMX_NETC_ECAM_INIT(inst)                                                           \
+	static struct eth_nxp_imx_netc_ecam_data eth_nxp_imx_netc_ecam_data_##inst;                \
+	static const struct eth_nxp_imx_netc_ecam_config eth_nxp_imx_netc_ecam_config_##inst = {   \
+		DEVICE_MMIO_NAMED_ROM_INIT(base, DT_DRV_INST(inst)),                               \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, eth_nxp_imx_netc_ecam_init, NULL,                              \
+			      &eth_nxp_imx_netc_ecam_data_##inst,                                  \
+			      &eth_nxp_imx_netc_ecam_config_##inst, POST_KERNEL,                   \
+			      CONFIG_ETH_INIT_PRIORITY, NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(ETH_NXP_IMX_NETC_ECAM_INIT)
