@@ -805,6 +805,9 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 		return 0;
 	}
 
+	/* Make sure controller is disabled. */
+	write_ssienr(dev, 0);
+
 	dev_data->dummy_bytes = 0;
 	dev_data->bytes_to_discard = 0;
 
