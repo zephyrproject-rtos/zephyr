@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Dmitrii Sharshakov <d3dx12.xx@gmail.com>
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RP2 SIO FIFO mailbox driver
+
+compatible: "raspberrypi,pico-sio-fifo"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true
+
+  execution-memory:
+    type: phandle
+    description: |
+      Memory area from which CPU1 will execute its core.
+      If not specified, the secondary CPU will not be started,
+      for example when the application is built for CPU1.
+      Please only set this property in the DT for CPU0.
+
+  image-source:
+    type: phandle
+    description: |
+      Memory area or partition from which the CPU1 code will be loaded.
+      Only specify this property if you want to run CPU1 not from the
+      memory its image is stored in, for example when the CPU0
+      needs RW access to flash. When not specified, the CPU1
+      will just be started from the executeion-memory.
+
+  memory-region:
+    type: phandle
+    description: |
+      Optional: on CPU0, pass the memory region CPU1 must execute in.
+      Used to validate that CPU1 stack is within the allowed memory region.
+      Only used if CONFIG_IPM_LOG_LEVEL is debug or more verbose.
