@@ -99,4 +99,6 @@ config POWER_DOMAIN_SOC_PM_STATE
 	  Generic power domain control to turn on/off devices when the
 	  PM subsystem transitions in and out certain power states.
 
+rsource "Kconfig.nrfs_gdpwr"
+
 endif
