@@ -389,6 +389,7 @@ struct btp_gap_bis_broadcast_cmd {
 } __packed;
 
 #define BTP_GAP_SET_RPA_TIMEOUT                 0x30
+
 struct btp_gap_set_rpa_timeout_cmd {
 	uint16_t rpa_timeout;
 } __packed;
@@ -599,3 +600,32 @@ int tester_gap_padv_stop(struct bt_le_ext_adv *ext_adv);
 int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params);
 int tester_gap_padv_stop_sync(void);
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+
+#if defined(CONFIG_BT_EAD)
+#define BTP_GAP_EAD_SET_KEY_MATERIAL 0x31
+#define BTP_GAP_EAD_CREATE_ADV_DATA  0x32
+#define BTP_GAP_EAD_DECRYPT_ADV_DATA 0x33
+
+#define BTP_GAP_EAD_KEY_SIZE 16
+#define BTP_GAP_EAD_IV_SIZE  8
+struct btp_gap_ead_set_key_material_cmd {
+	uint8_t key[BTP_GAP_EAD_KEY_SIZE];
+	uint8_t initialization_vector[BTP_GAP_EAD_IV_SIZE];
+} __packed;
+struct btp_gap_create_ead_adv_data_cmd {
+	uint8_t adv_data_len;
+	uint8_t adv_data[];
+} __packed;
+struct btp_gap_create_ead_adv_data_rp {
+	uint8_t adv_data_len;
+	uint8_t adv_data[];
+} __packed;
+struct btp_gap_decrypt_ead_adv_data_cmd {
+	uint8_t adv_data_len;
+	uint8_t adv_data[];
+} __packed;
+struct btp_gap_decrypt_ead_adv_data_rp {
+	uint8_t adv_data_len;
+	uint8_t adv_data[];
+} __packed;
+#endif /* defined(CONFIG_BT_EAD) */
