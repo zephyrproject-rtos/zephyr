@@ -11,7 +11,7 @@
 
 / {
 	model = "Renesas QEMU";
-	compatible = "qemu,rx","renesas,rxv1";
+	compatible = "qemu,rx";
 
 	chosen {
 		zephyr,sram = &sram0;
