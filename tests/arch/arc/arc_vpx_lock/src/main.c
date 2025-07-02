@@ -49,7 +49,6 @@ static void arc_vpx_lock_unlock_timed_payload(void *p1, void *p2, void *p3)
 {
 	int status;
 	unsigned int cpu_id;
-	unsigned int lock_id;
 
 	cpu_id = (unsigned int)(uintptr_t)(p1);
 	ARG_UNUSED(p2);
