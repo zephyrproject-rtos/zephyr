@@ -55,7 +55,7 @@ ZTEST(vector_table_relocation, test_vector_table_in_ram)
 
 	printf("VTOR address: 0x%x\n", vtor_address);
 	zassert_true(vtor_address >= CONFIG_SRAM_BASE_ADDRESS &&
-			     vtor_address <= CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE,
+			     vtor_address <= CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024U,
 		     "Vector table is not in RAM! Address: 0x%x", vtor_address);
 }
 
