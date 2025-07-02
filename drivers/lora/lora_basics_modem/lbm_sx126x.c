@@ -96,6 +96,7 @@ struct lbm_sx126x_config {
 	int dio3_tcxo_startup_delay_ms;
 	uint8_t dio3_tcxo_voltage;
 	bool dio2_rf_switch;
+	bool rx_boosted;
 	enum sx126x_variant variant;
 };
 
@@ -347,8 +348,10 @@ void ral_sx126x_bsp_get_trim_cap(const void *context, uint8_t *trimming_cap_xta,
 
 void ral_sx126x_bsp_get_rx_boost_cfg(const void *context, bool *rx_boost_is_activated)
 {
-	/* Not currently described in devicetree */
-	*rx_boost_is_activated = false;
+	const struct device *dev = context;
+	const struct lbm_sx126x_config *config = dev->config;
+
+	*rx_boost_is_activated = config->rx_boosted;
 }
 
 void ral_sx126x_bsp_get_ocp_value(const void *context, uint8_t *ocp_in_step_of_2_5_ma)
@@ -502,6 +505,7 @@ static int sx126x_init(const struct device *dev)
 		.dio3_tcxo_startup_delay_ms = DT_PROP_OR(node_id, tcxo_power_startup_delay_ms, 0), \
 		.dio3_tcxo_voltage = DT_PROP_OR(node_id, dio3_tcxo_voltage, UINT8_MAX),            \
 		.dio2_rf_switch = DT_PROP(node_id, dio2_tx_enable),                                \
+		.rx_boosted = DT_PROP(node_id, rx_boosted),                                        \
 		.variant = sx_variant,                                                             \
 	};                                                                                         \
 	static struct lbm_sx126x_data data_##node_id;                                              \
