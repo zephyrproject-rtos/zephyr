@@ -1962,7 +1962,7 @@ void coap_observer_init(struct coap_observer *observer,
 {
 	observer->tkl = coap_header_get_token(request, observer->token);
 
-	net_ipaddr_copy(&observer->addr, addr);
+	memcpy(&observer->addr, addr, sizeof(*addr));
 }
 
 static inline void coap_observer_raise_event(struct coap_resource *resource,
