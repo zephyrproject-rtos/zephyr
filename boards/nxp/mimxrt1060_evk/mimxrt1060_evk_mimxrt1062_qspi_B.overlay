@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	/* FLEXPWM not routed to LED on this EVK */
+	pwmleds {
+		status = "disabled";
+	};
+};
+
 /* FLEXPWM not routed to LED on this EVK */
 &flexpwm2_pwm3 {
 	status = "disabled";
