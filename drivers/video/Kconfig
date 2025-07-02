@@ -8,6 +8,7 @@
 #
 menuconfig VIDEO
 	bool "Video drivers"
+	imply RTIO
 	help
 	  Enable support for the VIDEO.
 
