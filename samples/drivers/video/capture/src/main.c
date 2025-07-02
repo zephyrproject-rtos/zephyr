@@ -124,6 +124,9 @@ int main(void)
 
 	LOG_INF("Video device: %s", video_dev->name);
 
+	/* Get PxP device */
+	const struct device *const transform_dev = DEVICE_DT_GET(DT_NODELABEL(pxp));
+
 	/* Get capabilities */
 	caps.type = type;
 	if (video_get_caps(video_dev, &caps)) {
@@ -210,6 +213,25 @@ int main(void)
 		return 0;
 	}
 
+	/* Set format PxP */
+	fmt.type = VIDEO_BUF_TYPE_INPUT;
+	if (video_set_format(transform_dev, &fmt)) {
+		LOG_ERR("Unable to set input format for PxP");
+		return 0;
+	}
+	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+
+	struct video_format fmt_out = {.pixelformat = fmt.pixelformat,
+		.width = fmt.height,
+		.height = fmt.width,
+		.type = VIDEO_BUF_TYPE_OUTPUT,};
+
+	if (video_set_format(transform_dev, &fmt_out)) {
+		LOG_ERR("Unable to set output format for PxP");
+		return 0;
+	}
+
+	/* Get and enumerate frame interval */
 	if (!video_get_frmival(video_dev, &frmival)) {
 		LOG_INF("- Default frame rate : %f fps",
 			1.0 * frmival.denominator / frmival.numerator);
@@ -261,6 +283,11 @@ int main(void)
 		video_set_ctrl(video_dev, &ctrl);
 	}
 
+	/* Rotate image 90 degree with PxP */
+	ctrl.id = VIDEO_CID_ROTATE;
+	ctrl.val = 90;
+	video_set_ctrl(transform_dev, &ctrl);
+
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
@@ -269,7 +296,7 @@ int main(void)
 		return 0;
 	}
 
-	err = display_setup(display_dev, fmt.pixelformat);
+	err = display_setup(display_dev, fmt_out.pixelformat);
 	if (err) {
 		LOG_ERR("Unable to set up display");
 		return err;
@@ -296,7 +323,10 @@ int main(void)
 			return 0;
 		}
 		buffers[i]->type = type;
-		video_enqueue(video_dev, buffers[i]);
+
+		if (i < 2) {
+			video_enqueue(video_dev, buffers[i]);
+		}
 	}
 
 	/* Start video capture */
@@ -325,8 +355,44 @@ int main(void)
 		}
 #endif
 
+		/* PxP m2m handling */
+		vbuf->type = VIDEO_BUF_TYPE_INPUT;
+		err = video_enqueue(transform_dev, vbuf);
+		if (err) {
+			LOG_ERR("Unable to enqueue PxP video buf in");
+			return 0;
+		}
+
+		buffers[2]->type = VIDEO_BUF_TYPE_OUTPUT;
+		err = video_enqueue(transform_dev, buffers[2]);
+		if (err) {
+			LOG_ERR("Unable to enqueue PxP video buf out");
+			return 0;
+		}
+
+		/* same start for both input and output */
+		if (video_stream_start(transform_dev, VIDEO_BUF_TYPE_INPUT)) {
+			LOG_ERR("Unable to start PxP");
+			return 0;
+		}
+
+		err = video_dequeue(transform_dev, &vbuf, K_FOREVER);
+		if (err) {
+			LOG_ERR("Unable to dequeue PxP video buf in");
+			return 0;
+		}
+
+		// buffers[2]->type = VIDEO_BUF_TYPE_OUTPUT; => rework buffer management
+		struct video_buffer *vbuf_out = &(struct video_buffer){};
+		vbuf_out->type = VIDEO_BUF_TYPE_OUTPUT;
+		err = video_dequeue(transform_dev, &vbuf_out, K_FOREVER);
+		if (err) {
+			LOG_ERR("Unable to dequeue PxP video buf out");
+			return 0;
+		}
+
 #if DT_HAS_CHOSEN(zephyr_display)
-		video_display_frame(display_dev, vbuf, fmt);
+		video_display_frame(display_dev, vbuf_out, fmt_out);
 #endif
 
 		err = video_enqueue(video_dev, vbuf);

@@ -371,7 +371,6 @@
 			reg = <0x40804000 0x4000>;
 			interrupts = <54 0>;
 			status = "disabled";
-			nxp,pxp = <&pxp>;
 		};
 
 		mipi_dsi: mipi-dsi@4080c000 {
@@ -1064,7 +1063,6 @@
 			reg = <0x40814000 0x4000>;
 			interrupts = <57 0>;
 			status = "disabled";
-			#dma-cells = <0>;
 		};
 
 		iomuxcgpr: iomuxcgpr@400e4000 {

@@ -144,10 +144,10 @@ struct video_caps {
  * Represent a video frame.
  */
 struct video_buffer {
-	/** type of the buffer */
-	enum video_buf_type type;
 	/** pointer to driver specific data. */
 	void *driver_data;
+	/** type of the buffer */
+	enum video_buf_type type;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
 	/** index of the buffer, optionally set by the application */
