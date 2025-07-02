@@ -2288,6 +2288,7 @@ def _main(args):
         xml.write(args.output, pretty=True)
 
     failed_cases = []
+    warning_cases = []
     name2doc = {testcase.name: testcase.doc
                 for testcase in inheritors(ComplianceTest)}
 
@@ -2296,19 +2297,31 @@ def _main(args):
             if case.is_skipped:
                 logging.warning(f"Skipped {case.name}")
             else:
-                failed_cases.append(case)
+                if any(res.type in ('error', 'failure') for res in case.result):
+                    failed_cases.append(case)
+                else:
+                    warning_cases.append(case)
         else:
             # Some checks can produce no .result
             logging.info(f"No JUnit result for {case.name}")
 
     n_fails = len(failed_cases)
+    n_warnings = len(warning_cases)
 
-    if n_fails:
-        print(f"{n_fails} checks failed")
-        for case in failed_cases:
+    if n_fails or n_warnings:
+        if n_fails:
+            print(f"{n_fails} check(s) failed")
+        if n_warnings:
+            print(f"{n_warnings} check(s) with warnings only")
+
+        for case in failed_cases + warning_cases:
             for res in case.result:
                 errmsg = res.text.strip()
-                logging.error(f"Test {case.name} failed: \n{errmsg}")
+                if res.type in ('error', 'failure'):
+                    logging.error(f"Test {case.name} failed: \n{errmsg}")
+                else:
+                    logging.warning(f"Test {case.name} warning: \n{errmsg}")
+
             if args.no_case_output:
                 continue
             with open(f"{case.name}.txt", "w") as f:
