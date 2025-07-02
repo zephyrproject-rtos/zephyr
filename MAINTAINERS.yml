@@ -272,6 +272,7 @@ ARM SiP SVC:
     - include/zephyr/sip_svc/
     - include/zephyr/drivers/sip_svc/
     - drivers/sip_svc/
+    - samples/subsys/sip_svc/
   labels:
     - "area: ARM SiP SVC"
   tests:
@@ -778,6 +779,7 @@ CMSIS-DSP integration:
     - modules/cmsis-dsp/
     - tests/benchmarks/cmsis_dsp/
     - tests/lib/cmsis_dsp/
+    - samples/modules/cmsis_dsp/
   labels:
     - "area: CMSIS-DSP"
   tests:
@@ -904,6 +906,7 @@ Demand Paging:
   files:
     - subsys/demand_paging/
     - tests/kernel/mem_protect/demand_paging/
+    - samples/subsys/demand_paging/
   tests:
     - kernel.demand_paging
 
@@ -1112,6 +1115,7 @@ Release Notes:
     - drivers/audio/
     - include/zephyr/audio/
     - doc/hardware/peripherals/audio/
+    - samples/drivers/audio/
   labels:
     - "area: Audio"
 
@@ -1141,6 +1145,7 @@ Release Notes:
     - drivers/auxdisplay/*
     - dts/bindings/auxdisplay/*
     - doc/hardware/peripherals/auxdisplay.rst
+    - samples/drivers/auxdisplay/
   labels:
     - "area: Aux display"
   tests:
@@ -1473,6 +1478,7 @@ Release Notes:
     - include/zephyr/net/phy.h
     - include/zephyr/net/mii.h
     - include/zephyr/net/ethernet.h
+    - samples/drivers/ethernet/
   labels:
     - "area: Ethernet"
   tests:
@@ -1531,6 +1537,7 @@ Release Notes:
     - include/zephyr/drivers/fuel_gauge.h
     - tests/drivers/fuel_gauge/
     - doc/hardware/peripherals/fuel_gauge.rst
+    - samples/drivers/fuel_gauge/
   labels:
     - "area: Fuel Gauge"
   tests:
@@ -1572,6 +1579,7 @@ Release Notes:
     - include/zephyr/dt-bindings/gnss/
     - tests/drivers/build_all/gnss/
     - tests/drivers/gnss/
+    - samples/drivers/gnss/
   labels:
     - "area: GNSS"
   tests:
@@ -1858,6 +1866,7 @@ Release Notes:
     - include/zephyr/drivers/led_strip.h
     - tests/drivers/build_all/led_strip/
     - include/zephyr/drivers/led_strip/
+    - samples/drivers/led/led_strip/
   labels:
     - "area: LED"
   tests:
@@ -1943,6 +1952,7 @@ Release Notes:
     - include/zephyr/drivers/rtc.h
     - tests/drivers/build_all/rtc/
     - dts/bindings/rtc/
+    - samples/drivers/rtc/
   labels:
     - "area: RTC"
   tests:
@@ -2066,6 +2076,7 @@ Release Notes:
     - tests/drivers/build_all/pwm/
     - include/zephyr/drivers/pwm.h
     - include/zephyr/drivers/pwm/
+    - samples/basic/blinky_pwm/
   labels:
     - "area: PWM"
   tests:
@@ -2383,6 +2394,7 @@ Release Notes:
     - include/zephyr/drivers/virtualization/
     - doc/services/virtualization/
     - include/zephyr/drivers/virtualization/ivshmem.h
+    - samples/drivers/virtualization/
   labels:
     - "area: Virtualization"
   tests:
@@ -2712,6 +2724,7 @@ Linker Scripts:
     - include/zephyr/linker/
     - tests/misc/iterable_sections/
     - tests/application_development/code_relocation/
+    - samples/application_development/code_relocation_nocopy/
   labels:
     - "area: Linker Scripts"
   tests:
