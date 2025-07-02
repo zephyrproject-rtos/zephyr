@@ -4091,6 +4091,25 @@ Microchip SAM Platforms:
   labels:
     - "platform: Microchip SAM"
 
+nPM Platforms:
+  status: maintained
+  maintainers:
+    - nordic-auko
+    - seov-nordic
+  files:
+    - boards/shields/npm*/
+    - drivers/*/*npm*
+    - drivers/*/nordic/*npm*/
+    - dts/bindings/*/nordic,npm*
+    - include/zephyr/drivers/*/npm*.h
+    - include/zephyr/dt-bindings/*/*npm*.h
+    - samples/shields/npm*/
+  labels:
+    - "platform: nPM"
+  description: >-
+    nPM Family of PMICs (Power Management ICs) by Nordic Semiconductor,
+    their dts files, drivers and other related files.
+
 nRF Platforms:
   status: maintained
   maintainers:
