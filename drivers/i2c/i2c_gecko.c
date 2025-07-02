@@ -237,6 +237,7 @@ void i2c_gecko_isr(const struct device *dev)
 	uint32_t pending;
 	uint32_t rx_byte;
 	uint8_t tx_byte;
+	int ret;
 
 	pending = config->base->IF;
 
@@ -249,31 +250,52 @@ void i2c_gecko_isr(const struct device *dev)
 		if (pending & I2C_IF_ADDR) {
 			/* Address Match, indicating that reception is started */
 			rx_byte = config->base->RXDATA;
-			config->base->CMD = I2C_CMD_ACK;
 
 			/* Check if read bit set */
 			if (rx_byte & 0x1) {
-				data->target_cfg->callbacks->read_requested(data->target_cfg,
-									    &tx_byte);
-				config->base->TXDATA = tx_byte;
+				ret = data->target_cfg->callbacks->read_requested(data->target_cfg,
+										  &tx_byte);
+				if (ret == 0) {
+					config->base->CMD = I2C_CMD_ACK;
+					config->base->TXDATA = tx_byte;
+				} else {
+					config->base->CMD = I2C_CMD_NACK;
+					config->base->TXDATA = 0xFF;
+				}
 			} else {
-				data->target_cfg->callbacks->write_requested(data->target_cfg);
+				ret = data->target_cfg->callbacks->write_requested(
+					data->target_cfg);
+				if (ret == 0) {
+					config->base->CMD = I2C_CMD_ACK;
+				} else {
+					config->base->CMD = I2C_CMD_NACK;
+				}
 			}
 
 			I2C_IntClear(config->base, I2C_IF_ADDR | I2C_IF_RXDATAV);
 		} else if (pending & I2C_IF_RXDATAV) {
 			rx_byte = config->base->RXDATA;
 			/* Read new data and write to target address */
-			data->target_cfg->callbacks->write_received(data->target_cfg, rx_byte);
-			config->base->CMD = I2C_CMD_ACK;
+			ret = data->target_cfg->callbacks->write_received(data->target_cfg,
+									  rx_byte);
+			if (ret == 0) {
+				config->base->CMD = I2C_CMD_ACK;
+			} else {
+				config->base->CMD = I2C_CMD_NACK;
+			}
 
 			I2C_IntClear(config->base, I2C_IF_RXDATAV);
 		}
 
 		if (pending & I2C_IF_ACK) {
 			/* Leader ACK'ed, so requesting more data */
-			data->target_cfg->callbacks->read_processed(data->target_cfg, &tx_byte);
-			config->base->TXDATA = tx_byte;
+			ret = data->target_cfg->callbacks->read_processed(data->target_cfg,
+									  &tx_byte);
+			if (ret == 0) {
+				config->base->TXDATA = tx_byte;
+			} else {
+				config->base->TXDATA = 0xFF;
+			}
 
 			I2C_IntClear(config->base, I2C_IF_ACK);
 		}
