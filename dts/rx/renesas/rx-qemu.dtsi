@@ -22,7 +22,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "renesas,rx";
+			compatible = "renesas,rxv1";
 			device_type = "cpu";
 			reg = <0>;
 			status = "okay";
