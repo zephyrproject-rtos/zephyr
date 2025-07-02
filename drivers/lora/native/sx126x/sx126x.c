@@ -231,12 +231,19 @@ static int sx126x_set_packet_params(const struct device *dev,
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 6);
 }
 
-static int sx126x_set_sync_word(const struct device *dev, bool public_network)
+static int sx126x_set_sync_word(const struct device *dev, struct lora_modem_config *config)
 {
-	uint16_t sync_word = public_network ?
-			     SX126X_LORA_SYNC_WORD_PUBLIC :
-			     SX126X_LORA_SYNC_WORD_PRIVATE;
+	uint16_t sync_word;
 	uint8_t buf[2];
+
+	if (config->sync_word) {
+		/* Matching behaviour for other LoRa backends */
+		sync_word = 0x0404 | ((config->sync_word & 0xF0) << 8) |
+			    ((config->sync_word & 0x0F) << 4);
+	} else {
+		sync_word = config->public_network ? SX126X_LORA_SYNC_WORD_PUBLIC
+						   : SX126X_LORA_SYNC_WORD_PRIVATE;
+	}
 
 	sys_put_be16(sync_word, buf);
 	return sx126x_hal_write_regs(dev, SX126X_REG_LORA_SYNC_WORD_MSB, buf, 2);
@@ -654,7 +661,7 @@ static int sx126x_lora_config(const struct device *dev,
 	}
 
 	/* Set sync word */
-	ret = sx126x_set_sync_word(dev, config->public_network);
+	ret = sx126x_set_sync_word(dev, config);
 	if (ret < 0) {
 		goto out;
 	}

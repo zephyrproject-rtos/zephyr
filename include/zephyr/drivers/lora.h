@@ -113,6 +113,13 @@ struct lora_modem_config {
 	/** TX-power in dBm to use for transmission */
 	int8_t tx_power;
 
+	/**
+	 * Override 'public_network' with an explicit sync word.
+	 * Not valid for the legacy loramac-node backend.
+	 * Must be a value other than 0x00.
+	 */
+	uint8_t sync_word;
+
 	/** Set to true for transmission, false for receiving */
 	bool tx;
 
