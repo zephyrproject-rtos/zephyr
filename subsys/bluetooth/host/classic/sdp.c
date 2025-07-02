@@ -2836,6 +2836,40 @@ static int sdp_get_param_item(struct bt_sdp_uuid_desc *pd_item, uint16_t *param)
 	return 0;
 }
 
+static int sdp_get_u16_data(const struct bt_sdp_attr_item *attr, uint16_t *u16)
+{
+	const uint8_t *p;
+
+	if (!u16) {
+		LOG_ERR("Invalid pointer.");
+		return -EINVAL;
+	}
+
+	p = attr->val;
+	BT_ASSERT(p);
+
+	if (p[0] != BT_SDP_UINT16) {
+		LOG_ERR("Invalid DTD 0x%02x", p[0]);
+		return -EINVAL;
+	}
+
+	/* assert 16bit can be read safely */
+	if (attr->len < 3) {
+		LOG_ERR("Data length too short %u", attr->len);
+		return -EMSGSIZE;
+	}
+
+	*u16 = sys_get_be16(++p);
+	p += sizeof(uint16_t);
+
+	if (p - attr->val != attr->len) {
+		LOG_ERR("Invalid data length %u", attr->len);
+		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
 int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 			   uint16_t *param)
 {
@@ -2915,36 +2949,13 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
 int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features)
 {
 	struct bt_sdp_attr_item attr;
-	const uint8_t *p;
-	int res;
+	int err;
 
-	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_SUPPORTED_FEATURES);
-	if (res < 0) {
-		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_SUPPORTED_FEATURES, res);
-		return res;
+	err = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_SUPPORTED_FEATURES);
+	if (err < 0) {
+		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_SUPPORTED_FEATURES, err);
+		return err;
 	}
 
-	p = attr.val;
-	BT_ASSERT(p);
-
-	if (p[0] != BT_SDP_UINT16) {
-		LOG_ERR("Invalid DTD 0x%02x", p[0]);
-		return -EINVAL;
-	}
-
-	/* assert 16bit can be read safely */
-	if (attr.len < 3) {
-		LOG_ERR("Data length too short %u", attr.len);
-		return -EMSGSIZE;
-	}
-
-	*features = sys_get_be16(++p);
-	p += sizeof(uint16_t);
-
-	if (p - attr.val != attr.len) {
-		LOG_ERR("Invalid data length %u", attr.len);
-		return -EMSGSIZE;
-	}
-
-	return 0;
+	return sdp_get_u16_data(&attr, features);
 }
