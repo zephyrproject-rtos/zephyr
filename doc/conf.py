@@ -143,6 +143,9 @@ SDK_URL_BASE="https://github.com/zephyrproject-rtos/sdk-ng/releases/download"
 rst_epilog = f"""
 .. include:: /substitutions.txt
 
+.. |zephyr-version| replace:: ``{version}``
+.. |zephyr-version-ltrim| unicode:: {version}
+   :ltrim:
 .. |sdk-version-literal| replace:: ``{sdk_version}``
 .. |sdk-version-trim| unicode:: {sdk_version}
    :trim:
