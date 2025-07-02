@@ -1838,20 +1838,22 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 		 * (through Kconfig).
 		 * Use same RPA as legacy advertiser if advertising.
 		 */
-		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-		    !is_adv_using_rand_addr()) {
-			err = bt_id_set_private_addr(BT_ID_DEFAULT);
-			if (err) {
-				if (active_scan || !is_adv_using_rand_addr()) {
+		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
+			if (is_adv_using_rand_addr()) {
+				if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
+					*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+				} else {
+					*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
+				}
+			} else {
+				err = bt_id_set_private_addr(BT_ID_DEFAULT);
+				if (err) {
 					return err;
 				}
 
-				LOG_WRN("Ignoring failure to set address for passive scan (%d)",
-					err);
+				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 			}
-
-			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
-		} else if (IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
+		} else {
 			if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
 				/* If scanning with Identity Address we must set the
 				 * random identity address for both active and passive
