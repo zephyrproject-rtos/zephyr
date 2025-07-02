@@ -283,13 +283,13 @@ void rtc_stm32_isr(const struct device *dev)
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int id = 0;
 
-	stm32_backup_domain_enable_access();
-
 	for (id = 0; id < RTC_STM32_ALARMS_COUNT; id++) {
 		if (rtc_stm32_is_active_alarm(RTC, (uint16_t)id) != 0) {
+			stm32_backup_domain_enable_access();
 			LL_RTC_DisableWriteProtection(RTC);
 			rtc_stm32_clear_alarm_flag(RTC, (uint16_t)id);
 			LL_RTC_EnableWriteProtection(RTC);
+			stm32_backup_domain_disable_access();
 
 			if (id == RTC_STM32_ALRM_A) {
 				p_rtc_alrm = &(data->rtc_alrm_a);
@@ -304,8 +304,6 @@ void rtc_stm32_isr(const struct device *dev)
 			}
 		}
 	}
-
-	stm32_backup_domain_disable_access();
 
 	ll_func_exti_clear_rtc_alarm_flag(RTC_STM32_EXTI_LINE);
 }
