@@ -11,7 +11,7 @@ from contextlib import nullcontext
 import os
 import sys
 import pytest
-import mock
+from unittest import mock
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
