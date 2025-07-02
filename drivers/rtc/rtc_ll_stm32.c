@@ -379,6 +379,7 @@ static int rtc_stm32_init(const struct device *dev)
 		err = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
 
 		if (err < 0) {
+			stm32_backup_domain_disable_access();
 			LOG_ERR("clock configure failed\n");
 			return -EIO;
 		}
