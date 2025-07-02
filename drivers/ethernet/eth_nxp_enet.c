@@ -473,8 +473,9 @@ static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 
 	/* Configure the PHY */
 	ret = phy_configure_link(phy, speeds, 0);
-
-	if (ret == -ENOTSUP || ret == -ENOSYS) {
+	if (ret == -EALREADY) {
+		return 0;
+	} else if (ret == -ENOTSUP || ret == -ENOSYS) {
 		phy_get_link_state(phy, &state);
 
 		if (state.is_up) {
