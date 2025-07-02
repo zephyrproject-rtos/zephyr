@@ -1,0 +1,71 @@
+/*
+ * Copyright 2025 Xiaomi Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/kernel.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/classic/sdp.h>
+
+#include "did_internal.h"
+
+#define DID_VER_1_3 (0x0103u)
+
+#define BLUETOOTH_DEVICE_IDENTIFY_SPEC_VERSION 0x0103
+#define BLUETOOTH_DEVICE_IDENTIFY_ATTR_VERSION 0x0100
+
+#define BLUETOOTH_DEVICE_VEDNOR_ID_SOURCE_BTSIG 0x0001 /* Bluetooth SIG assigned */
+#define BLUETOOTH_DEVICE_VENDOR_ID_SOURCE_USBIF 0x0002 /* USB Implementer's Forum */
+
+static struct bt_sdp_attribute did_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SVCLASS_ID_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_PNP_INFO_SVCLASS)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SPECIFICATION_ID,
+		BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		BT_SDP_ARRAY_16(BLUETOOTH_DEVICE_IDENTIFY_SPEC_VERSION)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_VENDOR_ID,
+		BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		BT_SDP_ARRAY_16(CONFIG_BT_DEVICE_VEDNOR_ID)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PRODUCT_ID,
+		BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		BT_SDP_ARRAY_16(CONFIG_BT_DEVICE_PRODUCT_ID)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_VERSION,
+		BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		BT_SDP_ARRAY_16(CONFIG_BT_DEVICE_VERSION)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PRIMARY_RECORD,
+		BT_SDP_TYPE_SIZE(BT_SDP_BOOL),
+		BT_SDP_ARRAY_8(1)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_VENDOR_ID_SOURCE,
+		BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		BT_SDP_ARRAY_16(BLUETOOTH_DEVICE_VEDNOR_ID_SOURCE_BTSIG)
+	),
+};
+
+static struct bt_sdp_record did_rec = BT_SDP_RECORD(did_attrs);
+
+int bt_did_init(void)
+{
+	return bt_sdp_register_service(&did_rec);
+}
