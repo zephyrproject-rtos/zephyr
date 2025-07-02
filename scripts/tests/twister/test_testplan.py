@@ -8,7 +8,7 @@ This test file contains testsuites for testsuite.py module of twister
 '''
 import sys
 import os
-import mock
+from unittest import mock
 import pytest
 
 from contextlib import nullcontext
