@@ -1,0 +1,17 @@
+# Copyright 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config POWER_DOMAIN_NRFS_GDPWR
+	bool "NRFS Global Domain Power Request driver"
+	depends on DT_HAS_NORDIC_NRFS_GDPWR_ENABLED
+	select NRFS
+	select NRFS_GDPWR_SERVICE_ENABLED
+	default y
+
+if POWER_DOMAIN_NRFS_GDPWR
+
+config POWER_DOMAIN_NRFS_GDPWR_TIMEOUT_MS
+	int "GDPWR request timeout in milliseconds"
+	default 500
+
+endif # POWER_DOMAIN_NRFS_GDPWR
