@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "icm42688_decoder.h"
-#include "icm42688_reg.h"
-#include "icm42688.h"
+#include "icm4268x_decoder.h"
+#include "icm4268x_reg.h"
+#include "icm4268x.h"
 #include <errno.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor_clock.h>
 
-LOG_MODULE_REGISTER(ICM42688_DECODER, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(ICM4268X_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
-#define DT_DRV_COMPAT invensense_icm42688
+#define DT_DRV_COMPAT invensense_icm4268x
 
-static int icm42688_get_shift(enum sensor_channel channel, int accel_fs, int gyro_fs, int8_t *shift)
+static int icm4268x_get_shift(enum sensor_channel channel, int accel_fs, int gyro_fs, int8_t *shift)
 {
 	switch (channel) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -79,7 +79,7 @@ static int icm42688_get_shift(enum sensor_channel channel, int accel_fs, int gyr
 	}
 }
 
-int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel chan, int32_t reading,
+int icm4268x_convert_raw_to_q31(struct icm4268x_cfg *cfg, enum sensor_channel chan, int32_t reading,
 				q31_t *out)
 {
 	int32_t whole;
@@ -88,7 +88,7 @@ int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel ch
 	int8_t shift;
 	int rc;
 
-	rc = icm42688_get_shift(chan, cfg->accel_fs, cfg->gyro_fs, &shift);
+	rc = icm4268x_get_shift(chan, cfg->accel_fs, cfg->gyro_fs, &shift);
 	if (rc != 0) {
 		return rc;
 	}
@@ -98,16 +98,16 @@ int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel ch
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		icm42688_accel_ms(cfg, reading, &whole, &fraction);
+		icm4268x_accel_ms(cfg, reading, &whole, &fraction);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		icm42688_gyro_rads(cfg, reading, &whole, &fraction);
+		icm4268x_gyro_rads(cfg, reading, &whole, &fraction);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
-		icm42688_temp_c(reading, &whole, &fraction);
+		icm4268x_temp_c(reading, &whole, &fraction);
 		break;
 	default:
 		return -ENOTSUP;
@@ -125,7 +125,7 @@ int icm42688_convert_raw_to_q31(struct icm42688_cfg *cfg, enum sensor_channel ch
 	return 0;
 }
 
-static int icm42688_get_channel_position(enum sensor_channel chan)
+static int icm4268x_get_channel_position(enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_DIE_TEMP:
@@ -149,7 +149,7 @@ static int icm42688_get_channel_position(enum sensor_channel chan)
 	}
 }
 
-static uint8_t icm42688_encode_channel(enum sensor_channel chan)
+static uint8_t icm4268x_encode_channel(enum sensor_channel chan)
 {
 	uint8_t encode_bmask = 0;
 
@@ -161,17 +161,17 @@ static uint8_t icm42688_encode_channel(enum sensor_channel chan)
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		encode_bmask = BIT(icm42688_get_channel_position(chan));
+		encode_bmask = BIT(icm4268x_get_channel_position(chan));
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		encode_bmask = BIT(icm42688_get_channel_position(SENSOR_CHAN_ACCEL_X)) |
-			       BIT(icm42688_get_channel_position(SENSOR_CHAN_ACCEL_Y)) |
-			       BIT(icm42688_get_channel_position(SENSOR_CHAN_ACCEL_Z));
+		encode_bmask = BIT(icm4268x_get_channel_position(SENSOR_CHAN_ACCEL_X)) |
+			       BIT(icm4268x_get_channel_position(SENSOR_CHAN_ACCEL_Y)) |
+			       BIT(icm4268x_get_channel_position(SENSOR_CHAN_ACCEL_Z));
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		encode_bmask = BIT(icm42688_get_channel_position(SENSOR_CHAN_GYRO_X)) |
-			       BIT(icm42688_get_channel_position(SENSOR_CHAN_GYRO_Y)) |
-			       BIT(icm42688_get_channel_position(SENSOR_CHAN_GYRO_Z));
+		encode_bmask = BIT(icm4268x_get_channel_position(SENSOR_CHAN_GYRO_X)) |
+			       BIT(icm4268x_get_channel_position(SENSOR_CHAN_GYRO_Y)) |
+			       BIT(icm4268x_get_channel_position(SENSOR_CHAN_GYRO_Z));
 		break;
 	default:
 		break;
@@ -180,18 +180,18 @@ static uint8_t icm42688_encode_channel(enum sensor_channel chan)
 	return encode_bmask;
 }
 
-int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *const channels,
+int icm4268x_encode(const struct device *dev, const struct sensor_chan_spec *const channels,
 		    const size_t num_channels, uint8_t *buf)
 {
-	struct icm42688_dev_data *data = dev->data;
-	struct icm42688_encoded_data *edata = (struct icm42688_encoded_data *)buf;
+	struct icm4268x_dev_data *data = dev->data;
+	struct icm4268x_encoded_data *edata = (struct icm4268x_encoded_data *)buf;
 	uint64_t cycles;
 	int rc;
 
 	edata->channels = 0;
 
 	for (int i = 0; i < num_channels; i++) {
-		edata->channels |= icm42688_encode_channel(channels[i].chan_type);
+		edata->channels |= icm4268x_encode_channel(channels[i].chan_type);
 	}
 
 	rc = sensor_clock_get_cycles(&cycles);
@@ -213,7 +213,7 @@ int icm42688_encode(const struct device *dev, const struct sensor_chan_spec *con
 #define IS_ACCEL(chan) ((chan) >= SENSOR_CHAN_ACCEL_X && (chan) <= SENSOR_CHAN_ACCEL_XYZ)
 #define IS_GYRO(chan)  ((chan) >= SENSOR_CHAN_GYRO_X && (chan) <= SENSOR_CHAN_GYRO_XYZ)
 
-static inline q31_t icm42688_read_temperature_from_packet(const uint8_t *pkt)
+static inline q31_t icm4268x_read_temperature_from_packet(const uint8_t *pkt)
 {
 	int32_t temperature;
 	int32_t whole;
@@ -223,7 +223,7 @@ static inline q31_t icm42688_read_temperature_from_packet(const uint8_t *pkt)
 	if (FIELD_GET(FIFO_HEADER_20, pkt[0]) == 1) {
 		temperature = (pkt[0xd] << 8) | pkt[0xe];
 
-		icm42688_temp_c(temperature, &whole, &fraction);
+		icm4268x_temp_c(temperature, &whole, &fraction);
 	} else {
 		if (FIELD_GET(FIFO_HEADER_ACCEL, pkt[0]) == 1 &&
 		    FIELD_GET(FIFO_HEADER_GYRO, pkt[0]) == 1) {
@@ -243,7 +243,7 @@ static inline q31_t icm42688_read_temperature_from_packet(const uint8_t *pkt)
 	return FIELD_PREP(GENMASK(31, 22), whole) | (fraction * GENMASK64(21, 0) / 1000000);
 }
 
-static int icm42688_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int fs,
+static int icm4268x_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int fs,
 					 uint8_t axis_offset, q31_t *out)
 {
 	uint32_t unsigned_value;
@@ -322,7 +322,7 @@ static const uint32_t gyro_period_ns[] = {
 	[ICM42688_DT_GYRO_ODR_32000] = UINT32_C(1000000) / 32,
 };
 
-static int icm42688_calc_timestamp_delta(int rtc_freq, int chan_type, int dt_odr, int frame_count,
+static int icm4268x_calc_timestamp_delta(int rtc_freq, int chan_type, int dt_odr, int frame_count,
 					 uint64_t *out_delta)
 {
 	uint32_t period;
@@ -344,11 +344,11 @@ static int icm42688_calc_timestamp_delta(int rtc_freq, int chan_type, int dt_odr
 	return 0;
 }
 
-static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				uint32_t *fit, uint16_t max_count, void *data_out)
 {
-	const struct icm42688_fifo_data *edata = (const struct icm42688_fifo_data *)buffer;
-	const uint8_t *buffer_end = buffer + sizeof(struct icm42688_fifo_data) + edata->fifo_count;
+	const struct icm4268x_fifo_data *edata = (const struct icm4268x_fifo_data *)buffer;
+	const uint8_t *buffer_end = buffer + sizeof(struct icm4268x_fifo_data) + edata->fifo_count;
 	int accel_frame_count = 0;
 	int gyro_frame_count = 0;
 	int count = 0;
@@ -360,7 +360,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 
 	((struct sensor_data_header *)data_out)->base_timestamp_ns = edata->header.timestamp;
 
-	buffer += sizeof(struct icm42688_fifo_data);
+	buffer += sizeof(struct icm4268x_fifo_data);
 	while (count < max_count && buffer < buffer_end) {
 		const bool is_20b = FIELD_GET(FIFO_HEADER_20, buffer[0]) == 1;
 		const bool has_accel = FIELD_GET(FIFO_HEADER_ACCEL, buffer[0]) == 1;
@@ -391,11 +391,11 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			uint64_t ts_delta;
 
 			if (has_accel) {
-				rc = icm42688_calc_timestamp_delta(
+				rc = icm4268x_calc_timestamp_delta(
 					edata->rtc_freq, SENSOR_CHAN_ACCEL_XYZ, edata->accel_odr,
 					accel_frame_count - 1, &ts_delta);
 			} else {
-				rc = icm42688_calc_timestamp_delta(
+				rc = icm4268x_calc_timestamp_delta(
 					edata->rtc_freq, SENSOR_CHAN_GYRO_XYZ, edata->gyro_odr,
 					gyro_frame_count - 1, &ts_delta);
 			}
@@ -418,17 +418,17 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 
 			data->shift = 9;
 			data->readings[count].temperature =
-				icm42688_read_temperature_from_packet(buffer);
+				icm4268x_read_temperature_from_packet(buffer);
 		} else if (IS_ACCEL(chan_spec.chan_type) && has_accel) {
 			/* Decode accel */
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
 			uint64_t ts_delta;
 
-			icm42688_get_shift(SENSOR_CHAN_ACCEL_XYZ, edata->header.accel_fs,
+			icm4268x_get_shift(SENSOR_CHAN_ACCEL_XYZ, edata->header.accel_fs,
 					   edata->header.gyro_fs, &data->shift);
 
-			rc = icm42688_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_ACCEL_XYZ,
+			rc = icm4268x_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_ACCEL_XYZ,
 							   edata->accel_odr, accel_frame_count - 1,
 							   &ts_delta);
 			if (rc < 0) {
@@ -451,7 +451,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			q31_t reading[3];
 
 			for (int i = 0; i < 3; i++) {
-				rc |= icm42688_read_imu_from_packet(
+				rc |= icm4268x_read_imu_from_packet(
 					buffer, true, edata->header.accel_fs, i, &reading[i]);
 			}
 
@@ -472,10 +472,10 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 				(struct sensor_three_axis_data *)data_out;
 			uint64_t ts_delta;
 
-			icm42688_get_shift(SENSOR_CHAN_GYRO_XYZ, edata->header.accel_fs,
+			icm4268x_get_shift(SENSOR_CHAN_GYRO_XYZ, edata->header.accel_fs,
 					   edata->header.gyro_fs, &data->shift);
 
-			rc = icm42688_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_GYRO_XYZ,
+			rc = icm4268x_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_GYRO_XYZ,
 							   edata->gyro_odr, gyro_frame_count - 1,
 							   &ts_delta);
 			if (rc < 0) {
@@ -498,7 +498,7 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			q31_t reading[3];
 
 			for (int i = 0; i < 3; i++) {
-				rc |= icm42688_read_imu_from_packet(
+				rc |= icm4268x_read_imu_from_packet(
 					buffer, false, edata->header.gyro_fs, i, &reading[i]);
 			}
 
@@ -521,12 +521,12 @@ static int icm42688_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 	return count;
 }
 
-static int icm42688_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+static int icm4268x_one_shot_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				    uint32_t *fit, uint16_t max_count, void *data_out)
 {
-	const struct icm42688_encoded_data *edata = (const struct icm42688_encoded_data *)buffer;
-	const struct icm42688_decoder_header *header = &edata->header;
-	struct icm42688_cfg cfg = {
+	const struct icm4268x_encoded_data *edata = (const struct icm4268x_encoded_data *)buffer;
+	const struct icm4268x_decoder_header *header = &edata->header;
+	struct icm4268x_cfg cfg = {
 		.accel_fs = edata->header.accel_fs,
 		.gyro_fs = edata->header.gyro_fs,
 	};
@@ -548,7 +548,7 @@ static int icm42688_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
 	case SENSOR_CHAN_DIE_TEMP: {
-		channel_request = icm42688_encode_channel(chan_spec.chan_type);
+		channel_request = icm4268x_encode_channel(chan_spec.chan_type);
 		if ((channel_request & edata->channels) != channel_request) {
 			return -ENODATA;
 		}
@@ -558,22 +558,22 @@ static int icm42688_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 
-		rc = icm42688_get_shift(chan_spec.chan_type, header->accel_fs, header->gyro_fs,
+		rc = icm4268x_get_shift(chan_spec.chan_type, header->accel_fs, header->gyro_fs,
 					&out->shift);
 		if (rc != 0) {
 			return -EINVAL;
 		}
 
-		icm42688_convert_raw_to_q31(
+		icm4268x_convert_raw_to_q31(
 			&cfg, chan_spec.chan_type,
-			edata->readings[icm42688_get_channel_position(chan_spec.chan_type)],
+			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type)],
 			&out->readings[0].value);
 		*fit = 1;
 		return 1;
 	}
 	case SENSOR_CHAN_ACCEL_XYZ:
 	case SENSOR_CHAN_GYRO_XYZ: {
-		channel_request = icm42688_encode_channel(chan_spec.chan_type);
+		channel_request = icm4268x_encode_channel(chan_spec.chan_type);
 		if ((channel_request & edata->channels) != channel_request) {
 			return -ENODATA;
 		}
@@ -582,23 +582,23 @@ static int icm42688_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
-		rc = icm42688_get_shift(chan_spec.chan_type, header->accel_fs, header->gyro_fs,
+		rc = icm4268x_get_shift(chan_spec.chan_type, header->accel_fs, header->gyro_fs,
 					&out->shift);
 		if (rc != 0) {
 			return -EINVAL;
 		}
 
-		icm42688_convert_raw_to_q31(
+		icm4268x_convert_raw_to_q31(
 			&cfg, chan_spec.chan_type - 3,
-			edata->readings[icm42688_get_channel_position(chan_spec.chan_type - 3)],
+			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type - 3)],
 			&out->readings[0].x);
-		icm42688_convert_raw_to_q31(
+		icm4268x_convert_raw_to_q31(
 			&cfg, chan_spec.chan_type - 2,
-			edata->readings[icm42688_get_channel_position(chan_spec.chan_type - 2)],
+			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type - 2)],
 			&out->readings[0].y);
-		icm42688_convert_raw_to_q31(
+		icm4268x_convert_raw_to_q31(
 			&cfg, chan_spec.chan_type - 1,
-			edata->readings[icm42688_get_channel_position(chan_spec.chan_type - 1)],
+			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type - 1)],
 			&out->readings[0].z);
 		*fit = 1;
 		return 1;
@@ -608,31 +608,31 @@ static int icm42688_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 	}
 }
 
-static int icm42688_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+static int icm4268x_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 				   uint32_t *fit, uint16_t max_count, void *data_out)
 {
-	const struct icm42688_decoder_header *header =
-		(const struct icm42688_decoder_header *)buffer;
+	const struct icm4268x_decoder_header *header =
+		(const struct icm4268x_decoder_header *)buffer;
 
 	if (header->is_fifo) {
-		return icm42688_fifo_decode(buffer, chan_spec, fit, max_count, data_out);
+		return icm4268x_fifo_decode(buffer, chan_spec, fit, max_count, data_out);
 	}
-	return icm42688_one_shot_decode(buffer, chan_spec, fit, max_count, data_out);
+	return icm4268x_one_shot_decode(buffer, chan_spec, fit, max_count, data_out);
 }
 
-static int icm42688_decoder_get_frame_count(const uint8_t *buffer,
+static int icm4268x_decoder_get_frame_count(const uint8_t *buffer,
 					    struct sensor_chan_spec chan_spec,
 					    uint16_t *frame_count)
 {
-	const struct icm42688_fifo_data *data = (const struct icm42688_fifo_data *)buffer;
-	const struct icm42688_encoded_data *enc_data = (const struct icm42688_encoded_data *)buffer;
-	const struct icm42688_decoder_header *header = &data->header;
+	const struct icm4268x_fifo_data *data = (const struct icm4268x_fifo_data *)buffer;
+	const struct icm4268x_encoded_data *enc_data = (const struct icm4268x_encoded_data *)buffer;
+	const struct icm4268x_decoder_header *header = &data->header;
 
 	if (chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 
-	uint8_t channel_request = icm42688_encode_channel(chan_spec.chan_type);
+	uint8_t channel_request = icm4268x_encode_channel(chan_spec.chan_type);
 
 
 	if ((!enc_data->header.is_fifo) &&
@@ -660,7 +660,7 @@ static int icm42688_decoder_get_frame_count(const uint8_t *buffer,
 	}
 
 	/* Skip the header */
-	buffer += sizeof(struct icm42688_fifo_data);
+	buffer += sizeof(struct icm4268x_fifo_data);
 
 	uint16_t count = 0;
 	const uint8_t *end = buffer + data->fifo_count;
@@ -690,7 +690,7 @@ static int icm42688_decoder_get_frame_count(const uint8_t *buffer,
 	return 0;
 }
 
-static int icm42688_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
+static int icm4268x_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
 					  size_t *frame_size)
 {
 	switch (chan_spec.chan_type) {
@@ -716,7 +716,7 @@ static int icm42688_decoder_get_size_info(struct sensor_chan_spec chan_spec, siz
 
 static bool icm24688_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
-	const struct icm42688_fifo_data *edata = (const struct icm42688_fifo_data *)buffer;
+	const struct icm4268x_fifo_data *edata = (const struct icm4268x_fifo_data *)buffer;
 
 	if (!edata->header.is_fifo) {
 		return false;
@@ -735,13 +735,13 @@ static bool icm24688_decoder_has_trigger(const uint8_t *buffer, enum sensor_trig
 }
 
 SENSOR_DECODER_API_DT_DEFINE() = {
-	.get_frame_count = icm42688_decoder_get_frame_count,
-	.get_size_info = icm42688_decoder_get_size_info,
-	.decode = icm42688_decoder_decode,
+	.get_frame_count = icm4268x_decoder_get_frame_count,
+	.get_size_info = icm4268x_decoder_get_size_info,
+	.decode = icm4268x_decoder_decode,
 	.has_trigger = icm24688_decoder_has_trigger,
 };
 
-int icm42688_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
+int icm4268x_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
 {
 	ARG_UNUSED(dev);
 	*decoder = &SENSOR_DECODER_NAME();

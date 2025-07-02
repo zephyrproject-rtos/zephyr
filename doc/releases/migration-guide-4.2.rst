@@ -312,6 +312,9 @@ Sensors
 
 * Renamed ``CONFIG_NPM1300_CHARGER`` to :kconfig:option:`CONFIG_NPM13XX_CHARGER`
 
+* Nodes with compatible property :dtcompatible:`invensense,icm42688` now additionally need to also
+  include :dtcompatible:`invensense,icm4268x` in order to work.
+
 Serial
 =======
 
