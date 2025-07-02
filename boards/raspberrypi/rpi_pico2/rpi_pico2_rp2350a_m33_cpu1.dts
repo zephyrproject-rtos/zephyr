@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 Andrew Featherstone
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/* The build system assumes that there's a cpucluster-specific file.
+ *
+ * This file provides composition of the device tree:
+ * 1. The common features of the SoC
+ * 2. Core-specific configuration.
+ * 3. Board-specific configuration.
+ */
+#include <raspberrypi/rpi_pico/rp2350a.dtsi>
+#include <raspberrypi/rpi_pico/m33.dtsi>
+
+/* there's nothing specific to the Cortex-M33 cores vs the (not yet
+ * implemented) Hazard3 cores.
+ */
+#include "rpi_pico2.dtsi"
+#include "rpi_pico2_split.dtsi"
+
+/delete-node/ &cpu0;
+
+/ {
+	chosen {
+		zephyr,sram = &sram0_cpu1;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		// Flash is only assigned to CPU0, CPU1 must
+		// execute from RAM to avoid access conflicts
+		// You can add a code-partition
+		// Then add image-source to the &cpu1_launcher on cpu0
+		// zephyr,code-partition = &cpu1_slot0_partition;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};

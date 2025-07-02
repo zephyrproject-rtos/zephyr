@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Dmitrii Sharshakov <d3dx12.xx@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* CPU0 */
+		sram0_cpu0: memory@20000000 {
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		/* CPU1 */
+		sram0_cpu1: memory@20040000 {
+			reg = <0x20040000 DT_SIZE_K(256)>;
+		};
+
+		/* Shared and directly mapped */
+		sram8: memory@20080000 {
+			reg = <0x20080000 DT_SIZE_K(4)>;
+		};
+		sram9: memory@20081000 {
+			reg = <0x20081000 DT_SIZE_K(4)>;
+		};
+	};
+};

@@ -9,6 +9,8 @@ family:
     - name: rp2350a
       cpuclusters:
       - name: m33
+      - name: m33_cpu0
+      - name: m33_cpu1
     - name: rp2350b
       cpuclusters:
       - name: m33
