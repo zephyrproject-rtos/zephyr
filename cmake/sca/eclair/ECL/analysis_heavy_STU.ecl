@@ -10,14 +10,14 @@
 
 -doc_begin="Selection of guidelines from
 https://docs.zephyrproject.org/latest/contribute/coding_guidelines/index.html"
--enable=MC3R1.D4.6
--enable=MC3R1.D4.9
--enable=MC3R1.R12.1
--enable=MC3R1.R13.3
--enable=MC3R1.R2.6
--enable=MC3R1.R10.1
--enable=MC3R1.R10.3
--enable=MC3R1.R10.4
--enable=MC3R1.R14.4
--enable=MC3R1.R20.7
+-enable=MC3A2.D4.6
+-enable=MC3A2.D4.9
+-enable=MC3A2.R12.1
+-enable=MC3A2.R13.3
+-enable=MC3A2.R2.6
+-enable=MC3A2.R10.1
+-enable=MC3A2.R10.3
+-enable=MC3A2.R10.4
+-enable=MC3A2.R14.4
+-enable=MC3A2.R20.7
 -doc_end

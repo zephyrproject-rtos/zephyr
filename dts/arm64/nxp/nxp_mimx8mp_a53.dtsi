@@ -302,7 +302,7 @@
 				interrupt-names = "COMMON";
 				interrupt-parent = <&gic>;
 				nxp,mdio = <&enet_mdio>;
-				nxp,ptp-clock = <&enet_ptp_clock>;
+				ptp-clock = <&enet_ptp_clock>;
 				status = "disabled";
 			};
 			enet_mdio: mdio {

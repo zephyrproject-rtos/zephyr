@@ -8,7 +8,7 @@ description: Microchip MPFS I2C Controller
 
 compatible: "microchip,mpfs-i2c"
 
-include: i2c-controller.yaml
+include: [i2c-controller.yaml, reset-device.yaml]
 
 properties:
   reg:

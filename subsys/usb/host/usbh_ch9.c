@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(usbh_ch9, CONFIG_USBH_LOG_LEVEL);
 #define SETUP_REQ_TIMEOUT	5000U
 
 K_SEM_DEFINE(ch9_req_sync, 0, 1);
+static bool ctrl_req_no_status;
 
 static int ch9_req_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
 {
@@ -39,6 +40,11 @@ static int ch9_req_cb(struct usb_device *const udev, struct uhc_transfer *const 
 	k_sem_give(&ch9_req_sync);
 
 	return 0;
+}
+
+void usbh_req_omit_status(const bool omit)
+{
+	ctrl_req_no_status = omit;
 }
 
 int usbh_req_setup(struct usb_device *const udev,
@@ -67,13 +73,18 @@ int usbh_req_setup(struct usb_device *const udev,
 
 	memcpy(xfer->setup_pkt, &req, sizeof(req));
 
-	__ASSERT((buf != NULL && wLength) || (buf == NULL && !wLength),
+	__ASSERT(IS_ENABLED(CONFIG_ZTEST) ||
+		 (buf != NULL && wLength) || (buf == NULL && !wLength),
 		 "Unresolved conditions for data stage");
 	if (wLength) {
 		ret = usbh_xfer_buf_add(udev, xfer, buf);
 		if (ret) {
 			goto buf_alloc_err;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_ZTEST) && ctrl_req_no_status) {
+		xfer->no_status = true;
 	}
 
 	ret = usbh_xfer_enqueue(udev, xfer);

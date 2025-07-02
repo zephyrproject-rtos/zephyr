@@ -25,6 +25,11 @@ config USE_RA_FSP_SPI
 	help
 	  Enable RA FSP SPI driver
 
+config USE_RA_FSP_I3C
+	bool
+	help
+	  Enable RA FSP I3C driver
+
 config USE_RA_FSP_DTC
 	bool
 	help
@@ -190,6 +195,11 @@ config USE_RA_FSP_ELC
 	bool
 	help
 	  Enable RA FSP ELC driver
+
+config USE_RA_FSP_SSI
+	bool
+	help
+	  Enable RA FSP I2S SSI driver
 
 endif # HAS_RENESAS_RA_FSP
 

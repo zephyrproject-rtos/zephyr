@@ -1194,9 +1194,11 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 				status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
 										 dns_servers,
-										 interfaces);
+										 interfaces,
+										 DNS_SOURCE_DHCPV4);
 			} else {
-				status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+				status = dns_resolve_reconfigure(ctx, NULL, dns_servers,
+								 DNS_SOURCE_DHCPV4);
 			}
 
 			if (status < 0) {
@@ -1689,8 +1691,9 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 			 * comes back up.
 			 */
 			if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
-				dns_resolve_remove(dns_resolve_get_default(),
-						   net_if_get_by_iface(iface));
+				dns_resolve_remove_source(dns_resolve_get_default(),
+							  net_if_get_by_iface(iface),
+							  DNS_SOURCE_DHCPV4);
 			}
 		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
@@ -1963,6 +1966,12 @@ void net_dhcpv4_stop(struct net_if *iface)
 		iface->config.dhcpv4.state = NET_DHCPV4_DISABLED;
 		NET_DBG("state=%s",
 			net_dhcpv4_state_name(iface->config.dhcpv4.state));
+
+		if (IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)) {
+			dns_resolve_remove_source(dns_resolve_get_default(),
+						  net_if_get_by_iface(iface),
+						  DNS_SOURCE_DHCPV4);
+		}
 
 		sys_slist_find_and_remove(&dhcpv4_ifaces,
 					  &iface->config.dhcpv4.node);

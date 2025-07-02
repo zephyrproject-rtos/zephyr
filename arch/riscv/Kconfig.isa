@@ -34,7 +34,7 @@ config RISCV_ISA_EXT_M
 config RISCV_ISA_EXT_A
 	bool
 	imply RISCV_ISA_EXT_ZAAMO
-	imply RISCV_ISA_EXT_ZLRSC
+	imply RISCV_ISA_EXT_ZALRSC
 	help
 	  (A) - Standard Extension for Atomic Instructions
 
@@ -120,12 +120,12 @@ config RISCV_ISA_EXT_ZAAMO
 
 	  The Zaamo extension enables support for AMO*.W/D-style instructions.
 
-config RISCV_ISA_EXT_ZLRSC
+config RISCV_ISA_EXT_ZALRSC
 	bool
 	help
-	  (Zlrsc) - Load-Reserved/Store-Conditional subset of the A extension
+	  (Zalrsc) - Load-Reserved/Store-Conditional subset of the A extension
 
-	  The Zlrsc extension enables support for LR.W/D and SC.W/D-style instructions.
+	  The Zalrsc extension enables support for LR.W/D and SC.W/D-style instructions.
 
 config RISCV_ISA_EXT_ZBA
 	bool

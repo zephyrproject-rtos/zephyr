@@ -128,6 +128,9 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 						 .get_capabilities = netc_eth_get_capabilities,
 						 .get_phy = netc_eth_get_phy,
 						 .set_config = netc_eth_set_config,
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+						 .get_ptp_clock = netc_eth_get_ptp_clock,
+#endif
 						 .send = netc_eth_tx};
 
 #define NETC_PSI_INSTANCE_DEFINE(n)                                                                \
@@ -199,6 +202,8 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
 		.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                               \
 		.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,                               \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				                   \
+			(.ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),))              \
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \
 				      &netc_eth##n##_config, CONFIG_ETH_INIT_PRIORITY,             \

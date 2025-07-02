@@ -1,6 +1,6 @@
 # ExplorIR-M CO2 sensor configuration options
 
-# Copyright (c) 2023, Vitrolife A/S
+# Copyright (c) 2025 Prevas A/S
 # SPDX-License-Identifier: Apache-2.0
 
 config EXPLORIR_M

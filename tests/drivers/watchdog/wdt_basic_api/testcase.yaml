@@ -51,6 +51,7 @@ tests:
       - nucleo_wb55rg
       - nucleo_wl55jc
       - b_u585i_iot02a
+      - nucleo_u385rg_q
       - nucleo_u575zi_q
       - nucleo_c031c6
       - stm32h573i_dk
@@ -91,6 +92,7 @@ tests:
       - nucleo_h753zi
       - nucleo_h7s3l8
       - stm32h7s78_dk
+      - nucleo_u385rg_q
       - nucleo_wba55cg
     integration_platforms:
       - nucleo_f091rc

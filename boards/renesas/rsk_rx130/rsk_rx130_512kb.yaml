@@ -7,6 +7,7 @@ type: mcu
 arch: rx
 toolchain:
   - cross-compile
+  - zephyr
 supported:
   - gpio
   - serial

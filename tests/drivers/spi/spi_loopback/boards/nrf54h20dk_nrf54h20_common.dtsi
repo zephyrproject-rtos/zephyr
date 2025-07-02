@@ -4,6 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	zephyr,user {
+		miso-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &pinctrl {
 	spi130_default: spi130_default {
 		group1 {

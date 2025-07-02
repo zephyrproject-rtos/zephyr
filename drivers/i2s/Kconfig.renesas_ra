@@ -1,0 +1,32 @@
+# Renesas RA Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_RENESAS_RA_SSIE
+	bool "Renesas RA I2S SSIE"
+	default y
+	depends on DT_HAS_RENESAS_RA_I2S_SSIE_ENABLED
+	select USE_RA_FSP_SSI
+	select PINCTRL
+	help
+	  Enable Renesas RA I2S SSIE Driver.
+
+if I2S_RENESAS_RA_SSIE
+
+config I2S_RENESAS_RA_SSIE_DTC
+	bool "DTC on Transmission and Reception"
+	default y
+	select USE_RA_FSP_DTC
+	help
+	  Enable DTC on transmission and reception
+
+config I2S_RENESAS_RA_SSIE_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_RENESAS_RA_SSIE_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # I2S_RENESAS_RA_SSIE

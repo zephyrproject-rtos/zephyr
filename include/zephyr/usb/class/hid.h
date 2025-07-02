@@ -141,6 +141,8 @@ extern "C" {
 #define HID_USAGE_GEN_LEDS		0x08
 /** HID Button Usage page */
 #define HID_USAGE_GEN_BUTTON		0x09
+/** HID Sensors Usage page */
+#define HID_USAGE_SENSORS		0x20
 
 /** HID Generic Desktop Undefined Usage ID */
 #define HID_USAGE_GEN_DESKTOP_UNDEFINED	0x00
@@ -162,6 +164,33 @@ extern "C" {
 #define HID_USAGE_GEN_DESKTOP_Y		0x31
 /** HID Generic Desktop Wheel Usage ID */
 #define HID_USAGE_GEN_DESKTOP_WHEEL	0x38
+
+/** HID Sensors Collection Usage ID */
+#define HID_USAGE_SENSOR_TYPE_COLLECTION			0x001
+/** HID Sensors Environmental Temperature Type Usage ID */
+#define HID_USAGE_SENSORS_TYPE_ENVIRONMENTAL_TEMPERATURE	0x033
+/** HID Sensors Event Sensor State Usage ID */
+#define HID_USAGE_SENSORS_EVENT_SENSOR_STATE			0x201
+/** HID Sensors Friendly Name Property Usage ID */
+#define HID_USAGE_SENSORS_PROPERTY_FRIENDLY_NAME		0x301
+/** HID Sensors Enviromental Temperature Data Usage ID */
+#define HID_USAGE_SENSORS_DATA_ENVIRONMENTAL_TEMPERATURE	0x434
+/** HID Sensors Timestamp Property Usage ID */
+#define HID_USAGE_SENSORS_PROPERTY_TIMESTAMP			0x529
+/** HID Sensors Sensor State Undefined Usage ID */
+#define HID_USAGE_SENSORS_SENSOR_STATE_UNDEFINED		0x800
+/** HID Sensors Sensor State Ready Usage ID */
+#define HID_USAGE_SENSORS_SENSOR_STATE_READY			0x801
+/** HID Sensors Sensor State Not Available Usage ID */
+#define HID_USAGE_SENSORS_SENSOR_STATE_NOT_AVAILABLE		0x802
+/** HID Sensors Sensor State No Data Usage ID */
+#define HID_USAGE_SENSORS_SENSOR_STATE_NO_DATA			0x803
+/** HID Sensors Sensor State Initializing Usage ID */
+#define HID_USAGE_SENSORS_SENSOR_STATE_INITIALIZING		0x804
+/** HID Sensors Sensor State Access Denied Usage ID */
+#define HID_USAGE_SENSORS_SENSOR_STATE_ACCESS_DENIED		0x805
+/** HID Sensors Sensor State Error Usage ID */
+#define HID_USAGE_SENSORS_SENSOR_STATE_ERROR			0x806
 
 /**
  * @}
@@ -357,11 +386,20 @@ extern "C" {
  * For usage examples, see @ref HID_MOUSE_REPORT_DESC(),
  * @ref HID_KEYBOARD_REPORT_DESC()
  *
- * @param idx Number of data fields included in the report
+ * @param idx HID Usage ID per the HID Usage Table
  * @return    HID Usage Index item
  */
 #define HID_USAGE(idx)			\
 	HID_ITEM(HID_ITEM_TAG_USAGE, HID_ITEM_TYPE_LOCAL, 1), idx
+
+/**
+ * @brief Define HID Usage Index item with the data length of two bytes.
+ *
+ * @param idx HID Usage ID per the HID Usage Table
+ * @return    HID Usage Index item
+ */
+#define HID_USAGE16(idx)		\
+	HID_ITEM(HID_ITEM_TAG_USAGE, HID_ITEM_TYPE_LOCAL, 2), (uint8_t)idx, (idx >> 8)
 
 /**
  * @brief Define HID Usage Minimum item with the data length of one byte.
@@ -412,6 +450,15 @@ extern "C" {
  */
 #define HID_USAGE_MAX16(a, b)		\
 	HID_ITEM(HID_ITEM_TAG_USAGE_MAX, HID_ITEM_TYPE_LOCAL, 2), a, b
+
+/**
+ * @brief Define HID Unit Exponent item.
+ *
+ * @param  exp Unit exponent, refer to the HID Unit Exponent table
+ *             in the specification for usage
+ * @return  HID Unit Exponent item
+ */
+#define HID_UNIT_EXPONENT(exp) HID_ITEM(HID_ITEM_TAG_UNIT_EXPONENT, HID_ITEM_TYPE_GLOBAL, 1), exp
 
 /**
  * @}

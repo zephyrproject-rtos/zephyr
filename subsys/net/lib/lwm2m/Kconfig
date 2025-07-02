@@ -446,6 +446,14 @@ config LWM2M_NUM_ATTR
 	  This value sets up the maximum number of LwM2M attributes that
 	  we can handle at the same time.
 
+config LWM2M_MAX_NOTIFIED_NUMERICAL_RES_TRACKED
+	int "Maximum # of resources that can track last notified value for gt/lt/st"
+	default 4
+	help
+	  This value specifies the maximum number of numerical LwM2M resources
+	  that can track the last notified resource value for gt/lt/st attribute
+	  handling.
+
 endmenu # "Memory and buffer size configuration"
 
 menu "Content format supports"

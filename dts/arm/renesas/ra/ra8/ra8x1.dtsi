@@ -424,6 +424,17 @@
 			status = "disabled";
 		};
 
+		i3c0: i3c@4035f000 {
+			compatible = "renesas,ra-i3c";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			reg = <0x4035f000 0x3e8>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 4>, <&i3cclk 0 0>;
+			clock-names = "pclk", "tclk";
+			status = "disabled";
+		};
+
 		pwm0: pwm0@40322000 {
 			compatible = "renesas,ra-pwm";
 			divider = <RA_PWM_SOURCE_DIV_1>;
@@ -914,6 +925,30 @@
 				status = "disabled";
 			};
 		};
+
+		i2s0: ssie@4025d000 {
+			compatible = "renesas,ra-i2s-ssie";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			reg = <0x4025d000 0x28>;
+			clocks = <&pclkb MSTPC 8>;
+			clock-names = "pclk";
+			full-duplex;
+			status = "disabled";
+		};
+
+		i2s1: ssie@4025d100 {
+			compatible = "renesas,ra-i2s-ssie";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			reg = <0x4025d100 0x28>;
+			clocks = <&pclkb MSTPC 7>;
+			clock-names = "pclk";
+			status = "disabled";
+		};
+
 	};
 
 	usbfs_phy: usbfs-phy {

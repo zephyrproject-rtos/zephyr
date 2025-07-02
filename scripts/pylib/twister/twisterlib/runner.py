@@ -1895,7 +1895,6 @@ class TwisterRunner:
                 except queue.Empty:
                     break
                 else:
-                    inst.metrics.update(self.instances[inst.name].metrics)
                     inst.metrics["handler_time"] = inst.execution_time
                     self.instances[inst.name] = inst
 

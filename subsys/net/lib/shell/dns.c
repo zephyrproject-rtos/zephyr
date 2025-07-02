@@ -100,22 +100,30 @@ static void print_dns_info(const struct shell *sh,
 		}
 
 		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
-			PR("\t%s:%u%s%s\n",
+			PR("\t%s:%u%s%s%s%s%s\n",
 			   net_sprint_ipv4_addr(
 				   &net_sin(&ctx->servers[i].dns_server)->
 				   sin_addr),
 			   ntohs(net_sin(&ctx->servers[i].dns_server)->sin_port),
 			   printable_iface(iface_name, " via ", ""),
-			   printable_iface(iface_name, iface_name, ""));
+			   printable_iface(iface_name, iface_name, ""),
+			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",
+			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ?
+					dns_get_source_str(ctx->servers[i].source) : "",
+			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? ")" : "");
 
 		} else if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
-			PR("\t[%s]:%u%s%s\n",
+			PR("\t[%s]:%u%s%s%s%s%s\n",
 			   net_sprint_ipv6_addr(
 				   &net_sin6(&ctx->servers[i].dns_server)->
 				   sin6_addr),
 			   ntohs(net_sin6(&ctx->servers[i].dns_server)->sin6_port),
 			   printable_iface(iface_name, " via ", ""),
-			   printable_iface(iface_name, iface_name, ""));
+			   printable_iface(iface_name, iface_name, ""),
+			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",
+			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ?
+					dns_get_source_str(ctx->servers[i].source) : "",
+			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? ")" : "");
 		}
 	}
 

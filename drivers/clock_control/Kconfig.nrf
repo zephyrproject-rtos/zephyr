@@ -206,7 +206,8 @@ config CLOCK_CONTROL_NRF_ACCURACY
 endif # CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF2_COMMON
-	bool "NRF2 clock control common framework"
+	bool
+	depends on HAS_NORDIC_DRIVERS
 	select ONOFF
 
 config CLOCK_CONTROL_NRF_HSFLL_GLOBAL
@@ -301,3 +302,9 @@ config CLOCK_CONTROL_NRF_LFCLK_CLOCK_TIMEOUT_MS
 	default 1000
 
 endif # CLOCK_CONTROL_NRF_LFCLK
+
+config CLOCK_CONTROL_NRF_AUXPLL
+	bool "nRF Auxiliary PLL driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_AUXPLL_ENABLED
+	select CLOCK_CONTROL_NRF2_COMMON

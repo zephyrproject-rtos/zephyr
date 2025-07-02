@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <silabs/xg24/mgm240sd22vna.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "arduino_nano_matter-pinctrl.dtsi"
 #include "arduino_nano_matter_connector.dtsi"
 
@@ -30,6 +31,9 @@
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
 		sw0 = &button0;
 		watchdog0 = &wdog0;
 	};
@@ -53,6 +57,25 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "red";
+		};
+
+		green_pwm_led: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "green";
+		};
+
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&timer0_pwm 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "blue";
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -60,6 +83,16 @@
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

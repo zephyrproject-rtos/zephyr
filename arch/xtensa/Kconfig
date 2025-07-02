@@ -205,7 +205,7 @@ config XTENSA_MMU_NUM_L1_TABLES
 	default 1 if !USERSPACE
 	default 4
 	help
-	  This option specifies the maximum number of traslation tables.
+	  This option specifies the maximum number of translation tables.
 	  Translation tables are directly related to the number of
 	  memory domains in the target, considering the kernel itself requires one.
 

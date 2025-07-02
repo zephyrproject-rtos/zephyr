@@ -263,7 +263,7 @@ static int i2c_rz_riic_init(const struct device *dev)
 	int ret = 0;
 
 	/* Configure dt provided device signals when available */
-	if (!config->pin_config) {
+	if (config->pin_config->state_cnt > 0) {
 		ret = pinctrl_apply_state(config->pin_config, PINCTRL_STATE_DEFAULT);
 
 		if (ret < 0) {

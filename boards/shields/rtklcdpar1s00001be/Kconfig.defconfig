@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_RTKLCDPAR1S00001BE
+
+if LVGL
+
+# Configure LVGL to use touchscreen with input API
+
+config INPUT
+	default y
+
+# LVGL should allocate buffers equal to size of display
+config LV_Z_VDB_SIZE
+	default 100
+
+# Enable double buffering
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+# Use offloaded render thread
+config LV_Z_FLUSH_THREAD
+	default n
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+endif # LVGL
+
+orsource "boards/*.defconfig"
+
+endif # SHIELD_RTKLCDPAR1S00001BE

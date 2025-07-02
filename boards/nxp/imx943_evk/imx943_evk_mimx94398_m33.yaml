@@ -16,4 +16,5 @@ toolchain:
 supported:
   - uart
   - netif:eth
+  - gpio
 vendor: nxp

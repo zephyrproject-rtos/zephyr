@@ -8,3 +8,11 @@ config ADC_ENE_KB1200
 	select PINCTRL
 	help
 	  Enable ADC driver for ENE KB1200.
+
+config ADC_ENE_KB106X
+	bool "ENE KB106X ADC driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_ADC_ENABLED
+	select PINCTRL
+	help
+	  Enable ADC driver for ENE KB106X.

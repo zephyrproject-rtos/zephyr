@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 #include <zephyr/fff.h>
 #include <zephyr/ztest.h>
 #include "dns_cache.h"
@@ -173,4 +174,96 @@ ZTEST(net_dns_cache_test, test_only_expected_type_returned)
 	zassert_equal(AF_INET, info_read.ai_family);
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type_b, &info_read, 1));
 	zassert_equal(AF_INET6, info_read.ai_family);
+}
+
+ZTEST(net_dns_cache_test, test_remove_single_entry)
+{
+	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_read = {0};
+	const char *query = "example.com";
+	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
+
+	zassert_ok(dns_cache_add(&test_dns_cache, query, &info_write, TEST_DNS_CACHE_DEFAULT_TTL),
+		   "Cache entry adding should work.");
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
+	zassert_equal(AF_INET, info_read.ai_family);
+
+	zassert_ok(dns_cache_remove(&test_dns_cache, query), "Cache entry removal should work.");
+	zassert_equal(0, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
+}
+
+ZTEST(net_dns_cache_test, test_remove_multiple_entries_same_query)
+{
+	struct dns_addrinfo info_write_a = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write_b = {.ai_family = AF_INET6};
+	struct dns_addrinfo info_read[2] = {0};
+	const char *query = "example.com";
+	enum dns_query_type query_type_a = DNS_QUERY_TYPE_A;
+	enum dns_query_type query_type_b = DNS_QUERY_TYPE_AAAA;
+
+	zassert_ok(dns_cache_add(&test_dns_cache, query, &info_write_a, TEST_DNS_CACHE_DEFAULT_TTL),
+		   "Cache entry adding should work.");
+	zassert_ok(dns_cache_add(&test_dns_cache, query, &info_write_b, TEST_DNS_CACHE_DEFAULT_TTL),
+		   "Cache entry adding should work.");
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type_a, &info_read[0], 1));
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type_b, &info_read[0], 1));
+
+	zassert_ok(dns_cache_remove(&test_dns_cache, query), "Cache entry removal should work.");
+	zassert_equal(0, dns_cache_find(&test_dns_cache, query, query_type_a, &info_read[0], 1));
+	zassert_equal(0, dns_cache_find(&test_dns_cache, query, query_type_b, &info_read[0], 1));
+}
+
+ZTEST(net_dns_cache_test, test_remove_specific_query_only)
+{
+	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_read = {0};
+	const char *query1 = "example.com";
+	const char *query2 = "test.com";
+	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
+
+	zassert_ok(dns_cache_add(&test_dns_cache, query1, &info_write, TEST_DNS_CACHE_DEFAULT_TTL),
+		   "Cache entry adding should work.");
+	zassert_ok(dns_cache_add(&test_dns_cache, query2, &info_write, TEST_DNS_CACHE_DEFAULT_TTL),
+		   "Cache entry adding should work.");
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query1, query_type, &info_read, 1));
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query2, query_type, &info_read, 1));
+
+	zassert_ok(dns_cache_remove(&test_dns_cache, query1), "Cache entry removal should work.");
+	zassert_equal(0, dns_cache_find(&test_dns_cache, query1, query_type, &info_read, 1));
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query2, query_type, &info_read, 1));
+	zassert_equal(AF_INET, info_read.ai_family);
+}
+
+ZTEST(net_dns_cache_test, test_remove_nonexistent_query)
+{
+	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_read = {0};
+	const char *query = "example.com";
+	const char *nonexistent_query = "nonexistent.com";
+	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
+
+	zassert_ok(dns_cache_add(&test_dns_cache, query, &info_write, TEST_DNS_CACHE_DEFAULT_TTL),
+		   "Cache entry adding should work.");
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
+
+	zassert_ok(dns_cache_remove(&test_dns_cache, nonexistent_query),
+		   "Removing nonexistent query should not fail.");
+	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
+	zassert_equal(AF_INET, info_read.ai_family);
+}
+
+ZTEST(net_dns_cache_test, test_remove_empty_cache)
+{
+	const char *query = "example.com";
+
+	zassert_ok(dns_cache_remove(&test_dns_cache, query),
+		   "Removing from empty cache should not fail.");
+}
+
+ZTEST(net_dns_cache_test, test_remove_null_parameters)
+{
+	zassert_equal(-EINVAL, dns_cache_remove(NULL, "example.com"),
+		      "NULL cache should return error.");
+	zassert_equal(-EINVAL, dns_cache_remove(&test_dns_cache, NULL),
+		      "NULL query should return error.");
 }

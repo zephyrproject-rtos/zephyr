@@ -13,4 +13,5 @@ supported:
   - watchdog
   - usbd
   - counter
+  - i3c
 vendor: renesas

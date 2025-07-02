@@ -47,6 +47,7 @@ tests:
       - nucleo_g474re
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_u385rg_q
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco
@@ -89,6 +90,7 @@ tests:
       - nucleo_h743zi
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_u385rg_q
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco

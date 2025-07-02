@@ -18,4 +18,7 @@ config ESPI_TAF_NPCX
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,itims,clock-frequency)
 
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
 endif # SOC_SERIES_NPCK3

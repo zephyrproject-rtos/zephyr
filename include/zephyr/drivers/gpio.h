@@ -902,16 +902,17 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		 "Only one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 can be "
 		 "enabled for a level interrupt.");
 
-	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
-			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0) ||
-			 (flags & GPIO_INT_ENABLE_DISABLE_ONLY) != 0,
+#define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  GPIO_INT_ENABLE_DISABLE_ONLY
 #else
-			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0),
+#define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  0
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
-		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be "
-		 "enabled.");
 
+	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
+			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0) ||
+			 (flags & GPIO_INT_ENABLE_DISABLE_ONLY_VALUE) != 0,
+		 "At least one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 has to be enabled.");
+#undef GPIO_INT_ENABLE_DISABLE_ONLY_VALUE
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 

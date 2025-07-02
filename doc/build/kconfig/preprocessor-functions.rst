@@ -42,6 +42,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_compat_any_has_prop,<compatible string>,<prop>[,<value>])
    $(dt_compat_any_on_bus,<compatible string>,<prop>)
    $(dt_compat_enabled,<compatible string>)
+   $(dt_compat_enabled_num,<compatible string>)
    $(dt_compat_on_bus,<compatible string>,<bus>)
    $(dt_gpio_hogs_enabled)
    $(dt_has_compat,<compatible string>)

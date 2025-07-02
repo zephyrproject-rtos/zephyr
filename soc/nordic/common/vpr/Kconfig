@@ -3,7 +3,6 @@
 
 config RISCV_CORE_NORDIC_VPR
 	bool
-	select ATOMIC_OPERATIONS_C
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_VECTORED_MODE

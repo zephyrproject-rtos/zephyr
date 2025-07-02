@@ -16,6 +16,8 @@ supported:
   - xiao_i2c
   - xiao_serial
   - xiao_spi
+  - netif:openthread
+
 testing:
   ignore_tags:
     - bluetooth

@@ -98,7 +98,7 @@ function(process_region)
         )
     endif()
     # Treat BSS to be noinit
-    if(type STREQUAL BSS)
+    if(CONFIG_IAR_ZEPHYR_INIT AND type STREQUAL BSS)
       set_property(GLOBAL PROPERTY ${section}_NOINIT TRUE)
     endif()
   endforeach() # all sections
@@ -832,7 +832,12 @@ function(section_to_string)
       string(REGEX REPLACE "(block[ \t\r\n]+)([^ \t\r\n]+)" "\\1\\2_init" INIT_TEMP "${TEMP}")
       string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)([^ \t\r\n,]+)" "\\1\\2\\3\\4_init" INIT_TEMP "${INIT_TEMP}")
       string(REGEX REPLACE "(rw)([ \t\r\n]+)(section[ \t\r\n]+)" "ro\\2\\3" INIT_TEMP "${INIT_TEMP}")
-      string(REGEX REPLACE "alphabetical order, " "" INIT_TEMP "${INIT_TEMP}")
+
+      # No alphabetical orders on initializers
+      # Only alphabetical attribute.
+      string(REGEX REPLACE "with alphabetical order {" " {" INIT_TEMP "${INIT_TEMP}")
+      # Respect other attributes.
+      string(REGEX REPLACE "(, alphabetical order|alphabetical order, )" "" INIT_TEMP "${INIT_TEMP}")
       string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
       set(TEMP "${TEMP}\n${INIT_TEMP}\n")
 

@@ -582,7 +582,7 @@ struct bt_sdp_discover_params {
  */
 
 int bt_sdp_discover(struct bt_conn *conn,
-		    const struct bt_sdp_discover_params *params);
+		    struct bt_sdp_discover_params *params);
 
 /** @brief Release waiting SDP discovery request.
  *

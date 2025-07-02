@@ -16,8 +16,7 @@ Hardware
 
 - ESP32-S3 mini module, featuring the dual core 32-bit Xtensa Microprocessor
   (Tensilica LX7), running at up to 240MHz
-- 512KB SRAM and either 8MB flash or 4MB flash + 2MB PSRAM, depending on the
-  module variant
+- 512KB SRAM and either 4MB flash + 2MB PSRAM
 - USB-C directly connected to the ESP32-S3 for USB/UART and JTAG debugging
 - LiPo connector and built-in battery charging when powered via USB-C
 - MAX17048 fuel gauge for battery voltage and state-of-charge reporting

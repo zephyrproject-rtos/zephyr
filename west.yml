@@ -154,7 +154,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: f46941f3427bbc05d893a601660e6e3cffe9e29d
+      revision: 84ccbfc0b6041ba9f5688337c78bad99da5448ce
       path: modules/hal/ambiq
       groups:
         - hal
@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e74df076fabc5f944900e02c1884282aeb60dad1
+      revision: 3339ff2f85edb3edb1188873d3dcd25d9a544ee8
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 71308dc6d8c021887ce5d98a36cafe9517375a91
+      revision: 9587b1dcb83d24ab74e89837843a5f7d573f7059
       path: modules/hal/nordic
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 111f568bda6f119cd896f38ae5843ecde92039bd
+      revision: 7a52cbb7cb56db3a276cbd617db3ea7cc3435d12
       path: modules/hal/nxp
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 921041808ba4843f72a617f9ad90e0d3beb52bbd
+      revision: 190a144a16bed9a938a94543ed5bbc70c0552e0f
       path: modules/hal/silabs
       groups:
         - hal
@@ -245,7 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 468e5ad450a75d4baa3eed80e4f77a7700b71203
+      revision: 126cbbee19208b7aaca5ad8b287cf104e8bc837a
       path: modules/hal/stm32
       groups:
         - hal
@@ -281,7 +281,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: cf270006050cf944af699301c7f4de2b427cd862
+      revision: bc5d22f5838d017b889d1452a5854f9a32895414
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -310,7 +310,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 11982df962e2314f4e0c73b7ebc17172026c9266
+      revision: 07222c1929e1d79d303baa8fde7f977a79e48e9a
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -325,7 +325,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 968d55ff22579080466bf2f482596dd6e35361c6
+      revision: 6e5961223f81aa2707c555db138819a5c1b7942c
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 7cb2f44f46dfc86e4f97477ee90022944e138dd8
@@ -360,7 +360,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: c150f48855f04d77451a39bfaa80d14eb61d918b
+      revision: 65d8615521debd0c4c45153df37bbfe9934e9559
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

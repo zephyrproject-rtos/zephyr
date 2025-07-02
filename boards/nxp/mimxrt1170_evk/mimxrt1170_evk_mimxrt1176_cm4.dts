@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt11xx_cm4.dtsi>
+#include <nxp/nxp_rt1170_cm4.dtsi>
 #include "mimxrt1170_evk.dtsi"
 
 / {

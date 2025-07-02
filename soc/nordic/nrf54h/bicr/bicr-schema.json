@@ -193,7 +193,7 @@
                       ],
                       "enum": [
                         "CRYSTAL",
-                        "ETX_SINE",
+                        "EXT_SINE",
                         "EXT_SQUARE"
                       ],
                       "default": "CRYSTAL"

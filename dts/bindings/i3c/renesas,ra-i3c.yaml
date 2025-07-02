@@ -1,0 +1,56 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA I3C controller
+
+compatible: "renesas,ra-i3c"
+
+include: [i3c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "pclk"
+      - "tclk"
+    description: |
+      Clocks must be given corresponding names so that the shim driver can recognize them.
+      "pclk": peripheral clock source
+      "tclk": transfer clock source
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum:
+      - "resp"
+      - "rx"
+      - "tx"
+      - "rcv"
+      - "ibi"
+      - "eei"
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+      "resp": Command response interrupt
+      "rx": Rx data buffer full interrupt
+      "tx": Tx data buffer empty interrupt
+      "rcv": Receive status buffer full interrupt
+      "ibi": IBI data interrupt
+      "eei": Error, timeout and HDR exit interrupt
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

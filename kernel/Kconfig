@@ -585,7 +585,7 @@ config WORKQUEUE_WORK_TIMEOUT
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
-	default 4096 if COVERAGE_GCOV
+	default 4096 if COVERAGE_GCOV || WIFI_NRF70
 	default 2560 if WIFI_NM_WPA_SUPPLICANT
 	default 1024
 
@@ -943,7 +943,7 @@ config STACK_CANARIES_STRONG
 	select REQUIRES_STACK_CANARIES
 	help
 	  This option enables compiler stack canaries in functions that call alloca,
-	  functions that have local array definitiion or have references to local
+	  functions that have local array definition or have references to local
 	  frame addresses.
 
 config STACK_CANARIES_ALL

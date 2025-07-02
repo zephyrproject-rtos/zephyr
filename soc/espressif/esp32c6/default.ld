@@ -7,6 +7,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
+#include <zephyr/linker/iterable_sections.h>
 
 #include "memory.h"
 
@@ -452,6 +453,9 @@ SECTIONS
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
+  *libble_app.a:(.high_perf_code_iram1 .high_perf_code_iram1.*)
+  *libble_app.a:(.bt_iram_text .bt_iram_text.*)
+
     . = ALIGN(4) + 16;
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -725,9 +729,17 @@ SECTIONS
     __bss_start = ABSOLUTE(.);
     _bss_start = ABSOLUTE(.);
 
-    *libbtdm_app.a:(.bss .bss.* COMMON)
     . = ALIGN (4);
-    _btdm_bss_end = ABSOLUTE(.);
+    _bt_bss_start = ABSOLUTE(.);
+    *libbtbb.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_bss_end = ABSOLUTE(.);
+
+    . = ALIGN (4);
+    _bt_controller_bss_start = ABSOLUTE(.);
+    *libble_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_controller_bss_end = ABSOLUTE(.);
 
     *(.dynsbss)
     *(.sbss)

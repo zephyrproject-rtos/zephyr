@@ -35,7 +35,7 @@ void intel_adsp_ipc_set_done_handler(const struct device *dev,
 	k_spin_unlock(&devdata->lock, key);
 }
 
-void z_intel_adsp_ipc_isr(const void *devarg)
+static void intel_adsp_ipc_isr(const void *devarg)
 {
 	const struct device *dev = devarg;
 	const struct intel_adsp_ipc_config *config = dev->config;
@@ -224,7 +224,7 @@ static inline void ace_ipc_intc_unmask(void) {}
 
 static int dt_init(const struct device *dev)
 {
-	IRQ_CONNECT(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE), 0, z_intel_adsp_ipc_isr,
+	IRQ_CONNECT(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE), 0, intel_adsp_ipc_isr,
 		INTEL_ADSP_IPC_HOST_DEV, 0);
 	irq_enable(DT_IRQN(INTEL_ADSP_IPC_HOST_DTNODE));
 

@@ -171,7 +171,7 @@ static int can_nrf_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = clock_control_on(config->auxpll, NULL);
+	ret = nrf_clock_control_request_sync(config->auxpll, NULL, K_FOREVER);
 	if (ret < 0) {
 		return ret;
 	}

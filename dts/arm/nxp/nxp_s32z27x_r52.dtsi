@@ -1465,5 +1465,436 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		sent0: sent@40a50000 {
+			compatible = "nxp,s32-sent";
+			reg = <0x40a50000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 428 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 429 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 430 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "fast_msg", "serial_msg", "error";
+			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
+			status = "disabled";
+
+			sent0_ch0: ch@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			sent0_ch1: ch@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			sent0_ch2: ch@2 {
+				reg = <2>;
+				status = "disabled";
+			};
+
+			sent0_ch3: ch@3 {
+				reg = <3>;
+				status = "disabled";
+			};
+
+			sent0_ch4: ch@4 {
+				reg = <4>;
+				status = "disabled";
+			};
+
+			sent0_ch5: ch@5 {
+				reg = <5>;
+				status = "disabled";
+			};
+
+			sent0_ch6: ch@6 {
+				reg = <6>;
+				status = "disabled";
+			};
+
+			sent0_ch7: ch@7 {
+				reg = <7>;
+				status = "disabled";
+			};
+		};
+
+		sent1: sent@42050000 {
+			compatible = "nxp,s32-sent";
+			reg = <0x42050000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 455 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 456 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 457 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "fast_msg", "serial_msg", "error";
+			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
+			status = "disabled";
+
+			sent1_ch0: ch@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			sent1_ch1: ch@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			sent1_ch2: ch@2 {
+				reg = <2>;
+				status = "disabled";
+			};
+
+			sent1_ch3: ch@3 {
+				reg = <3>;
+				status = "disabled";
+			};
+
+			sent1_ch4: ch@4 {
+				reg = <4>;
+				status = "disabled";
+			};
+
+			sent1_ch5: ch@5 {
+				reg = <5>;
+				status = "disabled";
+			};
+
+			sent1_ch6: ch@6 {
+				reg = <6>;
+				status = "disabled";
+			};
+
+			sent1_ch7: ch@7 {
+				reg = <7>;
+				status = "disabled";
+			};
+		};
+
+		psi5_0: psi5@401e0000 {
+			compatible = "nxp,s32-psi5";
+			reg = <0x401e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			psi5_0_ch0: ch@0 {
+				reg = <0>;
+				interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_0_ch0_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_0_ch1: ch@1 {
+				reg = <1>;
+				interrupts = <GIC_SPI 353 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_0_ch1_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_0_ch2: ch@2 {
+				reg = <2>;
+				interrupts = <GIC_SPI 359 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_0_ch2_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_0_ch3: ch@3 {
+				reg = <3>;
+				interrupts = <GIC_SPI 365 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+
+				psi5_0_ch3_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+		};
+
+		psi5_1: psi5@421e0000 {
+			compatible = "nxp,s32-psi5";
+			reg = <0x421e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			psi5_1_ch0: ch@0 {
+				reg = <0>;
+				interrupts = <GIC_SPI 371 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+
+				psi5_1_ch0_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_1_ch1: ch@1 {
+				reg = <1>;
+				interrupts = <GIC_SPI 377 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+
+				psi5_1_ch1_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_1_ch2: ch@2 {
+				reg = <2>;
+				interrupts = <GIC_SPI 383 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+
+				psi5_1_ch2_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_1_ch3: ch@3 {
+				reg = <3>;
+				interrupts = <GIC_SPI 389 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+
+				psi5_1_ch3_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+		};
 	};
 };

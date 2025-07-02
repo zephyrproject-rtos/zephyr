@@ -97,6 +97,30 @@ config POWER_DOMAIN_SOC_PM_STATE
 	select DEVICE_DEPS
 	help
 	  Generic power domain control to turn on/off devices when the
-	  PM subsystem transitions in and out certain power states.
+	  PM subsystem transitions in and out of certain power states.
+
+config POWER_DOMAIN_TISCI
+	bool "TISCI managed power domain"
+	default y
+	depends on DT_HAS_TI_SCI_PM_DOMAIN_ENABLED
+	help
+	  TISCI managed power domain control to turn on/off devices when the
+	  PM subsystem transitions in and out of certain power states.
+
+if POWER_DOMAIN_TISCI
+
+config POWER_DOMAIN_TISCI_INIT_PRIORITY
+	int "TISCI managed power domain init priority"
+	default 10
+	help
+	  TISCI managed power domain initialization priority.
+
+config SOC_POWER_DOMAIN_INIT
+	bool "Power domain initialization"
+	default y
+	help
+	  Power domain initialization for the SoC.
+
+endif #POWER_DOMAIN_TISCI
 
 endif

@@ -244,6 +244,66 @@
 			};
 		};
 
+		ramcfg_sram3_axi: ramcfg@42023100 {
+			compatible = "st,stm32n6-ramcfg";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42023100 0x80>;
+			clocks = <&rcc STM32_CLOCK(MEM, 0)>, <&rcc STM32_CLOCK(AHB2, 12)>;
+			clock-names = "axisram", "ramcfg";
+
+			axisram3: memory@34200000 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				zephyr,memory-region = "AXISRAM3";
+				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+			};
+		};
+
+		ramcfg_sram4_axi: ramcfg@42023180 {
+			compatible = "st,stm32n6-ramcfg";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42023180 0x80>;
+			clocks = <&rcc STM32_CLOCK(MEM, 1)>, <&rcc STM32_CLOCK(AHB2, 12)>;
+			clock-names = "axisram", "ramcfg";
+
+			axisram4: memory@34270000 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				zephyr,memory-region = "AXISRAM4";
+				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+			};
+		};
+
+		ramcfg_sram5_axi: ramcfg@42023200 {
+			compatible = "st,stm32n6-ramcfg";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42023200 0x80>;
+			clocks = <&rcc STM32_CLOCK(MEM, 2)>, <&rcc STM32_CLOCK(AHB2, 12)>;
+			clock-names = "axisram", "ramcfg";
+
+			axisram5: memory@342e0000 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				zephyr,memory-region = "AXISRAM5";
+				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+			};
+		};
+
+		ramcfg_sram6_axi: ramcfg@42023280 {
+			compatible = "st,stm32n6-ramcfg";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42023280 0x80>;
+			clocks = <&rcc STM32_CLOCK(MEM, 3)>, <&rcc STM32_CLOCK(AHB2, 12)>;
+			clock-names = "axisram", "ramcfg";
+
+			axisram6: memory@34350000 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				zephyr,memory-region = "AXISRAM6";
+				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+			};
+		};
+
 		exti: interrupt-controller@56025000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;

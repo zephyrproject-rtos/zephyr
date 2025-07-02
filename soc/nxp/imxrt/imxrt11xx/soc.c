@@ -56,31 +56,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
-#ifdef CONFIG_INIT_ARM_PLL
-
-#if defined(CONFIG_SOC_MIMXRT1176)
-#define DEFAULT_LOOPDIV 83
-#define DEFAULT_POSTDIV 2
-#elif defined(CONFIG_SOC_MIMXRT1166)
-#define DEFAULT_LOOPDIV 100
-#define DEFAULT_POSTDIV 4
-#else
-/*
- * Check that the ARM PLL has a multiplier and divider set
- */
-BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_mult),
-	     "ARM PLL must have clock-mult property");
-BUILD_ASSERT(DT_NODE_HAS_PROP(DT_NODELABEL(arm_pll), clock_div),
-	     "ARM PLL must have clock-div property");
-#endif
-
-static const clock_arm_pll_config_t armPllConfig = {
-	.postDivider = CONCAT(kCLOCK_PllPostDiv,
-			      DT_PROP_OR(DT_NODELABEL(arm_pll), clock_div, DEFAULT_POSTDIV)),
-	.loopDivider = DT_PROP_OR(DT_NODELABEL(arm_pll), clock_mult, DEFAULT_LOOPDIV) * 2,
-};
-#endif
-
 static const clock_sys_pll2_config_t sysPll2Config = {
 	/* Denominator of spread spectrum */
 	.mfd = 268435455,
@@ -89,35 +64,6 @@ static const clock_sys_pll2_config_t sysPll2Config = {
 	/* Enable spread spectrum or not */
 	.ssEnable = false,
 };
-
-#ifdef CONFIG_INIT_ENET_PLL
-static const clock_sys_pll1_config_t sysPll1Config = {
-	.pllDiv2En = true,
-};
-#endif
-
-#ifdef CONFIG_INIT_VIDEO_PLL
-static const clock_video_pll_config_t videoPllConfig = {
-	/* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
-	.loopDivider = 41,
-	/* Divider after PLL, should only be 1, 2, 4, 8, 16, 32 */
-	.postDivider = 0,
-	/*
-	 * 30 bit numerator of fractional loop divider,
-	 * Fout = Fin * ( loopDivider + numerator / denominator )
-	 */
-	.numerator = 1,
-	/*
-	 * 30 bit denominator of fractional loop divider,
-	 * Fout = Fin * ( loopDivider + numerator / denominator )
-	 */
-	.denominator = 960000,
-	/* Spread spectrum parameter */
-	.ss = NULL,
-	/* Enable spread spectrum or not */
-	.ssEnable = false,
-};
-#endif
 
 #if CONFIG_USB_DC_NXP_EHCI
 usb_phy_config_struct_t usbPhyConfig = {
@@ -164,9 +110,9 @@ __weak void clock_init(void)
 {
 	clock_root_config_t rootCfg = {0};
 
-#if CONFIG_ADJUST_DCDC
-	DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
-#endif
+	if (IS_ENABLED(CONFIG_ADJUST_DCDC)) {
+		DCDC_SetVDD1P0BuckModeTargetVoltage(DCDC, kDCDC_1P0BuckTarget1P15V);
+	}
 
 /* RT1160 does not have Forward Body Biasing on the CM7 core */
 #if defined(CONFIG_SOC_MIMXRT1176_CM4) || defined(CONFIG_SOC_MIMXRT1176_CM7)
@@ -178,28 +124,28 @@ __weak void clock_init(void)
 	}
 #endif
 
-#if CONFIG_BYPASS_LDO_LPSR
-	PMU_StaticEnableLpsrAnaLdoBypassMode(ANADIG_LDO_SNVS, true);
-	PMU_StaticEnableLpsrDigLdoBypassMode(ANADIG_LDO_SNVS, true);
-#endif
-
-#if CONFIG_ADJUST_LDO
-	pmu_static_lpsr_ana_ldo_config_t lpsrAnaConfig;
-	pmu_static_lpsr_dig_config_t lpsrDigConfig;
-
-	if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_ANA &
-	     ANADIG_LDO_SNVS_PMU_LDO_LPSR_ANA_BYPASS_MODE_EN_MASK) == 0UL) {
-		PMU_StaticGetLpsrAnaLdoDefaultConfig(&lpsrAnaConfig);
-		PMU_StaticLpsrAnaLdoInit(ANADIG_LDO_SNVS, &lpsrAnaConfig);
+	if (IS_ENABLED(CONFIG_BYPASS_LDO_LPSR)) {
+		PMU_StaticEnableLpsrAnaLdoBypassMode(ANADIG_LDO_SNVS, true);
+		PMU_StaticEnableLpsrDigLdoBypassMode(ANADIG_LDO_SNVS, true);
 	}
 
-	if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_DIG &
-	     ANADIG_LDO_SNVS_PMU_LDO_LPSR_DIG_BYPASS_MODE_MASK) == 0UL) {
-		PMU_StaticGetLpsrDigLdoDefaultConfig(&lpsrDigConfig);
-		lpsrDigConfig.targetVoltage = kPMU_LpsrDigTargetStableVoltage1P117V;
-		PMU_StaticLpsrDigLdoInit(ANADIG_LDO_SNVS, &lpsrDigConfig);
+	if (IS_ENABLED(CONFIG_ADJUST_LDO)) {
+		pmu_static_lpsr_ana_ldo_config_t lpsrAnaConfig;
+		pmu_static_lpsr_dig_config_t lpsrDigConfig;
+
+		if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_ANA &
+		     ANADIG_LDO_SNVS_PMU_LDO_LPSR_ANA_BYPASS_MODE_EN_MASK) == 0UL) {
+			PMU_StaticGetLpsrAnaLdoDefaultConfig(&lpsrAnaConfig);
+			PMU_StaticLpsrAnaLdoInit(ANADIG_LDO_SNVS, &lpsrAnaConfig);
+		}
+
+		if ((ANADIG_LDO_SNVS->PMU_LDO_LPSR_DIG &
+		     ANADIG_LDO_SNVS_PMU_LDO_LPSR_DIG_BYPASS_MODE_MASK) == 0UL) {
+			PMU_StaticGetLpsrDigLdoDefaultConfig(&lpsrDigConfig);
+			lpsrDigConfig.targetVoltage = kPMU_LpsrDigTargetStableVoltage1P117V;
+			PMU_StaticLpsrDigLdoInit(ANADIG_LDO_SNVS, &lpsrDigConfig);
+		}
 	}
-#endif
 
 	/* PLL LDO shall be enabled first before enable PLLs */
 
@@ -256,22 +202,27 @@ __weak void clock_init(void)
 	 * changed in the following PLL/PFD configuration code.
 	 */
 
-#ifdef CONFIG_INIT_ARM_PLL
-	/* Init Arm Pll. */
-	CLOCK_InitArmPll(&armPllConfig);
-#endif
 
-#ifdef CONFIG_INIT_ENET_PLL
-	CLOCK_InitSysPll1(&sysPll1Config);
-#else
-#ifndef CONFIG_SECOND_CORE_MCUX
-	/* Bypass Sys Pll1. */
-	CLOCK_SetPllBypass(kCLOCK_PllSys1, true);
+	static const clock_arm_pll_config_t armPllConfig = {
+		.postDivider = CONCAT(kCLOCK_PllPostDiv, DT_PROP(DT_NODELABEL(arm_pll), clock_div)),
+		.loopDivider = DT_PROP(DT_NODELABEL(arm_pll), clock_mult) * 2,
+	};
 
-	/* DeInit Sys Pll1. */
-	CLOCK_DeinitSysPll1();
-#endif
-#endif
+	if (IS_ENABLED(CONFIG_INIT_ARM_PLL)) {
+		CLOCK_InitArmPll(&armPllConfig);
+	}
+
+	if (IS_ENABLED(CONFIG_ETH_NXP_ENET)) {
+		/* For default clocking, we will only use pll1 for div2 output for enet */
+		static const clock_sys_pll1_config_t sysPll1Config = {
+			.pllDiv2En = true,
+		};
+		CLOCK_InitSysPll1(&sysPll1Config);
+	} else if (!IS_ENABLED(CONFIG_SECOND_CORE_MCUX)) {
+		/* PLL1 not used otherwise, so bypass first then deinit */
+		CLOCK_SetPllBypass(kCLOCK_PllSys1, true);
+		CLOCK_DeinitSysPll1();
+	}
 
 	/* Init Sys Pll2. */
 	CLOCK_InitSysPll2(&sysPll2Config);
@@ -303,10 +254,31 @@ __weak void clock_init(void)
 	/* Init System Pll3 pfd3. */
 	CLOCK_InitPfd(kCLOCK_PllSys3, kCLOCK_Pfd3, 22);
 
-#ifdef CONFIG_INIT_VIDEO_PLL
-	/* Init Video Pll. */
-	CLOCK_InitVideoPll(&videoPllConfig);
-#endif
+	static const clock_video_pll_config_t videoPllConfig = {
+		/* PLL Loop divider, valid range for DIV_SELECT divider value: 27 ~ 54. */
+		.loopDivider = 41,
+		/* Divider after PLL, should only be 1, 2, 4, 8, 16, 32 */
+		.postDivider = 0,
+		/*
+		 * 30 bit numerator of fractional loop divider,
+		 * Fout = Fin * ( loopDivider + numerator / denominator )
+		 */
+		.numerator = 1,
+		/*
+		 * 30 bit denominator of fractional loop divider,
+		 * Fout = Fin * ( loopDivider + numerator / denominator )
+		 */
+		.denominator = 960000,
+		/* Spread spectrum parameter */
+		.ss = NULL,
+		/* Enable spread spectrum or not */
+		.ssEnable = false,
+	};
+
+	if (IS_ENABLED(CONFIG_INIT_VIDEO_PLL)) {
+		/* Init Video Pll. */
+		CLOCK_InitVideoPll(&videoPllConfig);
+	}
 
 	/* Module clock root configurations. */
 	/* Configure M7 using ARM_PLL_CLK */
@@ -389,6 +361,18 @@ __weak void clock_init(void)
 	rootCfg.mux = kCLOCK_LPUART2_ClockRoot_MuxSysPll2Out;
 	rootCfg.div = 22;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpuart2, &rootCfg);
+#endif
+
+#ifdef CONFIG_MCUX_FLEXIO
+	/* Configure flexio1 with oscRC400M */
+	rootCfg.mux = kCLOCK_FLEXIO1_ClockRoot_MuxOscRc400M;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio1, &rootCfg);
+
+	/* Configure flexio2 using oscRC400M */
+	rootCfg.mux = kCLOCK_FLEXIO2_ClockRoot_MuxOscRc400M;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexio2, &rootCfg);
 #endif
 
 #ifdef CONFIG_I2C_MCUX_LPI2C

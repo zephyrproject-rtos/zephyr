@@ -18,6 +18,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
 #define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
@@ -653,13 +654,7 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
-		if (!LL_PWR_IsEnabledBkUpAccess()) {
-			/* Enable write access to Backup domain */
-			LL_PWR_EnableBkUpAccess();
-			while (!LL_PWR_IsEnabledBkUpAccess()) {
-				/* Wait for Backup domain access */
-			}
-		}
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability before enabling the LSE oscillator */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
@@ -675,7 +670,7 @@ static void set_up_fixed_clock_sources(void)
 		while (!LL_RCC_LSE_IsReady()) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_CSI_ENABLED)) {

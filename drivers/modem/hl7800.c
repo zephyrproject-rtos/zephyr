@@ -1966,7 +1966,8 @@ static void dns_work_cb(struct k_work *work)
 			}
 		} else {
 			LOG_DBG("Reconfiguring DNS resolver");
-			ret = dns_resolve_reconfigure(dnsCtx, (const char **)dns_servers_str, NULL);
+			ret = dns_resolve_reconfigure(dnsCtx, (const char **)dns_servers_str, NULL,
+						      DNS_SOURCE_MANUAL);
 			if (ret < 0) {
 				LOG_ERR("dns_resolve_reconfigure fail (%d)", ret);
 				retry = true;

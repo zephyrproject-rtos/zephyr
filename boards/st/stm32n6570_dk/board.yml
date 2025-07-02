@@ -6,3 +6,4 @@ board:
     - name: stm32n657xx
       variants:
         - name: sb
+        - name: fsbl

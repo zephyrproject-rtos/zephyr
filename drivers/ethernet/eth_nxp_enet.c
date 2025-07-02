@@ -474,17 +474,18 @@ static int nxp_enet_phy_configure(const struct device *phy, uint8_t phy_mode)
 	/* Configure the PHY */
 	ret = phy_configure_link(phy, speeds, 0);
 
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		phy_get_link_state(phy, &state);
 
 		if (state.is_up) {
-			LOG_WRN("phy_configure_link returned -ENOTSUP, but link is up. "
+			LOG_WRN("phy_configure_link returned %d, but link is up. "
 				"Speed: %s, %s-duplex",
+				ret,
 				PHY_LINK_IS_SPEED_1000M(state.speed) ? "1 Gbits" :
 				PHY_LINK_IS_SPEED_100M(state.speed) ? "100 Mbits" : "10 Mbits",
 				PHY_LINK_IS_FULL_DUPLEX(state.speed) ? "full" : "half");
 		} else {
-			LOG_ERR("phy_configure_link returned -ENOTSUP and link is down.");
+			LOG_ERR("phy_configure_link returned %d and link is down.", ret);
 			return -ENETDOWN;
 		}
 	} else if (ret) {
@@ -738,8 +739,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 	k_work_init(&data->rx_work, eth_nxp_enet_rx_thread);
 
 	switch (config->mac_addr_source) {
-	case MAC_ADDR_SOURCE_LOCAL:
-		break;
 	case MAC_ADDR_SOURCE_RANDOM:
 		gen_random_mac(data->mac_addr,
 			FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
@@ -751,7 +750,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 		nxp_enet_fused_mac(data->mac_addr);
 		break;
 	default:
-		return -ENOTSUP;
+		break;
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -938,7 +937,7 @@ static const struct ethernet_api api_funcs = {
 	NXP_ENET_INVALID_MII_MODE))
 
 #ifdef CONFIG_PTP_CLOCK_NXP_ENET
-#define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, nxp_ptp_clock)),
+#define NXP_ENET_PTP_DEV(n) .ptp_clock = DEVICE_DT_GET(DT_INST_PHANDLE(n, ptp_clock)),
 #define NXP_ENET_FRAMEINFO_ARRAY(n)							\
 	static enet_frame_info_t							\
 		nxp_enet_##n##_tx_frameinfo_array[CONFIG_ETH_NXP_ENET_TX_BUFFERS];
@@ -966,12 +965,12 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 			" and CONFIG_ETH_NXP_ENET_1G enabled");
 
 #define NXP_ENET_MAC_ADDR_SOURCE(n)							\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
-			(MAC_ADDR_SOURCE_LOCAL),					\
-	(COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),			\
+	COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),				\
 			(MAC_ADDR_SOURCE_RANDOM),					\
 	(COND_CODE_1(DT_INST_PROP(n, nxp_unique_mac), (MAC_ADDR_SOURCE_UNIQUE),		\
 	(COND_CODE_1(DT_INST_PROP(n, nxp_fused_mac), (MAC_ADDR_SOURCE_FUSED),		\
+	(COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), local_mac_address),		\
+			(MAC_ADDR_SOURCE_LOCAL),					\
 	(MAC_ADDR_SOURCE_INVALID))))))))
 
 #define NXP_ENET_MAC_INIT(n)								\

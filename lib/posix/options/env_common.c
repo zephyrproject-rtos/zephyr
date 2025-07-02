@@ -151,17 +151,17 @@ int z_setenv(const char *name, const char *val, int overwrite)
 		} else {
 			/* name was not found in environ -> add new entry */
 			esize = environ_size();
-			envp = realloc(environ, sizeof(char **) *
-							(esize + 1 /* new entry */ + 1 /* NULL */));
+			envp = realloc(environ,
+				       sizeof(void *) * (esize + 1 /* new entry */ + 1 /* NULL */));
 			if (envp == NULL) {
 				ret = -ENOMEM;
 				SYS_SEM_LOCK_BREAK;
 			}
 
 			if (TRACK_ALLOC) {
-				allocated += sizeof(char **) * (esize + 2);
+				allocated += sizeof(void *) * (esize + 2);
 				LOG_DBG("realloc %zu bytes (allocated: %zu)",
-					sizeof(char **) * (esize + 2), allocated);
+					sizeof(void *) * (esize + 2), allocated);
 			}
 
 			environ = envp;
@@ -238,7 +238,7 @@ int z_unsetenv(const char *name)
 			free(environ);
 			environ = NULL;
 		} else {
-			envp = realloc(environ, (esize + 1 /* NULL */) * sizeof(char **));
+			envp = realloc(environ, (esize + 1 /* NULL */) * sizeof(void *));
 			if (envp != NULL) {
 				environ = envp;
 			}
@@ -247,7 +247,7 @@ int z_unsetenv(const char *name)
 
 		if (TRACK_ALLOC) {
 			/* recycle nsize here */
-			nsize = ((esize == 0) ? 2 : 1) * sizeof(char **);
+			nsize = ((esize == 0) ? 2 : 1) * sizeof(void *);
 			allocated -= nsize;
 			LOG_DBG("free %zu bytes (allocated: %zu)", nsize, allocated);
 		}

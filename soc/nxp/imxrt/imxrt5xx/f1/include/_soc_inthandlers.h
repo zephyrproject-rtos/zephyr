@@ -113,7 +113,7 @@
  *   XCHAL_INTLEVEL5_MASK: 0x00000001
  */
 
-static inline int _xtensa_handle_one_int1(unsigned int mask)
+static inline int _xtensa_handle_one_int1(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -131,7 +131,7 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int2(unsigned int mask)
+static inline int _xtensa_handle_one_int2(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -149,7 +149,7 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int3(unsigned int mask)
+static inline int _xtensa_handle_one_int3(unsigned int set, unsigned int mask)
 {
 	int irq;
 
@@ -167,12 +167,12 @@ handle_irq:
 	return mask;
 }
 
-static inline int _xtensa_handle_one_int4(unsigned int mask)
+static inline int _xtensa_handle_one_int4(unsigned int set, unsigned int mask)
 {
 	return 0;
 }
 
-static inline int _xtensa_handle_one_int5(unsigned int mask)
+static inline int _xtensa_handle_one_int5(unsigned int set, unsigned int mask)
 {
 	int irq;
 

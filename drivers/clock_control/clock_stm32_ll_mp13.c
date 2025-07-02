@@ -17,6 +17,9 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
 
+/** Offset between RCC_MP_xxxENSETR and RCC_MP_xxxENCLRR registers */
+#define RCC_CLR_OFFSET		0x4
+
 /** @brief Verifies clock is part of active clock configuration */
 int enabled_clock(uint32_t src_clk)
 {
@@ -52,7 +55,8 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 		return -ENOTSUP;
 	}
 
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus, pclken->enr);
+	/* STM32MP13 has EN_SET registers - no need for RMW */
+	sys_write32(pclken->enr, DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
 	/* Ensure that the write operation is completed */
 	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
 	UNUSED(temp);
@@ -72,9 +76,10 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 		return -ENOTSUP;
 	}
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus, pclken->enr);
+	/* STM32MP13 has EN_CLR register at pclken->bus + RCC_CLR_OFFSET - no need for RMW */
+	sys_write32(pclken->enr, DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus + RCC_CLR_OFFSET);
 	/* Ensure that the write operation is completed */
-	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus + RCC_CLR_OFFSET);
 	UNUSED(temp);
 
 	return 0;

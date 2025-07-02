@@ -82,6 +82,7 @@ ForEachMacros:
   - 'HTTP_SERVICE_FOREACH_RESOURCE'
   - 'I3C_BUS_FOR_EACH_I3CDEV'
   - 'I3C_BUS_FOR_EACH_I2CDEV'
+  - 'MIN_HEAP_FOREACH'
 IfMacros:
   - 'CHECKIF'
 # Disabled for now, see bug https://github.com/zephyrproject-rtos/zephyr/issues/48520

@@ -568,7 +568,7 @@ int virtio_pci_commit_feature_bits(const struct device *dev)
 	return 0;
 }
 
-static const struct virtio_driver_api virtio_pci_driver_api = {
+static DEVICE_API(virtio, virtio_pci_driver_api) = {
 	.get_virtqueue = virtio_pci_get_virtqueue,
 	.notify_virtqueue = virtio_pci_notify_queue,
 	.get_device_specific_config = virtio_pci_get_device_specific_config,

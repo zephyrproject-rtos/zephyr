@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	chosen {
+		zephyr,camera = &csi_capture_port;
+	};
+};
+
+&csi_interface {
+	status = "okay";
+};
+
+&csi_ep_in {
+	remote-endpoint-label = "gc2145_ep_out";
+	bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+	data-lanes = <1 2>;
+};
+
+&csi_i2c {
+	status = "okay";
+
+	gc2145: camera@3c {
+		compatible = "galaxycore,gc2145";
+		reg = <0x3c>;
+		pwdn-gpios = <&csi_connector CSI_IO1 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&csi_connector CSI_IO0 GPIO_ACTIVE_LOW>;
+
+		port {
+			gc2145_ep_out: endpoint {
+				remote-endpoint-label = "csi_ep_in";
+				data-lanes = <1 2>;
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+			};
+		};
+	};
+};

@@ -5,6 +5,7 @@
 add_subdirectory_ifdef(CONFIG_FXAS21002 fxas21002)
 add_subdirectory_ifdef(CONFIG_FXLS8974 fxls8974)
 add_subdirectory_ifdef(CONFIG_FXOS8700 fxos8700)
+add_subdirectory_ifdef(CONFIG_LPADC_TEMP40 nxp_lpadc_temp40)
 add_subdirectory_ifdef(CONFIG_MCUX_LPCMP mcux_lpcmp)
 add_subdirectory_ifdef(CONFIG_NXP_TEMPMON nxp_tempmon)
 add_subdirectory_ifdef(CONFIG_P3T1755 p3t1755)

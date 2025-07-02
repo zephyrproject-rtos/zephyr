@@ -3,7 +3,7 @@
 # Copyright (c) 2017, I-SENSE group of ICCS
 # SPDX-License-Identifier: Apache-2.0
 
-# Default configurations appplied tp the whole STM32 family
+# Default configurations applied to the whole STM32 family
 
 if SOC_FAMILY_STM32
 
@@ -100,5 +100,8 @@ endif # MEMC_STM32_XSPI_PSRAM && SHARED_MULTI_HEAP
 
 config VIDEO_BUFFER_POOL_ALIGN
 	default 16 if VIDEO_STM32_DCMIPP
+
+config STM32_BACKUP_PROTECTION
+	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X
 
 endif # SOC_FAMILY_STM32

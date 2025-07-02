@@ -4,7 +4,7 @@ list(APPEND TOOLCHAIN_C_FLAGS)
 list(APPEND TOOLCHAIN_C_FLAGS  -mlittle-endian-data -ffunction-sections -fdata-sections -m64bit-doubles)
 
 list(APPEND TOOLCHAIN_LD_FLAGS)
-list(APPEND TOOLCHAIN_LD_FLAGS -mlittle-endian-data)
+list(APPEND TOOLCHAIN_LD_FLAGS -mlittle-endian-data -ffunction-sections -fdata-sections -m64bit-doubles)
 
 if(NOT CONFIG_PICOLIBC)
   list(APPEND TOOLCHAIN_LD_FLAGS -lm)
@@ -12,6 +12,7 @@ endif()
 
 if(NOT CONFIG_FPU)
   list(APPEND TOOLCHAIN_C_FLAGS -nofpu)
+  list(APPEND TOOLCHAIN_LD_FLAGS -nofpu)
 endif()
 
 if("cross-compile" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT})

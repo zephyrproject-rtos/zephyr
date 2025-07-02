@@ -102,7 +102,7 @@ this contributing and review process for imported components.
 .. _copyrights:
 
 Copyrights Notices
-*******************
+******************
 
 The Zephyr Project follows the `Community Best Practice`_ for Copyright Notices from the Linux
 Foundation.
@@ -176,8 +176,11 @@ For your commits, replace:
 - ``Your Name`` with your legal name (pseudonyms, hacker handles, and the
   names of groups are not allowed)
 
-- ``your.email@example.com`` with the same email address you are using to
-  author the commit (CI will fail if there is no match)
+- ``your.email@example.com`` with the real email address you are using to
+  author the commit. Pseudo or anonymized emails such as
+  ``you-id+your-username@users.noreply.github.com`` are not allowed. The
+  email must match the one you use to author the commit (CI will fail if
+  there is no match).
 
 You can automatically add the Signed-off-by: line to your commit body using
 ``git commit -s``. Use other commits in the zephyr git history as examples.
@@ -351,7 +354,7 @@ Pull Request Guidelines
 When opening a new Pull Request, adhere to the following guidelines to ensure
 compliance with Zephyr standards and facilitate the review process.
 
-If in doubt, it's advisible to explore existing Pull Requests within the Zephyr
+If in doubt, it's advisable to explore existing Pull Requests within the Zephyr
 repository. Use the search filters and labels to locate PRs related to changes
 similar to the ones you are proposing.
 

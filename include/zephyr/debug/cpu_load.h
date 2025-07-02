@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_DEBUG_CPU_LOAD_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +48,25 @@ int cpu_load_get(bool reset);
  * @param enable true to enable report logging and false to disable.
  */
 void cpu_load_log_control(bool enable);
+
+/* Optional callback for cpu_load_cb_reg
+ *
+ * This will be called from the k_timer expiry_fn used for periodic logging.
+ * CONFIG_CPU_LOAD_LOG_PERIODICALLY must be configured to a positive value.
+ * Time spent in this callback must be kept to a minimum.
+ */
+typedef void (*cpu_load_cb_t)(uint8_t percent);
+
+/** @brief Optional registration of callback when load is greater or equal to the threshold.
+ *
+ * @param cb Pointer to the callback function. NULL will cancel the callback.
+ * @param threshold_percent Threshold [0...100]. CPU load equal or greater that this
+ * will trigger the callback.
+ *
+ * @retval 0 - Callback registered/cancelled.
+ * @retval -EINVAL if the threshold is invalid.
+ */
+int cpu_load_cb_reg(cpu_load_cb_t cb, uint8_t threshold_percent);
 
 /**
  * @}

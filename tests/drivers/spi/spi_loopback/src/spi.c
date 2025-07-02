@@ -16,6 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -56,7 +57,8 @@ static int spec_idx;
  */
 struct spi_dt_spec spec_copies[5];
 
-
+const struct gpio_dt_spec miso_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), miso_gpios, {});
+const struct gpio_dt_spec mosi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), mosi_gpios, {});
 
 /*
  ********************
@@ -64,40 +66,49 @@ struct spi_dt_spec spec_copies[5];
  ********************
  */
 
-#if CONFIG_NOCACHE_MEMORY
+#ifdef CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
 #elif defined(CONFIG_DT_DEFINED_NOCACHE)
 #define __NOCACHE	__attribute__((__section__(CONFIG_DT_DEFINED_NOCACHE_NAME)))
 #else /* CONFIG_NOCACHE_MEMORY */
 #define __NOCACHE
+#if CONFIG_DCACHE_LINE_SIZE != 0
+#define __BUF_ALIGN	__aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define __BUF_ALIGN	__aligned(DT_PROP_OR(DT_PATH(cpus, cpu_0), d_cache_line_size, 32))
+#endif
 #endif /* CONFIG_NOCACHE_MEMORY */
+
+#ifndef __BUF_ALIGN
+#define __BUF_ALIGN	__aligned(32)
+#endif
 
 #define BUF_SIZE 18
 static const char tx_data[BUF_SIZE] = "0123456789abcdef-\0";
-static __aligned(32) char buffer_tx[BUF_SIZE] __NOCACHE;
-static __aligned(32) char buffer_rx[BUF_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer_tx[BUF_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer_rx[BUF_SIZE] __NOCACHE;
 
 #define BUF2_SIZE 36
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char buffer2_tx[BUF2_SIZE] __NOCACHE;
-static __aligned(32) char buffer2_rx[BUF2_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer2_tx[BUF2_SIZE] __NOCACHE;
+static __BUF_ALIGN char buffer2_rx[BUF2_SIZE] __NOCACHE;
 
 #define BUF3_SIZE CONFIG_SPI_LARGE_BUFFER_SIZE
 static const char large_tx_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char large_buffer_tx[BUF3_SIZE] __NOCACHE;
-static __aligned(32) char large_buffer_rx[BUF3_SIZE] __NOCACHE;
+static __BUF_ALIGN char large_buffer_tx[BUF3_SIZE] __NOCACHE;
+static __BUF_ALIGN char large_buffer_rx[BUF3_SIZE] __NOCACHE;
 
 #define BUFWIDE_SIZE 12
 static const uint16_t tx_data_16[] = {0x1234, 0x5678, 0x9ABC, 0xDEF0,
 				      0xFF00, 0x00FF, 0xAAAA, 0x5555,
 				      0xF0F0, 0x0F0F, 0xA5A5, 0x5A5A};
-static __aligned(32) uint16_t buffer_tx_16[BUFWIDE_SIZE] __NOCACHE;
-static __aligned(32) uint16_t buffer_rx_16[BUFWIDE_SIZE] __NOCACHE;
+static __BUF_ALIGN uint16_t buffer_tx_16[BUFWIDE_SIZE] __NOCACHE;
+static __BUF_ALIGN uint16_t buffer_rx_16[BUFWIDE_SIZE] __NOCACHE;
 static const uint32_t tx_data_32[] = {0x12345678, 0x56781234, 0x9ABCDEF0, 0xDEF09ABC,
 				      0xFFFF0000, 0x0000FFFF, 0x00FF00FF, 0xFF00FF00,
 				      0xAAAA5555, 0x5555AAAA, 0xAA55AA55, 0x55AA55AA};
-static __aligned(32) uint32_t buffer_tx_32[BUFWIDE_SIZE] __NOCACHE;
-static __aligned(32) uint32_t buffer_rx_32[BUFWIDE_SIZE] __NOCACHE;
+static __BUF_ALIGN uint32_t buffer_tx_32[BUFWIDE_SIZE] __NOCACHE;
+static __BUF_ALIGN uint32_t buffer_rx_32[BUFWIDE_SIZE] __NOCACHE;
 
 /*
  ********************
@@ -665,7 +676,7 @@ ZTEST(spi_loopback, test_spi_word_size_9)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
-	static __aligned(32) uint16_t tx_data_9[BUFWIDE_SIZE];
+	static __BUF_ALIGN uint16_t tx_data_9[BUFWIDE_SIZE];
 
 	for (int i = 0; i < BUFWIDE_SIZE; i++) {
 		tx_data_9[i] = tx_data_16[i] & 0x1FF;
@@ -689,7 +700,7 @@ ZTEST(spi_loopback, test_spi_word_size_24)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
-	static __aligned(32) uint32_t tx_data_24[BUFWIDE_SIZE];
+	static __BUF_ALIGN uint32_t tx_data_24[BUFWIDE_SIZE];
 
 	for (int i = 0; i < BUFWIDE_SIZE; i++) {
 		tx_data_24[i] = tx_data_32[i] & 0xFFFFFF;
@@ -715,8 +726,8 @@ static struct k_thread thread[3];
 static K_SEM_DEFINE(thread_sem, 0, 3);
 static K_SEM_DEFINE(sync_sem, 0, 1);
 
-static uint8_t __aligned(32) tx_buffer[3][32] __NOCACHE;
-static uint8_t __aligned(32) rx_buffer[3][32] __NOCACHE;
+static uint8_t __BUF_ALIGN tx_buffer[3][32] __NOCACHE;
+static uint8_t __BUF_ALIGN rx_buffer[3][32] __NOCACHE;
 
 atomic_t thread_test_fails;
 
@@ -820,6 +831,35 @@ ZTEST(spi_loopback, test_spi_concurrent_transfer_different_spec)
 	spec_copies[2] = *loopback_specs[spec_idx];
 
 	test_spi_concurrent_transfer_helper(specs);
+}
+
+ZTEST(spi_loopback, test_spi_deinit)
+{
+	struct spi_dt_spec *spec = loopback_specs[0];
+	const struct device *dev = spec->bus;
+	int ret;
+
+	if (miso_pin.port == NULL || mosi_pin.port == NULL) {
+		TC_PRINT("  zephyr,user miso-gpios or mosi-gpios are not defined\n");
+		ztest_test_skip();
+	}
+
+	ret = device_deinit(dev);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		ztest_test_skip();
+	}
+
+	zassert_ok(ret);
+	zassert_ok(gpio_pin_configure_dt(&miso_pin, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_OUTPUT_INACTIVE));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
+	zassert_ok(gpio_pin_set_dt(&mosi_pin, 1));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 1);
+	zassert_ok(gpio_pin_set_dt(&mosi_pin, 0));
+	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
+	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_INPUT));
+	zassert_ok(device_init(dev));
 }
 
 #if (CONFIG_SPI_ASYNC)
@@ -977,6 +1017,8 @@ ZTEST(spi_extra_api_features, test_spi_hold_on_cs)
 early_exit:
 	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
 	zassert_false(ret, "SPI transceive failed, code %d", ret);
+	/* if there was no error then it was meant to be a skip at this point */
+	ztest_test_skip();
 }
 
 /*

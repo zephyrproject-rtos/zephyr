@@ -866,7 +866,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 
 	eth_xmc4xxx_mask_unused_interrupts(dev_cfg->regs);
 
-#if !DT_INST_NODE_HAS_PROP(0, local_mac_address)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	gen_random_mac(dev_data->mac_addr, INFINEON_OUI_B0, INFINEON_OUI_B1, INFINEON_OUI_B2);
 #endif
 	eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);

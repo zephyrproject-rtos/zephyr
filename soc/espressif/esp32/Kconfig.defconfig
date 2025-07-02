@@ -38,3 +38,12 @@ config GDBSTUB_BUF_SZ
 endif # GDBSTUB config
 
 endif # SOC_SERIES_ESP32 config
+
+if BT_ESP32
+
+# Temporary workaround to prevent HCI command timeouts on ESP32.
+# A proper fix will be implemented in the BLE proprietary blobs.
+config BT_BUF_CMD_TX_COUNT
+	default 2
+
+endif

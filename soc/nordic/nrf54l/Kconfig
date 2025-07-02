@@ -38,6 +38,9 @@ config SOC_NRF54L15_CPUAPP
 config SOC_NRF54L20_ENGA_CPUAPP
 	select SOC_NRF54L_CPUAPP_COMMON
 
+config SOC_NRF54LM20A_ENGA_CPUAPP
+	select SOC_NRF54L_CPUAPP_COMMON
+
 config SOC_NRF54L05_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
@@ -51,6 +54,9 @@ config SOC_NRF54L15_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 config SOC_NRF54L20_ENGA_CPUFLPR
+	select RISCV_CORE_NORDIC_VPR
+
+config SOC_NRF54LM20A_ENGA_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 if SOC_SERIES_NRF54LX
@@ -83,5 +89,11 @@ config SOC_NRF_FORCE_CONSTLAT
 	  will be constant and kept at a minimum. This is secured by forcing a set
 	  of base resources on while in sleep. The advantage of having a constant
 	  and predictable latency will be at the cost of having increased power consumption.
+
+config SOC_NRF54L_ANOMALY_56_WORKAROUND
+	bool "Apply workaround 56 for nRF54L SoCs"
+	default y
+	help
+	   This option enables configuration workaround 56 for nRF54L Series SoCs.
 
 endif # SOC_SERIES_NRF54LX

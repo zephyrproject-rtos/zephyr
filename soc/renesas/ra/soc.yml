@@ -70,3 +70,9 @@ family:
       - name: ra8t1
         socs:
           - name: r7fa8t1ahecbd
+      - name: ra8p1
+        socs:
+          - name: r7ka8p1kflcac
+            cpuclusters:
+              - name: cm85
+              - name: cm33

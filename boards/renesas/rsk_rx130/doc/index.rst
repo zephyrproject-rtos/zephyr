@@ -64,12 +64,14 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Applications for the ``rsk_rx130@512kb`` board target configuration can be
-built, flashed, and debugged as below.
+Applications for the ``rsk_rx130@512kb`` board target can be built, flashed, and
+debugged in the usual way. See :ref:`build_an_application` and
+:ref:`application_run` for more details on building and running.
 
-Currently, the Zephyr SDK hasn't added support for RX builds yet, so the GCC for RX toolchain is required and build system need to be set to use "cross-compile".
+If you want to build Zephyr application for RSK-RX130 board using Renesas GCC RX toolchain follow
+the steps below:
 
-  - Download and install GCC for RX v8.3.0.202405 toolchain:
+  - Download and install GCC for RX toolchain:
 
     https://llvm-gcc-renesas.com/rx-download-toolchains/
 
@@ -90,17 +92,14 @@ Currently, the Zephyr SDK hasn't added support for RX builds yet, so the GCC for
 Flashing
 ========
 
-Program can be flashed to RSKRX130-512KB via Jlink with RX adapter boards.
+Program can be flashed to RSKRX130-512KB using Jlink with RX adapter boards, by
+connecting the board's debug connector port to the host PC. Here's an example
+for building and flashing the :zephyr:code-sample:`hello_world` application.
 
-To flash the program to board
-
-  1. Connect from board's debug connector port to host PC using Jlink debugger.
-
-  2. Execute west command
-
-   .. code-block:: console
-
-      west flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rsk_rx130@512kb
+   :goals: build flash
 
 Debugging
 =========

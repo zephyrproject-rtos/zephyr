@@ -506,7 +506,8 @@ static void esp_dns_work(struct k_work *work)
 
 	dnsctx = dns_resolve_get_default();
 	err = dns_resolve_reconfigure_with_interfaces(dnsctx, NULL, dns_servers,
-						      interfaces);
+						      interfaces,
+						      DNS_SOURCE_MANUAL);
 	if (err) {
 		LOG_ERR("Could not set DNS servers: %d", err);
 	}

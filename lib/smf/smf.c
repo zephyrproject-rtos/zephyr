@@ -400,14 +400,6 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	ctx->executing = ctx->current;
-#endif
-
-#ifndef CONFIG_SMF_ANCESTOR_SUPPORT
-	if (ctx->current->run) {
-		ctx->current->run(ctx);
-	}
-#else
-	ctx->executing = ctx->current;
 	if (ctx->current->run) {
 		enum smf_state_result rc = ctx->current->run(ctx);
 
@@ -418,6 +410,10 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 
 	if (smf_execute_ancestor_run_actions(ctx)) {
 		return ctx->terminate_val;
+	}
+#else
+	if (ctx->current->run) {
+		ctx->current->run(ctx);
 	}
 #endif
 	return 0;

@@ -13,6 +13,18 @@
 #include <zephyr/drivers/misc/renesas_ra_external_interrupt/renesas_ra_external_interrupt.h>
 #include <soc.h>
 
+#ifndef R_ICU_IRQCR_IRQMD_Pos
+#define R_ICU_IRQCR_IRQMD_Pos R_ICU_IRQCRa_IRQMD_Pos
+#endif
+
+#ifndef R_ICU_IRQCR_IRQMD_Msk
+#define R_ICU_IRQCR_IRQMD_Msk R_ICU_IRQCRa_IRQMD_Msk
+#endif
+
+#ifndef R_ICU_IRQCR_FLTEN_Pos
+#define R_ICU_IRQCR_FLTEN_Pos R_ICU_IRQCRa_FLTEN_Pos
+#endif
+
 enum ext_irq_trigger {
 	EXT_INTERRUPT_EDGE_FALLING = 0,
 	EXT_INTERRUPT_EDGE_RISING,

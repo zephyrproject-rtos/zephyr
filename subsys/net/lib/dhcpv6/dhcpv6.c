@@ -1426,9 +1426,11 @@ static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
 
 		status = dns_resolve_reconfigure_with_interfaces(ctx, NULL,
 								 dns_servers,
-								 interfaces);
+								 interfaces,
+								 DNS_SOURCE_DHCPV6);
 	} else {
-		status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
+		status = dns_resolve_reconfigure(ctx, NULL, dns_servers,
+						 DNS_SOURCE_DHCPV6);
 	}
 
 	if (status < 0) {
@@ -2224,8 +2226,9 @@ static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 		 * comes back up.
 		 */
 		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
-			dns_resolve_remove(dns_resolve_get_default(),
-					   net_if_get_by_iface(iface));
+			dns_resolve_remove_source(dns_resolve_get_default(),
+						  net_if_get_by_iface(iface),
+						  DNS_SOURCE_DHCPV6);
 		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
@@ -2247,8 +2250,10 @@ static void dhcpv6_generate_client_duid(struct net_if *iface)
 
 	memset(clientid, 0, sizeof(*clientid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL), &clientid->duid.type);
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE), &duid_ll->hw_type);
+	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL),
+		      UNALIGNED_MEMBER_ADDR(clientid, duid.type));
+	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, lladdr->addr, lladdr->len);
 
 	clientid->length = DHCPV6_DUID_LL_HEADER_SIZE + lladdr->len;
@@ -2320,6 +2325,12 @@ void net_dhcpv6_stop(struct net_if *iface)
 			net_dhcpv6_state_name(iface->config.dhcpv6.state));
 
 		(void)dhcpv6_enter_state(iface, NET_DHCPV6_DISABLED);
+
+		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
+			dns_resolve_remove_source(dns_resolve_get_default(),
+						  net_if_get_by_iface(iface),
+						  DNS_SOURCE_DHCPV6);
+		}
 
 		sys_slist_find_and_remove(&dhcpv6_ifaces,
 					  &iface->config.dhcpv6.node);

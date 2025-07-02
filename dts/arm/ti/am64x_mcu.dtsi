@@ -5,6 +5,7 @@
  */
 
 #include <freq.h>
+#include "am64x_mcu_power_domains.dtsi"
 
 / {
 	#address-cells = <1>;

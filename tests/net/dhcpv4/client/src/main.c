@@ -252,6 +252,9 @@ static uint32_t request_xid;
 #define EVT_VENDOR_EMPTY    BIT(12)
 #define EVT_DHCP_OFFER      BIT(13)
 #define EVT_DHCP_ACK        BIT(14)
+#define EVT_DNS_SERVER1_DEL BIT(15)
+#define EVT_DNS_SERVER2_DEL BIT(16)
+#define EVT_DNS_SERVER3_DEL BIT(17)
 
 static K_EVENT_DEFINE(events);
 
@@ -538,6 +541,18 @@ static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, siz
 			zassert_unreachable("Unknown DNS server");
 		}
 		break;
+	case NET_EVENT_DNS_SERVER_DEL:
+		zassert_equal(info_length, sizeof(struct sockaddr));
+		if (net_sin(info)->sin_addr.s_addr == dns_addrs[0].s_addr) {
+			k_event_post(&events, EVT_DNS_SERVER1_DEL);
+		} else if (net_sin(info)->sin_addr.s_addr == dns_addrs[1].s_addr) {
+			k_event_post(&events, EVT_DNS_SERVER2_DEL);
+		} else if (net_sin(info)->sin_addr.s_addr == dns_addrs[2].s_addr) {
+			k_event_post(&events, EVT_DNS_SERVER3_DEL);
+		} else {
+			zassert_unreachable("Unknown DNS server");
+		}
+		break;
 	case NET_EVENT_IPV4_DHCP_START:
 		k_event_post(&events, EVT_DHCP_START);
 		break;
@@ -746,17 +761,14 @@ ZTEST(dhcpv4_tests, test_dhcp)
 			      "Missing DHCP vendor option(s) %08x", evt);
 #endif
 
-		if (loop == 0) {
-			/* Associated DNS servers aren't deleted on DHCP stop */
-			evt = k_event_wait_all(&events,
-					       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
-						       EVT_DNS_SERVER3_ADD,
-					       false, WAIT_TIME);
-			zassert_equal(evt,
-				      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
-					      EVT_DNS_SERVER3_ADD,
-				      "Missing DNS server(s) %08x", evt);
-		}
+		evt = k_event_wait_all(&events,
+				       EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+				       EVT_DNS_SERVER3_ADD,
+				       false, WAIT_TIME);
+		zassert_equal(evt,
+			      EVT_DNS_SERVER1_ADD | EVT_DNS_SERVER2_ADD |
+			      EVT_DNS_SERVER3_ADD,
+			      "Missing DNS server(s) %08x", evt);
 
 		evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
 		zassert_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound");
@@ -784,8 +796,15 @@ ZTEST(dhcpv4_tests, test_dhcp)
 
 		net_dhcpv4_stop(iface);
 
-		evt = k_event_wait_all(&events, EVT_DHCP_STOP | EVT_ADDR_DEL, false, WAIT_TIME);
-		zassert_equal(evt, EVT_DHCP_STOP | EVT_ADDR_DEL,
+		evt = k_event_wait_all(&events,
+				       EVT_DHCP_STOP | EVT_ADDR_DEL |
+				       EVT_DNS_SERVER1_DEL | EVT_DNS_SERVER2_DEL |
+				       EVT_DNS_SERVER3_DEL,
+				       false, WAIT_TIME);
+		zassert_equal(evt,
+			      EVT_DHCP_STOP | EVT_ADDR_DEL |
+			      EVT_DNS_SERVER1_DEL | EVT_DNS_SERVER2_DEL |
+			      EVT_DNS_SERVER3_DEL,
 			      "Missing DHCP stop or deleted address");
 	}
 }

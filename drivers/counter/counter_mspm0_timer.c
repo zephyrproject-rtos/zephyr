@@ -277,8 +277,8 @@ static void counter_mspm0_isr(void *arg)
 			.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(			\
 				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk)),	\
 			.divideRatio = MSPM0_CLK_DIV(DT_PROP(DT_INST_PARENT(n),		\
-						     clk_div)),				\
-			.prescale = DT_PROP(DT_INST_PARENT(n), clk_prescaler),		\
+						     ti_clk_div)),			\
+			.prescale = DT_PROP(DT_INST_PARENT(n), ti_clk_prescaler),	\
 			},								\
 		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)	\
 							? UINT32_MAX : UINT16_MAX,	\

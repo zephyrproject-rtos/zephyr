@@ -7,6 +7,7 @@
 /*
  * Copyright (c) 2019 Linaro Limited.
  * Copyright 2025 NXP
+ * Copyright (c) 2025 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -240,6 +241,57 @@ enum video_signal_result {
 };
 
 /**
+ * @struct video_selection_target
+ * @brief Video selection target enum
+ *
+ * Used to indicate which selection to query or set on a video device
+ */
+enum video_selection_target {
+	/** Current crop setting */
+	VIDEO_SEL_TGT_CROP,
+	/** Crop bound (aka the maximum crop achievable) */
+	VIDEO_SEL_TGT_CROP_BOUND,
+	/** Native size of the input frame */
+	VIDEO_SEL_TGT_NATIVE_SIZE,
+	/** Current compose setting */
+	VIDEO_SEL_TGT_COMPOSE,
+	/** Compose bound (aka the maximum compose achievable) */
+	VIDEO_SEL_TGT_COMPOSE_BOUND,
+};
+
+/**
+ * @struct video_rect
+ * @brief Description of a rectangle area.
+ *
+ * Used for crop/compose and possibly within drivers as well
+ */
+struct video_rect {
+	/** left offset of selection rectangle */
+	uint32_t left;
+	/** top offset of selection rectangle */
+	uint32_t top;
+	/** width of selection rectangle */
+	uint32_t width;
+	/** height of selection rectangle */
+	uint32_t height;
+};
+
+/**
+ * @struct video_selection
+ * @brief Video selection (crop / compose) structure
+ *
+ * Used to describe the query and set selection target on a video device
+ */
+struct video_selection {
+	/** buffer type, allow to select for device having both input and output */
+	enum video_buf_type type;
+	/** selection target enum */
+	enum video_selection_target target;
+	/** selection target rectangle */
+	struct video_rect rect;
+};
+
+/**
  * @typedef video_api_format_t
  * @brief Function pointer type for video_set/get_format()
  *
@@ -329,6 +381,14 @@ typedef int (*video_api_get_caps_t)(const struct device *dev, struct video_caps 
  */
 typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_signal *sig);
 
+/**
+ * @typedef video_api_selection_t
+ * @brief Get/Set video selection (crop / compose)
+ *
+ * See @ref video_set_selection and @ref video_get_selection for argument descriptions.
+ */
+typedef int (*video_api_selection_t)(const struct device *dev, struct video_selection *sel);
+
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_format_t set_format;
@@ -345,6 +405,8 @@ __subsystem struct video_driver_api {
 	video_api_frmival_t set_frmival;
 	video_api_frmival_t get_frmival;
 	video_api_enum_frmival_t enum_frmival;
+	video_api_selection_t set_selection;
+	video_api_selection_t get_selection;
 };
 
 /**
@@ -754,6 +816,72 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 	}
 
 	return api->set_signal(dev, sig);
+}
+
+/**
+ * @brief Set video selection (crop/compose).
+ *
+ * Configure the optional crop and compose feature of a video device.
+ * Crop is first applied on the input frame, and the result of that crop is applied
+ * to the compose. The result of the compose (width/height) is equal to the format
+ * width/height given to the @ref video_set_format function.
+ *
+ * Some targets are inter-dependents. For instance, setting a @ref VIDEO_SEL_TGT_CROP will
+ * reset @ref VIDEO_SEL_TGT_COMPOSE to the same size.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param sel Pointer to a video selection structure
+ *
+ * @retval 0 Is successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If format is not supported.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_set_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_driver_api *api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(sel != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->set_selection == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_selection(dev, sel);
+}
+
+/**
+ * @brief Get video selection (crop/compose).
+ *
+ * Retrieve the current settings related to the crop and compose of the video device.
+ * This can also be used to read the native size of the input stream of the video
+ * device.
+ * This function can be used to read crop / compose capabilities of the device prior
+ * to performing configuration via the @ref video_set_selection api.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param sel Pointer to a video selection structure, @c type and @c target set by the caller
+ *
+ * @retval 0 Is successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If format is not supported.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_get_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_driver_api *api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(sel != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->get_selection == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_selection(dev, sel);
 }
 
 /**

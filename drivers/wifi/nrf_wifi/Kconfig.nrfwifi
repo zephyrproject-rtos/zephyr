@@ -599,10 +599,8 @@ endif
 
 if NETWORKING
 # Finetune defaults for certain system components used by the driver
-
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 4096
-
+# Note: These will take effect only if the symbol is not defined already
+# (i.e., the original symbol is processed after "drivers/Kconfig")
 config NET_TX_STACK_SIZE
 	default 4096
 

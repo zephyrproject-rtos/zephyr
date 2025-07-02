@@ -259,7 +259,7 @@ arduino_spi: &lpspi1 {
 		reg = <0>;
 		spi-max-frequency = <104000000>;
 		status = "okay";
-		jedec-id = [9d 70 17];
+		jedec-id = [9d 70 18];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 

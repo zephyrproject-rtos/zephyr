@@ -495,6 +495,35 @@
 			status = "disabled";
 		};
 
+		usb: usb@USB_BASE_NAME {
+			compatible = "ambiq,usb";
+			reg = <USB_REG_BASE USB_REG_SIZE>;
+			interrupts = <27 0>;
+			num-bidir-endpoints = <6>;
+			maximum-speed = "high-speed";
+			status = "disabled";
+		};
+
+		pdm0: pdm@PDM0_BASE_NAME {
+			compatible = "ambiq,pdm";
+			reg = <PDM0_REG_BASE PDM0_REG_SIZE>;
+			interrupts = <48 0>;
+			status = "disabled";
+		};
+
+		i2s0: i2s0@I2S0_BASE_NAME {
+			compatible = "ambiq,i2s";
+			reg = <I2S0_REG_BASE I2S0_REG_SIZE>;
+			interrupts = <44 0>;
+			status = "disabled";
+		};
+
+		i2s1: i2s1@I2S1_BASE_NAME {
+			compatible = "ambiq,i2s";
+			reg = <I2S1_REG_BASE I2S1_REG_SIZE>;
+			interrupts = <45 0>;
+			status = "disabled";
+		};
 		mspi0: mspi@MSPI0_BASE_NAME {
 			compatible = "ambiq,mspi-controller";
 			reg = <MSPI0_REG_BASE MSPI0_REG_SIZE>,

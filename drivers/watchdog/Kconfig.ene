@@ -8,3 +8,10 @@ config WDT_ENE_KB1200
 	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  This option enables the KB1200 watchdog driver.
+
+config WDT_ENE_KB106X
+	bool "ENE KB106X watchdog driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_WATCHDOG_ENABLED
+	help
+	  This option enables the KB106X watchdog driver.

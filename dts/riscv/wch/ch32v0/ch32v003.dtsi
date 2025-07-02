@@ -72,6 +72,19 @@
 			status = "disabled";
 		};
 
+		exti: interrupt-controller@40010400 {
+			compatible = "wch,exti";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			reg = <0x40010400 16>;
+			interrupt-parent = <&pfic>;
+			num-lines = <8>;
+			interrupts = <20>;
+			line-ranges = <0 8>;
+			interrupt-names = "line0-7";
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40010000 {
 			compatible = "wch,afio";
 			reg = <0x40010000 0x10>;
@@ -172,6 +185,16 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		adc1: adc@40012400 {
+			compatible = "wch,adc";
+			reg = <0x40012400 16>;
+			clocks = <&rcc CH32V00X_CLOCK_ADC1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <29>;
+			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

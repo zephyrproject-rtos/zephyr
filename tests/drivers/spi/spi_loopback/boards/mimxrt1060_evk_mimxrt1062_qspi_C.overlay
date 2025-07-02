@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Short J17-pin4 and J17-pin5, populate R356, R350,R346, R362 to enable Pins for SPI1. */
 &lpspi1 {
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

@@ -354,6 +354,12 @@ config TRACING_GPIO
 	help
 	  Enable tracing GPIO.
 
+config TRACING_IDLE
+	bool "Tracing Idle"
+	default y
+	help
+	  Enable tracing Idle state.
+
 endmenu  # Tracing Configuration
 
 endif

@@ -31,10 +31,63 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	offload_params[cpu_id].fn = routine;
 	offload_params[cpu_id].arg = parameter;
 
-	__asm__ volatile("rsr %0, INTENABLE" : "=r"(intenable));
-	intenable |= BIT(ZSR_IRQ_OFFLOAD_INT);
-	__asm__ volatile("wsr %0, INTENABLE; wsr %0, INTSET; rsync"
-			 :: "r"(intenable), "r"(BIT(ZSR_IRQ_OFFLOAD_INT)));
+#if XCHAL_NUM_INTERRUPTS > 32
+	switch ((ZSR_IRQ_OFFLOAD_INT) >> 5) {
+	case 0:
+		__asm__ volatile("rsr.intenable  %0" : "=r"(intenable));
+		break;
+	case 1:
+		__asm__ volatile("rsr.intenable1 %0" : "=r"(intenable));
+		break;
+#if XCHAL_NUM_INTERRUPTS > 64
+	case 2:
+		__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable));
+		break;
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	case 3:
+		__asm__ volatile("rsr.intenable3 %0" : "=r"(intenable));
+		break;
+#endif
+	default:
+		break;
+	}
+#else
+	__asm__ volatile("rsr.intenable  %0" : "=r"(intenable));
+#endif
+
+	intenable |= BIT((ZSR_IRQ_OFFLOAD_INT & 31U));
+
+#if XCHAL_NUM_INTERRUPTS > 32
+	switch ((ZSR_IRQ_OFFLOAD_INT) >> 5) {
+	case 0:
+		__asm__ volatile("wsr.intenable %0; wsr.intset %0; rsync"
+				 :: "r"(intenable), "r"(BIT((ZSR_IRQ_OFFLOAD_INT & 31U))));
+		break;
+	case 1:
+		__asm__ volatile("wsr.intenable1 %0; wsr.intset1 %0; rsync"
+				 :: "r"(intenable), "r"(BIT((ZSR_IRQ_OFFLOAD_INT & 31U))));
+		break;
+#if XCHAL_NUM_INTERRUPTS > 64
+	case 2:
+		__asm__ volatile("wsr.intenable2 %0; wsr.intset2 %0; rsync"
+				 :: "r"(intenable), "r"(BIT((ZSR_IRQ_OFFLOAD_INT & 31U))));
+		break;
+#endif
+#if XCHAL_NUM_INTERRUPTS > 96
+	case 3:
+		__asm__ volatile("wsr.intenable3 %0; wsr.intset3 %0; rsync"
+				 :: "r"(intenable), "r"(BIT((ZSR_IRQ_OFFLOAD_INT & 31U))));
+		break;
+#endif
+	default:
+		break;
+	}
+#else
+	__asm__ volatile("wsr.intenable %0; wsr.intset %0; rsync"
+			 :: "r"(intenable), "r"(BIT((ZSR_IRQ_OFFLOAD_INT & 31U))));
+#endif
+
 	arch_irq_unlock(key);
 }
 

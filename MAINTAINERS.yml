@@ -371,7 +371,6 @@ Bluetooth HCI:
     - hermabe
     - Thalley
     - sjanc
-    - theob-pro
     - HoZHel
     - cvinayak
   files:
@@ -424,7 +423,6 @@ Bluetooth Host:
     - rugeGerritsen
     - sjanc
     - Thalley
-    - theob-pro
     - cvinayak
   files:
     - doc/connectivity/bluetooth/
@@ -482,6 +480,7 @@ Bluetooth Host:
     - tests/bsim/bluetooth/hci_uart/
     - tests/bsim/bluetooth/ll/
     - tests/bsim/bluetooth/mesh/
+    - tests/bsim/bluetooth/tester/src/audio/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -520,8 +519,6 @@ Bluetooth Audio:
     - Thalley
   collaborators:
     - jhedberg
-    - Casper-Bonde-Bose
-    - MariuszSkamra
     - sjanc
     - asbjornsabo
     - fredrikdanebjer
@@ -536,6 +533,7 @@ Bluetooth Audio:
     - tests/bluetooth/audio/
     - tests/bsim/bluetooth/audio/
     - tests/bsim/bluetooth/audio_samples/
+    - tests/bsim/bluetooth/tester/src/audio/
     - tests/bluetooth/shell/audio.conf
     - tests/bluetooth/tester/overlay-le-audio.conf
     - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
@@ -1086,8 +1084,8 @@ Release Notes:
     - "Release Notes"
 
 "Drivers: ADC":
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - anangl
   files:
     - drivers/adc/
@@ -2010,6 +2008,23 @@ Release Notes:
   tests:
     - sample.drivers.espi.ps2
 
+"Drivers: PSI5":
+  status: maintained
+  maintainers:
+    - manuargue
+    - Dat-NguyenDuy
+  collaborators:
+    - congnguyenhuu
+  files:
+    - drivers/psi5/
+    - include/zephyr/drivers/psi5/
+    - dts/bindings/psi5/
+    - doc/hardware/peripherals/psi5.rst
+  labels:
+    - "area: PSI5"
+  tests:
+    - drivers.psi5
+
 "Drivers: PTP Clock":
   status: maintained
   maintainers:
@@ -2037,10 +2052,9 @@ Release Notes:
     - "area: PM CPU ops"
 
 "Drivers: PWM":
-  status: maintained
-  maintainers:
-    - anangl
+  status: odd fixes
   collaborators:
+    - anangl
     - henrikbrixandersen
   files:
     - drivers/pwm/
@@ -2119,6 +2133,23 @@ Release Notes:
     - "area: Sensors"
   tests:
     - drivers.sensor
+
+"Drivers: SENT":
+  status: maintained
+  maintainers:
+    - manuargue
+    - Dat-NguyenDuy
+  collaborators:
+    - congnguyenhuu
+  files:
+    - drivers/sent/
+    - include/zephyr/drivers/sent/
+    - dts/bindings/sent/
+    - doc/hardware/peripherals/sent.rst
+  labels:
+    - "area: SENT"
+  tests:
+    - drivers.sent
 
 "Drivers: SMBus":
   status: maintained
@@ -3311,6 +3342,7 @@ RISCV arch:
     - npitre
     - ycsin
     - VynDragon
+    - masz-nordic
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -3985,6 +4017,10 @@ NXP Platforms (Xtensa):
   files:
     - soc/nxp/imx/*/adsp/
     - soc/nxp/imxrt/imxrt5xx/f1/
+    - soc/nxp/imxrt/imxrt7xx/hifi1/
+    - soc/nxp/imxrt/*/hifi4/
+    - soc/nxp/imxrt/imxrt[567]xx/CMakeLists.txt
+    - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
   labels:
     - "platform: NXP Xtensa"
   description: NXP Xtensa platforms

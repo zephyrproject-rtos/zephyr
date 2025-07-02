@@ -44,6 +44,25 @@
 #define K_MEM_VIRT_OFFSET	0
 #endif /* CONFIG_MMU */
 
+#if CONFIG_SRAM_BASE_ADDRESS != 0
+#define IS_SRAM_ADDRESS_LOWER(ADDR)  ((ADDR) >= CONFIG_SRAM_BASE_ADDRESS)
+#else
+#define IS_SRAM_ADDRESS_LOWER(ADDR)  true
+#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
+
+
+#if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
+#define IS_SRAM_ADDRESS_UPPER(ADDR)              \
+	((ADDR) < (CONFIG_SRAM_BASE_ADDRESS +    \
+		  (CONFIG_SRAM_SIZE * 1024UL)))
+#else
+#define IS_SRAM_ADDRESS_UPPER(ADDR)  false
+#endif
+
+#define IS_SRAM_ADDRESS(ADDR)            \
+	(IS_SRAM_ADDRESS_LOWER(ADDR) &&  \
+	 IS_SRAM_ADDRESS_UPPER(ADDR))
+
 /**
  * @brief Get physical address from virtual address.
  *
@@ -115,16 +134,7 @@ static inline uintptr_t k_mem_phys_addr(void *virt)
 		 "address %p not in permanent mappings", virt);
 #else
 	/* Should be identity-mapped */
-	__ASSERT(
-#if CONFIG_SRAM_BASE_ADDRESS != 0
-		 (addr >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
-#if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
-		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
-			  (CONFIG_SRAM_SIZE * 1024UL))),
-#else
-		 false,
-#endif /* (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0 */
+	__ASSERT(IS_SRAM_ADDRESS(addr),
 		 "physical address 0x%lx not in RAM",
 		 (unsigned long)addr);
 #endif /* CONFIG_MMU */
@@ -153,16 +163,7 @@ static inline void *k_mem_virt_addr(uintptr_t phys)
 	__ASSERT(sys_mm_is_phys_addr_in_range(phys),
 		"physical address 0x%lx not in RAM", (unsigned long)phys);
 #else
-	__ASSERT(
-#if CONFIG_SRAM_BASE_ADDRESS != 0
-		 (phys >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
-#if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
-		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
-			  (CONFIG_SRAM_SIZE * 1024UL))),
-#else
-		 false,
-#endif /* (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0 */
+	__ASSERT(IS_SRAM_ADDRESS(phys),
 		 "physical address 0x%lx not in RAM", (unsigned long)phys);
 #endif /* CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK */
 

@@ -466,7 +466,8 @@ ZTEST(dns_addremove, test_dns_reconfigure_callback)
 			     "Timeout while waiting for DNS added callback");
 	}
 
-	ret = dns_resolve_reconfigure(&resv_ipv4, dns2_servers_str, NULL);
+	ret = dns_resolve_reconfigure(&resv_ipv4, dns2_servers_str, NULL,
+				      DNS_SOURCE_MANUAL);
 	zassert_equal(ret, 0, "Cannot reconfigure DNS server");
 
 	/* Wait for DNS removed callback after reconfiguring DNS */

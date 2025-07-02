@@ -507,7 +507,7 @@ config SIZE_OPTIMIZATIONS
 config SIZE_OPTIMIZATIONS_AGGRESSIVE
 	bool "Aggressively optimize for size"
 	help
-	  Compiler optimizations wil be set to -Oz independently of other
+	  Compiler optimizations will be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS
@@ -696,6 +696,13 @@ config OUTPUT_DISASSEMBLY_WITH_SOURCE
 	  since it can be used to remove one of the elements of
 	  the .lst file that can vary across platforms because
 	  of reasons such as having ".." include paths.
+
+config OUTPUT_DISASSEMBLY_NO_ALIASES
+	bool "Disassemble with raw instruction mnemonics"
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain raw instruction mnemonic instead of
+	  pseudo instructions.
 
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"

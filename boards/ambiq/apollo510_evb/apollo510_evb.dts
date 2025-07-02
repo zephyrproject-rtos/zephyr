@@ -199,6 +199,30 @@
 	};
 };
 
+zephyr_udc0: &usb {
+	vddusb33-gpios = <&gpio64_95 27 (GPIO_PULL_UP)>;
+	vddusb0p9-gpios = <&gpio64_95 26 (GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&pdm0 {
+	pinctrl-0 = <&pdm0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i2s1 {
+	pinctrl-0 = <&i2s1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 &gpio0_31 {
 	status = "okay";
 };

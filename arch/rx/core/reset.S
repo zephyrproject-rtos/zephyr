@@ -29,10 +29,10 @@ __start :
 
 /* load data section from ROM to RAM */
 
-    mov     #_mdata,r2      /* src ROM address of data section in R2 */
-    mov     #_data,r1       /* dest start RAM address of data section in R1 */
-    mov     #_edata,r3      /* end RAM address of data section in R3 */
-    sub    r1,r3            /* size of data section in R3 (R3=R3-R1) */
+    mov     #_image_ram_start,r2        /* src ROM address of data section in R2 */
+    mov     #__data_start,r1            /* dest start RAM address of data section in R1 */
+    mov     #__data_region_end,r3       /* end RAM address of data section in R3 */
+    sub    r1,r3                        /* size of data section in R3 (R3=R3-R1) */
 #ifdef __RX_ALLOW_STRING_INSNS__
     smovf                   /* block copy R3 bytes from R2 to R1 */
 #else

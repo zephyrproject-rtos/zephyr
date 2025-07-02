@@ -23,7 +23,6 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rtc.h>
-#include <stm32_hsem.h>
 #ifdef CONFIG_RTC_ALARM
 #include <stm32_ll_exti.h>
 #endif /* CONFIG_RTC_ALARM */
@@ -32,6 +31,9 @@
 #ifdef CONFIG_RTC_ALARM
 #include <zephyr/irq.h>
 #endif /* CONFIG_RTC_ALARM */
+
+#include <stm32_backup_domain.h>
+#include <stm32_hsem.h>
 
 #include <stdbool.h>
 #include "rtc_utils.h"
@@ -97,17 +99,6 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #define RTC_STM32_EXTI_LINE	0
 #endif /* DT_INST_NODE_HAS_PROP(0, alrm_exti_line) */
 #endif /* STM32_RTC_ALARM_ENABLED */
-
-#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
-/*
- * After system reset, the RTC registers are protected against parasitic write access by the
- * DBP bit in the power control peripheral (PWR).
- * Hence, DBP bit must be set in order to enable RTC registers write access.
- */
-#define RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION	(1)
-#else
-#define RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION	(0)
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPCR_DBP || PWR_DBPR_DBP */
 
 struct rtc_stm32_config {
 	uint32_t async_prescaler;
@@ -292,9 +283,7 @@ void rtc_stm32_isr(const struct device *dev)
 	struct rtc_stm32_alrm *p_rtc_alrm;
 	int id = 0;
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_enable_access();
 
 	for (id = 0; id < RTC_STM32_ALARMS_COUNT; id++) {
 		if (rtc_stm32_is_active_alarm(RTC, (uint16_t)id) != 0) {
@@ -316,9 +305,7 @@ void rtc_stm32_isr(const struct device *dev)
 		}
 	}
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_DisableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_disable_access();
 
 	ll_func_exti_clear_rtc_alarm_flag(RTC_STM32_EXTI_LINE);
 }
@@ -381,10 +368,7 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 
-	/* Enable Backup access */
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_enable_access();
 
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	/* Must be configured before selecting the RTC clock source */
@@ -416,9 +400,7 @@ static int rtc_stm32_init(const struct device *dev)
 
 	err = rtc_stm32_configure(dev);
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_DisableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_disable_access();
 
 #ifdef STM32_RTC_ALARM_ENABLED
 	rtc_stm32_irq_config(dev);
@@ -469,16 +451,12 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_enable_access();
 
 	LL_RTC_TIME_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_time);
 	LL_RTC_DATE_Init(RTC, LL_RTC_FORMAT_BCD, &rtc_date);
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_DisableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_disable_access();
 
 #ifdef CONFIG_SOC_SERIES_STM32F2X
 	/*
@@ -808,9 +786,9 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 		p_rtc_alrm->user_callback = NULL;
 		p_rtc_alrm->user_data = NULL;
 		p_rtc_alrm->is_pending = false;
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-		LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+
+		stm32_backup_domain_enable_access();
+
 		if (rtc_stm32_is_active_alarm(RTC, id)) {
 			LL_RTC_DisableWriteProtection(RTC);
 			rtc_stm32_disable_alarm(RTC, id);
@@ -852,9 +830,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 			id, timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour,
 			timeptr->tm_wday, timeptr->tm_mday, mask);
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_enable_access();
 
 	/* Disable the write protection for RTC registers */
 	LL_RTC_DisableWriteProtection(RTC);
@@ -905,9 +881,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	LL_RTC_EnableWriteProtection(RTC);
 
 disable_bkup_access:
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_DisableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_disable_access();
 
 unlock:
 	k_spin_unlock(&data->lock, key);
@@ -1028,9 +1002,7 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 		return -EIO;
 	}
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_EnableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_enable_access();
 
 	LL_RTC_DisableWriteProtection(RTC);
 
@@ -1038,9 +1010,7 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 
 	LL_RTC_EnableWriteProtection(RTC);
 
-#if RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION
-	LL_PWR_DisableBkUpAccess();
-#endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
+	stm32_backup_domain_disable_access();
 
 	return 0;
 }

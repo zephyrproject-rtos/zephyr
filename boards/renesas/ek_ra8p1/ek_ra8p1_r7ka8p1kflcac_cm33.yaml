@@ -1,0 +1,10 @@
+identifier: ek_ra8p1/r7ka8p1kflcac/cm33
+name: Renesas EK-RA8P1
+type: mcu
+arch: arm
+ram: 1664
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+vendor: renesas

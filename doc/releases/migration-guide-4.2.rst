@@ -23,7 +23,7 @@ the :ref:`release notes<zephyr_4.2>`.
 Common
 ******
 
-* The minimum required Python version is now 3.12 (from 3.10).
+* The minimum required Python version is now 3.12.1 (from 3.10).
 
 Build System
 ************
@@ -39,7 +39,7 @@ Boards
   nRF Util (``nrfutil``) tool. This means that you may need to `install nRF Util
   <https://www.nordicsemi.com/Products/Development-tools/nrf-util>`_ or, if you
   prefer to continue using ``nrfjprog``, you can do so by invoking west while
-  specfying the runner: ``west flash -r nrfjprog``. The full documentation for
+  specifying the runner: ``west flash -r nrfjprog``. The full documentation for
   nRF Util can be found
   `here <https://docs.nordicsemi.com/bundle/nrfutil/page/README.html>`_.
 
@@ -58,7 +58,7 @@ Boards
 * The DT binding :dtcompatible:`zephyr,native-posix-cpu` has been deprecated in favor of
   :dtcompatible:`zephyr,native-sim-cpu`.
 
-* Zephyr now supports version 1.11.3 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
+* Zephyr now supports version 1.11.6 of the :zephyr:board:`neorv32`. NEORV32 processor (SoC)
   implementations need to be updated to this version to be compatible with Zephyr v4.2.0.
 
 * The :zephyr:board:`neorv32` now targets NEORV32 processor (SoC) templates via board variants. The
@@ -175,7 +175,7 @@ Ethernet
   ``ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS``, ``ETH_STM32_AUTO_NEGOTIATION_ENABLE``,
   ``ETH_STM32_SPEED_10M``, ``ETH_STM32_MODE_HALFDUPLEX`` have been removed, as they are no longer
   needed, and the driver now uses the ethernet phy api to communicate with the phy driver, which
-  is resposible for configuring the phy settings (:github:`87593`).
+  is responsible for configuring the phy settings (:github:`87593`).
 
 * ``ethernet_native_posix`` has been renamed ``ethernet_native_tap``, and with it its
   kconfig options: :kconfig:option:`CONFIG_ETH_NATIVE_POSIX` and its related options have been
@@ -188,7 +188,7 @@ Ethernet
   :zephyr_file:`include/zephyr/net/ethernet.h` have been renamed
   to ``ETHERNET_DSA_CONDUIT_PORT`` and ``ETHERNET_DSA_USER_PORT``.
 
-* Enums for the Ethernet speed have been renamed to be more indepedent of the used medium.
+* Enums for the Ethernet speed have been renamed to be more independent of the used medium.
   ``LINK_HALF_10BASE_T``, ``LINK_FULL_10BASE_T``, ``LINK_HALF_100BASE_T``, ``LINK_FULL_100BASE_T``,
   ``LINK_HALF_1000BASE_T``, ``LINK_FULL_1000BASE_T``, ``LINK_FULL_2500BASE_T`` and
   ``LINK_FULL_5000BASE_T`` have been renamed to :c:enumerator:`LINK_HALF_10BASE`,
@@ -361,6 +361,10 @@ Timer
         reg-names = "mtime", "mtimecmp";
     };
 
+* It is now possible to use a ``timebase-frequency`` property in the cpus DTS group to provide
+  the value for :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` instead of
+  using a value: :github:`91296`
+
 Watchdog
 ========
 * Renamed ``CONFIG_WDT_NPM1300`` to :kconfig:option:`CONFIG_WDT_NPM13XX`,
@@ -435,7 +439,7 @@ Bluetooth HCI
   have been deprecated, but are still usable, with the exception that they can only be
   called once per buffer.
 
-* The :c:func:`bt_hci_cmd_create` function has been depracated and the new :c:func:`bt_hci_cmd_alloc`
+* The :c:func:`bt_hci_cmd_create` function has been deprecated and the new :c:func:`bt_hci_cmd_alloc`
   function should be used instead. The new function takes no parameters because the command
   sending functions have been updated to do the command header encoding.
 
@@ -548,6 +552,11 @@ Networking
   and ``SO_NET_MGMT_ETHERNET_GET_QAV_PARAM`` socket options are created that will replace
   the previously used ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` and
   ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` options.
+
+* The DNS server resolver configuration functions :c:func:`dns_resolve_reconfigure` and
+  :c:func:`dns_resolve_reconfigure_with_interfaces` now require that the user supplies
+  the source of the DNS server information. For example when DNS server information is
+  received via DHCPv4, then :c:enumerator:`DNS_SOURCE_DHCPV4` needs to be specified.
 
 LwM2M
 =====
@@ -708,6 +717,9 @@ Video
   required by the application. This update enables the application to correctly allocate a buffer
   size on a per driver basis. Existing applications will not be broken by this change but can be
   simplified as performed in the sample in the commit ``33dcbe37cfd3593e8c6e9cfd218dd31fdd533598``.
+
+* Samples and projects using the :ref:`native simulator <native_sim>` now require specifying the
+  ``--snippet`` :ref:`video-sw-generator <snippet-video-sw-generator>` to build correctly.
 
 Audio
 =====

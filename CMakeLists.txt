@@ -1701,8 +1701,12 @@ list(APPEND
 list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
 # Use ';' as separator to get proper space in resulting command.
-set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
-set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
+# Ignore gapfill for RX target as some RX toolchains generate wrong output image when running
+# gapfill for binary format.
+if(NOT CONFIG_RX)
+  set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
+  set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
+endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   target_link_libraries(${logical_target_for_zephyr_elf} $<TARGET_PROPERTY:linker,memusage>)
@@ -1905,10 +1909,13 @@ if(CONFIG_BUILD_OUTPUT_S19)
 endif()
 
 if(CONFIG_OUTPUT_DISASSEMBLY)
-if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
+  if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_all>")
-  elseif (CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE)
+  elseif(CONFIG_OUTPUT_DISASSEMBLY_WITH_SOURCE)
     set(disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_inline_source>")
+  endif()
+  if(CONFIG_OUTPUT_DISASSEMBLY_NO_ALIASES)
+    list(APPEND disassembly_type "$<TARGET_PROPERTY:bintools,disassembly_flag_no_aliases>")
   endif()
   list(APPEND
     post_build_commands

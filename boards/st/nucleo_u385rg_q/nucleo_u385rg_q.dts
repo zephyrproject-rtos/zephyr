@@ -43,6 +43,7 @@
 	aliases {
 		led0 = &green_led_2;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -132,5 +133,13 @@
 	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb3
 		     &spi3_miso_pb4 &spi3_mosi_pb5>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&wwdg {
 	status = "okay";
 };

@@ -14,6 +14,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
+#include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
 #define ahb_prescaler(v) CONCAT(LL_RCC_HCLK_SYSCLK_DIV_, v)
@@ -392,13 +393,7 @@ static void set_up_fixed_clock_sources(void)
 
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
 		/* N.B.: PWR clock has been enabled by SoC init hook */
-		if (LL_PWR_IsEnabledBkUpAccess() == 0U) {
-			/* Enable write access to Backup domain */
-			LL_PWR_EnableBkUpAccess();
-			while (LL_PWR_IsEnabledBkUpAccess() == 0U) {
-				/* Wait for Backup domain access */
-			}
-		}
+		stm32_backup_domain_enable_access();
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
@@ -419,7 +414,8 @@ static void set_up_fixed_clock_sources(void)
 		/* Enforce BackUp domain access is disabled after clock initialization */
 		while (LL_RCC_LSE_IsPropagationReady() == 0U) {
 		}
-		LL_PWR_DisableBkUpAccess();
+
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_MSIS_ENABLED)) {
@@ -556,20 +552,14 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_LSI_ENABLED)) {
-		if (LL_PWR_IsEnabledBkUpAccess() == 0U) {
-			/* Enable write access to Backup domain */
-			LL_PWR_EnableBkUpAccess();
-			while (LL_PWR_IsEnabledBkUpAccess() == 0U) {
-				/* Wait for Backup domain access */
-			}
-		}
+		stm32_backup_domain_enable_access();
 
 		/* Enable LSI oscillator */
 		LL_RCC_LSI_Enable();
 		while (LL_RCC_LSI_IsReady() == 0) {
 		}
 
-		LL_PWR_DisableBkUpAccess();
+		stm32_backup_domain_disable_access();
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {

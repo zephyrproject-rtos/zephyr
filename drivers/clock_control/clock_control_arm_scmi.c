@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,10 +68,32 @@ static int scmi_clock_get_rate(const struct device *dev,
 	return scmi_clock_rate_get(proto, clk_id, rate);
 }
 
+static int scmi_clock_set_rate(const struct device *dev,
+			       clock_control_subsys_t clk,
+			       clock_control_subsys_rate_t rate)
+{
+	struct scmi_clock_data *data;
+	struct scmi_protocol *proto;
+	struct scmi_clock_rate_config cfg = {0};
+
+	proto = dev->data;
+	data = proto->data;
+	cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	cfg.clk_id = POINTER_TO_UINT(clk);
+	cfg.rate[0] = (uintptr_t)rate;
+
+	if (cfg.clk_id >= data->clk_num) {
+		return -EINVAL;
+	}
+
+	return scmi_clock_rate_set(proto, &cfg);
+}
+
 static DEVICE_API(clock_control, scmi_clock_api) = {
 	.on = scmi_clock_on,
 	.off = scmi_clock_off,
 	.get_rate = scmi_clock_get_rate,
+	.set_rate = scmi_clock_set_rate,
 };
 
 static int scmi_clock_init(const struct device *dev)

@@ -193,9 +193,9 @@ menuconfig NET_LOOPBACK
 if NET_LOOPBACK
 
 config NET_LOOPBACK_SIMULATE_PACKET_DROP
-	bool "Controlable packet drop"
+	bool "Controllable packet drop"
 	help
-	  Enable interface to have a controlable packet drop rate, only for
+	  Enable interface to have a controllable packet drop rate, only for
 	  testing, should not be enabled for normal applications
 
 config NET_LOOPBACK_MTU

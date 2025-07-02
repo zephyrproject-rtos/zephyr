@@ -84,7 +84,7 @@ static int mcux_dac12_write_value(const struct device *dev, uint8_t channel, uin
 	return 0;
 }
 
-static const struct dac_driver_api mcux_dac12_driver_api = {
+static DEVICE_API(dac, mcux_dac12_driver_api) = {
 	.channel_setup = mcux_dac12_channel_setup,
 	.write_value = mcux_dac12_write_value,
 };

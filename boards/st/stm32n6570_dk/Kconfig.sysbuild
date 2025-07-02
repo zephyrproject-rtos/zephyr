@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 STMicroelectronics
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice

@@ -16,6 +16,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/target/eeprom.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/ztest.h>
 
@@ -164,6 +165,62 @@ static int run_program_read(const struct device *i2c, uint8_t addr,
 	}
 
 	return 0;
+}
+
+ZTEST(i2c_eeprom_target, test_deinit)
+{
+	const struct device *const i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
+	const struct device *const i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
+	const struct gpio_dt_spec sda_pin_0 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), sda0_gpios, {});
+	const struct gpio_dt_spec scl_pin_0 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), scl0_gpios, {});
+	const struct gpio_dt_spec sda_pin_1 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), sda1_gpios, {});
+	const struct gpio_dt_spec scl_pin_1 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), scl1_gpios, {});
+	int ret;
+
+	if (i2c_0 == i2c_1) {
+		TC_PRINT("  gpio loopback required for test\n");
+		ztest_test_skip();
+	}
+
+	if (scl_pin_0.port == NULL || sda_pin_0.port == NULL ||
+	    scl_pin_1.port == NULL || sda_pin_1.port == NULL) {
+		TC_PRINT("  bus gpios not specified in zephyr,path\n");
+		ztest_test_skip();
+	}
+
+	ret = device_deinit(i2c_0);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		ztest_test_skip();
+	}
+
+	zassert_ok(ret);
+
+	ret = device_deinit(i2c_1);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		zassert_ok(device_init(i2c_0));
+		ztest_test_skip();
+	}
+
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_0, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_1, GPIO_OUTPUT_INACTIVE));
+	zassert_ok(gpio_pin_configure_dt(&scl_pin_0, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&scl_pin_1, GPIO_OUTPUT_INACTIVE));
+	zassert_equal(gpio_pin_get_dt(&sda_pin_0), 0);
+	zassert_equal(gpio_pin_get_dt(&scl_pin_0), 0);
+	zassert_ok(gpio_pin_set_dt(&sda_pin_1, 1));
+	zassert_ok(gpio_pin_set_dt(&scl_pin_1, 1));
+	zassert_equal(gpio_pin_get_dt(&sda_pin_0), 1);
+	zassert_equal(gpio_pin_get_dt(&scl_pin_0), 1);
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_1, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&scl_pin_1, GPIO_INPUT));
+	zassert_ok(device_init(i2c_0));
+	zassert_ok(device_init(i2c_1));
 }
 
 ZTEST(i2c_eeprom_target, test_eeprom_target)

@@ -28,18 +28,33 @@
 	};
 
 	soc {
-		gpt0: timg@40084000 {
+		timg0: timg@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
 			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
 			interrupts = <16 0>;
-			clk-prescaler = <255>;
-			clk-div = <1>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
 			status = "disabled";
 
 			counter0: counter {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+			};
+		};
+
+		tima0: tima@40860000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40860000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			interrupts = <18 0>;
+			ti,clk-prescaler = <0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			pwma0: pwma0 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};

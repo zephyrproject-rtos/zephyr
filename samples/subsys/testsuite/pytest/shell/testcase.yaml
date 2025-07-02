@@ -3,6 +3,7 @@ common:
     - test_framework
     - pytest
     - shell
+  platform_exclude: qemu_rx
   filter: CONFIG_SERIAL and not CONFIG_SMP and dt_chosen_enabled("zephyr,shell-uart")
   extra_configs:
     - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
