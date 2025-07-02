@@ -19,14 +19,6 @@
 #define POWER_DOMAIN_STATE_ON  0x00000000
 #define POWER_DOMAIN_STATE_OFF 0x40000000
 
-void soc_late_init_hook(void)
-{
-#ifdef CONFIG_CACHE_MANAGEMENT
-	sys_cache_data_enable();
-	sys_cache_instr_enable();
-#endif /* CONFIG_CACHE_MANAGEMENT */
-}
-
 static int soc_init(void)
 {
 	int ret = 0;
@@ -84,6 +76,11 @@ static int soc_init(void)
 		return ret;
 	}
 #endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
+
+#ifdef CONFIG_CACHE_MANAGEMENT
+	sys_cache_data_enable();
+	sys_cache_instr_enable();
+#endif /* CONFIG_CACHE_MANAGEMENT */
 
 	return ret;
 }
