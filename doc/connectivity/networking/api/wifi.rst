@@ -97,25 +97,25 @@ To facilitate installation of the certificates, a helper script is provided, see
 The script will install the certificates in the ``rsa2k`` directory to the TLS credentials store in the device over UART and using TLS credentials shell commands.
 
 
-To initiate Wi-Fi connection using enterprise security, use one of the following commands depending on the EAP method:
+To initiate a Wi-Fi connection using enterprise security, use one of the following commands depending on the EAP method:
 
-**EAP-TLS**
+* EAP-TLS
 
-.. code-block:: console
+  .. code-block:: console
 
-    uart:~$ wifi connect -s <SSID> -c <channel> -k 7 -w 2 -a <Anonymous identity> --key1-pwd <Password EAP phase1> --key2-pwd <Password EAP phase2>
+     uart:~$ wifi connect -s <SSID> -c <channel> -k 7 -w 2 -a <Anonymous identity> --key1-pwd <Password EAP phase1> --key2-pwd <Password EAP phase2>
 
-**EAP-TTLS-MSCHAPV2**
+* EAP-TTLS-MSCHAPV2
 
-.. code-block:: console
+  .. code-block:: console
 
-    uart:~$ wifi connect -s <SSID> -c <channel> -k 14 -K <Private key Password> --eap-id1 <Client Identity> --eap-pwd1 <Client Password> -a <Anonymous identity>
+     uart:~$ wifi connect -s <SSID> -c <channel> -k 14 -K <Private key Password> --eap-id1 <Client Identity> --eap-pwd1 <Client Password> -a <Anonymous identity>
 
-**EAP-PEAP-MSCHAPV2**
+* EAP-PEAP-MSCHAPV2
 
-.. code-block:: console
+  .. code-block:: console
 
-    uart:~$ wifi connect -s <SSID> -c <channel> -k 12 -K <Private key Password> --eap-id1 <Client Identity> --eap-pwd1 <Client Password> -a <Anonymous identity>
+     uart:~$ wifi connect -s <SSID> -c <channel> -k 12 -K <Private key Password> --eap-id1 <Client Identity> --eap-pwd1 <Client Password> -a <Anonymous identity>
 
 Server certificate is also provided in the same directory for testing purposes.
 Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or ``hostapd``.
@@ -123,16 +123,17 @@ Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or 
 Certificate requirements for EAP methods
 ----------------------------------------
 
-Different EAP methods require different certificates on the client side:
+Different EAP methods have varying client-side certificate requirements, as outlined below:
 
-* **EAP-TLS**:
-  Requires both a client certificate (and private key) and the CA certificate on the client. The client authenticates itself to the server using its certificate.
+* EAP-TLS - Requires both a client certificate (and its private key) and a CA certificate on the client.
+            The client authenticates itself to the server using its certificate.
 
-* **EAP-TTLS-MSCHAPV2**:
-  Requires only the CA certificate on the client. The client authenticates to the server using a username and password (MSCHAPV2) inside the TLS tunnel. No client certificate is needed.
+* EAP-TTLS-MSCHAPV2 - Requires only the CA certificate on the client.
+                      The client authenticates to the server using a username and password <MSCHAPV2> inside the TLS tunnel.
+                      No client certificate is needed.
 
-* **EAP-PEAP-MSCHAPV2**:
-  Requires only the CA certificate on the client. Like TTLS, the client uses a username and password (MSCHAPV2) inside the TLS tunnel and does not need a client certificate.
+* EAP-PEAP-MSCHAPV2 - Requires only the CA certificate on the client.
+                      Like TTLS, the client uses a username and password <MSCHAPV2> inside the TLS tunnel and does not require a client certificate.
 
 .. note::
 
