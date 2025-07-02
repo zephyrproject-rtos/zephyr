@@ -12,3 +12,7 @@ board:
               cpucluster: m33
         - name: mcuboot
           cpucluster: m33
+        - name: cpu0
+          cpucluster: m33
+        - name: cpu1
+          cpucluster: m33
