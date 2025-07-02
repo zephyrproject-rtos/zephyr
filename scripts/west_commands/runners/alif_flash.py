@@ -60,9 +60,6 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         #check tools availability
         self.require(self.gen_toc, self.exe_dir)
 
-        #set Execution directory
-        os.chdir(self.exe_dir)
-
         fls_addr = self.flash_address_from_build_conf(self.build_conf)
         fls_size = self.build_conf.get('CONFIG_FLASH_SIZE')
 
@@ -75,26 +72,39 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
             self.logger.info("..build for HighEfficency Core")
             build_core = "he"
 
-        shutil.copy(self.zephyr_repo + '/build/zephyr/zephyr.bin',
-                          self.exe_dir + '/build/images/')
+        shutil.copy(
+            os.path.join(self.cfg.build_dir, 'zephyr', 'zephyr.bin'),
+            os.path.join(self.exe_dir, 'build/images/')
+        )
 
-        #Prepare json to create AToC.
-        self.prepare_json(self.logger, build_core, fls_addr, fls_size)
 
-        #Generte ToC.
-        self.check_call(['./' + self.gen_toc, '-f',
-                        self.exe_dir + self.cfg_op_file],
-                        **kwargs)
+        # change dir just for the JSON and TOC
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(self.exe_dir)
+            self.logger.info(f"Changed working directory to {self.exe_dir}")
 
-        #Write ToC.
-        self.check_call(['./' + self.write_toc, '-p'], **kwargs)
+            #Prepare json to create AToC.
+            self.prepare_json(self.logger, build_core, fls_addr, fls_size)
+
+            # Generate ToC.
+            self.check_call(['./' + self.gen_toc, '-f',
+                             self.exe_dir + self.cfg_op_file],
+                            **kwargs)
+
+            # Write ToC.
+            self.check_call(['./' + self.write_toc, '-p'], **kwargs)
+
+        finally:
+            os.chdir(old_cwd)
+            self.logger.info(f"Returned to working directory {old_cwd}")
 
     @classmethod
-    def get_itcm_address(cls, logger) :
+    def get_itcm_address(cls, logger):
         """Function retrieves itcm address."""
         try:
-            with open( os.path.join(cls.zephyr_repo,
-                            'build', 'zephyr', 'zephyr.dts'), "r", encoding="utf-8") as f:
+            with open(os.path.join(cls.zephyr_repo,
+                                   'build', 'zephyr', 'zephyr.dts'), "r", encoding="utf-8") as f:
                 dtext = f.read()
         except Exception as err:
             logger.error(f"dts parsing error {err}")
@@ -118,9 +128,9 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
             logger.error(f"Can't open file to read {cls.exe_dir + cls.cfg_ip_file} : {err}")
             return
 
-        if build_core == "hp" :
+        if build_core == "hp":
             cpu_node = json_data["HP_APP"]
-        else :
+        else:
             cpu_node = json_data["HE_APP"]
 
         #update binary name
