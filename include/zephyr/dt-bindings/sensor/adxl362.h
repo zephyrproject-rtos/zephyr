@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_ADI_ADX362_H_
 
 /**
- * @defgroup ADXL362 ADXL362 DT Options
+ * @defgroup adxl362 ADXL362 DT Options
  * @ingroup sensor_interface
  * @{
  */
