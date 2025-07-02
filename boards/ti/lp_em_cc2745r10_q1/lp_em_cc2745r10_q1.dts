@@ -59,6 +59,10 @@
 		};
 	};
 
+	lfxosc: lf_xosc {
+		compatible = "ti,cc27xx-lf-xosc";
+	};
+
 };
 
 &cpu0 {
