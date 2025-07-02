@@ -103,6 +103,7 @@ int main(void)
 			return 0;
 		}
 		buffers[i]->type = type;
+		buffers[i]->index = i;
 	}
 
 	/* Connection loop */

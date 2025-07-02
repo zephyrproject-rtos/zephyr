@@ -69,6 +69,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	vbuf->buffer = block->data;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
+	vbuf->state = VIDEO_BUF_STATE_DONE;
 
 	return vbuf;
 }
@@ -97,6 +98,51 @@ void video_buffer_release(struct video_buffer *vbuf)
 	if (block) {
 		VIDEO_COMMON_FREE(block->data);
 	}
+}
+
+/* To be completed */
+int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type)
+{
+	struct video_buffer *buffer;
+
+	/* TODO: Input request vs Output request for m2m devices */
+	if (count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+		return -EINVAL;
+	}
+
+	/* TODO: Buffer request is not cumulative. For each new request, free all the buffers
+	 * that are previously requested
+	 */
+
+	/* Allocate buffers */
+	for (uint8_t i = 0; i < count; i++) {
+		buffer =
+			video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_FOREVER);
+		buffer->type = type;
+		buffer->index = i;
+	}
+
+	return 0;
+}
+
+int video_enqueue(const struct device *dev, uint8_t index)
+{
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->enqueue == NULL) {
+		return -ENOSYS;
+	}
+
+	if (video_buf[index].state != VIDEO_BUF_STATE_DONE) {
+		return -EINVAL;
+	}
+
+	video_buf[index].state = VIDEO_BUF_STATE_QUEUED;
+
+	return api->enqueue(dev, &video_buf[index]);
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,

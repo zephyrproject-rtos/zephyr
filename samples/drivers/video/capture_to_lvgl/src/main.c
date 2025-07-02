@@ -104,6 +104,8 @@ int main(void)
 			return 0;
 		}
 		buffers[i]->type = type;
+		buffers[i]->index = i;
+
 		video_enqueue(video_dev, buffers[i]);
 	}
 
