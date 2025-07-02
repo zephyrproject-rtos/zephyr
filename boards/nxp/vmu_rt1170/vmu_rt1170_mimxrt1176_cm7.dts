@@ -250,7 +250,7 @@
 	cs-gpios =<&gpio2 11 GPIO_ACTIVE_LOW>;
 
 	icm42688_0: icm42688p0@0 {
-		compatible = "invensense,icm42688";
+		compatible = "invensense,icm42688", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
@@ -272,7 +272,7 @@
 	cs-gpios =<&gpio3 24 GPIO_ACTIVE_LOW>;
 
 	icm42688_1: icm42688p1@0 {
-		compatible = "invensense,icm42688";
+		compatible = "invensense,icm42688", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
