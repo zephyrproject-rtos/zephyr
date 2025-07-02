@@ -1,0 +1,18 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 HSI Clock
+
+compatible: "st,stm32l0-hsi-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hsi-div:
+    type: int
+    required: true
+    description: |
+      HSI clock divider. Configures the output HSI clock frequency
+    enum:
+      - 1 # hsi_clk = 16MHz
+      - 4 # hsi_clk = 4MHz
