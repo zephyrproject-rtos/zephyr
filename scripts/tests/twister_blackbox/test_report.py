@@ -14,8 +14,7 @@ import pytest
 import shutil
 import sys
 import re
-
-from lxml import etree
+import xml.etree.ElementTree as etree
 
 # pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
@@ -162,7 +161,7 @@ class TestReport:
 
             elif path.endswith(".xml"):
                 tree = etree.parse(path)
-                xml_text = etree.tostring(tree, encoding="utf-8").decode("utf-8")
+                xml_text = etree.tostring(tree.getroot(), encoding="unicode")
                 assert xml_text.strip(), f"XML file '{path}' is empty"
 
             elif path.endswith(".log"):
