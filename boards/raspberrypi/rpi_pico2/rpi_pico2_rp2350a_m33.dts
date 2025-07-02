@@ -21,6 +21,63 @@
  */
 #include "rpi_pico2.dtsi"
 
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&flash0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+gpio0_lo: &gpio0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
 &led0 {
 	status = "okay";
 };

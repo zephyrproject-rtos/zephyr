@@ -12,19 +12,18 @@
 #include "rpi_pico2-pinctrl.dtsi"
 #include "../common/rpi_pico-led.dtsi"
 
+/*
+ * We need to be careful about shared definitions in this
+ * device tree. Zephyr will run start up code on peripherals
+ * that are present here - meaning it will get run twice.
+ * Best case, this is a bit wasteful as the bus accesses are
+ * arbitrated. Worst case, the peripherals are left in an
+ * unknown state based on the order of access.
+ * Bacause of this, we mark all peripherals as "reserved"
+ * and will only enable them in the core-specific device trees
+ */
+
 / {
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,flash-controller = &qmi;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-	};
-
-	aliases {
-		watchdog0 = &wdt0;
-	};
-
 	pico_header: connector {
 		compatible = "raspberrypi,pico-header";
 		#gpio-cells = <2>;
@@ -61,11 +60,12 @@
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_M(4)>;
+	status = "reserved";
 };
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
+	status = "reserved";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 };
@@ -78,51 +78,53 @@
 };
 
 gpio0_lo: &gpio0 {
-	status = "okay";
+	status = "reserved";
 };
 
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "reserved";
 };
 
 &i2c0 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "reserved";
 };
 
 &i2c1 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "reserved";
 };
 
 &adc {
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "reserved";
 };
 
 &pwm {
 	pinctrl-0 = <&pwm_ch4b_default>;
 	pinctrl-names = "default";
 	divider-int-0 = <255>;
+	status = "reserved";
 };
 
 &timer0 {
-	status = "okay";
+	status = "reserved";
 };
 
 &wdt0 {
-	status = "okay";
+	status = "reserved";
 };
 
 zephyr_udc0: &usbd {
-	status = "okay";
+	status = "reserved";
 };
 
 pico_serial: &uart0 {};
