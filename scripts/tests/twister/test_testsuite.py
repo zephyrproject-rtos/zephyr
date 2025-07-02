@@ -7,7 +7,7 @@ Tests for testinstance class
 """
 
 import mmap
-import mock
+from unittest import mock
 import os
 import pytest
 import sys
