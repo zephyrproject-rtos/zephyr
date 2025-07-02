@@ -7,7 +7,7 @@ Tests for runner.py classes
 """
 
 import errno
-import mock
+from unittest import mock
 import os
 import pathlib
 import pytest
