@@ -23,8 +23,12 @@ LOG_MODULE_REGISTER(net_mgmt_sock_sample, LOG_LEVEL_DBG);
 #endif
 
 /* A test thread that spits out events that we can catch and show to user */
-static void trigger_events(void)
+static void trigger_events(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int operation = 0;
 	struct net_if_addr *ifaddr_v6;
 	struct net_if *iface;
