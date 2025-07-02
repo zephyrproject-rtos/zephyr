@@ -950,6 +950,14 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@40202000 {
+			compatible = "renesas,ra-rtc";
+			reg = <0x40202000 0x80>;
+			clocks = <&subclk>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		option_setting_ofs_cf_sec: option-setting-ofs-cf-sec@300a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0300a100 0x200>;
@@ -1018,7 +1026,6 @@
 				status = "okay";
 			};
 		};
-
 	};
 
 	usbfs_phy: usbfs-phy {
