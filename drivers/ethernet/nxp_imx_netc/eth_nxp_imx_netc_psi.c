@@ -22,6 +22,9 @@ LOG_MODULE_REGISTER(nxp_imx_eth_psi);
 #include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
+#define DEV_CFG(_dev)  ((const struct netc_eth_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct netc_eth_data *)(_dev)->data)
+
 static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link_state *state,
 				      void *user_data)
 {
@@ -103,6 +106,9 @@ static int netc_eth_init(const struct device *dev)
 {
 	const struct netc_eth_config *cfg = dev->config;
 	int err;
+
+	DEVICE_MMIO_NAMED_MAP(dev, port, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+	DEVICE_MMIO_NAMED_MAP(dev, pfconfig, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	if (cfg->pseudo_mac) {
 		goto init_common;
@@ -192,6 +198,8 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.rx_frame = eth##n##_rx_frame,                                                     \
 	};                                                                                         \
 	static const struct netc_eth_config netc_eth##n##_config = {                               \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(port, DT_DRV_INST(n)),                          \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pfconfig, DT_DRV_INST(n)),                      \
 		.generate_mac = netc_eth##n##_generate_mac,                                        \
 		.bdr_init = netc_eth##n##_bdr_init,                                                \
 		.phy_dev = (COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),                      \
