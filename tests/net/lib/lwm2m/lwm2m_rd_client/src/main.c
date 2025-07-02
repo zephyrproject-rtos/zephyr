@@ -27,6 +27,7 @@ FAKE_VOID_FUNC(show_lwm2m_event, enum lwm2m_rd_client_event);
 FAKE_VOID_FUNC(show_lwm2m_observe, enum lwm2m_observe_event);
 
 static int next_event;
+static struct lwm2m_ctx ctx;
 
 bool expect_lwm2m_rd_client_event(uint8_t expected_val)
 {
@@ -198,8 +199,6 @@ ZTEST_SUITE(lwm2m_rd_client, NULL, NULL, my_suite_before, my_suite_after, NULL);
 
 ZTEST(lwm2m_rd_client, test_start_registration_ok)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -224,8 +223,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_ok)
 
 ZTEST(lwm2m_rd_client, test_register_update_too_small_lifetime_to_default)
 {
-	struct lwm2m_ctx ctx;
-
 	get_u32_val = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME / 2;
 	lwm2m_get_u32_fake.custom_fake = lwm2m_get_u32_val;
 
@@ -247,8 +244,6 @@ ZTEST(lwm2m_rd_client, test_register_update_too_small_lifetime_to_default)
 
 ZTEST(lwm2m_rd_client, test_timeout_resume_registration)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -270,8 +265,6 @@ ZTEST(lwm2m_rd_client, test_timeout_resume_registration)
 
 ZTEST(lwm2m_rd_client, test_start_registration_timeout)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -289,8 +282,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_timeout)
 
 ZTEST(lwm2m_rd_client, test_start_registration_fail)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -315,8 +306,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_fail)
 
 ZTEST(lwm2m_rd_client, test_start_registration_update)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -337,8 +326,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_update)
 
 ZTEST(lwm2m_rd_client, test_rx_off)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -360,8 +347,6 @@ ZTEST(lwm2m_rd_client, test_rx_off)
 
 ZTEST(lwm2m_rd_client, test_start_registration_update_fail)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -384,8 +369,6 @@ ZTEST(lwm2m_rd_client, test_start_registration_update_fail)
 
 ZTEST(lwm2m_rd_client, test_registration_update_timeout)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -414,8 +397,6 @@ ZTEST(lwm2m_rd_client, test_registration_update_timeout)
 
 ZTEST(lwm2m_rd_client, test_deregistration_timeout)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -437,8 +418,6 @@ ZTEST(lwm2m_rd_client, test_deregistration_timeout)
 
 ZTEST(lwm2m_rd_client, test_error_on_registration_update)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -462,8 +441,6 @@ ZTEST(lwm2m_rd_client, test_error_on_registration_update)
 
 ZTEST(lwm2m_rd_client, test_network_error_on_registration)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -480,8 +457,6 @@ ZTEST(lwm2m_rd_client, test_network_error_on_registration)
 
 ZTEST(lwm2m_rd_client, test_suspend_resume_registration)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -514,8 +489,6 @@ ZTEST(lwm2m_rd_client, test_suspend_resume_registration)
 
 ZTEST(lwm2m_rd_client, test_suspend_stop_resume)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -540,8 +513,6 @@ ZTEST(lwm2m_rd_client, test_suspend_stop_resume)
 
 ZTEST(lwm2m_rd_client, test_socket_error)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -564,8 +535,6 @@ ZTEST(lwm2m_rd_client, test_socket_error)
 
 ZTEST(lwm2m_rd_client, test_socket_error_on_stop)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -590,8 +559,6 @@ ZTEST(lwm2m_rd_client, test_socket_error_on_stop)
 
 ZTEST(lwm2m_rd_client, test_no_context)
 {
-	struct lwm2m_ctx ctx;
-
 	lwm2m_rd_client_init();
 	zassert_equal(lwm2m_rd_client_stop(&ctx, NULL, false), -EPERM);
 	zassert_equal(lwm2m_rd_client_pause(), -EPERM);
@@ -602,8 +569,6 @@ ZTEST(lwm2m_rd_client, test_no_context)
 
 ZTEST(lwm2m_rd_client, test_engine_trigger_bootstrap)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -630,9 +595,6 @@ ZTEST(lwm2m_rd_client, test_engine_trigger_bootstrap)
 
 ZTEST(lwm2m_rd_client, test_bootstrap_timeout)
 {
-
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -653,8 +615,6 @@ ZTEST(lwm2m_rd_client, test_bootstrap_timeout)
 
 ZTEST(lwm2m_rd_client, test_bootstrap_fail)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -676,9 +636,6 @@ ZTEST(lwm2m_rd_client, test_bootstrap_fail)
 
 ZTEST(lwm2m_rd_client, test_bootstrap_no_srv)
 {
-
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -695,8 +652,6 @@ ZTEST(lwm2m_rd_client, test_bootstrap_no_srv)
 
 ZTEST(lwm2m_rd_client, test_disable_server)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -718,8 +673,6 @@ ZTEST(lwm2m_rd_client, test_disable_server)
 
 ZTEST(lwm2m_rd_client, test_disable_server_stop)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -744,8 +697,6 @@ ZTEST(lwm2m_rd_client, test_disable_server_stop)
 
 ZTEST(lwm2m_rd_client, test_disable_server_connect)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -774,8 +725,6 @@ ZTEST(lwm2m_rd_client, test_disable_server_connect)
 
 ZTEST(lwm2m_rd_client, test_fallback_to_bootstrap)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -796,8 +745,6 @@ ZTEST(lwm2m_rd_client, test_fallback_to_bootstrap)
 
 ZTEST(lwm2m_rd_client, test_no_srv_fallback_to_bootstrap)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	lwm2m_rd_client_init();
@@ -822,8 +769,6 @@ ZTEST(lwm2m_rd_client, test_no_srv_fallback_to_bootstrap)
 
 ZTEST(lwm2m_rd_client, test_start_stop_ignore_engine_fault)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	test_prepare_pending_message_cb(&message_reply_cb_default);
@@ -857,8 +802,6 @@ ZTEST(lwm2m_rd_client, test_start_stop_ignore_engine_fault)
 
 ZTEST(lwm2m_rd_client, test_start_suspend_ignore_engine_fault)
 {
-	struct lwm2m_ctx ctx;
-
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	test_prepare_pending_message_cb(&message_reply_cb_default);
