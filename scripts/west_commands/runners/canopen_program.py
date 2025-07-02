@@ -12,7 +12,7 @@ from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
     import canopen
-    from progress.bar import Bar
+    from tqdm import tqdm
     MISSING_REQUIREMENTS = False
 except ImportError:
     MISSING_REQUIREMENTS = True
@@ -284,17 +284,17 @@ class CANopenProgramDownloader:
             outfile = self.data_sdo.open('wb', buffering=self.download_buffer_size,
                                          size=size, block_transfer=self.block_transfer)
 
-            progress = Bar('%(percent)d%%', max=size, suffix='%(index)d/%(max)dB')
+            progress = tqdm(total=size, unit='B', unit_scale=True)
             while True:
                 chunk = infile.read(self.download_buffer_size // 2)
                 if not chunk:
                     break
                 outfile.write(chunk)
-                progress.next(n=len(chunk))
+                progress.update(len(chunk))
         except Exception as err:
             raise ValueError('Failed to download program') from err
         finally:
-            progress.finish()
+            progress.close()
             infile.close()
             outfile.close()
 
