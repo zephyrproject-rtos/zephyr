@@ -401,9 +401,6 @@ static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	struct bt_a2dp_stream_ops *ops;
 
 	ep = CONTAINER_OF(a2dp->set_config_param.sep, struct bt_a2dp_ep, sep);
-	if (ep->stream == NULL) {
-		return -EINVAL;
-	}
 
 	if ((ep->stream == NULL) || (SET_CONF_REQ(req) != &a2dp->set_config_param)) {
 		return -EINVAL;
