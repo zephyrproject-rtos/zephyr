@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef DRIVERS_SENSOR_ICM42688_ICM42688_EMUL_H
-#define DRIVERS_SENSOR_ICM42688_ICM42688_EMUL_H
+#ifndef DRIVERS_SENSOR_ICM4268X_ICM4268X_EMUL_H
+#define DRIVERS_SENSOR_ICM4268X_ICM4268X_EMUL_H
 
 #include <zephyr/drivers/emul.h>
 
@@ -16,7 +16,7 @@
  * @param in One or more bytes to write to the registers
  * @param count The number of bytes to write
  */
-void icm42688_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *in,
+void icm4268x_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *in,
 			   size_t count);
 
 /**
@@ -27,6 +27,6 @@ void icm42688_emul_set_reg(const struct emul *target, uint8_t reg_addr, const ui
  * @param out Buffer to write the register values into
  * @param count The number of bytes to read
  */
-void icm42688_emul_get_reg(const struct emul *target, uint8_t reg_addr, uint8_t *out, size_t count);
+void icm4268x_emul_get_reg(const struct emul *target, uint8_t reg_addr, uint8_t *out, size_t count);
 
-#endif /* DRIVERS_SENSOR_ICM42688_ICM42688_EMUL_H */
+#endif /* DRIVERS_SENSOR_ICM4268X_ICM4268X_EMUL_H */

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/** This test is exclusive for icm42688 so let's restrict it for now. */
 #define DT_DRV_COMPAT invensense_icm42688
 
 #include <zephyr/device.h>
@@ -12,39 +13,39 @@
 #include <zephyr/drivers/spi_emul.h>
 #include <zephyr/logging/log.h>
 
-#include <icm42688_reg.h>
+#include <icm4268x_reg.h>
 
-LOG_MODULE_DECLARE(ICM42688, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(ICM4268X, CONFIG_SENSOR_LOG_LEVEL);
 
 #define NUM_REGS (UINT8_MAX >> 1)
 
-struct icm42688_emul_data {
+struct icm4268x_emul_data {
 	uint8_t reg[NUM_REGS];
 };
 
-struct icm42688_emul_cfg {
+struct icm4268x_emul_cfg {
 };
 
-void icm42688_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *val,
+void icm4268x_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *val,
 			   size_t count)
 {
-	struct icm42688_emul_data *data = target->data;
+	struct icm4268x_emul_data *data = target->data;
 
 	__ASSERT_NO_MSG(reg_addr + count < NUM_REGS);
 	memcpy(data->reg + reg_addr, val, count);
 }
 
-void icm42688_emul_get_reg(const struct emul *target, uint8_t reg_addr, uint8_t *val, size_t count)
+void icm4268x_emul_get_reg(const struct emul *target, uint8_t reg_addr, uint8_t *val, size_t count)
 {
-	struct icm42688_emul_data *data = target->data;
+	struct icm4268x_emul_data *data = target->data;
 
 	__ASSERT_NO_MSG(reg_addr + count < NUM_REGS);
 	memcpy(val, data->reg + reg_addr, count);
 }
 
-static void icm42688_emul_handle_write(const struct emul *target, uint8_t regn, uint8_t value)
+static void icm4268x_emul_handle_write(const struct emul *target, uint8_t regn, uint8_t value)
 {
-	struct icm42688_emul_data *data = target->data;
+	struct icm4268x_emul_data *data = target->data;
 
 	switch (regn) {
 	case REG_DEVICE_CONFIG:
@@ -60,11 +61,11 @@ static void icm42688_emul_handle_write(const struct emul *target, uint8_t regn, 
 	}
 }
 
-static int icm42688_emul_io_spi(const struct emul *target, const struct spi_config *config,
+static int icm4268x_emul_io_spi(const struct emul *target, const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
-	struct icm42688_emul_data *data = target->data;
+	struct icm4268x_emul_data *data = target->data;
 	const struct spi_buf *tx, *rx;
 	uint8_t regn;
 	bool is_read;
@@ -98,15 +99,15 @@ static int icm42688_emul_io_spi(const struct emul *target, const struct spi_conf
 
 		__ASSERT_NO_MSG(tx->len > 0);
 		value = ((uint8_t *)tx->buf)[0];
-		icm42688_emul_handle_write(target, regn, value);
+		icm4268x_emul_handle_write(target, regn, value);
 	}
 
 	return 0;
 }
 
-static int icm42688_emul_init(const struct emul *target, const struct device *parent)
+static int icm4268x_emul_init(const struct emul *target, const struct device *parent)
 {
-	struct icm42688_emul_data *data = target->data;
+	struct icm4268x_emul_data *data = target->data;
 
 	/* Initialized the who-am-i register */
 	data->reg[REG_WHO_AM_I] = WHO_AM_I_ICM42688;
@@ -114,8 +115,8 @@ static int icm42688_emul_init(const struct emul *target, const struct device *pa
 	return 0;
 }
 
-static const struct spi_emul_api icm42688_emul_spi_api = {
-	.io = icm42688_emul_io_spi,
+static const struct spi_emul_api icm4268x_emul_spi_api = {
+	.io = icm4268x_emul_io_spi,
 };
 
 #define Q31_SCALE ((int64_t)INT32_MAX + 1)
@@ -124,7 +125,7 @@ static const struct spi_emul_api icm42688_emul_spi_api = {
  * @brief Get current full-scale range in g's based on register config, along with corresponding
  *        sensitivity and shift. See datasheet section 3.2, table 2.
  */
-static void icm42688_emul_get_accel_settings(const struct emul *target, int *fs_g, int *sensitivity,
+static void icm4268x_emul_get_accel_settings(const struct emul *target, int *fs_g, int *sensitivity,
 					     int8_t *shift)
 {
 	uint8_t reg;
@@ -132,7 +133,7 @@ static void icm42688_emul_get_accel_settings(const struct emul *target, int *fs_
 	int sensitivity_out, fs_g_out;
 	int8_t shift_out;
 
-	icm42688_emul_get_reg(target, REG_ACCEL_CONFIG0, &reg, 1);
+	icm4268x_emul_get_reg(target, REG_ACCEL_CONFIG0, &reg, 1);
 
 	switch ((reg & MASK_ACCEL_UI_FS_SEL) >> 5) {
 	case BIT_ACCEL_UI_FS_16:
@@ -177,13 +178,13 @@ static void icm42688_emul_get_accel_settings(const struct emul *target, int *fs_
  * @brief Helper function for calculating accelerometer ranges. Considers the current full-scale
  *        register config (i.e. +/-2g, +/-4g, etc...)
  */
-static void icm42688_emul_get_accel_ranges(const struct emul *target, q31_t *lower, q31_t *upper,
+static void icm4268x_emul_get_accel_ranges(const struct emul *target, q31_t *lower, q31_t *upper,
 					   q31_t *epsilon, int8_t *shift)
 {
 	int fs_g;
 	int sensitivity;
 
-	icm42688_emul_get_accel_settings(target, &fs_g, &sensitivity, shift);
+	icm4268x_emul_get_accel_settings(target, &fs_g, &sensitivity, shift);
 
 	/* Epsilon is equal to 1.5 bit-counts worth of error. */
 	*epsilon = (3 * SENSOR_G * Q31_SCALE / sensitivity / 1000000LL / 2) >> *shift;
@@ -195,7 +196,7 @@ static void icm42688_emul_get_accel_ranges(const struct emul *target, q31_t *low
  * @brief Get current full-scale gyro range in milli-degrees per second based on register config,
  *        along with corresponding sensitivity and shift. See datasheet section 3.1, table 1.
  */
-static void icm42688_emul_get_gyro_settings(const struct emul *target, int *fs_mdps,
+static void icm4268x_emul_get_gyro_settings(const struct emul *target, int *fs_mdps,
 					    int *sensitivity, int8_t *shift)
 {
 	uint8_t reg;
@@ -203,7 +204,7 @@ static void icm42688_emul_get_gyro_settings(const struct emul *target, int *fs_m
 	int sensitivity_out, fs_mdps_out;
 	int8_t shift_out;
 
-	icm42688_emul_get_reg(target, REG_GYRO_CONFIG0, &reg, 1);
+	icm4268x_emul_get_reg(target, REG_GYRO_CONFIG0, &reg, 1);
 
 	switch ((reg & MASK_GYRO_UI_FS_SEL) >> 5) {
 	case BIT_GYRO_UI_FS_2000:
@@ -268,7 +269,7 @@ static void icm42688_emul_get_gyro_settings(const struct emul *target, int *fs_m
  * @brief Helper function for calculating gyroscope ranges. Considers the current full-scale
  *        register config
  */
-static void icm42688_emul_get_gyro_ranges(const struct emul *target, q31_t *lower, q31_t *upper,
+static void icm4268x_emul_get_gyro_ranges(const struct emul *target, q31_t *lower, q31_t *upper,
 					  q31_t *epsilon, int8_t *shift)
 {
 	/* millidegrees/second */
@@ -276,7 +277,7 @@ static void icm42688_emul_get_gyro_ranges(const struct emul *target, q31_t *lowe
 	/* 10x LSBs per degrees/second*/
 	int sensitivity;
 
-	icm42688_emul_get_gyro_settings(target, &fs_mdps, &sensitivity, shift);
+	icm4268x_emul_get_gyro_settings(target, &fs_mdps, &sensitivity, shift);
 
 	/* Reduce the actual range of gyroscope values. Some full-scale ranges actually exceed the
 	 * size of an int16 by a small margin. For example, FS_SEL=0 has a +/-2000 deg/s range with
@@ -295,7 +296,7 @@ static void icm42688_emul_get_gyro_ranges(const struct emul *target, q31_t *lowe
 	*lower = -*upper;
 }
 
-static int icm42688_emul_backend_get_sample_range(const struct emul *target,
+static int icm4268x_emul_backend_get_sample_range(const struct emul *target,
 						  struct sensor_chan_spec ch, q31_t *lower,
 						  q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
@@ -314,12 +315,12 @@ static int icm42688_emul_backend_get_sample_range(const struct emul *target,
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		icm42688_emul_get_accel_ranges(target, lower, upper, epsilon, shift);
+		icm4268x_emul_get_accel_ranges(target, lower, upper, epsilon, shift);
 		break;
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		icm42688_emul_get_gyro_ranges(target, lower, upper, epsilon, shift);
+		icm4268x_emul_get_gyro_ranges(target, lower, upper, epsilon, shift);
 		break;
 	default:
 		return -ENOTSUP;
@@ -328,14 +329,14 @@ static int icm42688_emul_backend_get_sample_range(const struct emul *target,
 	return 0;
 }
 
-static int icm42688_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
+static int icm4268x_emul_backend_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 					     const q31_t *value, int8_t shift)
 {
 	if (!target || !target->data) {
 		return -EINVAL;
 	}
 
-	struct icm42688_emul_data *data = target->data;
+	struct icm4268x_emul_data *data = target->data;
 
 	int sensitivity;
 	uint8_t reg_addr;
@@ -364,7 +365,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, struct s
 		default:
 			__ASSERT_UNREACHABLE;
 		}
-		icm42688_emul_get_accel_settings(target, NULL, &sensitivity, NULL);
+		icm4268x_emul_get_accel_settings(target, NULL, &sensitivity, NULL);
 		reg_val = ((value_unshifted * sensitivity / Q31_SCALE) * 1000000LL) / SENSOR_G;
 		break;
 	case SENSOR_CHAN_GYRO_X:
@@ -383,7 +384,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, struct s
 		default:
 			__ASSERT_UNREACHABLE;
 		}
-		icm42688_emul_get_gyro_settings(target, NULL, &sensitivity, NULL);
+		icm4268x_emul_get_gyro_settings(target, NULL, &sensitivity, NULL);
 		reg_val =
 			CLAMP((((value_unshifted * sensitivity * 180LL) / Q31_SCALE) * 1000000LL) /
 				      SENSOR_PI / 10LL,
@@ -402,18 +403,18 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, struct s
 	return 0;
 }
 
-static const struct emul_sensor_driver_api icm42688_emul_sensor_driver_api = {
-	.set_channel = icm42688_emul_backend_set_channel,
-	.get_sample_range = icm42688_emul_backend_get_sample_range,
+static const struct emul_sensor_driver_api icm4268x_emul_sensor_driver_api = {
+	.set_channel = icm4268x_emul_backend_set_channel,
+	.get_sample_range = icm4268x_emul_backend_get_sample_range,
 };
 
-#define ICM42688_EMUL_DEFINE(n, api)                                                               \
-	EMUL_DT_INST_DEFINE(n, icm42688_emul_init, &icm42688_emul_data_##n,                        \
-			    &icm42688_emul_cfg_##n, &api, &icm42688_emul_sensor_driver_api)
+#define ICM4268X_EMUL_DEFINE(n, api)                                                               \
+	EMUL_DT_INST_DEFINE(n, icm4268x_emul_init, &icm4268x_emul_data_##n,                        \
+			    &icm4268x_emul_cfg_##n, &api, &icm4268x_emul_sensor_driver_api)
 
-#define ICM42688_EMUL_SPI(n)                                                                       \
-	static struct icm42688_emul_data icm42688_emul_data_##n;                                   \
-	static const struct icm42688_emul_cfg icm42688_emul_cfg_##n;                               \
-	ICM42688_EMUL_DEFINE(n, icm42688_emul_spi_api)
+#define ICM4268X_EMUL_SPI(n)                                                                       \
+	static struct icm4268x_emul_data icm4268x_emul_data_##n;                                   \
+	static const struct icm4268x_emul_cfg icm4268x_emul_cfg_##n;                               \
+	ICM4268X_EMUL_DEFINE(n, icm4268x_emul_spi_api)
 
-DT_INST_FOREACH_STATUS_OKAY(ICM42688_EMUL_SPI)
+DT_INST_FOREACH_STATUS_OKAY(ICM4268X_EMUL_SPI)
