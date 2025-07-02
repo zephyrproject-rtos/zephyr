@@ -1,0 +1,20 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32L0 HSI Clock
+
+compatible: "st,stm32l0-hsi-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hsi-div:
+    type: int
+    required: true
+    description: |
+      HSI clock divider. Configures the output HSI clock frequency.
+      In that case, the HSI clock can be divided as follows:
+      hsi clk = 16MHz / hsi-div
+    enum:
+      - 1
+      - 4
