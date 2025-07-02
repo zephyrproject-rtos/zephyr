@@ -3096,3 +3096,17 @@ int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features)
 
 	return sdp_get_u16_data(&attr, features);
 }
+
+int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id)
+{
+	struct bt_sdp_attr_item attr;
+	int err;
+
+	err = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_VENDOR_ID);
+	if (err < 0) {
+		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_VENDOR_ID, err);
+		return err;
+	}
+
+	return sdp_get_u16_data(&attr, vendor_id);
+}
