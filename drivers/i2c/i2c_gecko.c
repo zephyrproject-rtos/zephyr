@@ -325,23 +325,23 @@ void i2c_gecko_isr(const struct device *dev)
 #define GECKO_I2C_IRQ_DATA(idx)
 #endif
 
-#define I2C_INIT(idx)										\
-	PINCTRL_DT_INST_DEFINE(idx);								\
-	GECKO_I2C_IRQ_DEF(idx);									\
-												\
-	static const struct i2c_gecko_config i2c_gecko_config_##idx = {				\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),					\
-		.base = (I2C_TypeDef *)DT_INST_REG_ADDR(idx),					\
-		.clock = cmuClock_I2C##idx,							\
-		.bitrate = DT_INST_PROP(idx, clock_frequency),					\
-		GECKO_I2C_IRQ_DATA(idx)};							\
-												\
-	static struct i2c_gecko_data i2c_gecko_data_##idx;					\
-												\
-	I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, NULL, &i2c_gecko_data_##idx,		\
-				  &i2c_gecko_config_##idx, POST_KERNEL,				\
-					CONFIG_I2C_INIT_PRIORITY, &i2c_gecko_driver_api);	\
-												\
+#define I2C_INIT(idx)                                                                              \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	GECKO_I2C_IRQ_DEF(idx);                                                                    \
+                                                                                                   \
+	static const struct i2c_gecko_config i2c_gecko_config_##idx = {                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.base = (I2C_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
+		.clock = cmuClock_I2C##idx,                                                        \
+		.bitrate = DT_INST_PROP(idx, clock_frequency),                                     \
+		GECKO_I2C_IRQ_DATA(idx)};                                                          \
+                                                                                                   \
+	static struct i2c_gecko_data i2c_gecko_data_##idx;                                         \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, NULL, &i2c_gecko_data_##idx,                \
+				  &i2c_gecko_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,  \
+				  &i2c_gecko_driver_api);                                          \
+                                                                                                   \
 	GECKO_I2C_IRQ_HANDLER(idx)
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_INIT)
