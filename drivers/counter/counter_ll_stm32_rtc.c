@@ -199,7 +199,9 @@ static int rtc_stm32_start(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	stm32_backup_domain_enable_access();
 	LL_RCC_EnableRTC();
+	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
 
@@ -222,7 +224,9 @@ static int rtc_stm32_stop(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	stm32_backup_domain_enable_access();
 	LL_RCC_DisableRTC();
+	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif
 
@@ -241,8 +245,6 @@ tick_t rtc_stm32_read(const struct device *dev)
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	ARG_UNUSED(dev);
 
-	stm32_backup_domain_enable_access();
-
 	/* Read time and date registers. Make sure value of the previous register
 	 * hasn't been changed while reading the next one.
 	 */
@@ -259,8 +261,6 @@ tick_t rtc_stm32_read(const struct device *dev)
 #endif
 
 	} while (rtc_date != LL_RTC_DATE_Get(RTC));
-
-	stm32_backup_domain_disable_access();
 
 	/* Convert calendar datetime to UNIX timestamp */
 	/* RTC start time: 1st, Jan, 2000 */
@@ -300,11 +300,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
-	stm32_backup_domain_enable_access();
-
 	ticks = LL_RTC_TIME_Get(RTC);
-
-	stm32_backup_domain_disable_access();
 
 	return ticks;
 }
@@ -413,11 +409,14 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	rtc_alarm.AlarmTime.Seconds = remain;
 #endif
 
+	stm32_backup_domain_enable_access();
+
 	LL_RTC_DisableWriteProtection(RTC);
 	ll_func_disable_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
 
 	if (ll_func_init_alarm(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
+		stm32_backup_domain_disable_access();
 		return -EIO;
 	}
 
@@ -431,6 +430,8 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	ll_func_clear_alarm_flag(RTC);
 	ll_func_enable_interrupt_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
+
+	stm32_backup_domain_disable_access();
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	/* The reference manual says:
@@ -458,11 +459,13 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	struct rtc_stm32_data *data = dev->data;
 
+	stm32_backup_domain_enable_access();
 	LL_RTC_DisableWriteProtection(RTC);
 	ll_func_clear_alarm_flag(RTC);
 	ll_func_disable_interrupt_alarm(RTC);
 	ll_func_disable_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
+	stm32_backup_domain_disable_access();
 
 	data->callback = NULL;
 
@@ -512,11 +515,13 @@ void rtc_stm32_isr(const struct device *dev)
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	) {
 
+		stm32_backup_domain_enable_access();
 		LL_RTC_DisableWriteProtection(RTC);
 		ll_func_clear_alarm_flag(RTC);
 		ll_func_disable_interrupt_alarm(RTC);
 		ll_func_disable_alarm(RTC);
 		LL_RTC_EnableWriteProtection(RTC);
+		stm32_backup_domain_disable_access();
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 		data->irq_on_late = 0;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
