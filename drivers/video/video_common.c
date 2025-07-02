@@ -9,10 +9,11 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
+#include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
@@ -40,6 +41,28 @@ struct mem_block {
 };
 
 static struct mem_block video_block[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+
+
+static void video_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct device *dev = iodev_sqe->sqe.iodev->data;
+	const struct video_driver_api *api;
+
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(dev->api != NULL);
+
+	api = dev->api;
+	if (api->iodev_submit == NULL) {
+		rtio_iodev_sqe_err(iodev_sqe, -ENODEV);
+		return;
+	}
+
+	api->iodev_submit(dev, iodev_sqe);
+}
+
+const struct rtio_iodev_api _video_iodev_api = {
+	.submit = video_iodev_submit,
+};
 
 struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
 {

@@ -7,6 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/rtio/rtio.h>
 
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
@@ -25,6 +26,9 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #if !DT_HAS_CHOSEN(zephyr_camera)
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
 #endif
+
+RTIO_DEFINE(rtio, CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+VIDEO_STREAM_DEFINE(iodev_camera, DT_CHOSEN(zephyr_camera));
 
 #if DT_HAS_CHOSEN(zephyr_display)
 static inline int display_setup(const struct device *const display_dev, const uint32_t pixfmt)
@@ -91,7 +95,6 @@ static inline void video_display_frame(const struct device *const display_dev,
 
 int main(void)
 {
-	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 	struct video_buffer *vbuf = &(struct video_buffer){};
 	const struct device *video_dev;
 	struct video_format fmt;
@@ -284,19 +287,34 @@ int main(void)
 	}
 
 	/* Alloc video buffers and enqueue for capture */
-	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
+	while (true) {
+		struct rtio_sqe *sqe;
+
+		sqe = rtio_sqe_acquire(&rtio);
+		if (sqe == NULL) {
+			break;
+		}
+
 		/*
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
 		 * buffer alignment is needed in order to achieve the best performance
 		 */
-		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_FOREVER);
-		if (buffers[i] == NULL) {
+		vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+						  K_FOREVER);
+		if (vbuf == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
 		}
-		buffers[i]->type = type;
-		video_enqueue(video_dev, buffers[i]);
+
+		vbuf->type = type;
+
+		/* Turn the buffer into an RTIO submission */
+		rtio_sqe_prep_read(sqe, &iodev_camera, RTIO_PRIO_NORM,
+				   vbuf->buffer, vbuf->size, vbuf);
+		sqe->flags |= RTIO_SQE_MULTISHOT;
+
+		/* Submit it to RTIO but do not wait them to complete immediately */
+		rtio_submit(&rtio, 0);
 	}
 
 	/* Start video capture */
@@ -310,10 +328,11 @@ int main(void)
 	/* Grab video frames */
 	vbuf->type = type;
 	while (1) {
-		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
-		if (err) {
-			LOG_ERR("Unable to dequeue video buf");
-			return 0;
+		struct rtio_cqe *cqe = rtio_cqe_consume_block(&rtio);
+		struct video_buffer *vbuf = cqe->userdata;
+
+		if (cqe->result < 0) {
+			LOG_ERR("I/O operation failed");
 		}
 
 		LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
@@ -329,10 +348,7 @@ int main(void)
 		video_display_frame(display_dev, vbuf, fmt);
 #endif
 
-		err = video_enqueue(video_dev, vbuf);
-		if (err) {
-			LOG_ERR("Unable to requeue video buf");
-			return 0;
-		}
+		/* The vbuf will be re-queued thanks to RTIO_SQE_MULTISHOT */
+		rtio_cqe_release(&rtio, cqe);
 	}
 }

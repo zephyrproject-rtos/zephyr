@@ -23,10 +23,11 @@
  * @{
  */
 
-#include <zephyr/device.h>
 #include <stddef.h>
-#include <zephyr/kernel.h>
 
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -38,6 +39,15 @@ extern "C" {
  * buffers the size of the video frame
  */
 #define LINE_COUNT_HEIGHT (-1)
+
+/**
+ * @brief Statically define an input or output video stream.
+ *
+ * @param name Name of the RTIO iodev that will be defined for this stream.
+ * @param dt_node Devicetree node referring to the device to stream buffers from/to.
+ */
+#define VIDEO_STREAM_DEFINE(name, dt_node)                                                         \
+	RTIO_IODEV_DEFINE(name, &_video_iodev_api, DEVICE_DT_GET(dt_node))
 
 struct video_control;
 
@@ -115,7 +125,7 @@ struct video_caps {
 	enum video_buf_type type;
 	/** list of video format capabilities (zero terminated). */
 	const struct video_format_cap *format_caps;
-	/** minimal count of video buffers to enqueue before being able to start
+	/** minimal count of video buffers to submit before being able to start
 	 * the stream.
 	 */
 	uint8_t min_vbuf_count;
@@ -138,16 +148,29 @@ struct video_caps {
 };
 
 /**
+ * @brief Interface between a video device and the application
+ *
+ * A video interface to send or receive frames with a video device from the application.
+ * As a consequence, input or output, so memory-to-memory (M2M) devices need two interfaces.
+ *
+ * The application can call @ref VIDEO_DT_INPUT_DEFINE and @ref VIDEO_DT_OUTPUT_DEFINE to
+ * instanciate video interfaces along with the associated @ref iodev maintaining the I/O state.
+ */
+struct video_stream {
+	/** Video device with which this interface communicates */
+	const struct device *dev;
+	/** Type of buffer the interace exchanges with the application, such as input or output */
+	enum video_buf_type type;
+};
+
+/**
  * @struct video_buffer
  * @brief Video buffer structure
  *
  * Represent a video frame.
  */
 struct video_buffer {
-	/** type of the buffer */
 	enum video_buf_type type;
-	/** pointer to driver specific data. */
-	void *driver_data;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
 	/** index of the buffer, optionally set by the application */
@@ -316,30 +339,11 @@ typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmiva
 typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_frmival_enum *fie);
 
 /**
- * @typedef video_api_enqueue_t
- * @brief Enqueue a buffer in the driver’s incoming queue.
+ * @brief Callback API for submitting work to a video device with RTIO
  *
- * See video_enqueue() for argument descriptions.
+ * @param dev Device
  */
-typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
-
-/**
- * @typedef video_api_dequeue_t
- * @brief Dequeue a buffer from the driver’s outgoing queue.
- *
- * See video_dequeue() for argument descriptions.
- */
-typedef int (*video_api_dequeue_t)(const struct device *dev, struct video_buffer **buf,
-				   k_timeout_t timeout);
-
-/**
- * @typedef video_api_flush_t
- * @brief Flush endpoint buffers, buffer are moved from incoming queue to
- *        outgoing queue.
- *
- * See video_flush() for argument descriptions.
- */
-typedef int (*video_api_flush_t)(const struct device *dev, bool cancel);
+typedef void (*video_api_iodev_submit_t)(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 
 /**
  * @typedef video_api_set_stream_t
@@ -374,20 +378,15 @@ typedef int (*video_api_ctrl_t)(const struct device *dev, uint32_t cid);
 typedef int (*video_api_get_caps_t)(const struct device *dev, struct video_caps *caps);
 
 /**
- * @typedef video_api_set_signal_t
- * @brief Register/Unregister poll signal for buffer events.
- *
- * See video_set_signal() for argument descriptions.
- */
-typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_signal *sig);
-
-/**
  * @typedef video_api_selection_t
  * @brief Get/Set video selection (crop / compose)
  *
  * See @ref video_set_selection and @ref video_get_selection for argument descriptions.
  */
 typedef int (*video_api_selection_t)(const struct device *dev, struct video_selection *sel);
+
+/* The video iodev API implementation */
+extern const struct rtio_iodev_api _video_iodev_api;
 
 __subsystem struct video_driver_api {
 	/* mandatory callbacks */
@@ -396,17 +395,14 @@ __subsystem struct video_driver_api {
 	video_api_set_stream_t set_stream;
 	video_api_get_caps_t get_caps;
 	/* optional callbacks */
-	video_api_enqueue_t enqueue;
-	video_api_dequeue_t dequeue;
-	video_api_flush_t flush;
 	video_api_ctrl_t set_ctrl;
 	video_api_ctrl_t get_volatile_ctrl;
-	video_api_set_signal_t set_signal;
 	video_api_frmival_t set_frmival;
 	video_api_frmival_t get_frmival;
 	video_api_enum_frmival_t enum_frmival;
 	video_api_selection_t set_selection;
 	video_api_selection_t get_selection;
+	video_api_iodev_submit_t iodev_submit;
 };
 
 /**
@@ -559,96 +555,10 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 }
 
 /**
- * @brief Enqueue a video buffer.
- *
- * Enqueue an empty (capturing) or filled (output) video buffer in the driver’s
- * endpoint incoming queue.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Pointer to the video buffer.
- *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -EIO General input / output error.
- */
-static inline int video_enqueue(const struct device *dev, struct video_buffer *buf)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-	__ASSERT_NO_MSG(buf->buffer != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enqueue(dev, buf);
-}
-
-/**
- * @brief Dequeue a video buffer.
- *
- * Dequeue a filled (capturing) or displayed (output) buffer from the driver’s
- * endpoint outgoing queue.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Pointer a video buffer pointer.
- * @param timeout Timeout
- *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -EIO General input / output error.
- */
-static inline int video_dequeue(const struct device *dev, struct video_buffer **buf,
-				k_timeout_t timeout)
-{
-	const struct video_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->dequeue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->dequeue(dev, buf, timeout);
-}
-
-/**
- * @brief Flush endpoint buffers.
- *
- * A call to flush finishes when all endpoint buffers have been moved from
- * incoming queue to outgoing queue. Either because canceled or fully processed
- * through the video function.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param cancel If true, cancel buffer processing instead of waiting for
- *        completion.
- *
- * @retval 0 Is successful, -ERRNO code otherwise.
- */
-static inline int video_flush(const struct device *dev, bool cancel)
-{
-	const struct video_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->flush == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->flush(dev, cancel);
-}
-
-/**
  * @brief Start the video device function.
  *
  * video_stream_start is called to enter ‘streaming’ state (capture, output...).
- * The driver may receive buffers with video_enqueue() before video_stream_start
+ * The driver may receive buffers with video_iodev_submit() before video_stream_start
  * is called. If driver/device needs a minimum number of buffers before being
  * able to start streaming, then driver set the min_vbuf_count to the related
  * endpoint capabilities.
@@ -698,7 +608,6 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 	}
 
 	ret = api->set_stream(dev, false, type);
-	video_flush(dev, true);
 
 	return ret;
 }
@@ -790,33 +699,6 @@ int video_query_ctrl(struct video_ctrl_query *cq);
  * @param cq Pointer to the control query struct.
  */
 void video_print_ctrl(const struct video_ctrl_query *const cq);
-
-/**
- * @brief Register/Unregister k_poll signal for a video endpoint.
- *
- * Register a poll signal to the endpoint, which will be signaled on frame
- * completion (done, aborted, error). Registering a NULL poll signal
- * unregisters any previously registered signal.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param sig Pointer to k_poll_signal
- *
- * @retval 0 Is successful, -ERRNO code otherwise.
- */
-static inline int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	const struct video_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(sig != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->set_signal == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_signal(dev, sig);
-}
 
 /**
  * @brief Set video selection (crop/compose).
