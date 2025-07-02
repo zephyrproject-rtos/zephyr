@@ -5,7 +5,7 @@ canopen
 clang-format>=15.0.0
 elasticsearch<9
 exceptiongroup>=1.0.0rc8
-gcovr==6.0
+gcovr==6.0 # keep
 gitlint>=0.19.1
 gitpython>=3.1.41
 ijson
@@ -29,7 +29,7 @@ python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
 pyyaml
 reuse
-ruff==0.11.11
+ruff==0.11.11 # keep
 setuptools>=70.2.0
 spdx-tools
 sphinx-lint
