@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_ICM42688_H_
-#define ZEPHYR_DRIVERS_SENSOR_ICM42688_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_ICM4268X_H_
+#define ZEPHYR_DRIVERS_SENSOR_ICM4268X_H_
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/dt-bindings/sensor/icm42688.h>
+#include <zephyr/dt-bindings/sensor/icm42686.h>
 #include <stdlib.h>
 
 struct alignment {
@@ -19,7 +20,7 @@ struct alignment {
 	int8_t sign;
 };
 
-static inline uint8_t icm42688_accel_fs_to_reg(uint8_t g)
+static inline uint8_t icm4268x_accel_fs_to_reg(uint8_t g)
 {
 	if (g >= 16) {
 		return ICM42688_DT_ACCEL_FS_16;
@@ -32,7 +33,7 @@ static inline uint8_t icm42688_accel_fs_to_reg(uint8_t g)
 	}
 }
 
-static inline void icm42688_accel_reg_to_fs(uint8_t fs, struct sensor_value *out)
+static inline void icm4268x_accel_reg_to_fs(uint8_t fs, struct sensor_value *out)
 {
 	switch (fs) {
 	case ICM42688_DT_ACCEL_FS_16:
@@ -50,7 +51,7 @@ static inline void icm42688_accel_reg_to_fs(uint8_t fs, struct sensor_value *out
 	}
 }
 
-static inline uint8_t icm42688_gyro_fs_to_reg(uint16_t dps)
+static inline uint8_t icm4268x_gyro_fs_to_reg(uint16_t dps)
 {
 	if (dps >= 2000) {
 		return ICM42688_DT_GYRO_FS_2000;
@@ -71,7 +72,7 @@ static inline uint8_t icm42688_gyro_fs_to_reg(uint16_t dps)
 	}
 }
 
-static inline void icm42688_gyro_reg_to_fs(uint8_t fs, struct sensor_value *out)
+static inline void icm4268x_gyro_reg_to_fs(uint8_t fs, struct sensor_value *out)
 {
 	switch (fs) {
 	case ICM42688_DT_GYRO_FS_2000:
@@ -101,7 +102,7 @@ static inline void icm42688_gyro_reg_to_fs(uint8_t fs, struct sensor_value *out)
 	}
 }
 
-static inline uint8_t icm42688_accel_hz_to_reg(uint16_t hz)
+static inline uint8_t icm4268x_accel_hz_to_reg(uint16_t hz)
 {
 	if (hz >= 32000) {
 		return ICM42688_DT_ACCEL_ODR_32000;
@@ -136,7 +137,7 @@ static inline uint8_t icm42688_accel_hz_to_reg(uint16_t hz)
 	}
 }
 
-static inline void icm42688_accel_reg_to_hz(uint8_t odr, struct sensor_value *out)
+static inline void icm4268x_accel_reg_to_hz(uint8_t odr, struct sensor_value *out)
 {
 	switch (odr) {
 	case ICM42688_DT_ACCEL_ODR_32000:
@@ -202,7 +203,7 @@ static inline void icm42688_accel_reg_to_hz(uint8_t odr, struct sensor_value *ou
 	}
 }
 
-static inline uint8_t icm42688_gyro_odr_to_reg(uint16_t hz)
+static inline uint8_t icm4268x_gyro_odr_to_reg(uint16_t hz)
 {
 	if (hz >= 32000) {
 		return ICM42688_DT_GYRO_ODR_32000;
@@ -231,7 +232,7 @@ static inline uint8_t icm42688_gyro_odr_to_reg(uint16_t hz)
 	}
 }
 
-static inline void icm42688_gyro_reg_to_odr(uint8_t odr, struct sensor_value *out)
+static inline void icm4268x_gyro_reg_to_odr(uint8_t odr, struct sensor_value *out)
 {
 	switch (odr) {
 	case ICM42688_DT_GYRO_ODR_32000:
@@ -288,7 +289,7 @@ static inline void icm42688_gyro_reg_to_odr(uint8_t odr, struct sensor_value *ou
 /**
  * @brief All sensor configuration options
  */
-struct icm42688_cfg {
+struct icm4268x_cfg {
 	uint8_t accel_pwr_mode;
 	uint8_t accel_fs;
 	uint8_t accel_odr;
@@ -318,7 +319,7 @@ struct icm42688_cfg {
 	uint16_t rtc_freq;
 };
 
-struct icm42688_trigger_entry {
+struct icm4268x_trigger_entry {
 	struct sensor_trigger trigger;
 	sensor_trigger_handler_t handler;
 };
@@ -326,17 +327,17 @@ struct icm42688_trigger_entry {
 /**
  * @brief Device data (struct device)
  */
-struct icm42688_dev_data {
-	struct icm42688_cfg cfg;
-#ifdef CONFIG_ICM42688_TRIGGER
-#if defined(CONFIG_ICM42688_TRIGGER_OWN_THREAD)
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM42688_THREAD_STACK_SIZE);
+struct icm4268x_dev_data {
+	struct icm4268x_cfg cfg;
+#ifdef CONFIG_ICM4268X_TRIGGER
+#if defined(CONFIG_ICM4268X_TRIGGER_OWN_THREAD)
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM4268X_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
-#elif defined(CONFIG_ICM42688_TRIGGER_GLOBAL_THREAD)
+#elif defined(CONFIG_ICM4268X_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
-#ifdef CONFIG_ICM42688_STREAM
+#ifdef CONFIG_ICM4268X_STREAM
 	struct rtio_iodev_sqe *streaming_sqe;
 	struct rtio *r;
 	struct rtio_iodev *spi_iodev;
@@ -344,13 +345,13 @@ struct icm42688_dev_data {
 	uint16_t fifo_count;
 	uint64_t timestamp;
 	atomic_t reading_fifo;
-#endif /* CONFIG_ICM42688_STREAM */
+#endif /* CONFIG_ICM4268X_STREAM */
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t data_ready_handler;
 	const struct sensor_trigger *data_ready_trigger;
 	struct k_mutex mutex;
-#endif /* CONFIG_ICM42688_TRIGGER */
+#endif /* CONFIG_ICM4268X_TRIGGER */
 
 	int16_t readings[7];
 };
@@ -358,7 +359,7 @@ struct icm42688_dev_data {
 /**
  * @brief Device config (struct device)
  */
-struct icm42688_dev_cfg {
+struct icm4268x_dev_cfg {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec gpio_int1;
 	struct gpio_dt_spec gpio_int2;
@@ -367,23 +368,23 @@ struct icm42688_dev_cfg {
 /**
  * @brief Reset the sensor
  *
- * @param dev icm42688 device pointer
+ * @param dev icm4268x device pointer
  *
  * @retval 0 success
  * @retval -EINVAL Reset status or whoami register returned unexpected value.
  */
-int icm42688_reset(const struct device *dev);
+int icm4268x_reset(const struct device *dev);
 
 /**
  * @brief (Re)Configure the sensor with the given configuration
  *
- * @param dev icm42688 device pointer
- * @param cfg icm42688_cfg pointer
+ * @param dev icm4268x device pointer
+ * @param cfg icm4268x_cfg pointer
  *
  * @retval 0 success
  * @retval -errno Error
  */
-int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg);
+int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg);
 
 
 /**
@@ -391,13 +392,13 @@ int icm42688_configure(const struct device *dev, struct icm42688_cfg *cfg);
  *
  * Will rollback to prior configuration if new configuration is invalid
  *
- * @param dev icm42688 device pointer
- * @param cfg icm42688_cfg pointer
+ * @param dev icm4268x device pointer
+ * @param cfg icm4268x_cfg pointer
  *
  * @retval 0 success
  * @retval -errno Error
  */
-int icm42688_safely_configure(const struct device *dev, struct icm42688_cfg *cfg);
+int icm4268x_safely_configure(const struct device *dev, struct icm4268x_cfg *cfg);
 
 /**
  * @brief Reads all channels
@@ -406,23 +407,23 @@ int icm42688_safely_configure(const struct device *dev, struct icm42688_cfg *cfg
  * as the time to read the 14 bytes at 1MHz is going to be 112 us which
  * is less time than a SPI transaction takes to setup typically.
  *
- * @param dev icm42688 device pointer
+ * @param dev icm4268x device pointer
  * @param buf 14 byte buffer to store data values (7 channels, 2 bytes each)
  *
  * @retval 0 success
  * @retval -errno Error
  */
-int icm42688_read_all(const struct device *dev, uint8_t data[14]);
+int icm4268x_read_all(const struct device *dev, uint8_t data[14]);
 
 /**
- * @brief Convert icm42688 accelerometer value to useful g values
+ * @brief Convert icm4268x accelerometer value to useful g values
  *
- * @param cfg icm42688_cfg current device configuration
+ * @param cfg icm4268x_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_g whole G's output in int32_t
  * @param out_ug micro (1/1000000) of a G output as int32_t
  */
-static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_t *out_g,
+static inline void icm4268x_accel_g(struct icm4268x_cfg *cfg, int32_t in, int32_t *out_g,
 				    int32_t *out_ug)
 {
 	int32_t sensitivity;
@@ -452,14 +453,14 @@ static inline void icm42688_accel_g(struct icm42688_cfg *cfg, int32_t in, int32_
 }
 
 /**
- * @brief Convert icm42688 gyroscope value to useful deg/s values
+ * @brief Convert icm4268x gyroscope value to useful deg/s values
  *
- * @param cfg icm42688_cfg current device configuration
+ * @param cfg icm4268x_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_dps whole deg/s output in int32_t
  * @param out_udps micro (1/1000000) deg/s as int32_t
  */
-static inline void icm42688_gyro_dps(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_dps,
+static inline void icm4268x_gyro_dps(const struct icm4268x_cfg *cfg, int32_t in, int32_t *out_dps,
 				     int32_t *out_udps)
 {
 	int64_t sensitivity;
@@ -504,14 +505,14 @@ static inline void icm42688_gyro_dps(const struct icm42688_cfg *cfg, int32_t in,
 }
 
 /**
- * @brief Convert icm42688 accelerometer value to useful m/s^2 values
+ * @brief Convert icm4268x accelerometer value to useful m/s^2 values
  *
- * @param cfg icm42688_cfg current device configuration
+ * @param cfg icm4268x_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_ms meters/s^2 (whole) output in int32_t
  * @param out_ums micrometers/s^2 output as int32_t
  */
-static inline void icm42688_accel_ms(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_ms,
+static inline void icm4268x_accel_ms(const struct icm4268x_cfg *cfg, int32_t in, int32_t *out_ms,
 				     int32_t *out_ums)
 {
 	int64_t sensitivity;
@@ -544,14 +545,14 @@ static inline void icm42688_accel_ms(const struct icm42688_cfg *cfg, int32_t in,
 }
 
 /**
- * @brief Convert icm42688 gyroscope value to useful rad/s values
+ * @brief Convert icm4268x gyroscope value to useful rad/s values
  *
- * @param cfg icm42688_cfg current device configuration
+ * @param cfg icm4268x_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_rads whole rad/s output in int32_t
  * @param out_urads microrad/s as int32_t
  */
-static inline void icm42688_gyro_rads(const struct icm42688_cfg *cfg, int32_t in, int32_t *out_rads,
+static inline void icm4268x_gyro_rads(const struct icm4268x_cfg *cfg, int32_t in, int32_t *out_rads,
 				      int32_t *out_urads)
 {
 	int64_t sensitivity;
@@ -596,14 +597,14 @@ static inline void icm42688_gyro_rads(const struct icm42688_cfg *cfg, int32_t in
 }
 
 /**
- * @brief Convert icm42688 temp value to useful celsius values
+ * @brief Convert icm4268x temp value to useful celsius values
  *
- * @param cfg icm42688_cfg current device configuration
+ * @param cfg icm4268x_cfg current device configuration
  * @param in raw data value in int32_t format
  * @param out_c whole celsius output in int32_t
  * @param out_uc micro (1/1000000) celsius as int32_t
  */
-static inline void icm42688_temp_c(int32_t in, int32_t *out_c, int32_t *out_uc)
+static inline void icm4268x_temp_c(int32_t in, int32_t *out_c, int32_t *out_uc)
 {
 	int64_t sensitivity = 13248; /* value equivalent for x100 1c */
 
@@ -617,4 +618,4 @@ static inline void icm42688_temp_c(int32_t in, int32_t *out_c, int32_t *out_uc)
 	*out_uc = ((in100 - (*out_c) * sensitivity) * INT64_C(1000000)) / sensitivity;
 }
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_ICM4268X_H_ */
