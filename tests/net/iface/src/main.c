@@ -78,20 +78,24 @@ struct net_if_test {
 	struct net_linkaddr ll_addr;
 };
 
+static void test_create_mac(uint8_t *mac_buf)
+{
+	if (mac_buf[2] == 0x00) {
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		mac_buf[0] = 0x00;
+		mac_buf[1] = 0x00;
+		mac_buf[2] = 0x5E;
+		mac_buf[3] = 0x00;
+		mac_buf[4] = 0x53;
+		mac_buf[5] = sys_rand8_get();
+	}
+}
+
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
 
-	if (data->mac_addr[2] == 0x00) {
-		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-		data->mac_addr[0] = 0x00;
-		data->mac_addr[1] = 0x00;
-		data->mac_addr[2] = 0x5E;
-		data->mac_addr[3] = 0x00;
-		data->mac_addr[4] = 0x53;
-		data->mac_addr[5] = sys_rand8_get();
-	}
-
+	test_create_mac(data->mac_addr);
 	memcpy(data->ll_addr.addr, data->mac_addr, sizeof(data->mac_addr));
 	data->ll_addr.len = 6U;
 
@@ -207,6 +211,7 @@ static void eth_fake_iface_init(struct net_if *iface)
 
 	ctx->iface = iface;
 
+	test_create_mac(ctx->mac_address);
 	net_if_set_link_addr(iface, ctx->mac_address,
 			     sizeof(ctx->mac_address),
 			     NET_LINK_ETHERNET);
@@ -1363,8 +1368,6 @@ static void generate_iid(struct net_if *iface,
 	struct net_linkaddr *lladdr = net_if_get_link_addr(iface);
 	uint8_t *mac;
 	int ret;
-
-	(void)net_iface_get_mac(net_if_get_device(iface));
 
 	lladdr = net_if_get_link_addr(eth_iface);
 	mac = lladdr->addr;
