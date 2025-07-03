@@ -99,3 +99,63 @@ wdt011: &cpurad_wdt011 {};
 &dppic020 {
 	status = "okay";
 };
+
+&fll16m  {
+	status = "okay";
+};
+
+&hsfll120  {
+	status = "okay";
+};
+
+&lfclk  {
+	status = "okay";
+};
+
+&gdpwr {
+	status = "okay";
+};
+
+&gdpwr_fast_active_0 {
+	status = "okay";
+};
+
+&gdpwr_fast_active_1 {
+	status = "okay";
+};
+
+&gdpwr_fast_main {
+	status = "okay";
+};
+
+&gdpwr_slow_active {
+	status = "okay";
+};
+
+&gdpwr_slow_main {
+	status = "okay";
+};
+
+&gpio_pad_group0 {
+	status = "okay";
+};
+
+&gpio_pad_group1 {
+	status = "okay";
+};
+
+&gpio_pad_group2 {
+	status = "okay";
+};
+
+&gpio_pad_group6 {
+	status = "okay";
+};
+
+&gpio_pad_group7 {
+	status = "okay";
+};
+
+&gpio_pad_group9 {
+	status = "okay";
+};

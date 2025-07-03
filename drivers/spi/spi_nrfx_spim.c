@@ -13,9 +13,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <soc.h>
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_ppi.h>
 #endif
@@ -53,20 +50,33 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPIM_PROP(idx, prop)		DT_PROP(SPIM(idx), prop)
 #define SPIM_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(SPIM(idx), prop)
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL)
-#define SPIM_REQUESTS_CLOCK(node) \
-	DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(node), nordic_nrf_hsfll_global)
-#define SPIM_REQUESTS_CLOCK_OR(node) SPIM_REQUESTS_CLOCK(node) ||
-#if (DT_FOREACH_STATUS_OKAY(nordic_nrf_spim, SPIM_REQUESTS_CLOCK_OR) 0)
-#define USE_CLOCK_REQUESTS 1
+/* Execute macro f(x) for all instances. */
+#define SPIM_FOR_EACH_INSTANCE(f, sep, off_code, ...) \
+	NRFX_FOREACH_PRESENT(SPIM, f, sep, off_code, __VA_ARGS__)
+
+/* Only CPUAPP and CPURAD can control clocks and power domains, so if a fast instance is
+ * used by other cores, treat the SPIM like a normal one. This presumes the CPUAPP or CPURAD
+ * have requested the clocks and power domains needed by the fast instance to be ACTIVE before
+ * other cores use the fast instance.
+ */
+#if CONFIG_SOC_NRF54H20_CPUAPP || CONFIG_SOC_NRF54H20_CPURAD
+#define INSTANCE_IS_FAST(unused, prefix, idx, _)						\
+	UTIL_AND(										\
+		UTIL_AND(									\
+			IS_ENABLED(CONFIG_HAS_HW_NRF_SPIM##prefix##idx),			\
+			NRF_DT_IS_FAST(SPIM(idx))						\
+		),										\
+		IS_ENABLED(CONFIG_CLOCK_CONTROL)						\
+	)
+
+#if SPIM_FOR_EACH_INSTANCE(INSTANCE_IS_FAST, (||), (0))
+#define SPIM_ANY_FAST 1
 /* If fast instances are used then system managed device PM cannot be used because
  * it may call PM actions from locked context and fast SPIM PM actions can only be
  * called from a thread context.
  */
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #endif
-#else
-#define SPIM_REQUESTS_CLOCK(node) 0
 #endif
 
 #define SPIM_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
@@ -106,7 +116,7 @@ struct spi_nrfx_data {
 	uint8_t ppi_ch;
 	uint8_t gpiote_ch;
 #endif
-#ifdef USE_CLOCK_REQUESTS
+#ifdef SPIM_ANY_FAST
 	bool clock_requested;
 #endif
 };
@@ -126,7 +136,7 @@ struct spi_nrfx_config {
 #ifdef CONFIG_DCACHE
 	uint32_t mem_attr;
 #endif
-#ifdef USE_CLOCK_REQUESTS
+#ifdef SPIM_ANY_FAST
 	const struct device *clk_dev;
 	struct nrf_clock_spec clk_spec;
 #endif
@@ -140,7 +150,7 @@ static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
 
 static inline int request_clock(const struct device *dev)
 {
-#ifdef USE_CLOCK_REQUESTS
+#ifdef SPIM_ANY_FAST
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
 	int error;
@@ -167,7 +177,7 @@ static inline int request_clock(const struct device *dev)
 
 static inline void release_clock(const struct device *dev)
 {
-#ifdef USE_CLOCK_REQUESTS
+#ifdef SPIM_ANY_FAST
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
 
@@ -747,9 +757,6 @@ static int spim_resume(const struct device *dev)
 		return -EAGAIN;
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
-#endif
 #if SPIM_CROSS_DOMAIN_SUPPORTED
 	if (dev_config->cross_domain && spim_has_cross_domain_connection(dev_config)) {
 #if SPIM_CROSS_DOMAIN_PINS_HANDLE
@@ -783,9 +790,6 @@ static void spim_suspend(const struct device *dev)
 
 	spi_context_cs_put_all(&dev_data->ctx);
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(dev_config->pcfg, true);
-#endif
 #if SPIM_CROSS_DOMAIN_SUPPORTED
 	if (dev_config->cross_domain && spim_has_cross_domain_connection(dev_config)) {
 #if SPIM_CROSS_DOMAIN_PINS_HANDLE
@@ -895,20 +899,13 @@ static int spi_nrfx_deinit(const struct device *dev)
 			(0))),								 \
 		(0))
 
-/* Fast instances depend on the global HSFLL clock controller (as they need
- * to request the highest frequency from it to operate correctly), so they
- * must be initialized after that controller driver, hence the default SPI
- * initialization priority may be too early for them.
+/* Get initialization priority of an instance. Instances that requires clock control
+ * which is using nrfs (IPC) are initialized later.
  */
-#if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY) && \
-	CONFIG_SPI_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY
 #define SPIM_INIT_PRIORITY(idx) \
-	COND_CODE_1(SPIM_REQUESTS_CLOCK(SPIM(idx)), \
+	COND_CODE_1(INSTANCE_IS_FAST(_, /*empty*/, idx, _), \
 		(UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)), \
 		(CONFIG_SPI_INIT_PRIORITY))
-#else
-#define SPIM_INIT_PRIORITY(idx) CONFIG_SPI_INIT_PRIORITY
-#endif
 
 #define SPI_NRFX_SPIM_DEFINE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(SPIM(idx));			       \
@@ -963,10 +960,9 @@ static int spi_nrfx_deinit(const struct device *dev)
 		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
 		IF_ENABLED(CONFIG_DCACHE,				       \
 			(.mem_attr = SPIM_GET_MEM_ATTR(idx),))		       \
-		IF_ENABLED(USE_CLOCK_REQUESTS,				       \
-			(.clk_dev = SPIM_REQUESTS_CLOCK(SPIM(idx))	       \
-				  ? DEVICE_DT_GET(DT_CLOCKS_CTLR(SPIM(idx)))   \
-				  : NULL,				       \
+		IF_ENABLED(SPIM_ANY_FAST,				       \
+			(.clk_dev = DEVICE_DT_GET_OR_NULL(		       \
+				DT_CLOCKS_CTLR(SPIM(idx))),		       \
 			 .clk_spec = {					       \
 				.frequency = NRF_CLOCK_CONTROL_FREQUENCY_MAX,  \
 			 },))						       \
@@ -998,4 +994,4 @@ static int spi_nrfx_deinit(const struct device *dev)
 #define COND_NRF_SPIM_DEVICE(unused, prefix, i, _) \
 	IF_ENABLED(CONFIG_HAS_HW_NRF_SPIM##prefix##i, (SPI_NRFX_SPIM_DEFINE(prefix##i);))
 
-NRFX_FOREACH_PRESENT(SPIM, COND_NRF_SPIM_DEVICE, (), (), _)
+SPIM_FOR_EACH_INSTANCE(COND_NRF_SPIM_DEVICE, (), (), _)

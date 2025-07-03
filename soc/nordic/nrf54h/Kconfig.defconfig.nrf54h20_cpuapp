@@ -11,4 +11,7 @@ config NUM_IRQS
 config SHELL_BACKEND_SERIAL
 	default n if NRF_ETR_SHELL
 
+config POWER_DOMAIN
+	default y
+
 endif # SOC_NRF54H20_CPUAPP
