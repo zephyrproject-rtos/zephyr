@@ -22,7 +22,7 @@ Click the operating system you are using.
 
    .. group-tab:: Ubuntu
 
-      This guide covers Ubuntu version 20.04 LTS and later.
+      This guide covers Ubuntu version 22.04 LTS and later.
       If you are using a different Linux distribution see :ref:`installation_linux`.
 
       .. code-block:: bash
@@ -72,19 +72,6 @@ The current minimum required version for the main dependencies are:
    .. group-tab:: Ubuntu
 
       .. _install_dependencies_ubuntu:
-
-      #. If using an Ubuntu version older than 22.04, it is necessary to add extra
-         repositories to meet the minimum required versions for the main
-         dependencies listed above. In that case, download, inspect and execute
-         the Kitware archive script to add the Kitware APT repository to your
-         sources list.
-         A detailed explanation of ``kitware-archive.sh`` can be found here
-         `kitware third-party apt repository <https://apt.kitware.com/>`_:
-
-         .. code-block:: bash
-
-            wget https://apt.kitware.com/kitware-archive.sh
-            sudo bash kitware-archive.sh
 
       #. Use ``apt`` to install the required dependencies:
 
