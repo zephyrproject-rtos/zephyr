@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <arm/armv8-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r9a07g075";
@@ -93,6 +94,30 @@
 					read-only;
 				};
 			};
+		};
+
+		adc0: adc0@90004000 {
+			compatible = "renesas,rz-adc";
+			reg = <0x90004000 0x1000>;
+			unit = <0>;
+			interrupts = <GIC_SPI 345 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFF>;
+			status = "disabled";
+		};
+
+		adc1: adc1@80045000 {
+			compatible = "renesas,rz-adc";
+			reg = <0x80045000 0x1000>;
+			unit = <1>;
+			interrupts = <GIC_SPI 350 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0xFFFF>;
+			status = "disabled";
 		};
 
 		icu: icu@81048000 {
