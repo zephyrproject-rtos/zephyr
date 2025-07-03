@@ -127,6 +127,7 @@ endif()
 
 if(CONFIG_VIDEO)
   zephyr_iterable_section(NAME video_device GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
+  zephyr_iterable_section(NAME video_interface GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
 if(CONFIG_LOG)
