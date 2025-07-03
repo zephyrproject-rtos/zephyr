@@ -934,3 +934,21 @@ config NRF_WIFI_DYNAMIC_ED
 	  This option enables support for proprietary algorithm to
 	  enhance performance in high-traffic channels.
 endif # WIFI_NRF70
+
+config WIFI_NRF71
+	bool "For nrf71 rx buffer and softhpqm support testing"
+	select EXPERIMENTAL
+	help
+	  Enable to test RX buffer command & softhpqm support
+if WIFI_NRF71
+config NRF71_HOST_RX_BUF_CMD
+	bool "Sends command with host RX buffers to firmware"
+	help
+	  Sends a command with host rx buffers to firmware.
+	  Firmware does the programming of rx buffers as hardware
+	  queues are not accessible to host in nrf71.
+config NRF71_SOFT_HPQM
+	select EXPERIMENTAL
+	select NRF71_HOST_RX_BUF_CMD
+	bool "Soft HPQM support"
+endif # WIFI_NRF71
