@@ -19,7 +19,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
