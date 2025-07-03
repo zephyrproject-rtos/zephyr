@@ -22,12 +22,6 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: nanopb
-      revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
-      path: modules/lib/nanopb
-      remote: upstream
-      groups:
-        - optional
     - name: psa-arch-tests
       revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
       path: modules/tee/tf-m/psa-arch-tests
