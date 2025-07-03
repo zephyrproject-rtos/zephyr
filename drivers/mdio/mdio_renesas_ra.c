@@ -35,10 +35,12 @@ static int renesas_ra_mdio_read(const struct device *dev, uint8_t prtad, uint8_t
 				uint16_t *data)
 {
 	struct renesas_ra_mdio_data *dev_data = dev->data;
+	ether_phy_extended_cfg_t *ext_cfg =
+		(ether_phy_extended_cfg_t *)dev_data->ether_phy_cfg.p_extend;
 	uint32_t read;
 	fsp_err_t err;
 
-	dev_data->ether_phy_ctrl.phy_lsi_address = prtad;
+	ext_cfg->p_phy_lsi_cfg_list[0]->address = prtad;
 
 	k_mutex_lock(&dev_data->rw_mutex, K_FOREVER);
 
@@ -59,9 +61,11 @@ static int renesas_ra_mdio_write(const struct device *dev, uint8_t prtad, uint8_
 				 uint16_t data)
 {
 	struct renesas_ra_mdio_data *dev_data = dev->data;
+	ether_phy_extended_cfg_t *ext_cfg =
+		(ether_phy_extended_cfg_t *)dev_data->ether_phy_cfg.p_extend;
 	fsp_err_t err;
 
-	dev_data->ether_phy_ctrl.phy_lsi_address = prtad;
+	ext_cfg->p_phy_lsi_cfg_list[0]->address = prtad;
 
 	k_mutex_lock(&dev_data->rw_mutex, K_FOREVER);
 
@@ -106,13 +110,22 @@ static DEVICE_API(mdio, renesas_ra_mdio_api) = {
 
 #define RENSAS_RA_MDIO_INSTANCE_DEFINE(node)                                                       \
 	PINCTRL_DT_INST_DEFINE(node);                                                              \
+	static ether_phy_lsi_cfg_t renesas_ra_mdio##node##_lsi_cfg_list = {                        \
+		.type = ETHER_PHY_LSI_TYPE_CUSTOM,                                                 \
+	};                                                                                         \
+	static ether_phy_extended_cfg_t renesas_ra_mdio##node##_extend = {                         \
+		.p_phy_lsi_cfg_list =                                                              \
+			{                                                                          \
+				&renesas_ra_mdio##node##_lsi_cfg_list,                             \
+			},                                                                         \
+	};                                                                                         \
 	static struct renesas_ra_mdio_data renesas_ra_mdio##node##_data = {                        \
 		.ether_phy_cfg = {                                                                 \
 			.channel = 0,                                                              \
 			.phy_reset_wait_time = 0x00020000,                                         \
 			.mii_bit_access_wait_time = 8,                                             \
-			.phy_lsi_type = ETHER_PHY_LSI_TYPE_CUSTOM,                                 \
 			.flow_control = ETHER_PHY_FLOW_CONTROL_DISABLE,                            \
+			.p_extend = &renesas_ra_mdio##node##_extend,                               \
 		}};                                                                                \
 	static const struct renesas_ra_mdio_config renesas_ra_mdio##node##_cfg = {                 \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(node)};                                   \
