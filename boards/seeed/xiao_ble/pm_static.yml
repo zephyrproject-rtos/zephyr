@@ -1,0 +1,18 @@
+# Mirror of partitions defined in nrf52840_partition_uf2_sdv7.dtsi
+# Default flash layout for nrf52840 using UF2 and SoftDevice s140 v7
+
+softdevice_reserved:
+  address: 0x00
+  size: 0x27000
+
+app:
+  address: 0x27000
+  size: 0xC5000
+
+settings_storage:
+  address: 0xEC000
+  size: 0x8000
+
+uf2_partition:
+  address: 0xF4000
+  size: 0xC000
