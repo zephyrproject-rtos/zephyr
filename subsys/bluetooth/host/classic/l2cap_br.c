@@ -3717,6 +3717,19 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server)
 	return 0;
 }
 
+int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server)
+{
+	CHECKIF(server == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&br_servers, &server->node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
 static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident, uint16_t reason, void *data,
 				 uint8_t data_len)
 {
