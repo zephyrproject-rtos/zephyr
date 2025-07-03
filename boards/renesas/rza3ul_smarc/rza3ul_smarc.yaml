@@ -9,6 +9,7 @@ supported:
   - uart
   - gpio
   - pwm
+  - adc
 testing:
   ignore_tags:
     - bluetooth
