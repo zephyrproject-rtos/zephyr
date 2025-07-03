@@ -71,9 +71,7 @@ __subsystem struct hwspinlock_driver_api {
  * @retval 0 If successful.
  * @retval -errno In case of any failure.
  */
-__syscall int hwspinlock_trylock(const struct device *dev, uint32_t id);
-
-static inline int z_impl_hwspinlock_trylock(const struct device *dev, uint32_t id)
+static inline int hwspinlock_trylock(const struct device *dev, uint32_t id)
 {
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
@@ -94,9 +92,7 @@ static inline int z_impl_hwspinlock_trylock(const struct device *dev, uint32_t i
  * @param dev HW spinlock device instance.
  * @param id  Spinlock identifier.
  */
-__syscall void hwspinlock_lock(const struct device *dev, uint32_t id);
-
-static inline void z_impl_hwspinlock_lock(const struct device *dev, uint32_t id)
+static inline void hwspinlock_lock(const struct device *dev, uint32_t id)
 {
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
@@ -115,9 +111,7 @@ static inline void z_impl_hwspinlock_lock(const struct device *dev, uint32_t id)
  * @param dev HW spinlock device instance.
  * @param id  Spinlock identifier.
  */
-__syscall void hwspinlock_unlock(const struct device *dev, uint32_t id);
-
-static inline void z_impl_hwspinlock_unlock(const struct device *dev, uint32_t id)
+static inline void hwspinlock_unlock(const struct device *dev, uint32_t id)
 {
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
@@ -138,9 +132,7 @@ static inline void z_impl_hwspinlock_unlock(const struct device *dev, uint32_t i
  * @retval HW spinlock max ID.
  * @retval 0 if the function is not implemented by the driver.
  */
-__syscall uint32_t hwspinlock_get_max_id(const struct device *dev);
-
-static inline uint32_t z_impl_hwspinlock_get_max_id(const struct device *dev)
+static inline uint32_t hwspinlock_get_max_id(const struct device *dev)
 {
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
@@ -157,7 +149,5 @@ static inline uint32_t z_impl_hwspinlock_get_max_id(const struct device *dev)
 #endif
 
 /** @} */
-
-#include <zephyr/syscalls/hwspinlock.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HWSPINLOCK_H_ */
