@@ -323,7 +323,7 @@ manifest:
       revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
       path: modules/lib/nanopb
     - name: net-tools
-      revision: 986bfeb040df3d9029366de8aea4ce1f84e93780
+      revision: 64bf49ad9b6d1d1f9d24bf8b94d82d9bcb52f61a
       path: tools/net-tools
       groups:
         - tools
