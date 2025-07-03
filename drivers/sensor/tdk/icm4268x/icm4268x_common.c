@@ -67,10 +67,18 @@ static uint16_t icm4268x_compute_fifo_wm(const struct icm4268x_cfg *cfg)
 {
 	const bool accel_enabled = cfg->accel_pwr_mode != ICM42688_DT_ACCEL_OFF;
 	const bool gyro_enabled = cfg->gyro_pwr_mode != ICM42688_DT_GYRO_OFF;
-	const int pkt_size = cfg->fifo_hires ? 20 : (accel_enabled && gyro_enabled ? 16 : 8);
 	int accel_modr = 0;
 	int gyro_modr = 0;
+	uint8_t pkt_size;
 	int64_t modr;
+
+	if (cfg->fifo_hires) {
+		pkt_size = 20;
+	} else if (accel_enabled && gyro_enabled) {
+		pkt_size = 16;
+	} else {
+		pkt_size = 8;
+	}
 
 	if (cfg->batch_ticks == 0 || (!accel_enabled && !gyro_enabled)) {
 		return 0;
