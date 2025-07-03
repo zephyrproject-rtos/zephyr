@@ -7,6 +7,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/sensor/qdec_nrf.h>
 #include <soc.h>
 
 #include <nrfx_qdec.h>
@@ -24,6 +25,22 @@ LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 #define ACC_MAX (INT_MAX / FULL_ANGLE)
 #define ACC_MIN (INT_MIN / FULL_ANGLE)
 
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_128US == SAMPLEPER_128US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_256US == SAMPLEPER_256US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_512US == SAMPLEPER_512US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_1024US == SAMPLEPER_1024US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_2048US == SAMPLEPER_2048US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_4096US == SAMPLEPER_4096US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_8192US == SAMPLEPER_8192US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
+BUILD_ASSERT(NRF_QDEC_SAMPLEPER_16384US == SAMPLEPER_16384US,
+	     "Different SAMPLEPER register values in devicetree binding and nRF HAL");
 
 struct qdec_nrfx_data {
 	int32_t fetched_acc;
@@ -272,7 +289,7 @@ static int qdec_nrfx_init(const struct device *dev)
 		.qdec = NRFX_QDEC_INSTANCE(idx),					     \
 		.config = {								     \
 			.reportper = NRF_QDEC_REPORTPER_40,				     \
-			.sampleper = NRF_QDEC_SAMPLEPER_2048US,				     \
+			.sampleper = DT_STRING_TOKEN(QDEC(idx), nordic_period),              \
 			.skip_gpio_cfg = true,						     \
 			.skip_psel_cfg = true,						     \
 			.ledpre  = QDEC_PROP(idx, led_pre),				     \
