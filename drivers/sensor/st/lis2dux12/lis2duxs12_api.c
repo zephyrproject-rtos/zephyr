@@ -17,7 +17,19 @@ static int32_t st_lis2duxs12_set_odr_raw(const struct device *dev, uint8_t odr)
 	struct lis2dux12_data *data = dev->data;
 	const struct lis2dux12_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lis2duxs12_md_t mode = {.odr = odr, .fs = data->range};
+	lis2duxs12_md_t mode;
+
+	/* handle high performance mode */
+	if (cfg->pm == LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE) {
+		if (odr < LIS2DUX12_DT_ODR_6Hz) {
+			odr = LIS2DUX12_DT_ODR_6Hz;
+		}
+
+		odr |= 0x10;
+	}
+
+	mode.odr = odr;
+	mode.fs = data->range;
 
 	data->odr = odr;
 	return lis2duxs12_mode_set(ctx, &mode);
