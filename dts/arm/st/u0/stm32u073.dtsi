@@ -16,7 +16,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4000a000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			interrupts = <24 0>;
 			interrupt-names = "combined";
 			status = "disabled";
@@ -24,7 +24,7 @@
 
 		lptim3: timers@40009000 {
 			compatible = "st,stm32-lptim";
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009000 0x400>;
@@ -38,7 +38,7 @@
 			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
 			interrupts = <11 0 11 0 11 0 11 0 11 0>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 1U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-requests = <5>;
 			dma-offset = <7>;
 			status = "disabled";
@@ -57,7 +57,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 13U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 13)>;
 			status = "disabled";
 		};
 	};
