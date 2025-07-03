@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/renesas_rz_pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	compatible = "renesas,r9a07g063";
@@ -47,6 +48,17 @@
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
+		};
+
+		adc: adc@10059000 {
+			compatible = "renesas,rz-adc-c";
+			reg = <0x10059000 DT_SIZE_K(1)>;
+			interrupts = <GIC_SPI 347 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "scanend";
+			#io-channel-cells = <1>;
+			vref-mv = <1800>;
+			channel-available-mask = <0x3>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@11030000 {
