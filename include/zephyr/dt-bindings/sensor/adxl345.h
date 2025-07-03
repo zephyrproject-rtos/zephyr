@@ -13,7 +13,7 @@
  */
 
 /**
- * @defgroup ADXL345_ODR Output Rate options
+ * @defgroup adxl345_odr Output Rate options
  * @{
  */
 #define ADXL345_DT_ODR_12_5		7
