@@ -902,6 +902,11 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
         grep_stdout = git("grep", "-I", "-h", "--perl-regexp", regex, "--",
                           ":samples", ":tests", cwd=ZEPHYR_BASE)
 
+        # Grep for symbol definitions in samples/ and tests/ located at the
+        # current path
+        grep_stdout += git("grep", "-I", "-h", "--perl-regexp", regex, "--",
+                          ":samples", ":tests", cwd=os.getcwd())
+
         # Generate combined list of configs and choices from the main Kconfig tree.
         kconf_syms = kconf.unique_defined_syms + kconf.unique_choices
 
