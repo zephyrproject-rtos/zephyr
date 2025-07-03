@@ -2588,6 +2588,16 @@ static inline ssize_t sdp_get_seq_len(const uint8_t *data, size_t len)
 		return 3 + sys_get_be16(pnext);
 	case BT_SDP_SEQ32:
 	case BT_SDP_ALT32:
+		/* validate len for pnext safe use to read 32bit value */
+		if (len < 5) {
+			break;
+		}
+
+		if (len < (5 + sys_get_be32(pnext))) {
+			break;
+		}
+
+		return 5 + sys_get_be32(pnext);
 	default:
 		LOG_ERR("Invalid/unhandled DTD 0x%02x", data[0]);
 		return -EINVAL;
