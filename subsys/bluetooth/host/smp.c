@@ -1579,6 +1579,11 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
+		/* TODO: consider the follow cases (BLE to BR derivation need to consider them too):
+		 * (1) the ble connection is already encrypted, then the new LTK is derived.
+		 * (2) the ble connection is not encrypted, the LTK is derived,
+		 *     how to trigger the BLE encryption.
+		 */
 		smp_pairing_br_complete(smp, 0);
 	}
 
