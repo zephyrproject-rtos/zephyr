@@ -151,11 +151,12 @@ static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
 	return 0;
 }
 
-static void dma_xfer_start(const struct device *dev, struct i2c_msg *msg)
+static int dma_xfer_start(const struct device *dev, struct i2c_msg *msg)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
+	int ret = 0;
 
 	if ((msg->flags & I2C_MSG_READ) != 0U) {
 		/* Configure RX DMA */
@@ -166,10 +167,10 @@ static void dma_xfer_start(const struct device *dev, struct i2c_msg *msg)
 		data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		data->dma_blk_cfg.block_size = msg->len;
 
-		if (configure_dma(&cfg->rx_dma, &data->dma_rx_cfg,
-					&data->dma_blk_cfg) != 0) {
-			LOG_ERR("Problem setting up RX DMA");
-			return;
+		ret = configure_dma(&cfg->rx_dma, &data->dma_rx_cfg, &data->dma_blk_cfg);
+
+		if (ret != 0) {
+			return ret;
 		}
 		data->current.buf += msg->len;
 		data->current.len -= msg->len;
@@ -185,16 +186,16 @@ static void dma_xfer_start(const struct device *dev, struct i2c_msg *msg)
 			data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 			data->dma_blk_cfg.block_size = msg->len;
 
-			if (configure_dma(&cfg->tx_dma, &data->dma_tx_cfg,
-						&data->dma_blk_cfg) != 0) {
-				LOG_ERR("Problem setting up TX DMA");
-				return;
+			ret = configure_dma(&cfg->tx_dma, &data->dma_tx_cfg, &data->dma_blk_cfg);
+			if (ret != 0) {
+				return ret;
 			}
 			data->current.buf += data->current.len;
 			data->current.len -= data->current.len;
 			LL_I2C_EnableDMAReq_TX(i2c);
 		}
 	}
+	return ret;
 }
 
 static inline void dma_finish(const struct device *dev, struct i2c_msg *msg)
@@ -750,7 +751,13 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	cr1 |= I2C_CR1_ERRIE | I2C_CR1_STOPIE | I2C_CR1_TCIE | I2C_CR1_NACKIE;
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-	dma_xfer_start(dev, msg);
+	int ret;
+
+	ret = dma_xfer_start(dev, msg);
+	if (ret != 0) {
+		LL_I2C_Disable(regs);
+		return ret;
+	}
 #else
 	/* If not using DMA, also enable RX and TX empty interrupts */
 	cr1 |= I2C_CR1_TXIE | I2C_CR1_RXIE;
