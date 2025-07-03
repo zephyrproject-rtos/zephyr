@@ -252,7 +252,7 @@ zephyr_udc0: &usbotg_fs {
 
 &rng {
 	/* Change clock source to avoid using MSI */
-	clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
+	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 		 <&rcc STM32_SRC_PLL_Q CLK48_SEL(2)>;
 	status = "okay";
 };
