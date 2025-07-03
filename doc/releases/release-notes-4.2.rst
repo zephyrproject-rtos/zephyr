@@ -461,16 +461,19 @@ New Boards
 
 * Renesas Electronics Corporation
 
+   * :zephyr:board:`ek_ra8p1` (``ek_ra8p1``)
    * :zephyr:board:`rsk_rx130` (``rsk_rx130``)
    * :zephyr:board:`rza2m_evk` (``rza2m_evk``)
    * :zephyr:board:`rza3ul_smarc` (``rza3ul_smarc``)
    * :zephyr:board:`rzg2l_smarc` (``rzg2l_smarc``)
    * :zephyr:board:`rzg2lc_smarc` (``rzg2lc_smarc``)
+   * :zephyr:board:`rzg2ul_smarc` (``rzg2ul_smarc``)
    * :zephyr:board:`rzn2l_rsk` (``rzn2l_rsk``)
    * :zephyr:board:`rzt2l_rsk` (``rzt2l_rsk``)
    * :zephyr:board:`rzt2m_rsk` (``rzt2m_rsk``)
    * :zephyr:board:`rzv2h_evk` (``rzv2h_evk``)
    * :zephyr:board:`rzv2l_smarc` (``rzv2l_smarc``)
+   * :zephyr:board:`rzv2n_evk` (``rzv2n_evk``)
 
 * Seeed Technology Co., Ltd
 
@@ -717,6 +720,7 @@ New Drivers
    * :dtcompatible:`litex,litei2c`
    * :dtcompatible:`realtek,rts5912-i2c`
    * :dtcompatible:`renesas,ra-i2c-sci-b`
+   * :dtcompatible:`renesas,rx-i2c`
    * :dtcompatible:`renesas,rz-riic`
    * :dtcompatible:`sensry,sy1xx-i2c`
    * :dtcompatible:`wch,i2c`
@@ -724,6 +728,7 @@ New Drivers
 * :abbr:`I2S (Inter-IC Sound)`
 
    * :dtcompatible:`nordic,nrf-tdm`
+   * :dtcompatible:`renesas,ra-i2s-ssie`
    * :dtcompatible:`silabs,siwx91x-i2s`
    * :dtcompatible:`st,stm32-sai`
 
@@ -731,6 +736,7 @@ New Drivers
 
    * :dtcompatible:`ite,it51xxx-i3cm`
    * :dtcompatible:`ite,it51xxx-i3cs`
+   * :dtcompatible:`renesas,ra-i3c`
 
 * Input
 
@@ -790,7 +796,9 @@ New Drivers
 
    * :dtcompatible:`nordic,nrf-mpc`
    * :dtcompatible:`nxp,rtxxx-dsp-ctrl`
+   * :dtcompatible:`renesas,ra-elc`
    * :dtcompatible:`renesas,ra-ulpt`
+   * :dtcompatible:`renesas,rx-mtu`
    * :dtcompatible:`renesas,rx-sci`
    * :dtcompatible:`renesas,rz-sci`
    * :dtcompatible:`renesas,rz-sci-b`
@@ -851,6 +859,7 @@ New Drivers
    * :dtcompatible:`ite,it51xxx-pwm`
    * :dtcompatible:`neorv32,pwm`
    * :dtcompatible:`realtek,rts5912-pwm`
+   * :dtcompatible:`renesas,rx-mtu-pwm`
    * :dtcompatible:`silabs,siwx91x-pwm`
    * :dtcompatible:`wch,gptm-pwm`
 
@@ -924,6 +933,7 @@ New Drivers
 
    * :dtcompatible:`cdns,spi`
    * :dtcompatible:`microchip,mec5-qspi`
+   * :dtcompatible:`renesas,rx-rspi`
    * :dtcompatible:`renesas,rz-rspi`
    * :dtcompatible:`silabs,gspi`
    * :dtcompatible:`ti,cc23x0-spi`
