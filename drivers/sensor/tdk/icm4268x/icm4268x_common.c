@@ -23,6 +23,8 @@ int icm4268x_reset(const struct device *dev)
 	int res;
 	uint8_t value;
 	const struct icm4268x_dev_cfg *dev_cfg = dev->config;
+	struct icm4268x_dev_data *dev_data = dev->data;
+	uint8_t expected_who_am_i;
 
 	/* start up time for register read/write after POR is 1ms and supply ramp time is 3ms */
 	k_msleep(3);
@@ -55,8 +57,20 @@ int icm4268x_reset(const struct device *dev)
 		return res;
 	}
 
-	if (value != WHO_AM_I_ICM42688) {
-		LOG_ERR("invalid WHO_AM_I value, was %i but expected %i", value, WHO_AM_I_ICM42688);
+	switch (dev_data->cfg.variant) {
+	case ICM4268X_VARIANT_ICM42688:
+		expected_who_am_i = WHO_AM_I_ICM42688;
+		break;
+	case ICM4268X_VARIANT_ICM42686:
+		expected_who_am_i = WHO_AM_I_ICM42686;
+		break;
+	default:
+		LOG_ERR("Invalid variant: %d", dev_data->cfg.variant);
+		return -EINVAL;
+	}
+
+	if (value != expected_who_am_i) {
+		LOG_ERR("invalid WHO_AM_I value, was %i but expected %i", value, expected_who_am_i);
 		return -EINVAL;
 	}
 
