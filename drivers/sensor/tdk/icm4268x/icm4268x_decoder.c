@@ -116,7 +116,7 @@ int icm4268x_convert_raw_to_q31(struct icm4268x_cfg *cfg, enum sensor_channel ch
 	if (shift < 0) {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) * (1 << -shift) / INT64_C(1000000);
-	} else if (shift > 0) {
+	} else {
 		intermediate =
 			intermediate * ((int64_t)INT32_MAX + 1) / ((1 << shift) * INT64_C(1000000));
 	}
@@ -513,6 +513,8 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 				buffer = frame_end;
 				continue;
 			}
+		} else {
+			CODE_UNREACHABLE;
 		}
 		buffer = frame_end;
 		*fit = (uintptr_t)frame_end;
