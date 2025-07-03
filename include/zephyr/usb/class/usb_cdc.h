@@ -22,7 +22,7 @@
 #define ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_
 
 /** CDC Specification release number in BCD format */
-#define CDC_SRN_1_20			0x0120
+#define CDC_SRN_1_20			0x0120 __DEPRECATED_MACRO
 
 /** Communications Class Subclass Codes */
 #define ACM_SUBCLASS			0x02
