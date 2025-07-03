@@ -55,8 +55,8 @@
  * - line [ 5 : 8 ]
  * - port [ 9 : 13 ]
  *
- * @param port Port ('A'..'Q')
- * @param line Pin (0..15)
+ * @param port Port ('A'..'Q', 'Z')
+ * @param line Pin (0..25)
  * @param mode Mode (ANALOG, GPIO_IN, ALTERNATE).
  */
 #define STM32_PINMUX(port, line, mode)					       \
