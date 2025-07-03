@@ -247,6 +247,8 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X)
 		apb_psc = (uint32_t)(READ_BIT(RCC->APB1DIVR, RCC_APB1DIVR_APB1DIV));
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		apb_psc = STM32_PPRE1;
 #else
 		apb_psc = STM32_APB1_PRESCALER;
 #endif
@@ -256,6 +258,8 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	else {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X)
 		apb_psc = (uint32_t)(READ_BIT(RCC->APB2DIVR, RCC_APB2DIVR_APB2DIV));
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		apb_psc = STM32_PPRE2;
 #else
 		apb_psc = STM32_APB2_PRESCALER;
 #endif
