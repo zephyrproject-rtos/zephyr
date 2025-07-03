@@ -13,7 +13,7 @@
 		timers22: timers@40011400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40011400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 5U)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 5)>;
 			resets = <&rctl STM32_RESET(APB2, 5U)>;
 			interrupts = <22 0>;
 			interrupt-names = "global";
