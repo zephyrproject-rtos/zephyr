@@ -7,7 +7,6 @@
 
 #include <limits.h>
 #include <pmc.h>
-#include <stdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 
@@ -1154,11 +1153,7 @@ void sam_pmc_setup(const struct device *dev)
 	parents[7] = sama7g5_plls[PLL_ID_AUDIO][PLL_COMPID_DIV0].clk;
 	parents[8] = sama7g5_plls[PLL_ID_ETH][PLL_COMPID_DIV0].clk;
 	for (i = 0; i < 8; i++) {
-		char name[6];
-
-		snprintf(name, sizeof(name), "prog%d", i);
-
-		ret = clk_register_programmable(regmap, name, parents,
+		ret = clk_register_programmable(regmap, parents,
 						9, i,
 						&programmable_layout,
 						sama7g5_prog_mux_table, &clk);
