@@ -200,6 +200,9 @@ static inline void icm4268x_accel_reg_to_hz(uint8_t odr, struct sensor_value *ou
 		out->val1 = 1;
 		out->val2 = 562500;
 		return;
+	default:
+		CODE_UNREACHABLE;
+		return;
 	}
 }
 
@@ -283,6 +286,8 @@ static inline void icm4268x_gyro_reg_to_odr(uint8_t odr, struct sensor_value *ou
 		out->val1 = 12;
 		out->val2 = 500000;
 		return;
+	default:
+		CODE_UNREACHABLE;
 	}
 }
 
