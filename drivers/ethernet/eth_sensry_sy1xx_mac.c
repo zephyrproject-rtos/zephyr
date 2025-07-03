@@ -191,7 +191,6 @@ static int sy1xx_mac_start(const struct device *dev)
 {
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
-	uint8_t rand_mac_addr[6];
 
 	extern void sy1xx_udma_disable_clock(sy1xx_udma_module_t module, uint32_t instance);
 
