@@ -27,6 +27,7 @@ source "drivers/mbox/Kconfig.ti_omap"
 source "drivers/mbox/Kconfig.renesas_rz"
 source "drivers/mbox/Kconfig.mhuv3"
 source "drivers/mbox/Kconfig.ti_secproxy"
+source "drivers/mbox/Kconfig.ipm"
 
 config MBOX_INIT_PRIORITY
 	int "MBOX init priority"
