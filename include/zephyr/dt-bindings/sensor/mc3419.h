@@ -7,13 +7,13 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_MEMSIC_MC3419_H_
 
 /**
- * @defgroup MC3419 Memsic DT Options
+ * @defgroup mc3419 Memsic DT Options
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup MC3419_LPF_CONFIGS Lowe pass filter configurations
+ * @defgroup mc3419_lpf_configs Lowe pass filter configurations
  * @{
  */
 #define MC3419_LPF_DISABLE                 0
@@ -24,7 +24,7 @@
 /** @} */
 
 /**
- * @defgroup MC3419_DECIMATION_RATES decimate sampling rate by provided rate
+ * @defgroup mc3419_decimation_rates decimate sampling rate by provided rate
  * @{
  */
 #define MC3419_DECIMATE_IDR_BY_1    0
