@@ -203,7 +203,7 @@ zephyr_udc0: &usbotg_fs {
 	mck-enabled;
 	pinctrl-0 = <&i2s3_ws_pa4 &i2s3_ck_pc10 &i2s3_sd_pc12 &i2s3_mck_pc7>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK(APB1, 15U)>,
+	clocks = <&rcc STM32_CLOCK(APB1, 15)>,
 		 <&rcc STM32_SRC_PLLI2S_R I2S_SEL(0)>;
 	status = "okay";
 };
