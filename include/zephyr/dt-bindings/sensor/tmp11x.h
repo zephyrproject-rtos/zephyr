@@ -7,13 +7,13 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_TI_TMP11X_H_
 
 /**
- * @defgroup TMP11X Texas Instruments (TI) TMP11X DT Options
+ * @defgroup tmp11x Texas Instruments (TI) TMP11X DT Options
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup TMP11X_ODR Temperature output data rate
+ * @defgroup tmp11x_odr Temperature output data rate
  * @{
  */
 #define TMP11X_DT_ODR_15_5_MS  0
@@ -27,7 +27,7 @@
 /** @} */
 
 /**
- * @defgroup TMP11X_OS Temperature average sample count
+ * @defgroup tmp11x_os Temperature average sample count
  * @{
  */
 #define TMP11X_DT_OVERSAMPLING_1  0
