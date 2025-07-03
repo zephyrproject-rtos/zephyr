@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# Copyright (c) 2025 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ICM-42686 motion tracking device.
+
+    When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
+    gyro-odr properties in a .dts or .dtsi file you may include icm42686.h
+    and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/icm42686.h>
+
+    icm42686: icm42686@0 {
+      compatible = "invensense,icm42686", "invensense,icm4268x"
+      ...
+
+      accel-pwr-mode = <ICM42686_DT_ACCEL_LN>;
+      accel-fs = <ICM42686_DT_ACCEL_FS_16>;
+      accel-odr = <ICM42686_DT_ACCEL_ODR_2000>;
+      gyro-pwr-mode= <ICM42686_DT_GYRO_LN>;
+      gyro-fs = <ICM42686_DT_GYRO_FS_2000>;
+      gyro-odr = <ICM42686_DT_GYRO_ODR_2000>;
+    };
+compatible: "invensense,icm42686"
+include: ["invensense,icm4268x.yaml"]

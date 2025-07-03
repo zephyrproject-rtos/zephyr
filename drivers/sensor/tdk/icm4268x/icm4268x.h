@@ -20,183 +20,211 @@ struct alignment {
 	int8_t sign;
 };
 
-static inline uint8_t icm4268x_accel_fs_to_reg(uint8_t g)
+enum icm4268x_variant {
+	ICM4268X_VARIANT_ICM42688 = 0,
+	ICM4268X_VARIANT_ICM42686 = 1,
+};
+
+/** Helper struct used to map between values and DT-options (e.g: DT_ACCEL_FS) */
+struct icm4268x_reg_val_pair {
+	uint8_t reg;
+	int32_t val;
+};
+
+static const uint8_t table_accel_fs_to_reg_array_size[] = {
+	[ICM4268X_VARIANT_ICM42688] = 4, /* FS16 to FS2 */
+	[ICM4268X_VARIANT_ICM42686] = 5, /* FS32 to FS2 */
+};
+
+static const struct icm4268x_reg_val_pair table_accel_fs_to_reg[][5] = {
+	[ICM4268X_VARIANT_ICM42688] = {
+		{.val = 16, .reg = ICM42688_DT_ACCEL_FS_16},
+		{.val = 8, .reg = ICM42688_DT_ACCEL_FS_8},
+		{.val = 4, .reg = ICM42688_DT_ACCEL_FS_4},
+		{.val = 2, .reg = ICM42688_DT_ACCEL_FS_2},
+	},
+	[ICM4268X_VARIANT_ICM42686] = {
+		{.val = 32, .reg = ICM42686_DT_ACCEL_FS_32},
+		{.val = 16, .reg = ICM42686_DT_ACCEL_FS_16},
+		{.val = 8, .reg = ICM42686_DT_ACCEL_FS_8},
+		{.val = 4, .reg = ICM42686_DT_ACCEL_FS_4},
+		{.val = 2, .reg = ICM42686_DT_ACCEL_FS_2},
+	},
+};
+
+static inline uint8_t icm4268x_accel_fs_to_reg(uint8_t g, enum icm4268x_variant variant)
 {
-	if (g >= 16) {
-		return ICM42688_DT_ACCEL_FS_16;
-	} else if (g >= 8) {
-		return ICM42688_DT_ACCEL_FS_8;
-	} else if (g >= 4) {
-		return ICM42688_DT_ACCEL_FS_4;
-	} else {
-		return ICM42688_DT_ACCEL_FS_2;
+	for (uint8_t i = 0 ; i < table_accel_fs_to_reg_array_size[variant] ; i++) {
+		if (g >= table_accel_fs_to_reg[variant][i].val) {
+			return table_accel_fs_to_reg[variant][i].reg;
+		}
 	}
+
+	/** Force values less than lower boundary */
+	return table_accel_fs_to_reg[variant][table_accel_fs_to_reg_array_size[variant] - 1].reg;
 }
 
-static inline void icm4268x_accel_reg_to_fs(uint8_t fs, struct sensor_value *out)
+static inline void icm4268x_accel_reg_to_fs(uint8_t fs, enum icm4268x_variant variant,
+					    struct sensor_value *out)
 {
-	switch (fs) {
-	case ICM42688_DT_ACCEL_FS_16:
-		sensor_g_to_ms2(16, out);
-		return;
-	case ICM42688_DT_ACCEL_FS_8:
-		sensor_g_to_ms2(8, out);
-		return;
-	case ICM42688_DT_ACCEL_FS_4:
-		sensor_g_to_ms2(4, out);
-		return;
-	case ICM42688_DT_ACCEL_FS_2:
-		sensor_g_to_ms2(2, out);
-		return;
+	for (uint8_t i = 0 ; i < table_accel_fs_to_reg_array_size[variant] ; i++) {
+		if (fs == table_accel_fs_to_reg[variant][i].reg) {
+			sensor_g_to_ms2(table_accel_fs_to_reg[variant][i].val, out);
+			return;
+		}
 	}
+
+	CODE_UNREACHABLE;
 }
 
-static inline uint8_t icm4268x_gyro_fs_to_reg(uint16_t dps)
+static const uint8_t table_gyro_fs_to_reg_array_size[] = {
+	[ICM4268X_VARIANT_ICM42688] = 8, /* FS2000 to FS15_625 */
+	[ICM4268X_VARIANT_ICM42686] = 8, /* FS4000 to FS31_25 */
+};
+
+static const struct icm4268x_reg_val_pair table_gyro_fs_to_reg[][8] = {
+	[ICM4268X_VARIANT_ICM42688] = {
+		{.val = 200000000, .reg = ICM42688_DT_GYRO_FS_2000},
+		{.val = 100000000, .reg = ICM42688_DT_GYRO_FS_1000},
+		{.val = 50000000,  .reg = ICM42688_DT_GYRO_FS_500},
+		{.val = 25000000,  .reg = ICM42688_DT_GYRO_FS_250},
+		{.val = 12500000,  .reg = ICM42688_DT_GYRO_FS_125},
+		{.val = 6250000,   .reg = ICM42688_DT_GYRO_FS_62_5},
+		{.val = 3125000,   .reg = ICM42688_DT_GYRO_FS_31_25},
+		{.val = 1562500,   .reg = ICM42688_DT_GYRO_FS_15_625},
+	},
+	[ICM4268X_VARIANT_ICM42686] = {
+		{.val = 400000000, .reg = ICM42686_DT_GYRO_FS_4000},
+		{.val = 200000000, .reg = ICM42686_DT_GYRO_FS_2000},
+		{.val = 100000000, .reg = ICM42686_DT_GYRO_FS_1000},
+		{.val = 50000000,  .reg = ICM42686_DT_GYRO_FS_500},
+		{.val = 25000000,  .reg = ICM42686_DT_GYRO_FS_250},
+		{.val = 12500000,  .reg = ICM42686_DT_GYRO_FS_125},
+		{.val = 6250000,   .reg = ICM42686_DT_GYRO_FS_62_5},
+		{.val = 3125000,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+};
+
+static inline uint8_t icm4268x_gyro_fs_to_reg(uint16_t dps, enum icm4268x_variant variant)
 {
-	if (dps >= 2000) {
-		return ICM42688_DT_GYRO_FS_2000;
-	} else if (dps >= 1000) {
-		return ICM42688_DT_GYRO_FS_1000;
-	} else if (dps >= 500) {
-		return ICM42688_DT_GYRO_FS_500;
-	} else if (dps >= 250) {
-		return ICM42688_DT_GYRO_FS_250;
-	} else if (dps >= 125) {
-		return ICM42688_DT_GYRO_FS_125;
-	} else if (dps >= 62) {
-		return ICM42688_DT_GYRO_FS_62_5;
-	} else if (dps >= 31) {
-		return ICM42688_DT_GYRO_FS_31_25;
-	} else {
-		return ICM42688_DT_GYRO_FS_15_625;
+	for (uint8_t i = 0 ; i < table_gyro_fs_to_reg_array_size[variant] ; i++) {
+		if (dps * 100000 >= table_gyro_fs_to_reg[variant][i].val) {
+			return table_gyro_fs_to_reg[variant][i].reg;
+		}
 	}
+
+	/** Force values less than lower boundary */
+	return table_gyro_fs_to_reg[variant][table_gyro_fs_to_reg_array_size[variant] - 1].reg;
 }
 
-static inline void icm4268x_gyro_reg_to_fs(uint8_t fs, struct sensor_value *out)
+static inline void icm4268x_gyro_reg_to_fs(uint8_t fs, enum icm4268x_variant variant,
+					   struct sensor_value *out)
 {
-	switch (fs) {
-	case ICM42688_DT_GYRO_FS_2000:
-		sensor_degrees_to_rad(2000, out);
-		return;
-	case ICM42688_DT_GYRO_FS_1000:
-		sensor_degrees_to_rad(1000, out);
-		return;
-	case ICM42688_DT_GYRO_FS_500:
-		sensor_degrees_to_rad(500, out);
-		return;
-	case ICM42688_DT_GYRO_FS_250:
-		sensor_degrees_to_rad(250, out);
-		return;
-	case ICM42688_DT_GYRO_FS_125:
-		sensor_degrees_to_rad(125, out);
-		return;
-	case ICM42688_DT_GYRO_FS_62_5:
-		sensor_10udegrees_to_rad(6250000, out);
-		return;
-	case ICM42688_DT_GYRO_FS_31_25:
-		sensor_10udegrees_to_rad(3125000, out);
-		return;
-	case ICM42688_DT_GYRO_FS_15_625:
-		sensor_10udegrees_to_rad(1562500, out);
-		return;
+	for (uint8_t i = 0 ; i < table_gyro_fs_to_reg_array_size[variant] ; i++) {
+		if (fs == table_gyro_fs_to_reg[variant][i].reg) {
+			sensor_10udegrees_to_rad(table_gyro_fs_to_reg[variant][i].val, out);
+			return;
+		}
 	}
+
+	CODE_UNREACHABLE;
 }
 
 static inline uint8_t icm4268x_accel_hz_to_reg(uint16_t hz)
 {
 	if (hz >= 32000) {
-		return ICM42688_DT_ACCEL_ODR_32000;
+		return ICM4268X_DT_ACCEL_ODR_32000;
 	} else if (hz >= 16000) {
-		return ICM42688_DT_ACCEL_ODR_16000;
+		return ICM4268X_DT_ACCEL_ODR_16000;
 	} else if (hz >= 8000) {
-		return ICM42688_DT_ACCEL_ODR_8000;
+		return ICM4268X_DT_ACCEL_ODR_8000;
 	} else if (hz >= 4000) {
-		return ICM42688_DT_ACCEL_ODR_4000;
+		return ICM4268X_DT_ACCEL_ODR_4000;
 	} else if (hz >= 2000) {
-		return ICM42688_DT_ACCEL_ODR_2000;
+		return ICM4268X_DT_ACCEL_ODR_2000;
 	} else if (hz >= 1000) {
-		return ICM42688_DT_ACCEL_ODR_1000;
+		return ICM4268X_DT_ACCEL_ODR_1000;
 	} else if (hz >= 500) {
-		return ICM42688_DT_ACCEL_ODR_500;
+		return ICM4268X_DT_ACCEL_ODR_500;
 	} else if (hz >= 200) {
-		return ICM42688_DT_ACCEL_ODR_200;
+		return ICM4268X_DT_ACCEL_ODR_200;
 	} else if (hz >= 100) {
-		return ICM42688_DT_ACCEL_ODR_100;
+		return ICM4268X_DT_ACCEL_ODR_100;
 	} else if (hz >= 50) {
-		return ICM42688_DT_ACCEL_ODR_50;
+		return ICM4268X_DT_ACCEL_ODR_50;
 	} else if (hz >= 25) {
-		return ICM42688_DT_ACCEL_ODR_25;
+		return ICM4268X_DT_ACCEL_ODR_25;
 	} else if (hz >= 12) {
-		return ICM42688_DT_ACCEL_ODR_12_5;
+		return ICM4268X_DT_ACCEL_ODR_12_5;
 	} else if (hz >= 6) {
-		return ICM42688_DT_ACCEL_ODR_6_25;
+		return ICM4268X_DT_ACCEL_ODR_6_25;
 	} else if (hz >= 3) {
-		return ICM42688_DT_ACCEL_ODR_3_125;
+		return ICM4268X_DT_ACCEL_ODR_3_125;
 	} else {
-		return ICM42688_DT_ACCEL_ODR_1_5625;
+		return ICM4268X_DT_ACCEL_ODR_1_5625;
 	}
 }
 
 static inline void icm4268x_accel_reg_to_hz(uint8_t odr, struct sensor_value *out)
 {
 	switch (odr) {
-	case ICM42688_DT_ACCEL_ODR_32000:
+	case ICM4268X_DT_ACCEL_ODR_32000:
 		out->val1 = 32000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_16000:
+	case ICM4268X_DT_ACCEL_ODR_16000:
 		out->val1 = 1600;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_8000:
+	case ICM4268X_DT_ACCEL_ODR_8000:
 		out->val1 = 8000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_4000:
+	case ICM4268X_DT_ACCEL_ODR_4000:
 		out->val1 = 4000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_2000:
+	case ICM4268X_DT_ACCEL_ODR_2000:
 		out->val1 = 2000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_1000:
+	case ICM4268X_DT_ACCEL_ODR_1000:
 		out->val1 = 1000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_500:
+	case ICM4268X_DT_ACCEL_ODR_500:
 		out->val1 = 500;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_200:
+	case ICM4268X_DT_ACCEL_ODR_200:
 		out->val1 = 200;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_100:
+	case ICM4268X_DT_ACCEL_ODR_100:
 		out->val1 = 100;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_50:
+	case ICM4268X_DT_ACCEL_ODR_50:
 		out->val1 = 50;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_25:
+	case ICM4268X_DT_ACCEL_ODR_25:
 		out->val1 = 25;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_ACCEL_ODR_12_5:
+	case ICM4268X_DT_ACCEL_ODR_12_5:
 		out->val1 = 12;
 		out->val2 = 500000;
 		return;
-	case ICM42688_DT_ACCEL_ODR_6_25:
+	case ICM4268X_DT_ACCEL_ODR_6_25:
 		out->val1 = 6;
 		out->val2 = 250000;
 		return;
-	case ICM42688_DT_ACCEL_ODR_3_125:
+	case ICM4268X_DT_ACCEL_ODR_3_125:
 		out->val1 = 3;
 		out->val2 = 125000;
 		return;
-	case ICM42688_DT_ACCEL_ODR_1_5625:
+	case ICM4268X_DT_ACCEL_ODR_1_5625:
 		out->val1 = 1;
 		out->val2 = 562500;
 		return;
@@ -209,80 +237,80 @@ static inline void icm4268x_accel_reg_to_hz(uint8_t odr, struct sensor_value *ou
 static inline uint8_t icm4268x_gyro_odr_to_reg(uint16_t hz)
 {
 	if (hz >= 32000) {
-		return ICM42688_DT_GYRO_ODR_32000;
+		return ICM4268X_DT_GYRO_ODR_32000;
 	} else if (hz >= 16000) {
-		return ICM42688_DT_GYRO_ODR_16000;
+		return ICM4268X_DT_GYRO_ODR_16000;
 	} else if (hz >= 8000) {
-		return ICM42688_DT_GYRO_ODR_8000;
+		return ICM4268X_DT_GYRO_ODR_8000;
 	} else if (hz >= 4000) {
-		return ICM42688_DT_GYRO_ODR_4000;
+		return ICM4268X_DT_GYRO_ODR_4000;
 	} else if (hz >= 2000) {
-		return ICM42688_DT_GYRO_ODR_2000;
+		return ICM4268X_DT_GYRO_ODR_2000;
 	} else if (hz >= 1000) {
-		return ICM42688_DT_GYRO_ODR_1000;
+		return ICM4268X_DT_GYRO_ODR_1000;
 	} else if (hz >= 500) {
-		return ICM42688_DT_GYRO_ODR_500;
+		return ICM4268X_DT_GYRO_ODR_500;
 	} else if (hz >= 200) {
-		return ICM42688_DT_GYRO_ODR_200;
+		return ICM4268X_DT_GYRO_ODR_200;
 	} else if (hz >= 100) {
-		return ICM42688_DT_GYRO_ODR_100;
+		return ICM4268X_DT_GYRO_ODR_100;
 	} else if (hz >= 50) {
-		return ICM42688_DT_GYRO_ODR_50;
+		return ICM4268X_DT_GYRO_ODR_50;
 	} else if (hz >= 25) {
-		return ICM42688_DT_GYRO_ODR_25;
+		return ICM4268X_DT_GYRO_ODR_25;
 	} else {
-		return ICM42688_DT_GYRO_ODR_12_5;
+		return ICM4268X_DT_GYRO_ODR_12_5;
 	}
 }
 
 static inline void icm4268x_gyro_reg_to_odr(uint8_t odr, struct sensor_value *out)
 {
 	switch (odr) {
-	case ICM42688_DT_GYRO_ODR_32000:
+	case ICM4268X_DT_GYRO_ODR_32000:
 		out->val1 = 32000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_16000:
+	case ICM4268X_DT_GYRO_ODR_16000:
 		out->val1 = 16000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_8000:
+	case ICM4268X_DT_GYRO_ODR_8000:
 		out->val1 = 8000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_4000:
+	case ICM4268X_DT_GYRO_ODR_4000:
 		out->val1 = 4000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_2000:
+	case ICM4268X_DT_GYRO_ODR_2000:
 		out->val1 = 2000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_1000:
+	case ICM4268X_DT_GYRO_ODR_1000:
 		out->val1 = 1000;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_500:
+	case ICM4268X_DT_GYRO_ODR_500:
 		out->val1 = 500;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_200:
+	case ICM4268X_DT_GYRO_ODR_200:
 		out->val1 = 200;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_100:
+	case ICM4268X_DT_GYRO_ODR_100:
 		out->val1 = 100;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_50:
+	case ICM4268X_DT_GYRO_ODR_50:
 		out->val1 = 50;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_25:
+	case ICM4268X_DT_GYRO_ODR_25:
 		out->val1 = 25;
 		out->val2 = 0;
 		return;
-	case ICM42688_DT_GYRO_ODR_12_5:
+	case ICM4268X_DT_GYRO_ODR_12_5:
 		out->val1 = 12;
 		out->val2 = 500000;
 		return;
@@ -295,6 +323,7 @@ static inline void icm4268x_gyro_reg_to_odr(uint8_t odr, struct sensor_value *ou
  * @brief All sensor configuration options
  */
 struct icm4268x_cfg {
+	enum icm4268x_variant variant;
 	uint8_t accel_pwr_mode;
 	uint8_t accel_fs;
 	uint8_t accel_odr;
@@ -420,94 +449,21 @@ int icm4268x_safely_configure(const struct device *dev, struct icm4268x_cfg *cfg
  */
 int icm4268x_read_all(const struct device *dev, uint8_t data[14]);
 
-/**
- * @brief Convert icm4268x accelerometer value to useful g values
- *
- * @param cfg icm4268x_cfg current device configuration
- * @param in raw data value in int32_t format
- * @param out_g whole G's output in int32_t
- * @param out_ug micro (1/1000000) of a G output as int32_t
- */
-static inline void icm4268x_accel_g(struct icm4268x_cfg *cfg, int32_t in, int32_t *out_g,
-				    int32_t *out_ug)
-{
-	int32_t sensitivity;
-
-	switch (cfg->accel_fs) {
-	case ICM42688_DT_ACCEL_FS_2:
-		sensitivity = 16384;
-		break;
-	case ICM42688_DT_ACCEL_FS_4:
-		sensitivity = 8192;
-		break;
-	case ICM42688_DT_ACCEL_FS_8:
-		sensitivity = 4096;
-		break;
-	case ICM42688_DT_ACCEL_FS_16:
-		sensitivity = 2048;
-		break;
-	default:
-		CODE_UNREACHABLE;
-	}
-
-	/* Whole g's */
-	*out_g = in / sensitivity;
-
-	/* Micro g's */
-	*out_ug = ((abs(in) - (abs((*out_g)) * sensitivity)) * 1000000) / sensitivity;
-}
-
-/**
- * @brief Convert icm4268x gyroscope value to useful deg/s values
- *
- * @param cfg icm4268x_cfg current device configuration
- * @param in raw data value in int32_t format
- * @param out_dps whole deg/s output in int32_t
- * @param out_udps micro (1/1000000) deg/s as int32_t
- */
-static inline void icm4268x_gyro_dps(const struct icm4268x_cfg *cfg, int32_t in, int32_t *out_dps,
-				     int32_t *out_udps)
-{
-	int64_t sensitivity;
-
-	switch (cfg->gyro_fs) {
-	case ICM42688_DT_GYRO_FS_2000:
-		sensitivity = 164;
-		break;
-	case ICM42688_DT_GYRO_FS_1000:
-		sensitivity = 328;
-		break;
-	case ICM42688_DT_GYRO_FS_500:
-		sensitivity = 655;
-		break;
-	case ICM42688_DT_GYRO_FS_250:
-		sensitivity = 1310;
-		break;
-	case ICM42688_DT_GYRO_FS_125:
-		sensitivity = 2620;
-		break;
-	case ICM42688_DT_GYRO_FS_62_5:
-		sensitivity = 5243;
-		break;
-	case ICM42688_DT_GYRO_FS_31_25:
-		sensitivity = 10486;
-		break;
-	case ICM42688_DT_GYRO_FS_15_625:
-		sensitivity = 20972;
-		break;
-	default:
-		CODE_UNREACHABLE;
-	}
-
-	int32_t in10 = in * 10;
-
-	/* Whole deg/s */
-	*out_dps = in10 / sensitivity;
-
-	/* Micro deg/s */
-	*out_udps = ((int64_t)(llabs(in10) - (llabs((*out_dps)) * sensitivity)) * 1000000LL) /
-		    sensitivity;
-}
+static const struct icm4268x_reg_val_pair table_accel_sensitivity_to_reg[][5] = {
+	[ICM4268X_VARIANT_ICM42688] = {
+		{.val = 2048, .reg = ICM42688_DT_ACCEL_FS_16},
+		{.val = 4096, .reg = ICM42688_DT_ACCEL_FS_8},
+		{.val = 8192, .reg = ICM42688_DT_ACCEL_FS_4},
+		{.val = 16384, .reg = ICM42688_DT_ACCEL_FS_2},
+	},
+	[ICM4268X_VARIANT_ICM42686] = {
+		{.val = 1024, .reg = ICM42686_DT_ACCEL_FS_32},
+		{.val = 2048, .reg = ICM42686_DT_ACCEL_FS_16},
+		{.val = 4096, .reg = ICM42686_DT_ACCEL_FS_8},
+		{.val = 8192, .reg = ICM42686_DT_ACCEL_FS_4},
+		{.val = 16384, .reg = ICM42686_DT_ACCEL_FS_2},
+	},
+};
 
 /**
  * @brief Convert icm4268x accelerometer value to useful m/s^2 values
@@ -520,34 +476,51 @@ static inline void icm4268x_gyro_dps(const struct icm4268x_cfg *cfg, int32_t in,
 static inline void icm4268x_accel_ms(const struct icm4268x_cfg *cfg, int32_t in, int32_t *out_ms,
 				     int32_t *out_ums)
 {
-	int64_t sensitivity;
+	int64_t sensitivity = 0;
 
-	switch (cfg->accel_fs) {
-	case ICM42688_DT_ACCEL_FS_2:
-		sensitivity = 16384;
-		break;
-	case ICM42688_DT_ACCEL_FS_4:
-		sensitivity = 8192;
-		break;
-	case ICM42688_DT_ACCEL_FS_8:
-		sensitivity = 4096;
-		break;
-	case ICM42688_DT_ACCEL_FS_16:
-		sensitivity = 2048;
-		break;
-	default:
-		CODE_UNREACHABLE;
+	for (uint8_t i = 0 ; i < table_accel_fs_to_reg_array_size[cfg->variant] ; i++) {
+		if (cfg->accel_fs == table_accel_sensitivity_to_reg[cfg->variant][i].reg) {
+			sensitivity = table_accel_sensitivity_to_reg[cfg->variant][i].val;
+			break;
+		}
 	}
 
-	/* Convert to micrometers/s^2 */
-	int64_t in_ms = in * SENSOR_G;
+	if (sensitivity != 0) {
+		/* Convert to micrometers/s^2 */
+		int64_t in_ms = in * SENSOR_G;
 
-	/* meters/s^2 whole values */
-	*out_ms = in_ms / (sensitivity * 1000000LL);
+		/* meters/s^2 whole values */
+		*out_ms = in_ms / (sensitivity * 1000000LL);
 
-	/* micrometers/s^2 */
-	*out_ums = (in_ms - (*out_ms * sensitivity * 1000000LL)) / sensitivity;
+		/* micrometers/s^2 */
+		*out_ums = (in_ms - (*out_ms * sensitivity * 1000000LL)) / sensitivity;
+	} else {
+		CODE_UNREACHABLE;
+	}
 }
+
+static const struct icm4268x_reg_val_pair table_gyro_sensitivity_to_reg[][8] = {
+	[ICM4268X_VARIANT_ICM42688] = {
+		{.val = 164, .reg = ICM42688_DT_GYRO_FS_2000},
+		{.val = 328, .reg = ICM42688_DT_GYRO_FS_1000},
+		{.val = 655,  .reg = ICM42688_DT_GYRO_FS_500},
+		{.val = 1310,  .reg = ICM42688_DT_GYRO_FS_250},
+		{.val = 2620,  .reg = ICM42688_DT_GYRO_FS_125},
+		{.val = 5243,   .reg = ICM42688_DT_GYRO_FS_62_5},
+		{.val = 10486,   .reg = ICM42688_DT_GYRO_FS_31_25},
+		{.val = 20972,   .reg = ICM42688_DT_GYRO_FS_15_625},
+	},
+	[ICM4268X_VARIANT_ICM42686] = {
+		{.val = 82, .reg = ICM42686_DT_GYRO_FS_4000},
+		{.val = 164, .reg = ICM42686_DT_GYRO_FS_2000},
+		{.val = 328, .reg = ICM42686_DT_GYRO_FS_1000},
+		{.val = 655,  .reg = ICM42686_DT_GYRO_FS_500},
+		{.val = 1310,  .reg = ICM42686_DT_GYRO_FS_250},
+		{.val = 2620,  .reg = ICM42686_DT_GYRO_FS_125},
+		{.val = 5243,   .reg = ICM42686_DT_GYRO_FS_62_5},
+		{.val = 10486,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+};
 
 /**
  * @brief Convert icm4268x gyroscope value to useful rad/s values
@@ -560,45 +533,28 @@ static inline void icm4268x_accel_ms(const struct icm4268x_cfg *cfg, int32_t in,
 static inline void icm4268x_gyro_rads(const struct icm4268x_cfg *cfg, int32_t in, int32_t *out_rads,
 				      int32_t *out_urads)
 {
-	int64_t sensitivity;
+	int64_t sensitivity = 0;
 
-	switch (cfg->gyro_fs) {
-	case ICM42688_DT_GYRO_FS_2000:
-		sensitivity = 164;
-		break;
-	case ICM42688_DT_GYRO_FS_1000:
-		sensitivity = 328;
-		break;
-	case ICM42688_DT_GYRO_FS_500:
-		sensitivity = 655;
-		break;
-	case ICM42688_DT_GYRO_FS_250:
-		sensitivity = 1310;
-		break;
-	case ICM42688_DT_GYRO_FS_125:
-		sensitivity = 2620;
-		break;
-	case ICM42688_DT_GYRO_FS_62_5:
-		sensitivity = 5243;
-		break;
-	case ICM42688_DT_GYRO_FS_31_25:
-		sensitivity = 10486;
-		break;
-	case ICM42688_DT_GYRO_FS_15_625:
-		sensitivity = 20972;
-		break;
-	default:
-		CODE_UNREACHABLE;
+	for (uint8_t i = 0 ; i < table_gyro_fs_to_reg_array_size[cfg->variant] ; i++) {
+		if (cfg->gyro_fs == table_gyro_sensitivity_to_reg[cfg->variant][i].reg) {
+			sensitivity = table_gyro_sensitivity_to_reg[cfg->variant][i].val;
+			break;
+		}
 	}
 
-	int64_t in10_rads = (int64_t)in * SENSOR_PI * 10LL;
+	if (sensitivity != 0) {
+		int64_t in10_rads = (int64_t)in * SENSOR_PI * 10LL;
 
-	/* Whole rad/s */
-	*out_rads = in10_rads / (sensitivity * 180LL * 1000000LL);
+		/* Whole rad/s */
+		*out_rads = in10_rads / (sensitivity * 180LL * 1000000LL);
 
-	/* microrad/s */
-	*out_urads =
-		(in10_rads - (*out_rads * sensitivity * 180LL * 1000000LL)) / (sensitivity * 180LL);
+		/* microrad/s */
+		*out_urads =
+			(in10_rads - (*out_rads * sensitivity * 180LL * 1000000LL)) /
+			(sensitivity * 180LL);
+	} else {
+		CODE_UNREACHABLE;
+	}
 }
 
 /**

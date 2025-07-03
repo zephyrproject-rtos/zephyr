@@ -104,6 +104,24 @@ static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	LOG_DBG("Requesting buffer [%u, %u] got %u", (unsigned int)min_read_size,
 		(unsigned int)ideal_read_size, buf_len);
 
+	/** FSR are fixed for high-resolution, at which point we should
+	 * override driver FS config.
+	 */
+	uint8_t accel_fs_hr, gyro_fs_hr;
+
+	switch (drv_data->cfg.variant) {
+	case ICM4268X_VARIANT_ICM42688:
+		accel_fs_hr = ICM42688_DT_ACCEL_FS_16;
+		gyro_fs_hr = ICM42688_DT_GYRO_FS_2000;
+		break;
+	case ICM4268X_VARIANT_ICM42686:
+		accel_fs_hr = ICM42686_DT_ACCEL_FS_32;
+		gyro_fs_hr = ICM42686_DT_GYRO_FS_4000;
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
+
 	/* Read FIFO and call back to rtio with rtio_sqe completion */
 	/* TODO is packet format even needed? the fifo has a header per packet
 	 * already
@@ -111,10 +129,9 @@ static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, v
 	struct icm4268x_fifo_data hdr = {
 		.header = {
 			.is_fifo = true,
-			.gyro_fs = drv_data->cfg.fifo_hires ? ICM42688_DT_GYRO_FS_2000 :
-							      drv_data->cfg.gyro_fs,
-			.accel_fs = drv_data->cfg.fifo_hires ? ICM42688_DT_ACCEL_FS_16 :
-							       drv_data->cfg.accel_fs,
+			.variant = drv_data->cfg.variant,
+			.gyro_fs = drv_data->cfg.fifo_hires ? gyro_fs_hr : drv_data->cfg.gyro_fs,
+			.accel_fs = drv_data->cfg.fifo_hires ? accel_fs_hr : drv_data->cfg.accel_fs,
 			.timestamp = drv_data->timestamp,
 			.axis_align[0] = drv_data->cfg.axis_align[0],
 			.axis_align[1] = drv_data->cfg.axis_align[1],

@@ -16,61 +16,71 @@ LOG_MODULE_REGISTER(ICM4268X_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT invensense_icm4268x
 
-static int icm4268x_get_shift(enum sensor_channel channel, int accel_fs, int gyro_fs, int8_t *shift)
+static const struct icm4268x_reg_val_pair table_accel_shift_to_reg[][5] = {
+	[ICM4268X_VARIANT_ICM42688] = {
+		{.val = 8, .reg = ICM42688_DT_ACCEL_FS_16},
+		{.val = 7, .reg = ICM42688_DT_ACCEL_FS_8},
+		{.val = 6, .reg = ICM42688_DT_ACCEL_FS_4},
+		{.val = 5, .reg = ICM42688_DT_ACCEL_FS_2},
+	},
+	[ICM4268X_VARIANT_ICM42686] = {
+		{.val = 9, .reg = ICM42686_DT_ACCEL_FS_32},
+		{.val = 8, .reg = ICM42686_DT_ACCEL_FS_16},
+		{.val = 7, .reg = ICM42686_DT_ACCEL_FS_8},
+		{.val = 6, .reg = ICM42686_DT_ACCEL_FS_4},
+		{.val = 5, .reg = ICM42686_DT_ACCEL_FS_2},
+	},
+};
+
+static const struct icm4268x_reg_val_pair table_gyro_shift_to_reg[][8] = {
+	[ICM4268X_VARIANT_ICM42688] = {
+		{.val = 6, .reg = ICM42688_DT_GYRO_FS_2000},
+		{.val = 5, .reg = ICM42688_DT_GYRO_FS_1000},
+		{.val = 4,  .reg = ICM42688_DT_GYRO_FS_500},
+		{.val = 3,  .reg = ICM42688_DT_GYRO_FS_250},
+		{.val = 2,  .reg = ICM42688_DT_GYRO_FS_125},
+		{.val = 1,   .reg = ICM42688_DT_GYRO_FS_62_5},
+		{.val = 0,   .reg = ICM42688_DT_GYRO_FS_31_25},
+		{.val = -1,   .reg = ICM42688_DT_GYRO_FS_15_625},
+	},
+	[ICM4268X_VARIANT_ICM42686] = {
+		{.val = 7, .reg = ICM42686_DT_GYRO_FS_4000},
+		{.val = 6, .reg = ICM42686_DT_GYRO_FS_2000},
+		{.val = 5, .reg = ICM42686_DT_GYRO_FS_1000},
+		{.val = 4,  .reg = ICM42686_DT_GYRO_FS_500},
+		{.val = 3,  .reg = ICM42686_DT_GYRO_FS_250},
+		{.val = 2,  .reg = ICM42686_DT_GYRO_FS_125},
+		{.val = 1,   .reg = ICM42686_DT_GYRO_FS_62_5},
+		{.val = 0,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+};
+
+static int icm4268x_get_shift(enum sensor_channel channel, int accel_fs, int gyro_fs,
+			      enum icm4268x_variant variant, int8_t *shift)
 {
 	switch (channel) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
-		switch (accel_fs) {
-		case ICM42688_DT_ACCEL_FS_2:
-			*shift = 5;
-			return 0;
-		case ICM42688_DT_ACCEL_FS_4:
-			*shift = 6;
-			return 0;
-		case ICM42688_DT_ACCEL_FS_8:
-			*shift = 7;
-			return 0;
-		case ICM42688_DT_ACCEL_FS_16:
-			*shift = 8;
-			return 0;
-		default:
-			return -EINVAL;
+		for (uint8_t i  = 0 ; i < table_accel_fs_to_reg_array_size[variant] ; i++) {
+			if (accel_fs == table_accel_shift_to_reg[variant][i].reg) {
+				*shift = table_accel_shift_to_reg[variant][i].val;
+				return 0;
+			}
 		}
+		return -EINVAL;
 	case SENSOR_CHAN_GYRO_XYZ:
 	case SENSOR_CHAN_GYRO_X:
 	case SENSOR_CHAN_GYRO_Y:
 	case SENSOR_CHAN_GYRO_Z:
-		switch (gyro_fs) {
-		case ICM42688_DT_GYRO_FS_15_625:
-			*shift = -1;
-			return 0;
-		case ICM42688_DT_GYRO_FS_31_25:
-			*shift = 0;
-			return 0;
-		case ICM42688_DT_GYRO_FS_62_5:
-			*shift = 1;
-			return 0;
-		case ICM42688_DT_GYRO_FS_125:
-			*shift = 2;
-			return 0;
-		case ICM42688_DT_GYRO_FS_250:
-			*shift = 3;
-			return 0;
-		case ICM42688_DT_GYRO_FS_500:
-			*shift = 4;
-			return 0;
-		case ICM42688_DT_GYRO_FS_1000:
-			*shift = 5;
-			return 0;
-		case ICM42688_DT_GYRO_FS_2000:
-			*shift = 6;
-			return 0;
-		default:
-			return -EINVAL;
+		for (uint8_t i  = 0 ; i < table_gyro_fs_to_reg_array_size[variant] ; i++) {
+			if (gyro_fs == table_gyro_shift_to_reg[variant][i].reg) {
+				*shift = table_gyro_shift_to_reg[variant][i].val;
+				return 0;
+			}
 		}
+		return -EINVAL;
 	case SENSOR_CHAN_DIE_TEMP:
 		*shift = 9;
 		return 0;
@@ -88,7 +98,7 @@ int icm4268x_convert_raw_to_q31(struct icm4268x_cfg *cfg, enum sensor_channel ch
 	int8_t shift;
 	int rc;
 
-	rc = icm4268x_get_shift(chan, cfg->accel_fs, cfg->gyro_fs, &shift);
+	rc = icm4268x_get_shift(chan, cfg->accel_fs, cfg->gyro_fs, cfg->variant, &shift);
 	if (rc != 0) {
 		return rc;
 	}
@@ -200,6 +210,7 @@ int icm4268x_encode(const struct device *dev, const struct sensor_chan_spec *con
 	}
 
 	edata->header.is_fifo = false;
+	edata->header.variant = data->cfg.variant;
 	edata->header.accel_fs = data->cfg.accel_fs;
 	edata->header.gyro_fs = data->cfg.gyro_fs;
 	edata->header.axis_align[0] = data->cfg.axis_align[0];
@@ -426,7 +437,8 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			uint64_t ts_delta;
 
 			icm4268x_get_shift(SENSOR_CHAN_ACCEL_XYZ, edata->header.accel_fs,
-					   edata->header.gyro_fs, &data->shift);
+					   edata->header.gyro_fs, edata->header.variant,
+					   &data->shift);
 
 			rc = icm4268x_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_ACCEL_XYZ,
 							   edata->accel_odr, accel_frame_count - 1,
@@ -473,7 +485,8 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			uint64_t ts_delta;
 
 			icm4268x_get_shift(SENSOR_CHAN_GYRO_XYZ, edata->header.accel_fs,
-					   edata->header.gyro_fs, &data->shift);
+					   edata->header.gyro_fs, edata->header.variant,
+					   &data->shift);
 
 			rc = icm4268x_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_GYRO_XYZ,
 							   edata->gyro_odr, gyro_frame_count - 1,
@@ -531,6 +544,7 @@ static int icm4268x_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 	struct icm4268x_cfg cfg = {
 		.accel_fs = edata->header.accel_fs,
 		.gyro_fs = edata->header.gyro_fs,
+		.variant = edata->header.variant,
 	};
 	uint8_t channel_request;
 	int rc;
@@ -561,7 +575,7 @@ static int icm4268x_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 		out->header.reading_count = 1;
 
 		rc = icm4268x_get_shift(chan_spec.chan_type, header->accel_fs, header->gyro_fs,
-					&out->shift);
+					header->variant, &out->shift);
 		if (rc != 0) {
 			return -EINVAL;
 		}
@@ -585,7 +599,7 @@ static int icm4268x_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
 		rc = icm4268x_get_shift(chan_spec.chan_type, header->accel_fs, header->gyro_fs,
-					&out->shift);
+					header->variant, &out->shift);
 		if (rc != 0) {
 			return -EINVAL;
 		}
