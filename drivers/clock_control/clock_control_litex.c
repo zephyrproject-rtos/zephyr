@@ -1640,7 +1640,6 @@ static int litex_clk_dts_timeout_read(struct litex_clk_timeout *timeout)
 static int litex_clk_dts_clkouts_read(void)
 {
 	struct litex_clk_range clkout_div;
-	struct litex_clk_clkout *lcko;
 
 	litex_clk_dts_clkout_ranges_read(&clkout_div);
 
