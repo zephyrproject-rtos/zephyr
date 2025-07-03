@@ -24,6 +24,44 @@ LOG_MODULE_REGISTER(siwx91x_wifi);
 
 NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, _NET_ETH_MAX_FRAME_SIZE, 0, NULL);
 
+typedef struct {
+	const char *const *codes;
+	size_t num_codes;
+	sl_wifi_region_code_t region_code;
+} region_map_t;
+
+static const char *const us_codes[] = {
+	"AE", "AR", "AS", "BB", "BM", "BR", "BS", "CA", "CO", "CR", "CU", "CX",
+	"DM", "DO", "EC", "FM", "GD", "GY", "GU", "HN", "HT", "JM", "KY", "LB",
+	"LK", "MH", "MN", "MP", "MO", "MY", "NI", "PA", "PE", "PG", "PH", "PK",
+	"PR", "PW", "PY", "SG", "MX", "SV", "TC", "TH", "TT", "US", "UY", "VE",
+	"VI", "VN", "VU", "00"
+	/* Map "00" (world domain) to US region,
+	 * as using the world domain is not recommended
+	 */
+};
+static const char *const eu_codes[] = {
+	"AD", "AF", "AI", "AL", "AM", "AN", "AT", "AW", "AU", "AZ", "BA", "BE",
+	"BG", "BH", "BL", "BT", "BY", "CH", "CY", "CZ", "DE", "DK", "EE", "ES",
+	"FR", "GB", "GE", "GF", "GL", "GP", "GR", "GT", "HK", "HR", "HU", "ID",
+	"IE", "IL", "IN", "IR", "IS", "IT", "JO", "KH", "FI", "KN", "KW", "KZ",
+	"LC", "LI", "LT", "LU", "LV", "MD", "ME", "MK", "MF", "MT", "MV", "MQ",
+	"NL", "NO", "NZ", "OM", "PF", "PL", "PM", "PT", "QA", "RO", "RS", "RU",
+	"SA", "SE", "SI", "SK", "SR", "SY", "TR", "TW", "UA", "UZ", "VC", "WF",
+	"WS", "YE", "RE", "YT"
+};
+static const char *const jp_codes[] = {"BD", "BN", "BO", "CL", "BZ", "JP", "NP"};
+static const char *const kr_codes[] = {"KR", "KP"};
+static const char *const cn_codes[] = {"CN"};
+
+static const region_map_t region_maps[] = {
+	{us_codes, ARRAY_SIZE(us_codes), SL_WIFI_REGION_US},
+	{eu_codes, ARRAY_SIZE(eu_codes), SL_WIFI_REGION_EU},
+	{jp_codes, ARRAY_SIZE(jp_codes), SL_WIFI_REGION_JP},
+	{kr_codes, ARRAY_SIZE(kr_codes), SL_WIFI_REGION_KR},
+	{cn_codes, ARRAY_SIZE(cn_codes), SL_WIFI_REGION_CN},
+};
+
 static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 {
 	switch (interface) {
@@ -348,6 +386,45 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 	return 0;
 }
 
+sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_code)
+{
+	__ASSERT(country_code, "country_code cannot be NULL");
+
+	ARRAY_FOR_EACH(region_maps, i) {
+		for (size_t j = 0; j < region_maps[i].num_codes; j++) {
+			if (memcmp(country_code, region_maps[i].codes[j],
+			    WIFI_COUNTRY_CODE_LEN) == 0) {
+				return region_maps[i].region_code;
+			}
+		}
+	}
+	return SL_WIFI_DEFAULT_REGION;
+}
+
+static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
+{
+	sl_wifi_operation_mode_t oper_mode = sli_get_opermode();
+	sl_wifi_region_code_t region_code;
+	int ret;
+
+	__ASSERT(reg_domain, "reg_domain cannot be NULL");
+
+	if (reg_domain->oper == WIFI_MGMT_SET) {
+		region_code = siwx91x_map_country_code_to_region(reg_domain->country_code);
+		ret = sl_si91x_set_device_region(oper_mode, SL_WIFI_BAND_MODE_2_4GHZ, region_code);
+		if (ret) {
+			LOG_ERR("Failed to set device region: %x", ret);
+			return -EINVAL;
+		}
+
+		if (region_code == SL_WIFI_DEFAULT_REGION) {
+			LOG_INF("Country code not supported, using default region");
+		}
+	}
+
+	return 0;
+}
+
 static void siwx91x_iface_init(struct net_if *iface)
 {
 	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
@@ -404,6 +481,7 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.get_stats		= siwx91x_stats,
 #endif
 	.get_version		= siwx91x_get_version,
+	.reg_domain		= siwx91x_wifi_reg_domain,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_api = {
