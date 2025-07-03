@@ -1,9 +1,9 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: "Renesas RZ ADC"
+description: "Renesas RZ ADC-C driver"
 
-compatible: "renesas,rz-adc"
+compatible: "renesas,rz-adc-c"
 
 include: [adc-controller.yaml, pinctrl-device.yaml]
 
@@ -18,11 +18,6 @@ properties:
     type: int
     required: true
     description: Indicates the reference voltage of the ADC in mV.
-
-  unit:
-    type: int
-    description: Indicates the unit number of the ADC device.
-    required: true
 
   channel-available-mask:
     type: int
