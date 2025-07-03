@@ -30,7 +30,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <36 5>;
 			status = "disabled";
 		};
@@ -44,7 +44,7 @@
 			ram-size = <512>;
 			maximum-speed = "full-speed";
 			status = "disabled";
-			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
 			phys = <&usb_fs_phy>;
 		};
 
@@ -53,7 +53,7 @@
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			status = "disabled";
 		};
 	};
