@@ -13,7 +13,7 @@
  */
 
 /**
- * @defgroup ADXL362_FIFO_MODE FIFO mode options
+ * @defgroup adxl362_fifo_mode FIFO mode options
  * @{
  */
 #define ADXL362_FIFO_MODE_DISABLED        0x0
