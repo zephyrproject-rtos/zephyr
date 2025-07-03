@@ -476,7 +476,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015404 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21U)>,
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 					 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 1 36 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
@@ -488,7 +488,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015424 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21U)>,
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 					 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 0 37 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
@@ -725,9 +725,9 @@
 			reg = <0x420d2400 0x400>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <120 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
-			clocks = <&rcc STM32_CLOCK(AHB2_2, 8U)>,
+			clocks = <&rcc STM32_CLOCK(AHB2_2, 8)>,
 				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 21U)>;
+				<&rcc STM32_CLOCK(AHB2, 21)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
