@@ -13,9 +13,9 @@ description: |
   the power domain is suspended.
 
   The GPIO pad group is a child node of the GPIO
-  controller which manages the the pad group,
-  named pad-group. The pad group's nodelabel is
-  named gpio_pad_group<GPIO number>.
+  controller which manages the pad group, named
+  pad-group. The pad group's nodelabel is named
+  gpio_pad_group<GPIO number>.
 
   Example layout:
 
