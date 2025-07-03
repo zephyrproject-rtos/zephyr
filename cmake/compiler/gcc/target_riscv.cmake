@@ -3,11 +3,17 @@
 set(riscv_mabi "lp")
 set(riscv_march "rv")
 
+if(CONFIG_RISCV_CMODEL_MEDLOW)
+  set(riscv_mcmodel "medlow")
+elseif(CONFIG_RISCV_CMODEL_MEDANY)
+  set(riscv_mcmodel "medany")
+elseif(CONFIG_RISCV_CMODEL_LARGE)
+  set(riscv_mcmodel "large")
+endif()
+
 if(CONFIG_64BIT)
   string(CONCAT riscv_mabi  ${riscv_mabi} "64")
   string(CONCAT riscv_march ${riscv_march} "64")
-  list(APPEND TOOLCHAIN_C_FLAGS -mcmodel=medany)
-  list(APPEND TOOLCHAIN_LD_FLAGS -mcmodel=medany)
 else()
   string(CONCAT riscv_mabi  "i" ${riscv_mabi} "32")
   string(CONCAT riscv_march ${riscv_march} "32")
@@ -123,8 +129,17 @@ if(NOT CONFIG_RISCV_ISA_EXT_M AND
   string(CONCAT riscv_march ${riscv_march} "_zmmul")
 endif()
 
-list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
-list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
+list(APPEND TOOLCHAIN_C_FLAGS
+     -mabi=${riscv_mabi}
+     -march=${riscv_march}
+     -mcmodel=${riscv_mcmodel}
+     )
+
+list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT
+     -mabi=${riscv_mabi}
+     -march=${riscv_march}
+     -mcmodel=${riscv_mcmodel}
+     )
 
 # Flags not supported by llext linker
 # (regexps are supported and match whole word)
@@ -146,6 +161,7 @@ set(LLEXT_REMOVE_FLAGS
 set(LLEXT_APPEND_FLAGS
   -mabi=${riscv_mabi}
   -march=${riscv_march}
+  -mcmodel=${riscv_mcmodel}
   -mno-relax
   -msmall-data-limit=0
   )
