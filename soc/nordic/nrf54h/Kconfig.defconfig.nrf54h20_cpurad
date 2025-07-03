@@ -11,4 +11,7 @@ config NUM_IRQS
 config PM
 	default y
 
+config POWER_DOMAIN
+	default y
+
 endif # SOC_NRF54H20_CPURAD
