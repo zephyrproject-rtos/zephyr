@@ -15,8 +15,8 @@ struct icm4268x_decoder_header {
 	uint64_t timestamp;
 	uint8_t is_fifo: 1;
 	uint8_t gyro_fs: 3;
-	uint8_t accel_fs: 2;
-	uint8_t reserved: 2;
+	uint8_t accel_fs: 3;
+	uint8_t variant: 1;
 	struct alignment axis_align[3];
 } __attribute__((__packed__));
 

@@ -150,7 +150,8 @@ static int icm4268x_attr_set(const struct device *dev, enum sensor_channel chan,
 		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 			new_config.accel_odr = icm4268x_accel_hz_to_reg(val->val1);
 		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-			new_config.accel_fs = icm4268x_accel_fs_to_reg(sensor_ms2_to_g(val));
+			new_config.accel_fs = icm4268x_accel_fs_to_reg(sensor_ms2_to_g(val),
+								       data->cfg.variant);
 		} else {
 			LOG_ERR("Unsupported attribute");
 			res = -ENOTSUP;
@@ -163,7 +164,8 @@ static int icm4268x_attr_set(const struct device *dev, enum sensor_channel chan,
 		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 			new_config.gyro_odr = icm4268x_gyro_odr_to_reg(val->val1);
 		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-			new_config.gyro_fs = icm4268x_gyro_fs_to_reg(sensor_rad_to_degrees(val));
+			new_config.gyro_fs = icm4268x_gyro_fs_to_reg(sensor_rad_to_degrees(val),
+								     data->cfg.variant);
 		} else {
 			LOG_ERR("Unsupported attribute");
 			res = -EINVAL;
@@ -232,7 +234,7 @@ static int icm4268x_attr_get(const struct device *dev, enum sensor_channel chan,
 		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 			icm4268x_accel_reg_to_hz(cfg->accel_odr, val);
 		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-			icm4268x_accel_reg_to_fs(cfg->accel_fs, val);
+			icm4268x_accel_reg_to_fs(cfg->accel_fs, data->cfg.variant, val);
 		} else {
 			LOG_ERR("Unsupported attribute");
 			res = -EINVAL;
@@ -245,7 +247,7 @@ static int icm4268x_attr_get(const struct device *dev, enum sensor_channel chan,
 		if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 			icm4268x_gyro_reg_to_odr(cfg->gyro_odr, val);
 		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-			icm4268x_gyro_reg_to_fs(cfg->gyro_fs, val);
+			icm4268x_gyro_reg_to_fs(cfg->gyro_fs, data->cfg.variant, val);
 		} else {
 			LOG_ERR("Unsupported attribute");
 			res = -EINVAL;
@@ -341,6 +343,10 @@ void icm4268x_unlock(const struct device *dev)
 
 #define ICM42688_DT_CONFIG_INIT(inst)						\
 	{									\
+		COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),	\
+			(.variant = ICM4268X_VARIANT_ICM42688,), (		\
+		COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686),	\
+			(.variant = ICM4268X_VARIANT_ICM42686,), ())))		\
 		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),		\
 		.accel_fs = DT_INST_PROP(inst, accel_fs),			\
 		.accel_odr = DT_INST_PROP(inst, accel_odr),			\
@@ -372,11 +378,25 @@ void icm4268x_unlock(const struct device *dev)
 						    .spi_iodev = &icm4268x_spi_iodev_##inst,))     \
 	};
 
+/** The rest of the Device-tree configuration is validated in the YAML
+ * file. This outlier comes from the fact we're sharing the dts-properties
+ * across variants, and ICM42686 has an extra enum for the accel-fs.
+ */
+#define ICM42688_BUILD_CONFIG_VALIDATION(inst)							   \
+	BUILD_ASSERT((DT_INST_PROP(inst, accel_fs) >= ICM42688_DT_ACCEL_FS_16) &&		   \
+		     (DT_INST_PROP(inst, accel_fs) <=  ICM42688_DT_ACCEL_FS_2),			   \
+		"Invalid accel-fs configured for ICM42688. Please revisit DTS config-set");
+
 #define ICM4268X_INIT(inst)                                                                        \
 												   \
-	BUILD_ASSERT(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),			   \
+	BUILD_ASSERT(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688) ||			   \
+		     DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686),			   \
 		"Please define additional compatible property to dts node: "			   \
-		"<invensense,icm42688>");							   \
+		"<invensense,icm42688> or <invensense,icm42686>");				   \
+												   \
+												   \
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),				   \
+		    (ICM42688_BUILD_CONFIG_VALIDATION(inst)), ());				   \
 												   \
 	ICM4268X_DEFINE_DATA(inst);                                                                \
                                                                                                    \

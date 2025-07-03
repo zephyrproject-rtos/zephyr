@@ -8,7 +8,7 @@
 menuconfig ICM4268X
 	bool "ICM4268X Six-Axis Motion Tracking Device"
 	default y
-	depends on DT_HAS_INVENSENSE_ICM42688_ENABLED
+	depends on DT_HAS_INVENSENSE_ICM4268X_ENABLED
 	select SPI
 	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
