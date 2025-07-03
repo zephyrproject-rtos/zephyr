@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,6 +70,10 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+};
+
+&sar_adc1 {
+	status = "okay";
 };
 
 &gpio1 {
