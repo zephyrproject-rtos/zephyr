@@ -25,7 +25,7 @@ struct clk_peripheral {
 	const struct clk_pcr_layout *layout;
 };
 
-static struct clk_peripheral clocks_periph[72];
+static struct clk_peripheral clocks_periph[SOC_NUM_CLOCK_PERIPHERAL];
 static uint32_t clocks_periph_idx;
 
 #define to_clk_peripheral(ptr) CONTAINER_OF(ptr, struct clk_peripheral, clk)
