@@ -203,8 +203,8 @@
 		};
 
 		adc: adc@40058000 {
-			compatible = "renesas,rz-adc";
-			reg = <0x40058000 0x80>;
+			compatible = "renesas,rz-adc-c";
+			reg = <0x40058000 DT_SIZE_K(4)>;
 			interrupts = <312 3>;
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
