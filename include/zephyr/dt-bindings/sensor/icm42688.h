@@ -8,13 +8,13 @@
 #include "sensor_axis_align.h"
 
 /**
- * @defgroup ICM42688 Invensense (TDK) ICM42688 DT Options
+ * @defgroup icm42688 Invensense (TDK) ICM42688 DT Options
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup ICM42688_ACCEL_POWER_MODES Accelerometer power modes
+ * @defgroup icm42688_accel_power_modes Accelerometer power modes
  * @{
  */
 #define ICM42688_DT_ACCEL_OFF		0
@@ -23,7 +23,7 @@
 /** @} */
 
 /**
- * @defgroup ICM42688_GYRO_POWER_MODES Gyroscope power modes
+ * @defgroup icm42688_gyro_power_modes Gyroscope power modes
  * @{
  */
 #define ICM42688_DT_GYRO_OFF		0
@@ -32,7 +32,7 @@
 /** @} */
 
 /**
- * @defgroup ICM42688_ACCEL_SCALE Accelerometer scale options
+ * @defgroup icm42688_accel_scale Accelerometer scale options
  * @{
  */
 #define ICM42688_DT_ACCEL_FS_16	0
@@ -42,7 +42,7 @@
 /** @} */
 
 /**
- * @defgroup ICM42688_GYRO_SCALE Gyroscope scale options
+ * @defgroup icm42688_gyro_scale Gyroscope scale options
  * @{
  */
 #define ICM42688_DT_GYRO_FS_2000		0
@@ -56,7 +56,7 @@
 /** @} */
 
 /**
- * @defgroup ICM42688_ACCEL_DATA_RATE Accelerometer data rate options
+ * @defgroup icm42688_accel_data_rate Accelerometer data rate options
  * @{
  */
 #define ICM42688_DT_ACCEL_ODR_32000		1
@@ -77,7 +77,7 @@
 /** @} */
 
 /**
- * @defgroup ICM42688_GYRO_DATA_RATE Gyroscope data rate options
+ * @defgroup icm42688_gyro_data_rate Gyroscope data rate options
  * @{
  */
 #define ICM42688_DT_GYRO_ODR_32000		1
