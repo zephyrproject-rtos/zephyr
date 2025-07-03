@@ -13,7 +13,7 @@
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 17U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
 			resets = <&rctl STM32_RESET(APB1, 17U)>;
 			interrupts = <28 0>;
 			status = "disabled";
@@ -46,7 +46,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 				 <&rcc STM32_SRC_PLLCLK USB_SEL(1)>;
 			status = "disabled";
 		};
