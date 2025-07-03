@@ -170,13 +170,13 @@
 
 		fll16m: fll16m {
 			compatible = "nordic,nrf-fll16m";
-			clock-names = "hfxo", "lfxo";
+			status = "disabled";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			open-loop-accuracy-ppm = <20000>;
 			open-loop-startup-time-us = <200>; /* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
-			status = "disabled";
+			clock-names = "hfxo", "lfxo";
 		};
 
 		hsfll120: hsfll120 {
