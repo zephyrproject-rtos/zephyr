@@ -34,10 +34,12 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
  * - HAL design (requirement of drv_inst_idx in nrfx_spis_t)
  * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
  */
-#define SPIS_NODE(idx) COND_CODE_1(SPIS_IS_FAST(idx), (spis##idx), (spi##idx))
+#define SPIS_NODE(idx) \
+	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(spis##idx)), (spis##idx), (spi##idx))
 #define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 #define SPIS_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(SPIS(idx), prop)
+#define SPIS_IS_FAST(idx) NRF_DT_IS_FAST(SPIS(idx))
 
 #define SPIS_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SPIS(prefix##idx)),		\
@@ -595,7 +597,7 @@ static int spi_nrfx_init(const struct device *dev)
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action,		       \
-		COND_CODE_1(NRF_DT_IS_FAST(SPIS(idx)), (0),		       \
+		COND_CODE_1(SPIS_IS_FAST(idx), (0),			       \
 			    (PM_DEVICE_ISR_SAFE)));			       \
 	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \
