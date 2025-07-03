@@ -102,6 +102,8 @@ Removed APIs and options
 
 * Removed the ``get_ctrl`` driver API from :c:struct:`video_driver_api`.
 
+* Removed ``CONFIG_I3C_USE_GROUP_ADDR`` and support for group addresses for I3C devices.
+
 Deprecated APIs and options
 ===========================
 
@@ -180,6 +182,14 @@ New APIs and options
   * :c:func:`i2c_configure_dt`.
   * :c:macro:`I2C_DEVICE_DT_DEINIT_DEFINE`
   * :c:macro:`I2C_DEVICE_DT_INST_DEINIT_DEFINE`
+
+* I3C
+
+  * :kconfig:option:`CONFIG_I3C_MODE`
+  * :kconfig:option:`CONFIG_I3C_CONTROLLER_ROLE_ONLY`
+  * :kconfig:option:`CONFIG_I3C_TARGET_ROLE_ONLY`
+  * :kconfig:option:`CONFIG_I3C_DUAL_ROLE`
+  * :c:func:`i3c_ccc_do_rstdaa`
 
 * SPI
 
