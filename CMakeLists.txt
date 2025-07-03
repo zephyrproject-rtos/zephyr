@@ -1442,38 +1442,71 @@ if(CONFIG_USERSPACE)
   endforeach()
 endif()
 
-if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
+# setup linking targets for a new linker pass.
+# This sets up generation of linker scripts, adds a new executable and
+# defines how it is linked.
+# EXECUTABLE - the executable name
+# CMD_FILE - file name of the linker-script
+# PASS_DEFINES - list of -Defines for the pass
+# DEPENDENCIES - list of extra dependencies
+# SCRIPT_TARGET - name of the linker script custom target
+# LIBRARIES_PRE_SCRIPT
+# LIBRARIES_POST_SCRIPT - passed on to target_ld_link_elf
+#
+macro(setup_linker_pass)
+  cmake_parse_arguments(
+    arg_sls ""
+    "EXECUTABLE;CMD_FILE;SCRIPT_TARGET"
+    "PASS_DEFINES;DEPENDENCIES;SOURCES;LIBRARIES_PRE_SCRIPT;LIBRARIES_POST_SCRIPT"
+    ${ARGN}
+  )
+  # Setup generation of the linker script
   configure_linker_script(
-    ${ZEPHYR_CURRENT_LINKER_CMD}
-    "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
-    ${CODE_RELOCATION_DEP}
-    ${APP_SMEM_UNALIGNED_DEP}
-    ${APP_SMEM_UNALIGNED_LD}
-    ${APP_SMEM_PINNED_UNALIGNED_LD}
+    ${arg_sls_CMD_FILE}
+    "${arg_sls_PASS_DEFINES}"
+    ${arg_sls_DEPENDENCIES}
     zephyr_generated_headers
-    )
-
+  )
   add_custom_target(
-    linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script
+    ${arg_sls_SCRIPT_TARGET}
     DEPENDS
-    ${ZEPHYR_CURRENT_LINKER_CMD}
-    )
-
+    ${arg_sls_CMD_FILE}
+  )
   set_property(TARGET
-    linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script
+    ${arg_sls_SCRIPT_TARGET}
     PROPERTY INCLUDE_DIRECTORIES
     ${ZEPHYR_INCLUDE_DIRS}
-    )
-
-  add_executable(${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c)
+  )
+  # Setup linking of the executable
+  # FIXME: Is there any way to get rid of empty_file.c?
+  add_executable(${arg_sls_EXECUTABLE} misc/empty_file.c ${arg_sls_SOURCES})
   toolchain_ld_link_elf(
-    TARGET_ELF            ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
-    LIBRARIES_PRE_SCRIPT  ""
-    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
-    LIBRARIES_POST_SCRIPT ""
+    TARGET_ELF            ${arg_sls_EXECUTABLE}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${arg_sls_EXECUTABLE}.map
+    LIBRARIES_PRE_SCRIPT  ${arg_sls_LIBRARIES_PRE_SCRIPT}
+    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/${arg_sls_CMD_FILE}
+    LIBRARIES_POST_SCRIPT ${arg_sls_LIBRARIES_POST_SCRIPT}
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
+  set_property(TARGET   ${arg_sls_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${arg_sls_CMD_FILE})
+endmacro()
+
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
+
+  setup_linker_pass(
+    EXECUTABLE ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    CMD_FILE ${ZEPHYR_CURRENT_LINKER_CMD}
+    PASS_DEFINES ${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}
+    SCRIPT_TARGET linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script
+    DEPENDENCIES ${CODE_RELOCATION_DEP}
+      ${APP_SMEM_UNALIGNED_DEP}
+      ${APP_SMEM_UNALIGNED_LD}
+      ${APP_SMEM_PINNED_UNALIGNED_LD}
+      zephyr_generated_headers
+    LIBRARIES_PRE_SCRIPT  ""
+    LIBRARIES_POST_SCRIPT ""
+  )
+
   target_link_libraries_ifdef(CONFIG_NATIVE_LIBRARY ${ZEPHYR_LINK_STAGE_EXECUTABLE}
                               $<TARGET_PROPERTY:linker,no_position_independent>)
   target_byproducts(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
@@ -1656,41 +1689,25 @@ if(CONFIG_USERSPACE)
   )
 endif()
 
-configure_linker_script(
-  ${ZEPHYR_CURRENT_LINKER_CMD}
-  "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
-  ${APP_SMEM_ALIGNED_DEP}
-  ${KOBJECT_LINKER_DEP}
-  ${CODE_RELOCATION_DEP}
-  zephyr_generated_headers
-  )
-
-add_custom_target(
-  linker_zephyr_prebuilt_script_target
-  DEPENDS
-  ${ZEPHYR_CURRENT_LINKER_CMD}
-  )
-
-set_property(TARGET
-  linker_zephyr_prebuilt_script_target
-  PROPERTY INCLUDE_DIRECTORIES
-  ${ZEPHYR_INCLUDE_DIRS}
-  )
-
 # Read global variables into local variables
 get_property(GASF GLOBAL PROPERTY GENERATED_APP_SOURCE_FILES)
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
-# FIXME: Is there any way to get rid of empty_file.c?
-add_executable(       ${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c ${GASF})
-toolchain_ld_link_elf(
-  TARGET_ELF            ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-  OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
+setup_linker_pass(
+  EXECUTABLE ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+  CMD_FILE ${ZEPHYR_CURRENT_LINKER_CMD}
+  PASS_DEFINES ${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}
+  SCRIPT_TARGET linker_zephyr_prebuilt_script_target
+  DEPENDENCIES ${APP_SMEM_ALIGNED_DEP}
+    ${KOBJECT_LINKER_DEP}
+    ${CODE_RELOCATION_DEP}
+    zephyr_generated_headers
+  SOURCES ${GASF}
   LIBRARIES_PRE_SCRIPT  ""
-  LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
-  DEPENDENCIES          ${CODE_RELOCATION_DEP}
+  LIBRARIES_POST_SCRIPT ""
 )
+
 target_link_libraries_ifdef(CONFIG_NATIVE_LIBRARY ${ZEPHYR_LINK_STAGE_EXECUTABLE}
                             $<TARGET_PROPERTY:linker,partial_linking>)
 target_byproducts(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
@@ -1716,35 +1733,19 @@ else()
   # The final linker pass uses the same source linker script of the
   # previous passes, but this time with a different output
   # file and preprocessed with the define LINKER_ZEPHYR_FINAL.
-  configure_linker_script(
-    linker.cmd
-    "LINKER_ZEPHYR_FINAL"
-    ${CODE_RELOCATION_DEP}
-    ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    zephyr_generated_headers
-    )
-
-  add_custom_target(
-    linker_zephyr_final_script_target
-    DEPENDS
-    linker.cmd
-    )
-  set_property(TARGET
-    linker_zephyr_final_script_target
-    PROPERTY INCLUDE_DIRECTORIES
-    ${ZEPHYR_INCLUDE_DIRS}
-  )
-
-  add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GASF} ${GKSF})
-  toolchain_ld_link_elf(
-    TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
+  setup_linker_pass(
+    EXECUTABLE ${ZEPHYR_FINAL_EXECUTABLE}
+    CMD_FILE linker.cmd
+    PASS_DEFINES "LINKER_ZEPHYR_FINAL"
+    SCRIPT_TARGET linker_zephyr_final_script_target
+    DEPENDENCIES ${CODE_RELOCATION_DEP}
+      ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+      zephyr_generated_headers
+    SOURCES ${GASF} ${GKSF}
     LIBRARIES_PRE_SCRIPT  ${GKOF}
-    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
     LIBRARIES_POST_SCRIPT ""
-    DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
-  set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
+
   add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} linker_zephyr_final_script_target)
 
   # Use the pass2 elf as the final elf
