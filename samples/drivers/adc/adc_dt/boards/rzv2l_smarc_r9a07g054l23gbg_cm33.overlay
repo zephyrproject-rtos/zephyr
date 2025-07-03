@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
-	aliases {
-		adc0 = &adc;
+	zephyr,user {
+		io-channels = <&adc 0>, <&adc 2>;
 	};
 };
 
