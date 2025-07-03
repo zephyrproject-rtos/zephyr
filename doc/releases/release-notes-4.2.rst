@@ -921,6 +921,7 @@ New Drivers
    * :dtcompatible:`aesc,uart`
    * :dtcompatible:`ambiq,pl011-uart`
    * :dtcompatible:`bflb,uart`
+   * :dtcompatible:`ene,kb106x-uart`
    * :dtcompatible:`espressif,esp32-lpuart`
    * :dtcompatible:`ite,it51xxx-uart`
    * :dtcompatible:`renesas,rx-uart-sci`
