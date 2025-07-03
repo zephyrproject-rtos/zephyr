@@ -1,5 +1,5 @@
 /**
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * @file nxp_wifi_drv.c
@@ -394,6 +394,77 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	return 0;
 }
 
+static int nxp_wifi_cpu_reset(uint8_t enable)
+{
+	int err = 0;
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sd_gpios) &&    \
+	DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+
+	struct gpio_dt_spec sdio_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), sd_gpios);
+	struct gpio_dt_spec pwr_gpios = GPIO_DT_SPEC_GET(DT_DRV_INST(0), pwr_gpios);
+
+	if (!gpio_is_ready_dt(&sdio_reset)) {
+		LOG_ERR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
+				sdio_reset.pin);
+		return -EIO;
+	}
+
+	/* Configure sdio_reset as output  */
+	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure sdio_reset %s pin %d", err,
+				sdio_reset.port->name, sdio_reset.pin);
+		return err;
+	}
+
+	if (!gpio_is_ready_dt(&pwr_gpios)) {
+		LOG_ERR("Error: failed to configure pwr_gpios %s pin %d", pwr_gpios.port->name,
+				pwr_gpios.pin);
+		return -EIO;
+	}
+
+	/* Configure wlan-power-io as an output  */
+	err = gpio_pin_configure_dt(&pwr_gpios, GPIO_OUTPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure pwr_gpios %s pin %d", err,
+				pwr_gpios.port->name, pwr_gpios.pin);
+		return err;
+	}
+
+	if (enable) {
+		/* Set SDIO reset pin as high  */
+		err = gpio_pin_set_dt(&sdio_reset, 1);
+		if (err) {
+			return err;
+		}
+		/* wait for reset done */
+		k_sleep(K_MSEC(100));
+
+		/* Set power gpio pin as high  */
+		err = gpio_pin_set_dt(&pwr_gpios, 1);
+		if (err) {
+			return err;
+		}
+	} else {
+		/* Set SDIO reset pin as low */
+		err = gpio_pin_set_dt(&sdio_reset, 0);
+		if (err) {
+			return err;
+		}
+
+		/* Set power gpio pin as low */
+		err = gpio_pin_set_dt(&pwr_gpios, 0);
+		if (err) {
+			return err;
+		}
+	}
+	/* wait for reset done */
+	k_sleep(K_MSEC(100));
+#endif
+
+	return err;
+}
+
 static int nxp_wifi_wlan_init(void)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
@@ -407,7 +478,9 @@ static int nxp_wifi_wlan_init(void)
 		k_event_init(&s_nxp_wifi_SyncEvent);
 	}
 
-	if (status == NXP_WIFI_RET_SUCCESS) {
+	ret = nxp_wifi_cpu_reset(true);
+
+	if ((status == NXP_WIFI_RET_SUCCESS) && (ret == 0)) {
 		ret = wlan_init(wlan_fw_bin, wlan_fw_bin_len);
 		if (ret != WM_SUCCESS) {
 			status = NXP_WIFI_RET_FAIL;
