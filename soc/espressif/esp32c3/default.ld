@@ -334,6 +334,7 @@ SECTIONS
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *libc.a:*(.literal .text .literal.* .text.*)
+    *librtc.a:(.literal .text .literal.* .text.*)
 
     /* [mapping:hal] */
     *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
@@ -624,6 +625,8 @@ SECTIONS
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.rodata .rodata.*)
     *(.rodata.esp_system_abort)
+
+    *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
 
     . = ALIGN(4);
     #include <snippets-rwdata.ld>
