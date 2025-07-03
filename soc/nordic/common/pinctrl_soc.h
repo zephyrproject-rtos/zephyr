@@ -67,6 +67,49 @@ typedef uint32_t pinctrl_soc_pin_t;
 		      NRF_GPD_FAST_ACTIVE1) << NRF_GPD_FAST_ACTIVE1_POS), (0))
 
 /**
+ * @brief Utility macro to check if instance is fast by node, expands to 1 or 0.
+ *
+ * @param node Node identifier.
+ */
+#define NRF_DT_IS_FAST(node)								\
+	COND_CODE_1(										\
+		DT_NODE_HAS_PROP(node, power_domains),						\
+		(										\
+			DT_SAME_NODE(								\
+				DT_PHANDLE(node, power_domains),				\
+				DT_NODELABEL(gdpwr_fast_active_1)				\
+			)									\
+		),										\
+		(0)										\
+	)
+
+/**
+ * @brief Utility macro to check if instance is fast by DT_DRV_INST, expands to 1 or 0.
+ *
+ * @param inst Driver instance
+ */
+#define NRF_DT_INST_IS_FAST(inst) \
+	NRF_DT_IS_FAST(DT_DRV_INST(inst))
+
+/**
+ * @brief Utility macro to check if instance is fast by DT_DRV_INST, expands to 1 or empty.
+ *
+ * @param inst Driver instance
+ */
+#define NRF_DT_INST_IS_FAST_OR_EMPTY(inst) \
+	IF_ENABLED(NRF_DT_INST_IS_FAST(inst), 1)
+
+/**
+ * @brief Utility macro to check if any instance with compat is fast. Expands to 1 or 0.
+ */
+#define NRF_DT_INST_ANY_IS_FAST									\
+	COND_CODE_0(										\
+		IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY(NRF_DT_INST_IS_FAST_OR_EMPTY)),		\
+		(1),										\
+		(0)										\
+	)
+
+/**
  * @brief Utility macro to initialize each pin.
  *
  * @param node_id Node identifier.
@@ -81,9 +124,7 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 (DT_PROP(node_id, nordic_drive_mode) << NRF_DRIVE_POS) |	       \
 	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS) |\
 	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS) |		       \
-	 Z_GET_CLOCKPIN_ENABLE(node_id, prop, idx, p_node_id) |		       \
-	 Z_GET_GPD_FAST_ACTIVE1(p_node_id)				       \
-	),
+	 Z_GET_CLOCKPIN_ENABLE(node_id, prop, idx, p_node_id)),
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
@@ -153,6 +194,20 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg Pin configuration bit field.
  */
 #define NRF_GET_PIN(pincfg) (((pincfg) >> NRF_PIN_POS) & NRF_PIN_MSK)
+
+/**
+ * @brief Utility macro to obtain port.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_PORT(pincfg) (NRF_GET_PIN(pincfg) >> 5)
+
+/**
+ * @brief Utility macro to obtain port.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_PORT_PIN(pincfg) (NRF_GET_PORT(pincfg) % 32)
 
 /** @endcond */
 

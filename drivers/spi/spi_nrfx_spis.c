@@ -20,15 +20,7 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
-
-#define SPIS_IS_FAST(idx) IS_EQ(idx, 120)
-
-#define NRFX_SPIS_IS_FAST(unused, prefix, id, _) SPIS_IS_FAST(prefix##id)
-
-#if NRFX_FOREACH_ENABLED(SPIS, NRFX_SPIS_IS_FAST, (+), (0), _)
+#if NRF_DT_INST_ANY_IS_FAST
 /* If fast instances are used then system managed device PM cannot be used because
  * it may call PM actions from locked context and fast SPIM PM actions can only be
  * called from a thread context.
@@ -52,9 +44,6 @@ struct spi_nrfx_config {
 	nrfx_spis_config_t config;
 	void (*irq_connect)(void);
 	uint16_t max_buf_len;
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	bool gpd_ctrl;
-#endif
 	const struct pinctrl_dev_config *pcfg;
 	struct gpio_dt_spec wake_gpio;
 	void *mem_reg;
@@ -379,12 +368,6 @@ static void spi_nrfx_suspend(const struct device *dev)
 		nrf_spis_disable(dev_config->spis.p_reg);
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	if (dev_config->gpd_ctrl) {
-		nrf_gpd_retain_pins_set(dev_config->pcfg, true);
-	}
-#endif
-
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
 
@@ -393,12 +376,6 @@ static void spi_nrfx_resume(const struct device *dev)
 	const struct spi_nrfx_config *dev_config = dev->config;
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	if (dev_config->gpd_ctrl) {
-		nrf_gpd_retain_pins_set(dev_config->pcfg, false);
-	}
-#endif
 
 	if (dev_config->wake_gpio.port == NULL) {
 		nrf_spis_enable(dev_config->spis.p_reg);
@@ -489,7 +466,7 @@ static int spi_nrfx_init(const struct device *dev)
  * - Name-based HAL IRQ handlers, e.g. nrfx_spis_0_irq_handler
  */
 
-#define SPIS_NODE(idx) COND_CODE_1(SPIS_IS_FAST(idx), (spis##idx), (spi##idx))
+#define SPIS_NODE(idx) COND_CODE_1(NRF_DT_INST_IS_FAST(SPIS(idx)), (spis##idx), (spi##idx))
 
 #define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
 
@@ -528,9 +505,6 @@ static int spi_nrfx_init(const struct device *dev)
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
 		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
-		IF_ENABLED(CONFIG_SOC_NRF54H20_GPD,			       \
-			(.gpd_ctrl = NRF_PERIPH_GET_FREQUENCY(SPIS(idx)) >     \
-				NRFX_MHZ_TO_HZ(16UL),))			       \
 		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
 		.mem_reg = DMM_DEV_TO_REG(SPIS(idx)),			       \
 	};								       \
@@ -538,7 +512,8 @@ static int spi_nrfx_init(const struct device *dev)
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action,		       \
-		COND_CODE_1(SPIS_IS_FAST(idx), (0), (PM_DEVICE_ISR_SAFE)));    \
+		COND_CODE_1(NRF_DT_INST_IS_FAST(SPIS(idx)), (0),	       \
+			    (PM_DEVICE_ISR_SAFE)));			       \
 	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \
 			    PM_DEVICE_DT_GET(SPIS(idx)),		       \
