@@ -24,11 +24,15 @@ extern "C" {
 /**
  * @ingroup math_dsp
  * @defgroup math_dsp_utils_shifts Float/Fixed point shift conversion functions
+ *
+ * Convert number representation in Float or Double to/from Q31/Q15/Q7.
+ *
+ * @{
  */
 
 /**
  * @ingroup math_dsp_utils_shifts
- * @addtogroup math_dsp_basic_conv_to_float Fixed to Float point conversions
+ * @defgroup math_dsp_basic_conv_to_float Fixed to Float point conversions
  *
  * Convert number Q7/Q15/Q31 to Float or Double representation with shift.
  *
@@ -96,7 +100,7 @@ extern "C" {
 
 /**
  * @ingroup math_dsp_utils_shifts
- * @addtogroup math_dsp_basic_conv_to_fixed Float to Fixed point conversions
+ * @defgroup math_dsp_basic_conv_to_fixed Float to Fixed point conversions
  *
  * Convert number representation in Float or Double to Q31/Q15/Q7.
  *
@@ -163,6 +167,10 @@ extern "C" {
  */
 #define Z_SHIFT_F64_TO_Q31(src, m)                                                                 \
 	((q31_t)Z_CLAMP((int64_t)(src * (1U << 31)) >> m, INT32_MIN, INT32_MAX))
+
+/**
+ * @}
+ */
 
 /**
  * @}
