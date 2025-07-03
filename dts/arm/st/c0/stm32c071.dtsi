@@ -84,3 +84,7 @@
 		#phy-cells = <0>;
 	};
 };
+
+&exti {
+	num-lines = <36>;
+};
