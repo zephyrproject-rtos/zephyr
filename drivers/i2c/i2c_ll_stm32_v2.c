@@ -20,7 +20,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-
+#include <stm32_cache.h>
 #include <zephyr/cache.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
@@ -149,6 +149,68 @@ static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
 
 	return 0;
 }
+
+static void dma_xfer_start(const struct device *dev, struct i2c_msg *msg)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	if ((msg->flags & I2C_MSG_READ) != 0U) {
+		/* Configure RX DMA */
+		data->dma_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
+			cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE);
+		data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		data->dma_blk_cfg.dest_address = (uint32_t)data->current.buf;
+		data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		data->dma_blk_cfg.block_size = data->current.len;
+
+		if (configure_dma(&cfg->rx_dma, &data->dma_rx_cfg,
+					&data->dma_blk_cfg) != 0) {
+			LOG_ERR("Problem setting up RX DMA");
+			return;
+		}
+		data->current.buf += msg->len;
+		data->current.len -= msg->len;
+		LL_I2C_EnableDMAReq_RX(i2c);
+	} else {
+		if (data->current.len != 0U) {
+			/* Configure TX DMA */
+			data->dma_blk_cfg.source_address = (uint32_t)data->current.buf;
+			data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+			data->dma_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
+				cfg->i2c, LL_I2C_DMA_REG_DATA_TRANSMIT);
+			data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			data->dma_blk_cfg.block_size = data->current.len;
+
+			if (configure_dma(&cfg->tx_dma, &data->dma_tx_cfg,
+						&data->dma_blk_cfg) != 0) {
+				LOG_ERR("Problem setting up TX DMA");
+				return;
+			}
+			data->current.buf += data->current.len;
+			data->current.len -= data->current.len;
+			LL_I2C_EnableDMAReq_TX(i2c);
+		}
+	}
+}
+
+static void dma_finish(const struct device *dev, struct i2c_msg *msg)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+
+	if ((msg->flags & I2C_MSG_READ) != 0U) {
+		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
+		LL_I2C_DisableDMAReq_RX(cfg->i2c);
+		if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+			sys_cache_data_invd_range(msg->buf, msg->len);
+		}
+	} else {
+		dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
+		LL_I2C_DisableDMAReq_TX(cfg->i2c);
+	}
+}
+
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
 static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
@@ -188,44 +250,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 		if (msg->len) {
-			if (msg->flags & I2C_MSG_READ) {
-				/* Configure RX DMA */
-				data->dma_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
-					cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE);
-				data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-				data->dma_blk_cfg.dest_address = (uint32_t)msg->buf;
-				data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-				data->dma_blk_cfg.block_size = msg->len;
-
-				if (configure_dma(&cfg->rx_dma, &data->dma_rx_cfg,
-						  &data->dma_blk_cfg) != 0) {
-					LOG_ERR("Problem setting up RX DMA");
-					return;
-				}
-				data->current.buf += msg->len;
-				data->current.len -= msg->len;
-				LL_I2C_EnableDMAReq_RX(i2c);
-			} else {
-				if (data->current.len) {
-					/* Configure TX DMA */
-					data->dma_blk_cfg.source_address =
-						(uint32_t)data->current.buf;
-					data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-					data->dma_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
-						cfg->i2c, LL_I2C_DMA_REG_DATA_TRANSMIT);
-					data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-					data->dma_blk_cfg.block_size = msg->len;
-
-					if (configure_dma(&cfg->tx_dma, &data->dma_tx_cfg,
-							  &data->dma_blk_cfg) != 0) {
-						LOG_ERR("Problem setting up TX DMA");
-						return;
-					}
-					data->current.buf += data->current.len;
-					data->current.len -= data->current.len;
-					LL_I2C_EnableDMAReq_TX(i2c);
-				}
-			}
+			dma_xfer_start(dev, msg);
 		}
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
@@ -287,16 +312,6 @@ static void i2c_stm32_master_mode_end(const struct device *dev)
 		LL_I2C_Disable(i2c);
 	}
 #endif
-
-#ifdef CONFIG_I2C_STM32_V2_DMA
-	if (data->current.msg->flags & I2C_MSG_READ) {
-		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
-		LL_I2C_DisableDMAReq_RX(i2c);
-	} else {
-		dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
-		LL_I2C_DisableDMAReq_TX(i2c);
-	}
-#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	k_sem_give(&data->device_sync_sem);
 }
@@ -599,17 +614,6 @@ void i2c_stm32_event(const struct device *dev)
 			LL_I2C_GenerateStopCondition(i2c);
 		} else {
 			i2c_stm32_disable_transfer_interrupts(dev);
-
-#ifdef CONFIG_I2C_STM32_V2_DMA
-			if (data->current.msg->flags & I2C_MSG_READ) {
-				dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
-				LL_I2C_DisableDMAReq_RX(i2c);
-			} else {
-				dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
-				LL_I2C_DisableDMAReq_TX(i2c);
-			}
-#endif /* CONFIG_I2C_STM32_V2_DMA */
-
 			k_sem_give(&data->device_sync_sem);
 		}
 	}
@@ -694,6 +698,9 @@ static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	dma_finish(dev, msg);
+#endif
 
 	if (data->current.is_nack || data->current.is_err ||
 	    data->current.is_arlo || is_timeout) {
@@ -753,13 +760,9 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 		k_sem_take(&data->device_sync_sem, K_FOREVER);
 		is_timeout = true;
 	}
-#if defined(CONFIG_I2C_STM32_V2_DMA)
-	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
-		LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache",
-			msg->buf, msg->len);
-		sys_cache_data_invd_range((void *)msg->buf, msg->len);
-	}
-#endif /* CONFIG_I2C_STM32_V2_DMA */
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	dma_finish(dev, msg);
+#endif
 
 	if (data->current.is_nack || data->current.is_err ||
 	    data->current.is_arlo || is_timeout) {
