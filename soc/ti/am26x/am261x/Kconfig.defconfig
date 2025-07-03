@@ -25,6 +25,8 @@ config SRAM_SIZE
 config SRAM_BASE_ADDRESS
 	default 0x70000000
 
+config ARM_MPU
+	default y if SOC_SERIES_AM261X_R5F
 
 if SERIAL
 

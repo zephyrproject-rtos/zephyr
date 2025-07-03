@@ -49,3 +49,10 @@ config SOC_SERIES
 
 config SOC
 	default "am2612" if SOC_AM2612_R5F
+
+config CORES_IN_LOCKSTEP_MODE
+	bool
+	default n
+	help
+		Set this symbol to y using overlay file if the R5F cores
+		are operating in lockstep mode
