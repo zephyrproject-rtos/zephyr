@@ -72,7 +72,7 @@
 		adc1: adc@50000000 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 28)>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
