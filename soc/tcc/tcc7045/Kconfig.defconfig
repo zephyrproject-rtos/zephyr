@@ -18,6 +18,9 @@ config NUM_IRQS
 config TICKLESS_KERNEL
 	def_bool n
 
+config TCCVCP_CONSOLE
+	def_bool y
+
 config ARM_MPU
 	def_bool y
 

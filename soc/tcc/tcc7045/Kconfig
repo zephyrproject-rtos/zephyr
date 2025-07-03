@@ -16,4 +16,3 @@ config SOC_TCC7045
 	select CLOCK_CONTROL_TCC_CCU
 	select SYSCON
 	select TIMEOUT_64BIT
-	select SRAM_VECTOR_TABLE
