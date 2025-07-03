@@ -24,7 +24,15 @@ struct icm4268x_emul_data {
 };
 
 struct icm4268x_emul_cfg {
+#if defined(CONFIG_CPP)
+       /* Empty struct has size 0 in C, size 1 in C++. Force them to be the same. */
+	uint8_t unused_cpp_size_compatibility;
+#endif
 };
+
+#if defined(CONFIG_CPP)
+BUILD_ASSERT(sizeof(struct icm4268x_emul_cfg) >= 1);
+#endif
 
 void icm4268x_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *val,
 			   size_t count)
@@ -47,17 +55,13 @@ static void icm4268x_emul_handle_write(const struct emul *target, uint8_t regn, 
 {
 	struct icm4268x_emul_data *data = target->data;
 
-	switch (regn) {
-	case REG_DEVICE_CONFIG:
-		if (FIELD_GET(BIT_SOFT_RESET_CONFIG, value) == 1) {
-			/* Perform a soft reset */
-			memset(data->reg, 0, NUM_REGS);
-			/* Initialized the who-am-i register */
-			data->reg[REG_WHO_AM_I] = WHO_AM_I_ICM42688;
-			/* Set the bit for the reset being done */
-			data->reg[REG_INT_STATUS] |= BIT_RESET_DONE_INT;
-		}
-		break;
+	if (regn == REG_DEVICE_CONFIG && FIELD_GET(BIT_SOFT_RESET_CONFIG, value) == 1) {
+		/* Perform a soft reset */
+		memset(data->reg, 0, NUM_REGS);
+		/* Initialized the who-am-i register */
+		data->reg[REG_WHO_AM_I] = WHO_AM_I_ICM42688;
+		/* Set the bit for the reset being done */
+		data->reg[REG_INT_STATUS] |= BIT_RESET_DONE_INT;
 	}
 }
 
