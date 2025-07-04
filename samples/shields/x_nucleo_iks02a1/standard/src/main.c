@@ -160,9 +160,6 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 
 int main(void)
 {
-#ifdef CONFIG_ISM330DHCX_ENABLE_TEMP
-	struct sensor_value die_temp;
-#endif
 	struct sensor_value die_temp2;
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
