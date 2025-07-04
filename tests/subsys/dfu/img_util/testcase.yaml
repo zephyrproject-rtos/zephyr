@@ -1,13 +1,25 @@
 common:
   platform_allow:
     - nrf52840dk/nrf52840
-    - native_sim
-    - native_sim/native/64
   integration_platforms:
-    - native_sim
+    - nrf52840dk/nrf52840
 tests:
   dfu.image_util:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
     tags: dfu_image_util
   dfu.image_util.progressive:
     extra_args: EXTRA_CONF_FILE=progressively_overlay.conf
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
     tags: dfu_image_util
+  dfu.image_util.slot1:
+    extra_args: FILE_SUFFIX=slot1
+    tags: dfu_image_util
+    sysbuild: true
