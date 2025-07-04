@@ -300,6 +300,7 @@
 };
 
 mikrobus_serial: &uart3 {};
+mikrobus_spi: &spi1 {};
 
 &iic1 {
 	#address-cells = <1>;
