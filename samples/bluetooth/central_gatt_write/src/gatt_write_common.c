@@ -12,10 +12,25 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 
+/* Count down number of write commands after all PHY and connection updates */
+#define COUNT_THROUGHPUT 1000U
+
 /* Count down number of metrics intervals before performing a PHY update */
-#define PHY_UPDATE_COUNTDOWN 3U
+#define PHY_UPDATE_COUNTDOWN 5U
 static uint32_t phy_update_countdown;
 static uint8_t phy_param_idx;
+
+/* Count down number of metrics intervals before performing a param update */
+#define PARAM_UPDATE_COUNTDOWN     PHY_UPDATE_COUNTDOWN
+#if defined(CONFIG_TEST_PHY_UPDATE)
+#define PARAM_UPDATE_ITERATION_MAX 1
+#else /* !CONFIG_TEST_PHY_UPDATE */
+#define PARAM_UPDATE_ITERATION_MAX 20
+#endif /* !CONFIG_TEST_PHY_UPDATE */
+static uint32_t param_update_countdown;
+static uint32_t param_update_iteration;
+static uint32_t param_update_count;
+static uint8_t param_update_idx;
 
 static void phy_update_iterate(struct bt_conn *conn)
 {
@@ -95,11 +110,16 @@ static void phy_update_iterate(struct bt_conn *conn)
 
 	phy_update_countdown = PHY_UPDATE_COUNTDOWN;
 
-	phy_param_idx++;
 	if (phy_param_idx >= ARRAY_SIZE(phy_param)) {
-		/* No more PHY updates, stay at the last index */
-		phy_param_idx = ARRAY_SIZE(phy_param);
-		return;
+		if (IS_ENABLED(CONFIG_TEST_PHY_UPDATE)) {
+			/* No more PHY updates, stay at the last index */
+			return;
+		}
+
+		/* Test PHY Update not enabled, lets continue with connection update iterations
+		 * forever.
+		 */
+		phy_param_idx = 0U;
 	}
 
 	struct bt_conn_info conn_info;
@@ -132,6 +152,8 @@ static void phy_update_iterate(struct bt_conn *conn)
 		printk("Failed to update PHY (%d).\n", err);
 		return;
 	}
+
+	phy_param_idx++;
 }
 
 /* Interval between storing the measured write rate */
@@ -145,6 +167,7 @@ static uint32_t write_rate;
 /* Globals, reused by central_gatt_write and peripheral_gatt_write samples */
 struct bt_conn *conn_connected;
 uint32_t last_write_rate;
+uint32_t *write_countdown;
 void (*start_scan_func)(void);
 
 static void write_cmd_cb(struct bt_conn *conn, void *user_data)
@@ -177,6 +200,103 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		if (IS_ENABLED(CONFIG_BT_USER_PHY_UPDATE)) {
 			phy_update_iterate(conn);
 		}
+
+		const struct bt_le_conn_param update_params[] = {{
+
+				.interval_min = 0x0029,
+				.interval_max = 0x0029,
+				.latency = 0,
+				.timeout = 31,
+			}, {
+				.interval_min = 0x0028,
+				.interval_max = 0x0028,
+				.latency = 0,
+				.timeout = 30,
+			}, {
+				.interval_min = 0x0007,
+				.interval_max = 0x0007,
+				.latency = 0,
+				.timeout = 84,
+			}, {
+				.interval_min = 0x0006,
+				.interval_max = 0x0006,
+				.latency = 0,
+				.timeout = 84,
+			}, {
+				.interval_min = 0x0028,
+				.interval_max = 0x0028,
+				.latency = 0,
+				.timeout = 30,
+			}, {
+				.interval_min = 0x0029,
+				.interval_max = 0x0029,
+				.latency = 0,
+				.timeout = 31,
+			}, {
+				.interval_min = 0x0006,
+				.interval_max = 0x0006,
+				.latency = 0,
+				.timeout = 84,
+			}, {
+				.interval_min = 0x0007,
+				.interval_max = 0x0007,
+				.latency = 0,
+				.timeout = 84,
+			}, {
+				.interval_min = 0x0028,
+				.interval_max = 0x0028,
+				.latency = 0,
+				.timeout = 30,
+			},
+		};
+		int err;
+
+		if ((param_update_countdown--) != 0U) {
+			return;
+		}
+
+		param_update_countdown = PARAM_UPDATE_COUNTDOWN;
+
+		if (param_update_idx >= ARRAY_SIZE(update_params)) {
+			if (IS_ENABLED(CONFIG_TEST_CONN_UPDATE) &&
+			    (--param_update_iteration == 0U)) {
+				/* No more conn updates, stay at the last index */
+				param_update_iteration = 1U;
+
+				if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+				    !IS_ENABLED(CONFIG_TEST_PHY_UPDATE)) {
+					/* Stop scanning. We will keep calling on every complete
+					 * countdown. This is ok, for implementation simplicity,
+					 * i.e.not adding addition design.
+					 */
+					err = bt_le_scan_stop();
+					if (err != 0) {
+						printk("Failed to stop scanning (%d).\n", err);
+					}
+
+					printk("Scanning stopped.\n");
+
+					*write_countdown = COUNT_THROUGHPUT;
+				}
+
+				return;
+			}
+
+			/* Test Connection Update not enabled, lets continue with connection update
+			 * iterations forever.
+			 */
+			param_update_idx = 0U;
+		}
+
+		param_update_count++;
+
+		printk("Parameter Update Count: %u\n", param_update_count);
+		err = bt_conn_le_param_update(conn, &update_params[param_update_idx]);
+		if (err != 0) {
+			printk("Parameter update failed (err %d)\n", err);
+		}
+
+		param_update_idx++;
 
 	} else {
 		uint16_t len;
@@ -226,7 +346,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (conn_err) {
-		printk("%s: Failed to connect to %s (%u)\n", __func__, addr,
+		printk("%s: Failed to connect to %s (0x%02x)\n", __func__, addr,
 		       conn_err);
 		return;
 	}
@@ -256,6 +376,17 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		phy_update_countdown = PHY_UPDATE_COUNTDOWN;
 		phy_param_idx = 0U;
 	}
+
+	/* Every 1 second the acknowledged total GATT Write without Response data size is used for
+	 * the throughput calculation.
+	 * PHY update is performed in reference to this calculation interval, and connection update
+	 * is offset by 1 of this interval so that connection update is initiated one such interval
+	 * after PHY update was requested.
+	 */
+	param_update_countdown = PARAM_UPDATE_COUNTDOWN + 1U;
+	param_update_iteration = PARAM_UPDATE_ITERATION_MAX;
+	param_update_count = 0U;
+	param_update_idx = 0U;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -272,7 +403,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	printk("%s: %s role %u, reason %u %s\n", __func__, addr, conn_info.role,
+	printk("%s: %s role %u, reason 0x%02x %s\n", __func__, addr, conn_info.role,
 	       reason, bt_hci_err_to_str(reason));
 
 	conn_connected = NULL;
@@ -366,28 +497,28 @@ int write_cmd(struct bt_conn *conn)
 		data_len_max = BT_ATT_MAX_ATTRIBUTE_LEN;
 	}
 
-#if TEST_FRAGMENTATION_WITH_VARIABLE_LENGTH_DATA
-	/* Use incremental length data for every write command */
-	/* TODO: Include test case in BabbleSim tests */
-	static bool decrement;
+	if (IS_ENABLED(CONFIG_USE_VARIABLE_LENGTH_DATA)) {
+		/* Use incremental length data for every write command */
+		/* TODO: Include test case in BabbleSim tests */
+		static bool decrement;
 
-	if (decrement) {
-		data_len--;
-		if (data_len <= 1) {
-			data_len = 1;
-			decrement = false;
+		if (decrement) {
+			data_len--;
+			if (data_len <= 1) {
+				data_len = 1;
+				decrement = false;
+			}
+		} else {
+			data_len++;
+			if (data_len >= data_len_max) {
+				data_len = data_len_max;
+				decrement = true;
+			}
 		}
 	} else {
-		data_len++;
-		if (data_len >= data_len_max) {
-			data_len = data_len_max;
-			decrement = true;
-		}
+		/* Use fixed length data for every write command */
+		data_len = data_len_max;
 	}
-#else
-	/* Use fixed length data for every write command */
-	data_len = data_len_max;
-#endif
 
 	/* Pass the 16-bit data length value (instead of reference) in
 	 * user_data so that unique value is pass for each write callback.
