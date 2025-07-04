@@ -1,4 +1,4 @@
-# Doxyfile 1.12.0
+# Doxyfile 1.14.0
 
 # This file describes the settings to be used by the documentation system
 # Doxygen (www.doxygen.org) for a project.
@@ -80,7 +80,7 @@ OUTPUT_DIRECTORY       = @DOXY_OUT@
 # sub-directories (in 2 levels) under the output directory of each output format
 # and will distribute the generated files over these directories. Enabling this
 # option can be useful when feeding Doxygen a huge amount of source files, where
-# putting all generated files in the same directory would otherwise causes
+# putting all generated files in the same directory would otherwise cause
 # performance problems for the file system. Adapt CREATE_SUBDIRS_LEVEL to
 # control the number of sub-directories.
 # The default value is: NO.
@@ -199,10 +199,10 @@ STRIP_FROM_INC_PATH    =
 SHORT_NAMES            = NO
 
 # If the JAVADOC_AUTOBRIEF tag is set to YES then Doxygen will interpret the
-# first line (until the first dot) of a Javadoc-style comment as the brief
-# description. If set to NO, the Javadoc-style will behave just like regular Qt-
-# style comments (thus requiring an explicit @brief command for a brief
-# description.)
+# first line (until the first dot, question mark or exclamation mark) of a
+# Javadoc-style comment as the brief description. If set to NO, the Javadoc-
+# style will behave just like regular Qt-style comments (thus requiring an
+# explicit @brief command for a brief description.)
 # The default value is: NO.
 
 JAVADOC_AUTOBRIEF      = YES
@@ -218,9 +218,10 @@ JAVADOC_AUTOBRIEF      = YES
 JAVADOC_BANNER         = NO
 
 # If the QT_AUTOBRIEF tag is set to YES then Doxygen will interpret the first
-# line (until the first dot) of a Qt-style comment as the brief description. If
-# set to NO, the Qt-style will behave just like regular Qt-style comments (thus
-# requiring an explicit \brief command for a brief description.)
+# line (until the first dot, question mark or exclamation mark) of a Qt-style
+# comment as the brief description. If set to NO, the Qt-style will behave just
+# like regular Qt-style comments (thus requiring an explicit \brief command for
+# a brief description.)
 # The default value is: NO.
 
 QT_AUTOBRIEF           = YES
@@ -388,10 +389,19 @@ MARKDOWN_ID_STYLE      = DOXYGEN
 # When enabled Doxygen tries to link words that correspond to documented
 # classes, or namespaces to their corresponding documentation. Such a link can
 # be prevented in individual cases by putting a % sign in front of the word or
-# globally by setting AUTOLINK_SUPPORT to NO.
+# globally by setting AUTOLINK_SUPPORT to NO. Words listed in the
+# AUTOLINK_IGNORE_WORDS tag are excluded from automatic linking.
 # The default value is: YES.
 
 AUTOLINK_SUPPORT       = YES
+
+# This tag specifies a list of words that, when matching the start of a word in
+# the documentation, will suppress auto links generation, if it is enabled via
+# AUTOLINK_SUPPORT. This list does not affect links explicitly created using \#
+# or the \link or commands.
+# This tag requires that the tag AUTOLINK_SUPPORT is set to YES.
+
+AUTOLINK_IGNORE_WORDS  =
 
 # If you use STL classes (i.e. std::string, std::vector, etc.) but do not want
 # to include (a tag file for) the STL sources as input, then you should set this
@@ -603,6 +613,14 @@ HIDE_UNDOC_MEMBERS     = NO
 # The default value is: NO.
 
 HIDE_UNDOC_CLASSES     = NO
+
+# If the HIDE_UNDOC_NAMESPACES tag is set to YES, Doxygen will hide all
+# undocumented namespaces that are normally visible in the namespace hierarchy.
+# If set to NO, these namespaces will be included in the various overviews. This
+# option has no effect if EXTRACT_ALL is enabled.
+# The default value is: YES.
+
+HIDE_UNDOC_NAMESPACES  = YES
 
 # If the HIDE_FRIEND_COMPOUNDS tag is set to YES, Doxygen will hide all friend
 # declarations. If set to NO, these declarations will be included in the
@@ -914,6 +932,14 @@ WARN_NO_PARAMDOC       = NO
 
 WARN_IF_UNDOC_ENUM_VAL = NO
 
+# If WARN_LAYOUT_FILE option is set to YES, Doxygen will warn about issues found
+# while parsing the user defined layout file, such as missing or wrong elements.
+# See also LAYOUT_FILE for details. If set to NO, problems with the layout file
+# will be suppressed.
+# The default value is: YES.
+
+WARN_LAYOUT_FILE       = YES
+
 # If the WARN_AS_ERROR tag is set to YES then Doxygen will immediately stop when
 # a warning is encountered. If the WARN_AS_ERROR tag is set to FAIL_ON_WARNINGS
 # then Doxygen will continue running as if WARN_AS_ERROR tag is set to NO, but
@@ -994,10 +1020,10 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
 INPUT_ENCODING         = UTF-8
 
 # This tag can be used to specify the character encoding of the source files
-# that Doxygen parses The INPUT_FILE_ENCODING tag can be used to specify
+# that Doxygen parses. The INPUT_FILE_ENCODING tag can be used to specify
 # character encoding on a per file pattern basis. Doxygen will compare the file
 # name with each pattern and apply the encoding instead of the default
-# INPUT_ENCODING) if there is a match. The character encodings are a list of the
+# INPUT_ENCODING if there is a match. The character encodings are a list of the
 # form: pattern=encoding (like *.php=ISO-8859-1).
 # See also: INPUT_ENCODING for further information on supported encodings.
 
@@ -1016,9 +1042,9 @@ INPUT_FILE_ENCODING    =
 #
 # If left blank the following patterns are tested:*.c, *.cc, *.cxx, *.cxxm,
 # *.cpp, *.cppm, *.ccm, *.c++, *.c++m, *.java, *.ii, *.ixx, *.ipp, *.i++, *.inl,
-# *.idl, *.ddl, *.odl, *.h, *.hh, *.hxx, *.hpp, *.h++, *.ixx, *.l, *.cs, *.d,
-# *.php, *.php4, *.php5, *.phtml, *.inc, *.m, *.markdown, *.md, *.mm, *.dox (to
-# be provided as Doxygen C comment), *.py, *.pyw, *.f90, *.f95, *.f03, *.f08,
+# *.idl, *.ddl, *.odl, *.h, *.hh, *.hxx, *.hpp, *.h++, *.l, *.cs, *.d, *.php,
+# *.php4, *.php5, *.phtml, *.inc, *.m, *.markdown, *.md, *.mm, *.dox (to be
+# provided as Doxygen C comment), *.py, *.pyw, *.f90, *.f95, *.f03, *.f08,
 # *.f18, *.f, *.for, *.vhd, *.vhdl, *.ucf, *.qsf and *.ice.
 
 FILE_PATTERNS          = *.c \
@@ -1569,9 +1595,9 @@ DOCSET_PUBLISHER_NAME  = Publisher
 # additional HTML index files: index.hhp, index.hhc, and index.hhk. The
 # index.hhp is a project file that can be read by Microsoft's HTML Help Workshop
 # on Windows. In the beginning of 2021 Microsoft took the original page, with
-# a.o. the download links, offline the HTML help workshop was already many years
-# in maintenance mode). You can download the HTML help workshop from the web
-# archives at Installation executable (see:
+# a.o. the download links, offline (the HTML help workshop was already many
+# years in maintenance mode). You can download the HTML help workshop from the
+# web archives at Installation executable (see:
 # http://web.archive.org/web/20160201063255/http://download.microsoft.com/downlo
 # ad/0/A/9/0A939EF6-E31C-430F-A3DF-DFAE7960D564/htmlhelp.exe).
 #
@@ -1745,20 +1771,29 @@ DISABLE_INDEX          = NO
 # further fine tune the look of the index (see "Fine-tuning the output"). As an
 # example, the default style sheet generated by Doxygen has an example that
 # shows how to put an image at the root of the tree instead of the PROJECT_NAME.
-# Since the tree basically has the same information as the tab index, you could
-# consider setting DISABLE_INDEX to YES when enabling this option.
-# The default value is: NO.
+# Since the tree basically has more details information than the tab index, you
+# could consider setting DISABLE_INDEX to YES when enabling this option.
+# The default value is: YES.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
 GENERATE_TREEVIEW      = YES
 
-# When both GENERATE_TREEVIEW and DISABLE_INDEX are set to YES, then the
-# FULL_SIDEBAR option determines if the side bar is limited to only the treeview
-# area (value NO) or if it should extend to the full height of the window (value
-# YES). Setting this to YES gives a layout similar to
-# https://docs.readthedocs.io with more room for contents, but less room for the
-# project logo, title, and description. If either GENERATE_TREEVIEW or
-# DISABLE_INDEX is set to NO, this option has no effect.
+# When GENERATE_TREEVIEW is set to YES, the PAGE_OUTLINE_PANEL option determines
+# if an additional navigation panel is shown at the right hand side of the
+# screen, displaying an outline of the contents of the main page, similar to
+# e.g. https://developer.android.com/reference If GENERATE_TREEVIEW is set to
+# NO, this option has no effect.
+# The default value is: YES.
+# This tag requires that the tag GENERATE_HTML is set to YES.
+
+PAGE_OUTLINE_PANEL     = YES
+
+# When GENERATE_TREEVIEW is set to YES, the FULL_SIDEBAR option determines if
+# the side bar is limited to only the treeview area (value NO) or if it should
+# extend to the full height of the window (value YES). Setting this to YES gives
+# a layout similar to e.g. https://docs.readthedocs.io with more room for
+# contents, but less room for the project logo, title, and description. If
+# GENERATE_TREEVIEW is set to NO, this option has no effect.
 # The default value is: NO.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
@@ -1878,7 +1913,7 @@ MATHJAX_FORMAT         = HTML-CSS
 # - in case of MathJax version 3: https://cdn.jsdelivr.net/npm/mathjax@3
 # This tag requires that the tag USE_MATHJAX is set to YES.
 
-MATHJAX_RELPATH        = http://cdn.mathjax.org/mathjax/latest
+MATHJAX_RELPATH        = https://cdn.jsdelivr.net/npm/mathjax@3
 
 # The MATHJAX_EXTENSIONS tag can be used to specify one or more MathJax
 # extension names that should be enabled during MathJax rendering. For example
@@ -2159,10 +2194,10 @@ LATEX_HIDE_INDICES     = NO
 # The LATEX_BIB_STYLE tag can be used to specify the style to use for the
 # bibliography, e.g. plainnat, or ieeetr. See
 # https://en.wikipedia.org/wiki/BibTeX and \cite for more info.
-# The default value is: plain.
+# The default value is: plainnat.
 # This tag requires that the tag GENERATE_LATEX is set to YES.
 
-LATEX_BIB_STYLE        = plain
+LATEX_BIB_STYLE        = plainnat
 
 # The LATEX_EMOJI_DIRECTORY tag is used to specify the (relative or absolute)
 # path from which the emoji images will be read. If a relative path is entered,
@@ -2721,6 +2756,15 @@ UML_LOOK               = NO
 
 UML_LIMIT_NUM_FIELDS   = 10
 
+# If the UML_LOOK tag is enabled, field labels are shown along the edge between
+# two class nodes. If there are many fields and many nodes the graph may become
+# too cluttered. The UML_MAX_EDGE_LABELS threshold limits the number of items to
+# make the size more manageable. Set this to 0 for no limit.
+# Minimum value: 0, maximum value: 100, default value: 10.
+# This tag requires that the tag UML_LOOK is set to YES.
+
+UML_MAX_EDGE_LABELS    = 10
+
 # If the DOT_UML_DETAILS tag is set to NO, Doxygen will show attributes and
 # methods without types and arguments in the UML graphs. If the DOT_UML_DETAILS
 # tag is set to YES, Doxygen will add type and arguments for attributes and
@@ -2828,24 +2872,29 @@ DIR_GRAPH_MAX_DEPTH    = 1
 # generated by dot. For an explanation of the image formats see the section
 # output formats in the documentation of the dot tool (Graphviz (see:
 # https://www.graphviz.org/)).
-# Note: If you choose svg you need to set HTML_FILE_EXTENSION to xhtml in order
-# to make the SVG files visible in IE 9+ (other browsers do not have this
-# requirement).
+#
+# Note the formats svg:cairo and svg:cairo:cairo cannot be used in combination
+# with INTERACTIVE_SVG (the INTERACTIVE_SVG will be set to NO).
 # Possible values are: png, jpg, gif, svg, png:gd, png:gd:gd, png:cairo,
-# png:cairo:gd, png:cairo:cairo, png:cairo:gdiplus, png:gdiplus and
-# png:gdiplus:gdiplus.
+# png:cairo:gd, png:cairo:cairo, png:cairo:gdiplus, png:gdiplus,
+# png:gdiplus:gdiplus, svg:cairo, svg:cairo:cairo, svg:svg, svg:svg:core,
+# gif:cairo, gif:cairo:gd, gif:cairo:gdiplus, gif:gdiplus, gif:gdiplus:gdiplus,
+# gif:gd, gif:gd:gd, jpg:cairo, jpg:cairo:gd, jpg:cairo:gdiplus, jpg:gd,
+# jpg:gd:gd, jpg:gdiplus and jpg:gdiplus:gdiplus.
 # The default value is: png.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
 DOT_IMAGE_FORMAT       = png
 
-# If DOT_IMAGE_FORMAT is set to svg, then this option can be set to YES to
-# enable generation of interactive SVG images that allow zooming and panning.
+# If DOT_IMAGE_FORMAT is set to svg or svg:svg or svg:svg:core, then this option
+# can be set to YES to enable generation of interactive SVG images that allow
+# zooming and panning.
 #
 # Note that this requires a modern browser other than Internet Explorer. Tested
 # and working are Firefox, Chrome, Safari, and Opera.
-# Note: For IE 9+ you need to set HTML_FILE_EXTENSION to xhtml in order to make
-# the SVG files visible. Older versions of IE do not have SVG support.
+#
+# Note This option will be automatically disabled when DOT_IMAGE_FORMAT is set
+# to svg:cairo or svg:cairo:cairo.
 # The default value is: NO.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
@@ -2894,6 +2943,12 @@ PLANTUML_CFG_FILE      =
 # the !include statement in a PlantUML block.
 
 PLANTUML_INCLUDE_PATH  =
+
+# The PLANTUMLFILE_DIRS tag can be used to specify one or more directories that
+# contain PlantUml files that are included in the documentation (see the
+# \plantumlfile command).
+
+PLANTUMLFILE_DIRS      =
 
 # The DOT_GRAPH_MAX_NODES tag can be used to set the maximum number of nodes
 # that will be shown in the graph. If the number of nodes in a graph becomes
