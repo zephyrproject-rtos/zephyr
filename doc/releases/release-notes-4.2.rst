@@ -33,6 +33,20 @@ We are pleased to announce the release of Zephyr version 4.2.0.
 
 Major enhancements with this release include:
 
+- Initial support for the **Renesas RX** 32-bit architecture has been added, including a QEMU-based
+  :zephyr:board:`board target <qemu_rx>`.
+
+- The USB device stack now supports **USB Video Class** (UVC).
+
+- The networking stack now includes full support for the **MQTT 5.0** protocol.
+
+- Zbus graduates to stable status with the release of API version v1.0.0.
+
+- **Bluetooth Classic** stack now supports **Hands-Free Profile** (HFP) for both Audio Gateway (AG)
+  and Hands-Free (HF) roles.
+
+- **96 new boards** have been added since the last release.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.1.0 to Zephyr v4.2.0 can be found in the separate :ref:`migration guide<migration_4.2>`.
 
