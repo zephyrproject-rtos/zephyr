@@ -148,7 +148,6 @@ static void process_thread(void)
 	if (IS_ENABLED(CONFIG_NET_SAMPLE_MQTT_SN_STATIC_GATEWAY)) {
 		LOG_INF("Adding predefined Gateway");
 		struct sockaddr_in gwaddr = {0};
-		int err;
 
 		LOG_DBG("Parsing Broadcast IP %s", SAMPLE_GW_IP);
 		gwaddr.sin_family = AF_INET;
