@@ -41,6 +41,4 @@ extern const struct rtio_iodev_api _video_iodev_api;
 struct video_device *video_find_vdev(const struct device *dev);
 struct rtio_iodev *video_find_iodev(const struct device *dev);
 
-struct video_buffer *video_get_buf_sqe(struct mpsc *io_q);
-
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIDEO_VIDEO_DEVICE_H_ */

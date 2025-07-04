@@ -40,14 +40,3 @@ struct rtio_iodev *video_find_iodev(const struct device *dev)
 
 	return NULL;
 }
-
-static void video_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
-{
-	struct video_interface *vi = iodev_sqe->sqe.iodev->data;
-
-	mpsc_push(vi->io_q, &iodev_sqe->q);
-}
-
-const struct rtio_iodev_api _video_iodev_api = {
-	.submit = video_iodev_submit,
-};
