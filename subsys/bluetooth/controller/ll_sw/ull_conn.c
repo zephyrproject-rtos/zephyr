@@ -2975,7 +2975,7 @@ uint8_t ll_conn_set_path_loss_reporting(uint16_t handle, uint8_t enable)
 }
 #endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
 
-uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn)
+bool ull_conn_lll_tx_queue_is_empty(struct ll_conn *conn)
 {
-	return (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL);
+	return memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL;
 }
