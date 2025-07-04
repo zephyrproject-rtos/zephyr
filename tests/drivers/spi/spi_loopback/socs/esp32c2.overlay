@@ -41,4 +41,11 @@
 	pinctrl-0 = <&spim2_loopback>;
 	pinctrl-names = "default";
 	status = "okay";
+
+	dmas = <&dma 0>, <&dma 1>;
+	dma-names = "rx", "tx";
+};
+
+&dma {
+	status = "okay";
 };
