@@ -160,10 +160,7 @@ static void ism330dhcx_config(const struct device *ism330dhcx)
 
 int main(void)
 {
-#ifdef CONFIG_ISM330DHCX_ENABLE_TEMP
 	struct sensor_value die_temp;
-#endif
-	struct sensor_value die_temp2;
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
@@ -215,7 +212,7 @@ int main(void)
 
 		sensor_channel_get(iis2dlpc, SENSOR_CHAN_ACCEL_XYZ, accel2);
 		sensor_channel_get(iis2mdc, SENSOR_CHAN_MAGN_XYZ, magn);
-		sensor_channel_get(iis2mdc, SENSOR_CHAN_DIE_TEMP, &die_temp2);
+		sensor_channel_get(iis2mdc, SENSOR_CHAN_DIE_TEMP, &die_temp);
 		sensor_channel_get(ism330dhcx, SENSOR_CHAN_ACCEL_XYZ, accel1);
 		sensor_channel_get(ism330dhcx, SENSOR_CHAN_GYRO_XYZ, gyro);
 
@@ -237,8 +234,7 @@ int main(void)
 		       sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 
-		printf("IIS2MDC: Temperature: %.1f C\n",
-		       sensor_value_to_double(&die_temp2));
+		printf("IIS2MDC: Temperature: %.1f C\n", sensor_value_to_double(&die_temp));
 
 		printf("ISM330DHCX: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&accel1[0]),
