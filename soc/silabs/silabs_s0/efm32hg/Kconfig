@@ -10,6 +10,3 @@ config SOC_SERIES_EFM32HG
 	select SOC_GECKO_CMU
 	select SOC_GECKO_GPIO
 	select HAS_PM
-
-config SOC_GECKO_SDID
-	default 77 if SOC_SERIES_EFM32HG
