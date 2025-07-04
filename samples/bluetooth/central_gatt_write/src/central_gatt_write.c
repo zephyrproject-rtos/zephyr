@@ -97,6 +97,12 @@ uint32_t central_gatt_write(uint32_t count)
 	last_write_rate = 0U;
 	write_countdown = &count;
 
+	if (count != 0U) {
+		printk("GATT Write countdown %u on connection.\n", count);
+	} else {
+		printk("GATT Write forever on connection.\n");
+	}
+
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	err = bt_conn_le_set_default_phy(BT_GAP_LE_PHY_1M, BT_GAP_LE_PHY_1M);
 	if (err) {
@@ -124,6 +130,9 @@ uint32_t central_gatt_write(uint32_t count)
 			(void)write_cmd(conn);
 			bt_conn_unref(conn);
 
+			/* Passing `0` will not use GATT Write Cmd countdown.
+			 * Below code block will be optimized out by the linker.
+			 */
 			if (count) {
 				if ((count % 1000U) == 0U) {
 					printk("GATT Write countdown %u\n", count);

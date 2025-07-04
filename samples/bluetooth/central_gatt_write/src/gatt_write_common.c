@@ -18,23 +18,45 @@
 /* Count down number of metrics intervals before performing a PHY update */
 #define PHY_UPDATE_COUNTDOWN 5U
 static uint32_t phy_update_countdown;
+
+/* Current index of the parameters array to initiate PHY Update */
 static uint8_t phy_param_idx;
 
 /* Count down number of metrics intervals before performing a param update */
 #define PARAM_UPDATE_COUNTDOWN     PHY_UPDATE_COUNTDOWN
-#if defined(CONFIG_TEST_PHY_UPDATE)
-#define PARAM_UPDATE_ITERATION_MAX 1
-#else /* !CONFIG_TEST_PHY_UPDATE */
-#define PARAM_UPDATE_ITERATION_MAX 20
-#endif /* !CONFIG_TEST_PHY_UPDATE */
 static uint32_t param_update_countdown;
-static uint32_t param_update_iteration;
-static uint32_t param_update_count;
+
+/* Current index of the parameters array to initiate Connection Update */
 static uint8_t param_update_idx;
 
+/* If testing PHY Update then perform one iteration of Connection Updates otherwise when testing
+ * Connection Updates perform 20 iterations.
+ */
+#define PARAM_UPDATE_ITERATION_MAX COND_CODE_1(CONFIG_USE_PHY_UPDATE_ITERATION_ONCE, (1U), (20U))
+static uint32_t param_update_iteration;
+
+/* Total number of Connection Updates performed
+ *
+ * Used for logging purposes only
+ */
+static uint32_t param_update_count;
+
+/* Calculate the Supervision Timeout to a Rounded up 10 ms unit
+ *
+ * Conform to required BT Specifiction defined minimum Supervision Timeout of 100 ms
+ */
 #define CONN_TIMEOUT(_timeout) \
-	BT_GAP_US_TO_CONN_TIMEOUT(DIV_ROUND_UP(MAX(100000U, (_timeout)), \
+	BT_GAP_US_TO_CONN_TIMEOUT(DIV_ROUND_UP(MAX(100U * USEC_PER_MSEC, (_timeout)), \
 					       10U * USEC_PER_MSEC) * 10U * USEC_PER_MSEC)
+
+/* Relaxed number of Connection Interval to set the Supervision Timeout.
+ * Shall be >= 2U.
+ *
+ * Refer to BT Spec v6.1, Vol 6, Part B, Section 4.5.2 Supervision timeout
+ *
+ * `(1 + connPeripheralLatency) × connSubrateFactor × connInterval × 2`
+ */
+#define CONN_INTERVAL_MULTIPLIER (6U)
 
 static void phy_update_iterate(struct bt_conn *conn)
 {
@@ -115,7 +137,7 @@ static void phy_update_iterate(struct bt_conn *conn)
 	phy_update_countdown = PHY_UPDATE_COUNTDOWN;
 
 	if (phy_param_idx >= ARRAY_SIZE(phy_param)) {
-		if (IS_ENABLED(CONFIG_TEST_PHY_UPDATE)) {
+		if (IS_ENABLED(CONFIG_USE_PHY_UPDATE_ITERATION_ONCE)) {
 			/* No more PHY updates, stay at the last index */
 			return;
 		}
@@ -169,9 +191,16 @@ static uint32_t write_len;
 static uint32_t write_rate;
 
 /* Globals, reused by central_gatt_write and peripheral_gatt_write samples */
+/* Connection context used by the Write Cmd calls */
 struct bt_conn *conn_connected;
+/* Stores the latest calculated write rate, bits per second */
 uint32_t last_write_rate;
+/* Number of Write Commands used to record the latest write rate.
+ * Has to be large enough to be transmitting packets for METRICS_INTERVAL duration.
+ * Assign 0 to continue calculating latest write rate, forever or until disconnection.
+ */
 uint32_t *write_countdown;
+/* Function pointer used to restart scanning on ACL disconnect */
 void (*start_scan_func)(void);
 
 static void write_cmd_cb(struct bt_conn *conn, void *user_data)
@@ -211,16 +240,15 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		 *       scan window.
 		 */
 		const struct bt_le_conn_param update_params[] = {{
-
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(51250U * 6U),
+				.timeout = CONN_TIMEOUT(51250U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(50000U * 6U),
+				.timeout = CONN_TIMEOUT(50000U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(8750U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(8750U),
@@ -235,12 +263,12 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(50000U * 6U),
+				.timeout = CONN_TIMEOUT(50000U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(51250U * 6U),
+				.timeout = CONN_TIMEOUT(51250U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(7500U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(7500U),
@@ -255,7 +283,7 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(50000U * 6U),
+				.timeout = CONN_TIMEOUT(50000U * CONN_INTERVAL_MULTIPLIER),
 			},
 		};
 		int err;
@@ -267,16 +295,26 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		param_update_countdown = PARAM_UPDATE_COUNTDOWN;
 
 		if (param_update_idx >= ARRAY_SIZE(update_params)) {
-			if (IS_ENABLED(CONFIG_TEST_CONN_UPDATE) &&
+			if (IS_ENABLED(CONFIG_USE_CONN_UPDATE_ITERATION_ONCE) &&
 			    (--param_update_iteration == 0U)) {
 				/* No more conn updates, stay at the last index */
 				param_update_iteration = 1U;
 
+				/* As this function is re-used by the peripheral; on target, users
+				 * can enable simultaneous (background) scanning but by default do
+				 * not have the scanning enabled.
+				 * If both Central plus Peripheral role is built together then
+				 * Peripheral is scanning (on 1M and Coded PHY windows) while there
+				 * is simultaneous Write Commands.
+				 *
+				 * We stop scanning if we are stopping after one iteration of
+				 * Connection Updates.
+				 */
 				if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
-				    !IS_ENABLED(CONFIG_TEST_PHY_UPDATE)) {
+				    !IS_ENABLED(CONFIG_USE_PHY_UPDATE_ITERATION_ONCE)) {
 					/* Stop scanning. We will keep calling on every complete
 					 * countdown. This is ok, for implementation simplicity,
-					 * i.e.not adding addition design.
+					 * i.e. not adding addition design.
 					 */
 					err = bt_le_scan_stop();
 					if (err != 0) {
