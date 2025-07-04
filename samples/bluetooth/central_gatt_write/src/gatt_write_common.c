@@ -18,23 +18,39 @@
 /* Count down number of metrics intervals before performing a PHY update */
 #define PHY_UPDATE_COUNTDOWN 5U
 static uint32_t phy_update_countdown;
+
+/* Current index of the parameters array to initiate PHY Update */
 static uint8_t phy_param_idx;
 
 /* Count down number of metrics intervals before performing a param update */
 #define PARAM_UPDATE_COUNTDOWN     PHY_UPDATE_COUNTDOWN
-#if defined(CONFIG_TEST_PHY_UPDATE)
-#define PARAM_UPDATE_ITERATION_MAX 1
-#else /* !CONFIG_TEST_PHY_UPDATE */
-#define PARAM_UPDATE_ITERATION_MAX 20
-#endif /* !CONFIG_TEST_PHY_UPDATE */
 static uint32_t param_update_countdown;
-static uint32_t param_update_iteration;
-static uint32_t param_update_count;
+
+/* Current index of the parameters array to initiate Connection Update */
 static uint8_t param_update_idx;
 
+/* If testing PHY Update then perform one iteration of Connection Updates otherwise when testing
+ * Connection Updates perform 20 iterations.
+ */
+#define PARAM_UPDATE_ITERATION_MAX COND_CODE_1(CONFIG_TEST_PHY_UPDATE, (1U), (20U))
+static uint32_t param_update_iteration;
+
+/* Total number of Connection Updates performed */
+static uint32_t param_update_count;
+
+/* Calculate the Supervision Timeout to a Rounded up 10 ms unit */
 #define CONN_TIMEOUT(_timeout) \
 	BT_GAP_US_TO_CONN_TIMEOUT(DIV_ROUND_UP(MAX(100000U, (_timeout)), \
 					       10U * USEC_PER_MSEC) * 10U * USEC_PER_MSEC)
+
+/* Relaxed number of Connection Interval to set the Supervision Timeout.
+ * Shall be >= 2U.
+ *
+ * Refer to BT Spec v6.0, Vol 6, Part B, Section 4.5.2 Supervision timeout
+ *
+ * `(1 + connPeripheralLatency) × connSubrateFactor × connInterval × 2`
+ */
+#define CONN_INTERVAL_MULTIPLIER (6U)
 
 static void phy_update_iterate(struct bt_conn *conn)
 {
@@ -211,16 +227,15 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		 *       scan window.
 		 */
 		const struct bt_le_conn_param update_params[] = {{
-
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(51250U * 6U),
+				.timeout = CONN_TIMEOUT(51250U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(50000U * 6U),
+				.timeout = CONN_TIMEOUT(50000U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(8750U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(8750U),
@@ -235,12 +250,12 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(50000U * 6U),
+				.timeout = CONN_TIMEOUT(50000U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(51250U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(51250U * 6U),
+				.timeout = CONN_TIMEOUT(51250U * CONN_INTERVAL_MULTIPLIER),
 			}, {
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(7500U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(7500U),
@@ -255,7 +270,7 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 				.interval_min = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.interval_max = BT_GAP_US_TO_CONN_INTERVAL(50000U),
 				.latency = 0,
-				.timeout = CONN_TIMEOUT(50000U * 6U),
+				.timeout = CONN_TIMEOUT(50000U * CONN_INTERVAL_MULTIPLIER),
 			},
 		};
 		int err;

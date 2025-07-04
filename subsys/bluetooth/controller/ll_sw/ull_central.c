@@ -946,7 +946,13 @@ void ull_central_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ref = ull_ref_inc(&conn->ull);
 	LL_ASSERT(ref);
 
-	/* Increment event counter */
+	/* Increment event counter.
+	 *
+	 * Refer to BT Spec v6.0, Vol 6, Part B, Section 4.5.1 Connection events
+	 *
+	 * `the connEventCounter shall wrap from 0xFFFF to 0x0000. This counter is used to
+	 * synchronize Link Layer control procedures.`
+	 */
 	conn->event_counter += (lazy + 1U);
 
 	/* De-mux 2 tx node from FIFO, sufficient to be able to set MD bit */
