@@ -152,6 +152,16 @@ Logging
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
 
+Shell
+=====
+
+* The MQTT topics related to :kconfig:option:`SHELL_BACKEND_MQTT` have been renamed. Renamed
+  ``<device_id>_rx`` to ``<device_id>/sh/rx`` and ``<device_id>_tx`` to ``<device_id>/sh/rx``. The
+  part after the ``<device_id>`` is now configurable via :kconfig:option:`SHELL_MQTT_TOPIC_RX_ID`
+  and :kconfig:option:`SHELL_MQTT_TOPIC_TX_ID`. This allows keeping the previous topics for backward
+  compatibility.
+  (:github:`92677`).
+
 .. zephyr-keep-sorted-stop
 
 Modules
