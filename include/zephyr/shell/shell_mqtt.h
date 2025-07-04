@@ -25,7 +25,8 @@ extern "C" {
 #define SH_MQTT_BUFFER_SIZE 64
 #define DEVICE_ID_BIN_MAX_SIZE 3
 #define DEVICE_ID_HEX_MAX_SIZE ((DEVICE_ID_BIN_MAX_SIZE * 2) + 1)
-#define SH_MQTT_TOPIC_MAX_SIZE DEVICE_ID_HEX_MAX_SIZE + 3
+#define SH_MQTT_TOPIC_RX_MAX_SIZE DEVICE_ID_HEX_MAX_SIZE + sizeof(CONFIG_SHELL_MQTT_TOPIC_RX_ID)
+#define SH_MQTT_TOPIC_TX_MAX_SIZE DEVICE_ID_HEX_MAX_SIZE + sizeof(CONFIG_SHELL_MQTT_TOPIC_TX_ID)
 
 extern const struct shell_transport_api shell_mqtt_transport_api;
 
@@ -40,8 +41,8 @@ struct shell_mqtt_tx_buf {
 /** MQTT-based shell transport. */
 struct shell_mqtt {
 	char device_id[DEVICE_ID_HEX_MAX_SIZE];
-	char sub_topic[SH_MQTT_TOPIC_MAX_SIZE];
-	char pub_topic[SH_MQTT_TOPIC_MAX_SIZE];
+	char sub_topic[SH_MQTT_TOPIC_RX_MAX_SIZE];
+	char pub_topic[SH_MQTT_TOPIC_TX_MAX_SIZE];
 
 	/** Handler function registered by shell. */
 	shell_transport_handler_t shell_handler;

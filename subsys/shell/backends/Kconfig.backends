@@ -348,6 +348,18 @@ config SHELL_MQTT_LISTEN_TIMEOUT_MS
 	help
 	  Time to listen for incoming packets in milliseconds.
 
+config SHELL_MQTT_TOPIC_RX_ID
+	string "MQTT topic receive identifier"
+	default "/sh/rx"
+	help
+	  String used as receive identifier in the MQTT topic.
+
+config SHELL_MQTT_TOPIC_TX_ID
+	string "MQTT topic transmit identifier"
+	default "/sh/tx"
+	help
+	  String used as transmit identifier in the MQTT topic.
+
 module = SHELL_BACKEND_MQTT
 default-timeout = 100
 source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
