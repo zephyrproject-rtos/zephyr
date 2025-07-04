@@ -277,7 +277,8 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
  *
  * @details The test allocates 256 unsigned integers of 4 bytes for a
  * total of 1024 bytes from the 2048 byte heap. It checks if allocation
- * and initialization are successful or not
+ * and initialization are successful or not.
+ * Also tests k_heap_calloc() overflow and zero-size edge cases
  *
  * @see k_heap_calloc(), k_heap_free()
  */
@@ -292,6 +293,14 @@ ZTEST(k_heap_api, test_k_heap_calloc)
 	}
 
 	k_heap_free(&k_heap_test, p);
+
+	/* Overflow: num * size wraps around */
+	p = k_heap_calloc(&k_heap_test, SIZE_MAX, SIZE_MAX, K_NO_WAIT);
+	zassert_is_null(p, "k_heap_calloc with overflow should fail");
+
+	/* Zero-size, should not crash */
+	p = k_heap_calloc(&k_heap_test, 0, 0, K_NO_WAIT);
+	(void)p;
 }
 
 /**
