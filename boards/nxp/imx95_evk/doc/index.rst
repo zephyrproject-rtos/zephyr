@@ -106,8 +106,7 @@ Ethernet
 --------
 
 NETC driver supports to manage the Physical Station Interface (PSI).
-The first ENET1 port could be enabled for M7 by west build option
-``-DEXTRA_DTC_OVERLAY_FILE=enetc_psi0.overlay``.
+The first ENET1 port could be enabled on M7 DDR platform.
 
 
 Programming and Debugging (A55)
