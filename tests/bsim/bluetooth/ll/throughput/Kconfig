@@ -1,19 +1,4 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config TEST_CONN_UPDATE
-	bool "Test Connection Update"
-	default y
-	help
-	  Test Connection Update for a single iteration.
-
-config TEST_PHY_UPDATE
-	bool "Test PHY Update"
-	depends on BT_USER_PHY_UPDATE
-	default y
-	help
-	  Test PHY Update for a single iteration.
-
-menu "Zephyr Kernel"
-source "Kconfig.zephyr"
-endmenu
+source "$(ZEPHYR_BASE)/samples/bluetooth/central_gatt_write/Kconfig"
