@@ -431,3 +431,34 @@ ZTEST(k_heap_api, test_k_heap_realloc_fail)
 
 	k_heap_free(&k_heap_test, p);
 }
+
+/**
+ * @brief Test k_heap_aligned_alloc() API usage and edge cases
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details Allocates a block with a specific alignment from the heap
+ * and checks alignment, then tries oversize and invalid alignment.
+ *
+ * @see k_heap_aligned_alloc()
+ */
+ZTEST(k_heap_api, test_k_heap_aligned_alloc)
+{
+	void *p;
+
+	/* Allocate 128 bytes aligned to 16 bytes */
+	p = k_heap_aligned_alloc(&k_heap_test, 16, 128, K_NO_WAIT);
+	zassert_not_null(p, "k_heap_aligned_alloc failed");
+	zassert_true(((uintptr_t)p % 16) == 0, "Pointer not 16-byte aligned");
+	k_heap_free(&k_heap_test, p);
+
+	/* Oversize allocation returns NULL */
+	p = k_heap_aligned_alloc(&k_heap_test, 8, HEAP_SIZE * 2, K_NO_WAIT);
+	zassert_is_null(p, "k_heap_aligned_alloc with oversize should fail");
+
+	/* With non-power-of-two alignment, Zephyr internally rewrites the alignment
+	 * and proceeds, so this should not assert or necessarily fail.
+	 */
+	p = k_heap_aligned_alloc(&k_heap_test, 3, 64, K_NO_WAIT);
+	(void)p;
+}
