@@ -749,6 +749,7 @@ struct bt_hci_cp_le_set_tx_power_report_enable {
 	uint8_t  remote_enable;
 } __packed;
 
+#define BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS BT_OP(BT_OGF_LE, 0x0078) /* 0x2078 */
 struct bt_hci_cp_le_set_path_loss_reporting_parameters {
 	uint16_t handle;
 	uint8_t  high_threshold;
@@ -758,16 +759,27 @@ struct bt_hci_cp_le_set_path_loss_reporting_parameters {
 	uint16_t min_time_spent;
 } __packed;
 
+struct bt_hci_rp_le_set_path_loss_reporting_parameters {
+	uint16_t handle;
+	uint8_t  status;
+} __packed;
+
+
+#define BT_HCI_LE_PATH_LOSS_REPORTING_DISABLE       0x00
+#define BT_HCI_LE_PATH_LOSS_REPORTING_ENABLE        0x01
+#define BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE BT_OP(BT_OGF_LE, 0x0079) /* 0x2079 */
+
 struct bt_hci_cp_le_set_path_loss_reporting_enable {
 	uint16_t handle;
 	uint8_t  enable;
 } __packed;
 
-#define BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_PARAMETERS BT_OP(BT_OGF_LE, 0x0078) /* 0x2078 */
+struct bt_hci_rp_le_set_path_loss_reporting_enable {
+	uint16_t handle;
+	uint8_t  status;
+} __packed;
 
-#define BT_HCI_LE_PATH_LOSS_REPORTING_DISABLE       0x00
-#define BT_HCI_LE_PATH_LOSS_REPORTING_ENABLE        0x01
-#define BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE BT_OP(BT_OGF_LE, 0x0079) /* 0x2079 */
+#define BT_HCI_OP_LE_SET_DEFAULT_SUBRATE BT_OP(BT_OGF_LE, 0x007D) /* 0x207D */
 
 struct bt_hci_cp_le_set_default_subrate {
 	uint16_t subrate_min;
@@ -777,6 +789,8 @@ struct bt_hci_cp_le_set_default_subrate {
 	uint16_t supervision_timeout;
 } __packed;
 
+#define BT_HCI_OP_LE_SUBRATE_REQUEST     BT_OP(BT_OGF_LE, 0x007E) /* 0x207E */
+
 struct bt_hci_cp_le_subrate_request {
 	uint16_t handle;
 	uint16_t subrate_min;
@@ -785,9 +799,6 @@ struct bt_hci_cp_le_subrate_request {
 	uint16_t continuation_number;
 	uint16_t supervision_timeout;
 } __packed;
-
-#define BT_HCI_OP_LE_SET_DEFAULT_SUBRATE BT_OP(BT_OGF_LE, 0x007D) /* 0x207D */
-#define BT_HCI_OP_LE_SUBRATE_REQUEST     BT_OP(BT_OGF_LE, 0x007E) /* 0x207E */
 
 #define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01

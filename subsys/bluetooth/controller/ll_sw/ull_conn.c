@@ -2924,6 +2924,56 @@ uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
 	return 1;
 }
 
+#if defined(CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING)
+uint8_t ll_conn_set_path_loss_parameters(uint16_t handle,
+					 uint8_t  high_threshold,
+					 uint8_t  high_hysteresis,
+					 uint8_t  low_threshold,
+					 uint8_t  low_hysteresis,
+					 uint16_t min_time_spent)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	conn->lll.pl_params.high_threshold  = high_threshold;
+	conn->lll.pl_params.high_hysteresis = high_hysteresis;
+	conn->lll.pl_params.low_threshold   = low_threshold;
+	conn->lll.pl_params.low_hysteresis  = low_hysteresis;
+	conn->lll.pl_params.min_time_spent  = min_time_spent;
+
+	/* Reset the counter and zone after any update from the host */
+	conn->lll.pl_state.min_time_counter = 0;
+	conn->lll.pl_current_zone = BT_HCI_LE_ZONE_ENTERED_LOW;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ll_conn_set_path_loss_reporting(uint16_t handle, uint8_t enable)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	conn->lll.pl_params.enabled = enable;
+
+	/* Reset the counter and zone after any update from the host */
+	conn->lll.pl_state.min_time_counter = 0;
+	conn->lll.pl_current_zone = BT_HCI_LE_ZONE_ENTERED_LOW;
+
+	return BT_HCI_ERR_SUCCESS;
+
+}
+#endif /* CONFIG_BT_CTLR_LE_PATH_LOSS_MONITORING */
+
 uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn)
 {
 	return (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL);
