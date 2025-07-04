@@ -4134,6 +4134,9 @@ nRF Platforms:
     - tests/drivers/*/*nrf*/
     - snippets/nordic*/
     - tests/boards/nrf/
+  files-exclude:
+    - drivers/wifi/nrf_wifi/
+    - dts/bindings/wifi/
   labels:
     - "platform: nRF"
 
