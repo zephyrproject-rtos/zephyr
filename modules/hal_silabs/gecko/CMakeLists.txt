@@ -16,11 +16,11 @@ set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR/zephyr/blobs})
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
 string(TOUPPER ${CONFIG_SOC_SERIES} SILABS_GECKO_DEVICE)
+string(TOUPPER ${CONFIG_SOC} SILABS_GECKO_PART_NUMBER)
 
 # Get SoC series number, i.e. translate e.g. efr32bg22 -> 22
 string(SUBSTRING ${CONFIG_SOC_SERIES} 7 2 GECKO_SERIES_NUMBER)
 
-set(SILABS_GECKO_PART_NUMBER ${CONFIG_SOC_PART_NUMBER})
 
 function(add_prebuilt_library lib_name prebuilt_path)
   add_library(${lib_name} STATIC IMPORTED GLOBAL)
