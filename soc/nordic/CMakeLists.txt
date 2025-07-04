@@ -47,4 +47,4 @@ endif()
 
 add_subdirectory(${SOC_SERIES})
 add_subdirectory(common)
-add_subdirectory(ironside)
+add_subdirectory_ifdef(CONFIG_NRF_IRONSIDE ironside)

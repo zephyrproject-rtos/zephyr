@@ -22,7 +22,10 @@
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
+
+#if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
 #include <nrf_ironside/cpuconf.h>
+#endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
