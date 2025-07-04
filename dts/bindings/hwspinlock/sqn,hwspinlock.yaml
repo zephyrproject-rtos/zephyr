@@ -17,5 +17,15 @@ properties:
     type: int
     required: true
 
+  reg-width:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+    default: 1
+    description: |
+      Register width for a single spinlock in bytes.
+
 hwlock-cells:
   - id
