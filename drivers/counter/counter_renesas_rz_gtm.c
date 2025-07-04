@@ -187,6 +187,10 @@ static int counter_rz_gtm_stop(const struct device *dev)
 static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 				    const struct counter_alarm_cfg *alarm_cfg)
 {
+	if (!alarm_cfg) {
+		return -EINVAL;
+	}
+
 	const struct counter_rz_gtm_config *cfg = dev->config;
 	struct counter_rz_gtm_data *data = dev->data;
 
@@ -198,9 +202,6 @@ static int counter_rz_gtm_set_alarm(const struct device *dev, uint8_t chan,
 	uint32_t now, diff;
 	int err = 0;
 
-	if (!alarm_cfg) {
-		return -EINVAL;
-	}
 	/* Alarm callback is mandatory */
 	if (!alarm_cfg->callback) {
 		return -EINVAL;
