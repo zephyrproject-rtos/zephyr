@@ -605,6 +605,8 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
+
+		return;
 	}
 
 	/*
