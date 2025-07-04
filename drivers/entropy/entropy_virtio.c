@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/virtio/virtio.h>
-#include <zephyr/virtio/virtqueue.h>
+#include <zephyr/drivers/virtio.h>
+#include <zephyr/drivers/virtio/virtqueue.h>
 #include <zephyr/logging/log.h>
 
 #define VIRTIO_ENTROPY_QUEUE_IDX 0
