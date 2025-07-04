@@ -18,3 +18,10 @@ CONFIG_UART_PL011=y
 
 # This should be commented in order to test at EL1 S (EL1 Secure)
 CONFIG_ARMV8_A_NS=y
+
+# FPU support is disabled due to QEMU limitations. When CONFIG_FPU_SHARING
+# is enabled, it uses the swpal instruction which QEMU does not emulate.
+# If testing is targeted on real hardware and FPU operations are needed,
+# comment the lines below.
+CONFIG_FPU=n
+CONFIG_FPU_SHARING=n

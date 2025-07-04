@@ -7,4 +7,5 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+    - fpu
 vendor: amd
