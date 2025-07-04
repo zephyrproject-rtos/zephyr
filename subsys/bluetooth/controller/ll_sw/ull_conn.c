@@ -1478,6 +1478,21 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count)
 	}
 }
 
+uint16_t ull_conn_tx_enqueue_count_get(struct ll_conn *conn)
+{
+	uint16_t count = 0;
+	memq_link_t *curr;
+
+	curr = memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL);
+	while (curr != NULL) {
+		count++;
+
+		curr = memq_peek(curr->next, conn->lll.memq_tx.tail, NULL);
+	}
+
+	return count;
+}
+
 void ull_conn_link_tx_release(void *link)
 {
 	mem_release(link, &mem_link_tx.free);
