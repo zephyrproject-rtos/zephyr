@@ -17,6 +17,10 @@
 static uint32_t phy_update_countdown;
 static uint8_t phy_param_idx;
 
+/* Count down number of metrics intervals before performing a param update */
+#define PARAM_UPDATE_COUNTDOWN PHY_UPDATE_COUNTDOWN
+static uint32_t param_update_countdown;
+
 static void phy_update_iterate(struct bt_conn *conn)
 {
 	const struct bt_conn_le_phy_param phy_param[] = {
@@ -178,6 +182,34 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 			phy_update_iterate(conn);
 		}
 
+		const struct bt_le_conn_param update_params[2] = {{
+				.interval_min = 0x0029,
+				.interval_max = 0x0029,
+				.latency = 0,
+				.timeout = 31,
+			}, {
+				.interval_min = 0x0028,
+				.interval_max = 0x0028,
+				.latency = 0,
+				.timeout = 30,
+			},
+		};
+		static uint8_t param_update_count;
+		int err;
+
+		if ((param_update_countdown--) != 0U) {
+			return;
+		}
+
+		param_update_countdown = PARAM_UPDATE_COUNTDOWN;
+
+		err = bt_conn_le_param_update(conn, &update_params[param_update_count & 0x1]);
+		if (err != 0) {
+			printk("Parameter update failed (err %d)\n", err);
+		}
+
+		param_update_count++;
+
 	} else {
 		uint16_t len;
 
@@ -256,6 +288,14 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		phy_update_countdown = PHY_UPDATE_COUNTDOWN;
 		phy_param_idx = 0U;
 	}
+
+	/* Every 1 second the acknowledged total GATT Write without Response data size is used for
+	 * the throughput calculation.
+	 * PHY update is performed in reference to this calculation interval, and connection update
+	 * is offset by 1 of this interval so that connection update is initiated one such interval
+	 * after PHY update was requested.
+	 */
+	param_update_countdown = PARAM_UPDATE_COUNTDOWN + 1U;
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
