@@ -72,6 +72,13 @@ enum video_buf_state {
 	VIDEO_BUF_STATE_ERROR,
 };
 
+enum video_buf_memory {
+	/** buffer memory is on the video heap */
+	VIDEO_MEMORY_VIDEO = 1,
+	/** buffer memory is provided by user */
+	VIDEO_MEMORY_USER = 2,
+};
+
 /**
  * @struct video_format
  * @brief Video format structure
@@ -164,6 +171,8 @@ struct video_buffer {
 	enum video_buf_type type;
 	/** current state of the buffer */
 	enum video_buf_state state;
+	/** the backend memory of the buffer */
+	enum video_buf_memory memory;
 	/** pointer to driver specific data. */
 	void *driver_data;
 	/** pointer to the start of the buffer. */
@@ -583,13 +592,13 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
  * endpoint incoming queue.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param index Index of the buffer to be queued
+ * @param buf Pointer to a video buffer structure.
  *
  * @retval 0 Is successful.
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-int video_enqueue(const struct device *dev, uint8_t index);
+int video_enqueue(const struct device *dev, struct video_buffer *buf);
 
 /**
  * @brief Dequeue a video buffer.
@@ -598,7 +607,7 @@ int video_enqueue(const struct device *dev, uint8_t index);
  * endpoint outgoing queue.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param buf Pointer a video buffer pointer.
+ * @param buf Pointer to a video buffer structure.
  * @param timeout Timeout
  *
  * @retval 0 Is successful.
@@ -895,7 +904,8 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 	return api->get_selection(dev, sel);
 }
 
-int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type);
+int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type,
+			  enum video_buf_memory memory);
 
 /**
  * @brief Search for a format that matches in a list of capabilities
