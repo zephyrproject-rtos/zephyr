@@ -2,11 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(include)
-
 zephyr_library()
-
 zephyr_library_sources_ifdef(CONFIG_NRF_IRONSIDE_CALL call.c)
-
 zephyr_library_sources_ifdef(CONFIG_NRF_IRONSIDE_BOOT_REPORT boot_report.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_IRONSIDE_CPUCONF_SERVICE cpuconf.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_IRONSIDE_UPDATE_SERVICE update.c)
