@@ -393,6 +393,10 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 
 static inline int enet_qos_dma_reset(enet_qos_t *base)
 {
+	/* Save off ENET->MAC_MDIO_ADDRESS: CR Field Prior to Reset */
+	int cr = 0;
+
+	cr = ENET_QOS_REG_GET(MAC_MDIO_ADDRESS, CR, base->MAC_MDIO_ADDRESS);
 	/* Set the software reset of the DMA */
 	base->DMA_MODE |= ENET_QOS_REG_PREP(DMA_MODE, SWR, 0b1);
 
@@ -426,6 +430,7 @@ static inline int enet_qos_dma_reset(enet_qos_t *base)
 	return -EIO;
 
 done:
+	base->MAC_MDIO_ADDRESS = ENET_QOS_REG_PREP(MAC_MDIO_ADDRESS, CR, cr);
 	return 0;
 }
 
