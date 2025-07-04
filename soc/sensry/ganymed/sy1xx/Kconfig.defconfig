@@ -61,9 +61,6 @@ config USE_DT_CODE_PARTITION
 config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	default n
 
-config RISCV_SOC_EXCEPTION_FROM_IRQ
-	default y
-
 config INIT_STACKS
 	default y
 
