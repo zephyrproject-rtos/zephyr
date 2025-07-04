@@ -12,7 +12,7 @@ Notes:
       without the html extension).
 """
 
-REDIRECTS = [
+REDIRECTS = (
     # zephyr-keep-sorted-start
     ('application/index', 'develop/application/index'),
     ('boards/arduino/uno_r4_minima/doc/index', 'boards/arduino/uno_r4/doc/index'),
@@ -312,4 +312,4 @@ REDIRECTS = [
     ('services/secure_storage', 'services/storage/secure_storage/index'),
     ('services/settings/index', 'services/storage/settings/index'),
     # zephyr-keep-sorted-stop
-]
+)
