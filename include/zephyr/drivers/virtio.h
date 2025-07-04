@@ -16,9 +16,9 @@ extern "C" {
 /**
  * @brief Virtio Interface
  * @defgroup virtio_interface Virtio Interface
+ * @ingroup io_interfaces
  * @{
  */
-
 
 /**
  * Callback used during virtqueue enumeration
