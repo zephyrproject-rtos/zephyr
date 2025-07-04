@@ -16,6 +16,7 @@ extern int mtu_exchange(struct bt_conn *conn);
 extern int write_cmd(struct bt_conn *conn);
 extern struct bt_conn *conn_connected;
 extern uint32_t last_write_rate;
+extern uint32_t *write_countdown;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -49,6 +50,23 @@ static struct bt_gatt_cb gatt_callbacks = {
 	.att_mtu_updated = mtu_updated
 };
 
+#if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_TEST_PHY_UPDATE)
+#define BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES \
+		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
+				 BT_LE_SCAN_OPT_NONE, \
+				 BT_GAP_SCAN_FAST_INTERVAL_MIN, \
+				 BT_GAP_SCAN_FAST_INTERVAL_MIN)
+
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
+			 struct net_buf_simple *ad)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+}
+#endif /* CONFIG_BT_OBSERVER && !CONFIG_TEST_PHY_UPDATE */
+
 uint32_t peripheral_gatt_write(uint32_t count)
 {
 	int err;
@@ -62,6 +80,17 @@ uint32_t peripheral_gatt_write(uint32_t count)
 	printk("Bluetooth initialized\n");
 
 	bt_gatt_cb_register(&gatt_callbacks);
+
+#if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_TEST_PHY_UPDATE)
+	printk("Start continuous passive scanning...");
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES,
+			       device_found);
+	if (err) {
+		printk("Scan start failed (%d).\n", err);
+		return err;
+	}
+	printk("success.\n");
+#endif /* CONFIG_BT_OBSERVER && !CONFIG_TEST_PHY_UPDATE */
 
 #if defined(CONFIG_BT_SMP)
 	(void)bt_conn_auth_cb_register(&auth_callbacks);
@@ -85,6 +114,7 @@ uint32_t peripheral_gatt_write(uint32_t count)
 
 	conn_connected = NULL;
 	last_write_rate = 0U;
+	write_countdown = &count;
 
 	while (true) {
 		struct bt_conn *conn = NULL;
@@ -103,6 +133,10 @@ uint32_t peripheral_gatt_write(uint32_t count)
 			bt_conn_unref(conn);
 
 			if (count) {
+				if ((count % 1000U) == 0U) {
+					printk("GATT Write countdown %u\n", count);
+				}
+
 				count--;
 				if (!count) {
 					break;
