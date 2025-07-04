@@ -1,0 +1,10 @@
+common:
+  tags:
+  - clib
+  - strtoll
+tests:
+  libraries.libc.strtoll:
+    filter: CONFIG_LIBC_STRTO_SUPPORTED
+    tags: libc_strto
+    extra_configs:
+      - CONFIG_LIBC_STRTO=y
