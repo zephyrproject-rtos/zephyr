@@ -1600,7 +1600,23 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
-		return l2cap_br_ret_fc_data_pull(conn, amount, length);
+		struct net_buf *buf;
+		const sys_snode_t *next_pdu_ready;
+
+		buf = l2cap_br_ret_fc_data_pull(conn, amount, length);
+
+		/* When the returned buffer is a `NULL`, it means there is not any data needs to
+		 * be sent. However maybe there is any frame pending on other L2CAP channel needs
+		 * to be sent over the same ACL connection. Re-trigger the TX processor. It will
+		 * call the function `l2cap_br_data_pull()` again and the pending buffer will be
+		 * pulled from following L2CAP.
+		 */
+		next_pdu_ready = sys_slist_peek_head(&conn->l2cap_data_ready);
+		if ((buf == NULL) && (next_pdu_ready != NULL) && (next_pdu_ready != pdu_ready)) {
+			bt_tx_irq_raise();
+		}
+
+		return buf;
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
