@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_VIRTIO_VIRTIO_H_
 #define ZEPHYR_VIRTIO_VIRTIO_H_
 #include <zephyr/device.h>
-#include "virtqueue.h"
+#include "virtio/virtqueue.h"
 
 #ifdef __cplusplus
 extern "C" {

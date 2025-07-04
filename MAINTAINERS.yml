@@ -2266,7 +2266,8 @@ Release Notes:
   files:
     - drivers/virtio/
     - dts/bindings/virtio/
-    - include/zephyr/virtio/
+    - include/zephyr/drivers/virtio.h
+    - include/zephyr/drivers/virtio/
   labels:
     - "area: VIRTIO"
 
