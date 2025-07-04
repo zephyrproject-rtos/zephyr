@@ -82,6 +82,9 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
 
   drivers.uart.pm.async.enhanced_poll:
@@ -89,6 +92,9 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
     platform_exclude:
       - nrf54l09pdk/nrf54l09/cpuapp
