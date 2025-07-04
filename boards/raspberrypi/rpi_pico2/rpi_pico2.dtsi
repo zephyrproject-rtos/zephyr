@@ -70,6 +70,13 @@
 	pinctrl-names = "default";
 };
 
+&uart1 {
+	current-speed = <115200>;
+	status = "reserved";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
 gpio0_lo: &gpio0 {
 	status = "okay";
 };
