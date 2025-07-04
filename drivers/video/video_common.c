@@ -13,10 +13,12 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include "video_common.h"
+#include "video_device.h"
 
 LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 

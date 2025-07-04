@@ -23,11 +23,12 @@
  * @{
  */
 
-#include <zephyr/device.h>
 #include <stddef.h>
-#include <zephyr/kernel.h>
 
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -337,22 +338,8 @@ typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmiva
  */
 typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_frmival_enum *fie);
 
-/**
- * @typedef video_api_enqueue_t
- * @brief Enqueue a buffer in the driver’s incoming queue.
- *
- * See video_enqueue() for argument descriptions.
- */
-typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
-
-/**
- * @typedef video_api_dequeue_t
- * @brief Dequeue a buffer from the driver’s outgoing queue.
- *
- * See video_dequeue() for argument descriptions.
- */
-typedef int (*video_api_dequeue_t)(const struct device *dev, struct video_buffer **buf,
-				   k_timeout_t timeout);
+typedef void (*video_api_iodev_submit_t)(const struct device *dev,
+					 struct rtio_iodev_sqe *iodev_sqe);
 
 /**
  * @typedef video_api_flush_t
@@ -418,8 +405,6 @@ __subsystem struct video_driver_api {
 	video_api_set_stream_t set_stream;
 	video_api_get_caps_t get_caps;
 	/* optional callbacks */
-	video_api_enqueue_t enqueue;
-	video_api_dequeue_t dequeue;
 	video_api_flush_t flush;
 	video_api_ctrl_t set_ctrl;
 	video_api_ctrl_t get_volatile_ctrl;
@@ -429,6 +414,7 @@ __subsystem struct video_driver_api {
 	video_api_enum_frmival_t enum_frmival;
 	video_api_selection_t set_selection;
 	video_api_selection_t get_selection;
+	video_api_iodev_submit_t iodev_submit;
 };
 
 /**
@@ -612,29 +598,13 @@ int video_enqueue(const struct device *const dev, const struct video_buffer *con
  * Dequeue a filled (capturing) or displayed (output) buffer from the driver’s
  * endpoint outgoing queue.
  *
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Pointer to a video buffer structure.
- * @param timeout Timeout
+ * @param buf Pointer a video buffer pointer.
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -EIO General input / output error.
+ * @retval The RTIO completion event with the completed buffer.
  */
-static inline int video_dequeue(const struct device *dev, struct video_buffer **buf,
-				k_timeout_t timeout)
-{
-	const struct video_driver_api *api;
+struct rtio_cqe *video_dequeue(void);
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->dequeue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->dequeue(dev, buf, timeout);
-}
+void video_rtio_cqe_release(struct rtio_cqe *cqe);
 
 /**
  * @brief Flush endpoint buffers.

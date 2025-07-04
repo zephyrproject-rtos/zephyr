@@ -151,26 +151,88 @@ int video_request_buffers(struct video_buffer_request *const vbr)
 	return 0;
 }
 
+RTIO_DEFINE(rtio, CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+
 int video_enqueue(const struct device *const dev, const struct video_buffer *const buf)
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(buf != NULL);
 	__ASSERT_NO_MSG(buf->buffer != NULL);
 
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	if (api == NULL || api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
 	if (video_buf[buf->index].memory == VIDEO_MEMORY_EXTERNAL) {
 		video_buf[buf->index].buffer = buf->buffer;
 	}
 
-	int ret = api->enqueue(dev, &video_buf[buf->index]);
-	if (ret < 0) {
-		return ret;
-	}
+	video_buf[buf->index].type = buf->type;
+
+	/* RTIO submission */
+	struct rtio_iodev *ri = video_find_iodev(dev);
+	struct rtio_sqe *sqe = rtio_sqe_acquire(&rtio);
+
+	__ASSERT_NO_MSG(ri != NULL);
+	__ASSERT_NO_MSG(sqe != NULL);
+
+	rtio_sqe_prep_read(sqe, ri, RTIO_PRIO_NORM, video_buf[buf->index].buffer,
+			   video_buf[buf->index].size, &video_buf[buf->index]);
+
+	sqe->flags |= RTIO_SQE_MULTISHOT;
+
+	/* Do not wait for complete */
+	rtio_submit(&rtio, 0);
 
 	return 0;
 }
+
+struct rtio_cqe *video_dequeue(void)
+{
+	return rtio_cqe_consume_block(&rtio);
+}
+
+void video_rtio_cqe_release(struct rtio_cqe *cqe)
+{
+	/* Buffer will be re-queued thanks to RTIO_SQE_MULTISHOT */
+	rtio_cqe_release(&rtio, cqe);
+}
+
+struct rtio_iodev_sqe *video_pop_io_q(struct mpsc *io_q)
+{
+	struct mpsc_node *node;
+	struct rtio_iodev_sqe *iodev_sqe;
+	struct video_buffer *vbuf;
+
+	node = mpsc_pop(io_q);
+	if (node == NULL) {
+		return NULL;
+	}
+
+	iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
+	vbuf = iodev_sqe->sqe.userdata;
+
+	__ASSERT_NO_MSG(vbuf != NULL);
+
+	if ((vbuf->type == VIDEO_BUF_TYPE_OUTPUT && iodev_sqe->sqe.op == RTIO_OP_RX) ||
+	    (vbuf->type == VIDEO_BUF_TYPE_INPUT && iodev_sqe->sqe.op == RTIO_OP_TX)) {
+		return iodev_sqe;
+	} else {
+		LOG_ERR("Unsupported RTIO operation (%d) or video buffer type (%d)",
+			iodev_sqe->sqe.op, vbuf->type);
+		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+		return NULL;
+	}
+}
+
+static void video_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct video_interface *vi = iodev_sqe->sqe.iodev->data;
+	const struct video_driver_api *api = vi->dev->api;
+
+	if (api->iodev_submit != NULL) {
+		api->iodev_submit(vi->dev, iodev_sqe);
+	}
+
+	mpsc_push(vi->io_q, &iodev_sqe->q);
+}
+
+const struct rtio_iodev_api _video_iodev_api = {
+	.submit = video_iodev_submit,
+};

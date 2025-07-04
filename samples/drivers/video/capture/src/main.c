@@ -19,7 +19,7 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #else
-LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #endif
 
 #if !DT_HAS_CHOSEN(zephyr_camera)
@@ -314,11 +314,14 @@ int main(void)
 
 	/* Grab video frames */
 	while (1) {
-		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
-		if (err) {
-			LOG_ERR("Unable to dequeue video buf");
+		struct rtio_cqe *cqe = video_dequeue();
+		struct video_buffer *vbuf = cqe->userdata;
+
+		if (cqe->result != 0) {
+			LOG_ERR("The video buffer of size %u completed with errors", vbuf->size);
 			return 0;
 		}
+
 
 		LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
 			frame++, vbuf->bytesused, vbuf->timestamp);
@@ -335,10 +338,6 @@ int main(void)
 		video_display_frame(display_dev, vbuf, fmt);
 #endif
 
-		err = video_enqueue(video_dev, vbuf);
-		if (err) {
-			LOG_ERR("Unable to requeue video buf");
-			return 0;
-		}
+		video_rtio_cqe_release(cqe);
 	}
 }
