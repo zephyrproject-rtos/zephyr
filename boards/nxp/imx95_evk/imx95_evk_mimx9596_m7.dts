@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,12 +26,12 @@
 &emdio {
 	pinctrl-0 = <&emdio_default>;
 	pinctrl-names = "default";
-	status = "disabled";
+	status = "okay";
 
 	phy0: phy@1 {
 		compatible = "realtek,rtl8211f";
 		reg = <0x1>;
-		status = "disabled";
+		status = "okay";
 	};
 };
 
@@ -41,7 +41,11 @@
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
 	phy-connection-type = "rgmii";
-	status = "disabled";
+	status = "okay";
+};
+
+&enetc_ptp_clock {
+	status = "okay";
 };
 
 &flexspi {
