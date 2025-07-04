@@ -119,7 +119,6 @@ config BT_CTLR_LE_POWER_CONTROL_SUPPORT
 	bool
 
 config BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
-	depends on BT_CTLR_LE_POWER_CONTROL_SUPPORT
 	bool
 
 config BT_CTLR_SUBRATING_SUPPORT
@@ -667,7 +666,6 @@ config BT_CTLR_LE_PATH_LOSS_MONITORING
 	bool "LE Path Loss Monitoring Feature"
 	depends on BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
 	default y if BT_PATH_LOSS_MONITORING
-	select BT_CTLR_LE_POWER_CONTROL
 	help
 	  Enable support for LE Path Loss Monitoring feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
