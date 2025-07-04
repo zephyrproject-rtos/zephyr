@@ -12,7 +12,6 @@ ijson
 intelhex
 junit2html
 junitparser>=2
-lxml>=5.3.0
 mock
 mypy
 natsort
