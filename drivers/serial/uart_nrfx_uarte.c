@@ -1611,11 +1611,11 @@ static void endrx_isr(const struct device *dev)
 		}
 
 		irq_unlock(key);
-		if (IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT)) {
-			if (start_timeout && !K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
-				k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
-			}
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+		if (start_timeout && !K_TIMEOUT_EQ(async_rx->timeout, K_NO_WAIT)) {
+			k_timer_start(&async_rx->timer, async_rx->timeout, K_NO_WAIT);
 		}
+#endif
 	}
 
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
