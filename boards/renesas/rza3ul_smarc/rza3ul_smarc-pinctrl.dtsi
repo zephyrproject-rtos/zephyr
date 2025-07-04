@@ -9,8 +9,8 @@
 &pinctrl {
 	/omit-if-no-ref/ scif0_pins: scif0 {
 		scif0-pinmux {
-			pinmux = <RZA_PINMUX(PORT_06, 3, 6)>, /* RXD */
-				 <RZA_PINMUX(PORT_06, 4, 6)>; /* TXD */
+			pinmux = <RZA_PINMUX(PORT_06, 3, 6)>,	/* RXD */
+				 <RZA_PINMUX(PORT_06, 4, 6)>;	/* TXD */
 			drive-strength = <1>;
 			slew-rate = "fast";
 		};

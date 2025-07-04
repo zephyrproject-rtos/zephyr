@@ -168,7 +168,7 @@ arduino_i2c: &i2c0 {
 
 arduino_spi: &spi3 {
 	status = "okay";
-	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;	/* D10 */
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";

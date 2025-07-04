@@ -26,8 +26,8 @@
 	};
 
 	chosen {
-		zephyr,sram = &ocram1; /* TODO Merge with other OCRAM */
-		zephyr,sram1 = &ocram2; /* TODO Merge with other OCRAM */
+		zephyr,sram = &ocram1;	/* TODO Merge with other OCRAM */
+		zephyr,sram1 = &ocram2;	/* TODO Merge with other OCRAM */
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
@@ -133,7 +133,6 @@
 	};
 };
 
-
 &gpio1 {
 	status = "okay";
 };
@@ -215,7 +214,6 @@
 	};
 };
 
-
 &flexcan1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
@@ -247,7 +245,7 @@
 
 &lpspi1 {
 	status = "okay";
-	cs-gpios =<&gpio2 11 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
 
 	icm42688_0: icm42688p0@0 {
 		compatible = "invensense,icm42688";
@@ -269,7 +267,7 @@
 
 &lpspi2 {
 	status = "okay";
-	cs-gpios =<&gpio3 24 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio3 24 GPIO_ACTIVE_LOW>;
 
 	icm42688_1: icm42688p1@0 {
 		compatible = "invensense,icm42688";
@@ -292,8 +290,7 @@
 &lpspi3 {
 	status = "okay";
 	cs-gpios = <&gpio2 15 GPIO_ACTIVE_LOW>,
-		<&gpio2 18 GPIO_ACTIVE_LOW>;
-
+		   <&gpio2 18 GPIO_ACTIVE_LOW>;
 
 	bmi08x_accel: bmi08x@0 {
 		compatible = "bosch,bmi08x-accel";
@@ -330,7 +327,6 @@
 	ist8310: ist8310@e {
 		compatible = "isentek,ist8310";
 		reg = <0xe>;
-
 	};
 
 	ncp5623c: ncp5623c@39 {
@@ -341,9 +337,9 @@
 			label = "GNSS LED";
 			index = <0>;
 			color-mapping =
-				<LED_COLOR_ID_RED>,
-				<LED_COLOR_ID_GREEN>,
-				<LED_COLOR_ID_BLUE>;
+					<LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
 		};
 	};
 };
@@ -401,48 +397,47 @@
 	nxp,prescaler = <64>;
 };
 
-&flexpwm1_pwm2	{
+&flexpwm1_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch3>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm0	{
+&flexpwm2_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch4>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm1	{
+&flexpwm2_pwm1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch5>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm2	{
+&flexpwm2_pwm2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch6>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm2_pwm3	{
+&flexpwm2_pwm3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch7>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
 
-&flexpwm3_pwm0	{
+&flexpwm3_pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm_vmu_ch8>;
 	pinctrl-names = "default";
 	nxp,prescaler = <64>;
 };
-
 
 &gpt5 {
 	compatible = "nxp,gpt-ppm-input";

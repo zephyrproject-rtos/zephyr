@@ -6,7 +6,6 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
-
 / {
 	model = "Adafruit MacroPad RP2040";
 	compatible = "adafruit,macropad-rp2040";
@@ -193,7 +192,7 @@
 		inversion-on;
 		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		data-cmd-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
-		ready-time-ms = <100>;  /* SH1106G needs 100ms delay after init */
+		ready-time-ms = <100>;	/* SH1106G needs 100ms delay after init */
 	};
 };
 

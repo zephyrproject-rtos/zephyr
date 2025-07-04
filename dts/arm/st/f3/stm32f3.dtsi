@@ -37,7 +37,6 @@
 		compatible = "mmio-sram";
 	};
 
-
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
@@ -225,8 +224,8 @@
 			reg = <0x40005400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 21U)>,
 				 /* I2C clock source should always be defined,
-				  * even for the default value
-				  */
+				 * even for the default value
+				 */
 				 <&rcc STM32_SRC_SYSCLK I2C1_SEL(1)>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "event", "error";

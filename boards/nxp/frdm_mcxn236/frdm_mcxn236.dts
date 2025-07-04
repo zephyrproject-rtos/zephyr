@@ -24,7 +24,7 @@
 		zephyr,canbus = &flexcan1;
 	};
 
-	aliases{
+	aliases {
 		watchdog0 = &wwdt0;
 		pwm-0 = &flexpwm1_pwm0;
 		rtc = &rtc;

@@ -20,7 +20,7 @@
 		reg = <0x6a>;
 		accel-odr = <0x1b>;
 		gyro-odr = <0x11>;
-		irq-gpios =  <&arduino_header 5 GPIO_ACTIVE_HIGH>; /* A5 (PC0) */
+		irq-gpios = <&arduino_header 5 GPIO_ACTIVE_HIGH>;	/* A5 (PC0) */
 		drdy-pin = <1>;
 	};
 
@@ -29,7 +29,7 @@
 		reg = <0x6b>;
 		accel-odr = <0x02>;
 		gyro-odr = <0x02>;
-		int2-gpios =  <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
+		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 (PB5) */
 		drdy-pin = <2>;
 		drdy-pulsed;
 	};
@@ -37,20 +37,19 @@
 	lis2mdl_1e_x_nucleo_iks4a1: lis2mdl@1e {
 		compatible = "st,lis2mdl";
 		reg = <0x1e>;
-		irq-gpios =  <&arduino_header 2 GPIO_ACTIVE_HIGH>; /* A2 (PA4) */
+		irq-gpios = <&arduino_header 2 GPIO_ACTIVE_HIGH>;	/* A2 (PA4) */
 	};
 
 	lps22df_5d_x_nucleo_iks4a1: lps22df@5d {
 		compatible = "st,lps22df";
 		reg = <0x5d>;
 		drdy-pulsed;
-		drdy-gpios =  <&arduino_header 12 GPIO_ACTIVE_HIGH>; /* D6 (PB10) */
+		drdy-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;	/* D6 (PB10) */
 	};
 
 	lis2duxs12_1e_x_nucleo_iks4a1: lis2duxs12@19 {
 		compatible = "st,lis2duxs12";
 		reg = <0x19>;
-		int1-gpios =  <&arduino_header 3 GPIO_ACTIVE_HIGH>; /* A3 */
+		int1-gpios = <&arduino_header 3 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
-
 };

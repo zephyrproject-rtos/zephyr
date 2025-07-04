@@ -15,7 +15,7 @@
 	model = "NXP FRDM_MCXA156 board";
 	compatible = "nxp,mcxa156", "nxp,mcx";
 
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &red_led;
@@ -76,9 +76,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<9  0 &gpio2 15 0>,	/* Pin 9, LCD touch INT */
-				<10  0 &gpio3 22 0>,	/* Pin 10, LCD backlight control */
-				<11  0 &gpio3 0 0>;	/* Pin 11, LCD and touch reset */
+		gpio-map = <9 0 &gpio2 15 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio3 22 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio3 0 0>;	/* Pin 11, LCD and touch reset */
 	};
 };
 

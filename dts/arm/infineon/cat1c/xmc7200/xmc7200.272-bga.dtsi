@@ -11,8 +11,8 @@
 
 / {
 	soc {
-		/delete-node/ gpio@40311080; // gpio_prt33
-		/delete-node/ gpio@40311100; // gpio_prt34
+		/delete-node/ gpio@40311080;	// gpio_prt33
+		/delete-node/ gpio@40311100;	// gpio_prt34
 
 		pinctrl: pinctrl@40300000 {
 			/* scb_i2c_scl */

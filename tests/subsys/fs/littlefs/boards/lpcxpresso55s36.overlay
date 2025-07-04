@@ -7,10 +7,10 @@
 /delete-node/ &storage_partition;
 
 &flash0 {
-	 partitions {
-		 small_partition: partition@1D800 {
-			 label = "small";
-			 reg = <0x0001D800 DT_SIZE_K(128)>;
-		 };
-	 };
+	partitions {
+		small_partition: partition@1D800 {
+			label = "small";
+			reg = <0x0001D800 DT_SIZE_K(128)>;
+		};
+	};
 };

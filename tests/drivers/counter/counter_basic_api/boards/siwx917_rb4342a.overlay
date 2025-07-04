@@ -3,6 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-&sysrtc0  {
+&sysrtc0 {
 	status = "okay";
 };

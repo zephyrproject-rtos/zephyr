@@ -31,7 +31,7 @@
 		zephyr,memory-region = "RAM0";
 	};
 
-	leds { /* Respecting pcb silkscreen naming */
+	leds {	/* Respecting pcb silkscreen naming */
 		compatible = "gpio-leds";
 		green_led: led_uC0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -155,14 +155,14 @@
 	status = "okay";
 };
 
-&usart1 { /* USB FT232 */
+&usart1 {	/* USB FT232 */
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
 };
 
-&uart4 { /* ARDUINO P405 1 & 2 */
+&uart4 {	/* ARDUINO P405 1 & 2 */
 	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
@@ -199,9 +199,9 @@
 	cs-gpios = <&gpiob 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	dmas = <&dmamux1 2 13 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC |
 		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>,
-		       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
+	       <&dmamux1 3 12 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC |
 		       STM32_DMA_MEM_8BITS | STM32_DMA_PERIPH_8BITS)>;
-		dma-names = "tx", "rx";
+	dma-names = "tx", "rx";
 	status = "okay";
 
 	adin1110: adin1110@0 {
@@ -215,7 +215,7 @@
 		spi-oa-protection;
 
 		port1 {
-			local-mac-address = [ 00 E0 22 FE DA C8 ];
+			local-mac-address = [00 E0 22 FE DA C8];
 		};
 		mdio {
 			compatible = "adi,adin2111-mdio";
@@ -264,7 +264,7 @@ zephyr_udc0: &usbotg_fs {
 		     &octospim_p1_io0_pb1 &octospim_p1_io1_pb0
 		     &octospim_p1_io2_pa7 &octospim_p1_io3_pa6>;
 	pinctrl-names = "default";
-	dmas = <&dma1 0 40 0x480>; /* request 40 for OCTOSPI1 */
+	dmas = <&dma1 0 40 0x480>;	/* request 40 for OCTOSPI1 */
 	dma-names = "tx_rx";
 
 	status = "okay";
@@ -272,11 +272,11 @@ zephyr_udc0: &usbotg_fs {
 	mx25r6435f: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64)>; /* 64 Megabits */
-		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
+		size = <DT_SIZE_M(64)>;	/* 64 Megabits */
+		ospi-max-frequency = <DT_FREQ_M(26)>;	/* for Voltage Range 2 */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
-		writeoc="PP_1_4_4";
+		writeoc = "PP_1_4_4";
 
 		partitions {
 			compatible = "fixed-partitions";

@@ -68,7 +68,7 @@
 	wakeup-source;
 };
 
-&flexcomm19{
+&flexcomm19 {
 	status = "okay";
 };
 

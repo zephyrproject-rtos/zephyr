@@ -38,7 +38,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20280000 0x100000>;
 		zephyr,memory-region = "SRAM_NO_CACHE";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 
 	leds {
@@ -124,7 +124,7 @@
 	pinctrl-0 = <&mspi0_default>;
 	pinctrl-1 = <&mspi0_sleep>;
 	pinctrl-2 = <&mspi0_psram>;
-	pinctrl-names = "default","sleep","psram";
+	pinctrl-names = "default", "sleep", "psram";
 	status = "disabled";
 	zephyr,pm-device-runtime-auto;
 
@@ -165,7 +165,7 @@
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_flash>;
-	pinctrl-names = "default","sleep","flash";
+	pinctrl-names = "default", "sleep", "flash";
 	status = "okay";
 	zephyr,pm-device-runtime-auto;
 
@@ -189,7 +189,7 @@
 		read-command = <0xCC>;
 		write-command = <0x8E>;
 		command-length = "INSTR_1_BYTE";
-		address-length = "ADDR_4_BYTE"; /* Avoid use of 3 byte address if Ambiq MSPI */
+		address-length = "ADDR_4_BYTE";	/* Avoid use of 3 byte address if Ambiq MSPI */
 		rx-dummy = <16>;
 		tx-dummy = <0>;
 		xip-config = <1 0 DT_SIZE_M(8) 0>;

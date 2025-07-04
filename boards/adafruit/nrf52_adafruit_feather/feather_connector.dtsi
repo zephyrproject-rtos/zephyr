@@ -34,5 +34,5 @@
 	};
 };
 
-feather_serial: &uart0 {};
-feather_i2c: &i2c0 {};
+feather_serial: &uart0 { };
+feather_i2c: &i2c0 { };

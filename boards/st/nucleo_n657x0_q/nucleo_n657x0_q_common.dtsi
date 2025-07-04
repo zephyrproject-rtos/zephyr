@@ -137,7 +137,7 @@
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
 		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
-	pinctrl-0 = <&adc1_inp10_pa9 &adc1_inp11_pa10>; /* Arduino A1 & A2 */
+	pinctrl-0 = <&adc1_inp10_pa9 &adc1_inp11_pa10>;	/* Arduino A1 & A2 */
 	pinctrl-names = "default";
 	vref-mv = <1800>;
 	status = "okay";
@@ -238,7 +238,7 @@ zephyr_udc0: &usbotg_hs1 {
 	mx25um51245g: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(512)>; /* 512 Mbits */
+		size = <DT_SIZE_M(512)>;	/* 512 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(200)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;

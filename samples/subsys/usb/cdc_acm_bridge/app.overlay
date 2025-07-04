@@ -9,7 +9,6 @@
 		compatible = "zephyr,uart-bridge";
 		peers = <&cdc_acm_uart0 &arduino_serial>;
 	};
-
 };
 
 &arduino_serial {

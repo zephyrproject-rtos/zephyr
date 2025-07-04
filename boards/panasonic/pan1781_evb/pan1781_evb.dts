@@ -97,7 +97,7 @@
 };
 
 &sw_pwm {
-	status ="okay";
+	status = "okay";
 	channel-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 	clock-prescaler = <8>;
 };
@@ -133,7 +133,7 @@ arduino_i2c: &i2c0 {
 
 arduino_spi: &spi1 {
 	status = "okay";
-	cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;	/* D10 */
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";

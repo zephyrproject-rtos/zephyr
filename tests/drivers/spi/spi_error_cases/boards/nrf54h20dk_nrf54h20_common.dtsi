@@ -40,7 +40,6 @@
 			low-power-enable;
 		};
 	};
-
 };
 
 &gpiote130 {
@@ -73,6 +72,6 @@ dut_spis: &spi131 {
 	pinctrl-0 = <&spis131_default_alt>;
 	pinctrl-1 = <&spis131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
-	/delete-property/rx-delay-supported;
-	/delete-property/rx-delay;
+	/delete-property/ rx-delay-supported;
+	/delete-property/ rx-delay;
 };

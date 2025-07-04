@@ -190,7 +190,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
 			      <0x40047008 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -275,8 +275,8 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq11
-	&port_irq12 &port_irq13 &port_irq14>;
+		     &port_irq9 &port_irq10 &port_irq11
+		     &port_irq12 &port_irq13 &port_irq14>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -299,7 +299,7 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4>;
+		     &port_irq3 &port_irq4>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -314,7 +314,7 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3>;
+		     &port_irq3>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -327,7 +327,7 @@
 
 &ioport3 {
 	port-irqs = <&port_irq5 &port_irq6
-	&port_irq8 &port_irq9>;
+		     &port_irq8 &port_irq9>;
 	port-irq-names = "port-irq5",
 			 "port-irq6",
 			 "port-irq8",
@@ -340,8 +340,8 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq8
-	&port_irq9>;
+		     &port_irq6 &port_irq7 &port_irq8
+		     &port_irq9>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -360,7 +360,7 @@
 
 &ioport5 {
 	port-irqs = <&port_irq11 &port_irq12 &port_irq14
-	&port_irq15>;
+		     &port_irq15>;
 	port-irq-names = "port-irq11",
 			 "port-irq12",
 			 "port-irq14",
@@ -373,7 +373,7 @@
 
 &ioport7 {
 	port-irqs = <&port_irq7 &port_irq8 &port_irq10
-	&port_irq11>;
+		     &port_irq11>;
 	port-irq-names = "port-irq7",
 			 "port-irq8",
 			 "port-irq10",

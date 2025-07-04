@@ -23,31 +23,31 @@
 
 		joy_sel: joystick_selection {
 			label = "joystick selection";
-			gpios = <&st_morpho_header ST_MORPHO_R_19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&st_morpho_header ST_MORPHO_R_19(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_ENTER>;
 		};
 
 		joy_down: joystick_down {
 			label = "joystick down";
-			gpios = <&st_morpho_header ST_MORPHO_R_27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&st_morpho_header ST_MORPHO_R_27(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 
 		joy_up: joystick_up {
 			label = "joystick up";
-			gpios = <&st_morpho_header ST_MORPHO_L_38 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&st_morpho_header ST_MORPHO_L_38(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
 
 		joy_left: joystick_left {
 			label = "joystick left";
-			gpios = <&st_morpho_header ST_MORPHO_R_17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&st_morpho_header ST_MORPHO_R_17(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 
 		joy_right: joystick_right {
 			label = "joystick right";
-			gpios = <&st_morpho_header ST_MORPHO_L_34 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			gpios = <&st_morpho_header ST_MORPHO_L_34(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 	};
@@ -70,21 +70,21 @@
 			height = <320>;
 			rotation = <180>;
 			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
-			frmctr1 = [00 1f]; /* 60Hz frame rate */
+			frmctr1 = [00 1f];	/* 60Hz frame rate */
 		};
 	};
 };
 
-st_morpho_lcd_spi: &spi1 {};
-st_morpho_flash_spi: &spi2 {};
+st_morpho_lcd_spi: &spi1 { };
+st_morpho_flash_spi: &spi2 { };
 
 &st_morpho_lcd_spi {
-	cs-gpios = <&st_morpho_header ST_MORPHO_R_21 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	cs-gpios = <&st_morpho_header ST_MORPHO_R_21(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
 &st_morpho_flash_spi {
-	cs-gpios = <&st_morpho_header ST_MORPHO_R_23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	cs-gpios = <&st_morpho_header ST_MORPHO_R_23(GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 
 	mx25l6433f: mx25l6433f@0 {

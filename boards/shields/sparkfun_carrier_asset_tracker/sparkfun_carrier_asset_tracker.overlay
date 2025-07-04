@@ -18,8 +18,8 @@
 
 	modem: sara_r5 {
 		compatible = "u-blox,sara-r5";
-		mdm-power-gpios = <&micromod_header 7 0>; /* G2 */
-		mdm-reset-gpios = <&micromod_header 12 0>; /* D6 */
+		mdm-power-gpios = <&micromod_header 7 0>;	/* G2 */
+		mdm-reset-gpios = <&micromod_header 12 0>;	/* D6 */
 		status = "okay";
 	};
 };

@@ -1,7 +1,7 @@
 / {
 	m0p_code: m0p_code@28000800 {
 		compatible = "mmio-sram";
-		reg = <0x28000800  DT_SIZE_K(16)>;
+		reg = <0x28000800 DT_SIZE_K(16)>;
 	};
 
 	m0p_data: m0p_data@10000000 {
@@ -13,7 +13,7 @@
 
 	cm7_0_code: cm7_0_code@28004000 {
 		compatible = "mmio-sram";
-		reg = <0x28004000  DT_SIZE_K(816)>;
+		reg = <0x28004000 DT_SIZE_K(816)>;
 	};
 
 	cm7_0_data: cm7_0_data@10080000 {
@@ -25,7 +25,7 @@
 
 	cm7_1_code: cm7_1_code@280d0000 {
 		compatible = "mmio-sram";
-		reg = <0x280d0000  DT_SIZE_K(64)>;
+		reg = <0x280d0000 DT_SIZE_K(64)>;
 	};
 
 	cm7_1_data: cm7_1_data@10280000 {

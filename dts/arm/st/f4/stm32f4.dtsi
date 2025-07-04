@@ -589,7 +589,7 @@
 
 	pwr: power@40007000 {
 		compatible = "st,stm32-pwr";
-		reg = <0x40007000 0x400>; /* PWR register bank */
+		reg = <0x40007000 0x400>;	/* PWR register bank */
 		status = "disabled";
 
 		wkup-pins-nb = <1>;

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
- # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,10 +110,10 @@
 &lora {
 	status = "okay";
 
-	tcxo-power-gpios = <&porta 9 GPIO_ACTIVE_HIGH>;  /* TCXO_PWR */
+	tcxo-power-gpios = <&porta 9 GPIO_ACTIVE_HIGH>;	/* TCXO_PWR */
 	tcxo-power-startup-delay-ms = <5>;
-	rfi-enable-gpios = <&porta 13 GPIO_ACTIVE_HIGH>; /* BAND_SEL */
-	rfo-enable-gpios = <&porta 13 GPIO_ACTIVE_HIGH>; /* BAND_SEL */
+	rfi-enable-gpios = <&porta 13 GPIO_ACTIVE_HIGH>;	/* BAND_SEL */
+	rfo-enable-gpios = <&porta 13 GPIO_ACTIVE_HIGH>;	/* BAND_SEL */
 };
 
 &sercom5 {

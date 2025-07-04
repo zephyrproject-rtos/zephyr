@@ -25,9 +25,9 @@
 			   <ST_MORPHO_L_17 0 &gpioa 15 0>,
 			   <ST_MORPHO_L_21 0 &gpiob 7 0>,
 			   <ST_MORPHO_L_23 0 &gpioc 13 0>,
-			   <ST_MORPHO_L_25 0 &gpioc 14 0>, /* SB23=ON, R31=OFF */
+			   <ST_MORPHO_L_25 0 &gpioc 14 0>,	/* SB23=ON, R31=OFF */
 			   <ST_MORPHO_L_26 0 &gpiod 5 0>,
-			   <ST_MORPHO_L_27 0 &gpioc 15 0>, /* SB24=ON, R32=OFF */
+			   <ST_MORPHO_L_27 0 &gpioc 15 0>,	/* SB24=ON, R32=OFF */
 			   <ST_MORPHO_L_28 0 &gpioa 0 0>,
 			   <ST_MORPHO_L_29 0 &gpiof 0 0>,
 			   <ST_MORPHO_L_30 0 &gpioa 1 0>,
@@ -35,9 +35,9 @@
 			   <ST_MORPHO_L_32 0 &gpioa 4 0>,
 			   <ST_MORPHO_L_34 0 &gpiob 1 0>,
 			   <ST_MORPHO_L_35 0 &gpioc 2 0>,
-			   <ST_MORPHO_L_36 0 &gpiob 11 0>, /* SB4=ON, SB2=OFF */
+			   <ST_MORPHO_L_36 0 &gpiob 11 0>,	/* SB4=ON, SB2=OFF */
 			   <ST_MORPHO_L_37 0 &gpioc 3 0>,
-			   <ST_MORPHO_L_38 0 &gpiob 12 0>, /* SB3=ON, SB5=OFF */
+			   <ST_MORPHO_L_38 0 &gpiob 12 0>,	/* SB3=ON, SB5=OFF */
 			   <ST_MORPHO_R_1 0 &gpioc 9 0>,
 			   <ST_MORPHO_R_2 0 &gpioc 8 0>,
 			   <ST_MORPHO_R_3 0 &gpiob 8 0>,

@@ -5,7 +5,7 @@
  */
 
 &octospi1 {
-	dmas = <&dma1 0 41 0x480>; /* request 41 for OCTOSPI1 */
+	dmas = <&dma1 0 41 0x480>;	/* request 41 for OCTOSPI1 */
 	dma-names = "tx_rx";
 };
 

@@ -43,7 +43,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
 	};
 };
 

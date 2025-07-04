@@ -34,7 +34,7 @@
 	soc {
 		sram: sram@10000000 {
 			ranges = <0x0 0x10000000 0x780000
-				0x20000000 0x30000000 0x780000>;
+				  0x20000000 0x30000000 0x780000>;
 		};
 
 		peripheral: peripheral@50000000 {
@@ -52,7 +52,6 @@
 		xspi2: spi@50411000 {
 			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
 		};
-
 	};
 
 	pinctrl: pinctrl {
@@ -66,7 +65,6 @@
 		#clock-cells = <0>;
 	};
 };
-
 
 &sram {
 	#address-cells = <1>;
@@ -85,13 +83,13 @@
 	 * The SRAM region [0x200000-0x400000] is reserved for HiFi4 application.
 	 */
 
-	sram4rom: memory@20000000{
+	sram4rom: memory@20000000 {
 		compatible = "mmio-sram";
 		reg = <0x20000000 DT_SIZE_K(96)>;
 	};
 
 	/* This partition is shared with code in RAM */
-	sram_shared_code: memory@20018000{
+	sram_shared_code: memory@20018000 {
 		compatible = "mmio-sram";
 		reg = <0x20018000 DT_SIZE_K(1024+512-96)>;
 	};
@@ -102,7 +100,7 @@
 	};
 
 	sram1: memory@20200000 {
-		compatible =  "mmio-sram";
+		compatible = "mmio-sram";
 		reg = <0x20200000 DT_SIZE_K(2048)>;
 	};
 };
@@ -123,7 +121,7 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;
@@ -248,9 +246,9 @@
 		dma-requests = <105>;
 		reg = <0x140000 0x1000>;
 		interrupts = <59 0>, <60 0>, <61 0>, <62 0>,
-			<63 0>, <64 0>, <65 0>, <66 0>,
-			<67 0>, <68 0>, <69 0>, <70 0>,
-			<71 0>, <72 0>, <73 0>, <74 0>;
+			     <63 0>, <64 0>, <65 0>, <66 0>,
+			     <67 0>, <68 0>, <69 0>, <70 0>,
+			     <71 0>, <72 0>, <73 0>, <74 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -263,9 +261,9 @@
 		dma-requests = <105>;
 		reg = <0x160000 0x1000>;
 		interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
-			<79 0>, <80 0>, <81 0>, <82 0>,
-			<83 0>, <84 0>, <85 0>, <86 0>,
-			<87 0>, <88 0>, <89 0>, <90 0>;
+			     <79 0>, <80 0>, <81 0>, <82 0>,
+			     <83 0>, <84 0>, <85 0>, <86 0>,
+			     <87 0>, <88 0>, <89 0>, <90 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -317,7 +315,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x100000 0x1000>;
-		interrupts = <91 0>,<92 0>;
+		interrupts = <91 0>, <92 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio0>;
@@ -327,7 +325,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x102000 0x1000>;
-		interrupts = <93 0>,<94 0>;
+		interrupts = <93 0>, <94 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio1>;
@@ -337,7 +335,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x104000 0x1000>;
-		interrupts = <95 0>,<96 0>;
+		interrupts = <95 0>, <96 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio2>;
@@ -347,7 +345,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x106000 0x1000>;
-		interrupts = <97 0>,<98 0>;
+		interrupts = <97 0>, <98 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio3>;
@@ -357,7 +355,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x108000 0x1000>;
-		interrupts = <99 0>,<100 0>;
+		interrupts = <99 0>, <100 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio4>;
@@ -367,7 +365,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x10a000 0x1000>;
-		interrupts = <101 0>,<102 0>;
+		interrupts = <101 0>, <102 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio5>;
@@ -377,7 +375,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x10c000 0x1000>;
-		interrupts = <103 0>,<104 0>;
+		interrupts = <103 0>, <104 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio6>;
@@ -387,7 +385,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x10e000 0x1000>;
-		interrupts = <105 0>,<106 0>;
+		interrupts = <105 0>, <106 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio7>;
@@ -400,7 +398,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -439,7 +437,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -478,7 +476,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -517,7 +515,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -556,7 +554,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -595,7 +593,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -634,7 +632,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -673,7 +671,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -712,7 +710,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -751,7 +749,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -790,7 +788,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -829,7 +827,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -868,7 +866,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -907,7 +905,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -951,7 +949,6 @@
 		rx-fifo-size = <8>;
 		status = "disabled";
 	};
-
 
 	/* LPFlexcomm15 only support LPI2C function. */
 	lpi2c15: i2c@213000 {
@@ -1075,7 +1072,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x152000 0x1000>;
+		reg = <0x152000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI0_CLK>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <115 0>;
@@ -1092,7 +1089,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x153000 0x1000>;
+		reg = <0x153000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI1_CLK>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <116 0>;
@@ -1109,7 +1106,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x154000 0x1000>;
+		reg = <0x154000 0x1000>;
 		clocks = <&clkctl0 MCUX_SAI2_CLK>;
 		pinmuxes = <&syscon0 0x240 0x1>;
 		interrupts = <117 0>;
@@ -1145,8 +1142,8 @@
 		reg = <0x417000 0x1000>;
 		interrupts = <58 0>;
 		clocks = <&clkctl4 MCUX_MIPI_DSI_DPHY_CLK>,
-				 <&clkctl4 MCUX_MIPI_DSI_ESC_CLK>,
-				 <&clkctl4 MCUX_LCDIF_PIXEL_CLK>;
+			 <&clkctl4 MCUX_MIPI_DSI_ESC_CLK>,
+			 <&clkctl4 MCUX_LCDIF_PIXEL_CLK>;
 		clock-names = "dphy", "esc", "pixel";
 		ulps-control;
 		status = "disabled";

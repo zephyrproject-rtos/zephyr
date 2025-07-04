@@ -652,7 +652,7 @@
 		flexpwm2: flexpwm@403e0000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x403e0000 0x4000>;
-			interrupts =  <141 0>;
+			interrupts = <141 0>;
 
 			flexpwm2_pwm0: flexpwm2_pwm0 {
 				compatible = "nxp,imx-pwm";
@@ -698,7 +698,7 @@
 		flexpwm3: flexpwm@403e4000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x403e4000 0x4000>;
-			interrupts =  <146 0>;
+			interrupts = <146 0>;
 
 			flexpwm3_pwm0: flexpwm3_pwm0 {
 				compatible = "nxp,imx-pwm";
@@ -916,11 +916,11 @@
 			nxp,mem2mem;
 			nxp,a-on;
 			reg = <0x400E8000 0x4000>,
-				<0x400EC000 0x4000>;
+			      <0x400EC000 0x4000>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
-				<4 0>, <5 0>, <6 0>, <7 0>,
-				<8 0>, <9 0>, <10 0>, <11 0>,
-				<12 0>, <13 0>, <14 0>, <15 0>;
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>;
 			irq-shared-offset = <16>;
 			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7C 0x000000C0>;
 			status = "disabled";
@@ -1005,10 +1005,10 @@
 			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
 			 */
 			pll-clocks = <&anatop 0x70 0xC000 0>,
-				      <&anatop 0x70 0x7F 32>,
-				      <&anatop 0x70 0x180000 1>,
-				      <&anatop 0x80 0x3FFFFFFF 77>,
-				      <&anatop 0x90 0x3FFFFFFF 100>;
+				     <&anatop 0x70 0x7F 32>,
+				     <&anatop 0x70 0x180000 1>,
+				     <&anatop 0x80 0x3FFFFFFF 77>,
+				     <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			/* The maximum input frequency into the SAI mclk input is 300MHz
 			 * Based on this requirement, pre-div must be at least 3
@@ -1043,10 +1043,10 @@
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0x0>,
-					<&anatop 0x70 0x7F 32>,
-					<&anatop 0x70 0x180000 1>,
-					<&anatop 0x80 0x3FFFFFFF 77>,
-					<&anatop 0x90 0x3FFFFFFF 100>;
+				     <&anatop 0x70 0x7F 32>,
+				     <&anatop 0x70 0x180000 1>,
+				     <&anatop 0x80 0x3FFFFFFF 77>,
+				     <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x100000>;
 			interrupts = <57 0>;
@@ -1070,10 +1070,10 @@
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0>,
-				   <&anatop 0x70 0x7F 32>,
-				   <&anatop 0x70 0x180000 1>,
-				   <&anatop 0x80 0x3FFFFFFF 77>,
-				   <&anatop 0x90 0x3FFFFFFF 100>;
+				     <&anatop 0x70 0x7F 32>,
+				     <&anatop 0x70 0x180000 1>,
+				     <&anatop 0x80 0x3FFFFFFF 77>,
+				     <&anatop 0x90 0x3FFFFFFF 100>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x200000>;
 			interrupts = <58 0>, <59 0>;

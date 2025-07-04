@@ -55,7 +55,7 @@
 
 &clk_hse {
 	hse-bypass;
-	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	clock-frequency = <DT_FREQ_M(8)>;	/* STLink 8MHz clock */
 	status = "okay";
 };
 
@@ -73,7 +73,7 @@
 	div-m = <4>;
 	mul-n = <120>;
 	div-p = <2>;
-	div-q = <3>; /* gives 80MHz to the FDCAN */
+	div-q = <3>;	/* gives 80MHz to the FDCAN */
 	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";

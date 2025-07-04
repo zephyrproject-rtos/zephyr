@@ -49,7 +49,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+		gpio-map = <0 0 &gpio2 31 0>;	/* Pin 1, BL+ */
 	};
 
 	/*
@@ -62,8 +62,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<1  0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
-				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
+		gpio-map = <1 0 &gpio1 2 0>,	/* Pin 2, LCD touch RST */
+			   <2 0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {
@@ -132,7 +132,7 @@ zephyr_lcdif: &lcdif {
 	pinctrl-names = "default";
 };
 
-nxp_touch_i2c: &lpi2c1 {};
+nxp_touch_i2c: &lpi2c1 { };
 
 arduino_i2c: &lpi2c1 {
 	status = "okay";
@@ -329,10 +329,10 @@ arduino_spi: &lpspi1 {
 	status = "okay";
 };
 
-dvp_fpc24_i2c: &lpi2c1 {};
+dvp_fpc24_i2c: &lpi2c1 { };
 
-dvp_fpc24_interface: &csi {};
+dvp_fpc24_interface: &csi { };
 
-m2_hci_bt_uart: &lpuart3 {};
+m2_hci_bt_uart: &lpuart3 { };
 
-m2_wifi_sdio: &usdhc1 {};
+m2_wifi_sdio: &usdhc1 { };

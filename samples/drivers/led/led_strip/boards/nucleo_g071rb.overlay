@@ -11,12 +11,12 @@
 		compatible = "worldsemi,ws2812-spi";
 
 		/* SPI */
-		reg = <0>; /* ignored, but necessary for SPI bindings */
+		reg = <0>;	/* ignored, but necessary for SPI bindings */
 		spi-max-frequency = <4000000>;
-		frame-format = <32768>; /* SPI_FRAME_FORMAT_TI */
+		frame-format = <32768>;	/* SPI_FRAME_FORMAT_TI */
 
 		/* WS2812 */
-		chain-length = <16>; /* arbitrary; change at will */
+		chain-length = <16>;	/* arbitrary; change at will */
 		spi-one-frame = <0x70>;
 		spi-zero-frame = <0x40>;
 		color-mapping = <LED_COLOR_ID_GREEN

@@ -55,9 +55,9 @@
 	};
 };
 
-uext_serial: &uart1 {};
-uext_i2c: &i2c0 {};
-uext_spi: &spi2 {};
+uext_serial: &uart1 { };
+uext_i2c: &i2c0 { };
+uext_spi: &spi2 { };
 
 &uart0 {
 	status = "okay";

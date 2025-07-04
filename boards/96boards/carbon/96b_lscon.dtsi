@@ -21,7 +21,7 @@
 	};
 };
 
-lscon_96b_i2c0: &i2c1 {};
-lscon_96b_spi0: &spi2 {};
-lscon_96b_uart0: &usart2 {};
-lscon_96b_uart1: &usart1 {};
+lscon_96b_i2c0: &i2c1 { };
+lscon_96b_spi0: &spi2 { };
+lscon_96b_uart0: &usart2 { };
+lscon_96b_uart1: &usart1 { };

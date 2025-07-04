@@ -5,7 +5,7 @@
  */
 
 &octospi1 {
-	dmas = <&dma1 1 0x16 0x480>; /* request for OCTOSPI1 fifo THreshold */
+	dmas = <&dma1 1 0x16 0x480>;	/* request for OCTOSPI1 fifo THreshold */
 	dma-names = "tx_rx";
 };
 

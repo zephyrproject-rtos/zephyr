@@ -56,13 +56,13 @@
 		compatible = "gpio-keys";
 
 		user_button_0: sw_1 {
-			label = "IRIS SWITCH_1"; /* GPIO45 */
+			label = "IRIS SWITCH_1";	/* GPIO45 */
 			gpios = <&hsgpio1 0xd GPIO_ACTIVE_LOW>;
 			zephyr,code = <0x2>;
 		};
 
 		user_button_1: sw_2 {
-			label = "IRIS SWITCH_2"; /* GPIO51 */
+			label = "IRIS SWITCH_2";	/* GPIO51 */
 			gpios = <&hsgpio1 0x13 GPIO_ACTIVE_LOW>;
 			zephyr,code = <0x3>;
 		};

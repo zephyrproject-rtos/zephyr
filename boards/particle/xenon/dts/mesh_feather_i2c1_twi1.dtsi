@@ -26,7 +26,7 @@
 	};
 };
 
-&i2c1 { /* feather I2C1 */
+&i2c1 {	/* feather I2C1 */
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;

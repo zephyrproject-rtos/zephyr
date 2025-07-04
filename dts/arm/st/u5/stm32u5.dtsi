@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -103,14 +102,14 @@
 		clk_msis: clk-msis {
 			#clock-cells = <0>;
 			compatible = "st,stm32u5-msi-clock";
-			msi-range = <4>; /* 4MHz (reset value) */
+			msi-range = <4>;	/* 4MHz (reset value) */
 			status = "disabled";
 		};
 
 		clk_msik: clk-msik {
 			#clock-cells = <0>;
 			compatible = "st,stm32u5-msi-clock";
-			msi-range = <4>; /* 4MHz (reset value) */
+			msi-range = <4>;	/* 4MHz (reset value) */
 			status = "disabled";
 		};
 
@@ -288,7 +287,7 @@
 			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40036400 DT_SIZE_K(2)>;
 			/* BKPSRAMEN and RAMCFGEN clock enable */
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 ((1 << 28) | (1 << 17))>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1((1 << 28) | (1 << 17))>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
@@ -476,7 +475,7 @@
 			#size-cells = <0>;
 			reg = <0x40015404 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21U)>,
-					 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 1 36 0>;
 			status = "disabled";
 		};
@@ -487,7 +486,7 @@
 			#size-cells = <0>;
 			reg = <0x40015424 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21U)>,
-					 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(0)>;
 			dmas = <&gpdma1 0 37 0>;
 			status = "disabled";
 		};
@@ -699,8 +698,8 @@
 			interrupts = <76 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB2_2, 4)>,
-				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 21)>;
+				 <&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 21)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -712,8 +711,8 @@
 			interrupts = <120 0>;
 			clock-names = "ospix", "ospi-ker", "ospi-mgr";
 			clocks = <&rcc STM32_CLOCK(AHB2_2, 8U)>,
-				<&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
-				<&rcc STM32_CLOCK(AHB2, 21U)>;
+				 <&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 21U)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -809,7 +808,7 @@
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
 			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0
-					80 0 81 0 82 0 83 0 84 0 85 0 86 0 87 0>;
+				      80 0 81 0 82 0 83 0 84 0 85 0 86 0 87 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <16>;
 			dma-requests = <114>;
@@ -819,11 +818,11 @@
 
 		pwr: power@46020800 {
 			compatible = "st,stm32-pwr";
-			reg = <0x46020800 0x400>; /* PWR register bank */
+			reg = <0x46020800 0x400>;	/* PWR register bank */
 			status = "disabled";
 
-			wkup-pins-nb = <8>; /* 8 system wake-up pins */
-			wkup-pin-srcs = <3>; /* 3 gpio sources associated with each wkup pin */
+			wkup-pins-nb = <8>;	/* 8 system wake-up pins */
+			wkup-pin-srcs = <3>;	/* 3 gpio sources associated with each wkup pin */
 			wkup-pins-pol;
 			wkup-pins-pupd;
 
@@ -886,7 +885,6 @@
 					     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 		};
-
 	};
 
 	swj_port: swj_port {

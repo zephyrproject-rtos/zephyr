@@ -22,7 +22,7 @@
 			pinmux = <SWO_P28>;
 		};
 	};
-	adc0_default: adc0_default{
+	adc0_default: adc0_default {
 		group1 {
 			pinmux = <ADCSE4_P15>, <ADCSE7_P12>;
 			drive-strength = "0.1";
@@ -132,7 +132,7 @@
 			pinmux = <M7SCK_P22>, <M7MISO_P24>, <M7MOSI_P23>;
 		};
 	};
-	mspi0_default: mspi0_default{
+	mspi0_default: mspi0_default {
 		group1 {
 			pinmux = <MSPI0_0_P64>,
 				 <MSPI0_1_P65>,
@@ -145,7 +145,7 @@
 			ambiq,nce-src = <32>;
 		};
 	};
-	mspi1_default: mspi1_default{
+	mspi1_default: mspi1_default {
 		group1 {
 			pinmux = <MSPI1_0_P37>,
 				 <MSPI1_1_P38>,
@@ -158,7 +158,7 @@
 			ambiq,nce-src = <34>;
 		};
 	};
-	mspi2_default: mspi2_default{
+	mspi2_default: mspi2_default {
 		group1 {
 			pinmux = <MSPI2_0_P74>,
 				 <MSPI2_1_P75>,
@@ -179,7 +179,7 @@
 				 <SDIF_DAT5_P80>,
 				 <SDIF_DAT6_P81>,
 				 <SDIF_DAT7_P82>;
-				 drive-strength = "1.0";
+			drive-strength = "1.0";
 		};
 		group1 {
 			pinmux =
@@ -187,9 +187,9 @@
 				 <SDIF_DAT2_P86>,
 				 <SDIF_CMD_P83>,
 				 <SDIF_CLKOUT_P88>;
-				 drive-strength = "1.0";
-				 bias-pull-up;
-				 ambiq,pull-up-ohms = <12000>;
+			drive-strength = "1.0";
+			bias-pull-up;
+			ambiq,pull-up-ohms = <12000>;
 		};
 	};
 };

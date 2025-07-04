@@ -61,21 +61,21 @@
 };
 
 &sw_pwm {
-	status ="okay";
+	status = "okay";
 	channel-gpios = <&gpio0 21 PWM_POLARITY_INVERTED>;
 	clock-prescaler = <8>;
 };
 
 &gpiote {
-	status ="okay";
+	status = "okay";
 };
 
 &gpio0 {
-	status ="okay";
+	status = "okay";
 };
 
 &adc {
-	status ="okay";
+	status = "okay";
 };
 
 &uart0 {

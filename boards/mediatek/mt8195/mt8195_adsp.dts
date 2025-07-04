@@ -10,9 +10,9 @@
 	#size-cells = <1>;
 
 	sram0: memory@40000000 {
-		 device_type = "memory";
-		 compatible = "mmio-sram";
-		 reg = <0x40000000 DT_SIZE_K(256)>;
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x40000000 DT_SIZE_K(256)>;
 	};
 
 	dram0: memory@60000000 {
@@ -93,7 +93,7 @@
 			interrupt-parent = <&intc23>;
 			interrupts = <1 0 0>;
 		};
-	}; /* soc */
+	};	/* soc */
 
 	chosen { };
 	aliases { };

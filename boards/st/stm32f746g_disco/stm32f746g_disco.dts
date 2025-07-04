@@ -56,16 +56,16 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(16)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
 	};
 
 	/* Declare attributes for the External flash Mem to allow code execution there */
 	ext_memory: memory@90000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(16)>; /* max addressable area */
+		reg = <0x90000000 DT_SIZE_M(16)>;	/* max addressable area */
 		zephyr,memory-region = "EXTMEM";
 		/* Override ATTR_MPU_EXTMEM with ATTR_MPU_IO to allow access */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
 	};
 
 	aliases {
@@ -213,7 +213,7 @@ zephyr_udc0: &usbotg_fs {
 	n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(128)>; /* 128 Mbits */
+		size = <DT_SIZE_M(128)>;	/* 128 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
 
@@ -265,13 +265,13 @@ zephyr_udc0: &usbotg_fs {
 		bank@0 {
 			reg = <0>;
 			st,sdram-control = <STM32_FMC_SDRAM_NC_8
-						STM32_FMC_SDRAM_NR_12
-						STM32_FMC_SDRAM_MWID_16
-						STM32_FMC_SDRAM_NB_4
-						STM32_FMC_SDRAM_CAS_2
-						STM32_FMC_SDRAM_SDCLK_PERIOD_2
-						STM32_FMC_SDRAM_RBURST_ENABLE
-						STM32_FMC_SDRAM_RPIPE_0>;
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_16
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_0>;
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
 	};

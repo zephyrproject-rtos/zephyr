@@ -61,12 +61,12 @@
 		row-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>,
 			    <&gpio0 14 GPIO_ACTIVE_HIGH>,
 			    <&gpio0 15 GPIO_ACTIVE_HIGH>;
-		col-gpios = <&gpio0  4 GPIO_ACTIVE_LOW>,
-			    <&gpio0  5 GPIO_ACTIVE_LOW>,
-			    <&gpio0  6 GPIO_ACTIVE_LOW>,
-			    <&gpio0  7 GPIO_ACTIVE_LOW>,
-			    <&gpio0  8 GPIO_ACTIVE_LOW>,
-			    <&gpio0  9 GPIO_ACTIVE_LOW>,
+		col-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>,
+			    <&gpio0 5 GPIO_ACTIVE_LOW>,
+			    <&gpio0 6 GPIO_ACTIVE_LOW>,
+			    <&gpio0 7 GPIO_ACTIVE_LOW>,
+			    <&gpio0 8 GPIO_ACTIVE_LOW>,
+			    <&gpio0 9 GPIO_ACTIVE_LOW>,
 			    <&gpio0 10 GPIO_ACTIVE_LOW>,
 			    <&gpio0 11 GPIO_ACTIVE_LOW>,
 			    <&gpio0 12 GPIO_ACTIVE_LOW>;

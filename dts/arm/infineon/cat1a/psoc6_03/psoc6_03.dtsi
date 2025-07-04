@@ -26,7 +26,7 @@
 
 	flash-controller@40240000 {
 		compatible = "infineon,cat1-flash-controller";
-		reg = < 0x40240000 0x10000 >;
+		reg = <0x40240000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -247,6 +247,5 @@
 			interrupts = <164 6>;
 			status = "disabled";
 		};
-
 	};
 };

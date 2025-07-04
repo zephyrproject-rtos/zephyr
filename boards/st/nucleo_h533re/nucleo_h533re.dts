@@ -31,7 +31,6 @@
 		};
 	};
 
-
 	pwmleds {
 		compatible = "pwm-leds";
 
@@ -132,7 +131,7 @@
 &adc1 {
 	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
-	pinctrl-0 = <&adc1_inp0_pa0>; /* Arduino A0 */
+	pinctrl-0 = <&adc1_inp0_pa0>;	/* Arduino A0 */
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <8>;

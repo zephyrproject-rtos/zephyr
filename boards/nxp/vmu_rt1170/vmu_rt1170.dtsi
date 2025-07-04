@@ -137,22 +137,22 @@
 };
 
 &lpi2c1 {
-	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
 
 &lpi2c2 {
-	pinctrl-0 =<&pinmux_lpi2c2>;
+	pinctrl-0 = <&pinmux_lpi2c2>;
 	pinctrl-names = "default";
 };
 
 &lpi2c3 {
-	pinctrl-0 =<&pinmux_lpi2c3>;
+	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
 };
 
 &lpi2c6 {
-	pinctrl-0 =<&pinmux_lpi2c6>;
+	pinctrl-0 = <&pinmux_lpi2c6>;
 	pinctrl-names = "default";
 };
 
@@ -206,7 +206,7 @@
 		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <4096>;
-		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
+		write-block-size = <2>;	/* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
 		partitions {
 			compatible = "fixed-partitions";

@@ -23,7 +23,7 @@
 };
 
 &i2c1 {
-	/delete-property/ fifo-enable;   /* FIFO2 */
+	/delete-property/ fifo-enable;	/* FIFO2 */
 };
 
 /* HOST */
@@ -34,7 +34,7 @@
 		     &i2c4_data_gpe7_default>;
 	pinctrl-names = "default";
 
-	fifo-enable;   /* FIFO2 */
+	fifo-enable;	/* FIFO2 */
 
 	eeprom1: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";

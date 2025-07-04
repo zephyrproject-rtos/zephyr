@@ -71,11 +71,11 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<14 0 &ioport5 11 0>,	/* IIC_SDA */
-				<15 0 &ioport4 4 0>,	/* DISP_BLEN */
-				<16 0 &ioport5 12 0>,	/* IIC_SCL */
-				<17 0 &ioport5 10 0>,	/* DISP_INT */
-				<18 0 &ioporta 1 0>;	/* DISP_RST */
+		gpio-map = <14 0 &ioport5 11 0>,	/* IIC_SDA */
+			   <15 0 &ioport4 4 0>,	/* DISP_BLEN */
+			   <16 0 &ioport5 12 0>,	/* IIC_SCL */
+			   <17 0 &ioport5 10 0>,	/* DISP_INT */
+			   <18 0 &ioporta 1 0>;	/* DISP_RST */
 	};
 
 	aliases {
@@ -349,22 +349,22 @@
 	bank@0 {
 		reg = <0>;
 		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
-		SDRAM_TRCD_3CYCLES
-		SDRAM_TRP_3CYCLES
-		SDRAM_TWR_2CYCLES
-		SDRAM_TCL_3CYCLES
-		937
-		SDRAM_TREFW_8CYCLES>;
+					   SDRAM_TRCD_3CYCLES
+					   SDRAM_TRP_3CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
 	};
 };
 
-zephyr_lcdif: &lcdif {};
+zephyr_lcdif: &lcdif { };
 
-zephyr_mipi_dsi: &mipi_dsi {};
+zephyr_mipi_dsi: &mipi_dsi { };
 
-renesas_mipi_i2c: &iic1 {};
+renesas_mipi_i2c: &iic1 { };
 
-pmod_sd_shield: &sdhc1 {};
+pmod_sd_shield: &sdhc1 { };
 
 &usbfs {
 	pinctrl-0 = <&usbfs_default>;

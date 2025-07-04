@@ -31,6 +31,5 @@
 			interrupts = <135 0>;
 			status = "disabled";
 		};
-
 	};
 };

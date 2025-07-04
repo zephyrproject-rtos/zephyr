@@ -14,7 +14,7 @@
 
 	soc {
 		compatible = "silabs,efm32gg12b", "silabs,efm32gg12",
-			"silabs,efm32", "simple-bus";
+			     "silabs,efm32", "simple-bus";
 
 		flash-controller@40000000 {
 			flash0: flash@0 {
@@ -22,5 +22,4 @@
 			};
 		};
 	};
-
 };

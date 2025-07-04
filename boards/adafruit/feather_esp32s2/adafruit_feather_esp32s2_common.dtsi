@@ -144,8 +144,8 @@
 		spi-max-frequency = <6400000>;
 		chain-length = <1>;
 		spi-cpha;
-		spi-one-frame = <WS2812C_ONE_FRAME>; /* 11110000: 625ns high and 625ns low */
-		spi-zero-frame = <WS2812C_ZERO_FRAME>; /* 11000000: 312.5ns high and 937.5ns low */
+		spi-one-frame = <WS2812C_ONE_FRAME>;	/* 11110000: 625ns high and 625ns low */
+		spi-zero-frame = <WS2812C_ZERO_FRAME>;	/* 11000000: 312.5ns high and 937.5ns low */
 		color-mapping = <LED_COLOR_ID_GREEN>,
 				<LED_COLOR_ID_RED>,
 				<LED_COLOR_ID_BLUE>;

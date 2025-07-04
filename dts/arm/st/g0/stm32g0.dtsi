@@ -458,16 +458,16 @@
 			interrupts = <11 0>;
 			dma-channels = <5>;
 			dma-generators = <4>;
-			dma-requests= <49>;
+			dma-requests = <49>;
 			status = "disabled";
 		};
 
 		pwr: power@40007000 {
 			compatible = "st,stm32-pwr";
-			reg = <0x40007000 0x400>; /* PWR register bank */
+			reg = <0x40007000 0x400>;	/* PWR register bank */
 			status = "disabled";
 
-			wkup-pins-nb = <6>; /* 6 system wake-up pins */
+			wkup-pins-nb = <6>;	/* 6 system wake-up pins */
 			wkup-pins-pol;
 			wkup-pins-pupd;
 

@@ -220,7 +220,7 @@ arduino_i2c: &i2c0 {
 arduino_spi: &spi2 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";

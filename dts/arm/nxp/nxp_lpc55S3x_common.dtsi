@@ -178,7 +178,7 @@
 		#interrupt-cells = <1>;
 		#address-cells = <0>;
 		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-			<32 2>, <33 2>, <34 2>, <35 2>;
+			     <32 2>, <33 2>, <34 2>, <35 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
 	};
@@ -291,7 +291,7 @@
 		status = "disabled";
 		clk-divider = <8>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;
@@ -305,7 +305,7 @@
 
 	dac0: dac@b2000 {
 		compatible = "nxp,lpdac";
-		reg = < 0xb2000 0x1000>;
+		reg = <0xb2000 0x1000>;
 		interrupts = <74 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -314,7 +314,7 @@
 
 	dac1: dac@b6000 {
 		compatible = "nxp,lpdac";
-		reg = < 0xb6000 0x1000>;
+		reg = <0xb6000 0x1000>;
 		interrupts = <75 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -323,7 +323,7 @@
 
 	dac2: dac@b9000 {
 		compatible = "nxp,lpdac";
-		reg = < 0xb9000 0x1000>;
+		reg = <0xb9000 0x1000>;
 		interrupts = <76 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -394,7 +394,6 @@
 			run-in-wait;
 		};
 	};
-
 
 	flexpwm1: flexpwm@400C5000 {
 		compatible = "nxp,flexpwm";

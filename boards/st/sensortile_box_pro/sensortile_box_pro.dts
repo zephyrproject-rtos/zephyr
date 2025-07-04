@@ -174,7 +174,7 @@ stm32_lp_tick_source: &lptim1 {
 
 &spi1_sck_pa5 {
 	/delete-property/ bias-pull-down;
-	bias-pull-up; /* Idle state for the clock pin is high-level due to SPI mode 3 */
+	bias-pull-up;	/* Idle state for the clock pin is high-level due to SPI mode 3 */
 };
 
 &spi2 {

@@ -40,7 +40,6 @@
 		};
 	};
 
-
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;

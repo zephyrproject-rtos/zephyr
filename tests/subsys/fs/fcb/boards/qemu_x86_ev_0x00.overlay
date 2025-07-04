@@ -5,7 +5,7 @@
  */
 
 &sim_flash {
-	erase-value = < 0x00 >;
+	erase-value = <0x00>;
 };
 
 &flash_sim0 {

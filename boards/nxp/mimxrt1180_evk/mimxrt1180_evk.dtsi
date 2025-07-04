@@ -262,8 +262,8 @@
 	pinctrl-names = "default";
 };
 
-p3t1755dp_ard_i3c_interface: &i3c2 {};
-p3t1755dp_ard_i2c_interface: &lpi2c2 {};
+p3t1755dp_ard_i3c_interface: &i3c2 { };
+p3t1755dp_ard_i2c_interface: &lpi2c2 { };
 
 &lpspi3 {
 	dmas = <&edma4 1 13>, <&edma4 2 12>;

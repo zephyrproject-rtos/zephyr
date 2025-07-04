@@ -77,7 +77,7 @@
 		zephyr,memory-region = "DTCM";
 	};
 
-	isram: sram@31000000 {/* alias @ 0x21000000 */
+	isram: sram@31000000 {	/* alias @ 0x21000000 */
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x31000000 DT_SIZE_M(2)>;
 		zephyr,memory-region = "ISRAM";

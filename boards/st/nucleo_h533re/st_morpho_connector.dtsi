@@ -16,8 +16,8 @@
 			   <ST_MORPHO_L_2 0 &gpioc 11 0>,
 			   <ST_MORPHO_L_3 0 &gpioc 12 0>,
 			   <ST_MORPHO_L_4 0 &gpiod 2 0>,
-			   <ST_MORPHO_L_13 0 &gpioa 13 0>, /* SB40=ON, SB41=ON */
-			   <ST_MORPHO_L_15 0 &gpioa 14 0>, /* SB40=ON, SB41=ON */
+			   <ST_MORPHO_L_13 0 &gpioa 13 0>,	/* SB40=ON, SB41=ON */
+			   <ST_MORPHO_L_15 0 &gpioa 14 0>,	/* SB40=ON, SB41=ON */
 			   <ST_MORPHO_L_17 0 &gpioa 15 0>,
 			   <ST_MORPHO_L_23 0 &gpioc 13 0>,
 			   <ST_MORPHO_L_25 0 &gpioc 14 0>,
@@ -32,16 +32,15 @@
 			   <ST_MORPHO_L_36 0 &gpioc 1 0>,
 			   <ST_MORPHO_L_37 0 &gpioc 3 0>,
 			   <ST_MORPHO_L_38 0 &gpioc 0 0>,
-
 			   <ST_MORPHO_R_2 0 &gpioa 9 0>,
 			   <ST_MORPHO_R_3 0 &gpiob 6 0>,
 			   <ST_MORPHO_R_4 0 &gpioa 12 0>,
 			   <ST_MORPHO_R_5 0 &gpiob 7 0>,
 			   <ST_MORPHO_R_6 0 &gpioc 5 0>,
 			   <ST_MORPHO_R_11 0 &gpioa 5 0>,
-			   <ST_MORPHO_R_12 0 &gpioa 12 0>, /* SB13=ON, SB17=ON */
+			   <ST_MORPHO_R_12 0 &gpioa 12 0>,	/* SB13=ON, SB17=ON */
 			   <ST_MORPHO_R_13 0 &gpioa 6 0>,
-			   <ST_MORPHO_R_14 0 &gpioa 11 0>, /* SB13=ON, SB17=ON */
+			   <ST_MORPHO_R_14 0 &gpioa 11 0>,	/* SB13=ON, SB17=ON */
 			   <ST_MORPHO_R_15 0 &gpioa 7 0>,
 			   <ST_MORPHO_R_16 0 &gpiob 12 0>,
 			   <ST_MORPHO_R_17 0 &gpioc 9 0>,

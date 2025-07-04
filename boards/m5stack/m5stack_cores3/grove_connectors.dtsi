@@ -14,5 +14,5 @@
 	};
 };
 
-zephyr_i2c: &i2c1 {};
-grove_uart: &uart2 {};
+zephyr_i2c: &i2c1 { };
+grove_uart: &uart2 { };

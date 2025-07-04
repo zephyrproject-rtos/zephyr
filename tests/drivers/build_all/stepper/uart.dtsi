@@ -12,8 +12,9 @@ adi_tmc51xx_uart: adi_tmc51xx {
 
 	label = "tmc5160_uart_1";
 
-	en-pwm-mode; test-mode; /* ADI TMC Global configuration flags */
-	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+	en-pwm-mode;
+	test-mode;	/* ADI TMC Global configuration flags */
+	clock-frequency = <16000000>;	/* Internal/External Clock frequency */
 
 	/* common stepper controller settings */
 	invert-direction;

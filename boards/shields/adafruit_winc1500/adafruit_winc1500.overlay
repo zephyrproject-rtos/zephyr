@@ -6,7 +6,7 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 0>;			/* D10 */
+	cs-gpios = <&arduino_header 16 0>;	/* D10 */
 
 	winc1500_adafruit_winc1500: winc1500@0 {
 		status = "ok";
@@ -15,6 +15,6 @@
 		spi-max-frequency = <4000000>;
 		irq-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>;	/* D7 */
 		reset-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;	/* D5 */
-		enable-gpios = <&arduino_header 12 0>;			/* D6 */
+		enable-gpios = <&arduino_header 12 0>;	/* D6 */
 	};
 };

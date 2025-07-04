@@ -65,7 +65,7 @@
 		reg = <0x70000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_IO))>;
 	};
 };
 
@@ -145,7 +145,7 @@
 };
 
 &adc1 {
-	pinctrl-0 = <&adc1_inp15_pa3>; /* Arduino A0 */
+	pinctrl-0 = <&adc1_inp15_pa3>;	/* Arduino A0 */
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
@@ -194,7 +194,7 @@
 	mx25uw25645: xspi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(256)>; /* 256Mbits */
+		size = <DT_SIZE_M(256)>;	/* 256Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;

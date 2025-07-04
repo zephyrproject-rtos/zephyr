@@ -113,4 +113,4 @@
 };
 
 /* Get a node label for wi-fi spi to use in shield files */
-wifi_spi: &spi22 {};
+wifi_spi: &spi22 { };

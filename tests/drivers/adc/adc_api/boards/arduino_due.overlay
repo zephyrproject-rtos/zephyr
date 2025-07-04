@@ -24,7 +24,7 @@
 	tracking-time = <2>;
 
 	/* External ADC(+) */
-	channel@6 { // Connector A1
+	channel@6 {	// Connector A1
 		reg = <6>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
@@ -32,7 +32,7 @@
 		zephyr,input-positive = <6>;
 		zephyr,vref-mv = <3300>;
 	};
-	channel@7 { // Connector A0
+	channel@7 {	// Connector A0
 		reg = <7>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";

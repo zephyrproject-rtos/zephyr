@@ -6,14 +6,14 @@
 	};
 };
 
-&dacc{
+&dacc {
 	status = "okay";
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
 };
 
-&pinctrl{
-	dac_default: dac_default{
+&pinctrl {
+	dac_default: dac_default {
 		group1 {
 			pinmux = <PB13X_DACC_DAC0>;
 		};

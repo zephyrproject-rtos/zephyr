@@ -168,7 +168,7 @@
 };
 
 &adc1 {
-	pinctrl-0 = < &adc1_in2_pc1>;
+	pinctrl-0 = <&adc1_in2_pc1>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
@@ -196,11 +196,11 @@ zephyr_udc0: &usbotg_fs {
 
 &quadspi {
 	pinctrl-0 = <&quadspi_bk1_io0_pb1 &quadspi_bk1_io1_pb0
-			&quadspi_bk1_io2_pa7 &quadspi_bk1_io3_pa6
-			&quadspi_bk1_ncs_pb11 &quadspi_clk_pa3>;
+		     &quadspi_bk1_io2_pa7 &quadspi_bk1_io3_pa6
+		     &quadspi_bk1_ncs_pb11 &quadspi_clk_pa3>;
 	pinctrl-names = "default";
 
-	dmas = <&dma2 7 3 STM32_DMA_PERIPH_RX>; /* channel 7 request 3 on DMA2 */
+	dmas = <&dma2 7 3 STM32_DMA_PERIPH_RX>;	/* channel 7 request 3 on DMA2 */
 	dma-names = "tx_rx";
 
 	flash-id = <1>;
@@ -209,7 +209,7 @@ zephyr_udc0: &usbotg_fs {
 	mx25r6435: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		qspi-max-frequency = <8000000>;
 		status = "okay";
 		spi-bus-width = <4>;

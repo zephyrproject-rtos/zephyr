@@ -26,7 +26,7 @@
 	icm42670p: icm42670p@68 {
 		compatible = "invensense,icm42670p";
 		reg = <0x68>;
-		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; /* D2 */
+		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;	/* D2 */
 		accel-hz = <100>;
 		gyro-hz = <100>;
 		accel-fs = <16>;

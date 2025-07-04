@@ -17,22 +17,22 @@
 
 		can0: can@e6c30000 {
 			clocks = <&cpg CPG_MOD 916>,
-			<&cpg CPG_CORE R8A7795_CLK_CANFD>;
+				 <&cpg CPG_CORE R8A7795_CLK_CANFD>;
 		};
 
 		pwm0: pwm@e6e30000 {
 			clocks = <&cpg CPG_MOD 523>,
-			<&cpg CPG_CORE R8A7795_CLK_S0D12>;
+				 <&cpg CPG_CORE R8A7795_CLK_S0D12>;
 		};
 
 		scif1: serial@e6e68000 {
 			clocks = <&cpg CPG_MOD 206>,
-			<&cpg CPG_CORE R8A7795_CLK_S3D4>;
+				 <&cpg CPG_CORE R8A7795_CLK_S3D4>;
 		};
 
 		scif2: serial@e6e88000 {
 			clocks = <&cpg CPG_MOD 310>,
-			<&cpg CPG_CORE R8A7795_CLK_S3D4>;
+				 <&cpg CPG_CORE R8A7795_CLK_S3D4>;
 		};
 	};
 };

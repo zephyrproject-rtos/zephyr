@@ -15,6 +15,6 @@
 	};
 
 	lsm6dso_x_nucleo_iks01a3: lsm6dso@6b {
-		/delete-property/ irq-gpios;    /* A3 */
+		/delete-property/ irq-gpios;	/* A3 */
 	};
 };

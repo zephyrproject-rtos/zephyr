@@ -146,8 +146,8 @@
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
 			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+				     <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 		};
 
@@ -158,8 +158,8 @@
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
 			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+				     <FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			#mbox-cells = <1>;
 		};
@@ -237,9 +237,9 @@
 			gpio-map-mask = <0xffffffe0 0xffffffc0>;
 			gpio-map-pass-thru = <0x1f 0x3f>;
 			gpio-map = <
-				0x00 0x0 &gpio0 0x0 0x0
-				0x20 0x0 &gpio1 0x0 0x0
-			>;
+				    0x00 0x0 &gpio0 0x0 0x0
+				    0x20 0x0 &gpio1 0x0 0x0
+				   >;
 			#gpio-cells = <2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -257,7 +257,7 @@
 				 * on part number dtsi level, using
 				 * the `gpio-reserved-ranges` property.
 				 */
-				ngpios = <32>;  /* 0..31 */
+				ngpios = <32>;	/* 0..31 */
 			};
 
 			gpio1: gpio@60004800 {
@@ -267,7 +267,7 @@
 				reg = <0x60004800 0x800>;
 				interrupts = <GPIO_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 				interrupt-parent = <&intc>;
-				ngpios = <22>; /* 32..53 */
+				ngpios = <22>;	/* 32..53 */
 			};
 		};
 
@@ -534,16 +534,16 @@
 			reg = <0x6003f000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
 			interrupts =
-				<DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_IN_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
-				<DMA_OUT_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>;
+				     <DMA_IN_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH3_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_IN_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>,
+				     <DMA_OUT_CH4_INTR_SOURCE IRQ_DEFAULT_PRIORITY ESP_INTR_FLAG_SHARED>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <10>;

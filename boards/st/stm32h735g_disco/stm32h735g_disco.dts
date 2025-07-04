@@ -183,7 +183,7 @@
 	mx25lm51245: ospi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(512)>; /* 512 Megabits */
+		size = <DT_SIZE_M(512)>;	/* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;

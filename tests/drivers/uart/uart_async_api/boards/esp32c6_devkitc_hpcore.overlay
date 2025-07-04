@@ -8,11 +8,11 @@
 	uart1_test: uart1_test {
 		group1 {
 			pinmux = <UART1_TX_GPIO2>;
-			input-enable;   /* Connect GPIO2 and GPIO3 externally for testing */
+			input-enable;	/* Connect GPIO2 and GPIO3 externally for testing */
 		};
 		group2 {
 			pinmux = <UART1_RX_GPIO3>;
-			output-enable;  /* Connect GPIO2 and GPIO3 externally for testing */
+			output-enable;	/* Connect GPIO2 and GPIO3 externally for testing */
 		};
 	};
 };

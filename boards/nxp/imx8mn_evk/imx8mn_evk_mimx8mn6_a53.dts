@@ -85,7 +85,7 @@
 		reg = <0x20>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		interrupt-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		interrupt-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };

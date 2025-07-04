@@ -7,7 +7,7 @@
 	regulator: regulator {
 		compatible = "zephyr,fake-regulator";
 
-		reg0: REG0 {};
+		reg0: REG0 { };
 
 		reg1: REG1 {
 			regulator-always-on;

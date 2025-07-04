@@ -43,21 +43,21 @@
 		clk_inro: clk_inro {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = < DT_FREQ_K(8) >;
+			clock-frequency = <DT_FREQ_K(8)>;
 			status = "disabled";
 		};
 
 		clk_ibro: clk_ibro {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = < 7372800 >;
+			clock-frequency = <7372800>;
 			status = "disabled";
 		};
 
 		clk_ertco: clk_ertco {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = < 32768 >;
+			clock-frequency = <32768>;
 			status = "disabled";
 		};
 
@@ -146,7 +146,7 @@
 		status = "disabled";
 	};
 
-	wdt0: watchdog@3000  {
+	wdt0: watchdog@3000 {
 		compatible = "adi,max32-watchdog";
 		reg = <0x3000 0x400>;
 		interrupts = <1 0>;

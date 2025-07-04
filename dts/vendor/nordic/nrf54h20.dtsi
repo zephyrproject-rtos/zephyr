@@ -178,7 +178,7 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			open-loop-accuracy-ppm = <20000>;
-			open-loop-startup-time-us = <200>; /* To be measured */
+			open-loop-startup-time-us = <200>;	/* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
@@ -201,8 +201,8 @@
 			status = "okay";
 			lfrc-accuracy-ppm = <500>;
 			lflprc-accuracy-ppm = <1000>;
-			lfrc-startup-time-us = <200>; /* To be measured */
-			lflprc-startup-time-us = <200>; /* To be measured */
+			lfrc-startup-time-us = <200>;	/* To be measured */
+			lflprc-startup-time-us = <200>;	/* To be measured */
 			clocks = <&hfxo>, <&lfxo>;
 			clock-names = "hfxo", "lfxo";
 		};
@@ -286,9 +286,9 @@
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(320)>;
 				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
+					       <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
+					       <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
+					       <&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -341,9 +341,9 @@
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(256)>;
 				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -556,7 +556,7 @@
 				#mbox-cells = <1>;
 			};
 
-			canpll: clock-controller@8c2000{
+			canpll: clock-controller@8c2000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x8c2000 0x1000>;
 				interrupts = <194 NRF_DEFAULT_IRQ_PRIORITY>;

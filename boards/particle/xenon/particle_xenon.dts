@@ -40,7 +40,7 @@
 	gpio-as-nreset;
 };
 
-&uart1 { /* feather UART2 */
+&uart1 {	/* feather UART2 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "disabled";

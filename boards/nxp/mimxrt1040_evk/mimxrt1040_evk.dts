@@ -50,7 +50,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+		gpio-map = <0 0 &gpio2 31 0>;	/* Pin 1, BL+ */
 	};
 
 	/*
@@ -63,8 +63,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<1  0 &gpio1 19 0>,	/* Pin 2, LCD touch RST */
-				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
+		gpio-map = <1 0 &gpio1 19 0>,	/* Pin 2, LCD touch RST */
+			   <2 0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {
@@ -195,7 +195,7 @@
 	pinctrl-names = "default";
 };
 
-nxp_touch_i2c: &lpi2c1 {};
+nxp_touch_i2c: &lpi2c1 { };
 
 zephyr_lcdif: &lcdif {
 	pinctrl-0 = <&pinmux_lcdif>;
@@ -234,6 +234,6 @@ lpi2c3: &lpi2c3 {
 	status = "okay";
 };
 
-m2_hci_bt_uart: &lpuart3 {};
+m2_hci_bt_uart: &lpuart3 { };
 
-m2_wifi_sdio: &usdhc1 {};
+m2_wifi_sdio: &usdhc1 { };

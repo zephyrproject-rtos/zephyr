@@ -139,7 +139,7 @@
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
 	w25q128jv: w25q128jv@0 {
-		status="okay";
+		status = "okay";
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
 		writeoc = "pp4io";
@@ -201,8 +201,8 @@ zephyr_udc0: &usbd {
 };
 
 // Sparkfun Micromod compatible pins
-micromod_1_uart: &uart0 {};
-micromod_2_uart: &uart1 {};
-micromod_0_i2c: &i2c0 {};
-micromod_1_i2c: &i2c1 {};
-micromod_0_spi: &spi2 {};
+micromod_1_uart: &uart0 { };
+micromod_2_uart: &uart1 { };
+micromod_0_i2c: &i2c0 { };
+micromod_1_i2c: &i2c1 { };
+micromod_0_spi: &spi2 { };
