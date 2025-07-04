@@ -17,6 +17,3 @@ config SOC_SERIES_EFR32BG27
 	select SOC_GECKO_DEV_INIT
 	select SOC_GECKO_SE
 	select HAS_PM
-
-config SOC_GECKO_SDID
-	default 230 if SOC_SERIES_EFR32BG27
