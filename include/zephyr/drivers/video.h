@@ -23,10 +23,10 @@
  * @{
  */
 
-#include <zephyr/device.h>
 #include <stddef.h>
-#include <zephyr/kernel.h>
 
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -351,15 +351,6 @@ typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_f
 typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
 
 /**
- * @typedef video_api_dequeue_t
- * @brief Dequeue a buffer from the driver’s outgoing queue.
- *
- * See video_dequeue() for argument descriptions.
- */
-typedef int (*video_api_dequeue_t)(const struct device *dev, struct video_buffer **buf,
-				   k_timeout_t timeout);
-
-/**
  * @typedef video_api_flush_t
  * @brief Flush endpoint buffers, buffer are moved from incoming queue to
  *        outgoing queue.
@@ -424,7 +415,6 @@ __subsystem struct video_driver_api {
 	video_api_get_caps_t get_caps;
 	/* optional callbacks */
 	video_api_enqueue_t enqueue;
-	video_api_dequeue_t dequeue;
 	video_api_flush_t flush;
 	video_api_ctrl_t set_ctrl;
 	video_api_ctrl_t get_volatile_ctrl;
@@ -606,36 +596,15 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf);
  * Dequeue a filled (capturing) or displayed (output) buffer from the driver’s
  * endpoint outgoing queue.
  *
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Pointer to a video buffer structure.
- * @param timeout Timeout
+ * @param buf Pointer a video buffer pointer.
  *
  * @retval 0 Is successful.
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_dequeue(const struct device *dev, struct video_buffer **buf,
-				k_timeout_t timeout)
-{
-	const struct video_driver_api *api;
-	int ret;
+int video_dequeue(struct video_buffer **buf);
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(buf != NULL);
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->dequeue == NULL) {
-		return -ENOSYS;
-	}
-
-	ret = api->dequeue(dev, buf, timeout);
-	
-	if (ret == 0) {
-		(*buf)->state = VIDEO_BUF_STATE_DONE;
-	}
-
-	return ret;
-}
+void video_release_buf();
 
 /**
  * @brief Flush endpoint buffers.
