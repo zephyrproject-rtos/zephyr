@@ -40,7 +40,3 @@ config SOC_SERIES_MGM24
 	select SOC_GECKO_SE
 	select HAS_PM
 	select SILABS_DEVICE_IS_MODULE
-
-config SOC_GECKO_SDID
-	default 215 if SOC_SERIES_EFR32MG24
-	default 215 if SOC_SERIES_MGM24
