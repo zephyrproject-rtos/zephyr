@@ -786,7 +786,6 @@ static int reset_cap_initiator(void)
 	}
 
 	if (unicast_group != NULL) {
-		int err;
 
 		err = unicast_group_delete();
 		if (err != 0) {
