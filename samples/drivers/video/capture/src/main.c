@@ -302,7 +302,7 @@ int main(void)
 
 	/* Grab video frames */
 	while (1) {
-		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
+		err = video_dequeue(&vbuf);
 		if (err) {
 			LOG_ERR("Unable to dequeue video buf");
 			return 0;
@@ -321,10 +321,6 @@ int main(void)
 		video_display_frame(display_dev, vbuf, fmt);
 #endif
 
-		err = video_enqueue(video_dev, vbuf);
-		if (err) {
-			LOG_ERR("Unable to requeue video buf");
-			return 0;
-		}
+		video_release_buf();
 	}
 }

@@ -13,10 +13,12 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include "video_common.h"
+#include "video_device.h"
 
 LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -135,14 +137,15 @@ int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type,
 	return 0;
 }
 
+RTIO_DEFINE(rtio, CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
 	int ret;
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
-	api = (const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 	if (api->enqueue == NULL) {
 		return -ENOSYS;
 	}
@@ -166,9 +169,63 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 		return ret;
 	}
 
-	video_buf[buf->index].state = VIDEO_BUF_STATE_QUEUED;
+	/* RTIO submission */
+	struct rtio_iodev *ri = video_find_iodev(dev);
+	struct rtio_sqe *sqe = rtio_sqe_acquire(&rtio);
+
+	__ASSERT_NO_MSG(ri != NULL);
+	__ASSERT_NO_MSG(sqe != NULL);
+
+	rtio_sqe_prep_read(sqe, ri, RTIO_PRIO_NORM, video_buf[index].buffer,
+			   video_buf[index].size, &video_buf[index]);
+
+	sqe->flags |= RTIO_SQE_MULTISHOT;
+
+	/* Do not wait for complete */
+	rtio_submit(&rtio, 0);
+
+	video_buf[index].state = VIDEO_BUF_STATE_QUEUED;
 
 	return 0;
+}
+
+int video_dequeue(struct video_buffer **buf)
+{
+	struct rtio_cqe *cqe = rtio_cqe_consume_block(&rtio);
+	*buf = cqe->userdata;
+
+	if (cqe->result < 0) {
+		LOG_ERR("I/O operation failed");
+		return cqe->result;
+	}
+
+	return 0;
+}
+
+void video_release_buf()
+{
+	/* Buffer will be re-queued thanks to RTIO_SQE_MULTISHOT */
+	rtio_cqe_release(&rtio, rtio_cqe_consume_block(&rtio));
+}
+
+struct video_buffer *video_get_buf_sqe(struct mpsc *io_q)
+{
+	struct mpsc_node *node = mpsc_pop(io_q);
+	if (node == NULL) {
+		return NULL;
+	}
+
+	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
+	struct rtio_sqe *sqe = &iodev_sqe->sqe;
+
+	if (sqe->op != RTIO_OP_RX) {
+		LOG_ERR("Invalid operation %d of length %u for submission %p", sqe->op,
+			sqe->rx.buf_len, (void *)iodev_sqe);
+		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+		return NULL;
+	}
+
+	return sqe->userdata;
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
