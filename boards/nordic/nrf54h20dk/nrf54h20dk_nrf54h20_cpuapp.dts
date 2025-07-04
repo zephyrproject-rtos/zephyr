@@ -18,10 +18,11 @@
 
 	chosen {
 		zephyr,console = &uart136;
-		zephyr,code-partition = &cpuapp_slot0_partition;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
+		zephyr,uart-mcumgr = &uart136;
 		zephyr,ieee802154 = &cpuapp_ieee802154;
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
@@ -108,18 +109,6 @@
 	};
 };
 
-&cpuapp_ram0x_region {
-	status = "okay";
-};
-
-&etr_buf_ram0x_region {
-	status = "okay";
-};
-
-&ram21_region {
-	status = "okay";
-};
-
 &cpuapp_bellboard {
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -145,8 +134,6 @@
 &cpusec_cpuapp_ipc {
 	status = "okay";
 	mbox-names = "tx", "rx";
-	tx-region = <&cpuapp_cpusec_ipc_shm>;
-	rx-region = <&cpusec_cpuapp_ipc_shm>;
 };
 
 &cpusec_bellboard {
@@ -190,12 +177,26 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 };
 
-&cpuapp_rx_partitions {
-	status = "okay";
+ironside_se_boot_report: &cpuapp_ironside_se_boot_report {};
+
+boot_partition: &cpuapp_boot_partition {
+	label = "mcuboot";
 };
 
-&cpuapp_rw_partitions {
-	status = "okay";
+slot0_partition: &cpuapp_slot0_partition {
+	label = "image-0";
+};
+
+slot1_partition: &cpuapp_slot1_partition {
+	label = "image-1";
+};
+
+slot2_partition: &cpurad_slot0_partition {
+	label = "image-2";
+};
+
+slot3_partition: &cpurad_slot1_partition {
+	label = "image-3";
 };
 
 &cpuppr_vpr {
