@@ -71,11 +71,13 @@ static int clock_control_renesas_ra_off(const struct device *dev, clock_control_
 static int clock_control_renesas_ra_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					     uint32_t *rate)
 {
+	ARG_UNUSED(sys);
+
 	const struct clock_control_ra_pclk_cfg *config = dev->config;
 	uint32_t clk_src_rate;
 	uint32_t clk_div_val;
 
-	if (!dev || !sys || !rate) {
+	if (!dev || !rate) {
 		return -EINVAL;
 	}
 
