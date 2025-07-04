@@ -60,6 +60,16 @@
 	};
 };
 
+&timer134 {
+	status = "reserved";
+};
+
+&dppic135 {
+	owned-channels = <0>;
+	source-channels = <0>;
+	status = "okay";
+};
+
 dut: &uart134 {
 	status = "okay";
 	current-speed = <115200>;
@@ -67,6 +77,7 @@ dut: &uart134 {
 	pinctrl-1 = <&uart134_alt_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+	timer = <&timer134>;
 	zephyr,pm-device-runtime-auto;
 };
 
@@ -80,12 +91,23 @@ dut_aux: &uart137 {
 	zephyr,pm-device-runtime-auto;
 };
 
+&dppic120 {
+	owned-channels = <0>;
+	source-channels = <0>;
+	status = "okay";
+};
+
+&timer120 {
+	status = "reserved";
+};
+
 dut2: &uart120 {
 	pinctrl-0 = <&uart120_default_alt>;
 	pinctrl-1 = <&uart120_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	hw-flow-control;
+	timer = <&timer120>;
 	zephyr,pm-device-runtime-auto;
 };
 
