@@ -68,9 +68,6 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	}
 
 	vbuf->buffer = block->data;
-	vbuf->size = size;
-	vbuf->bytesused = 0;
-	vbuf->state = VIDEO_BUF_STATE_DONE;
 
 	return vbuf;
 }
@@ -102,7 +99,8 @@ void video_buffer_release(struct video_buffer *vbuf)
 }
 
 /* To be completed */
-int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type)
+int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type,
+			  enum video_buf_memory memory)
 {
 	struct video_buffer *buffer;
 
@@ -113,16 +111,33 @@ int video_request_buffers(uint8_t count, size_t size, enum video_buf_type type)
 
 	/* Allocate buffers */
 	for (uint8_t i = 0; i < count; i++) {
-		buffer =
-			video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_FOREVER);
+		if (memory == VIDEO_MEMORY_INTERNAL) {
+			buffer =
+				video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_FOREVER);
+		} else {
+			/* find available video buffer */
+			for (uint8_t j = 0; j < ARRAY_SIZE(video_buf); j++) {
+				if (video_buf[j].buffer == NULL) {
+					buffer = &video_buf[j];
+					buffer->index = j;
+					break;
+				}
+			}
+			
+		}
+
 		buffer->type = type;
+		buffer->size = size;
+		buffer->bytesused = 0;
+		buffer->state = VIDEO_BUF_STATE_DONE;
 	}
 
 	return 0;
 }
 
-int video_enqueue(const struct device *dev, uint8_t index)
+int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
+	int ret;
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -132,13 +147,28 @@ int video_enqueue(const struct device *dev, uint8_t index)
 		return -ENOSYS;
 	}
 
-	if (video_buf[index].state != VIDEO_BUF_STATE_DONE) {
+	if (video_buf[buf->index].type != buf->type ||
+	    video_buf[buf->index].memory != buf->memory ||
+	    video_buf[buf->index].state != VIDEO_BUF_STATE_DONE) {
 		return -EINVAL;
 	}
 
-	video_buf[index].state = VIDEO_BUF_STATE_QUEUED;
+	if (buf->memory == VIDEO_MEMORY_EXTERNAL) {
+		if (buf->size != video_buf[buf->index].size) {
+			return -EINVAL;
+		}
 
-	return api->enqueue(dev, &video_buf[index]);
+		video_buf[buf->index].buffer = buf->buffer;
+	}
+
+	ret = api->enqueue(dev, &video_buf[buf->index]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	video_buf[buf->index].state = VIDEO_BUF_STATE_QUEUED;
+
+	return 0;
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,

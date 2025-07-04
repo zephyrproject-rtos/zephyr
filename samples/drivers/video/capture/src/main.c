@@ -279,15 +279,17 @@ int main(void)
 		bsize = fmt.pitch * caps.min_line_count;
 	}
 
-	err = video_request_buffers(ARRAY_SIZE(buffers), bsize, type);
+	err = video_request_buffers(ARRAY_SIZE(buffers), bsize, type, VIDEO_MEMORY_INTERNAL);
 	if (err) {
 		LOG_ERR("Unable to request video buf");
 		return 0;
 	}
 
 	/* Enqueue buffers for capture */
+	vbuf->type = type;
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-		video_enqueue(video_dev, i);
+		vbuf->index = i;
+		video_enqueue(video_dev, vbuf);
 	}
 
 	/* Start video capture */
@@ -299,7 +301,6 @@ int main(void)
 	LOG_INF("Capture started");
 
 	/* Grab video frames */
-	vbuf->type = type;
 	while (1) {
 		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (err) {
@@ -320,7 +321,7 @@ int main(void)
 		video_display_frame(display_dev, vbuf, fmt);
 #endif
 
-		err = video_enqueue(video_dev, vbuf->index);
+		err = video_enqueue(video_dev, vbuf);
 		if (err) {
 			LOG_ERR("Unable to requeue video buf");
 			return 0;
