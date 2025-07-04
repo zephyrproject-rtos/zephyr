@@ -1392,6 +1392,7 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
 	case NODE_RX_TYPE_DTM_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
@@ -1582,6 +1583,7 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_ISO)
 		case NODE_RX_TYPE_ISO_PDU:
 #endif
+		case NODE_RX_TYPE_PATH_LOSS:
 
 		/* Ensure that at least one 'case' statement is present for this
 		 * code block.
@@ -2965,6 +2967,7 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
 	case NODE_RX_TYPE_SCAN_INDICATION:
 #endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
+	case NODE_RX_TYPE_PATH_LOSS:
 
 	case NODE_RX_TYPE_RELEASE:
 	{
