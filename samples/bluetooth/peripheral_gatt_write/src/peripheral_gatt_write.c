@@ -50,7 +50,6 @@ static struct bt_gatt_cb gatt_callbacks = {
 	.att_mtu_updated = mtu_updated
 };
 
-#if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_TEST_PHY_UPDATE)
 #define BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES \
 		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
 				 BT_LE_SCAN_OPT_NONE, \
@@ -65,7 +64,6 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 }
-#endif /* CONFIG_BT_OBSERVER && !CONFIG_TEST_PHY_UPDATE */
 
 uint32_t peripheral_gatt_write(uint32_t count)
 {
@@ -81,16 +79,22 @@ uint32_t peripheral_gatt_write(uint32_t count)
 
 	bt_gatt_cb_register(&gatt_callbacks);
 
-#if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_TEST_PHY_UPDATE)
-	printk("Start continuous passive scanning...");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES,
-			       device_found);
-	if (err) {
-		printk("Scan start failed (%d).\n", err);
-		return err;
+	/* On target, users can enable simultaneous (background) scanning but by default do not have
+	 * the scanning enabled.
+	 * If both Central plus Peripheral role is built together then
+	 * Peripheral is scanning (on 1M and Coded PHY windows) while there
+	 * is simultaneous Write Commands.
+	 */
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) && !IS_ENABLED(CONFIG_USE_PHY_UPDATE_ITERATION_ONCE)) {
+		printk("Start continuous passive scanning...");
+		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES,
+				       device_found);
+		if (err != 0) {
+			printk("Scan start failed (%d).\n", err);
+			return err;
+		}
+		printk("success.\n");
 	}
-	printk("success.\n");
-#endif /* CONFIG_BT_OBSERVER && !CONFIG_TEST_PHY_UPDATE */
 
 #if defined(CONFIG_BT_SMP)
 	(void)bt_conn_auth_cb_register(&auth_callbacks);
@@ -115,6 +119,12 @@ uint32_t peripheral_gatt_write(uint32_t count)
 	conn_connected = NULL;
 	last_write_rate = 0U;
 	write_countdown = &count;
+
+	if (count != 0U) {
+		printk("GATT Write countdown %u on connection.\n", count);
+	} else {
+		printk("GATT Write forever on connection.\n");
+	}
 
 	while (true) {
 		struct bt_conn *conn = NULL;
