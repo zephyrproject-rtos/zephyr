@@ -618,9 +618,7 @@ lxml==5.4.0 \
     --hash=sha256:fa0e294046de09acd6146be0ed6727d1f42ded4ce3ea1e9a19c11b6774eea27c \
     --hash=sha256:fb54f7c6bafaa808f27166569b1511fc42701a7713858dddc08afdde9746849e \
     --hash=sha256:fd3be6481ef54b8cfd0e1e953323b7aa9d9789b94842d0e5b142ef4bb7999539
-    # via
-    #   -r requirements-actions.in
-    #   gcovr
+    # via gcovr
 markupsafe==3.0.2 \
     --hash=sha256:0bff5e0ae4ef2e1ae4fdf2dfd5b76c75e5c2fa4132d05fc1b0dabcd20c7e28c4 \
     --hash=sha256:0f4ca02bea9a23221c0182836703cbf8930c5e9454bacce27e767509fa286a30 \
