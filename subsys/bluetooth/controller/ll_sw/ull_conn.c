@@ -2916,7 +2916,7 @@ uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
 	return 1;
 }
 
-uint8_t ull_is_lll_tx_queue_empty(struct ll_conn *conn)
+bool ull_conn_lll_tx_queue_is_empty(struct ll_conn *conn)
 {
-	return (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL);
+	return memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail, NULL) == NULL;
 }
