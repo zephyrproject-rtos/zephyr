@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	virtio-mmio-backend {
+		compatible = "xen,virtio-mmio-backend";
+/*
+@10004000 {
+		reg = <0x0 0x10004000 0x0 0x200>;
+*/
+	};
+
+};

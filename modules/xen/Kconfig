@@ -3,6 +3,9 @@
 # Copyright (c) 2023 EPAM Systems
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_XEN_MODULE
+	bool
+
 config XEN
 	bool
 	default y
@@ -12,6 +15,8 @@ config XEN
 	  Enables support of Xen hypervisor on arm64 platform. Get enabled
 	  when board device tree contains "hypervisor" node with "xen,xen"
 	  compatible enabled.
+
+if XEN
 
 config XEN_DOM0
 	bool "Zephyr as Xen Domain 0"
@@ -28,8 +33,11 @@ config XEN_DOM0LESS
 
 config XEN_INTERFACE_VERSION
 	hex "Xen interface version"
-	default 0x00040e00
+	default 0
 	depends on XEN
 	help
 	  Xen interface version to use. This is the version of the
 	  interface that Zephyr will use to communicate with the hypervisor.
+	  If not defined, the latest version in the header will be used.
+
+endif
