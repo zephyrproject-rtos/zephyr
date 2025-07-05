@@ -69,11 +69,16 @@ void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 #if defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
+	ARG_UNUSED(thread);
+
 	return -ENOTSUP;
 }
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
+
 	return -ENOTSUP;
 }
 #endif /* CONFIG_FPU_SHARING */
