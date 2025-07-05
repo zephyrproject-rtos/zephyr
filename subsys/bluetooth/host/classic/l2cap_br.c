@@ -2673,7 +2673,7 @@ no_chan:
 #define L2CAP_QOS_LATENCY_DEFAULT           0xffffffff
 #define L2CAP_QOS_DELAY_DEFAULT             0xffffffff
 
-#if defined(CONFIG_BT_L2CAP_RET_FC)
+
 static uint16_t l2cap_br_conf_rsp_opt_mtu(struct bt_l2cap_chan *chan, struct net_buf *buf,
 					  size_t len)
 {
@@ -2789,6 +2789,7 @@ done:
 	return result;
 }
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_buf *buf,
 					     size_t len)
 {
@@ -3052,6 +3053,7 @@ static uint16_t l2cap_br_conf_rsp_opt_ext_win_size(struct bt_l2cap_chan *chan, s
 done:
 	return result;
 }
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_len,
 				       struct net_buf *buf)
@@ -3101,6 +3103,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 				goto invalid_opt;
 			}
 			break;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 		case BT_L2CAP_CONF_OPT_RET_FC:
 			result = l2cap_br_conf_rsp_opt_ret_fc(chan, buf, opt->len);
 			if (result != BT_L2CAP_CONF_SUCCESS) {
@@ -3125,6 +3128,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 				goto invalid_opt;
 			}
 			break;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 		default:
 			result = BT_L2CAP_CONF_UNKNOWN_OPT;
 			goto invalid_opt;
@@ -3132,6 +3136,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 		net_buf_pull(buf, opt->len);
 	}
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (BR_CHAN(chan)->rx.fcs == BT_L2CAP_BR_FCS_16BIT) {
 		/* If local enable FCS, peer also needs to enable it. */
 		BR_CHAN(chan)->tx.fcs = BT_L2CAP_BR_FCS_16BIT;
@@ -3143,6 +3148,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 		 */
 		BR_CHAN(chan)->tx.extended_control = true;
 	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	return 0;
 
@@ -3246,6 +3252,7 @@ done:
 	return result;
 }
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 static uint16_t l2cap_br_conf_rsp_unaccept_opt_ret_fc(struct bt_l2cap_chan *chan,
 						      struct net_buf *buf, size_t len)
 {
@@ -3454,6 +3461,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ext_win_size(struct bt_l2cap_chan
 done:
 	return result;
 }
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t opt_len,
 					  struct net_buf *buf)
@@ -3503,6 +3511,7 @@ static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t o
 				goto invalid_opt;
 			}
 			break;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 		case BT_L2CAP_CONF_OPT_RET_FC:
 			result = l2cap_br_conf_rsp_unaccept_opt_ret_fc(chan, buf, opt->len);
 			if (result != BT_L2CAP_CONF_SUCCESS) {
@@ -3527,6 +3536,7 @@ static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t o
 				goto invalid_opt;
 			}
 			break;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 		default:
 			result = BT_L2CAP_CONF_UNKNOWN_OPT;
 			goto invalid_opt;
@@ -3534,17 +3544,18 @@ static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t o
 		net_buf_pull(buf, opt->len);
 	}
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (BR_CHAN(chan)->rx.fcs == BT_L2CAP_BR_FCS_16BIT) {
 		/* If local enable FCS, peer also needs to enable it. */
 		BR_CHAN(chan)->tx.fcs = BT_L2CAP_BR_FCS_16BIT;
 	}
-
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 	return 0;
 
 invalid_opt:
 	return -EINVAL;
 }
-#endif /* CONFIG_BT_L2CAP_RET_FC */
+
 
 static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
 			      struct net_buf *buf)
@@ -3554,9 +3565,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct bt_l2cap_conf_rsp *rsp = (void *)buf->data;
 	uint16_t flags, scid, result, opt_len;
 	struct bt_l2cap_br_chan *br_chan;
-#if defined(CONFIG_BT_L2CAP_RET_FC)
 	int err;
-#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	if (buf->len < sizeof(*rsp)) {
 		LOG_ERR("Too small L2CAP conf rsp packet size");
@@ -3595,14 +3604,12 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	switch (result) {
 	case BT_L2CAP_CONF_SUCCESS:
 		atomic_set_bit(br_chan->flags, L2CAP_FLAG_CONN_LCONF_DONE);
-#if defined(CONFIG_BT_L2CAP_RET_FC)
 		err = l2cap_br_conf_rsp_opt_check(chan, opt_len, buf);
 		if (err) {
 			/* currently disconnect channel if opt is invalid */
 			bt_l2cap_chan_disconnect(chan);
 			break;
 		}
-#endif /* CONFIG_BT_L2CAP_RET_FC */
 		if (br_chan->state == BT_L2CAP_CONFIG &&
 		    atomic_test_bit(br_chan->flags, L2CAP_FLAG_CONN_RCONF_DONE)) {
 			LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", br_chan->rx.cid,
@@ -3614,7 +3621,6 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			}
 		}
 		break;
-#if defined(CONFIG_BT_L2CAP_RET_FC)
 	case BT_L2CAP_CONF_UNACCEPT:
 		err = l2cap_br_conf_rsp_unaccept_opt(chan, opt_len, buf);
 		if (!err) {
@@ -3622,7 +3628,6 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			break;
 		}
 		__fallthrough;
-#endif /* CONFIG_BT_L2CAP_RET_FC */
 	default:
 		/* currently disconnect channel on non success result */
 		bt_l2cap_chan_disconnect(chan);
