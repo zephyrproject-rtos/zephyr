@@ -58,6 +58,13 @@ config ESP32_SW_COEXIST_ENABLE
 	  If only Bluetooth is used, it is recommended to disable this option to reduce binary file
 	  size.
 
+config ESP32_EXT_ANTENNA
+	bool "ESP32 External Antenna Selector"
+	help
+	  Select the external antenna of custom ESP32 boards.
+	  By default, the onboard antenna is used.
+	  A board late init hook is required to enable and select the external antenna.
+
 endif
 
 rsource "Kconfig.amp"
