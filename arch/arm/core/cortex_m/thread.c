@@ -455,6 +455,8 @@ int arch_float_disable(struct k_thread *thread)
 
 int arch_float_enable(struct k_thread *thread, unsigned int options)
 {
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
 	/* This is not supported in Cortex-M */
 	return -ENOTSUP;
 }
