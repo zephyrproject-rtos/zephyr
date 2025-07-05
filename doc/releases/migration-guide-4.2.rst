@@ -220,6 +220,10 @@ Ethernet
 * :c:func:`phy_configure_link` got a ``flags`` parameter. Set it to ``0`` to preserve the old
   behavior (:github:`91354`).
 
+* The :dtcompatible:`microchip,vsc8541` PHY driver now expects the reset-gpios entry to specify
+  the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
+  nature was hard-coded into the driver. (:github:`91726`).
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
