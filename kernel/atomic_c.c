@@ -217,12 +217,12 @@ ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_sub);
  *
  * @return The value read from <target>
  */
-atomic_val_t atomic_get(const atomic_t *target)
+static inline atomic_val_t atomic_get(const atomic_t *target)
 {
 	return *target;
 }
 
-atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target)
+static inline atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target)
 {
 	return *target;
 }
