@@ -22,3 +22,18 @@ tests:
         - "Attempting to write 4 bytes"
         - "Data read matches data written. Good!!"
     depends_on: spi
+  sample.drivers.spi.flash.nrf54lm20:
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    harness_config:
+      fixture: external_flash
+      type: multi_line
+      ordered: true
+      regex:
+        - "Test 1: Flash erase"
+        - "Flash erase succeeded!"
+        - "Test 2: Flash write"
+        - "Attempting to write 4 bytes"
+        - "Data read matches data written. Good!!"
