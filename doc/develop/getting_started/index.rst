@@ -22,7 +22,7 @@ Click the operating system you are using.
 
    .. group-tab:: Ubuntu
 
-      This guide covers Ubuntu version 20.04 LTS and later.
+      This guide covers Ubuntu version 22.04 LTS and later.
       If you are using a different Linux distribution see :ref:`installation_linux`.
 
       .. code-block:: bash
@@ -73,27 +73,13 @@ The current minimum required version for the main dependencies are:
 
       .. _install_dependencies_ubuntu:
 
-      #. If using an Ubuntu version older than 22.04, it is necessary to add extra
-         repositories to meet the minimum required versions for the main
-         dependencies listed above. In that case, download, inspect and execute
-         the Kitware archive script to add the Kitware APT repository to your
-         sources list.
-         A detailed explanation of ``kitware-archive.sh`` can be found here
-         `kitware third-party apt repository <https://apt.kitware.com/>`_:
-
-         .. code-block:: bash
-
-            wget https://apt.kitware.com/kitware-archive.sh
-            sudo bash kitware-archive.sh
-
       #. Use ``apt`` to install the required dependencies:
 
          .. code-block:: bash
 
             sudo apt install --no-install-recommends git cmake ninja-build gperf \
-              ccache dfu-util device-tree-compiler wget \
-              python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-              make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
+              ccache dfu-util device-tree-compiler wget python3-dev python3-venv python3-tk \
+              xz-utils file make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
 
          .. note::
 
@@ -216,12 +202,6 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 .. tabs::
 
    .. group-tab:: Ubuntu
-
-      #. Use ``apt`` to install Python ``venv`` package:
-
-         .. code-block:: bash
-
-            sudo apt install python3-venv
 
       #. Create a new virtual environment:
 
