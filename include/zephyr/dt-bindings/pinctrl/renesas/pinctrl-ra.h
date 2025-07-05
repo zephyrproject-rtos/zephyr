@@ -48,6 +48,7 @@
 #define RA_PSEL_ETH_RMII     0x17
 #define RA_PSEL_GLCDC        0x19
 #define RA_PSEL_OSPI         0x1c
+#define RA_PSEL_CTSU         0x0c
 
 #define RA_PSEL_POS  8
 #define RA_PSEL_MASK 0x1f
