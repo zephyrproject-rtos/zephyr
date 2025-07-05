@@ -21,7 +21,4 @@ zephyr_include_directories(
   ./
 )
 
-zephyr_compile_definitions(
-    PB_ENABLE_MALLOC=1
-)
 endif()
