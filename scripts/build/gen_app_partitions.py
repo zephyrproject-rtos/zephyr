@@ -279,8 +279,9 @@ def zephyr_linker_symbol(symbol, expr) :
 
 class CmakeTemplate:
     section_name = "@_APP_SMEM{SECTION}_SECTION_NAME@"
+    smem_partition_align = "@SMEM_PARTITION_ALIGN,region_size=z_data_smem_{partition}_bss_end - z_data_smem_{partition}_part_start@"
     data_template = (
-        zephyr_linker_section_configure(section=section_name, align="@SMEM_PARTITION_ALIGN_BYTES@")+
+        zephyr_linker_section_configure(section=section_name, align=smem_partition_align)+
         zephyr_linker_section_configure(section=section_name, input="data_smem_{partition}_data*", symbols="z_data_smem_{partition}_part_start", keep=True)
     )
 
@@ -294,20 +295,20 @@ class CmakeTemplate:
 
     footer_template = (
         zephyr_linker_section_configure(section=section_name, symbols="z_data_smem_{partition}_bss_end", keep=True) +
-        zephyr_linker_section_configure(section=section_name, align="@SMEM_PARTITION_ALIGN_BYTES@") +
+        zephyr_linker_section_configure(section=section_name, align=smem_partition_align) +
         zephyr_linker_section_configure(section=section_name, symbols="z_data_smem_{partition}_part_end", keep=True)
     )
 
     linker_start_seq = (
         zephyr_linker_section(name=section_name, group="APP_SMEM_GROUP", noinput=True, align_with_input=True) +
-        zephyr_linker_section_configure(section=section_name, align="@APP_SHARED_ALIGN_BYTES@", symbols="_app_smem{section}_start"))
+        zephyr_linker_section_configure(section=section_name, align="@APP_SHARED_ALIGN@", symbols="_app_smem{section}_start"))
 
     linker_end_seq = (
-        zephyr_linker_section_configure(section=section_name, align="@APP_SHARED_ALIGN_BYTES@") +
+        zephyr_linker_section_configure(section=section_name, align="@APP_SHARED_ALIGN@") +
         zephyr_linker_section_configure(section=section_name, symbols="_app_smem{section}_end") )
 
     empty_app_smem = (
-        zephyr_linker_section(name=section_name, group="APP_SMEM_GROUP", align="@APP_SHARED_ALIGN_BYTES@", noinput=True, align_with_input=True) +
+        zephyr_linker_section(name=section_name, group="APP_SMEM_GROUP", align="@APP_SHARED_ALIGN@", noinput=True, align_with_input=True) +
         zephyr_linker_section_configure(section = section_name, symbols="_app_smem{section}_start") +
         zephyr_linker_section_configure(section = section_name, symbols="_app_smem{section}_end") )
 
