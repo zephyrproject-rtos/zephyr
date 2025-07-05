@@ -681,21 +681,21 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x role %u addr %s", evt->status, evt->role, bt_addr_str(&evt->bdaddr));
 
-	if (evt->status) {
-		return;
-	}
-
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
-	if (evt->role) {
-		conn->role = BT_CONN_ROLE_PERIPHERAL;
-	} else {
-		conn->role = BT_CONN_ROLE_CENTRAL;
+	if (evt->status == 0) {
+		if (evt->role == BT_HCI_ROLE_PERIPHERAL) {
+			conn->role = BT_CONN_ROLE_PERIPHERAL;
+		} else {
+			conn->role = BT_CONN_ROLE_CENTRAL;
+		}
 	}
+
+	bt_conn_role_changed(conn, evt->status);
 
 	bt_conn_unref(conn);
 }
@@ -800,7 +800,10 @@ int bt_br_init(void)
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
 	struct bt_hci_write_local_name *name_cp;
+	struct bt_hci_rp_read_default_link_policy_settings *rp;
+	struct net_buf *rsp;
 	int err;
+	uint16_t default_link_policy_settings;
 
 	/* Read extended local features */
 	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
@@ -901,6 +904,38 @@ int bt_br_init(void)
 		sc_cp->sc_support = 0x01;
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_SC_HOST_SUPP, buf, NULL);
+		if (err) {
+			return err;
+		}
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_DEFAULT_LINK_POLICY_SETTINGS, NULL, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	default_link_policy_settings = rp->default_link_policy_settings;
+
+	bool should_enable = IS_ENABLED(CONFIG_BT_DEFAULT_ROLE_SWITCH_ENABLE);
+	bool is_enabled = (default_link_policy_settings &
+			   BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH);
+
+	/* Enable/Disable the default role switch */
+	if (should_enable != is_enabled) {
+		struct bt_hci_cp_write_default_link_policy_settings *policy_cp;
+
+		default_link_policy_settings ^= BT_HCI_LINK_POLICY_SETTINGS_ENABLE_ROLE_SWITCH;
+
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		policy_cp = net_buf_add(buf, sizeof(*policy_cp));
+		policy_cp->default_link_policy_settings = default_link_policy_settings;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_DEFAULT_LINK_POLICY_SETTINGS, buf, NULL);
 		if (err) {
 			return err;
 		}
