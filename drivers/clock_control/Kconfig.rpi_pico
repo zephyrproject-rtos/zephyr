@@ -17,4 +17,10 @@ config RPI_PICO_ROSC_USE_MEASURED_FREQ
 	 Instead of the dts value, use the value measured by
 	 the frequency counter as the rosc frequency.
 
+config RPI_PICO_SKIP_CLOCK_INIT
+	bool
+	help
+	 Skip clock initialisation - which is needed when running Zephyr
+	 on the second CPU core.
+
 endif # CLOCK_CONTROL_RPI_PICO
