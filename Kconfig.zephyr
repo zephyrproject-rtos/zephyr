@@ -324,6 +324,14 @@ config LINKER_USE_RELAX
 	  Disabling it can reduce performance, as the linker is no longer able to substiture long /
 	  in-effective jump calls to shorter / more effective instructions.
 
+config LINKER_ERROR_RWX_SEGMENTS
+	bool "Error on RWX output segments"
+	help
+	  This option configures the linker to generate an error for output
+	  segments that are marked both executable and writable. Use to
+	  ensure that segments with code are only shared with read-only
+	  data and not read-write data.
+
 endmenu # "Linker Sections"
 
 config LINKER_ITERABLE_SUBALIGN
