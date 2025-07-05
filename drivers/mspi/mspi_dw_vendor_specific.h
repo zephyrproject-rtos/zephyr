@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,4 +97,41 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 }
 #endif /* defined(CONFIG_MSPI_XIP) */
 
+#else
+static inline void vendor_specific_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+static inline void vendor_specific_suspend(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+static inline void vendor_specific_resume(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+static inline void vendor_specific_irq_clear(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+static inline int vendor_specific_xip_enable(const struct device *dev,
+					     const struct mspi_dev_id *dev_id,
+					     const struct mspi_xip_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(dev_id);
+	ARG_UNUSED(cfg);
+
+	return 0;
+}
+static inline int vendor_specific_xip_disable(const struct device *dev,
+					      const struct mspi_dev_id *dev_id,
+					      const struct mspi_xip_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(dev_id);
+	ARG_UNUSED(cfg);
+
+	return 0;
+}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif) */
