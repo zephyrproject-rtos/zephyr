@@ -11,6 +11,19 @@ tests:
       - CONFIG_CPP_EXCEPTIONS=y
     integration_platforms:
       - mps2/an385
+  cpp.libcxx.glibcxx.newlib.module:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    toolchain_exclude: xcc
+    min_flash: 54
+    min_ram: 24
+    tags: cpp
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_GLIBCXX_LIBCPP=y
+      - CONFIG_GLIBCXX_LIBCPP_USE_MODULE=y
+      - CONFIG_CPP_EXCEPTIONS=y
+    integration_platforms:
+      - mps2/an385
   cpp.libcxx.glibcxx.newlib_nano:
     filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_HAS_NEWLIB_LIBC_NANO
     toolchain_exclude: xcc
@@ -32,6 +45,18 @@ tests:
       - CONFIG_PICOLIBC=y
       - CONFIG_GLIBCXX_LIBCPP=y
       - CONFIG_CPP_EXCEPTIONS=y
+    integration_platforms:
+      - mps2/an385
+  cpp.libcxx.glibcxx.picolibc.module:
+    toolchain_exclude: xcc
+    platform_exclude: native_sim
+    tags: cpp
+    timeout: 60
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_GLIBCXX_LIBCPP=y
+      - CONFIG_GLIBCXX_LIBCPP_USE_MODULE=y
+      - CONFIG_CPP_EXCEPTIONS=n
     integration_platforms:
       - mps2/an385
   cpp.libcxx.arcmwdtlib:
