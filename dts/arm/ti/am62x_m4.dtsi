@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <ti/k3-am62-main.dtsi>
 
 / {
 
