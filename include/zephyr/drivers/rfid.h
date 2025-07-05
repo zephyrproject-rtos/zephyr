@@ -144,7 +144,6 @@ static inline int rfid_transceive(const struct device *dev, struct transceive_da
 	return api->transceive(dev, data);
 }
 
-
 #ifdef __cplusplus
 }
 #endif
