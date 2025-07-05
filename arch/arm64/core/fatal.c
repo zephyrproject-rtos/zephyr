@@ -362,6 +362,10 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
+	ARG_UNUSED(esr);
+	ARG_UNUSED(far);
+	ARG_UNUSED(elr);
+
 	if (!esf) {
 		return false;
 	}
