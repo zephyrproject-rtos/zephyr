@@ -85,10 +85,10 @@ config FLASH_BASE_ADDRESS
 		if $(DT_FLASH_PARENT_IS_XSPI)
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-# The XSPI PSRAM driver creates a SMH region with attribute SMH_REG_ATTR_EXTERNAL (2)
+# The XSPI PSRAM and SDRAM driver both create a SMH region with attribute SMH_REG_ATTR_EXTERNAL (2)
 # If applicable set the LTDC / VIDEO_BUFFER SMH attribute to SMH_REG_ATTR_EXTERNAL (2)
-# in order to be able to allocate from the XSPI PSRAM
-if MEMC_STM32_XSPI_PSRAM && SHARED_MULTI_HEAP
+# in order to be able to allocate from the external memory
+if SHARED_MULTI_HEAP && (MEMC_STM32_XSPI_PSRAM || MEMC_STM32_SDRAM)
 
 config STM32_LTDC_FB_SMH_ATTRIBUTE
 	default 2 if STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
@@ -96,10 +96,10 @@ config STM32_LTDC_FB_SMH_ATTRIBUTE
 config VIDEO_BUFFER_SMH_ATTRIBUTE
 	default 2 if VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
 
-endif # MEMC_STM32_XSPI_PSRAM && SHARED_MULTI_HEAP
+endif # SHARED_MULTI_HEAP && (MEMC_STM32_XSPI_PSRAM || MEMC_STM32_SDRAM)
 
 config VIDEO_BUFFER_POOL_ALIGN
-	default 16 if VIDEO_STM32_DCMIPP
+	default 16 if VIDEO_STM32_DCMIPP || VIDEO_STM32_DCMI
 
 config STM32_BACKUP_PROTECTION
 	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X
