@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-FileCopyrightText: Copyright (c) 2025 Andre Stefanov
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_RAMP_CONSTANT
+	bool "Constant ramp control"
+	default y
+	help
+	  Enable simple ramp allowing only constant velocities without
+	  any acceleration. This ramp is used by default if none other
+	  is provided. It also enables execution of an emergency stop.
+
+config STEPPER_RAMP_TRAPEZOIDAL
+	bool "Trapezoidal ramp control"
+	help
+	  Enable trapezoidal ramp control for stepper drivers.
+	  The trapezoidal ramp control is implemented as a state machine
+	  and can be used with any stepper driver.
+
