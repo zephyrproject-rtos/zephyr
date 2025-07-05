@@ -13,9 +13,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <soc.h>
-#ifdef CONFIG_SOC_NRF54H20_GPD
-#include <nrf/gpd.h>
-#endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_ppi.h>
 #endif
@@ -43,20 +40,15 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPI_BUFFER_IN_RAM 1
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL)
-#define SPIM_REQUESTS_CLOCK(node) \
-	DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(node), nordic_nrf_hsfll_global)
-#define SPIM_REQUESTS_CLOCK_OR(node) SPIM_REQUESTS_CLOCK(node) ||
-#if (DT_FOREACH_STATUS_OKAY(nordic_nrf_spim, SPIM_REQUESTS_CLOCK_OR) 0)
+#if NRF_DT_INST_ANY_IS_FAST
 #define USE_CLOCK_REQUESTS 1
 /* If fast instances are used then system managed device PM cannot be used because
  * it may call PM actions from locked context and fast SPIM PM actions can only be
  * called from a thread context.
  */
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
-#endif
 #else
-#define SPIM_REQUESTS_CLOCK(node) 0
+#define USE_CLOCK_REQUESTS 0
 #endif
 
 struct spi_nrfx_data {
@@ -682,10 +674,6 @@ static int spim_resume(const struct device *dev)
 		return -EAGAIN;
 	}
 
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(dev_config->pcfg, false);
-#endif
-
 	return pm_device_runtime_is_enabled(dev) ? request_clock(dev) : 0;
 }
 
@@ -704,10 +692,6 @@ static void spim_suspend(const struct device *dev)
 	}
 
 	spi_context_cs_put_all(&dev_data->ctx);
-
-#ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(dev_config->pcfg, true);
-#endif
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
@@ -881,9 +865,7 @@ static int spi_nrfx_deinit(const struct device *dev)
 		IF_ENABLED(CONFIG_DCACHE,				       \
 			(.mem_attr = SPIM_GET_MEM_ATTR(idx),))		       \
 		IF_ENABLED(USE_CLOCK_REQUESTS,				       \
-			(.clk_dev = SPIM_REQUESTS_CLOCK(SPIM(idx))	       \
-				  ? DEVICE_DT_GET(DT_CLOCKS_CTLR(SPIM(idx)))   \
-				  : NULL,				       \
+			(.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(SPIM(idx))),  \
 			 .clk_spec = {					       \
 				.frequency = NRF_CLOCK_CONTROL_FREQUENCY_MAX,  \
 			 },))						       \
