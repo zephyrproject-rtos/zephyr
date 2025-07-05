@@ -4,7 +4,7 @@ Overview
 ********
 
 The `Raspberry Pi Pico`_ and Pico W are small, low-cost, versatile boards from
-Raspberry Pi. They are equipped with an `RP2040 <RP2040_Datasheet>`_ SoC, an on-board LED,
+Raspberry Pi. They are equipped with an `RP2040 <RP2040 Datasheet_>`_ SoC, an on-board LED,
 a USB connector, and an SWD interface.
 
 The Pico W additionally contains an `Infineon CYW43439`_ 2.4 GHz Wi-Fi/Bluetooth module.
