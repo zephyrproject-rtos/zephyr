@@ -4,12 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''
-This test file contains testsuites for testsuite.py module of twister
+This test file contains testsuites for testplan.py module of twister
 '''
 import sys
 import os
+import re
 import mock
 import pytest
+import json
 
 from contextlib import nullcontext
 
@@ -350,6 +352,795 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
                 assert instance.reason == "Quarantine: " + expected_val[testname]
             else:
                 assert instance.status == TwisterStatus.NONE
+
+
+# --- Exclusion Test Plans test suite --------------------------------------------------------------
+
+TESTDATA_EXCLUSION_FAKEPLANS = {
+    'testplan_1.json': {
+        'testsuites': [
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_foo', 'runnable': True,
+                'toolchain': 'foochain' }
+        ]
+    },
+    'twister_1.json': {
+        'testsuites': [
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_foo', 'runnable': True,
+                'status': 'failed', 'toolchain': 'foochain' }
+        ]
+    },
+    'testplan_2.json': {
+        'testsuites': [
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_foo',
+                'runnable': False, 'toolchain': 'foochain' },
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_foo_64',
+                'runnable': True, 'toolchain': 'foochain' },
+              { 'name': 'tests/foo/bar/baz.feature2', 'platform': 'qemu_foo',
+                'runnable': True, 'toolchain': 'foochain' }
+        ]
+    },
+    'twister_2.json': {
+        'testsuites': [
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_foo', 'runnable': False,
+                'status': 'passed', 'toolchain': 'foochain' },
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_foo_64', 'runnable': True,
+                'status': 'failed', 'toolchain': 'foochain' },
+              { 'name': 'tests/foo/bar/baz.feature2', 'platform': 'qemu_foo', 'runnable': True,
+                'status': 'failed', 'toolchain': 'foochain' }
+        ]
+    },
+    'testplan_3.json': {
+        'testsuites': [
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_foo',
+                'runnable': True, 'toolchain': 'foochain' },
+              { 'name': 'tests/foo/bar/baz.feature2', 'platform': 'qemu_foo',
+                'runnable': True, 'toolchain': 'foochain' },
+              { 'name': 'tests/foo/bar/baz.feature1', 'platform': 'qemu_bar',
+                'runnable': True, 'toolchain': 'foochain' }
+        ]
+    }
+}
+
+TESTDATA_EXCLUSION_PLANS = [
+  # exact_1_0 - single exact rule.
+  # The same testplan applied as a filter clears itself.
+  ( 'testplan_1.json',
+    True,   # is_runnable
+    {
+      'exact': ['testplan_1.json']
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_1.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('exact', ['testplan_1.json']) }
+  ),
+  # exact_1_0_1 - duplicate rule.
+  # The same testplan applied as a filter twice clears itself once as well, just redundant.
+  ( 'testplan_1.json',
+    True,   # is_runnable
+    {
+      'exact': ['testplan_1.json', 'testplan_1.json']
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', True): [
+          { 'status': None, 'filename': 'testplan_1.json' },
+          { 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('exact', ['testplan_1.json', 'testplan_1.json']) }
+  ),
+  # exact_1_1 - single exact rule, but differs in runnable = empty filter.
+  ( 'testplan_1.json',
+    False,   # is_runnable
+    {
+      'exact': ['testplan_1.json']
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_1.json' }]
+      }
+    },
+    {}
+  ),
+  # exact_1_2 - several exact rules; exclude correct not-runnable.
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'exact': ['testplan_1.json', 'testplan_2.json']
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_1.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', False): [{ 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', True): [{ 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_2.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('exact', ['testplan_2.json']) }
+  ),
+  # exact_1_2_2 - several exact rules with state; exclude correct not-runnable and status.
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'exact': ['twister_2.json']
+    },
+    ['passed'],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', False): [{ 'status': 'passed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', True): [{ 'status': 'failed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', True): [{ 'status': 'failed', 'filename': 'twister_2.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('exact', ['twister_2.json'], {'passed'}, {'passed'}) }
+  ),
+  # exact_2_0 - exact rule to another testplan with different runnable;
+  #             nothing to exclude; keeps other tests not affected.
+  ( 'testplan_2.json',
+    False,  # is_runnable
+    {
+      'exact': ['testplan_1.json']
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_1.json' }]
+      }
+    },
+    {}
+  ),
+  # exact_2_1 - only new tests in another test plan.
+  ( 'testplan_2.json',
+    True,  # is_runnable
+    {
+      'exact': ['testplan_1.json']
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_1.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('exact', ['testplan_1.json']) }
+  ),
+ # run_1_0 - single running rule - clears the same test with the same runnable state.
+  ( 'testplan_1.json',
+    True,   # is_runnable
+    {
+      'run': ['testplan_1.json']
+    },
+    [],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, True): [
+          { 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('run', ['testplan_1.json']) }
+  ),
+  # run_1_1 - single running rule allows the same test in different runnable state.
+  ( 'testplan_1.json',
+    False,   # is_runnable
+    {
+      'run': ['testplan_1.json']
+    },
+    [],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, True): [
+          { 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    {}
+  ),
+  # run_1_2 - several rules: match to only one not-runnable test rule.
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'run': ['testplan_1.json', 'testplan_2.json']
+    },
+    [],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, True): [
+          { 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_1.json' },
+          { 'platform': 'qemu_foo_64', 'status': None, 'filename': 'testplan_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature1', None, False): [{ 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature2', None, True): [{ 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_2.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('run', ['testplan_2.json']) }
+  ),
+  # run_1_2_2 - several rules; two matches with different boards exclude same single test.
+  ( 'testplan_1.json',
+    True,  # is_runnable
+    {
+      'run': ['testplan_1.json', 'testplan_2.json']
+    },
+    [],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, True): [
+          { 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_1.json' },
+          { 'platform': 'qemu_foo_64', 'status': None, 'filename': 'testplan_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature1', None, False): [{ 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature2', None, True): [{ 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_2.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('run', ['testplan_1.json', 'testplan_2.json']) }
+  ),
+  # run_2_1 - a runnable test rule excludes the test on two boards: the same one,
+  # and on a different board as well.
+  ( 'testplan_2.json',
+    True,  # is_runnable
+    {
+      'run': ['testplan_1.json']
+    },
+    [],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, True): [{ 'platform': 'qemu_foo', 'status': None, 'filename': 'testplan_1.json' }]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('run', ['testplan_1.json']),
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('run', ['testplan_1.json'])
+    }
+  ),
+  # run_1_2_3_1 - a test rule with the status and run, but different board.
+  ( 'testplan_1.json',
+    True,  # is_runnable
+    {
+      'run': ['twister_2.json']
+    },
+    ['failed'],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, False): [{ 'platform': 'qemu_foo', 'status': 'passed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature1', None, True): [{ 'platform': 'qemu_foo_64', 'status': 'failed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature2', None, True): [{ 'platform': 'qemu_foo', 'status': 'failed', 'filename': 'twister_2.json' }]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('run', ['twister_2.json'], {'failed'}, {'failed'})
+    }
+  ),
+  # run_1_2_3_2 - a test rule with status and run (same board).
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'run': ['twister_2.json']
+    },
+    ['passed'],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, False): [{ 'platform': 'qemu_foo', 'status': 'passed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature1', None, True): [{ 'platform': 'qemu_foo_64', 'status': 'failed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature2', None, True): [{ 'platform': 'qemu_foo', 'status': 'failed', 'filename': 'twister_2.json' }]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('run', ['twister_2.json'], {'passed'}, {'passed'})
+    }
+  ),
+  # run_2_1_2 - a rule with status and run excludes two tests (on two boards)
+  ( 'testplan_2.json',
+    True,  # is_runnable
+    {
+      'run': ['twister_1.json']
+    },
+    ['failed'],
+    {
+      'run': {
+        ('tests/foo/bar/baz.feature1', None, True): [{ 'platform': 'qemu_foo', 'status': 'failed', 'filename': 'twister_1.json' }]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('run', ['twister_1.json'], {'failed'}, {'failed'}),
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('run', ['twister_1.json'], {'failed'}, {'failed'})
+    }
+  ),
+ # platform_1_0 - single rule - clears the same test.
+  ( 'testplan_1.json',
+    False,   # is_runnable
+    {
+      'platform': ['testplan_1.json']
+    },
+    [],
+    {
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [
+          { 'runnable': True, 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('platform', ['testplan_1.json']) }
+  ),
+  # platform_1_2_2 - several rules; two matches with same board and test.
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'platform': ['testplan_1.json', 'testplan_2.json']
+    },
+    [],
+    {
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [
+          { 'runnable': True, 'status': None, 'filename': 'testplan_1.json' },
+          { 'runnable': False, 'status': None, 'filename': 'testplan_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', None): [
+          { 'runnable': True, 'status': None, 'filename': 'testplan_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', None): [
+          { 'runnable': True, 'status': None, 'filename': 'testplan_2.json' }
+        ]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('platform', ['testplan_1.json', 'testplan_2.json']) }
+  ),
+  # platform_2_1 - only one board match excludes the test.
+  ( 'testplan_2.json',
+    False,  # is_runnable
+    {
+      'platform': ['testplan_1.json']
+    },
+    [],
+    {
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [
+          { 'runnable': True, 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('platform', ['testplan_1.json'])
+    }
+  ),
+  # platform_2_1_2 - only one board match excludes the test, runnable doesn't matter
+  ( 'testplan_2.json',
+    True,  # is_runnable
+    {
+      'platform': ['testplan_1.json']
+    },
+    [],
+    {
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [
+          { 'runnable': True, 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('platform', ['testplan_1.json'])
+    }
+  ),
+  # platform_1_2_3_1 - a test rule with the status and platform.
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'platform': ['twister_2.json']
+    },
+    ['passed'],
+    {
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [{ 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', None): [{ 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', None): [{ 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('platform', ['twister_2.json'], {'passed'}, {'passed'})
+    }
+  ),
+  # platform_1_2_3_2 - a test rule with the different status and platform no match
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'platform': ['twister_2.json']
+    },
+    ['false'],
+    {
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [{ 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', None): [{ 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', None): [{ 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }]
+      }
+    },
+    {}
+  ),
+  # run_2_2_3_1 - a rule with status excludes two tests (on two boards)
+  ( 'testplan_2.json',
+    False,  # is_runnable
+    {
+      'platform': ['twister_2.json']
+    },
+    ['failed'],
+    {
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [{ 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', None): [{ 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', None): [{ 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }]
+      }
+    },
+    {
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('platform', ['twister_2.json'], {'failed'}, {'failed'}),
+      'qemu_foo/foochain/tests/foo/bar/baz.feature2': ('platform', ['twister_2.json'], {'failed'}, {'failed'})
+    }
+  ),
+  # name_1_0 - single rule - clears the same test.
+  ( 'testplan_1.json',
+    False,   # is_runnable
+    {
+      'name': ['testplan_1.json']
+    },
+    [],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['testplan_1.json']) }
+  ),
+  # name_1_2_2 - several rules; three matches with same test.
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'name': ['testplan_1.json', 'testplan_2.json']
+    },
+    [],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': None, 'filename': 'testplan_1.json' },
+          { 'platform': 'qemu_foo', 'runnable': False, 'status': None, 'filename': 'testplan_2.json' },
+          { 'platform': 'qemu_foo_64', 'runnable': True, 'status': None, 'filename': 'testplan_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature2', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': None, 'filename': 'testplan_2.json' }
+        ]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['testplan_1.json', 'testplan_2.json', 'testplan_2.json']) }
+  ),
+  # name_2_1 - board name match excludes two tests on different platforms.
+  ( 'testplan_2.json',
+    False,  # is_runnable
+    {
+      'name': ['testplan_1.json']
+    },
+    [],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['testplan_1.json']),
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('name', ['testplan_1.json'])
+    }
+  ),
+  # name_2_1_2 - board name match excludes two tests on different platforms; runnable doesn't matter.
+  ( 'testplan_2.json',
+    True,  # is_runnable
+    {
+      'name': ['testplan_1.json']
+    },
+    [],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': None, 'filename': 'testplan_1.json' }
+        ]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['testplan_1.json']),
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('name', ['testplan_1.json'])
+    }
+  ),
+  # name_1_2_3_1 - two test rules same name different status, but at least one status match
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'name': ['twister_2.json']
+    },
+    ['passed'],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' },
+          { 'platform': 'qemu_foo_64', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature2', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['twister_2.json', 'twister_2.json'], {'passed','failed'}, {'passed'})
+    }
+  ),
+  # name_1_2_3_2 - test name rules no status match
+  ( 'testplan_1.json',
+    False,  # is_runnable
+    {
+      'name': ['twister_2.json']
+    },
+    ['error'],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' },
+          { 'platform': 'qemu_foo_64', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature2', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ]
+      }
+    },
+    {}
+  ),
+  # name_2_1_3_1 - statuses and name rules cross match
+  ( 'testplan_2.json',
+    False,  # is_runnable
+    {
+      'name': ['twister_2.json']
+    },
+    ['passed'],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' },
+          { 'platform': 'qemu_foo_64', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature2', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['twister_2.json', 'twister_2.json'], {'passed', 'failed'}, {'passed'}),
+      # NOTE: this match data shows all (both) statuses of its name group (not the test itself)
+      # and the filtering status 'passed' which is matched here even if that particular test was failed,
+      # but its name is in the group, and the group has at least one of the filtering statuses ('passed').
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('name', ['twister_2.json', 'twister_2.json'], {'passed', 'failed'}, {'passed'})
+      # .. whereas 'baz.feature2' should not be excluded:
+      # qemu_foo/foochain/tests/foo/bar/baz.feature2: NOT Excluded by 'NAME' testplans:['twister_2.json'],
+      #                                      statuses:{'failed'} rule_status:'{'passed'}'
+    }
+  ),
+  # name_2_1_3_2 - statuses and name rules cross match
+  ( 'testplan_2.json',
+    False,  # is_runnable
+    {
+      'name': ['twister_2.json']
+    },
+    ['failed'],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' },
+          { 'platform': 'qemu_foo_64', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature2', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ]
+      }
+    },
+    {
+      # All tests are excluded here as both of the group names have 'failed' status.
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['twister_2.json', 'twister_2.json'], {'passed', 'failed'}, {'failed'}),
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('name', ['twister_2.json', 'twister_2.json'], {'passed', 'failed'}, {'failed'}),
+      'qemu_foo/foochain/tests/foo/bar/baz.feature2': ('name', ['twister_2.json'], {'failed'}, {'failed'})
+    }
+  ),
+  # name_2_1_3_3 - multiple statuses and rules cross match
+  ( 'testplan_2.json',
+    False,  # is_runnable
+    {
+      'name': ['twister_2.json']
+    },
+    ['passed', 'failed'],
+    {
+      'name': {
+        ('tests/foo/bar/baz.feature1', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': False, 'status': 'passed', 'filename': 'twister_2.json' },
+          { 'platform': 'qemu_foo_64', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ],
+        ('tests/foo/bar/baz.feature2', None, None): [
+          { 'platform': 'qemu_foo', 'runnable': True, 'status': 'failed', 'filename': 'twister_2.json' }
+        ]
+      }
+    },
+    {
+      'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('name', ['twister_2.json', 'twister_2.json'], {'passed','failed'}, {'passed', 'failed'}),
+      'qemu_foo_64/foochain/tests/foo/bar/baz.feature1': ('name', ['twister_2.json', 'twister_2.json'], {'passed','failed'}, {'passed', 'failed'}),
+      'qemu_foo/foochain/tests/foo/bar/baz.feature2': ('name', ['twister_2.json'], {'failed'}, {'passed', 'failed'})
+    }
+  ),
+  # exact_platform_1_1 - two types of rules, both matched, EXACT rule wins.
+  ( 'testplan_1.json',
+    False,   # is_runnable
+    {
+      'exact': ['testplan_1.json', 'testplan_2.json'],
+      'platform': ['testplan_3.json'],
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_1.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', False): [{ 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', True): [{ 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_2.json' }]
+      },
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [{ 'runnable': True, 'status': None, 'filename': 'testplan_3.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', None): [{ 'runnable': True, 'status': None, 'filename': 'testplan_3.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_bar', None): [{ 'runnable': True, 'status': None, 'filename': 'testplan_3.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('exact', ['testplan_2.json']) }
+  ),
+
+  # exact_platform_1_2 - two types of rules + status, only PLATFORM excludes.
+  ( 'testplan_1.json',
+    True,   # is_runnable
+    {
+      'exact': ['testplan_2.json'],
+      'platform': ['testplan_3.json'],
+    },
+    [],
+    {
+      'exact': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', False): [{ 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_foo_64', True): [{ 'status': None, 'filename': 'testplan_2.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', True): [{ 'status': None, 'filename': 'testplan_2.json' }]
+      },
+      'platform': {
+        ('tests/foo/bar/baz.feature1', 'qemu_foo', None): [{ 'runnable': True, 'status': None, 'filename': 'testplan_3.json' }],
+        ('tests/foo/bar/baz.feature2', 'qemu_foo', None): [{ 'runnable': True, 'status': None, 'filename': 'testplan_3.json' }],
+        ('tests/foo/bar/baz.feature1', 'qemu_bar', None): [{ 'runnable': True, 'status': None, 'filename': 'testplan_3.json' }]
+      }
+    },
+    { 'qemu_foo/foochain/tests/foo/bar/baz.feature1': ('platform', ['testplan_3.json']) }
+  )
+]  # TESTDATA_EXCLUSION_PLANS
+
+
+@pytest.mark.parametrize(
+    'current_testplan_fname, is_runnable, testplan_files, testplan_statuses, expected_rules, expected_tests_excluded',
+    TESTDATA_EXCLUSION_PLANS,
+    ids=[
+      "exact_1_0",
+      "exact_1_0_1",
+      "exact_1_1",
+      "exact_1_2",
+      "exact_1_2_2",
+      "exact_2_0",
+      "exact_2_1",
+      "run_1_2_3_1",
+      "run_1_0",
+      "run_1_1",
+      "run_1_2",
+      "run_1_2_2",
+      "run_2_1",
+      "run_1_2_3_2",
+      "run_2_1_2",
+      "platform_1_0",
+      "platform_1_2_2",
+      "platform_2_1",
+      "platform_2_1_2",
+      "platform_1_2_3_1",
+      "platform_1_2_3_2",
+      "platform_2_2_3_1",
+      "name_1_0",
+      "name_1_2_2",
+      "name_2_1",
+      "name_2_1_2",
+      "name_1_2_3_1",
+      "name_1_2_3_2",
+      "name_2_1_3_1",
+      "name_2_1_3_2",
+      "name_2_1_3_3",
+      "exact_platform_1_1",
+      "exact_platform_1_2"
+    ]
+)
+
+
+def test_exclusion_plans(current_testplan_fname, is_runnable, testplan_files, testplan_statuses,
+                              expected_rules, expected_tests_excluded):
+    in_options = {
+        'exclude_plan_status': testplan_statuses,
+        'load_tests': current_testplan_fname,  # will call load_from_file()
+        # set these to ease mocking:
+        'device_testing': False,
+        'testonly_failed': False,
+        'test_only': False,
+        'report_summary': None,
+        'report_suffix': None,
+        'subset': None
+    }
+
+    tp_files = []
+    EXCLUDE_TYPES = ['exact', 'run', 'platform', 'name']  # must load them in this particular order
+
+    tp_suites = [ ts['name'] for ts in TESTDATA_EXCLUSION_FAKEPLANS[current_testplan_fname]['testsuites'] ]
+
+    for flt_type in EXCLUDE_TYPES:
+        in_options["exclude_plan_" + flt_type] = testplan_files.get(flt_type, [])
+        tp_files += testplan_files.get(flt_type, [])
+
+    tp_files.append(current_testplan_fname)  # the current testplan is loaded last
+
+    mocked_files = [ mock.mock_open(read_data=json.dumps(TESTDATA_EXCLUSION_FAKEPLANS[fake_tp])).return_value for fake_tp in tp_files ]
+    mocked_reader = mock.mock_open()
+    mocked_reader.side_effect = mocked_files
+
+    env_mock = mock.Mock(options=mock.Mock(**in_options))
+    testplan = TestPlan(env=env_mock)
+
+    testplan.options.outdir = os.path.join('out', 'dir')
+    testplan.env.outdir = testplan.options.outdir
+
+    def get_platform(name):
+        p = mock.Mock()
+        p.name = name
+        p.normalized_name = name
+        return p
+
+    testplan.get_platform = mock.Mock(side_effect=get_platform)
+    testplan.handle_quarantined_tests = mock.Mock()
+    testplan.testsuites = { ts_name: mock.Mock() for ts_name in tp_suites }
+    for ts_name_, ts_ in testplan.testsuites.items():
+        ts_.name = ts_name_
+
+    with mock.patch('builtins.open', mocked_reader), \
+         mock.patch('twisterlib.testinstance.TestInstance._get_run_id', mock.Mock(return_value=0)), \
+         mock.patch('twisterlib.testinstance.TestInstance.init_cases', mock.Mock()), \
+         mock.patch('twisterlib.testinstance.TestInstance.check_runnable', mock.Mock(return_value=is_runnable)), \
+         mock.patch('twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()):
+        testplan.load()
+
+    # Check exclusion plans' correct conversion to rules:
+    for flt_type in EXCLUDE_TYPES:
+        assert testplan.exclusion_plans[flt_type]['filters'] == expected_rules.get(flt_type, {})
+
+    # Check filters are applied to instances according to the exclusion plans:
+    num_tests_excluded_ = 0
+    for testname_, instance_ in testplan.instances.items():
+        # testname_ is from instance and is prefixed with platform name
+        print(testname_)
+        print(expected_tests_excluded)
+        if testname_ in expected_tests_excluded:
+            assert instance_.status == TwisterStatus.FILTER
+            expected_rule_ = expected_tests_excluded[testname_]
+            expected_reason = f"Excluded by '{expected_rule_[0].upper()}' testplans:{expected_rule_[1]}"
+            expected_reason += f", statuses:{expected_rule_[2]} rule_status:'{expected_rule_[3]}'" if len(expected_rule_) > 3 else ""
+            assert instance_.reason == expected_reason
+            num_tests_excluded_ += 1
+        else:
+            # Other tests should remain in the plan unchanged
+            assert instance_.status != TwisterStatus.FILTER
+            assert not re.match(r"^Excluded by '.+' testplans:.+", instance_.reason)
+    assert len(expected_tests_excluded) == num_tests_excluded_
 
 
 TESTDATA_PART4 = [
@@ -727,6 +1518,10 @@ def test_testplan_load(
         only_failed=only_failed,
         load_tests=tmp_path / load_tests if load_tests else None,
         test_only=test_only,
+        exclude_plan_exact = [],
+        exclude_plan_run = [],
+        exclude_plan_platform = [],
+        exclude_plan = [],
         exclude_platform=['t-p0', 't-p1',
                           'ts-p0', 'ts-p1',
                           'lt-p0', 'lt-p1'],
@@ -776,6 +1571,8 @@ def test_testplan_load(
     testplan.platforms[11].normalized_name = 'lt-p4'
     testplan.generate_subset = mock.Mock()
     testplan.apply_filters = mock.Mock()
+    testplan.load_exclusion_plans = mock.Mock()
+    testplan.handle_exclusion_plans = mock.Mock()
 
     with mock.patch('twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()), \
          mock.patch('twisterlib.testinstance.TestInstance.check_runnable', return_value=True), \
@@ -1498,6 +2295,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     filter_platform = ['Platform 1']
 
     check_runnable_mock = mock.Mock(return_value=True)
+    testplan.handle_exclusion_plans = mock.Mock()
 
     with mock.patch('builtins.open', mock.mock_open(read_data=testplan_data)), \
          mock.patch('twisterlib.testinstance.TestInstance.check_runnable', check_runnable_mock), \
@@ -1754,6 +2552,8 @@ TESTDATA_14 = [
      'dummy status', 'dummy reason'),
     ('good platform', 'dummy reason', [{'type': 'Toolchain filter'}],
      'dummy status', 'dummy reason'),
+    ('good platform', 'dummy reason', [{'type': 'Exclusion testplan filter'}],
+     'dummy status', 'dummy reason'),
     ('good platform', 'dummy reason', [{'type': 'Module filter'}],
      'dummy status', 'dummy reason'),
     ('good platform', 'dummy reason', [{'type': 'testsuite filter'}],
@@ -1766,6 +2566,7 @@ TESTDATA_14 = [
     TESTDATA_14,
     ids=['wrong platform', 'quarantined', 'command line filtered',
          'skip filtered', 'platform key filtered', 'toolchain filtered',
+         'exclusion test plan',
          'module filtered', 'skip to error change']
 )
 def test_change_skip_to_error_if_integration(
