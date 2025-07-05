@@ -1219,11 +1219,9 @@ static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				void *param)
+static void rp_cu_check_instant_by_counter(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					   uint16_t event_counter, void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
-
 	if (is_instant_reached_or_passed(ctx->data.cu.instant, event_counter)) {
 		bool notify;
 
@@ -1252,6 +1250,22 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
+{
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	rp_cu_check_instant_by_counter(conn, ctx, evt, event_counter, param);
+}
+
+static void rp_cu_check_instant_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+						   uint8_t evt, void *param)
+{
+	uint16_t event_counter = ull_conn_event_counter(conn);
+
+	rp_cu_check_instant_by_counter(conn, ctx, evt, event_counter, param);
+}
+
 static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 					     uint8_t evt, void *param)
 {
@@ -1267,15 +1281,17 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 
 			/* Valid PDU */
 			if (cu_check_conn_ind_parameters(conn, ctx)) {
-				if (is_instant_not_passed(ctx->data.cu.instant,
-							  ull_conn_event_counter(conn))) {
+				uint16_t event_counter = ull_conn_event_counter(conn);
+
+				if (is_instant_not_passed(ctx->data.cu.instant, event_counter)) {
 					/* Keep RX node to use for NTF */
 					llcp_rx_node_retain(ctx);
 
 					ctx->state = RP_CU_STATE_WAIT_INSTANT;
 
 					/* In case we only just received it in time */
-					rp_cu_check_instant(conn, ctx, evt, param);
+					rp_cu_check_instant_rx_conn_update_ind(conn, ctx, evt,
+									       param);
 					break;
 				}
 
