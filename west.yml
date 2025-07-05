@@ -370,6 +370,10 @@ manifest:
     - name: zcbor
       revision: 9b07780aca6fb21f82a241ba386ad9b379809337
       path: modules/lib/zcbor
+    - name: zenoh-pico
+      url: https://github.com/teburd/zenoh-pico
+      revision: zenoh-pico-mctp
+      path: modules/lib/zenoh-pico
   # zephyr-keep-sorted-stop
 
   self:
