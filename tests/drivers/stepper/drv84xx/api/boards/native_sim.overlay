@@ -8,6 +8,7 @@
 / {
 	aliases {
 		stepper = &drv8424;
+		stepper-motion-control = &stepper_motion_control;
 	};
 };
 
@@ -22,11 +23,17 @@
 		en-gpios = <&gpio2 1 0>; /* 5 */
 		m0-gpios = <&gpio3 0 0>;
 		m1-gpios = <&gpio3 1 0>;
-		counter = <&counter0>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#stepper-motor-cells = <0>;
+	};
+
+	stepper_motion_control: stepper_motion_control {
+		compatible = "zephyr,stepper-motion-control";
+		status = "okay";
+		counter = <&counter0>;
+		stepper = <&drv8424>;
 	};
 
 	gpio1: gpio1 {

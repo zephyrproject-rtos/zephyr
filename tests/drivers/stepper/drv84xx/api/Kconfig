@@ -6,4 +6,10 @@ config ENTROPY_GENERATOR
 	bool "Shuffle the order of tests and suites"
 	default y
 
+config STEPPER_IDX
+	int "Stepper index"
+	default 0
+	help
+	  Index of the stepper device to test.
+
 source "Kconfig.zephyr"
