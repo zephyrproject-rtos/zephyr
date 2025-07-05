@@ -150,7 +150,7 @@ class Harness:
                     self.recording.append(rec)
         return match_cnt
 
-    def process_test(self, line):
+    def process_test(self, line, check_ztest_summary=True):
 
         self.parse_record(line)
 
@@ -161,14 +161,14 @@ class Harness:
             if run_id == str(self.run_id):
                 self.matched_run_id = True
 
-        if self.RUN_PASSED in line:
+        if check_ztest_summary and self.RUN_PASSED in line:
             if self.fault:
                 self.status = TwisterStatus.FAIL
                 self.reason = "Fault detected while running test"
             else:
                 self.status = TwisterStatus.PASS
 
-        if self.RUN_FAILED in line:
+        if check_ztest_summary and self.RUN_FAILED in line:
             self.status = TwisterStatus.FAIL
             self.reason = "Testsuite failed"
 
@@ -329,7 +329,7 @@ class Console(Harness):
         elif self.GCOV_END in line:
             self.capture_coverage = False
 
-        self.process_test(line)
+        self.process_test(line, False)
         # Reset the resulting test state to FAIL when not all of the patterns were
         # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
         # It might happen because of the pattern sequence diverged from the
