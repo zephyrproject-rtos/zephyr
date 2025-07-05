@@ -1049,6 +1049,7 @@ New Drivers
    * :dtcompatible:`ti,tmp11x`
    * :dtcompatible:`vishay,veml6031`
    * :dtcompatible:`we,wsen-itds-2533020201601`
+   * :dtcompatible:`we,wsen-isds-2536030320001`
 
 * :abbr:`SENT (Single Edge Nibble Transmission)`
 
