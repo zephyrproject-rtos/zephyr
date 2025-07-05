@@ -578,7 +578,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		return -ENOENT;
 	}
 
-	if (is_iso) {
+	if (!IS_ENABLED(CONFIG_UDC_DWC2_PFI) && is_iso) {
 		/* Queue transfer on next SOF. TODO: allow stack to explicitly
 		 * specify on which (micro-)frame the data should be sent.
 		 */
@@ -720,10 +720,12 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 		}
 
 		/* Set the Even/Odd (micro-)frame appropriately */
-		if (priv->sof_num & 1) {
-			doepctl |= USB_DWC2_DEPCTL_SETEVENFR;
-		} else {
-			doepctl |= USB_DWC2_DEPCTL_SETODDFR;
+		if (!IS_ENABLED(CONFIG_UDC_DWC2_PFI)) {
+			if (priv->sof_num & 1) {
+				doepctl |= USB_DWC2_DEPCTL_SETEVENFR;
+			} else {
+				doepctl |= USB_DWC2_DEPCTL_SETODDFR;
+			}
 		}
 	} else {
 		xfersize = net_buf_tailroom(buf);
@@ -1909,6 +1911,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
 	uint32_t ghwcfg4;
+	uint32_t gintmsk;
 	uint32_t val;
 	int ret;
 	bool hs_phy;
@@ -1950,6 +1953,11 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		priv->bufferdma = 0;
 	} else if (priv->bufferdma) {
 		LOG_WRN("Experimental DMA enabled");
+	}
+
+	if (IS_ENABLED(CONFIG_UDC_DWC2_PFI)) {
+		LOG_WRN("Experimental Periodic Frame Interrupt enabled");
+		sys_set_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_IGNRFRMNUM);
 	}
 
 	if (ghwcfg2 & USB_DWC2_GHWCFG2_DYNFIFOSIZING) {
@@ -2142,14 +2150,18 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	/* Unmask interrupts */
-	sys_write32(IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (USB_DWC2_GINTSTS_SOF |
-						       USB_DWC2_GINTSTS_INCOMPISOOUT |
-						       USB_DWC2_GINTSTS_INCOMPISOIN |))
-		    USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
+	gintmsk = USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
 		    USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
 		    USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
-		    USB_DWC2_GINTSTS_GOUTNAKEFF,
-		    (mem_addr_t)&base->gintmsk);
+		    USB_DWC2_GINTSTS_GOUTNAKEFF;
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
+		gintmsk |= USB_DWC2_GINTSTS_SOF;
+	}
+	if (!IS_ENABLED(CONFIG_UDC_DWC2_PFI)) {
+		gintmsk |= USB_DWC2_GINTSTS_INCOMPISOOUT |
+				USB_DWC2_GINTSTS_INCOMPISOIN;
+	}
+	sys_write32(gintmsk, (mem_addr_t)&base->gintmsk);
 
 	return 0;
 }
@@ -2623,7 +2635,8 @@ static inline void dwc2_handle_iepint(const struct device *dev)
 }
 
 static inline void dwc2_handle_out_xfercompl(const struct device *dev,
-					     const uint8_t ep_idx)
+					     const uint8_t ep_idx,
+					     const uint32_t pktdrpsts)
 {
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep_idx);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
@@ -2652,22 +2665,56 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 		uint32_t pkts;
 		bool valid;
 
-		pkts = usb_dwc2_get_doeptsizn_pktcnt(priv->rx_siz[ep_idx]) -
-			usb_dwc2_get_doeptsizn_pktcnt(doeptsiz);
-		switch (usb_dwc2_get_doeptsizn_rxdpid(doeptsiz)) {
-		case USB_DWC2_DOEPTSIZN_RXDPID_DATA0:
-			valid = (pkts == 1);
-			break;
-		case USB_DWC2_DOEPTSIZN_RXDPID_DATA1:
-			valid = (pkts == 2);
-			break;
-		case USB_DWC2_DOEPTSIZN_RXDPID_DATA2:
-			valid = (pkts == 3);
-			break;
-		case USB_DWC2_DOEPTSIZN_RXDPID_MDATA:
-		default:
-			valid = false;
-			break;
+		if (!IS_ENABLED(CONFIG_UDC_DWC2_PFI)) {
+			pkts = usb_dwc2_get_doeptsizn_pktcnt(priv->rx_siz[ep_idx]) -
+				usb_dwc2_get_doeptsizn_pktcnt(doeptsiz);
+			switch (usb_dwc2_get_doeptsizn_rxdpid(doeptsiz)) {
+			case USB_DWC2_DOEPTSIZN_RXDPID_DATA0:
+				valid = (pkts == 1);
+				break;
+			case USB_DWC2_DOEPTSIZN_RXDPID_DATA1:
+				valid = (pkts == 2);
+				break;
+			case USB_DWC2_DOEPTSIZN_RXDPID_DATA2:
+				valid = (pkts == 3);
+				break;
+			case USB_DWC2_DOEPTSIZN_RXDPID_MDATA:
+			default:
+				valid = false;
+				break;
+			}
+		} else {
+			const uint32_t xfersize = usb_dwc2_get_doeptsizn_xfersize(doeptsiz);
+			pkts = usb_dwc2_get_doeptsizn_pktcnt(doeptsiz);
+
+			if (pkts == 0) {
+				valid = true;
+
+				if (xfersize == 0) {
+					bcnt = xfersize;
+				}
+
+				if (pktdrpsts) {
+					LOG_ERR("why is PKTDRPSTS=1");
+				}
+			} else {
+				valid = false;
+				LOG_ERR("bcnt=%d, pkts=%d, xfersize=%d", bcnt, pkts, xfersize);
+				if (pktdrpsts) {
+					LOG_ERR("ISOC OUT PktDrop");
+				} else if (xfersize != 0) {
+					LOG_ERR("SHORT Packet! 2");
+				} else {
+					__ASSERT_NO_MSG("unrecoverable error");
+				}
+
+				/* Data is no longer relevant */
+				udc_submit_ep_event(dev, buf, 0);
+
+				/* Try to queue next packet before SOF */
+				dwc2_handle_xfer_next(dev, ep_cfg);
+				return;
+			}
 		}
 
 		if (!valid) {
@@ -2754,7 +2801,7 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		}
 
 		if (status & USB_DWC2_DOEPINT_XFERCOMPL) {
-			dwc2_handle_out_xfercompl(dev, n);
+			dwc2_handle_out_xfercompl(dev, n, doepint & USB_DWC2_DOEPINT_PKTDRPSTS);
 		}
 
 		if (status & USB_DWC2_DOEPINT_EPDISBLD) {
