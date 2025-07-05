@@ -77,6 +77,21 @@ void sys_trace_k_thread_priority_set(struct k_thread *thread)
 				    thread->base.prio, name);
 }
 
+void sys_trace_k_thread_sleep_enter(k_timeout_t timeout)
+{
+	ctf_top_thread_sleep_enter(
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks)
+		);
+}
+
+void sys_trace_k_thread_sleep_exit(k_timeout_t timeout, int ret)
+{
+	ctf_top_thread_sleep_exit(
+		k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+		(uint32_t)ret
+		);
+}
+
 void sys_trace_k_thread_create(struct k_thread *thread, size_t stack_size, int prio)
 {
 	ctf_bounded_string_t name = { "unknown" };
