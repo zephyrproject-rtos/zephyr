@@ -148,9 +148,17 @@
 	status = "disabled";
 	mmc {
 		compatible = "zephyr,mmc-disk";
-        disk-name = "SD2";
+		disk-name = "SD2";
 		status = "disabled";
 	};
+};
+
+&sdio1 {
+	pinctrl-0 = <&sdio1_default>;
+	pinctrl-names = "default";
+	txdelay = <9>;
+	rxdelay = <11>;
+	status = "okay";
 };
 
 &mspi0 {

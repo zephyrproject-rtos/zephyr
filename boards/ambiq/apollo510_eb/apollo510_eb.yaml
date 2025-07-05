@@ -12,7 +12,6 @@ supported:
   - watchdog
   - counter
   - gpio
-  - sdio
   - sdhc
   - dsi
   - pdm

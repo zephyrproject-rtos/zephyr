@@ -22,11 +22,7 @@ supported:
   - pdm
   - i2s
   - mspi
-  - sdio
   - sdhc
-  - usbd
-  - pdm
-  - i2s
 testing:
   ignore_tags:
     - net
