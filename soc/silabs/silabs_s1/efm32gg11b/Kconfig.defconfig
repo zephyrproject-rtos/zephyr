@@ -4,6 +4,9 @@
 
 if SOC_SERIES_EFM32GG11B
 
+config SOC_GECKO_SDID
+	default 100
+
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 68

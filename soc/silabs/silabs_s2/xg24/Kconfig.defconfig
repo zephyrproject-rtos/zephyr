@@ -4,6 +4,9 @@
 
 if SOC_SERIES_EFR32MG24 || SOC_SERIES_MGM24
 
+config SOC_GECKO_SDID
+	default 215
+
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 75
