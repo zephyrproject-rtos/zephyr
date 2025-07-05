@@ -227,7 +227,7 @@ static int cmd_ieee802154_scan(const struct shell *sh,
 	uint64_t scan_type;
 	int ret = 0;
 
-	if (argc < 3) {
+	if (argc < 4) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
