@@ -12,7 +12,7 @@
 #define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #include <soc.h>
 #include <errno.h>
@@ -64,11 +64,25 @@ struct renesas_ra_eth_config {
 	const struct device *phy_dev;
 };
 
+/*
+ * In some SoCs, ethernet peripheral is always non-secure, even in flat project.
+ * Place ethernet buffer in non-secure RAM is necessary.
+ */
+#define ETHER_BUFFER_ALIGN(s) static __aligned(s)
+#if (CONFIG_CPU_HAS_TEE == 1) && (CONFIG_ARM_SECURE_FIRMWARE != 1) &&                              \
+	(CONFIG_ARM_NONSECURE_FIRMWARE != 1) && (CONFIG_ETH_RENESAS_RA_SUPPORT_SECURE == 0)
+#define ETHER_BUFFER_PLACE_IN_SECTION __attribute__((section(".ns_buffer.eth")))
+#else
+#define ETHER_BUFFER_PLACE_IN_SECTION
+#endif
+
 #define DECLARE_ETHER_RX_BUFFER(idx, _)                                                            \
-	static __aligned(32) uint8_t g_ether0_ether_rx_buffer##idx[ETHER_BUF_SIZE];
+	ETHER_BUFFER_ALIGN(32)                                                                     \
+	uint8_t g_ether0_ether_rx_buffer##idx[ETHER_BUF_SIZE] ETHER_BUFFER_PLACE_IN_SECTION;
 
 #define DECLARE_ETHER_TX_BUFFER(idx, _)                                                            \
-	static __aligned(32) uint8_t g_ether0_ether_tx_buffer##idx[ETHER_BUF_SIZE];
+	ETHER_BUFFER_ALIGN(32)                                                                     \
+	uint8_t g_ether0_ether_tx_buffer##idx[ETHER_BUF_SIZE] ETHER_BUFFER_PLACE_IN_SECTION;
 
 #define DECLARE_ETHER_RX_BUFFER_PTR(idx, _) (uint8_t *)&g_ether0_ether_rx_buffer##idx[0]
 
@@ -79,13 +93,14 @@ LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER, (;));
 
 uint8_t *pp_g_ether0_ether_buffers[ETHER_TOTAL_BUF_NUM] = {
 	LISTIFY(CONFIG_ETH_RENESAS_RX_BUF_NUM, DECLARE_ETHER_RX_BUFFER_PTR, (,)),
-	LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER_PTR, (,))
-};
+		LISTIFY(CONFIG_ETH_RENESAS_TX_BUF_NUM, DECLARE_ETHER_TX_BUFFER_PTR, (,)) };
 
-static __aligned(16) ether_instance_descriptor_t
-	g_ether0_tx_descriptors[CONFIG_ETH_RENESAS_TX_BUF_NUM];
-static __aligned(16) ether_instance_descriptor_t
-	g_ether0_rx_descriptors[CONFIG_ETH_RENESAS_RX_BUF_NUM];
+ETHER_BUFFER_ALIGN(16)
+ether_instance_descriptor_t
+	g_ether0_tx_descriptors[CONFIG_ETH_RENESAS_TX_BUF_NUM] ETHER_BUFFER_PLACE_IN_SECTION;
+ETHER_BUFFER_ALIGN(16)
+ether_instance_descriptor_t
+	g_ether0_rx_descriptors[CONFIG_ETH_RENESAS_RX_BUF_NUM] ETHER_BUFFER_PLACE_IN_SECTION;
 
 const ether_extended_cfg_t g_ether0_extended_cfg_t = {
 	.p_rx_descriptors = g_ether0_rx_descriptors,
