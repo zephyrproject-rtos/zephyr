@@ -79,6 +79,8 @@ config SOC_RP2350B_M33
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 
+if SOC_SERIES_RP2350
+
 config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	bool
 	# IMAGE_DEF should be used to define the image for booting CPU0
@@ -87,3 +89,5 @@ config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	help
 	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
 	  RP23XX devices to consider this a valid image in flash.
+
+endif # SOC_SERIES_RP2350
