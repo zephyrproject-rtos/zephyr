@@ -245,6 +245,7 @@ SOC_* symbol.")
 endif()
 
 # Apply the final optimization flag(s)
+zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${OPTIMIZATION_FLAG}>)
 
