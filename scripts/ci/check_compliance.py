@@ -6,30 +6,30 @@
 
 import argparse
 import collections
-from itertools import takewhile
 import json
 import logging
 import os
-from pathlib import Path, PurePath
 import platform
 import re
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
-import traceback
-import shlex
-import shutil
 import textwrap
+import traceback
+from collections.abc import Iterable
+from itertools import takewhile
+from pathlib import Path, PurePath
+
+import magic
 import unidiff
 import yaml
-
+from junitparser import Error, Failure, JUnitXml, Skipped, TestCase, TestSuite
+from reuse.project import Project
+from reuse.report import ProjectReport, ProjectSubsetReport
+from west.manifest import Manifest, ManifestProject
 from yamllint import config, linter
-
-from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure
-import magic
-
-from west.manifest import Manifest
-from west.manifest import ManifestProject
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -37,14 +37,13 @@ except ImportError:
     from yaml import SafeLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from get_maintainer import Maintainers, MaintainersError
 import list_boards
 import list_hardware
+from get_maintainer import Maintainers, MaintainersError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]
                        / "scripts" / "dts" / "python-devicetree" / "src"))
 from devicetree import edtlib
-
 
 # Let the user run this script as ./scripts/ci/check_compliance.py without
 # making them set ZEPHYR_BASE.
@@ -1483,6 +1482,68 @@ class GitDiffCheck(ComplianceTest):
             self.failure("\n".join(offending_lines))
 
 
+class LicenseAndCopyrightCheck(ComplianceTest):
+    """
+    Verify that every file touched by the patch set has correct SPDX headers and uses allowed
+    license.
+    """
+
+    name = "LicenseAndCopyrightCheck"
+    doc = "Check SPDX headers and copyright lines with the reuse Python API."
+
+    def _report_violations(
+        self,
+        paths: Iterable[Path],
+        title: str,
+        severity: str,
+        desc: str | None = None,
+    ) -> None:
+        for p in paths:
+            rel_path = os.path.relpath(str(p), GIT_TOP)
+            self.fmtd_failure(severity, title, rel_path, desc=desc or "", line=1)
+
+    def run(self) -> None:
+        changed_files = get_files(filter="d")
+        if not changed_files:
+            return
+
+        # Only scan text files for now, in the future we may want to leverage REUSE standard's
+        # ability to also associate license/copyright info with binary files.
+        for file in changed_files:
+            full_path = GIT_TOP / file
+            mime_type = magic.from_file(os.fspath(full_path), mime=True)
+            if not mime_type.startswith("text/"):
+                changed_files.remove(file)
+
+        project = Project.from_directory(GIT_TOP)
+        report = ProjectSubsetReport.generate(project, changed_files, multiprocessing=False)
+
+        self._report_violations(
+            report.files_without_licenses,
+            "License missing",
+            "warning",
+            "File has no SPDX-License-Identifier header, consider adding one.",
+        )
+
+        self._report_violations(
+            report.files_without_copyright,
+            "Copyright missing",
+            "warning",
+            "File has no SPDX-FileCopyrightText header, consider adding one.",
+        )
+
+        for lic_id, paths in getattr(report, "missing_licenses", {}).items():
+            self._report_violations(
+                paths,
+                "License may not be allowed",
+                "warning",
+                (
+                    f"License file for '{lic_id}' not found in /LICENSES. Please check "
+                    "https://docs.zephyrproject.org/latest/contribute/guidelines.html#components-using-other-licenses."
+                ),
+            )
+
+
 class GitLint(ComplianceTest):
     """
     Runs gitlint on the commits and finds issues with style and syntax
@@ -2177,7 +2238,7 @@ def _main(args):
 
         test = testcase()
         try:
-            print(f"Running {test.name:16} tests in "
+            print(f"Running {test.name:30} tests in "
                   f"{resolve_path_hint(test.path_hint)} ...")
             test.run()
         except EndTest:
@@ -2197,6 +2258,7 @@ def _main(args):
         xml.write(args.output, pretty=True)
 
     failed_cases = []
+    warning_cases = []
     name2doc = {testcase.name: testcase.doc
                 for testcase in inheritors(ComplianceTest)}
 
@@ -2205,19 +2267,31 @@ def _main(args):
             if case.is_skipped:
                 logging.warning(f"Skipped {case.name}")
             else:
-                failed_cases.append(case)
+                if any(res.type in ('error', 'failure') for res in case.result):
+                    failed_cases.append(case)
+                else:
+                    warning_cases.append(case)
         else:
             # Some checks can produce no .result
             logging.info(f"No JUnit result for {case.name}")
 
     n_fails = len(failed_cases)
+    n_warnings = len(warning_cases)
 
-    if n_fails:
-        print(f"{n_fails} checks failed")
-        for case in failed_cases:
+    if n_fails or n_warnings:
+        if n_fails:
+            print(f"{n_fails} check(s) failed")
+        if n_warnings:
+            print(f"{n_warnings} check(s) have warnings only")
+
+        for case in failed_cases + warning_cases:
             for res in case.result:
                 errmsg = res.text.strip()
-                logging.error(f"Test {case.name} failed: \n{errmsg}")
+                if res.type in ('error', 'failure'):
+                    logging.error(f"Test {case.name} failed: \n{errmsg}")
+                else:
+                    logging.warning(f"Test {case.name} warning: \n{errmsg}")
+
             if args.no_case_output:
                 continue
             with open(f"{case.name}.txt", "w") as f:
