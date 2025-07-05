@@ -563,4 +563,4 @@ References
    https://www.phytec.de/reelboard/
 
 .. _DAPLink reel board Firmware:
-   https://github.com/PHYTEC-Messtechnik-GmbH/DAPLink/tree/reel-board
+   https://github.com/phytec/DAPLink/tree/reel-board
