@@ -1,21 +1,18 @@
 /*
  * Copyright (c) 2023 Microchip Technology Inc.
+ * Copyright (C) 2025 embedded brains GmbH & Co. KG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <errno.h>
-#include <string.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/irq.h>
-#include <zephyr/device.h>
-#include <zephyr/drivers/i2c.h>
-#include <zephyr/sys/util.h>
-#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/sys/barrier.h>
+#include <zephyr/sys/util.h>
+
 LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 
 #define DT_DRV_COMPAT microchip_mpfs_i2c
@@ -44,6 +41,7 @@ LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 #define CTRL_ENS1 BIT(6)
 #define CTRL_CR2  BIT(7)
 
+#define STATUS_BUS_ERROR                     (0x00)
 #define STATUS_M_START_SENT                  (0x08)
 #define STATUS_M_REPEATED_START_SENT         (0x10)
 #define STATUS_M_SLAW_ACK                    (0x18)
@@ -69,6 +67,7 @@ LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 #define STATUS_S_TX_DATA_ACK                 (0xB8)
 #define STATUS_S_TX_DATA_NACK                (0xC0)
 #define STATUS_LAST_DATA_ACK                 (0xC8)
+#define STATUS_NO_INFO                       (0xF8)
 
 #define PCLK_DIV_960 (CTRL_CR2)
 #define PCLK_DIV_256 (0)
@@ -80,23 +79,6 @@ LOG_MODULE_REGISTER(i2c_mchp, CONFIG_I2C_LOG_LEVEL);
 #define BCLK_DIV_8   (CTRL_CR0 | CTRL_CR1 | CTRL_CR2)
 #define CLK_MASK     (CTRL_CR0 | CTRL_CR1 | CTRL_CR2)
 
-/* -- Transactions types -- */
-#define NO_TRANSACTION                     (0x00)
-#define CONTROLLER_WRITE_TRANSACTION       (0x01)
-#define CONTROLLER_READ_TRANSACTION        (0x02)
-#define CONTROLLER_RANDOM_READ_TRANSACTION (0x03)
-#define WRITE_TARGET_TRANSACTION           (0x04)
-#define READ_TARGET_TRANSACTION            (0x05)
-
-#define MSS_I2C_RELEASE_BUS (0x00)
-#define MSS_I2C_HOLD_BUS    (0x01)
-#define TARGET_ADDR_SHIFT   (0x01)
-
-#define MSS_I2C_SUCCESS     (0x00)
-#define MSS_I2C_IN_PROGRESS (0x01)
-#define MSS_I2C_FAILED      (0x02)
-#define MSS_I2C_TIMED_OUT   (0x03)
-
 struct mss_i2c_config {
 	uint32_t clock_freq;
 	uintptr_t i2c_base_addr;
@@ -107,139 +89,163 @@ struct mss_i2c_config {
 };
 
 struct mss_i2c_data {
-	uint8_t ser_address;
-	uint8_t target_addr;
-	uint8_t options;
-	uint8_t transaction;
-	const uint8_t *controller_tx_buffer;
-	uint16_t controller_tx_size;
-	uint16_t controller_tx_idx;
-	uint8_t dir;
-	uint8_t *controller_rx_buffer;
-	uint16_t controller_rx_size;
-	uint16_t controller_rx_idx;
-	atomic_t controller_status;
-	uint32_t controller_timeout_ms;
-	const uint8_t *target_tx_buffer;
-	uint16_t target_tx_size;
-	uint16_t target_tx_idx;
-	uint8_t *target_rx_buffer;
-	uint16_t target_rx_size;
-	uint16_t target_rx_idx;
-	atomic_t target_status;
-	uint8_t target_mem_offset_length;
-	uint8_t is_target_enabled;
-	uint8_t bus_status;
-	uint8_t is_transaction_pending;
-	uint8_t pending_transaction;
-
-	sys_slist_t cb;
+	struct k_mutex mtx;
+	struct k_sem done;
+	const struct i2c_msg *msg_curr;
+	const struct i2c_msg *msg_last;
+	uint8_t *byte_curr;
+	const uint8_t *byte_end;
+	uint8_t addr;
+	int ret;
 };
 
-
-static int mss_i2c_configure(const struct device *dev, uint32_t dev_config_raw)
+static void mss_i2c_reset(const struct mss_i2c_config *cfg)
 {
-	const struct mss_i2c_config *cfg = dev->config;
-
+	/* Disable the module */
 	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
 
-	switch (I2C_SPEED_GET(dev_config_raw)) {
+	ctrl &= ~CTRL_ENS1;
+	sys_write8(ctrl, cfg->i2c_base_addr + CORE_I2C_CTRL);
+
+	/* Make sure the write completed */
+	ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
+
+	/* Enable the module */
+	ctrl &= ~(CTRL_AA | CTRL_SI | CTRL_STA | CTRL_STO);
+	ctrl |= CTRL_ENS1;
+	sys_write8(ctrl, cfg->i2c_base_addr + CORE_I2C_CTRL);
+}
+
+static int mss_i2c_configure(const struct device *dev, uint32_t dev_config)
+{
+	const struct mss_i2c_config *cfg = dev->config;
+	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
+
+	ctrl &= ~CLK_MASK;
+
+	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
-		sys_write8((ctrl | PCLK_DIV_960), cfg->i2c_base_addr + CORE_I2C_CTRL);
+		ctrl |= PCLK_DIV_960;
 		break;
 	case I2C_SPEED_FAST:
-		sys_write8((ctrl | PCLK_DIV_256), cfg->i2c_base_addr + CORE_I2C_CTRL);
+		ctrl |= PCLK_DIV_256;
 		break;
 	default:
 		return -EINVAL;
 	}
 
+	sys_write8(ctrl, cfg->i2c_base_addr + CORE_I2C_CTRL);
 	return 0;
 }
 
-static int mss_wait_complete(const struct device *dev)
+static uint8_t *mss_i2c_set_byte_end(struct mss_i2c_data *data, const struct i2c_msg *msg)
 {
-	struct mss_i2c_data *const data = dev->data;
-	atomic_t i2c_status = 0;
+	uint8_t *byte_curr = msg->buf;
 
-	do {
-		i2c_status = atomic_get(&data->controller_status);
-	} while (i2c_status == MSS_I2C_IN_PROGRESS);
-
-	return i2c_status;
+	data->byte_end = byte_curr + msg->len;
+	return byte_curr;
 }
-
-static int mss_i2c_read(const struct device *dev, uint8_t serial_addr, uint8_t *read_buffer,
-			uint32_t read_size)
-{
-	struct mss_i2c_data *const data = dev->data;
-	const struct mss_i2c_config *cfg = dev->config;
-
-	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-	data->target_addr = serial_addr << TARGET_ADDR_SHIFT;
-	data->pending_transaction = CONTROLLER_READ_TRANSACTION;
-	data->dir = I2C_MSG_READ;
-	data->controller_rx_buffer = read_buffer;
-	data->controller_rx_size = read_size;
-	data->controller_rx_idx = 0u;
-
-	sys_write8((ctrl | CTRL_STA), cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-	return 0;
-}
-
-static int mss_i2c_write(const struct device *dev, uint8_t serial_addr, uint8_t *tx_buffer,
-			 uint32_t tx_num_write)
-{
-	struct mss_i2c_data *const data = dev->data;
-	const struct mss_i2c_config *cfg = dev->config;
-	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-	atomic_t target_status = data->target_status;
-
-	if (data->transaction == NO_TRANSACTION) {
-		data->transaction = CONTROLLER_WRITE_TRANSACTION;
-	}
-
-	data->pending_transaction = CONTROLLER_WRITE_TRANSACTION;
-	data->target_addr = serial_addr << TARGET_ADDR_SHIFT;
-	data->dir = I2C_MSG_WRITE;
-	data->controller_tx_buffer = tx_buffer;
-	data->controller_tx_size = tx_num_write;
-	data->controller_tx_idx = 0u;
-	atomic_set(&data->controller_status, MSS_I2C_IN_PROGRESS);
-
-	if (target_status == MSS_I2C_IN_PROGRESS) {
-		data->is_transaction_pending = CONTROLLER_WRITE_TRANSACTION;
-	} else {
-		sys_write8((ctrl | CTRL_STA), cfg->i2c_base_addr + CORE_I2C_CTRL);
-	}
-
-	if (data->bus_status == MSS_I2C_HOLD_BUS) {
-		sys_write8((ctrl & ~CTRL_SI), cfg->i2c_base_addr + CORE_I2C_CTRL);
-	}
-
-	return 0;
-}
-
 
 static int mss_i2c_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			    uint16_t addr)
 {
-	for (int i = 0; i < num_msgs; i++) {
-		struct i2c_msg *current = &msgs[i];
+	const struct mss_i2c_config *cfg = dev->config;
+	struct mss_i2c_data *data = dev->data;
 
-		if ((current->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			mss_i2c_read(dev, addr, current->buf, current->len);
-			mss_wait_complete(dev);
-		} else {
-			mss_i2c_write(dev, addr, current->buf, current->len);
-			mss_wait_complete(dev);
-		}
+	/*
+	 * Check for validity of all messages, to prevent having to abort in
+	 * the middle of a transfer.
+	 */
+
+	struct i2c_msg *curr = msgs;
+
+	if (curr->len == 0) {
+		/*
+		 * There are potential issues with zero length buffers.  For example, zero length
+		 * transfers seem to prevent that a following restart or stop condition is
+		 * generated.  It is unclear if this is a hardware or driver issue.
+		 *
+		 * Independent of potential hardware issues, the driver definitely does not support
+		 * zero length continuation buffers.  They would complicate the message handling.
+		 */
+		return -EINVAL;
 	}
 
-	return 0;
+	for (int i = 1; i < num_msgs; ++i) {
+		struct i2c_msg *next = curr + 1;
+
+		if (next->len == 0) {
+			/* Zero length buffers are not supported, see above */
+			return -EINVAL;
+		}
+
+		if ((curr->flags & I2C_MSG_STOP) != 0) {
+			/* Stop condition is only allowed on last message */
+			return -EINVAL;
+		}
+
+		if ((curr->flags & I2C_MSG_RW_MASK) == (next->flags & I2C_MSG_RW_MASK)) {
+			if ((next->flags & I2C_MSG_RESTART) != 0) {
+				/*
+				 * Restart condition between messages of the same direction
+				 * is not supported.
+				 */
+				return -EINVAL;
+			}
+		} else if ((next->flags & I2C_MSG_RESTART) == 0) {
+			/*
+			 * Restart condition between messages of different directions
+			 * is required.
+			 */
+			return -EINVAL;
+		}
+
+		curr = next;
+	}
+
+	/* Add RW bit to address, so that we can write it directly to the data register */
+	addr <<= 1;
+	if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+		addr |= 1;
+	}
+
+	(void)k_mutex_lock(&data->mtx, K_FOREVER);
+
+	data->ret = 0;
+	data->addr = (uint8_t)addr;
+	data->msg_curr = msgs;
+	data->msg_last = msgs + num_msgs - 1;
+	data->byte_curr = mss_i2c_set_byte_end(data, msgs);
+
+	/* Start the transfer */
+	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
+
+	ctrl &= ~(CTRL_AA | CTRL_SI | CTRL_STO);
+	ctrl |= CTRL_STA;
+	sys_write8(ctrl, cfg->i2c_base_addr + CORE_I2C_CTRL);
+
+	/*
+	 * Clear a potentially erroneous done condition caused by a spurious interrupt.  Enable
+	 * interrupts and wait for the transfer completion.
+	 */
+	k_sem_reset(&data->done);
+	irq_enable(cfg->i2c_irq_base);
+	int ret = k_sem_take(&data->done, K_TICKS(1000));
+
+	irq_disable(cfg->i2c_irq_base);
+
+	if (unlikely(ret != 0)) {
+		/*
+		 * In case of a timeout, reset the module.  This could be caused by an SCL line held
+		 * low.
+		 */
+		mss_i2c_reset(cfg);
+	} else {
+		ret = data->ret;
+	}
+
+	(void)k_mutex_unlock(&data->mtx);
+	return ret;
 }
 
 static DEVICE_API(i2c, mss_i2c_driver_api) = {
@@ -250,9 +256,13 @@ static DEVICE_API(i2c, mss_i2c_driver_api) = {
 #endif
 };
 
-static void mss_i2c_reset(const struct device *dev)
+static void mss_i2c_init(const struct device *dev)
 {
 	const struct mss_i2c_config *cfg = dev->config;
+	struct mss_i2c_data *data = dev->data;
+
+	(void)k_mutex_init(&data->mtx);
+	(void)k_sem_init(&data->done, 0, 1);
 
 #if MSS_I2C_RESET_ENABLED
 	if (cfg->reset_spec.dev != NULL) {
@@ -260,134 +270,155 @@ static void mss_i2c_reset(const struct device *dev)
 	}
 #endif
 
-	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-	sys_write8((ctrl & ~CTRL_ENS1), cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-	ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-	sys_write8((ctrl | CTRL_ENS1), cfg->i2c_base_addr + CORE_I2C_CTRL);
+	mss_i2c_reset(cfg);
 }
 
+static inline bool mss_i2c_is_last_write_byte(struct mss_i2c_data *data, const struct i2c_msg *msg)
+{
+	return msg == data->msg_last || ((msg + 1)->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
+}
+
+static inline bool mss_i2c_is_last_read_byte(struct mss_i2c_data *data, const struct i2c_msg *msg)
+{
+	return msg == data->msg_last || ((msg + 1)->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE;
+}
+
+static uint8_t mss_i2c_set_ctrl_aa(struct mss_i2c_data *data, const struct i2c_msg *msg,
+				   uint8_t ctrl)
+{
+	if (mss_i2c_is_last_read_byte(data, msg)) {
+		return ctrl;
+	}
+
+	return ctrl | CTRL_AA;
+}
 
 static void mss_i2c_irq_handler(const struct device *dev)
 {
-	struct mss_i2c_data *const data = dev->data;
 	const struct mss_i2c_config *cfg = dev->config;
+	struct mss_i2c_data *data = dev->data;
+	uintptr_t i2c_base_addr = cfg->i2c_base_addr;
+	const struct i2c_msg *msg_curr = data->msg_curr;
+	uint8_t *byte_curr = data->byte_curr;
+	uint8_t ctrl = sys_read8(i2c_base_addr + CORE_I2C_CTRL);
+	bool done = false;
 
-	uint8_t ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
+	do {
+		uint8_t status = sys_read8(i2c_base_addr + CORE_I2C_STATUS);
 
-	uint8_t status = sys_read8(cfg->i2c_base_addr + CORE_I2C_STATUS);
+		if (status == STATUS_NO_INFO) {
+			break;
+		}
 
-	uint8_t hold_bus = 0;
+		ctrl &= ~(CTRL_AA | CTRL_STA | CTRL_STO);
 
-	switch (status) {
-	case STATUS_M_START_SENT:
-	case STATUS_M_REPEATED_START_SENT:
-		sys_write8((ctrl & ~CTRL_STA), cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-		sys_write8(data->target_addr | data->dir, cfg->i2c_base_addr + CORE_I2C_DATA);
-
-		data->controller_tx_idx = 0;
-		data->controller_rx_idx = 0;
-
-		data->is_transaction_pending = false;
-		data->transaction = data->pending_transaction;
-		break;
-	case STATUS_M_ARB_LOST:
-		sys_write8((ctrl | CTRL_STA), cfg->i2c_base_addr + CORE_I2C_CTRL);
-		LOG_WRN("lost arbitration: %x\n", status);
-		break;
-	case STATUS_M_SLAW_ACK:
-	case STATUS_M_TX_DATA_ACK:
-		if (data->controller_tx_idx < data->controller_tx_size) {
-			sys_write8(data->controller_tx_buffer[data->controller_tx_idx],
-				   cfg->i2c_base_addr + CORE_I2C_DATA);
-
-			data->controller_tx_idx++;
-
-		} else if (data->transaction == CONTROLLER_RANDOM_READ_TRANSACTION) {
-			data->dir = I2C_MSG_READ;
-			sys_write8((ctrl | CTRL_STA), cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-		} else {
-			data->transaction = NO_TRANSACTION;
-			hold_bus = data->options & MSS_I2C_HOLD_BUS;
-			data->bus_status = hold_bus;
-
-			if (hold_bus == MSS_I2C_RELEASE_BUS) {
-				sys_write8((ctrl | CTRL_STO), cfg->i2c_base_addr + CORE_I2C_CTRL);
+		switch (status) {
+		case STATUS_M_START_SENT:
+		case STATUS_M_REPEATED_START_SENT:
+			sys_write8(ctrl, i2c_base_addr + CORE_I2C_CTRL);
+			sys_write8(data->addr, i2c_base_addr + CORE_I2C_DATA);
+			break;
+		case STATUS_M_TX_DATA_NACK:
+			if (byte_curr != data->byte_end &&
+			    !mss_i2c_is_last_write_byte(data, msg_curr)) {
+				/*
+				 * A not acknowledged write is only acceptable for the last byte
+				 * written.
+				 */
+				data->ret = -EIO;
+				done = true;
 			}
+
+			__fallthrough;
+		case STATUS_M_SLAW_ACK:
+		case STATUS_M_TX_DATA_ACK:
+			if (byte_curr != data->byte_end) {
+				sys_write8(*byte_curr, i2c_base_addr + CORE_I2C_DATA);
+				++byte_curr;
+			} else if (msg_curr == data->msg_last) {
+				ctrl |= CTRL_STO;
+				done = true;
+			} else {
+				++msg_curr;
+				byte_curr = mss_i2c_set_byte_end(data, msg_curr);
+
+				if ((msg_curr->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
+					/* Direction change with repeated start */
+					ctrl |= CTRL_STA;
+					data->addr |= 1;
+				} else {
+					/*
+					 * Continue write with the new buffer.  The message check in
+					 * mss_i2c_transfer() ensures that this is a non-zero length
+					 * buffer.
+					 */
+					sys_write8(*byte_curr, i2c_base_addr + CORE_I2C_DATA);
+					++byte_curr;
+				}
+			}
+
+			break;
+		case STATUS_M_RX_DATA_ACKED:
+		case STATUS_M_RX_DATA_NACKED:
+			if (byte_curr != data->byte_end) {
+				*byte_curr = sys_read8(cfg->i2c_base_addr + CORE_I2C_DATA);
+				++byte_curr;
+			} else {
+				/* This is an error and should not happen */
+				data->ret = -EIO;
+				done = true;
+			}
+
+			__fallthrough;
+		case STATUS_M_SLAR_ACK:
+			if (byte_curr + 1 == data->byte_end) {
+				ctrl = mss_i2c_set_ctrl_aa(data, msg_curr, ctrl);
+			} else if (byte_curr != data->byte_end) {
+				ctrl |= CTRL_AA;
+			} else if (msg_curr == data->msg_last) {
+				ctrl |= CTRL_STO;
+				done = true;
+			} else {
+				++msg_curr;
+				byte_curr = mss_i2c_set_byte_end(data, msg_curr);
+
+				if ((msg_curr->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+					/* Direction change with repeated start */
+					ctrl |= CTRL_STA;
+					data->addr &= ~1;
+				} else if (byte_curr + 1 == data->byte_end) {
+					ctrl = mss_i2c_set_ctrl_aa(data, msg_curr, ctrl);
+				} else {
+					ctrl |= CTRL_AA;
+				}
+			}
+
+			break;
+		default:
+			ctrl |= CTRL_STO;
+			data->ret = -EIO;
+			done = true;
+			break;
 		}
-		atomic_set(&data->controller_status, MSS_I2C_SUCCESS);
-		break;
-	case STATUS_M_TX_DATA_NACK:
-	case STATUS_M_SLAR_NACK:
-	case STATUS_M_SLAW_NACK:
-		sys_write8((ctrl | CTRL_STO), cfg->i2c_base_addr + CORE_I2C_CTRL);
-		atomic_set(&data->controller_status, MSS_I2C_FAILED);
-		data->transaction = NO_TRANSACTION;
-		break;
-	case STATUS_M_SLAR_ACK:
-		if (data->controller_rx_size > 1u) {
-			sys_write8((ctrl | CTRL_AA), cfg->i2c_base_addr + CORE_I2C_CTRL);
 
-		} else if (data->controller_rx_size == 1u) {
-			sys_write8((ctrl & ~CTRL_AA), cfg->i2c_base_addr + CORE_I2C_CTRL);
+		ctrl &= ~CTRL_SI;
+		sys_write8(ctrl, i2c_base_addr + CORE_I2C_CTRL);
+	} while (!done);
 
-		} else {
-			sys_write8((ctrl | CTRL_AA | CTRL_STO), cfg->i2c_base_addr + CORE_I2C_CTRL);
-			atomic_set(&data->controller_status, MSS_I2C_SUCCESS);
-			data->transaction = NO_TRANSACTION;
-		}
-		break;
-	case STATUS_M_RX_DATA_ACKED:
-		data->controller_rx_buffer[data->controller_rx_idx] =
-			sys_read8(cfg->i2c_base_addr + CORE_I2C_DATA);
+	data->msg_curr = msg_curr;
+	data->byte_curr = byte_curr;
 
-		data->controller_rx_idx++;
-
-		/* Second Last byte */
-		if (data->controller_rx_idx >= (data->controller_rx_size - 1u)) {
-			sys_write8((ctrl & ~CTRL_AA), cfg->i2c_base_addr + CORE_I2C_CTRL);
-		} else {
-			atomic_set(&data->controller_status, MSS_I2C_IN_PROGRESS);
-		}
-		break;
-	case STATUS_M_RX_DATA_NACKED:
-
-		data->controller_rx_buffer[data->controller_rx_idx] =
-			sys_read8(cfg->i2c_base_addr + CORE_I2C_DATA);
-
-		hold_bus = data->options & MSS_I2C_HOLD_BUS;
-		data->bus_status = hold_bus;
-
-		if (hold_bus == 0u) {
-			sys_write8((ctrl | CTRL_STO), cfg->i2c_base_addr + CORE_I2C_CTRL);
-		}
-
-		data->transaction = NO_TRANSACTION;
-		atomic_set(&data->controller_status, MSS_I2C_SUCCESS);
-		break;
-	default:
-		break;
+	if (done) {
+		k_sem_give(&data->done);
 	}
-
-	ctrl = sys_read8(cfg->i2c_base_addr + CORE_I2C_CTRL);
-
-	sys_write8((ctrl & ~CTRL_SI), cfg->i2c_base_addr + CORE_I2C_CTRL);
 }
 
 #define MSS_I2C_INIT(n)                                                                            \
 	static int mss_i2c_init_##n(const struct device *dev)                                      \
 	{                                                                                          \
-		mss_i2c_reset(dev);                                                                \
-                                                                                                   \
+		mss_i2c_init(dev);                                                                 \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_i2c_irq_handler,        \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-                                                                                                   \
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
@@ -402,7 +433,7 @@ static void mss_i2c_irq_handler(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	I2C_DEVICE_DT_INST_DEFINE(n, mss_i2c_init_##n, NULL, &mss_i2c_data_##n,                    \
-			&mss_i2c_config_##n, PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,               \
-			&mss_i2c_driver_api);
+				  &mss_i2c_config_##n, PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,     \
+				  &mss_i2c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_I2C_INIT)
