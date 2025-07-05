@@ -560,7 +560,11 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
-#define Z_CONSTIFY(v) (_Generic((v), char * : (const char *)(uintptr_t)(v), default : (v)))
+#define Z_CONSTIFY(v) ({ \
+	__auto_type _uv = (v); \
+	__typeof__(_uv) const _cv = _uv; \
+	_cv; \
+})
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
 	__auto_type __v = Z_ARGIFY(Z_CONSTIFY(v)); \
 	/* Static code analysis may complain about unused variable. */ \
@@ -568,7 +572,7 @@ extern "C" {
 	size_t __arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((__v)) \
+			sizeof((__v)) /* NOLINT(bugprone-sizeof-expression) */ \
 		); \
 	__arg_size; \
 })
