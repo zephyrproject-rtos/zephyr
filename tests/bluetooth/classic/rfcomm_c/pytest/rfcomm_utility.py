@@ -22,7 +22,7 @@ from bumble.rfcomm import (
 )
 
 mcc_test_data = bytes.fromhex('01 02 03 04 05')
-send_value = bytes.fromhex('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+send_value = bytes([0xFF])
 
 
 class LogCaptureHandler(logging.Handler):

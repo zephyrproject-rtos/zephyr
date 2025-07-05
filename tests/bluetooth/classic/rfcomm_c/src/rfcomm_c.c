@@ -24,9 +24,10 @@
 #include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
 
-#define DATA_MTU 48
+#define DATA_MTU CONFIG_BT_RFCOMM_L2CAP_MTU
 
-NET_BUF_POOL_FIXED_DEFINE(pool, 1, DATA_MTU, CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(pool, 2, BT_RFCOMM_BUF_SIZE(DATA_MTU), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			  NULL);
 
 static struct bt_sdp_attribute spp_attrs[] = {
 	BT_SDP_NEW_SERVICE,
@@ -95,12 +96,12 @@ static struct bt_sdp_record spp_rec = BT_SDP_RECORD(spp_attrs);
 /* DLC entity */
 static void rfcomm_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
-	bt_shell_print("Incoming data dlc %p len %u", dlci, buf->len);
+	bt_shell_print("Incoming data dlc %p. Data length: %u", dlci, buf->len);
 }
 
 static void rfcomm_connected(struct bt_rfcomm_dlc *dlci)
 {
-	bt_shell_print("Dlc %p connected", dlci);
+	bt_shell_print("Dlc %p connected. MTU: %d", dlci, dlci->mtu);
 }
 
 static void rfcomm_disconnected(struct bt_rfcomm_dlc *dlci)
@@ -109,21 +110,21 @@ static void rfcomm_disconnected(struct bt_rfcomm_dlc *dlci)
 }
 
 static struct bt_rfcomm_dlc_ops rfcomm_ops = {
-	.recv		= rfcomm_recv,
-	.connected	= rfcomm_connected,
-	.disconnected	= rfcomm_disconnected,
+	.recv = rfcomm_recv,
+	.connected = rfcomm_connected,
+	.disconnected = rfcomm_disconnected,
 };
 
 static struct bt_rfcomm_dlc *rfcomm_dlc;
 
 static struct bt_rfcomm_dlc rfcomm_dlc_9 = {
 	.ops = &rfcomm_ops,
-	.mtu = 30,
+	.mtu = CONFIG_BT_RFCOMM_L2CAP_MTU,
 };
 
 static struct bt_rfcomm_dlc rfcomm_dlc_7 = {
 	.ops = &rfcomm_ops,
-	.mtu = 30,
+	.mtu = CONFIG_BT_RFCOMM_L2CAP_MTU,
 };
 
 /* RFCOMM server entity */
@@ -258,11 +259,12 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
-	uint32_t count;
-	int err, len;
+	uint8_t buf_data[DATA_MTU];
+	int ret, data_len = 1;
 	struct net_buf *buf;
 	uint8_t channel;
+
+	memset(buf_data, 0xff, sizeof(buf_data));
 
 	channel = strtoul(argv[1], NULL, 16);
 	if (channel == 9U) {
@@ -277,32 +279,30 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	count = strtoul(argv[2], NULL, 10);
+	if ((argc > 2) && (data_len > 0)) {
+		data_len = strtoul(argv[2], NULL, 10);
+	}
 
-	while (count--) {
-		buf = bt_rfcomm_create_pdu(&pool);
-		/* Should reserve one byte in tail for FCS */
-		len = MIN(rfcomm_dlc->mtu, net_buf_tailroom(buf) - 1);
+	buf = bt_rfcomm_create_pdu(&pool);
+	data_len = MIN(DATA_MTU, data_len);
+	net_buf_add_mem(buf, buf_data, data_len);
 
-		net_buf_add_mem(buf, buf_data, len);
-		err = bt_rfcomm_dlc_send(rfcomm_dlc, buf);
-		if (err < 0) {
-			shell_error(sh, "Unable to send: %d", -err);
-			net_buf_unref(buf);
-			return -ENOEXEC;
-		}
+	ret = bt_rfcomm_dlc_send(rfcomm_dlc, buf);
+	if (ret < 0) {
+		shell_error(sh, "Unable to send: %d", -ret);
+		net_buf_unref(buf);
+		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(rfcomm_s_cmds,
-	SHELL_CMD_ARG(register, NULL, "<server channel>", cmd_register, 2, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	rfcomm_s_cmds, SHELL_CMD_ARG(register, NULL, "<server channel>", cmd_register, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<server channel>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "<server channel>", cmd_disconnect, 2, 0),
-	SHELL_CMD_ARG(send, NULL, "<server channel> <data>", cmd_send, 3, 0),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_CMD_ARG(send, NULL, "<server channel> [data length]", cmd_send, 2, 1),
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
