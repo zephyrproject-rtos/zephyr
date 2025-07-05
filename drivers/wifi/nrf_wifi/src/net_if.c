@@ -429,6 +429,10 @@ int nrf_wifi_if_send(const struct device *dev,
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	}
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
+	if (ret == NRF_WIFI_STATUS_FAIL) {
+		/* FMAC API takes care of freeing the nbuf */
+		host_stats->total_tx_drop_pkts++;
+	}
 	goto unlock;
 drop:
 	if (host_stats != NULL) {
