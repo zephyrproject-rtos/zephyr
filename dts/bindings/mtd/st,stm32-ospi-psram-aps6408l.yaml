@@ -1,0 +1,76 @@
+# Copyright (c) 2025 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
+# Copyright (c) 2025 Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 OSPI PSRAM.
+
+compatible: "st,stm32-ospi-psram-aps6408l"
+
+include: ["st,stm32-ospi-psram.yaml"]
+
+properties:
+
+  fixed-latency:
+    type: boolean
+    description: |
+      Read latency type: variable if not set, fixed if set.
+
+  read-latency:
+    type: int
+    default: 5
+    description: |
+      Read latency code
+      - 0: LCx2 3 / Fmax 66 MHz
+      - 1: LCx2 4 / Fmax 104 MHz
+      - 2: LCx2 5 / Fmax 133 MHz
+      - 3: LCx2 6 / Fmax 133 MHz
+      - 4: LCx2 7 / Fmax 133 MHz
+      - 5: LCx2 5 / Fmax 133 MHz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+
+  drive-strength:
+    type: int
+    default: 0
+    description: |
+      Drive strength code:
+      - 0: 200Ω
+      - 1: 133Ω
+      - 2: 100Ω
+      - 3: 80Ω
+      - 4: 66Ω
+      - 5: 66Ω
+      - 6: 50Ω
+      - 7: 50Ω (default)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  write-latency:
+    type: int
+    default: 2
+    description: |
+      Write latency code:
+      - 0: WLC 3 / Fmax 66 MHz
+      - 4: WLC 4 / Fmax 109 MHz
+      - 2: WLC 5 / Fmax 133 MHz
+      - 5: WLC 6 / Fmax 166 MHz
+      - 1: WLC 7 / Fmax 200 MHz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 5
