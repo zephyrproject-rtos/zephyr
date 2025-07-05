@@ -330,6 +330,7 @@ zephyr_udc0: &usbotg_fs {
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <50000000>;
+		cs-high-time = <2>; /* >= 30 ns */
 		status = "okay";
 
 		partitions {
