@@ -54,11 +54,13 @@
 #define HFXO_NODE DT_NODELABEL(hfxo)
 
 /* LFXO config from DT */
+#if DT_NODE_HAS_STATUS_OKAY(LFXO_NODE) && defined(CONFIG_SOC_ENABLE_LFXO)
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external)
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_EXTERNAL
 #elif DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 #define LFXO_CAP (DT_ENUM_IDX(LFXO_NODE, load_capacitance_picofarad) + 1U)
-#else
+#endif /*DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external) */
+#elif !DT_NODE_HAS_STATUS(LFXO_NODE, disabled) && defined(CONFIG_SOC_ENABLE_LFXO)
 /* LFXO config from legacy Kconfig */
 #if defined(CONFIG_SOC_LFXO_CAP_INT_6PF)
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_6PF
@@ -68,8 +70,8 @@
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_9PF
 #else
 #define LFXO_CAP NRF_OSCILLATORS_LFXO_CAP_EXTERNAL
-#endif
-#endif
+#endif /* defined(CONFIG_SOC_LFXO_CAP_INT_6PF) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(LFXO_NODE) */
 
 /* HFXO config from DT */
 #if DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, internal)
@@ -505,6 +507,14 @@ void soc_early_init_hook(void)
 	 */
 	nrf_gpio_pin_control_select(PIN_XL1, NRF_GPIO_PIN_SEL_PERIPHERAL);
 	nrf_gpio_pin_control_select(PIN_XL2, NRF_GPIO_PIN_SEL_PERIPHERAL);
+#endif /* !defined(CONFIG_BUILD_WITH_TFM) */
+#else
+#if !defined(CONFIG_BUILD_WITH_TFM)
+	/* This can only be done from secure code.
+	 * Assign XL1/XL2 as GPIO to app core if LFXO is disabled.
+	 */
+	nrf_gpio_pin_control_select(PIN_XL1, NRF_GPIO_PIN_SEL_APP);
+	nrf_gpio_pin_control_select(PIN_XL2, NRF_GPIO_PIN_SEL_APP);
 #endif /* !defined(CONFIG_BUILD_WITH_TFM) */
 #endif /* defined(LFXO_CAP) */
 #if defined(HFXO_CAP_VAL_X2)
