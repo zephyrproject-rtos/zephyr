@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/ina228.h>
+
+&i2c0 {
+	status = "okay";
+
+	/* Example values from data sheet */
+	ina228_default_test: ina228@40 {
+		compatible = "ti,ina228";
+		reg = <0x40>;
+		rshunt-micro-ohms = <16200>;
+		lsb-nanoamp = <19073>;
+		status = "okay";
+	};
+
+	ina228_advanced_test: ina228@41 {
+		compatible = "ti,ina228";
+		reg = <0x41>;
+		rshunt-micro-ohms = <10000>;
+		lsb-nanoamp = <20000>;
+		initial-delay-ms = <300>;
+		temp-compensation-ppm = <1000>;
+		adc-low-range;
+		operating-mode = "Bus and shunt voltage continuous";
+		vbus-conversion-time-us = <50>;
+		vshunt-conversion-time-us = <4120>;
+		temp-conversion-time-us = <150>;
+		avg-count = <64>;
+		status = "okay";
+	};
+};
