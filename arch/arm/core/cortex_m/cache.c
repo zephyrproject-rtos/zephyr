@@ -96,6 +96,9 @@ int arch_icache_flush_and_invd_all(void)
 
 int arch_icache_flush_range(void *start_addr, size_t size)
 {
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
+
 	return -ENOTSUP;
 }
 
@@ -108,6 +111,9 @@ int arch_icache_invd_range(void *start_addr, size_t size)
 
 int arch_icache_flush_and_invd_range(void *start_addr, size_t size)
 {
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(size);
+
 	return -ENOTSUP;
 }
 
