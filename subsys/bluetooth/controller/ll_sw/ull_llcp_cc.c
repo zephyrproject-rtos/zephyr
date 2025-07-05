@@ -529,7 +529,7 @@ static void rp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	uint16_t start_event_count;
 	uint16_t event_counter;
 
-	event_counter = ull_conn_event_counter(conn);
+	event_counter = ull_conn_event_counter_at_prepare(conn);
 	start_event_count = ctx->data.cis_create.conn_event_count;
 
 	if (is_instant_reached_or_passed(start_event_count, event_counter)) {
@@ -1078,7 +1078,7 @@ static void lp_cc_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	uint16_t instant_latency;
 	uint16_t event_counter;
 
-	event_counter = ull_conn_event_counter(conn);
+	event_counter = ull_conn_event_counter_at_prepare(conn);
 	start_event_count = ctx->data.cis_create.conn_event_count;
 
 	instant_latency = (event_counter - start_event_count) & 0xffff;
