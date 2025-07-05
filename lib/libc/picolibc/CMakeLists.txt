@@ -9,6 +9,7 @@ zephyr_library_sources(
   exit.c
   locks.c
   stdio.c
+  z_libc.c
   )
 
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)
