@@ -1,0 +1,12 @@
+identifier: scdz_ch32v307evt
+name: SCDZ CH32V307 Evaluation Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 256
+supported:
+  - gpio
+  - i2c
