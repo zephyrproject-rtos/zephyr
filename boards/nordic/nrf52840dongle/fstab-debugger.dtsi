@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Flash partition table without support for Nordic nRF5 bootloader */
+/* Flash partition table without support for Nordic onboard USB bootloader */
 
 &flash0 {
 	partitions {
