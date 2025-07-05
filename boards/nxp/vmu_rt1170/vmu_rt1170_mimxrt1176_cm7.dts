@@ -243,23 +243,23 @@
 	};
 };
 
-#include <zephyr/dt-bindings/sensor/icm42688.h>
+#include <zephyr/dt-bindings/sensor/icm42686.h>
 
 &lpspi1 {
 	status = "okay";
 	cs-gpios =<&gpio2 11 GPIO_ACTIVE_LOW>;
 
-	icm42688_0: icm42688p0@0 {
-		compatible = "invensense,icm42688";
+	icm42686_0: icm42686p0@0 {
+		compatible = "invensense,icm42686", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
-		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
-		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
-		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
-		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
-		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
-		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
+		accel-pwr-mode = <ICM42686_DT_ACCEL_LN>;
+		accel-odr = <ICM42686_DT_ACCEL_ODR_1000>;
+		accel-fs = <ICM42686_DT_ACCEL_FS_16>;
+		gyro-pwr-mode = <ICM42686_DT_GYRO_LN>;
+		gyro-odr = <ICM42686_DT_GYRO_ODR_1000>;
+		gyro-fs = <ICM42686_DT_GYRO_FS_2000>;
 		axis-align-x = <SENSOR_AXIS_ALIGN_DT_Y>;
 		axis-align-y = <SENSOR_AXIS_ALIGN_DT_X>;
 		axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>;
@@ -267,12 +267,14 @@
 	};
 };
 
+#include <zephyr/dt-bindings/sensor/icm42688.h>
+
 &lpspi2 {
 	status = "okay";
 	cs-gpios =<&gpio3 24 GPIO_ACTIVE_LOW>;
 
-	icm42688_1: icm42688p1@0 {
-		compatible = "invensense,icm42688";
+	icm42688_0: icm42688p0@0 {
+		compatible = "invensense,icm42688", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
