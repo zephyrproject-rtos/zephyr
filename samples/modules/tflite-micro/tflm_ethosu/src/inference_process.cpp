@@ -118,9 +118,16 @@ bool InferenceProcess::runJob(InferenceJob &job)
 	}
 
 	/* Create the TFL micro interpreter */
+#ifdef CONFIG_TAINT_BLOBS_TFLM_ETHOSU
 	tflite::MicroMutableOpResolver <1> resolver;
 	resolver.AddEthosU();
-
+#else
+	tflite::MicroMutableOpResolver <4> resolver;
+	resolver.AddReshape();
+	resolver.AddConv2D();
+	resolver.AddFullyConnected();
+	resolver.AddSoftmax();
+#endif
 	tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize);
 
 	/* Allocate tensors */
