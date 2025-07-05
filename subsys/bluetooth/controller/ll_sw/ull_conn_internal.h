@@ -31,6 +31,7 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
 void ull_conn_done(struct node_rx_event_done *done);
 void ull_conn_tx_demux(uint8_t count);
 void ull_conn_tx_lll_enqueue(struct ll_conn *conn, uint8_t count);
+uint16_t ull_conn_tx_enqueue_count_get(struct ll_conn *conn);
 void ull_conn_link_tx_release(void *link);
 uint8_t ull_conn_ack_last_idx_get(void);
 memq_link_t *ull_conn_ack_peek(uint8_t *ack_last, uint16_t *handle,
