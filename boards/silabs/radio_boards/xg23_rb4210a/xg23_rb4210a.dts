@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/xg23/efr32zg23b020f512im48.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include "xg23_rb4210a-pinctrl.dtsi"
 
@@ -28,6 +29,8 @@
 		dht0 = &si7021;
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
@@ -44,6 +47,20 @@
 		led1: led_1 {
 			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
 			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 0";
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 1";
 		};
 	};
 
@@ -67,6 +84,16 @@
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
 		regulator-name = "sensor_disp_enable";
+		status = "okay";
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
 		status = "okay";
 	};
 };
