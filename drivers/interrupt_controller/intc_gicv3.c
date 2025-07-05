@@ -1,11 +1,12 @@
 /*
  * Copyright 2020 Broadcom
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
@@ -111,7 +112,11 @@ static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 		*cfg &= ~BIT(0);
 	}
 
+#ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
+	arch_dcache_flush_and_invd_range(cfg, sizeof(*cfg));
+#else
 	barrier_dsync_fence_full();
+#endif
 
 	its_rdist_invall();
 }
@@ -123,7 +128,11 @@ static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 	*cfg &= 0xfc;
 	*cfg |= prio & 0xfc;
 
+#ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
+	arch_dcache_flush_and_invd_range(cfg, sizeof(*cfg));
+#else
 	barrier_dsync_fence_full();
+#endif
 
 	its_rdist_invall();
 }
@@ -406,7 +415,7 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	unsigned int lpi_id_bits =
 		MIN(GICD_TYPER_IDBITS(sys_read32(GICD_TYPER)), ITS_MAX_LPI_NRBITS);
 	uintptr_t lpi_pend_table;
-	uint64_t reg;
+	uint64_t reg, tmp;
 	uint32_t ctlr;
 
 	/* If not, alloc a common prop table for all redistributors */
@@ -417,6 +426,11 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 
 	lpi_pend_table = (uintptr_t)k_aligned_alloc(64 * 1024, LPI_PENDBASE_SZ(lpi_id_bits));
 	memset((void *)lpi_pend_table, 0, LPI_PENDBASE_SZ(lpi_id_bits));
+
+#ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
+	arch_dcache_flush_and_invd_range((void *)lpi_prop_table, LPI_PROPBASE_SZ(lpi_id_bits));
+	arch_dcache_flush_and_invd_range((void *)lpi_pend_table, LPI_PENDBASE_SZ(lpi_id_bits));
+#endif
 
 	ctlr = sys_read32(rdist + GICR_CTLR);
 	ctlr &= ~GICR_CTLR_ENABLE_LPIS;
@@ -429,7 +443,16 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	      (GIC_BASER_CACHE_INNERLIKE << GITR_PROPBASER_OUTER_CACHE_SHIFT) |
 	      ((lpi_id_bits - 1) & GITR_PROPBASER_ID_BITS_MASK);
 	sys_write64(reg, rdist + GICR_PROPBASER);
-	/* TOFIX: check SHAREABILITY validity */
+	/* Check SHAREABILITY validity */
+	tmp = sys_read64(rdist + GICR_PROPBASER);
+#ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
+	tmp &= ~MASK(GITR_PROPBASER_SHAREABILITY);
+#endif
+	if (!(tmp & MASK(GITR_PROPBASER_SHAREABILITY))) {
+		reg &= ~(MASK(GITR_PROPBASER_SHAREABILITY) | MASK(GITR_PROPBASER_INNER_CACHE));
+		reg |= GIC_BASER_CACHE_NCACHEABLE << GITR_PROPBASER_INNER_CACHE_SHIFT;
+		sys_write64(reg, rdist + GICR_PROPBASER);
+	}
 
 	/* PENDBASE */
 	reg = (GIC_BASER_SHARE_INNER << GITR_PENDBASER_SHAREABILITY_SHIFT) |
@@ -437,7 +460,16 @@ static void gicv3_rdist_setup_lpis(mem_addr_t rdist)
 	      (lpi_pend_table & (GITR_PENDBASER_ADDR_MASK << GITR_PENDBASER_ADDR_SHIFT)) |
 	      (GIC_BASER_CACHE_INNERLIKE << GITR_PENDBASER_OUTER_CACHE_SHIFT) | GITR_PENDBASER_PTZ;
 	sys_write64(reg, rdist + GICR_PENDBASER);
-	/* TOFIX: check SHAREABILITY validity */
+	/* Check SHAREABILITY validity */
+	tmp = sys_read64(rdist + GICR_PENDBASER);
+#ifdef CONFIG_GIC_V3_RDIST_DMA_NONCOHERENT
+	tmp &= ~MASK(GITR_PENDBASER_SHAREABILITY);
+#endif
+	if (!(tmp & MASK(GITR_PENDBASER_SHAREABILITY))) {
+		reg &= ~(MASK(GITR_PENDBASER_SHAREABILITY) | MASK(GITR_PENDBASER_INNER_CACHE));
+		reg |= GIC_BASER_CACHE_NCACHEABLE << GITR_PENDBASER_INNER_CACHE_SHIFT;
+		sys_write64(reg, rdist + GICR_PENDBASER);
+	}
 
 	ctlr = sys_read32(rdist + GICR_CTLR);
 	ctlr |= GICR_CTLR_ENABLE_LPIS;
