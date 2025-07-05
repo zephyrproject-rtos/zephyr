@@ -378,6 +378,8 @@ def add_args(parser):
 def add_args_formatting(parser):
     parser.add_argument("--cmakeformat", default=None,
                         help='''CMake Format string to use to list each board''')
+    parser.add_argument("--sort-by-name", default=False, action='store_true',
+                        help='''Sort board groups by name''')
 
 
 def variant_v2_qualifiers(variant, qualifiers = None):
@@ -413,9 +415,11 @@ def board_v2_qualifiers_csv(board):
 
 
 def dump_v2_boards(args):
-    boards = find_v2_boards(args)
+    boards = find_v2_boards(args).values()
+    if args.sort_by_name:
+        boards = sorted(boards, key=lambda b: b.name)
 
-    for b in boards.values():
+    for b in boards:
         qualifiers_list = board_v2_qualifiers(b)
         if args.cmakeformat is not None:
             def notfound(x):
@@ -440,10 +444,14 @@ def dump_v2_boards(args):
 
 
 def dump_boards(args):
-    arch2boards = find_arch2boards(args)
-    for arch, boards in arch2boards.items():
+    arch2boards = find_arch2boards(args).items()
+    if args.sort_by_name:
+        arch2boards = sorted(arch2boards, key=lambda x: x[0])
+    for arch, boards in arch2boards:
         if args.cmakeformat is None:
             print(f'{arch}:')
+        if args.sort_by_name:
+            boards = sorted(boards, key=lambda b: b.name)
         for board in boards:
             if args.cmakeformat is not None:
                 info = args.cmakeformat.format(
