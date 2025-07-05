@@ -1291,8 +1291,8 @@ Devicetree Definitions
 ======================
 
 Devicetree directory trees are found in ``APPLICATION_SOURCE_DIR``,
-``BOARD_DIR``, and ``ZEPHYR_BASE``, but additional trees, or DTS_ROOTs,
-can be added by creating this directory tree::
+``BOARD_DIRECTORIES``, ``SHIELD_DIRS``, and ``ZEPHYR_BASE``. Any additional
+trees, or DTS_ROOTs, can be added by creating this directory tree::
 
     include/
     dts/common/
