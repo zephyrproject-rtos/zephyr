@@ -1,0 +1,25 @@
+# Copyright (c) 2025 ispace, inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TMS570 GPIO
+
+compatible: "ti,tms570-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  # NOTE: Register ranges:
+  #        - 0 : GIO port registers
+  #        - 1 : GIO base registers
+  reg:
+    required: true
+
+  interrupt-parent:
+    required: true
+
+  ngpios:
+    required: true
+
+gpio-cells:
+  - pin
+  - flags
