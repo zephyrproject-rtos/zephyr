@@ -386,6 +386,7 @@ SECTIONS
     *liblib__libc__picolibc.a:string.*(.literal .text .literal.* .text.*)
     *libphy.a:(.phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+    *librtc.a:(.literal .text .literal.* .text.*)
 
     /* APPCPU_ENABLED */
     *libzephyr.a:esp32s3-mp.*(.literal .text .literal.* .text.*)
@@ -715,6 +716,8 @@ SECTIONS
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.rodata .rodata.*)
     *(.rodata.esp_system_abort)
+
+    *libphy.a:(.rodata .rodata.*)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     /* [mapping:esp_wifi] */
