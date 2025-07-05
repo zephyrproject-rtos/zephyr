@@ -5,7 +5,7 @@ tests:
   drivers.disk.usdhc:
     harness_config:
       fixture: fixture_sdhc
-    filter: CONFIG_SDHC
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
     extra_configs:
       - CONFIG_DISK_DRIVER_SDMMC=y
       - platform:mimxrt1060_evk@C/mimxrt1062/qspi:CONFIG_MAIN_STACK_SIZE=2048
