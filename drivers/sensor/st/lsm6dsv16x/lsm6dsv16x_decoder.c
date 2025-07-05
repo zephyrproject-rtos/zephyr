@@ -660,8 +660,6 @@ static int lsm6dsv16x_decoder_decode(const uint8_t *buffer, struct sensor_chan_s
 
 	if (header->is_fifo) {
 		return lsm6dsv16x_decode_fifo(buffer, chan_spec, fit, max_count, data_out);
-	} else {
-		return lsm6dsv16x_decode_sample(buffer, chan_spec, fit, max_count, data_out);
 	}
 #endif
 
