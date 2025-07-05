@@ -29,7 +29,7 @@ struct efuse_bflb_config {
 
 static inline void efuse_bflb_clock_settle(void)
 {
-	__asm__ volatile (".rept 15 ; nop ; .endr");
+	__asm__ volatile (".rept 20 ; nop ; .endr");
 }
 
 /* 32 Mhz Oscillator: 0
@@ -173,6 +173,9 @@ static void efuse_bflb_cache(const struct device *dev)
 	const struct efuse_bflb_config *config = dev->config;
 	uint32_t tmp;
 	uint8_t old_clock_root;
+	uint32_t key;
+
+	key = irq_lock();
 
 	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
 	old_clock_root = (tmp & HBN_ROOT_CLK_SEL_MSK) >> HBN_ROOT_CLK_SEL_POS;
@@ -193,6 +196,8 @@ static void efuse_bflb_cache(const struct device *dev)
 	efuse_bflb_set_root_clock(old_clock_root);
 	efuse_bflb_clock_settle();
 	data->cached = true;
+
+	irq_unlock(key);
 }
 
 static int efuse_bflb_read(const struct device *dev, uint16_t reg, uint32_t *val)
