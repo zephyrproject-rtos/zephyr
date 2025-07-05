@@ -181,12 +181,18 @@
 			 status = "disabled";
 		 };
  
-		 pufcc: pufcc@A0130000 {
+		 pufs: pufcc@A0130000 {
 			 compatible = "pufsecurity,pufcc";
 			 reg = <0xA0130000 DT_SIZE_K(64)>;
 			 interrupts = <33 3>;
 			 interrupt-parent = < &eclic >;	
-			 status = "disabled";		
+			 status = "disabled";	
+
+			 pufs_otp: pufcc_otp {
+				compatible = "pufsecurity,otp";
+				status = "disabled";	
+			 };
+
 		 };
  
 		 fpga_cfg: cfg-ctrl@A0710000 {

@@ -7,6 +7,7 @@
  /dts-v1/;
 
  #include <rapidsilicon/rapidsi_virgo.dtsi>
+
  /
  {
 	 model = "Rapid Silicon Virgo Proto";
@@ -50,6 +51,14 @@
 	status = "okay";
  };
 
+ &pufs_otp {
+	status = "okay";
+ };
+ 
+ &pufs {
+	status = "okay";
+ };
+ 
  &spi0 {
 	status = "okay";
 	clock-frequency = <26666667>;

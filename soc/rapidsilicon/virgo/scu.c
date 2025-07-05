@@ -8,7 +8,8 @@
 
 typedef struct {
     volatile uint32_t idrev;             /* 0x00 */
-    volatile uint32_t reserved[10];      /* 0x04 - 0x28 */
+    volatile uint32_t sw_rst_control;    /* 0x04 */
+    volatile uint32_t reserved[9];       /* 0x08 - 0x28 */
     volatile uint32_t irq_map_mask[32];  /* 0x2C - 0xA8 */    
 } scu_registers_t;
 
@@ -18,6 +19,15 @@ typedef struct {
     #warning "Turn the rapidsi,scu status to okay in DTS else *s_scu_regs = NULL;"
     static volatile scu_registers_t *s_scu_regs = NULL;
 #endif
+
+void scu_assert_reset(void)
+{
+  uint32_t reset_flags =
+      (VIRGO_SCU_SW_RST_CTRL_MSK_BUS | VIRGO_SCU_SW_RST_CTRL_MSK_PER |
+       VIRGO_SCU_SW_RST_CTRL_MSK_FPGA0 | VIRGO_SCU_SW_RST_CTRL_MSK_FPGA1 |
+       VIRGO_SCU_SW_RST_CTRL_MSK_DMA);
+  s_scu_regs->sw_rst_control |= reset_flags;
+}
 
 void soc_get_id(uint8_t *chip_id, uint8_t *vendor_id)
 {

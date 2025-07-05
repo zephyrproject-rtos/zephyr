@@ -23,6 +23,16 @@
 #define SCU_IRQ_MAP_TO_FPGA   0x4
 #define SCU_IRQ_MAP_MASK      0x7
 
+/// Software reset control
+enum virgo_scu_sw_rst_ctrl_msk {
+  VIRGO_SCU_SW_RST_CTRL_MSK_SYSTEM = (0x1UL << 0),
+  VIRGO_SCU_SW_RST_CTRL_MSK_BUS = (0x1UL << 1),
+  VIRGO_SCU_SW_RST_CTRL_MSK_PER = (0x1UL << 4),
+  VIRGO_SCU_SW_RST_CTRL_MSK_FPGA0 = (0x1UL << 5),
+  VIRGO_SCU_SW_RST_CTRL_MSK_FPGA1 = (0x1UL << 6),
+  VIRGO_SCU_SW_RST_CTRL_MSK_DMA = (0x1UL << 10),
+};
+
 /*********************************
 * The following table is aligned
 * with respect to the scu map and
@@ -72,6 +82,8 @@ void scu_irq_unmap(enum map_mask_control_irq_id IRQn);
 void scu_irq_enable(enum map_mask_control_irq_id IRQn);
 void scu_irq_disable(enum map_mask_control_irq_id IRQn);
 uint32_t scu_get_irq_reg_val(enum map_mask_control_irq_id IRQn);
+
+void scu_assert_reset(void);
 
 #define SCU_CHIP_ID_OFFSET      16
 #define SCU_CHIP_ID_MASK        0x00FF0000

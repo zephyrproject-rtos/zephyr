@@ -27,9 +27,6 @@ if GEN_IRQ_VECTOR_TABLE
 		default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
 	endchoice
 
-	config RISCV_MCAUSE_EXCEPTION_MASK
-		default 0x1F
-
 endif
 
 config SOC_ANDES_V5_EXECIT
