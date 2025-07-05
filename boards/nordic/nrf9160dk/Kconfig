@@ -8,6 +8,9 @@ config BOARD_NRF9160DK
 	# (board.c), so it is forced here to be enabled always, not only
 	# enabled by default (in defconfig).
 	select GPIO if BOARD_NRF9160DK_NRF52840
+	select BOARD_EARLY_INIT_HOOK if BOARD_NRF9160DK_NRF52840 && \
+					$(dt_nodelabel_exists,external_flash_pins_routing)
+	select BOARD_LATE_INIT_HOOK if BOARD_NRF9160DK_NRF52840
 
 if BOARD_NRF9160DK_NRF52840
 
