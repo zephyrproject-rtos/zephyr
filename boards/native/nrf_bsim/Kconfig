@@ -45,6 +45,16 @@ config BOARD_NRF54L15BSIM_NRF54L15_CPUAPP
 	  Will produce a console Linux process which can be executed natively.
 	  It needs the BabbleSim simulator both in compile time and to execute
 
+config BOARD_NRF54LM20BSIM_NRF54LM20A_CPUAPP
+	bool
+	select SOC_SERIES_BSIM_NRF54LX
+	select SOC_COMPATIBLE_NRF54LM20A
+	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP
+	select CLOCK_CONTROL
+	help
+	  Simulated NRF54LM20 Application core
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
 
 if SOC_SERIES_BSIM_NRFXX
 

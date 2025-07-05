@@ -9,6 +9,7 @@ common:
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l20pdk/nrf54l20/cpuapp
     - nrf54lm20dk/nrf54lm20a/cpuapp
+    - nrf54lm20bsim/nrf54lm20a/cpuapp
     - nrf54l15bsim/nrf54l15/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf52_bsim
@@ -37,6 +38,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20bsim/nrf54lm20a/cpuapp
       - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf52_bsim
