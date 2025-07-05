@@ -1640,8 +1640,8 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
-#if STM32_QSPI_DOUBLE_FLASH
 	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
+#if STM32_QSPI_DOUBLE_FLASH
 	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
 	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
 
