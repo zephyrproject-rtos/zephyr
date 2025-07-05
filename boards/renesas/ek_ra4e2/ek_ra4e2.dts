@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &canfd0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -211,5 +212,9 @@
 };
 
 &wdt {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
