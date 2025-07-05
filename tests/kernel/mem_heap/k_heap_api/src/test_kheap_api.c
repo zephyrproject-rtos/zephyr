@@ -149,19 +149,17 @@ ZTEST(k_heap_api, test_k_heap_alloc_fail)
 	k_heap_free(&k_heap_test, p);
 }
 
-
 /**
  * @brief Test k_heap_free() API functionality.
  *
  * @ingroup k_heap_api_tests
  *
- * @details The test validates k_heap_free()
- * API, by using below steps
+ * @details The test validates k_heap_free() API, by using below steps
  * 1. allocate the memory from the heap,
- * 2. free the allocated memory
- * 3. allocate  memory more than the first allocation.
- * the allocation in the 3rd step should succeed if k_heap_free()
- * works as expected
+ * 2. free a NULL pointer (should have no effect)
+ * 3. free the allocated memory
+ * 4. allocate  memory more than the first allocation.
+ * The allocation in the 4th step should succeed if k_heap_free() works as expected
  *
  * @see k_heap_alloc, k_heap_free()
  */
@@ -171,6 +169,10 @@ ZTEST(k_heap_api, test_k_heap_free)
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
 
 	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	/* Free NULL pointer: should not crash or corrupt heap */
+	k_heap_free(&k_heap_test, NULL);
+
 	k_heap_free(&k_heap_test, p);
 	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, timeout);
 	zassert_not_null(p, "k_heap_alloc operation failed");
@@ -473,6 +475,38 @@ ZTEST(k_heap_api, test_k_heap_aligned_alloc)
 	(void)p;
 	/*
 	 * If calling k_heap_aligned_alloc with invalid alignment didn't result in an assert
+	 * then the API isn't working as expected, and the test shall fail.
+	 */
+	ztest_test_fail();
+}
+
+/*
+ * should be run last because the double-freeing corrupts memory
+ * (hence the prefix z_ in the test's name)
+ */
+/**
+ * @brief Test k_heap_free() API double free edge case.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The test validates that double-freeing a pointer asserts
+ *
+ * @see k_heap_alloc, k_heap_free()
+ */
+ZTEST(k_heap_api, test_z_k_heap_double_free)
+{
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
+
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	k_heap_free(&k_heap_test, p);
+
+	ztest_set_fault_valid(true);
+	/* Double free: should assert */
+	k_heap_free(&k_heap_test, p);
+	/*
+	 * If calling k_heap_free twice on the same buffer didn't result in an assert
 	 * then the API isn't working as expected, and the test shall fail.
 	 */
 	ztest_test_fail();
