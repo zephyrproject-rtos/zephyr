@@ -75,6 +75,11 @@ struct smfi_it51xxx_regs {
 #define SCARH_ENABLE                    BIT(7)
 #define SCARH_ADDR_BIT19                BIT(3)
 
+#define IT51XXX_SMFI_BASE      0xf01000
+/* 0x63: Flash Control Register 3 */
+#define IT51XXX_SMFI_FLHCTRL3R (IT51XXX_SMFI_BASE + 0x63)
+#define IT51XXX_SMFI_FFSPITRI  BIT(0)
+
 /**
  *
  * (16xxh) General Purpose I/O Port (GPIO) registers
