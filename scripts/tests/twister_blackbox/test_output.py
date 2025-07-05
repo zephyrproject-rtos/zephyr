@@ -8,7 +8,7 @@ Blackbox tests for twister's command line functions changing test output.
 
 import importlib
 import re
-import mock
+from unittest import mock
 import os
 import pytest
 import sys

@@ -7,7 +7,7 @@
 
 import logging
 import shutil
-import mock
+from unittest import mock
 import os
 import pytest
 import sys
