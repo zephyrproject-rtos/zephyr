@@ -27,7 +27,7 @@
 
 #include "mcuboot_priv.h"
 
-LOG_MODULE_REGISTER(mcuboot_dfu, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(mcuboot_dfu, LOG_LEVEL_INF);
 
 /*
  * Helpers for image headers and trailers, as defined by mcuboot.
@@ -305,10 +305,18 @@ bool boot_is_img_confirmed(void)
 
 	rc = boot_read_swap_state(fa, &state);
 	if (rc != 0) {
+		LOG_ERR("boot_read_swap_state ERROR");
 		return false;
 	}
 
+	LOG_INF("boot_is_img_confirmed flash_area id: 0x%x offset: 0x%lx", fa->fa_id, fa->fa_off);
+
+	LOG_INF("boot_is_img_confirmed swap_state magic=0x%x swap_type=0x%x copy_done=0x%x image_ok=0x%x image_num=0x%x",
+		state.magic, state.swap_type, state.copy_done, state.image_ok, state.image_num);
+
 	if (state.magic == BOOT_MAGIC_UNSET) {
+		LOG_INF("boot_is_img_confirmed MAGIC UNSET, treating as CONFIRMED ");
+
 		/* This is initial/preprogramed image.
 		 * Such image can neither be reverted nor physically confirmed.
 		 * Treat this image as confirmed which ensures consistency
@@ -328,6 +336,8 @@ int boot_write_img_confirmed(void)
 	if (flash_area_open(ACTIVE_SLOT_FLASH_AREA_ID, &fa) != 0) {
 		return -EIO;
 	}
+
+	LOG_INF("boot_write_img_confirmed flash_area id: 0x%x offset: 0x%lx", fa->fa_id, fa->fa_off);
 
 	rc = boot_set_next(fa, true, true);
 

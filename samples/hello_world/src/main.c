@@ -9,6 +9,7 @@
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
++	printf("Image: %s\n", CONFIG_IMAGE_NAME);
 
 	return 0;
 }

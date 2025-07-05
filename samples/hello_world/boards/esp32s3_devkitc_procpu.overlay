@@ -1,0 +1,21 @@
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &usb_serial;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&flash0 {
+       write-block-size = <32>;
+};
