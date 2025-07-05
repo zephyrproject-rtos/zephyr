@@ -214,11 +214,11 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
-	printk("%s %p %d\n", __func__, stream, stream->ep->dir);
-
 	if (stream == NULL || stream->ep == NULL) {
 		return -EINVAL;
 	}
+
+	printk("%s %p %d\n", __func__, stream, stream->ep->dir);
 
 	switch (stream->ep->status.state) {
 	case BT_BAP_EP_STATE_ENABLING:
