@@ -503,6 +503,65 @@ static inline bool led_is_ready_dt(const struct led_dt_spec *spec)
 		    (default_value))
 
 /**
+ * @brief Static initializer for a struct led_dt_spec
+ *
+ * This returns a static initializer for a struct led_dt_spec given a devicetree
+ * node identifier, a property specifying a phandle array of LEDs and an index.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    leds {
+ *        compatible = "gpio-leds";
+ *
+ *        led0: led_0 {
+ *            ...
+ *        };
+ *        led1: led_1 {
+ *            ...
+ *        };
+ *        led2: led_2 {
+ *            ...
+ *        };
+ *    };
+ *
+ *    multi_led: multi-led {
+ *        compatible = "leds-group-multicolor";
+ *        leds = <&led0>, <&led1>, <&led2>;
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct led_dt_spec spec =
+ *                    LED_DT_SPEC_GET_BY_IDX(DT_NODELABEL(multi_led), leds, 1);
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_PARENT(led0)),
+ *    //         .index = 1,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready().
+ *
+ * @param node_id devicetree node identifier.
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ *
+ * @return Static initializer for a struct led_dt_spec for the property.
+ */
+#define LED_DT_SPEC_GET_BY_IDX(node_id, prop, idx)                             \
+	{                                                                      \
+		.dev = DEVICE_DT_GET(DT_PARENT(                                \
+				DT_PHANDLE_BY_IDX(node_id, prop, idx))),       \
+		.index = DT_NODE_CHILD_IDX(                                    \
+				DT_PHANDLE_BY_IDX(node_id, prop, idx)),        \
+	}
+
+/**
  * @}
  */
 
