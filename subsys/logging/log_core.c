@@ -938,12 +938,21 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	uint32_t links_active_mask = 0xFFFFFFFF;
 	uint8_t domain_offset = 0;
 	uint32_t activate_mask = z_log_init(false, false);
-	/* If some backends are not activated yet set periodical thread wake up
-	 * to poll backends for readiness. Period is set arbitrary.
-	 * If all backends are ready periodic wake up is not needed.
-	 */
-	k_timeout_t timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
+	k_timeout_t timeout;
 	bool processed_any = false;
+
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		/* when multidomain is enabled, start in periodic polling
+		 * mode to check for link readiness
+		 */
+		timeout = K_MSEC(50);
+	} else {
+		/* If some backends are not activated yet set periodical thread wake up
+		 * to poll backends for readiness. Period is set arbitrary.
+		 * If all backends are ready periodic wake up is not needed.
+		 */
+		timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
+	}
 	thread_set(k_current_get());
 
 	/* Logging thread is periodically waken up until all backends that
@@ -953,10 +962,19 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		if (activate_mask) {
 			activate_mask = activate_foreach_backend(activate_mask);
 			if (!activate_mask) {
-				/* Periodic wake up no longer needed since all
-				 * backends are ready.
-				 */
-				timeout = K_FOREVER;
+				if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+					if (!links_active_mask) {
+						/* Periodic wake up no longer needed since all
+						 * backends and links are ready.
+						 */
+						timeout = K_FOREVER;
+					}
+				} else {
+					/* Periodic wake up no longer needed since all
+					 * backends are ready.
+					 */
+					timeout = K_FOREVER;
+				}
 			}
 		}
 
@@ -964,6 +982,12 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && links_active_mask) {
 			links_active_mask =
 				z_log_links_activate(links_active_mask, &domain_offset);
+			if (!links_active_mask && !activate_mask) {
+				/* Periodic wake up no longer needed since all
+				 * backends and links are ready.
+				 */
+				timeout = K_FOREVER;
+			}
 		}
 
 
