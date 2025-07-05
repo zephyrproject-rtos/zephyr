@@ -30,7 +30,7 @@
 		zephyr,code-cpu1-partition = &slot1_partition;
 	};
 
-	aliases{
+	aliases {
 		watchdog0 = &wwdt0;
 		pwm-0 = &flexpwm1_pwm0;
 		pwm-1 = &sc_timer;

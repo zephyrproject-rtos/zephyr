@@ -7,7 +7,7 @@
  * Test compilation with disabled flash nodes.
  */
 
-/{
+/ {
 	disabled_flash@0 {
 		compatible = "vnd,flash";
 		reg = <0x00 0x1000>;

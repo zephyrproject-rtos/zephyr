@@ -83,7 +83,6 @@
 			clocks = <&clk_uart>;
 			status = "disabled";
 		};
-
 	};
 
 	clocks {

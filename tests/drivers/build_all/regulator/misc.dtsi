@@ -12,5 +12,5 @@ regulator-fixed {
 npm1100 {
 	compatible = "nordic,npm1100";
 
-	BUCK {};
+	BUCK { };
 };

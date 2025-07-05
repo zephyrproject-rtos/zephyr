@@ -9,7 +9,7 @@
  * It is assumed that it is applied after clear_clocks.overlay file.
  */
 
-&clk_hsi {		/* HSI RC: 16MHz, hsi_clk = 16MHz */
+&clk_hsi {	/* HSI RC: 16MHz, hsi_clk = 16MHz */
 	status = "okay";
 };
 

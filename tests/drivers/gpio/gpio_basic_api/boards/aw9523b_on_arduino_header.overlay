@@ -9,8 +9,8 @@
 			compatible = "awinic,aw9523b-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
-			int-gpios = <&arduino_header 18 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
-			reset-gpios = <&arduino_header 19 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+			int-gpios = <&arduino_header 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			reset-gpios = <&arduino_header 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		};
 	};
 };

@@ -47,7 +47,7 @@
 		compatible = "ti,vim";
 		reg = <0x2fff0000 0x2800>;
 		interrupt-controller;
-		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+		#interrupt-cells = <4>;	/* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
 		status = "okay";
 	};
 

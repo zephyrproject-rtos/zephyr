@@ -12,7 +12,7 @@
 
 / {
 	model = "NXP LPCXPRESSO51U68 board";
-	compatible = "nxp,lpc51xxx","nxp,lpc";
+	compatible = "nxp,lpc51xxx", "nxp,lpc";
 
 	chosen {
 		zephyr,sram = &sram0;

@@ -9,8 +9,8 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		out-gpios = <&ioportd 1 0>; /* PD1 JA2-M1WP P17 */
-		in-gpios = <&ioportd 2 0>; /* PD2 JA2-M1WN P18 */
+		out-gpios = <&ioportd 1 0>;	/* PD1 JA2-M1WP P17 */
+		in-gpios = <&ioportd 2 0>;	/* PD2 JA2-M1WN P18 */
 	};
 };
 

@@ -37,7 +37,7 @@
 			   <30 0 &gpio0 8 0>,	/* GPIO-I */
 			   <31 0 &gpio0 9 0>,	/* GPIO-J */
 			   <32 0 &gpio0 15 0>;	/* GPIO-K */
-			   /* GPIO-L not connected */
+		/* GPIO-L not connected */
 	};
 };
 

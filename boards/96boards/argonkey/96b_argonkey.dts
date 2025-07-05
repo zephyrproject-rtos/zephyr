@@ -73,7 +73,7 @@
 	div-r = <3>;
 	div-q = <4>;
 	clocks = <&clk_hse>;
-	status = "okay"; /* 48MHz on PLLI2SQ */
+	status = "okay";	/* 48MHz on PLLI2SQ */
 };
 
 &rcc {
@@ -92,7 +92,9 @@
 	status = "okay";
 };
 
-&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
+&spi1_nss_pa4 {
+	slew-rate = "very-high-speed";
+};
 
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
@@ -101,7 +103,9 @@
 	status = "okay";
 };
 
-&spi2_nss_pb12 { slew-rate = "very-high-speed"; };
+&spi2_nss_pb12 {
+	slew-rate = "very-high-speed";
+};
 
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13

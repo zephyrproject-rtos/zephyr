@@ -24,17 +24,16 @@
 		};
 
 		pcc: clock-controller@4000d000 {
-			clock-frequency = <DT_FREQ_M(96)>; /* OFMCLK runs at 96MHz */
-			core-prescaler = <1>; /* CORE_CLK runs at 96MHz */
-			apb1-prescaler = <8>; /* APB1_CLK runs at 12MHz */
-			apb2-prescaler = <1>; /* APB2_CLK runs at 96MHz */
-			apb3-prescaler = <1>; /* APB3_CLK runs at 96MHz */
-			ahb6-prescaler = <1>; /* APB6_CLK runs at 96MHz */
-			fiu-prescaler = <1>; /* FIU_CLK runs at 96MHz */
-			i3c-prescaler = <1>; /* I3C_CLK runs at 96MHz */
+			clock-frequency = <DT_FREQ_M(96)>;	/* OFMCLK runs at 96MHz */
+			core-prescaler = <1>;	/* CORE_CLK runs at 96MHz */
+			apb1-prescaler = <8>;	/* APB1_CLK runs at 12MHz */
+			apb2-prescaler = <1>;	/* APB2_CLK runs at 96MHz */
+			apb3-prescaler = <1>;	/* APB3_CLK runs at 96MHz */
+			ahb6-prescaler = <1>;	/* APB6_CLK runs at 96MHz */
+			fiu-prescaler = <1>;	/* FIU_CLK runs at 96MHz */
+			i3c-prescaler = <1>;	/* I3C_CLK runs at 96MHz */
 		};
 	};
 
-	soc-if {
-	};
+	soc-if { };
 };

@@ -11,6 +11,7 @@ test_pwm_tsic_xx6: tsic_xx6 {
 	compatible = "ist,tsic-xx6";
 	pwms = <&test_pwm 0 0 0>;
 	data-bits = <14>;
-	lower-temperature-limit = <(-100)>;
+	lower-temperature-limit = <(
+	-100)>;
 	higher-temperature-limit = <250>;
 };

@@ -37,8 +37,7 @@
 	};
 };
 
-&spi130
-{
+&spi130 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	pinctrl-0 = <&spi130_default_alt>;
@@ -51,8 +50,7 @@
 	status = "okay";
 };
 
-&spi120
-{
+&spi120 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	pinctrl-0 = <&spi120_default_alt>;

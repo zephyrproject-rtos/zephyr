@@ -40,10 +40,10 @@
 	#size-cells = <1>;
 
 	sramx: memory@4000000 {
-		compatible =  "zephyr,memory-region", "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x4000000 DT_SIZE_K(96)>;
 		zephyr,memory-region = "SRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
 	};
 
 	/* mcxn23x Memory configurations:
@@ -113,7 +113,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x96000 0x1000>;
-		interrupts = <17 0>,<18 0>;
+		interrupts = <17 0>, <18 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&porta>;
@@ -123,7 +123,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x98000 0x1000>;
-		interrupts = <19 0>,<20 0>;
+		interrupts = <19 0>, <20 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portb>;
@@ -133,7 +133,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9a000 0x1000>;
-		interrupts = <21 0>,<22 0>;
+		interrupts = <21 0>, <22 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portc>;
@@ -143,7 +143,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9c000 0x1000>;
-		interrupts = <23 0>,<24 0>;
+		interrupts = <23 0>, <24 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portd>;
@@ -153,7 +153,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9e000 0x1000>;
-		interrupts = <25 0>,<26 0>;
+		interrupts = <25 0>, <26 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&porte>;
@@ -163,7 +163,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x40000 0x1000>;
-		interrupts = <27 0>,<28 0>;
+		interrupts = <27 0>, <28 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portf>;
@@ -175,7 +175,7 @@
 		interrupts = <35 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -211,7 +211,7 @@
 		interrupts = <36 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -253,7 +253,7 @@
 		interrupts = <37 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -295,7 +295,7 @@
 		interrupts = <38 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -331,7 +331,7 @@
 		interrupts = <39 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -373,7 +373,7 @@
 		interrupts = <40 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -409,7 +409,7 @@
 		interrupts = <41 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -445,7 +445,7 @@
 		interrupts = <42 0>;
 		status = "disabled";
 
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -484,9 +484,9 @@
 
 		reg = <0x80000 0x1000>;
 		interrupts = <1 0>, <2 0>, <3 0>, <4 0>,
-			<5 0>, <6 0>, <7 0>, <8 0>,
-			<9 0>, <10 0>, <11 0>, <12 0>,
-			<13 0>, <14 0>, <15 0>, <16 0>;
+			     <5 0>, <6 0>, <7 0>, <8 0>,
+			     <9 0>, <10 0>, <11 0>, <12 0>,
+			     <13 0>, <14 0>, <15 0>, <16 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -500,9 +500,9 @@
 
 		reg = <0xa0000 0x1000>;
 		interrupts = <77 0>, <78 0>, <79 0>, <80 0>,
-			<81 0>, <82 0>, <83 0>, <84 0>,
-			<85 0>, <86 0>, <87 0>, <88 0>,
-			<89 0>, <90 0>, <91 0>, <92 0>;
+			     <81 0>, <82 0>, <83 0>, <84 0>,
+			     <85 0>, <86 0>, <87 0>, <88 0>,
+			     <89 0>, <90 0>, <91 0>, <92 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -719,7 +719,7 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <0>;
@@ -736,7 +736,7 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <0>;
+		voltage-ref = <0>;
 		calibration-average = <128>;
 		power-level = <1>;
 		offset-value-a = <0>;

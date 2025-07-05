@@ -15,7 +15,7 @@
 &pinctrl {
 	letimer0_default: letimer0_default {
 		group1 {
-			pins = <LETIMER0_OUT0_PB2>; /* WPK EXP15 */
+			pins = <LETIMER0_OUT0_PB2>;	/* WPK EXP15 */
 			drive-push-pull;
 		};
 	};

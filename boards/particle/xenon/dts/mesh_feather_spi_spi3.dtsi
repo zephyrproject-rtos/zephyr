@@ -28,7 +28,7 @@
 	};
 };
 
-feather_spi: &spi3 { /* feather SPI */
+feather_spi: &spi3 {	/* feather SPI */
 	compatible = "nordic,nrf-spim";
 	status = "okay";
 	pinctrl-0 = <&spi3_default>;

@@ -200,8 +200,8 @@
 		rtc: rtc@40092000 {
 			compatible = "ti,cc13xx-cc26xx-rtc-timer";
 			reg = <0x40092000 0x1000>;
-			interrupts = <4 0>;  /* interrupt #20 = 4 + 16 */
-			status = "okay"; /* the system clock timer is mandatory */
+			interrupts = <4 0>;	/* interrupt #20 = 4 + 16 */
+			status = "okay";	/* the system clock timer is mandatory */
 		};
 
 		radio: radio@40040000 {
@@ -228,14 +228,14 @@
 		wdt0: watchdog@40080000 {
 			compatible = "ti,cc13xx-cc26xx-watchdog";
 			reg = <0x40080000 0x1000>;
-			interrupts = <14 0>;  /* interrupt #30 = 14 + 16 */
+			interrupts = <14 0>;	/* interrupt #30 = 14 + 16 */
 			status = "disabled";
 		};
 
 		adc0: adc@400cb008 {
 			compatible = "ti,cc13xx-cc26xx-adc";
 			reg = <0x400cb008 0x1>;
-			interrupts = <32 0>;  /* interrupt #48 = 32 + 16 */
+			interrupts = <32 0>;	/* interrupt #48 = 32 + 16 */
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};

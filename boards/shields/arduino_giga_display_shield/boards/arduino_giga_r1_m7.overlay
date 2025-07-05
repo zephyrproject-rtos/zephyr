@@ -24,7 +24,7 @@
 
 &sdram1 {
 	/* Frame buffer memory cache will cause screen flickering. */
-	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 };
 
 &zephyr_lcd_controller {
@@ -64,7 +64,7 @@
 	mul-n = <110>;
 	div-p = <2>;
 	div-q = <2>;
-	div-r = <4>; /* 27.5 MHz */
+	div-r = <4>;	/* 27.5 MHz */
 };
 
 &zephyr_mipi_dsi {

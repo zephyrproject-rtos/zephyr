@@ -29,11 +29,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		ltdc: display-controller@50001000 {
@@ -83,10 +83,10 @@
 		};
 	};
 	/*
-	* The RAM memories placed here can be used by both cores M4/M7
-	* For more information see reference manual and datasheet to STM32H745
-	* (RM0399 Rev 3)
-	*/
+	 * The RAM memories placed here can be used by both cores M4/M7
+	 * For more information see reference manual and datasheet to STM32H745
+	 * (RM0399 Rev 3)
+	 */
 
 	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
 	sram0: memory@24000000 {

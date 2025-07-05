@@ -552,7 +552,6 @@
 		compatible = "silabs,gecko-hwinfo";
 		status = "disabled";
 	};
-
 };
 
 &nvic {

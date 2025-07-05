@@ -54,6 +54,6 @@
 	status = "okay";
 };
 
-arduino_spi: &usic2ch0 {};
-arduino_serial: &usic1ch0 {};
-arduino_i2c: &usic1ch1 {};
+arduino_spi: &usic2ch0 { };
+arduino_serial: &usic1ch0 { };
+arduino_i2c: &usic1ch1 { };

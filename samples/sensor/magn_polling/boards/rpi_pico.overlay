@@ -15,7 +15,6 @@
 			input-enable;
 		};
 	};
-
 };
 
 &pio0 {
@@ -38,7 +37,7 @@
 			compatible = "ti,tmag5170";
 			reg = <0>;
 			operating-mode = <3>;
-			spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
+			spi-max-frequency = <1000000>;	/* conservatively set to 1MHz */
 		};
 	};
 };

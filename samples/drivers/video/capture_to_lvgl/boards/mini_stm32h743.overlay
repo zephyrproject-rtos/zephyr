@@ -6,5 +6,5 @@
  */
 
 &st7735r_160x80 {
-	madctl = <184>; /* Rotate the image 180 degrees. */
+	madctl = <184>;	/* Rotate the image 180 degrees. */
 };

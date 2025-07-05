@@ -11,17 +11,17 @@
 
 / {
 	soc {
-		/delete-node/ gpio@40310c00; // gpio_prt24
-		/delete-node/ gpio@40310c80; // gpio_prt25
-		/delete-node/ gpio@40310d00; // gpio_prt26
-		/delete-node/ gpio@40310d80; // gpio_prt27
-		/delete-node/ gpio@40310e00; // gpio_prt28
-		/delete-node/ gpio@40310e80; // gpio_prt29
-		/delete-node/ gpio@40310f00; // gpio_prt30
-		/delete-node/ gpio@40310f80; // gpio_prt31
-		/delete-node/ gpio@40311000; // gpio_prt32
-		/delete-node/ gpio@40311080; // gpio_prt33
-		/delete-node/ gpio@40311100; // gpio_prt34
+		/delete-node/ gpio@40310c00;	// gpio_prt24
+		/delete-node/ gpio@40310c80;	// gpio_prt25
+		/delete-node/ gpio@40310d00;	// gpio_prt26
+		/delete-node/ gpio@40310d80;	// gpio_prt27
+		/delete-node/ gpio@40310e00;	// gpio_prt28
+		/delete-node/ gpio@40310e80;	// gpio_prt29
+		/delete-node/ gpio@40310f00;	// gpio_prt30
+		/delete-node/ gpio@40310f80;	// gpio_prt31
+		/delete-node/ gpio@40311000;	// gpio_prt32
+		/delete-node/ gpio@40311080;	// gpio_prt33
+		/delete-node/ gpio@40311100;	// gpio_prt34
 
 		pinctrl: pinctrl@40300000 {
 			/* scb_i2c_scl */

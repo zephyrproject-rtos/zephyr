@@ -86,7 +86,7 @@
 	w25q64jvssiq_qspi: qspi-nor-flash@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		ospi-max-frequency = <DT_FREQ_M(133)>;
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
@@ -97,7 +97,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			slot0_partition: partition@0 {
-				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+				reg = <0x00000000 DT_SIZE_M(8)>;	/* 64 Mbits */
 			};
 		};
 	};
@@ -112,7 +112,7 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(40)>;
-		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		size = <DT_SIZE_M(64)>;	/* 64 Mbits */
 		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
@@ -124,7 +124,7 @@
 			#size-cells = <1>;
 			storage_partition: partition@0 {
 				label = "storage";
-				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+				reg = <0x00000000 DT_SIZE_M(8)>;	/* 64 Mbits */
 			};
 		};
 	};

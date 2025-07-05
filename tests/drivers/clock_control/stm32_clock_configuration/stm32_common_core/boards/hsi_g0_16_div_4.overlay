@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2022 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,7 +12,7 @@
 /* hsi_clk = 16MHz */
 
 &clk_hsi {
-	hsi-div = <4>; /* HSISYS = 4Mhz */
+	hsi-div = <4>;	/* HSISYS = 4Mhz */
 	status = "okay";
 };
 

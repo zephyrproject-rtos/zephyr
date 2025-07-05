@@ -7,7 +7,7 @@
 / {
 	resources {
 		compatible = "test-gpio-enable-disable-interrupt";
-		irq-gpios = <&gpio0 0 0>; /* Pin 0 */
+		irq-gpios = <&gpio0 0 0>;	/* Pin 0 */
 	};
 };
 

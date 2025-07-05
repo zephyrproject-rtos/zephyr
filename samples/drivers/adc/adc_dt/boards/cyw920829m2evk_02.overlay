@@ -24,7 +24,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <16>;
-		zephyr,input-positive = <4>;   /* P3.4 */
+		zephyr,input-positive = <4>;	/* P3.4 */
 	};
 
 	channel@5 {
@@ -33,7 +33,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <16>;
-		zephyr,input-positive = <5>;   /* P3.5 */
+		zephyr,input-positive = <5>;	/* P3.5 */
 	};
 
 	channel@6 {
@@ -42,7 +42,7 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <16>;
-		zephyr,input-positive = <6>;   /* P3.6 */
+		zephyr,input-positive = <6>;	/* P3.6 */
 	};
 
 	channel@7 {
@@ -51,6 +51,6 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,resolution = <16>;
-		zephyr,input-positive = <7>;   /* P3.7 */
+		zephyr,input-positive = <7>;	/* P3.7 */
 	};
 };

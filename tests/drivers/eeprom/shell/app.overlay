@@ -6,7 +6,7 @@
 
 #include <mem.h>
 
-/{
+/ {
 	fake_eeprom: fake_eeprom {
 		compatible = "zephyr,fake-eeprom";
 		status = "okay";

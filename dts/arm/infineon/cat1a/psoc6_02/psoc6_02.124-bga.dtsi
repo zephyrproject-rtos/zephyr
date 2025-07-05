@@ -963,7 +963,6 @@
 			/omit-if-no-ref/ p13_7_tcpwm1_line_compl: p13_7_tcpwm1_line_compl {
 				pinmux = <DT_CAT1_PINMUX(13, 7, HSIOM_SEL_ACT_1)>;
 			};
-
 		};
 	};
 };

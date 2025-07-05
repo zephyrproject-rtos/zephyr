@@ -26,4 +26,4 @@
 	pinctrl-names = "default";
 };
 
-arduino_serial: &uart5 {};
+arduino_serial: &uart5 { };

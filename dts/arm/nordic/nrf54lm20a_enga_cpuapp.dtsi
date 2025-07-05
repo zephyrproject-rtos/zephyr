@@ -6,9 +6,9 @@
 
 #include <nordic/nrf54lm20a.dtsi>
 
-cpu: &cpuapp {};
-systick: &cpuapp_systick {};
-nvic: &cpuapp_nvic {};
+cpu: &cpuapp { };
+systick: &cpuapp_systick { };
+nvic: &cpuapp_nvic { };
 
 /delete-node/ &cpuflpr;
 /delete-node/ &cpuflpr_rram;
@@ -65,7 +65,7 @@ nvic: &cpuapp_nvic {};
 
 &grtc {
 	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>,
-		     <229 NRF_DEFAULT_IRQ_PRIORITY>; /* reserved for Zero Latency IRQs */
+		     <229 NRF_DEFAULT_IRQ_PRIORITY>;	/* reserved for Zero Latency IRQs */
 };
 
 &gpiote20 {

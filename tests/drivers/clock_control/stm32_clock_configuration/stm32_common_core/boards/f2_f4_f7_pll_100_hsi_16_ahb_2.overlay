@@ -24,7 +24,7 @@
 &rcc {
 	clocks = <&pll>;
 	ahb-prescaler = <2>;
-	clock-frequency = <DT_FREQ_M(50)>; /* Pll Output (100) / AHB prescaler */
+	clock-frequency = <DT_FREQ_M(50)>;	/* Pll Output (100) / AHB prescaler */
 	apb1-prescaler = <2>;
 	apb2-prescaler = <2>;
 };

@@ -39,8 +39,8 @@
 
 	gic: interrupt-controller@1410000 {
 		compatible = "arm,gic-v2", "arm,gic";
-		reg = <0x01410000 0x10000>, /* GICD */
-		      <0x0142f000 0x1000>; /* GICC */
+		reg = <0x01410000 0x10000>,	/* GICD */
+		      <0x0142f000 0x1000>;	/* GICC */
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";
@@ -52,8 +52,8 @@
 	};
 
 	sram0: memory@c0000000 {
-		       reg = <0xc0000000 DT_SIZE_M(1)>;
-	       };
+		reg = <0xc0000000 DT_SIZE_M(1)>;
+	};
 
 	timer {
 		compatible = "arm,armv8-timer";
@@ -69,12 +69,12 @@
 	};
 
 	uart1: serial@21c0600 {
-			compatible = "fsl,ns16550", "ns16550";
-			reg = <0x21c0600 0x100>;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clock-frequency = <350000000>;
-			reg-shift = <2>;
-			status = "disabled";
-		};
+		compatible = "fsl,ns16550", "ns16550";
+		reg = <0x21c0600 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <350000000>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
 };

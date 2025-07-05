@@ -8,7 +8,7 @@
 		group1 {
 			/* tx rx */
 			psels = <RA_PSEL(RA_PSEL_SCI_0, 4, 11)>,
-			<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
+				<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
 		};
 	};
 
@@ -16,7 +16,7 @@
 		group1 {
 			/* SCL1 SDA1 */
 			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
-			<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
 			drive-strength = "medium";
 		};
 	};
@@ -25,15 +25,15 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 2, 2)>,
-			<RA_PSEL(RA_PSEL_SPI, 2, 3)>,
-			<RA_PSEL(RA_PSEL_SPI, 2, 4)>,
-			<RA_PSEL(RA_PSEL_SPI, 2, 5)>;
+				<RA_PSEL(RA_PSEL_SPI, 2, 3)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 4)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 5)>;
 		};
 	};
 
 	usbhs_default: usbhs_default {
 		group1 {
-			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>; /* USBHS-VBUS */
+			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>;	/* USBHS-VBUS */
 			drive-strength = "high";
 		};
 	};

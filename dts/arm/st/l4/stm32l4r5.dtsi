@@ -8,7 +8,7 @@
 #include <st/l4/stm32l4p5.dtsi>
 
 /delete-node/ &sdmmc2;
-/delete-node/ &sram2; /* different memory address */
+/delete-node/ &sram2;	/* different memory address */
 
 / {
 	/* total SRAM 640KB for the stm32L4R5x and stm32L4S5x */

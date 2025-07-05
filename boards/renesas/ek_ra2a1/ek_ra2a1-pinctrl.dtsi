@@ -21,9 +21,9 @@
 		group1 {
 			/* MISO MOSI RSPCK SSL */
 			psels = <RA_PSEL(RA_PSEL_SPI, 1, 4)>,
-			<RA_PSEL(RA_PSEL_SPI, 1, 5)>,
-			<RA_PSEL(RA_PSEL_SPI, 1, 3)>,
-			<RA_PSEL(RA_PSEL_SPI, 1, 2)>;
+				<RA_PSEL(RA_PSEL_SPI, 1, 5)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 3)>,
+				<RA_PSEL(RA_PSEL_SPI, 1, 2)>;
 		};
 	};
 
@@ -39,7 +39,7 @@
 		group1 {
 			/* SCL0 SDA0 */
 			psels = <RA_PSEL(RA_PSEL_I2C, 0, 0)>,
-			<RA_PSEL(RA_PSEL_I2C, 4, 1)>;
+				<RA_PSEL(RA_PSEL_I2C, 4, 1)>;
 			drive-strength = "medium";
 		};
 	};

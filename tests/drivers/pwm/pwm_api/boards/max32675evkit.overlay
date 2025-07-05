@@ -11,7 +11,7 @@
 };
 
 &tmr1c_oa_p0_11 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &timer1 {

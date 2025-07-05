@@ -102,7 +102,6 @@
 			interrupts = <103 0>;
 			status = "disabled";
 		};
-
 	};
 
 	smbus4: smbus4 {

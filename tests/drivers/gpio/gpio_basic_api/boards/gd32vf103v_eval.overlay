@@ -8,8 +8,8 @@
 	resources {
 		compatible = "test-gpio-basic-api";
 		/* Unplug jumpers from JP13 and JP4 and bridge PD0/PD1 */
-		out-gpios = <&gpiod 0 0>; /* JP13 pin 2 (PD0) */
-		in-gpios = <&gpiod 1 0>; /* JP4 pin 2 (PD1) */
+		out-gpios = <&gpiod 0 0>;	/* JP13 pin 2 (PD0) */
+		in-gpios = <&gpiod 1 0>;	/* JP4 pin 2 (PD1) */
 	};
 };
 

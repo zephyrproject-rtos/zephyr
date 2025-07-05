@@ -9,8 +9,8 @@
 &pinctrl {
 	/omit-if-no-ref/ scif4_default: scif4_default {
 		scif4-pinmux {
-			pinmux = <RZA2M_PINMUX(PORT_09, 0, 4)>, /* TXD */
-				 <RZA2M_PINMUX(PORT_09, 1, 4)>; /* RXD */
+			pinmux = <RZA2M_PINMUX(PORT_09, 0, 4)>,	/* TXD */
+				 <RZA2M_PINMUX(PORT_09, 1, 4)>;	/* RXD */
 		};
 	};
 };

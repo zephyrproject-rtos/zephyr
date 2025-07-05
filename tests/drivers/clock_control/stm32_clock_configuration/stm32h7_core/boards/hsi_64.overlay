@@ -10,7 +10,7 @@
  */
 
 &clk_hsi {
-	hsi-div = <1>;		/* HSI RC: 64MHz, hsi_clk = 64MHz */
+	hsi-div = <1>;	/* HSI RC: 64MHz, hsi_clk = 64MHz */
 	status = "okay";
 };
 

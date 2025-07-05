@@ -26,9 +26,9 @@
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 	};
 
@@ -38,7 +38,7 @@
 		gic: interrupt-controller@94000000 {
 			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0x94000000 0x10000>,
-				<0x94100000 0x80000>;
+			      <0x94100000 0x80000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
@@ -257,7 +257,7 @@
 			gpio1: gpio@100 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0100>;
 				status = "disabled";
@@ -266,7 +266,7 @@
 			gpio2: gpio@200 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0200>;
 				status = "disabled";
@@ -275,7 +275,7 @@
 			gpio3: gpio@300 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <1 4>;
 				reg = <0x0300>;
@@ -285,7 +285,7 @@
 			gpio4: gpio@400 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <2 2>;
 				reg = <0x0400>;
@@ -295,7 +295,7 @@
 			gpio5: gpio@500 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0500>;
 				status = "disabled";
@@ -304,7 +304,7 @@
 			gpio6: gpio@600 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0600>;
 				status = "disabled";
@@ -313,7 +313,7 @@
 			gpio7: gpio@700 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				reg = <0x0700>;
 				status = "disabled";
@@ -322,7 +322,7 @@
 			gpio8: gpio@800 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 4>;
 				reg = <0x0800>;
@@ -332,7 +332,7 @@
 			gpio9: gpio@900 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0900>;
 				status = "disabled";
@@ -341,7 +341,7 @@
 			gpio10: gpio@a00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				reg = <0x0a00>;
 				status = "disabled";
@@ -350,7 +350,7 @@
 			gpio11: gpio@b00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <0>;
 				reg = <0x0b00>;
 				status = "disabled";
@@ -359,7 +359,7 @@
 			gpio12: gpio@c00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				gpio-reserved-ranges = <0 4>;
 				reg = <0x0c00>;
@@ -369,7 +369,7 @@
 			gpio13: gpio@d00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 2>;
 				reg = <0x0d00>;
@@ -379,7 +379,7 @@
 			gpio14: gpio@e00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0e00>;
 				status = "disabled";
@@ -388,7 +388,7 @@
 			gpio15: gpio@f00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0f00>;
 				status = "disabled";
@@ -397,7 +397,7 @@
 			gpio16: gpio@1000 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <4 1>;
 				reg = <0x1000>;
@@ -407,7 +407,7 @@
 			gpio17: gpio@1100 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <1 2>;
 				reg = <0x1100>;
@@ -417,7 +417,7 @@
 			gpio18: gpio@1200 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <7>;
 				reg = <0x1200>;
 				status = "disabled";
@@ -426,7 +426,7 @@
 			gpio19: gpio@1300 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <1>;
 				reg = <0x1300>;
 				status = "disabled";
@@ -435,7 +435,7 @@
 			gpio20: gpio@1400 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				gpio-reserved-ranges = <0 1>;
 				reg = <0x1400>;
@@ -445,7 +445,7 @@
 			gpio21: gpio@1500 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 1>;
 				reg = <0x1500>;
@@ -455,7 +455,7 @@
 			gpio22: gpio@1600 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <4>;
 				reg = <0x1600>;
 				status = "disabled";
@@ -464,7 +464,7 @@
 			gpio23: gpio@1700 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 7>;
 				reg = <0x1700>;
@@ -474,7 +474,7 @@
 			gpio24: gpio@1800 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <3>;
 				reg = <0x1800>;
 				status = "disabled";
@@ -486,9 +486,9 @@
 			reg = <0x80001000 0x400>;
 			channel = <0>;
 			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -504,9 +504,9 @@
 			reg = <0x80001400 0x400>;
 			channel = <1>;
 			interrupts = <GIC_SPI 292 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 293 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 294 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 293 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 294 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -522,9 +522,9 @@
 			reg = <0x80001800 0x400>;
 			channel = <2>;
 			interrupts = <GIC_SPI 296 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 297 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 298 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 297 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 298 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -540,9 +540,9 @@
 			reg = <0x80001c00 0x400>;
 			channel = <3>;
 			interrupts = <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -558,9 +558,9 @@
 			reg = <0x80002000 0x400>;
 			channel = <4>;
 			interrupts = <GIC_SPI 304 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 305 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 306 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 305 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 306 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -576,9 +576,9 @@
 			reg = <0x81001000 0x400>;
 			channel = <5>;
 			interrupts = <GIC_SPI 435 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 437 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 438 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 437 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 438 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 

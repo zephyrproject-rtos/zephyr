@@ -27,12 +27,12 @@
 
 	sram0: memory@0 {
 		compatible = "mmio-sram";
-		reg = <0x0 DT_SIZE_K(192)>;		/* 192 KB of SRAM (I-Code) */
+		reg = <0x0 DT_SIZE_K(192)>;	/* 192 KB of SRAM (I-Code) */
 	};
 
 	sram1: memory1@30000 {
 		compatible = "mmio-sram";
-		reg = <0x30000 DT_SIZE_K(64)>;		/* 64 KB of SRAM (D-Code) */
+		reg = <0x30000 DT_SIZE_K(64)>;	/* 64 KB of SRAM (D-Code) */
 	};
 
 	sysclk: system-clock {

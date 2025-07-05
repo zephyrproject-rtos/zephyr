@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
- #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
- #include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
 
 &pinctrl {
 	uart0_default: uart0_default {
-		 group1 {
-			 pinmux = <UART0_TX_GPIO43>;
-			 output-high;
-		 };
-		 group2 {
-			 pinmux = <UART0_RX_GPIO44>;
-			 bias-pull-up;
-		 };
-	 };
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
 
 	i2c0_default: i2c0_default {
 		group1 {
@@ -49,7 +49,6 @@
 			pinmux = <SPIM2_MOSI_GPIO5>;
 			output-low;
 		};
-
 	};
 
 	spim3_default: spim3_default {
@@ -57,23 +56,22 @@
 			pinmux = <SPIM3_MOSI_GPIO21>;
 			output-low;
 		};
-
 	};
 
 	ledc0_default: ledc0_default {
 		group1 {
-			pinmux = <LEDC_CH0_GPIO9>; /* lcd backlight */
+			pinmux = <LEDC_CH0_GPIO9>;	/* lcd backlight */
 			output-enable;
 		};
 		group2 {
-			pinmux = <LEDC_CH1_GPIO3>; /* beeper */
+			pinmux = <LEDC_CH1_GPIO3>;	/* beeper */
 			output-enable;
 		};
 	};
 
 	mcpwm0_default: mcpwm0_default {
 		group1 {
-			pinmux = <MCPWM0_OUT0A_GPIO9>; /* lcd backlight */
+			pinmux = <MCPWM0_OUT0A_GPIO9>;	/* lcd backlight */
 			output-enable;
 		};
 		group2 {

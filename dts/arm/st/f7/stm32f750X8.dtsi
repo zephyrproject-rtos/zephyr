@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <mem.h>
- #include <st/f7/stm32f750.dtsi>
+#include <mem.h>
+#include <st/f7/stm32f750.dtsi>
 
 / {
 	soc {

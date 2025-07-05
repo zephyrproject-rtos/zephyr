@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- /{
+/ {
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
 	};
@@ -11,7 +11,7 @@
 
 &flash0 {
 	partitions {
-	/delete-node/ slot0_partition;
+		/delete-node/ slot0_partition;
 		/* Non-secure image primary slot */
 		slot0_ns_partition: partition@98000 {
 			label = "image-0-nonsecure";

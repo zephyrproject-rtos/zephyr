@@ -7,7 +7,7 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		out-gpios = <&gpiod 0 0>; /* WPK P28 */
-		in-gpios = <&gpiod 2 0>; /* WPK P32 */
+		out-gpios = <&gpiod 0 0>;	/* WPK P28 */
+		in-gpios = <&gpiod 2 0>;	/* WPK P32 */
 	};
 };

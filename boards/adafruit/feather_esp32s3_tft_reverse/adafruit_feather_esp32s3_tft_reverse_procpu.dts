@@ -224,12 +224,12 @@ zephyr_i2c: &i2c0 {
 		power-domains = <&neopixel_pwr>;
 
 		/* WS2812 */
-		reg = <0>; /* ignored, but necessary for SPI bindings */
+		reg = <0>;	/* ignored, but necessary for SPI bindings */
 		spi-max-frequency = <6400000>;
 		chain-length = <1>;
 		spi-cpha;
-		spi-one-frame = <0xf0>;  /* 625 ns high and 625 ns low */
-		spi-zero-frame = <0xc0>; /* 312.5 ns high and 937.5 ns low */
+		spi-one-frame = <0xf0>;	/* 625 ns high and 625 ns low */
+		spi-zero-frame = <0xc0>;	/* 312.5 ns high and 937.5 ns low */
 		color-mapping = <LED_COLOR_ID_GREEN
 				 LED_COLOR_ID_RED
 				 LED_COLOR_ID_BLUE>;

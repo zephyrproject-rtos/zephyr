@@ -80,7 +80,7 @@
 		clk_msi: clk-msi {
 			#clock-cells = <0>;
 			compatible = "st,stm32-msi-clock";
-			msi-range = <6>; /* 4MHz (reset value) */
+			msi-range = <6>;	/* 4MHz (reset value) */
 			status = "disabled";
 		};
 
@@ -505,16 +505,16 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 2U)>;
 			dma-channels = <14>;
 			dma-generators = <4>;
-			dma-requests= <38>;
+			dma-requests = <38>;
 			status = "disabled";
 		};
 
 		pwr: power@58000400 {
 			compatible = "st,stm32-pwr";
-			reg = <0x58000400 0x400>; /* PWR register bank */
+			reg = <0x58000400 0x400>;	/* PWR register bank */
 			status = "disabled";
 
-			wkup-pins-nb = <3>; /* 3 system wake-up pins */
+			wkup-pins-nb = <3>;	/* 3 system wake-up pins */
 			wkup-pins-pol;
 			wkup-pins-pupd;
 

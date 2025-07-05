@@ -40,7 +40,7 @@
 			};
 		};
 
-		usart0: usart@4000c000 { /* USART0 */
+		usart0: usart@4000c000 {	/* USART0 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x4000c000 0x400>;
 			interrupts = <3 0>, <4 0>;
@@ -49,7 +49,7 @@
 			status = "disabled";
 		};
 
-		usart1: usart@4000c400 { /* USART1 */
+		usart1: usart@4000c400 {	/* USART1 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x4000c400 0x400>;
 			interrupts = <15 0>, <16 0>;
@@ -58,7 +58,7 @@
 			status = "disabled";
 		};
 
-		usart2: usart@4000c800 { /* USART2 */
+		usart2: usart@4000c800 {	/* USART2 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x4000c800 0x400>;
 			interrupts = <18 0>, <19 0>;
@@ -67,7 +67,7 @@
 			status = "disabled";
 		};
 
-		uart0: uart@4000e000 { /* UART0 */
+		uart0: uart@4000e000 {	/* UART0 */
 			compatible = "silabs,gecko-uart";
 			reg = <0x4000e000 0x400>;
 			interrupts = <20 0>, <21 0>;
@@ -76,7 +76,7 @@
 			status = "disabled";
 		};
 
-		uart1: uart@4000e400 { /* UART1 */
+		uart1: uart@4000e400 {	/* UART1 */
 			compatible = "silabs,gecko-uart";
 			reg = <0x4000e400 0x400>;
 			interrupts = <22 0>, <23 0>;
@@ -85,7 +85,7 @@
 			status = "disabled";
 		};
 
-		leuart0: leuart@40084000 { /* LEUART0 */
+		leuart0: leuart@40084000 {	/* LEUART0 */
 			compatible = "silabs,gecko-leuart";
 			reg = <0x40084000 0x400>;
 			interrupts = <24 0>;
@@ -93,7 +93,7 @@
 			status = "disabled";
 		};
 
-		leuart1: leuart@40084400 { /* LEUART1 */
+		leuart1: leuart@40084400 {	/* LEUART1 */
 			compatible = "silabs,gecko-leuart";
 			reg = <0x40084400 0x400>;
 			interrupts = <25 0>;

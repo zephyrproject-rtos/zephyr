@@ -33,7 +33,7 @@
 	soc {
 		sram: sram@10000000 {
 			ranges = <0x0 0x10000000 0x780000
-				0x20000000 0x30000000 0x780000>;
+				  0x20000000 0x30000000 0x780000>;
 		};
 
 		peripheral: peripheral@50000000 {
@@ -43,7 +43,6 @@
 		xspi2: spi@50411000 {
 			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
 		};
-
 	};
 
 	pinctrl: pinctrl {
@@ -64,13 +63,13 @@
 	 * The SRAM region [0x680000-0x77FFFF] is reserved for HiFi1 application.
 	 */
 
-	sram_code: memory@600000{
+	sram_code: memory@600000 {
 		compatible = "mmio-sram";
 		reg = <0x600000 DT_SIZE_K(512)>;
 	};
 
 	/* This partition is shared with code in RAM */
-	sram_shared_code: memory@20058000{
+	sram_shared_code: memory@20058000 {
 		compatible = "mmio-sram";
 		reg = <0x20058000 DT_SIZE_K(256)>;
 	};
@@ -98,7 +97,7 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <10>;
@@ -257,7 +256,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x320000 0x1000>;
-		interrupts = <61 0>,<62 0>;
+		interrupts = <61 0>, <62 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio8>;
@@ -268,7 +267,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x322000 0x1000>;
-		interrupts = <63 0>,<64 0>;
+		interrupts = <63 0>, <64 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio9>;
@@ -279,7 +278,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x324000 0x1000>;
-		interrupts = <65 0>,<66 0>;
+		interrupts = <65 0>, <66 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio10>;
@@ -293,7 +292,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -330,7 +329,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -367,7 +366,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -404,7 +403,7 @@
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
-		ranges = <>;
+		ranges = < >;
 		#address-cells = <1>;
 		#size-cells = <1>;
 

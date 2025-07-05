@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&ps2_0 { /* PS2DAT0A */
+&ps2_0 {	/* PS2DAT0A */
 	wakerx-gpios = <MCHP_GPIO_DECODE_115 GPIO_ACTIVE_HIGH>;
 	wakeup-source;
 };

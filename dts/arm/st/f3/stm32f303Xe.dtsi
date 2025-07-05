@@ -50,8 +50,8 @@
 			reg = <0x40007800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 30)>,
 				 /* I2C clock source should always be defined,
-				  * even for the default value
-				  */
+				 * even for the default value
+				 */
 				 <&rcc STM32_SRC_SYSCLK I2C3_SEL(1)>;
 			interrupts = <72 0>, <73 0>;
 			interrupt-names = "event", "error";

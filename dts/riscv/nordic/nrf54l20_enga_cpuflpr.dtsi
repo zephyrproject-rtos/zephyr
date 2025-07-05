@@ -6,8 +6,8 @@
 
 #include <nordic/nrf54l20.dtsi>
 
-cpu: &cpuflpr {};
-clic: &cpuflpr_clic {};
+cpu: &cpuflpr { };
+clic: &cpuflpr_clic { };
 
 /delete-node/ &cpuapp;
 /delete-node/ &cpuapp_rram;

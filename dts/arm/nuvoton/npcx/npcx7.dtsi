@@ -43,39 +43,39 @@
 
 	def-io-conf-list {
 		pinmux = <&alt0_gpio_no_spip
-			   &alt0_gpio_no_fpip
-			   &alt1_no_pwrgd
-			   &alta_no_peci_en
-			   &altd_npsl_in1_sl
-			   &altd_npsl_in2_sl
-			   &altd_psl_in3_sl
-			   &altd_psl_in4_sl
-			   &alt7_no_ksi0_sl
-			   &alt7_no_ksi1_sl
-			   &alt7_no_ksi2_sl
-			   &alt7_no_ksi3_sl
-			   &alt7_no_ksi4_sl
-			   &alt7_no_ksi5_sl
-			   &alt7_no_ksi6_sl
-			   &alt7_no_ksi7_sl
-			   &alt8_no_kso00_sl
-			   &alt8_no_kso01_sl
-			   &alt8_no_kso02_sl
-			   &alt8_no_kso03_sl
-			   &alt8_no_kso04_sl
-			   &alt8_no_kso05_sl
-			   &alt8_no_kso06_sl
-			   &alt8_no_kso07_sl
-			   &alt9_no_kso08_sl
-			   &alt9_no_kso09_sl
-			   &alt9_no_kso10_sl
-			   &alt9_no_kso11_sl
-			   &alt9_no_kso12_sl
-			   &alt9_no_kso13_sl
-			   &alt9_no_kso14_sl
-			   &alt9_no_kso15_sl
-			   &alta_no_kso16_sl
-			   &alta_no_kso17_sl>;
+			  &alt0_gpio_no_fpip
+			  &alt1_no_pwrgd
+			  &alta_no_peci_en
+			  &altd_npsl_in1_sl
+			  &altd_npsl_in2_sl
+			  &altd_psl_in3_sl
+			  &altd_psl_in4_sl
+			  &alt7_no_ksi0_sl
+			  &alt7_no_ksi1_sl
+			  &alt7_no_ksi2_sl
+			  &alt7_no_ksi3_sl
+			  &alt7_no_ksi4_sl
+			  &alt7_no_ksi5_sl
+			  &alt7_no_ksi6_sl
+			  &alt7_no_ksi7_sl
+			  &alt8_no_kso00_sl
+			  &alt8_no_kso01_sl
+			  &alt8_no_kso02_sl
+			  &alt8_no_kso03_sl
+			  &alt8_no_kso04_sl
+			  &alt8_no_kso05_sl
+			  &alt8_no_kso06_sl
+			  &alt8_no_kso07_sl
+			  &alt9_no_kso08_sl
+			  &alt9_no_kso09_sl
+			  &alt9_no_kso10_sl
+			  &alt9_no_kso11_sl
+			  &alt9_no_kso12_sl
+			  &alt9_no_kso13_sl
+			  &alt9_no_kso14_sl
+			  &alt9_no_kso15_sl
+			  &alta_no_kso16_sl
+			  &alta_no_kso17_sl>;
 	};
 
 	soc {
@@ -96,8 +96,8 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 3
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
-			interrupts = <46 1>; /* Event timer interrupt */
-			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
+			interrupts = <46 1>;	/* Event timer interrupt */
+			clock-frequency = <15000000>;	/* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
 		};
 
 		uart1: serial@400c4000 {
@@ -120,18 +120,18 @@
 
 		/* Default clock and power settings in npcx9 series */
 		pcc: clock-controller@4000d000 {
-			clock-frequency = <DT_FREQ_M(90)>; /* OFMCLK runs at 90MHz */
-			core-prescaler = <6>; /* CORE_CLK runs at 15MHz */
-			apb1-prescaler = <6>; /* APB1_CLK runs at 15MHz */
-			apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
-			apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
-			ram-pd-depth = <12>; /* Valid bit-depth of RAM_PDn reg */
-			pwdwn-ctl-val = <0xfb /* No FIU_PD */
+			clock-frequency = <DT_FREQ_M(90)>;	/* OFMCLK runs at 90MHz */
+			core-prescaler = <6>;	/* CORE_CLK runs at 15MHz */
+			apb1-prescaler = <6>;	/* APB1_CLK runs at 15MHz */
+			apb2-prescaler = <6>;	/* APB2_CLK runs at 15MHz */
+			apb3-prescaler = <6>;	/* APB3_CLK runs at 15MHz */
+			ram-pd-depth = <12>;	/* Valid bit-depth of RAM_PDn reg */
+			pwdwn-ctl-val = <0xfb	/* No FIU_PD */
 					 0xff
-					 0x1f /* No GDMA_PD */
+					 0x1f	/* No GDMA_PD */
 					 0xff
 					 0xfa
-					 0x7f /* No ESPI_PD */
+					 0x7f	/* No ESPI_PD */
 					 0xe7>;
 		};
 
@@ -356,7 +356,7 @@
 			status = "disabled";
 			buffer-rx-size = <128>;
 			buffer-tx-size = <128>;
-			shi-cs-wui =<&wui_io53>;
+			shi-cs-wui = <&wui_io53>;
 		};
 
 		espi0: espi@4000a000 {

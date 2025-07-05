@@ -35,5 +35,5 @@
 	};
 };
 
-feather_i2c: &sercom3 {};
-feather_spi: &sercom4 {};
+feather_i2c: &sercom3 { };
+feather_spi: &sercom4 { };

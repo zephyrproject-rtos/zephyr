@@ -35,7 +35,7 @@
 		led1 = &blled1;	/* backlight mid */
 		led2 = &blled2;	/* backlight high */
 		led3 = &statusled;	/* status led, may be not populated */
-		sw0 = &key_in;  /* key in */
+		sw0 = &key_in;	/* key in */
 		watchdog0 = &wdt0;
 	};
 
@@ -92,7 +92,7 @@
 		st7789v: st7789v@1 {
 			compatible = "sitronix,st7789v";
 			reg = <1>;
-			mipi-max-frequency = <8000000>; /* 8MHz */
+			mipi-max-frequency = <8000000>;	/* 8MHz */
 			width = <240>;
 			height = <240>;
 			x-offset = <0>;
@@ -155,7 +155,7 @@
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	clock-frequency = <I2C_BITRATE_FAST>; /* 400KHz */
+	clock-frequency = <I2C_BITRATE_FAST>;	/* 400KHz */
 
 	/* BOSCH BMA421 Triaxial Acceleration Sensor (1000KHz) */
 	pinctrl-0 = <&i2c0_default>;
@@ -194,7 +194,7 @@
 	xt25fb32: xt25fb32@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <8000000>; /* 8MHz */
+		spi-max-frequency = <8000000>;	/* 8MHz */
 		jedec-id = [0b 40 16];
 		size = <DT_SIZE_M(32)>;
 

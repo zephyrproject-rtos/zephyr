@@ -58,7 +58,7 @@
 		led2 = &blue_led;
 		sw0 = &pb1;
 		sw1 = &pb2;
-	 };
+	};
 
 	feather_header: feather_connector {
 		compatible = "adafruit-feather-header";

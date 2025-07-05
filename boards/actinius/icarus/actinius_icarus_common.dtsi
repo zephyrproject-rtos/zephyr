@@ -97,7 +97,7 @@
 };
 
 &adc {
-	status ="okay";
+	status = "okay";
 };
 
 &gpiote {
@@ -146,7 +146,7 @@
 		compatible = "st,lis2dh12", "st,lis2dh";
 		reg = <0x19>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>,
-			  <&gpio0 29 GPIO_ACTIVE_HIGH>;
+			    <&gpio0 29 GPIO_ACTIVE_HIGH>;
 	};
 };
 

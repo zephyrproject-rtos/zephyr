@@ -45,7 +45,7 @@
 	mx25l25645g: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		size = <DT_SIZE_M(256)>;	/* 256 Mbits */
 		qspi-max-frequency = <50000000>;
 		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 		reset-gpios-duration = <1>;
@@ -53,14 +53,14 @@
 		status = "okay";
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   storage_partition: partition@0 {
-			       label = "storage";
-			       reg = <0 DT_SIZE_M(8)>;
-			   };
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0 DT_SIZE_M(8)>;
+			};
 		};
 	};
 };

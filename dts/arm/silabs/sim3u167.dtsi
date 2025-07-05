@@ -13,9 +13,11 @@
 	};
 
 	soc {
-		compatible =  "silabs,sim3u167", \
-			      "silabs,sim3u", \
-			      "silabs,sim3", \
+		compatible = "silabs,sim3u167", \
+			      "silabs,sim3u"
+		, \
+			      "silabs,sim3"
+		, \
 			      "simple-bus";
 
 		flash-controller@4002e000 {

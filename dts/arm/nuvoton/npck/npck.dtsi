@@ -49,7 +49,7 @@
 	def-io-conf-list {
 		compatible = "nuvoton,npcx-pinctrl-def";
 		/* Change default functional pads to GPIOs here. */
-		pinmux = <>;
+		pinmux = < >;
 	};
 
 	/** Dummy pinctrl node. It will be initialized with defaults based on the SoC series.
@@ -384,7 +384,7 @@
 		espi0: espi@4000a000 {
 			compatible = "nuvoton,npcx-espi";
 			reg = <0x4000a000 0x2000>;
-			interrupts = <11 3>; /* Interrupt for eSPI Bus */
+			interrupts = <11 3>;	/* Interrupt for eSPI Bus */
 
 			/* clocks for eSPI modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL6 7>;
@@ -411,12 +411,12 @@
 				    "pm_hcmd", "mbi";
 
 			/* host sub-module IRQ and priority */
-			interrupts = <6 3>, /* KBC Input-Buf-Full (IBF) */
-				     <5 3>, /* KBC Output-Buf-Empty (OBE) */
-				     <4 3>, /* PMCH Input-Buf-Full (IBF) */
-				     <3 3>,  /* PMCH Output-Buf-Empty (OBE) */
-				     <10 3>, /* Port80 FIFO Not Empty */
-				     <7 3>; /* SHM/MBI interrupts */
+			interrupts = <6 3>,	/* KBC Input-Buf-Full (IBF) */
+				     <5 3>,	/* KBC Output-Buf-Empty (OBE) */
+				     <4 3>,	/* PMCH Input-Buf-Full (IBF) */
+				     <3 3>,	/* PMCH Output-Buf-Empty (OBE) */
+				     <10 3>,	/* Port80 FIFO Not Empty */
+				     <7 3>;	/* SHM/MBI interrupts */
 
 			interrupt-names = "kbc_ibf", "kbc_obe", "pmch_ibf",
 					  "pmch_obe", "p80_fifo", "shm_mbi";
@@ -426,10 +426,10 @@
 
 			/* clocks for host sub-modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
-				<&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				 <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
 		};
 
 		/* I2c Controllers - Do not use them as i2c node directly */

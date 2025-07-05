@@ -132,7 +132,7 @@
 			status = "okay";
 		};
 
-		sci0: sci0@40070000  {
+		sci0: sci0@40070000 {
 			compatible = "renesas,ra-sci";
 			interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
@@ -146,7 +146,7 @@
 			};
 		};
 
-		sci1: sci1@40070020  {
+		sci1: sci1@40070020 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070020 0x20>;
 			clocks = <&pclka MSTPB 30>;
@@ -170,7 +170,7 @@
 			};
 		};
 
-		sci3: sci3@40070060  {
+		sci3: sci3@40070060 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070060 0x20>;
 			clocks = <&pclka MSTPB 27>;
@@ -182,7 +182,7 @@
 			};
 		};
 
-		sci4: sci4@40070080  {
+		sci4: sci4@40070080 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070080 0x20>;
 			clocks = <&pclka MSTPB 26>;
@@ -194,7 +194,7 @@
 			};
 		};
 
-		sci8: sci8@40070100  {
+		sci8: sci8@40070100 {
 			compatible = "renesas,ra-sci";
 			interrupts = <20 1>, <21 1>, <22 1>, <23 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
@@ -208,7 +208,7 @@
 			};
 		};
 
-		sci9: sci9@40070120  {
+		sci9: sci9@40070120 {
 			compatible = "renesas,ra-sci";
 			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
@@ -256,7 +256,7 @@
 			status = "disabled";
 		};
 
-		agt0: agt@40084000  {
+		agt0: agt@40084000 {
 			compatible = "renesas,ra-agt";
 			channel = <0>;
 			reg = <0x40084000 0x100>;

@@ -42,7 +42,6 @@
 			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
-
 };
 
 &usart1 {
@@ -70,7 +69,7 @@
 		compatible = "everlight,b1414", "worldsemi,ws2812-spi";
 
 		/* SPI */
-		reg = <0>; /* ignored, but necessary for SPI bindings */
+		reg = <0>;	/* ignored, but necessary for SPI bindings */
 		spi-max-frequency = <SPI_FREQ>;
 
 		/* B1414 */

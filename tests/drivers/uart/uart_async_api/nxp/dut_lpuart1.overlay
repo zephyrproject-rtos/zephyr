@@ -8,4 +8,4 @@
  * frdm_mcxa156 connect P3_20 to P3_21
  */
 
-dut: &lpuart1 {};
+dut: &lpuart1 { };

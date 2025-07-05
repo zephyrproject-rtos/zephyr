@@ -79,7 +79,7 @@
 &clk_msis {
 	status = "okay";
 	msi-pll-mode;
-	msi-range = <0>; /* 96MHz (reset value) */
+	msi-range = <0>;	/* 96MHz (reset value) */
 };
 
 &rcc {

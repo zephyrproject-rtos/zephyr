@@ -11,10 +11,10 @@ pca9420@0 {
 	compatible = "nxp,pca9420";
 	reg = <0x0>;
 
-	BUCK1 {};
-	BUCK2 {};
-	LDO1 {};
-	LDO2 {};
+	BUCK1 { };
+	BUCK2 { };
+	LDO1 { };
+	LDO2 { };
 };
 
 npm6001@1 {
@@ -24,12 +24,12 @@ npm6001@1 {
 	regulators {
 		compatible = "nordic,npm6001-regulator";
 
-		BUCK0 {};
-		BUCK1 {};
-		BUCK2 {};
-		BUCK3 {};
-		LDO0 {};
-		LDO1 {};
+		BUCK0 { };
+		BUCK1 { };
+		BUCK2 { };
+		BUCK3 { };
+		LDO0 { };
+		LDO1 { };
 	};
 };
 
@@ -40,10 +40,10 @@ npm1300@2 {
 	regulators {
 		compatible = "nordic,npm1300-regulator";
 
-		BUCK1 {};
-		BUCK2 {};
-		LDO1 {};
-		LDO2 {};
+		BUCK1 { };
+		BUCK2 { };
+		LDO1 { };
+		LDO2 { };
 	};
 };
 
@@ -54,8 +54,8 @@ apd356x@3 {
 	regulators {
 		compatible = "adi,adp5360-regulator";
 
-		BUCK {};
-		BUCKBOOST {};
+		BUCK { };
+		BUCKBOOST { };
 	};
 };
 
@@ -66,13 +66,13 @@ axp192@4 {
 	regulators {
 		compatible = "x-powers,axp192-regulator";
 
-		DCDC1 {};
-		DCDC2 {};
-		DCDC3 {};
-		LDOIO0 {};
-		LDO1 {};
-		LDO2 {};
-		LDO3 {};
+		DCDC1 { };
+		DCDC2 { };
+		DCDC3 { };
+		LDOIO0 { };
+		LDO1 { };
+		LDO2 { };
+		LDO3 { };
 	};
 };
 
@@ -83,20 +83,20 @@ axp2101@7 {
 	regulators {
 		compatible = "x-powers,axp2101-regulator";
 
-		DCDC1 {};
-		DCDC2 {};
-		DCDC3 {};
-		DCDC4 {};
-		DCDC5 {};
-		ALDO1 {};
-		ALDO2 {};
-		ALDO3 {};
-		ALDO4 {};
-		BLDO1 {};
-		BLDO2 {};
-		CPUSLDO {};
-		DLDO1 {};
-		DLDO2 {};
+		DCDC1 { };
+		DCDC2 { };
+		DCDC3 { };
+		DCDC4 { };
+		DCDC5 { };
+		ALDO1 { };
+		ALDO2 { };
+		ALDO3 { };
+		ALDO4 { };
+		BLDO1 { };
+		BLDO2 { };
+		CPUSLDO { };
+		DLDO1 { };
+		DLDO2 { };
 	};
 };
 
@@ -107,11 +107,11 @@ max20335@5 {
 	regulators {
 		compatible = "maxim,max20335-regulator";
 
-		BUCK1 {};
-		BUCK2 {};
-		LDO1 {};
-		LDO2 {};
-		LDO3 {};
+		BUCK1 { };
+		BUCK2 { };
+		LDO1 { };
+		LDO2 { };
+		LDO3 { };
 	};
 };
 
@@ -126,10 +126,10 @@ mpm54304@7 {
 	compatible = "mps,mpm54304";
 	reg = <0x7>;
 
-	BUCK1 {};
-	BUCK2 {};
-	BUCK3 {};
-	BUCK4 {};
+	BUCK1 { };
+	BUCK2 { };
+	BUCK3 { };
+	BUCK4 { };
 };
 
 npm2100@8 {
@@ -139,8 +139,8 @@ npm2100@8 {
 	regulators {
 		compatible = "nordic,npm2100-regulator";
 
-		BOOST {};
-		LDOSW {};
+		BOOST { };
+		LDOSW { };
 	};
 };
 
@@ -151,9 +151,9 @@ npm1304@9 {
 	regulators {
 		compatible = "nordic,npm1304-regulator";
 
-		BUCK1 {};
-		BUCK2 {};
-		LDO1 {};
-		LDO2 {};
+		BUCK1 { };
+		BUCK2 { };
+		LDO1 { };
+		LDO2 { };
 	};
 };

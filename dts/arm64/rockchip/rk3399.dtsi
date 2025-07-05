@@ -48,14 +48,14 @@
 		};
 	};
 
-	gic: interrupt-controller@fee00000  {
+	gic: interrupt-controller@fee00000 {
 		#address-cells = <1>;
 		compatible = "arm,gic-v3", "arm,gic";
-		reg = <0xfee00000 0x10000>, /* GICD */
-		      <0xfef00000 0xc0000>, /* GICR */
-		      <0xfff00000 0x10000>, /* GICC */
-		      <0xfff10000 0x10000>, /* GICH */
-		      <0xfff20000 0x10000>; /* GICV */
+		reg = <0xfee00000 0x10000>,	/* GICD */
+		      <0xfef00000 0xc0000>,	/* GICR */
+		      <0xfff00000 0x10000>,	/* GICC */
+		      <0xfff10000 0x10000>,	/* GICH */
+		      <0xfff20000 0x10000>;	/* GICV */
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";
@@ -83,7 +83,7 @@
 			      IRQ_DEFAULT_PRIORITY>;
 	};
 
-	uart2: serial@ff1a0000  {
+	uart2: serial@ff1a0000 {
 		compatible = "rockchip,rk3399-uart", "ns16550";
 		reg = <0xff1a0000 0x1000>;
 		interrupt-parent = <&gic>;

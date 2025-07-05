@@ -162,7 +162,7 @@
 			 * on part number dtsi level, using
 			 * the `gpio-reserved-ranges` property.
 			 */
-			ngpios = <26>;   /* 0..25 */
+			ngpios = <26>;	/* 0..25 */
 		};
 
 		i2c0: i2c@60013000 {
@@ -285,7 +285,7 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@6001f048  {
+		wdt0: watchdog@6001f048 {
 			compatible = "espressif,esp32-watchdog";
 			reg = <0x6001f048 0x20>;
 			interrupts = <TG0_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -325,16 +325,14 @@
 			reg = <0x6003f000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
 			interrupts =
-				<DMA_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<DMA_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+				     <DMA_CH0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_CH1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <DMA_CH2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
 			dma-buf-addr-alignment = <4>;
 			status = "disabled";
 		};
-
 	};
-
 };

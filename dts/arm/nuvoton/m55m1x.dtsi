@@ -46,8 +46,7 @@
 			#clock-cells = <0>;
 			lxt = "enable";
 			hirc48m = "enable";
-			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_PCLK0DIV(2) |
-					NUMAKER_CLK_PCLKDIV_PCLK1DIV(2) |
+			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_PCLK0DIV(2) | NUMAKER_CLK_PCLKDIV_PCLK1DIV(2) |
 					NUMAKER_CLK_PCLKDIV_PCLK2DIV(2) |
 					NUMAKER_CLK_PCLKDIV_PCLK3DIV(2) |
 					NUMAKER_CLK_PCLKDIV_PCLK4DIV(2))>;

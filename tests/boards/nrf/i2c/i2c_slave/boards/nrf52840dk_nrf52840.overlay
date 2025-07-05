@@ -49,7 +49,6 @@ dut_twim: &i2c0 {
 	};
 };
 
-
 dut_twis: &i2c1 {
 	compatible = "nordic,nrf-twis";
 	status = "okay";

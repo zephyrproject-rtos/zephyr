@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		stepper =  &adi_tmc2209;
+		stepper = &adi_tmc2209;
 	};
 };
 

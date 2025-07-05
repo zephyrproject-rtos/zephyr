@@ -64,7 +64,7 @@
 		clk_msi: clk-msi {
 			#clock-cells = <0>;
 			compatible = "st,stm32l0-msi-clock";
-			msi-range = <5>; /* 2.1MHz (reset value) */
+			msi-range = <5>;	/* 2.1MHz (reset value) */
 			status = "disabled";
 		};
 
@@ -331,7 +331,7 @@
 			status = "disabled";
 		};
 
-		eeprom: eeprom@8080000{
+		eeprom: eeprom@8080000 {
 			compatible = "st,stm32-eeprom";
 			status = "disabled";
 		};

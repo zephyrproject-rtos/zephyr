@@ -68,20 +68,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =        <0 0 &gpio0 4 0>,        /* AN  */
-		<1 0 &gpio1 6 0>,         /* RST */
-		<2 0 &gpio1 12 0>,        /* CS   */
-		<3 0 &gpio1 15 0>,        /* SCK  */
-		<4 0 &gpio1 14 0>,        /* MISO */
-		<5 0 &gpio1 13 0>,        /* MOSI */
-		/* +3.3V */
-		/* GND */
-		<6 0 &gpio1 7 0>,        /* PWM  */
-		<7 0 &gpio1 4 0>,        /* INT  */
-		<8 0 &gpio1 0 0>,        /* RX   */
-		<9 0 &gpio1 1 0>,        /* TX   */
-		<10 0 &gpio1 3 0>,        /* SCL  */
-		<11 0 &gpio1 2 0>;        /* SDA  */
+		gpio-map = <0 0 &gpio0 4 0>,	/* AN  */
+			   <1 0 &gpio1 6 0>,	/* RST */
+			   <2 0 &gpio1 12 0>,	/* CS   */
+			   <3 0 &gpio1 15 0>,	/* SCK  */
+			   <4 0 &gpio1 14 0>,	/* MISO */
+			   <5 0 &gpio1 13 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 7 0>,	/* PWM  */
+			   <7 0 &gpio1 4 0>,	/* INT  */
+			   <8 0 &gpio1 0 0>,	/* RX   */
+			   <9 0 &gpio1 1 0>,	/* TX   */
+			   <10 0 &gpio1 3 0>,	/* SCL  */
+			   <11 0 &gpio1 2 0>;	/* SDA  */
 		/* +5V */
 		/* GND */
 	};
@@ -152,7 +152,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_serial: &uart0 {};
+arduino_serial: &uart0 { };
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";
@@ -167,7 +167,7 @@ arduino_spi: &spi0 {
 	compatible = "nordic,nrf-spim";
 	/* Cannot be used together with uart0. */
 	/* status = "okay"; */
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-1 = <&spi0_sleep>;
 	pinctrl-names = "default", "sleep";

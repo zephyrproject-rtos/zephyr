@@ -1,0 +1,134 @@
+name: DTS Compliance Check
+
+on:
+  pull_request:
+    paths:
+      - "**/*.dts"
+      - "**/*.dtsi"
+      - "**/*.overlay"
+  workflow_dispatch:
+    inputs:
+      files:
+        description: "Comma-separated list of DTS files to lint"
+        required: false
+        default: ""
+      logLevel:
+        description: "Log level for dts-linter (none | verbose)"
+        required: false
+        default: "none"
+
+permissions:
+  contents: read
+
+jobs:
+  dts-compliance:
+    name: DTS Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm i -g dts-linter@0.0.0-alpha20
+
+      - name: Determine DTS files to format
+        id: find-files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Manual input from workflow_dispatch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.files }}" ]]; then
+            echo "Using manually provided files..."
+            echo "${{ github.event.inputs.files }}" | tr ',' '\n' | sed 's|^ *||;s| *$||' > dts-files-rel.txt
+
+            echo "Resolving absolute paths for manually provided files..."
+            while IFS= read -r file; do
+              if [ -f "$file" ]; then
+                realpath "$file"
+              else
+                echo "Warning: File '$file' does not exist!" >&2
+              fi
+            done < dts-files-rel.txt > dts-files.txt
+          else
+            echo "Detecting changed DTS files..."
+
+            # For PRs, get the diff from the base branch
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              git fetch origin "$GITHUB_BASE_REF"
+              git diff --name-only origin/"$GITHUB_BASE_REF"...HEAD | grep -E '\.dts$|\.dtsi$|\.overlay$' > dts-files-rel.txt || true
+            else
+              # For pushes, get the files changed in the last commit
+              git diff --name-only HEAD~1 | grep -E '\.dts$|\.dtsi$|\.overlay$' > dts-files-rel.txt || true
+            fi
+
+            echo "Resolving absolute paths for changed files..."
+            while IFS= read -r file; do
+              if [ -f "$file" ]; then
+                realpath "$file"
+              fi
+            done < dts-files-rel.txt > dts-files.txt
+          fi
+
+          if [ ! -s dts-files.txt ]; then
+            echo "No DTS files found to lint."
+            echo "empty=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found DTS files:"
+            cat dts-files.txt
+            echo "empty=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run DTS Linter
+        if: steps.find-files.outputs.empty != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t FILES < dts-files.txt
+
+          echo "Resolving absolute paths for bindings and includes..."
+          BINDINGS=$(realpath dts/bindings)
+          INCLUDES=(
+            "$(realpath dts)"
+            "$(realpath dts/arm)"
+            "$(realpath dts/arm64)"
+            "$(realpath dts/riscv)"
+            "$(realpath dts/common)"
+            "$(realpath dts/vendor)"
+            "$(realpath include)"
+          )
+
+          FILE_ARGS=$(printf -- '--files %s ' "${FILES[@]}")
+          INCLUDE_ARGS=$(printf -- '--includes %s ' "${INCLUDES[@]}")
+
+          LOG_LEVEL="${{ github.event.inputs.logLevel || 'none' }}"
+          CMD="dts-linter --outFile ./diff --bindings $BINDINGS $INCLUDE_ARGS --formatting --diagnostics --logLevel $LOG_LEVEL $FILE_ARGS"
+
+          echo "::group::Running dts-linter with command:"
+          echo "$CMD"
+          echo "::endgroup::"
+
+          set +e
+          eval "$CMD"
+          EXIT_CODE=$?
+          set -e
+
+          echo "Linter finished with exit code: $EXIT_CODE"
+          echo "EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+      - name: Upload diff artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dts-diff
+          path: ./diff
+
+      - name: Fail if linter failed
+        if: env.EXIT_CODE == '1'
+        run: exit 1

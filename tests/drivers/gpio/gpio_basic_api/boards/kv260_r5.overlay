@@ -8,7 +8,7 @@
 	loop {
 		compatible = "test-gpio-basic-api";
 
-		out-gpios = <&psgpio_bank3 0 0>; /* GPIOPS BANK 3 PIN 0 */
-		in-gpios = <&psgpio_bank3 1 0>; /* GPIOPS BANK 3 PIN 1 */
+		out-gpios = <&psgpio_bank3 0 0>;	/* GPIOPS BANK 3 PIN 0 */
+		in-gpios = <&psgpio_bank3 1 0>;	/* GPIOPS BANK 3 PIN 1 */
 	};
 };
