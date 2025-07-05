@@ -118,7 +118,8 @@ static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct pro
 	} else {
 		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 
-		ctx->data.chmu.instant = ull_conn_event_counter(conn) + CHMU_INSTANT_DELTA;
+		ctx->data.chmu.instant = ull_conn_event_counter(conn) + conn->lll.latency +
+					 CHMU_INSTANT_DELTA;
 
 		lp_chmu_tx(conn, ctx);
 
@@ -142,7 +143,7 @@ static void lp_chmu_st_wait_tx_chan_map_ind(struct ll_conn *conn, struct proc_ct
 static void lp_chmu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	if (is_instant_reached_or_passed(ctx->data.chmu.instant, event_counter)) {
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
@@ -257,7 +258,7 @@ static void rp_chmu_st_wait_rx_channel_map_update_ind(struct ll_conn *conn, stru
 static void rp_chmu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				  void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	if (((event_counter - ctx->data.chmu.instant) & 0xFFFF) <= 0x7FFF) {
 		rp_chmu_complete(conn, ctx, evt, param);
