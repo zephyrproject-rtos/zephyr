@@ -15,4 +15,22 @@ config ISO_PRINT_INTERVAL
 	help
 	  Only print the packet report once in a given interval of ISO packets.
 
+config BIG_TERMINATE_TIMEOUT_SECONDS
+	int "BIG terminate timeout in seconds"	
+	range 0 86400
+	default 60
+	help
+	  Every BIG will be terminated after this timeout. Set to 0 to disable.
+	  This is useful to test the BIG termination procedure
+	  The BIG will be automatically recreated after termination.
+
+config BIS_SEND_PAYLOAD_MASK
+	hex "Bitmask for which BIS will actually be sent"
+	range 0x1 0xFFFFFFFF
+	default 0xFFFFFFFF
+	help
+	  Every BIG will be terminated after this timeout. Set to 0 to disable.
+	  This is useful to test the BIG termination procedure
+	  The BIG will be automatically recreated after termination.
+	  
 source "Kconfig.zephyr"
