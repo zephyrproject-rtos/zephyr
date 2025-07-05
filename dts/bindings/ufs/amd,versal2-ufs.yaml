@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Amd Versal Gen2 UFS Host Controller.
+
+  Example usage:
+      ufs@f10b0000 {
+        compatible = "amd,versal2-ufs";
+        reg = <0xf10b0000 0x1000>;
+        interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&ufs_core_clk>;
+        clock-names = "core_clk";
+        freq-table-hz = <0 0>;
+        resets = <&scmi_reset 4>, <&scmi_reset 35>;
+        reset-names = "ufshc-rst", "ufsphy-rst";
+    };
+
+compatible: "amd,versal2-ufs"
+
+include: [ufs-common.yaml, reset-device.yaml]
+
+properties:
+  clocks:
+    required: true
+    description: The list of clocks used by the UFS Host Controller.
+
+  clock-names:
+    required: true
+    description: core_clk - Clock for the core logic
+
+  reg:
+    required: true
+    description: |
+      - Host Controller Base address
+      - IOU(Input-Output Unit) SLCR(System-Level Control Register)
+      - EFUSE Cache register
+      - UFS CRP(Clock reset Power) register
+
+  resets:
+    description: Reset control for both UFS Host Controller and PHY.
+
+  reset-names:
+    description: |
+      - "ufshc-rst" - Reset signal for the UFS Host Controller
+      - "ufsphy-rst" - Reset signal for the UFS PHY
