@@ -41,7 +41,7 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
-#if defined(CONFIG_MBEDTLS_LMS)
+#if defined(CONFIG_MBEDTLS_LMS_C)
 #define MBEDTLS_LMS_C
 #endif
 
@@ -61,18 +61,18 @@
 /* Supported TLS versions */
 
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_2)
 #define MBEDTLS_SSL_PROTO_TLS1_2
 #endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 #define MBEDTLS_SSL_PROTO_TLS1_3
 #define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
 #define MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
 #endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) || \
-	defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_2) || \
+	defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 
 /* Common modules required for TLS 1.2 and 1.3 */
 #define MBEDTLS_SSL_TLS_C
@@ -82,18 +82,18 @@
 /* This is not supported by Mbed TLS in TLS 1.3 mode
  * (see modules/crypto/mbedtls/docs/architecture/tls13-support.md).
  */
-#if !defined(CONFIG_MBEDTLS_TLS_VERSION_1_3)
+#if !defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 #endif
 
-#endif /* CONFIG_MBEDTLS_TLS_VERSION_1_2 || CONFIG_MBEDTLS_TLS_VERSION_1_3 */
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_2 || CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 
-#if defined(CONFIG_MBEDTLS_TLS_SESSION_TICKETS)
+#if defined(CONFIG_MBEDTLS_SSL_SESSION_TICKETS)
 #define MBEDTLS_SSL_SESSION_TICKETS
 #define MBEDTLS_SSL_TICKET_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_DTLS)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_DTLS)
 #define MBEDTLS_SSL_PROTO_DTLS
 #define MBEDTLS_SSL_DTLS_ANTI_REPLAY
 #define MBEDTLS_SSL_DTLS_HELLO_VERIFY
@@ -174,7 +174,7 @@
 
 /* Supported cipher modes */
 
-#if defined(CONFIG_MBEDTLS_CIPHER_AES_ENABLED)
+#if defined(CONFIG_MBEDTLS_AES_C)
 #define MBEDTLS_AES_C
 #endif
 
@@ -186,35 +186,35 @@
 #define MBEDTLS_AES_FEWER_TABLES
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED)
+#if defined(CONFIG_MBEDTLS_CAMELLIA_C)
 #define MBEDTLS_CAMELLIA_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_DES_ENABLED)
+#if defined(CONFIG_MBEDTLS_DES_C)
 #define MBEDTLS_DES_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED)
+#if defined(CONFIG_MBEDTLS_CHACHA20_C)
 #define MBEDTLS_CHACHA20_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_CCM_ENABLED)
+#if defined(CONFIG_MBEDTLS_CCM_C)
 #define MBEDTLS_CCM_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_GCM_ENABLED)
+#if defined(CONFIG_MBEDTLS_GCM_C)
 #define MBEDTLS_GCM_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_MODE_XTS_ENABLED)
+#if defined(CONFIG_MBEDTLS_CIPHER_MODE_XTS)
 #define MBEDTLS_CIPHER_MODE_XTS
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_MODE_CBC_ENABLED)
+#if defined(CONFIG_MBEDTLS_CIPHER_MODE_CBC)
 #define MBEDTLS_CIPHER_MODE_CBC
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_MODE_CTR_ENABLED)
+#if defined(CONFIG_MBEDTLS_CIPHER_MODE_CTR)
 #define MBEDTLS_CIPHER_MODE_CTR
 #endif
 
@@ -296,19 +296,19 @@
 
 /* Supported hash algorithms */
 
-#if defined(CONFIG_MBEDTLS_MD5)
+#if defined(CONFIG_MBEDTLS_MD5_C)
 #define MBEDTLS_MD5_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA1)
+#if defined(CONFIG_MBEDTLS_SHA1_C)
 #define MBEDTLS_SHA1_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA224)
+#if defined(CONFIG_MBEDTLS_SHA224_C)
 #define MBEDTLS_SHA224_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA256)
+#if defined(CONFIG_MBEDTLS_SHA256_C)
 #define MBEDTLS_SHA256_C
 #endif
 
@@ -316,28 +316,28 @@
 #define MBEDTLS_SHA256_SMALLER
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA384)
+#if defined(CONFIG_MBEDTLS_SHA384_C)
 #define MBEDTLS_SHA384_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SHA512)
+#if defined(CONFIG_MBEDTLS_SHA512_C)
 #define MBEDTLS_SHA512_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_POLY1305)
+#if defined(CONFIG_MBEDTLS_POLY1305_C)
 #define MBEDTLS_POLY1305_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_CMAC)
+#if defined(CONFIG_MBEDTLS_CMAC_C)
 #define MBEDTLS_CMAC_C
 #endif
 
 /* mbedTLS modules */
-#if defined(CONFIG_MBEDTLS_CTR_DRBG_ENABLED)
+#if defined(CONFIG_MBEDTLS_CTR_DRBG_C)
 #define MBEDTLS_CTR_DRBG_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_HMAC_DRBG_ENABLED)
+#if defined(CONFIG_MBEDTLS_HMAC_DRBG_C)
 #define MBEDTLS_HMAC_DRBG_C
 #endif
 
@@ -352,7 +352,7 @@
 #define MBEDTLS_MEMORY_DEBUG
 #endif
 
-#if defined(CONFIG_MBEDTLS_CHACHAPOLY_AEAD_ENABLED)
+#if defined(CONFIG_MBEDTLS_CHACHAPOLY_C)
 #define MBEDTLS_CHACHAPOLY_C
 #endif
 
@@ -368,11 +368,11 @@
 #define MBEDTLS_SSL_ALPN
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER)
+#if defined(CONFIG_MBEDTLS_CIPHER_C)
 #define MBEDTLS_CIPHER_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_MD)
+#if defined(CONFIG_MBEDTLS_MD_C)
 #define MBEDTLS_MD_C
 #endif
 
@@ -516,7 +516,7 @@
 #define MBEDTLS_PSA_CRYPTO_CONFIG_FILE   "config-psa.h"
 #endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
 #define MBEDTLS_SSL_ENCRYPT_THEN_MAC
 #endif
 
