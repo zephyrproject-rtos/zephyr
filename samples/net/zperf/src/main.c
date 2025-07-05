@@ -11,6 +11,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/net/net_config.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
