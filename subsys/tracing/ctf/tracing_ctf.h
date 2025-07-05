@@ -31,8 +31,12 @@ extern "C" {
 #define sys_port_trace_k_thread_join_enter(thread, timeout)
 #define sys_port_trace_k_thread_join_blocking(thread, timeout)
 #define sys_port_trace_k_thread_join_exit(thread, timeout, ret)
-#define sys_port_trace_k_thread_sleep_enter(timeout)
-#define sys_port_trace_k_thread_sleep_exit(timeout, ret)
+
+#define sys_port_trace_k_thread_sleep_enter(timeout)                           \
+	sys_trace_k_thread_sleep_enter(timeout)
+#define sys_port_trace_k_thread_sleep_exit(timeout, ret)                       \
+	sys_trace_k_thread_sleep_exit(timeout, ret)
+
 #define sys_port_trace_k_thread_msleep_enter(ms)
 #define sys_port_trace_k_thread_msleep_exit(ms, ret)
 #define sys_port_trace_k_thread_usleep_enter(us)
