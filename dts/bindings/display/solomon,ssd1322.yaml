@@ -1,4 +1,8 @@
-description: SSD1322 display controller
+title: Solomon SSD1322 display controller
+
+description: |
+    The Solomon SSD1322 is a monochrome OLED controller
+    with a maximum 480x128 resolution.
 
 compatible: "solomon,ssd1322"
 

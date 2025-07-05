@@ -1,7 +1,13 @@
 # Copyright (c) 2020 Hubert Miś <hubert.mis@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: FTDI FT800 graphic controller
+title: FTDI FT800 graphic controller
+
+description: |
+    The FTDI FT800 graphic controller is a graphics accelerator,
+    able to drive LCD displays with RGB parallel output.
+    It communicates with MCU through SPI commands.
+    It also includes touchscreen and sound output support.
 
 compatible: "ftdi,ft800"
 
