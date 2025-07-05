@@ -8,3 +8,31 @@ config SPI_ITE_IT51XXX
 	select PINCTRL
 	help
 	  Enable support for the ITE IT51XXX SPI host (SSPI) driver.
+
+if SPI_ITE_IT51XXX
+
+config SPI_ITE_IT51XXX_FIFO_MODE
+	bool "ITE IT51XXX Shared/Group FIFO Mode Support"
+	select SOC_IT51XXX_CPU_IDLE_GATING
+	default y
+	help
+	  Enable ITE IT51XXX shared and group FIFO mode. Due to hardware
+	  limitations, FIFO mode is only supported under the following
+	  conditions: (1) SPI mode 0 (CPOL = 0, CPHA = 0) (2) chip select
+	  0 is used (3) the number of bytes in both TX and RX transactions
+	  is even and less than SPI_ITE_IT51XXX_FIFO_SIZE (the FIFO size
+	  setting) (4) the clock source is set to the PLL frequency for
+	  group fifo mode. If the transaction doesn't meet these
+	  requirements, the driver automatically switches to PIO mode for
+	  the transfer.
+
+config SPI_ITE_IT51XXX_FIFO_SIZE
+	int "ITE IT51XXX Shared/Group FIFO Size"
+	depends on SPI_ITE_IT51XXX_FIFO_MODE
+	range 2 2046
+	default 128
+	help
+	  Set IT51XXX FIFO size. The maximum settable value, as per the
+	  hardware design, is 2046.
+
+endif # SPI_ITE_IT51XXX
