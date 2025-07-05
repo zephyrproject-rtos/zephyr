@@ -50,6 +50,15 @@ config ADC_INIT_PRIORITY
 	help
 	  ADC driver device initialization priority.
 
+config ADC_STREAM
+	bool "ADC stream support"
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM
+	select RTIO_WORKQ
+	help
+	  This option enables the stream API calls.
+
 module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
