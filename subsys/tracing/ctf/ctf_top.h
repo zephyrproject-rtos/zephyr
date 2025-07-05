@@ -186,6 +186,8 @@ typedef enum {
 	CTF_EVENT_GPIO_GET_PENDING_INT_EXIT = 0x7C,
 	CTF_EVENT_GPIO_FIRE_CALLBACKS_ENTER = 0x7D,
 	CTF_EVENT_GPIO_FIRE_CALLBACK = 0x7E,
+	CTF_EVENT_THREAD_SLEEP_ENTER = 0x7F,
+	CTF_EVENT_THREAD_SLEEP_EXIT = 0x80,
 } ctf_event_t;
 
 typedef struct {
@@ -211,6 +213,16 @@ static inline void ctf_top_thread_priority_set(uint32_t thread_id, int8_t prio,
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_PRIORITY_SET),
 		  thread_id, name, prio);
+}
+
+static inline void ctf_top_thread_sleep_enter(uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SLEEP_ENTER), timeout);
+}
+
+static inline void ctf_top_thread_sleep_exit(uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_THREAD_SLEEP_EXIT), timeout, ret);
 }
 
 static inline void ctf_top_thread_create(uint32_t thread_id, int8_t prio,
