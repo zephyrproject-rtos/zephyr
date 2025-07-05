@@ -770,7 +770,9 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	if (is_instant_reached_or_passed(ctx->data.pu.instant, ull_conn_event_counter(conn))) {
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	if (is_instant_reached_or_passed(ctx->data.pu.instant, event_counter)) {
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		if (phy_changed) {
@@ -1191,7 +1193,9 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	if (is_instant_reached_or_passed(ctx->data.pu.instant, ull_conn_event_counter(conn))) {
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	if (is_instant_reached_or_passed(ctx->data.pu.instant, event_counter)) {
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
