@@ -2716,6 +2716,8 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 {
 	struct bt_iso_chan *bis;
 
+	atomic_set_bit(big->flags, BT_BIG_BUSY);
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		bis->iso->err = reason;
 
@@ -2731,6 +2733,8 @@ static void big_disconnect(struct bt_iso_big *big, uint8_t reason)
 			}
 		}
 	}
+
+	atomic_clear_bit(big->flags, BT_BIG_BUSY);
 }
 
 static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan **bis_channels, uint8_t num_bis,
@@ -3160,6 +3164,7 @@ void hci_le_big_complete(struct net_buf *buf)
 		return;
 	}
 
+	atomic_set_bit(big->flags, BT_BIG_BUSY);
 	i = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		const uint16_t handle = evt->handle[i++];
@@ -3179,6 +3184,8 @@ void hci_le_big_complete(struct net_buf *buf)
 			}
 		}
 	}
+
+	atomic_clear_bit(big->flags, BT_BIG_BUSY);
 }
 
 void hci_le_big_terminate(struct net_buf *buf)
@@ -3260,6 +3267,11 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	if (!atomic_test_bit(big->flags, BT_BIG_INITIALIZED) || !big->num_bis) {
 		LOG_DBG("BIG not initialized");
 		return -EINVAL;
+	}
+
+	if (atomic_test_bit(big->flags, BT_BIG_BUSY)) {
+		LOG_DBG("BIG %p is busy", big);
+		return -EBUSY;
 	}
 
 	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
@@ -3350,6 +3362,7 @@ void hci_le_big_sync_established(struct net_buf *buf)
 		return;
 	}
 
+	atomic_set_bit(big->flags, BT_BIG_BUSY);
 	i = 0;
 	SYS_SLIST_FOR_EACH_CONTAINER(&big->bis_channels, bis, node) {
 		const uint16_t handle = evt->handle[i++];
@@ -3369,6 +3382,8 @@ void hci_le_big_sync_established(struct net_buf *buf)
 			}
 		}
 	}
+
+	atomic_clear_bit(big->flags, BT_BIG_BUSY);
 }
 
 void hci_le_big_sync_lost(struct net_buf *buf)
