@@ -156,9 +156,11 @@ ZTEST(k_heap_api, test_k_heap_alloc_fail)
  * @details The test validates k_heap_free()
  * API, by using below steps
  * 1. allocate the memory from the heap,
- * 2. free the allocated memory
- * 3. allocate  memory more than the first allocation.
- * the allocation in the 3rd step should succeed if k_heap_free()
+ * 2. Freeing a NULL pointer (should have no effect)
+ * 3. free the allocated memory
+ * 4. allocate  memory more than the first allocation.
+ * 5. Double-freeing a pointer (asserts, but should not crash)
+ * the allocation in the 4th step should succeed if k_heap_free()
  * works as expected
  *
  * @see k_heap_alloc, k_heap_free()
@@ -169,6 +171,10 @@ ZTEST(k_heap_api, test_k_heap_free)
 	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
 
 	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	/* Free NULL pointer: should not crash or corrupt heap */
+	k_heap_free(&k_heap_test, NULL);
+
 	k_heap_free(&k_heap_test, p);
 	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, timeout);
 	zassert_not_null(p, "k_heap_alloc operation failed");
@@ -176,6 +182,11 @@ ZTEST(k_heap_api, test_k_heap_free)
 		p[i] = '0';
 	}
 	k_heap_free(&k_heap_test, p);
+
+#ifndef CONFIG_ASSERT
+	/* Double free: should not crash, but behavior is otherwise undefined */
+	k_heap_free(&k_heap_test, p);
+#endif
 }
 
 /**
