@@ -379,10 +379,18 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 		}
 	}
 
-	data->transfer_settings.source_data_size = config->source_data_size;
-	data->transfer_settings.dest_data_size = config->dest_data_size;
+#if (defined(FSL_FEATURE_DMAMUX_HAS_A_ON) && FSL_FEATURE_DMAMUX_HAS_A_ON)
 	data->transfer_settings.source_burst_length = config->source_burst_length;
 	data->transfer_settings.dest_burst_length = config->dest_burst_length;
+#else
+	data->transfer_settings.source_burst_length = block_config->block_size;
+	data->transfer_settings.dest_burst_length = block_config->block_size;
+	config->source_burst_length = block_config->block_size;
+	config->dest_burst_length = block_config->block_size;
+#endif /* FSL_FEATURE_DMAMUX_HAS_A_ON */
+
+	data->transfer_settings.source_data_size = config->source_data_size;
+	data->transfer_settings.dest_data_size = config->dest_data_size;
 	data->transfer_settings.direction = config->channel_direction;
 	data->transfer_settings.transfer_type = transfer_type;
 	data->transfer_settings.valid = true;
@@ -604,6 +612,9 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 #endif
 	data->busy = true;
 	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
+#if defined(CONFIG_DMA_MCUX_EDMA_V3)
+	EDMA_TriggerChannelStart(DEV_BASE(dev), channel);
+#endif
 	return 0;
 }
 
@@ -633,9 +644,14 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
+	if (data->transferConfig.majorLoopCounts < 2) {
+		return -ENOSYS;
+	}
+
 	if (!data->busy) {
 		return -EINVAL;
 	}
+
 	EDMA_StopTransfer(DEV_EDMA_HANDLE(dev, channel));
 	return 0;
 }
@@ -647,6 +663,7 @@ static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
 	if (!data->busy) {
 		return -EINVAL;
 	}
+
 	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
 	return 0;
 }
