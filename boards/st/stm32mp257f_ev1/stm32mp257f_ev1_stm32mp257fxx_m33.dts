@@ -49,6 +49,10 @@
 	clock-frequency = <DT_FREQ_M(400)>;
 };
 
+&gpiob {
+	status = "okay";
+};
+
 &gpiog {
 	status = "okay";
 };
@@ -69,4 +73,10 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "disabled";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb5 &i2c2_sda_pb4>;
+	pinctrl-names = "default";
+	status = "okay";
 };
