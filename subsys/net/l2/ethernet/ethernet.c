@@ -176,11 +176,6 @@ static void ethernet_update_rx_stats(struct net_if *iface, size_t length,
 	}
 }
 
-static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
-{
-	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
-}
-
 #if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Drop packet if it has broadcast destination MAC address but the IP
  * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
@@ -250,15 +245,13 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 }
 #endif
 
-static enum net_verdict ethernet_recv(struct net_if *iface,
-				      struct net_pkt *pkt)
+static enum net_verdict ethernet_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint8_t hdr_len = sizeof(struct net_eth_hdr);
 	size_t body_len;
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 	enum net_verdict verdict = NET_CONTINUE;
-	bool is_vlan_pkt = false;
 	bool handled = false;
 	struct net_linkaddr *lladdr;
 	uint16_t type;
@@ -294,77 +287,25 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		(void)net_if_queue_tx(bridge, out_pkt);
 	}
 
-	type = ntohs(hdr->type);
+	size_t pkt_len = net_pkt_get_len(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_VLAN) && type == NET_ETH_PTYPE_VLAN) {
-		if (net_eth_is_vlan_enabled(ctx, iface) &&
-		    !eth_is_vlan_tag_stripped(iface)) {
-			struct net_eth_vlan_hdr *hdr_vlan =
-				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-			struct net_if *vlan_iface;
-
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-			type = ntohs(hdr_vlan->type);
-			hdr_len = sizeof(struct net_eth_vlan_hdr);
-			is_vlan_pkt = true;
-
-			/* If we receive a packet with a VLAN tag, for that we don't
-			 * have a VLAN interface, drop the packet.
-			 */
-			vlan_iface = net_eth_get_vlan_iface(iface,
-							    net_pkt_vlan_tag(pkt));
-			if (vlan_iface == NULL) {
-				NET_DBG("Dropping frame, no VLAN interface for tag %d",
-					net_pkt_vlan_tag(pkt));
-				goto drop;
-			}
-
-			net_pkt_set_iface(pkt, vlan_iface);
-
-			if (net_if_l2(net_pkt_iface(pkt)) == NULL) {
-				goto drop;
-			}
-
-			if (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_PRIORITY) {
-				/* We could call VLAN interface directly but then the
-				 * interface statistics would not get updated so route
-				 * the call via Virtual L2 layer.
-				 */
-				if (net_if_l2(net_pkt_iface(pkt))->recv != NULL) {
-					verdict = net_if_l2(net_pkt_iface(pkt))->recv(iface, pkt);
-					if (verdict == NET_DROP) {
-						goto drop;
-					}
-				}
-			}
-		}
-	}
-
-	/* Set the pointers to ll src and dst addresses */
+	/* Set the pointers to ll src and dst addresses and type */
 	(void)net_linkaddr_create(net_pkt_lladdr_src(pkt), hdr->src.addr,
 				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
-
 	(void)net_linkaddr_create(net_pkt_lladdr_dst(pkt), hdr->dst.addr,
 				  sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
+	type = ntohs(hdr->type);
+	net_pkt_set_ll_proto_type(pkt, type);
+	/* Get rid of the Ethernet header. */
+	net_buf_pull(pkt->frags, hdr_len);
 
 	lladdr = net_pkt_lladdr_dst(pkt);
-
-	net_pkt_set_ll_proto_type(pkt, type);
 	dst_broadcast = net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr);
 	dst_eth_multicast = net_eth_is_addr_group((struct net_eth_addr *)lladdr->addr);
 	dst_iface_addr = net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr);
 
-	if (is_vlan_pkt) {
-		print_vlan_ll_addrs(pkt, type, net_pkt_vlan_tci(pkt),
-				    net_pkt_get_len(pkt),
-				    net_pkt_lladdr_src(pkt),
-				    net_pkt_lladdr_dst(pkt),
-				    eth_is_vlan_tag_stripped(iface));
-	} else {
-		print_ll_addrs(pkt, type, net_pkt_get_len(pkt),
-			       net_pkt_lladdr_src(pkt),
-			       net_pkt_lladdr_dst(pkt));
-	}
+	print_ll_addrs(pkt, net_pkt_ll_proto_type(pkt), pkt_len, net_pkt_lladdr_src(pkt),
+		       net_pkt_lladdr_dst(pkt));
 
 	if (!(dst_broadcast || dst_eth_multicast || dst_iface_addr)) {
 		/* The ethernet frame is not for me as the link addresses
@@ -375,9 +316,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 					   sizeof(struct net_eth_addr)));
 		goto drop;
 	}
-
-	/* Get rid of the Ethernet header. */
-	net_buf_pull(pkt->frags, hdr_len);
 
 	body_len = net_pkt_get_len(pkt);
 
@@ -422,7 +360,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 out:
-	ethernet_update_rx_stats(iface, body_len + hdr_len, dst_broadcast, dst_eth_multicast);
+	ethernet_update_rx_stats(iface, pkt_len, dst_broadcast, dst_eth_multicast);
 	return verdict;
 drop:
 	eth_stats_update_errors_rx(iface);
@@ -566,102 +504,39 @@ static inline size_t get_reserve_ll_header_size(struct net_if *iface)
 	}
 }
 
-static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
+static int ethernet_fill_header(struct ethernet_context *ctx,
 					    struct net_if *iface,
 					    struct net_pkt *pkt,
 					    uint32_t ptype)
 {
-	struct net_if *orig_iface = iface;
 	struct net_buf *hdr_frag;
-	struct net_eth_hdr *hdr;
-	size_t reserve_ll_header;
-	size_t hdr_len;
-	bool is_vlan;
+	void *hdr_buf;
+	struct net_eth_hdr hdr;
+	const size_t hdr_len = sizeof(struct net_eth_hdr);
 
-	is_vlan = IS_ENABLED(CONFIG_NET_VLAN) &&
-		net_eth_is_vlan_enabled(ctx, iface) &&
-		net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC;
-	if (is_vlan) {
-		orig_iface = net_eth_get_vlan_iface(iface, net_pkt_vlan_tag(pkt));
-	}
-
-	reserve_ll_header = get_reserve_ll_header_size(orig_iface);
-	if (reserve_ll_header > 0) {
-		hdr_len = reserve_ll_header;
-		hdr_frag = pkt->buffer;
-
-		NET_DBG("Making room for link header %zd bytes", hdr_len);
-
-		/* Make room for the header */
-		net_buf_push(pkt->buffer, hdr_len);
-	} else {
-		hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
-			sizeof(struct net_eth_vlan_hdr) :
-			sizeof(struct net_eth_hdr);
-
+	/* Check if previous layer reserved some space */
+	if (net_buf_headroom(pkt->frags) < hdr_len) {
 		hdr_frag = net_pkt_get_frag(pkt, hdr_len, NET_BUF_TIMEOUT);
-		if (!hdr_frag) {
-			return NULL;
-		}
-	}
-
-	if (is_vlan) {
-		struct net_eth_vlan_hdr *hdr_vlan;
-
-		if (reserve_ll_header == 0U) {
-			hdr_len = sizeof(struct net_eth_vlan_hdr);
-			net_buf_add(hdr_frag, hdr_len);
-		}
-
-		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
-
-		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
-		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
-		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst))) {
-			memcpy(&hdr_vlan->dst, net_pkt_lladdr_dst(pkt)->addr,
-			       sizeof(struct net_eth_addr));
-		}
-
-		memcpy(&hdr_vlan->src, net_pkt_lladdr_src(pkt)->addr,
-		       sizeof(struct net_eth_addr));
-
-		hdr_vlan->type = ptype;
-		hdr_vlan->vlan.tpid = htons(NET_ETH_PTYPE_VLAN);
-		hdr_vlan->vlan.tci = htons(net_pkt_vlan_tci(pkt));
-
-		print_vlan_ll_addrs(pkt, ntohs(hdr_vlan->type),
-				    net_pkt_vlan_tci(pkt),
-				    hdr_len,
-				    &hdr_vlan->src, &hdr_vlan->dst, false);
-	} else {
-		hdr = (struct net_eth_hdr *)(hdr_frag->data);
-
-		if (reserve_ll_header == 0U) {
-			hdr_len = sizeof(struct net_eth_hdr);
-			net_buf_add(hdr_frag, hdr_len);
-		}
-
-		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
-		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
-		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst))) {
-			memcpy(&hdr->dst, net_pkt_lladdr_dst(pkt)->addr,
-			       sizeof(struct net_eth_addr));
-		}
-
-		memcpy(&hdr->src, net_pkt_lladdr_src(pkt)->addr,
-		       sizeof(struct net_eth_addr));
-
-		hdr->type = ptype;
-
-		print_ll_addrs(pkt, ntohs(hdr->type),
-			       hdr_len, &hdr->src, &hdr->dst);
-	}
-
-	if (reserve_ll_header == 0U) {
 		net_pkt_frag_insert(pkt, hdr_frag);
+		if (!hdr_frag) {
+			return -ENOMEM;
+		}
+		net_buf_reserve(hdr_frag, hdr_len);
+	} else {
+		hdr_frag = pkt->frags;
 	}
+	
+	memcpy(&hdr.dst, net_pkt_lladdr_dst(pkt)->addr, sizeof(struct net_eth_addr));
+	memcpy(&hdr.src, net_pkt_lladdr_src(pkt)->addr, sizeof(struct net_eth_addr));
+	hdr.type = htons(net_pkt_ll_proto_type(pkt));
+	
+	/* Place header in buffer */
+	hdr_buf = net_buf_push(hdr_frag, hdr_len);
+	memcpy(hdr_buf, &hdr, sizeof(struct net_eth_hdr));
 
-	return hdr_frag;
+	print_ll_addrs(pkt, ntohs(hdr.type), hdr_len, &hdr.src, &hdr.dst);
+
+	return 0;
 }
 
 static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
@@ -771,7 +646,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	 * where we are actually sending the packet. The interface in net_pkt
 	 * is used to determine if the VLAN header is added to Ethernet frame.
 	 */
-	if (!ethernet_fill_header(ctx, iface, pkt, ptype)) {
+	ret = ethernet_fill_header(ctx, iface, pkt, ptype);
+	if (ret < 0) {
 		ret = -ENOMEM;
 		goto arp_error;
 	}
@@ -1111,5 +987,5 @@ void ethernet_init(struct net_if *iface)
 
 	net_arp_init();
 
-	ctx->is_init = true;
+	iface->is_init = true;
 }
