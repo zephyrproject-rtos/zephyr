@@ -6,11 +6,7 @@ zephyr_library()
 
 if(CONFIG_FAKE_ENTROPY_NATIVE_SIM)
   zephyr_library_sources(fake_entropy_native_sim.c)
-  if(CONFIG_NATIVE_LIBRARY)
-    target_sources(native_simulator INTERFACE fake_entropy_native_bottom.c)
-  else()
-    zephyr_library_sources(fake_entropy_native_bottom.c)
-  endif()
+  target_sources(native_simulator INTERFACE fake_entropy_native_bottom.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE entropy_handlers.c)
