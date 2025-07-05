@@ -771,7 +771,12 @@ void k_sched_lock(void)
 	K_SPINLOCK(&_sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
-		z_sched_lock();
+		__ASSERT(!arch_is_in_isr(), "");
+		__ASSERT(_current->base.sched_locked != 1U, "");
+
+		--_current->base.sched_locked;
+
+		compiler_barrier();
 	}
 }
 
