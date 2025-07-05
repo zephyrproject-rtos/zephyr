@@ -217,7 +217,7 @@ static int icp201xx_channel_get(const struct device *dev, enum sensor_channel ch
 	struct icp201xx_data *data = (struct icp201xx_data *)dev->data;
 
 	if (!(chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_PRESS ||
-	      chan == SENSOR_CHAN_ALTITUDE)) {
+	      (chan == SENSOR_CHAN_ALTITUDE && IS_ENABLED(CONFIG_FPU)))) {
 		return -ENOTSUP;
 	}
 	icp201xx_mutex_lock(dev);
@@ -226,8 +226,7 @@ static int icp201xx_channel_get(const struct device *dev, enum sensor_channel ch
 		icp201xx_convert_pressure(val, data->raw_pressure);
 	} else if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		icp201xx_convert_temperature(val, data->raw_temperature);
-#ifdef CONFIG_FPU
-	} else if (chan == SENSOR_CHAN_ALTITUDE) {
+	} else if (chan == SENSOR_CHAN_ALTITUDE && IS_ENABLED(CONFIG_FPU)) {
 		struct sensor_value pressure_val, temp_val;
 		float pressure, temperature, altitude;
 
@@ -237,10 +236,6 @@ static int icp201xx_channel_get(const struct device *dev, enum sensor_channel ch
 		temperature = temp_val.val1 + ((float)temp_val.val2 / 1000000);
 		altitude = convertToHeight(pressure, temperature);
 		sensor_value_from_float(val, altitude);
-#endif
-	} else {
-		icp201xx_mutex_unlock(dev);
-		return -ENOTSUP;
 	}
 
 	icp201xx_mutex_unlock(dev);
