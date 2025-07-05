@@ -27,6 +27,10 @@ endif()
 
 zephyr_compile_definitions(CY_WIFI_COUNTRY=$<UPPER_CASE:${CONFIG_WHD_WIFI_COUNTRY}>)
 
+if(CONFIG_WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP)
+  zephyr_compile_definitions(WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP)
+endif()
+
 # Add WHD includes
 zephyr_include_directories(${hal_wifi_dir})
 zephyr_include_directories(${hal_wifi_dir}/WHD/${whd_wifi_ver}/inc)
