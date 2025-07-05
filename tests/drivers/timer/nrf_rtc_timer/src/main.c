@@ -361,6 +361,11 @@ static void overflow_sched_handler(int32_t id, uint64_t expire_time,
  */
 ZTEST(nrf_rtc_timer, test_overflow)
 {
+	/* For bit width lower than default 24, overflow injection is not possible. */
+	if (CONFIG_NRF_RTC_COUNTER_BIT_WIDTH < 24) {
+		ztest_test_skip();
+	}
+
 	PRINT("RTC ticks before overflow injection: %u\r\n",
 	      (uint32_t)z_nrf_rtc_timer_read());
 
