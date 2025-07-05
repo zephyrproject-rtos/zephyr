@@ -63,7 +63,6 @@ static bool check_dns_query(uint8_t *buf, int buf_len)
 	 */
 	result = net_buf_alloc(&test_dns_msg_pool, K_FOREVER);
 	if (!result) {
-		ret = -ENOMEM;
 		return false;
 	}
 
