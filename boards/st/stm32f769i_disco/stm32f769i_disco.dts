@@ -200,6 +200,7 @@ arduino_serial: &usart6 {};
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <DT_FREQ_M(66)>;
+		cs-high-time = <2>; /* >= 30 ns */
 		status = "okay";
 
 		partitions {

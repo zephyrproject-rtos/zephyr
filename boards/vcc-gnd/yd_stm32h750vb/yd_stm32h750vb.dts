@@ -119,6 +119,7 @@
 		reg = <0>;
 		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <80000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		status = "okay";
 
