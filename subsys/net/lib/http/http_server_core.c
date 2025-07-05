@@ -156,7 +156,11 @@ int http_server_init(struct http_server_ctx *ctx)
 			proto = IPPROTO_TCP;
 		}
 
-		fd = zsock_socket(af, SOCK_STREAM, proto);
+		if (svc->socket_create != NULL) {
+			fd = svc->socket_create(svc, af, proto);
+		} else {
+			fd = zsock_socket(af, SOCK_STREAM, proto);
+		}
 		if (fd < 0) {
 			LOG_ERR("socket: %d", errno);
 			failed++;

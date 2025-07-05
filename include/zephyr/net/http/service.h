@@ -69,6 +69,8 @@ struct http_service_runtime_data {
 	int num_clients;
 };
 
+typedef int (*http_socket_create_fn)(const struct http_service_desc *svc, int af, int proto);
+
 struct http_service_desc {
 	const char *host;
 	uint16_t *port;
@@ -84,6 +86,7 @@ struct http_service_desc {
 	const sec_tag_t *sec_tag_list;
 	size_t sec_tag_list_size;
 #endif
+	http_socket_create_fn socket_create;
 };
 
 #define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,               \
@@ -110,6 +113,7 @@ struct http_service_desc {
 		COND_CODE_1(CONFIG_NET_SOCKETS_SOCKOPT_TLS,                                        \
 			    (.sec_tag_list_size = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (0),\
 					     (GET_ARG_N(1, GET_ARGS_LESS_N(1, __VA_ARGS__))))), ())\
+		.socket_create = GET_ARG_N(3, __VA_ARGS__, NULL, NULL, NULL),                     \
 	}
 
 /** @endcond */
@@ -135,9 +139,9 @@ struct http_service_desc {
  * @param _res_fallback Fallback resource to be served if no other resource matches path
  */
 #define HTTP_SERVICE_DEFINE_EMPTY(_name, _host, _port, _concurrent, _backlog, _detail,             \
-				  _res_fallback)                                                   \
+				  _res_fallback, ...) \
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,               \
-				_res_fallback, NULL, NULL)
+				_res_fallback, NULL, NULL, __VA_ARGS__)
 
 /**
  * @brief Define an HTTPS service without static resources.
@@ -162,10 +166,10 @@ struct http_service_desc {
  * @param _sec_tag_list_size TLS security tag list size used to setup a HTTPS socket.
  */
 #define HTTPS_SERVICE_DEFINE_EMPTY(_name, _host, _port, _concurrent, _backlog, _detail,          \
-				   _res_fallback, _sec_tag_list, _sec_tag_list_size)             \
+				   _res_fallback, _sec_tag_list, _sec_tag_list_size, ...) \
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,             \
 				_res_fallback, NULL, NULL,                                       \
-				_sec_tag_list, _sec_tag_list_size);				 \
+				_sec_tag_list, _sec_tag_list_size, __VA_ARGS__); \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS),				 \
 		     "TLS is required for HTTP secure (CONFIG_NET_SOCKETS_SOCKOPT_TLS)")
 
@@ -189,13 +193,14 @@ struct http_service_desc {
  * @param _detail User-defined detail associated with the service.
  * @param _res_fallback Fallback resource to be served if no other resource matches path
  */
-#define HTTP_SERVICE_DEFINE(_name, _host, _port, _concurrent, _backlog, _detail, _res_fallback)    \
+#define HTTP_SERVICE_DEFINE(_name, _host, _port, _concurrent, _backlog, \
+				_detail, _res_fallback, _socket_create, ...) \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_start)[];      \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_end)[];        \
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,               \
 				_res_fallback,                                                     \
 				&_CONCAT(_http_resource_desc_##_name, _list_start)[0],             \
-				&_CONCAT(_http_resource_desc_##_name, _list_end)[0]);
+				&_CONCAT(_http_resource_desc_##_name, _list_end)[0], __VA_ARGS__)
 
 /**
  * @brief Define an HTTPS service with static resources.
@@ -220,14 +225,14 @@ struct http_service_desc {
  * @param _sec_tag_list_size TLS security tag list size used to setup a HTTPS socket.
  */
 #define HTTPS_SERVICE_DEFINE(_name, _host, _port, _concurrent, _backlog, _detail,              \
-			     _res_fallback, _sec_tag_list, _sec_tag_list_size)                 \
+			     _res_fallback, _sec_tag_list, _sec_tag_list_size, ...) \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_start)[];  \
 	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_end)[];    \
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,           \
 				_res_fallback,                                                 \
 				&_CONCAT(_http_resource_desc_##_name, _list_start)[0],         \
 				&_CONCAT(_http_resource_desc_##_name, _list_end)[0],           \
-				_sec_tag_list, _sec_tag_list_size);                            \
+				_sec_tag_list, _sec_tag_list_size, __VA_ARGS__); \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS),                               \
 		     "TLS is required for HTTP secure (CONFIG_NET_SOCKETS_SOCKOPT_TLS)")
 
