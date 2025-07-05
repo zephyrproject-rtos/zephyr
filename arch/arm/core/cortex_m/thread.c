@@ -488,6 +488,20 @@ static void z_arm_prepare_switch_to_main(void)
 #endif /* CONFIG_FPU */
 }
 
+__used void arch_irq_unlock_outlined(unsigned int key)
+{
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	__enable_fault_irq(); /* alters FAULTMASK */
+	__enable_irq();       /* alters PRIMASK */
+#endif
+	arch_irq_unlock(key);
+}
+
+__used unsigned int arch_irq_lock_outlined(void)
+{
+	return arch_irq_lock();
+}
+
 void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 				k_thread_entry_t _main)
 {
@@ -543,39 +557,37 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	 * When calling arch_irq_unlock_outlined, LR is lost which is fine since
 	 * we do not intend to return after calling z_thread_entry.
 	 */
+
+	/* load function address into reigster to avoid offset out of range with ldr */
+	register uintptr_t __thread_entry __asm__("r5");
+	__thread_entry = (uintptr_t)z_thread_entry;
+	register uintptr_t __unlock_reg __asm__("r6");
+	__unlock_reg = (uintptr_t)arch_irq_unlock_outlined;
+	__asm__ volatile (
+		/* no actual instructions */
+		""
+		: "+r"(__thread_entry), "+r"(__unlock_reg)
+		:
+	);
+
 	__asm__ volatile("mov   r4,  %0\n" /* force _main to be stored in a register */
 			 "msr   PSP, %1\n" /* __set_PSP(stack_ptr) */
 
 			 "movs  r0,  #0\n" /* arch_irq_unlock(0) */
-			 "ldr   r3, =arch_irq_unlock_outlined\n"
-			 "blx   r3\n"
+			 "blx   r6\n"      /* arch_irq_unlock_outlined */
 
-			 "mov   r0, r4\n" /* z_thread_entry(_main, NULL, NULL, NULL) */
+			 "mov   r0, r4\n"  /* z_thread_entry(_main, NULL, NULL, NULL) */
 			 "movs  r1, #0\n"
 			 "movs  r2, #0\n"
 			 "movs  r3, #0\n"
-			 "ldr   r4, =z_thread_entry\n"
-			 /* We don’t intend to return, so there is no need to link. */
-			 "bx    r4\n"
+			 "bx    r5\n"      /* z_thread_entry
+					    * We don’t intend to return, so no link
+					    */
 			 :
-			 : "r"(_main), "r"(stack_ptr)
+			 : "r" (_main), "r" (stack_ptr)
 			 : "r0", "r1", "r2", "r3", "r4", "ip", "lr", "memory");
 
 	CODE_UNREACHABLE;
-}
-
-__used void arch_irq_unlock_outlined(unsigned int key)
-{
-#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__enable_fault_irq(); /* alters FAULTMASK */
-	__enable_irq();       /* alters PRIMASK */
-#endif
-	arch_irq_unlock(key);
-}
-
-__used unsigned int arch_irq_lock_outlined(void)
-{
-	return arch_irq_lock();
 }
 
 #if !defined(CONFIG_MULTITHREADING)
