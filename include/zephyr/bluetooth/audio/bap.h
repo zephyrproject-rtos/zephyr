@@ -907,7 +907,6 @@ struct bt_bap_stream {
 	void *user_data;
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(__DOXYGEN__)
-	/** @cond INTERNAL_HIDDEN */
 	/**
 	 * @brief Audio ISO reference
 	 *
@@ -924,6 +923,7 @@ struct bt_bap_stream {
 	uint16_t _prev_seq_num;
 #endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
+	/** @cond INTERNAL_HIDDEN */
 	/** Internally used list node */
 	sys_snode_t _node;
 	/** @endcond */
