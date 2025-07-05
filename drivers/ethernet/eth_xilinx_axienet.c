@@ -381,8 +381,6 @@ static int xilinx_axienet_get_config(const struct device *dev, enum ethernet_con
 {
 	const struct xilinx_axienet_config *dev_config = dev->config;
 	const struct xilinx_axienet_data *data = dev->data;
-	struct phy_link_state link_state;
-	int err;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
