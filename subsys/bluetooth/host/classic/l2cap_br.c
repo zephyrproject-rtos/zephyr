@@ -652,7 +652,12 @@ static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan, u
 
 	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
 		if (bt_l2cap_br_get_outstanding_count(br_chan)) {
-			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_RET, true);
+			/*
+			 * If unacknowledged I-frames have been sent but the retransmission
+			 * timer has not elapsed, then the ongoing retransmission timer should
+			 * not be restarted.
+			 */
+			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_RET, false);
 		} else {
 			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, false);
 		}
