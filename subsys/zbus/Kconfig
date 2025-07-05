@@ -29,41 +29,63 @@ config ZBUS_OBSERVER_NAME
 config ZBUS_CHANNEL_PUBLISH_STATS
 	bool "Channel publishing statistics (Timestamp and count)"
 
-config ZBUS_MSG_SUBSCRIBER
+
+config ZBUS_MSG_BUF_POOL
+	bool "Use net_buf pool for zbus features"
 	select NET_BUF
-	bool "Message subscribers will receive all messages in sequence."
+	help
+	  The net_buf pool is shared between Message subscribers and async listeners.
 
-if ZBUS_MSG_SUBSCRIBER
+if ZBUS_MSG_BUF_POOL
 
-choice ZBUS_MSG_SUBSCRIBER_BUF_ALLOC
-	prompt "ZBus msg_subscribers buffer allocation"
-	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC if ZBUS_PREFER_DYNAMIC_ALLOCATION
-	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
-
-config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
-	bool "Use heap to allocate msg_subscriber buffers data"
-
-config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
-	bool "Use fixed data size for msg_subscriber buffers pool"
-
-endchoice
-
-config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION
+config ZBUS_MSG_BUF_POOL_ISOLATION
 	default n
 	bool "Use isolated pools instead of only using the global pool."
 
-config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
-	default 16
-	int "The count of net_buf available to be used simutaneously."
+choice ZBUS_MSG_BUF_ALLOC
+	prompt "ZBus net_buf allocation"
+	default ZBUS_MSG_BUF_ALLOC_DYNAMIC if ZBUS_PREFER_DYNAMIC_ALLOCATION
+	default ZBUS_MSG_BUF_ALLOC_STATIC
 
-if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
+config ZBUS_MSG_BUF_ALLOC_DYNAMIC
+	bool "Use heap to allocate net_buf data"
 
-config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE
-	int "The size of the biggest message used with ZBus."
+config ZBUS_MSG_BUF_ALLOC_STATIC
+	bool "Use fixed data size for net_buf pool"
 
-endif # ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
+endchoice
 
-endif # ZBUS_MSG_SUBSCRIBER
+config ZBUS_MSG_BUF_STATIC_DATA_SIZE
+	int "The size of the biggest message used with message subscribers and async listeners."
+	depends on ZBUS_MSG_BUF_ALLOC_STATIC
+
+endif # ZBUS_MSG_BUF_POOL
+
+config ZBUS_MSG_SUBSCRIBER
+	select ZBUS_MSG_BUF_POOL
+	bool "Message subscribers will receive all messages in sequence."
+
+config ZBUS_MSG_SUBSCRIBER_MSG_BUF_POOL_SIZE_ADD
+	int "The number of items in the pool added to the zbus net_buf pool."
+	default 16 if ZBUS_MSG_SUBSCRIBER
+	default 0
+
+config ZBUS_ASYNC_LISTENER
+	bool "Listeners will execute the callback asynchronously in the system workqueue"
+	select ZBUS_MSG_BUF_POOL
+
+config ZBUS_ASYNC_LISTENER_MSG_BUF_POOL_SIZE_ADD
+	default 8 if ZBUS_ASYNC_LISTENER
+	default 0
+	int "The number of items in the pool added to the zbus net_buf pool."
+
+if ZBUS_ASYNC_LISTENER
+
+config ZBUS_ASYNC_LISTENER_EXEC_TIMEOUT
+	int "Timeout for the async listeners wait to perform an execution in milliseconds."
+	default 200
+
+endif # ZBUS_ASYNC_LISTENER
 
 config ZBUS_RUNTIME_OBSERVERS
 	bool "Runtime observers support."
@@ -110,9 +132,9 @@ config ZBUS_ASSERT_MOCK
 
 config HEAP_MEM_POOL_ADD_SIZE_ZBUS
 	int
-	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
-	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
-	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
+	default 2048 if ZBUS_MSG_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
+	default 1024 if !ZBUS_MSG_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
+	default 3072 if ZBUS_MSG_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_DYNAMIC
 
 
 module = ZBUS
