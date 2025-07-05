@@ -372,7 +372,7 @@ static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack, K_KERNEL_STACK_SIZEOF(spi_rx_stack),
 			(k_thread_entry_t)bt_spi_rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	ret = bt_apollo_controller_init(spi_send_packet);
 	if (ret == 0) {

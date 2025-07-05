@@ -147,6 +147,7 @@ config BT_LL_SW_SPLIT
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
 	select HAS_BT_CTLR
+	select BT_DRV_RX_HIGH_PRIO_SUPPORT if !BT_HCI_RAW
 	help
 	  Use Zephyr software Bluetooth LE Link Layer ULL LLL split implementation.
 
