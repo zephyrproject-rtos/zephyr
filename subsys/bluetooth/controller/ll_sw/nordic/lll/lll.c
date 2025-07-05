@@ -525,10 +525,6 @@ int lll_done(void *param)
 		param = event.curr.param;
 		event.curr.param = NULL;
 
-#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
-		done_inc();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
-
 		if (param) {
 			ull = HDR_LLL2ULL(param);
 		} else {
@@ -549,7 +545,9 @@ int lll_done(void *param)
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 	ull_prepare_dequeue(TICKER_USER_ID_LLL);
-#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+#else /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+	done_inc();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	struct event_done_extra *extra;
