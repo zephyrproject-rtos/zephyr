@@ -203,34 +203,26 @@ config IPM_CONSOLE_LINE_BUF_LEN
 	  where characters are stored before sending the whole line.
 
 config UART_MCUMGR
-	bool "Mcumgr UART driver"
-	select UART_INTERRUPT_DRIVEN
+	bool "Mcumgr UART driver [DEPRECATED]"
+	select DEPRECATED
 	help
-	  Enable the mcumgr UART driver. This driver allows the application to
-	  communicate over UART using the mcumgr protocol for image upgrade and
-	  device management. The driver doesn't inspect received data (as
-	  contrary to console UART driver) and all aspects of received protocol
-	  data are handled by an application provided callback.
+	  This option is deprecated.
 
 if UART_MCUMGR
 
 config UART_MCUMGR_RX_BUF_SIZE
-	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
-	default 128
+	int "Size of receive buffer for mcumgr fragments received over UART, in bytes [DEPRECATED]"
+	default 0
 	help
-	  Specifies the size of the mcumgr UART receive buffer, in bytes. This
-	  value must be large enough to accommodate any line sent by an mcumgr
-	  client.
+	  This option is deprecated.
+	  Please use MCUMGR_TRANSPORT_UART_RX_BUF_SIZE instead.
 
 config UART_MCUMGR_RX_BUF_COUNT
-	int "Number of receive buffers for mcumgr fragments received over UART"
-	default 2
+	int "Number of receive buffers for mcumgr fragments received over UART [DEPRECATED]"
+	default 0
 	help
-	  Specifies the number of the mcumgr UART receive buffers.  Receive
-	  buffers hold received mcumgr fragments prior to reassembly.  This
-	  setting's value must satisfy the following relation:
-	  UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >=
-	  MCUMGR_TRANSPORT_UART_MTU
+	  This option is deprecated.
+	  Please use MCUMGR_TRANSPORT_UART_RX_BUF_COUNT instead.
 
 endif # UART_MCUMGR
 
