@@ -702,10 +702,10 @@ Video
 * 8 bit RAW Bayer formats BGGR8 / GBRG8 / GRBG8 / RGGB8 have been renamed by adding
   a S prefix in front:
 
-  ``VIDEO_PIX_FMT_BGGR8`` becomes ``VIDEO_PIX_FMT_SBGGR8``
-  ``VIDEO_PIX_FMT_GBRG8`` becomes ``VIDEO_PIX_FMT_SGBRG8``
-  ``VIDEO_PIX_FMT_GRBG8`` becomes ``VIDEO_PIX_FMT_SGRBG8``
-  ``VIDEO_PIX_FMT_RGGB8`` becomes ``VIDEO_PIX_FMT_SRGGB8``
+  ``VIDEO_PIX_FMT_BGGR8`` becomes :c:macro:`VIDEO_PIX_FMT_SBGGR8`
+  ``VIDEO_PIX_FMT_GBRG8`` becomes :c:macro:`VIDEO_PIX_FMT_SGBRG8`
+  ``VIDEO_PIX_FMT_GRBG8`` becomes :c:macro:`VIDEO_PIX_FMT_SGRBG8`
+  ``VIDEO_PIX_FMT_RGGB8`` becomes :c:macro:`VIDEO_PIX_FMT_SRGGB8`
 
 * On STM32 devices, the DCMI driver (:dtcompatible:`st,stm32-dcmi`) now relies on endpoint based
   video-interfaces.yaml bindings for sensor interface properties (such as bus width and
@@ -714,13 +714,10 @@ Video
   :c:func:`video_set_frmival`.
   See (:github:`89627`).
 
-* video_endpoint_id enum has been dropped. It is no longer a parameter in any video API.
+* :c:enum:`video_endpoint_id` has been dropped. It is no longer a parameter in any video API.
 
-* video_buf_type enum has been added. It is a required parameter in the following video APIs:
-
-  ``set_stream``
-  ``video_stream_start``
-  ``video_stream_stop``
+* :c:enum:`video_buf_type` has been added. It is a required parameter in the following video APIs:
+  :c:func:`set_stream`, :c:func:`video_stream_start`, :c:func:`video_stream_stop`
 
 * ``video_format.pitch`` has been updated to be set explicitly by the driver, a task formerly
   required by the application. This update enables the application to correctly allocate a buffer
@@ -729,6 +726,10 @@ Video
 
 * Samples and projects using the :ref:`native simulator <native_sim>` now require specifying the
   ``--snippet`` :ref:`video-sw-generator <snippet-video-sw-generator>` to build correctly.
+
+* :c:func:`video_query_ctrl` now takes a single argument with the :c:struct:`video_ctrl_query`,
+  which now contains a ``video_ctrl_query.dev`` field to specify and read back which device is
+  being queried (:github:`91265`).
 
 Audio
 =====
