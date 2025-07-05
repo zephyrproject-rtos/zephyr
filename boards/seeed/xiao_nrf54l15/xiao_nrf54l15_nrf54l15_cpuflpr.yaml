@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: xiao_nrf54l15/nrf54l15/cpuflpr
+name: XIAO nRF54L15
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 96
+flash: 96
+supported:
+  - counter
+  - gpio
+  - i2c
+  - spi
+  - watchdog
