@@ -32,6 +32,9 @@ anytree
 # intelhex used by mergehex.py
 intelhex
 
+# esptool
+rich_click
+
 # it's west
 # Keep the version identical to the minimum required in cmake/modules/west.cmake
 west>=0.14.0
