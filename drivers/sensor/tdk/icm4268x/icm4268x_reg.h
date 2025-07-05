@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_ICM42688_REG_H_
-#define ZEPHYR_DRIVERS_SENSOR_ICM42688_REG_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_ICM4268X_REG_H_
+#define ZEPHYR_DRIVERS_SENSOR_ICM4268X_REG_H_
 
 #include <zephyr/sys/util.h>
 
@@ -503,6 +503,7 @@
 
 /* misc. defines */
 #define WHO_AM_I_ICM42688     0x47
+#define WHO_AM_I_ICM42686     0x44
 #define MIN_ACCEL_SENS_SHIFT  11
 #define ACCEL_DATA_SIZE	      6
 #define GYRO_DATA_SIZE	      6
@@ -519,4 +520,4 @@
 #define FIFO_HEADER_ODR_ACCEL	    BIT(1)
 #define FIFO_HEADER_ODR_GYRO	    BIT(0)
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_ICM42688_REG_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_ICM4268X_REG_H_ */
