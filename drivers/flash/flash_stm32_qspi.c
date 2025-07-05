@@ -387,12 +387,26 @@ static int qspi_write_unprotect(const struct device *dev)
 static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 			  size_t size)
 {
+	int ret = 0;
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 	HAL_StatusTypeDef hal_ret;
 
 	__ASSERT(data != NULL, "null destination");
 
 	LOG_INF("Reading SFDP");
+
+#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+	/*
+	 * In dual flash mode, reading the SFDP table would cause the parameters from both flash
+	 * memories to be read (first byte read would be the first SFDP byte from the first flash,
+	 * second byte read would be the first SFDP byte from the second flash, ...). Both flash
+	 * memories are expected to be identical so to have identical SFDP. Therefore, the dual
+	 * flash mode is disabled during the reading to obtain the SFDP from a single flash memory
+	 * only.
+	 */
+	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_DISABLE);
+	LOG_DBG("Dual flash mode disabled while reading SFDP");
+#endif /* dual_flash */
 
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = JESD216_CMD_READ_SFDP,
@@ -409,19 +423,27 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to send SFDP instruction", hal_ret);
-		return -EIO;
+		ret = -EIO;
+		goto end;
 	}
 
 	hal_ret = HAL_QSPI_Receive(&dev_data->hqspi, (uint8_t *)data,
 				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to read SFDP", hal_ret);
-		return -EIO;
+		ret = -EIO;
+		goto end;
 	}
 
 	dev_data->cmd_status = 0;
 
-	return 0;
+end:
+#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+	/* Re-enable the dual flash mode */
+	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_ENABLE);
+#endif /* dual_flash */
+
+	return ret;
 }
 
 static bool qspi_address_is_valid(const struct device *dev, off_t addr,
@@ -1511,16 +1533,19 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
 #if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
+	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
+	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
+	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
+
 	/*
 	 * When the DTS has <dual-flash>, it means Dual Flash Mode
 	 * Even in DUAL flash config, the SDFP is read from one single quad-NOR
 	 * else the magic nb is wrong (0x46465353)
-	 * That means that the Dual Flash config is set after the SFDP sequence
+	 * So configure the driver to read from the first flash when dual flash
+	 * mode is temporarily disabled. Note that if BK2_NCS is not connected,
+	 * it is not possible to read from the second flash when dual flash mode
+	 * is disabled.
 	 */
-	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
-	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
-	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;
-	/* Set Dual Flash Mode only on MemoryMapped */
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
 #endif /* dual_flash */
 
@@ -1623,16 +1648,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
-#if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)
-	/*
-	 * When the DTS has dual_flash, it means Dual Flash Mode for Memory MAPPED
-	 * Force Dual Flash mode now, after the SFDP sequence which is reading
-	 * one quad-NOR only
-	 */
-	MODIFY_REG(dev_data->hqspi.Instance->CR, (QUADSPI_CR_DFM), QSPI_DUALFLASH_ENABLE);
-	LOG_DBG("Dual Flash Mode");
-#endif /* dual_flash */
-
 	ret = stm32_qspi_set_memory_mapped(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
