@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Shontal Biton
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32ZG28
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 79
+
+config PM
+	select UART_INTERRUPT_DRIVEN
+
+config GPIO_GECKO
+	default y
+
+config SOC_GECKO_SDID
+	default 235 if SOC_SERIES_EFR32ZG28
+
+endif
