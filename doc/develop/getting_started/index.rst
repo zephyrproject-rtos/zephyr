@@ -252,11 +252,25 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
       #. Get the Zephyr source code:
 
-         .. code-block:: bash
+         .. only:: not release
 
-           west init ~/zephyrproject
-           cd ~/zephyrproject
-           west update
+            .. code-block:: bash
+
+               west init ~/zephyrproject
+               cd ~/zephyrproject
+               west update
+
+         .. only:: release
+
+            .. We need to use a parsed-literal here because substitutions do not work in code
+               blocks. This means users can't copy-paste these lines as easily as other blocks but
+               should be good enough still :)
+
+            .. parsed-literal::
+
+               west init ~/zephyrproject --mr v |zephyr-version-ltrim|
+               cd ~/zephyrproject
+               west update
 
       #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
          automatically load boilerplate code required for building Zephyr
