@@ -35,4 +35,6 @@ source "drivers/lora/Kconfig.sx12xx"
 
 source "drivers/lora/Kconfig.rylrxxx"
 
+source "drivers/lora/Kconfig.daphnisi"
+
 endif # LORA

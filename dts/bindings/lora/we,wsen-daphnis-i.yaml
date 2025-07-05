@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Daphnis-I (EU868) Module
+  Refer to https://www.we-online.com/en/components/products/manual/2618011181000
+
+compatible: "we,wsen-daphnis-i"
+
+include: uart-device.yaml
+
+properties:
+  reset-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      Reset pin. This pin shall be connected to the reset pin of the module.
+
+  wakeup-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      Wake up pin. This pin shall be connected to the wake up pin of the module.
+
+  boot-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      Boot pin. This pin shall be connected to the Boot pin of the module.
+
+  duty-cycle-restriction:
+    type: boolean
+    description: |
+      If set it will keep track of TOA of the sent packets and make sure
+      that the limit is not reached.
