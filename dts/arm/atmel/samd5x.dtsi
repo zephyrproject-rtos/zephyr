@@ -388,6 +388,19 @@
 			calib-offset = <14>;
 		};
 
+		dac0: dac@43002400{
+			compatible = "atmel,samd5x-dac";
+			reg = <0x43002400 0x20>;
+
+			clocks = <&gclk 42>, <&mclk 0x20 9>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+
+			#io-channel-cells = <1>;
+		};
+
 		tc0: tc@40003800 {
 			compatible = "atmel,sam0-tc32";
 			reg = <0x40003800 0x34>;
