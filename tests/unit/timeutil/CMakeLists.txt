@@ -14,4 +14,5 @@ target_sources(testbinary
     test_s32.c
     test_s64.c
     test_sync.c
+    timespec.c
 )
