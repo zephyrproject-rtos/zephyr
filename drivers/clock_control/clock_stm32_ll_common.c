@@ -662,7 +662,13 @@ static void set_up_fixed_clock_sources(void)
 			}
 		}
 #if STM32_HSI_DIV_ENABLED
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		if (LL_RCC_IsActiveFlag_HSIDIV()) {
+			LL_RCC_HSI_EnableDivider();
+		}
+#else
 		LL_RCC_SetHSIDiv(hsi_divider(STM32_HSI_DIVISOR));
+#endif
 #endif
 	}
 
