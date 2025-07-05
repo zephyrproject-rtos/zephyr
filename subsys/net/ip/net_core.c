@@ -55,7 +55,6 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "route.h"
 
 #include "packet_socket.h"
-#include "canbus_socket.h"
 
 #include "connection.h"
 #include "udp_internal.h"
@@ -140,8 +139,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
 		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
 		return NET_DROP;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
-		return net_canbus_socket_input(pkt);
 	}
 
 	NET_DBG("Unknown protocol family packet (0x%x)", family);
