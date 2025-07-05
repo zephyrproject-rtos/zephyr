@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Conny Marco Menebröcker
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config RFID_CR95HF
+	bool "Support for CR95HF RFID driver"
+	depends on DT_HAS_ST_CR95HF_ENABLED
+	depends on SPI || UART
+	help
+		Enable support for the CR95HF RFID driver.
