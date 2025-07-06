@@ -166,7 +166,7 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 	struct lll_conn *lll = curr;
 
 	/* Do not abort if near supervision timeout */
-	if (lll->forced) {
+	if ((lll->forced == 1U) && (trx_cnt < 1U)) {
 		return 0;
 	}
 
@@ -188,7 +188,7 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 	struct lll_conn *lll = curr;
 
 	/* Do not abort if near supervision timeout */
-	if (lll->forced) {
+	if ((lll->forced == 1U) && (tx_cnt < 1U)) {
 		return 0;
 	}
 
