@@ -181,23 +181,15 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 	return 0;
 }
 
-int video_dequeue(struct video_buffer **buf)
+struct rtio_cqe *video_dequeue(void)
 {
-	struct rtio_cqe *cqe = rtio_cqe_consume_block(&rtio);
-	*buf = cqe->userdata;
-
-	if (cqe->result < 0) {
-		LOG_ERR("I/O operation failed");
-		return cqe->result;
-	}
-
-	return 0;
+	return rtio_cqe_consume_block(&rtio);
 }
 
-void video_release_buf()
+void video_release_buf(struct rtio_cqe *cqe)
 {
 	/* Buffer will be re-queued thanks to RTIO_SQE_MULTISHOT */
-	rtio_cqe_release(&rtio, rtio_cqe_consume_block(&rtio));
+	rtio_cqe_release(&rtio, cqe);
 }
 
 struct video_buffer *video_get_buf_sqe(struct mpsc *io_q)
@@ -219,3 +211,41 @@ struct video_buffer *video_get_buf_sqe(struct mpsc *io_q)
 
 	return sqe->userdata;
 }
+
+struct rtio_iodev_sqe *video_pop_io_q(struct mpsc *io_q)
+{
+	struct mpsc_node *node;
+	struct rtio_iodev_sqe *iodev_sqe;
+	struct video_buffer *vbuf;
+
+	node = mpsc_pop(io_q);
+	if (node == NULL) {
+		return NULL;
+	}
+
+	iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
+	vbuf = iodev_sqe->sqe.userdata;
+
+	__ASSERT_NO_MSG(vbuf != NULL);
+
+	if ((vbuf->type == VIDEO_BUF_TYPE_OUTPUT && iodev_sqe->sqe.op == RTIO_OP_RX) ||
+	    (vbuf->type == VIDEO_BUF_TYPE_INPUT && iodev_sqe->sqe.op == RTIO_OP_TX)) {
+		return iodev_sqe;
+	} else {
+		LOG_ERR("Unsupported RTIO operation (%d) or video buffer type (%d)",
+			iodev_sqe->sqe.op, vbuf->type);
+		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+		return NULL;
+	}
+}
+
+static void video_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct video_interface *vi = iodev_sqe->sqe.iodev->data;
+
+	mpsc_push(vi->io_q, &iodev_sqe->q);
+}
+
+const struct rtio_iodev_api _video_iodev_api = {
+	.submit = video_iodev_submit,
+};

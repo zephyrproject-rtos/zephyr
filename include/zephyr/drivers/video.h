@@ -28,6 +28,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -598,13 +599,11 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf);
  *
  * @param buf Pointer a video buffer pointer.
  *
- * @retval 0 Is successful.
- * @retval -EINVAL If parameters are invalid.
- * @retval -EIO General input / output error.
+ * @retval The RTIO completion event with the completed buffer.
  */
-int video_dequeue(struct video_buffer **buf);
+struct rtio_cqe *video_dequeue(void);
 
-void video_release_buf();
+void video_release_buf(struct rtio_cqe *cqe);
 
 /**
  * @brief Flush endpoint buffers.

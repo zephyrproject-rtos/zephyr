@@ -5,3 +5,4 @@
  */
 
 struct video_buffer *video_get_buf_sqe(struct mpsc *io_q);
+struct rtio_iodev_sqe *video_pop_io_q(struct mpsc *io_q);
