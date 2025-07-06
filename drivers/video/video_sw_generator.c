@@ -310,11 +310,6 @@ static void video_sw_generator_worker(struct k_work *work)
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
-static int video_sw_generator_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	return 0;
-}
-
 static int video_sw_generator_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	caps->format_caps = fmts;
@@ -379,7 +374,6 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
 	.get_format = video_sw_generator_get_fmt,
 	.set_stream = video_sw_generator_set_stream,
-	.enqueue = video_sw_generator_enqueue,
 	.get_caps = video_sw_generator_get_caps,
 	.set_frmival = video_sw_generator_set_frmival,
 	.get_frmival = video_sw_generator_get_frmival,
