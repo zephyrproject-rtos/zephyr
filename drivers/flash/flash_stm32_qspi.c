@@ -1402,10 +1402,29 @@ static int flash_stm32_qspi_send_reset(const struct device *dev)
 {
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = SPI_NOR_CMD_RESET_EN,
-		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+		.InstructionMode = QSPI_INSTRUCTION_4_LINES
 	};
 	int ret;
 
+	/*
+	 * The device might be in SPI or QPI mode, so to ensure the device is properly reset send
+	 * the reset commands in both QPI and SPI modes.
+	 */
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_EN", ret);
+		return ret;
+	}
+
+	cmd.Instruction = SPI_NOR_CMD_RESET_MEM;
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_MEM", ret);
+		return ret;
+	}
+
+	cmd.Instruction = SPI_NOR_CMD_RESET_EN;
+	cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
 	ret = qspi_send_cmd(dev, &cmd);
 	if (ret != 0) {
 		LOG_ERR("%d: Failed to send RESET_EN", ret);
