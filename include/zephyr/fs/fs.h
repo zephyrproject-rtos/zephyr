@@ -200,11 +200,11 @@ struct fs_statvfs {
  * @return a value suitable for initializing an fs_mount_t flags
  * member.
  */
-#define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)				\
-	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0)	\
-	 | (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0)	\
-	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0)  \
-	 | (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
+#define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)					\
+	((DT_NODE_HAS_PROP(node_id, automount)   ? FS_MOUNT_FLAG_AUTOMOUNT : 0) \
+	 | (DT_NODE_HAS_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0) \
+	 | (DT_NODE_HAS_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0) \
+	 | (DT_NODE_HAS_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
 
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is
