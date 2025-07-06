@@ -12,7 +12,6 @@ LOG_MODULE_REGISTER(spi_emul_cr95hf, LOG_LEVEL_DBG);
 #include <zephyr/drivers/emul.h>
 #include <zephyr/kernel.h>
 
-
 static const struct gpio_dt_spec irq_out = GPIO_DT_SPEC_GET(DT_NODELABEL(cr95hf), irq_out_gpios);
 
 struct cr95hf_emul_data {
@@ -22,11 +21,10 @@ struct cr95hf_emul_data {
 	size_t offset;
 };
 
-static int cr95hf_emul_io(const struct emul *emul, const struct spi_config *config,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs)
+static int cr95hf_emul_io(const struct emul *cr95hf_emul, const struct spi_config *config,
+			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
-	struct cr95hf_emul_data *data = emul->data;
+	struct cr95hf_emul_data *data = cr95hf_emul->data;
 
 	uint8_t transmit[256] = {0};
 	size_t trans_len = 0;
@@ -34,59 +32,51 @@ static int cr95hf_emul_io(const struct emul *emul, const struct spi_config *conf
 	uint8_t response[256] = {0};
 	size_t resp_len = 0;
 
-	if(data->rest > 0) {
+	if (data->rest > 0) {
 		const struct spi_buf *buf = &rx_bufs->buffers[0];
 		size_t len = MIN(buf->len, data->rest);
+
 		memcpy(buf->buf, data->next_response + data->offset, len);
 
 		LOG_DBG("CR95HF TX: %02x %02x (len=%d)",
-		len > 0 ? data->next_response[data->offset] : 0,
-		len > 1 ? data->next_response[data->offset + 1] : 0,
-		len);
+			len > 0 ? data->next_response[data->offset] : 0,
+			len > 1 ? data->next_response[data->offset + 1] : 0, len);
 
-		if(len != data->rest) {
+		if (len != data->rest) {
 			data->rest = data->rest - len;
 			data->offset = data->offset + len;
-		}
-		else {
+		} else {
 			data->rest = 0;
 			data->offset = 0;
 		}
 		return 0;
 	}
 
-	if(tx_bufs) {
-		if(tx_bufs->count == 1) {
+	if (tx_bufs) {
+		if (tx_bufs->count == 1) {
 			memcpy(transmit, tx_bufs->buffers[0].buf, tx_bufs->buffers[0].len);
 			trans_len = tx_bufs->buffers[0].len;
 		}
 
-		LOG_DBG("CR95HF RX: %02x %02x (len=%d)",
-		trans_len > 0 ? transmit[0] : 0,
-		trans_len > 1 ? transmit[1] : 0,
-		trans_len);
+		LOG_DBG("CR95HF RX: %02x %02x (len=%d)", trans_len > 0 ? transmit[0] : 0,
+			trans_len > 1 ? transmit[1] : 0, trans_len);
 	}
 
-	if(trans_len == 1 && transmit[0] == 0x01) {
+	if (trans_len == 1 && transmit[0] == 0x01) {
 		/* Reset Received -> No response*/
 		resp_len = 0;
-	}
-	else if (trans_len == 2 &&
-			transmit[0] == 0x00 &&
-			transmit[1] == 0x55) {
+	} else if (trans_len == 2 && transmit[0] == 0x00 && transmit[1] == 0x55) {
 		/* Echo Request received -> Response Read with Echo 0x55*/
 		data->next_response[0] = 0x00; /* Dummy Byte while read command*/
 		data->next_response[1] = 0x55;
 		data->next_resp_len = 2;
 		resp_len = 0;
-	}
-	else if (trans_len == 1 && transmit[0] == 0x02) {
+	} else if (trans_len == 1 && transmit[0] == 0x02) {
 		/* Read Command received -> Response prepared data*/
-		memcpy(response,data->next_response,data->next_resp_len);
+		memcpy(response, data->next_response, data->next_resp_len);
 		resp_len = data->next_resp_len;
 		data->next_resp_len = 0;
-	}
-	else if ( trans_len == 17 && transmit[0] == 0x00 && transmit[1] == 0x07) {
+	} else if (trans_len == 17 && transmit[0] == 0x00 && transmit[1] == 0x07) {
 		/* Tag Detector Mode */
 		data->next_response[0] = 0x00; /* Dummy Byte while read command*/
 		data->next_response[1] = 0x00;
@@ -96,16 +86,14 @@ static int cr95hf_emul_io(const struct emul *emul, const struct spi_config *conf
 		resp_len = 0;
 		/* Set irq_out to low to indicate a wakeup */
 		gpio_pin_set_dt(&irq_out, 1);
-	}
-	else if ( trans_len == 7 && transmit[0] == 0x00 && transmit[1] == 0x02) {
+	} else if (trans_len == 7 && transmit[0] == 0x00 && transmit[1] == 0x02) {
 		/* ISO14443-A selected */
 		data->next_response[0] = 0x00; /* Dummy Byte while read command*/
 		data->next_response[1] = 0x00;
 		data->next_response[2] = 0x00;
 		data->next_resp_len = 3;
 		resp_len = 0;
-	}
-	else if ( trans_len == 5 && transmit[0] == 0x00 && transmit[3] == 0x26) {
+	} else if (trans_len == 5 && transmit[0] == 0x00 && transmit[3] == 0x26) {
 		/* REQA received -> send ATQA */
 		data->next_response[0] = 0x00; /* Dummy Byte while read command*/
 		data->next_response[1] = 0x80;
@@ -117,8 +105,7 @@ static int cr95hf_emul_io(const struct emul *emul, const struct spi_config *conf
 		data->next_response[7] = 0x00;
 		data->next_resp_len = 8;
 		resp_len = 0;
-	}
-	else if ( trans_len == 6 && transmit[0] == 0x00 && transmit[3] == 0x93) {
+	} else if (trans_len == 6 && transmit[0] == 0x00 && transmit[3] == 0x93) {
 		/* CL1 Received  */
 		data->next_response[0] = 0x00; /* Dummy Byte while read command*/
 		data->next_response[1] = 0x80;
@@ -133,8 +120,7 @@ static int cr95hf_emul_io(const struct emul *emul, const struct spi_config *conf
 		data->next_response[10] = 0x00;
 		data->next_resp_len = 11;
 		resp_len = 0;
-	}
-	else if ( trans_len == 11 && transmit[0] == 0x00 && transmit[3] == 0x93) {
+	} else if (trans_len == 11 && transmit[0] == 0x00 && transmit[3] == 0x93) {
 		/* CL1 Complete */
 		data->next_response[0] = 0x00; /* Dummy Byte while read command*/
 		data->next_response[1] = 0x80;
@@ -149,23 +135,22 @@ static int cr95hf_emul_io(const struct emul *emul, const struct spi_config *conf
 		resp_len = 0;
 	}
 
-	if(rx_bufs && resp_len > 0) {
+	if (rx_bufs && resp_len > 0) {
 		const struct spi_buf *buf = &rx_bufs->buffers[0];
 		size_t len = MIN(buf->len, resp_len);
+
 		memcpy(buf->buf, response, len);
-		if(len != resp_len) {
+
+		if (len != resp_len) {
 			data->rest = resp_len - len;
 			data->offset = len;
-		}
-		else {
+		} else {
 			data->rest = 0;
 			data->offset = 0;
 		}
 
-		LOG_DBG("CR95HF TX: %02x %02x (len=%d)",
-		len > 0 ? response[0] : 0,
-		len > 1 ? response[1] : 0,
-		len);
+		LOG_DBG("CR95HF TX: %02x %02x (len=%d)", len > 0 ? response[0] : 0,
+			len > 1 ? response[1] : 0, len);
 	}
 
 	return 0;
@@ -189,21 +174,11 @@ static int cr95hf_emul_init(const struct emul *cr95hf_emul, const struct device 
 	return 0;
 }
 
-#define DEFINE_SPI_EMUL(n) \
-	static struct cr95hf_emul_data cr95hf_emul_data_##n; \
-	EMUL_DT_INST_DEFINE(n, \
-		&cr95hf_emul_init, \
-		&cr95hf_emul_data_##n, \
-		NULL, \
-		&cr95hf_emul_api, \
-		NULL); \
-	DEVICE_DT_INST_DEFINE(n, \
-		NULL, \
-		NULL, \
-		NULL, \
-		NULL, \
-		POST_KERNEL, \
-		CONFIG_SPI_INIT_PRIORITY, \
-		NULL)
+#define DEFINE_SPI_EMUL(n)                                                                         \
+	static struct cr95hf_emul_data cr95hf_emul_data_##n;                                       \
+	EMUL_DT_INST_DEFINE(n, &cr95hf_emul_init, &cr95hf_emul_data_##n, NULL, &cr95hf_emul_api,   \
+			    NULL);                                                                 \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,    \
+			      NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_SPI_EMUL)

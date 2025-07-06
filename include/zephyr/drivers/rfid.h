@@ -82,10 +82,7 @@ typedef int (*rfid_api_get_uid)(const struct device *dev, uint8_t *uid, size_t *
  * @brief API to transceive data betwenn TAG and Host
  *
  * @param dev RFID device
- * @param tx Buffer for data to be send
- * @param tx_len Length of the tx buffer
- * @param rx Buffer for data to be send
- * @param rx_len Length of the tx buffer
+ * @param data Structure to send and receive data
  * @return 0 on success, negative on error
  */
 typedef int (*rfid_api_transceive)(const struct device *dev, struct transceive_data data);

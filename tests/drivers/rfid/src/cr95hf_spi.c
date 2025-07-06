@@ -33,7 +33,9 @@ ZTEST(cr95hf_test, test_cr95hf_read_uid)
 	zassert_true(device_is_ready(rfid_dev), "CR95HF device not ready/init failed");
 
 	rfid_select_mode(rfid_dev, TAG_DETECTOR);
+
 	struct rfid_cr95hf_data *data = rfid_dev->data;
+
 	zassert_equal(data->current_mode, READY, "Current Mode is not READY as expected");
 
 	rfid_protocol_select(rfid_dev, ISO_14443A);
@@ -41,10 +43,11 @@ ZTEST(cr95hf_test, test_cr95hf_read_uid)
 
 	uint8_t uid[10];
 	size_t uid_len = 10;
-	uint8_t expected_uid[4] = { 0x08, 0x19, 0x2D, 0xA2};
+	uint8_t expected_uid[4] = {0x08, 0x19, 0x2D, 0xA2};
+
 	rfid_get_uid(rfid_dev, uid, &uid_len);
-	zassert_equal(uid_len,4,"Length of TAG UID is not 4 as expected");
-	zassert_mem_equal(uid,expected_uid,4,"Received TAG ID is not the expected 0x192DA29E");
+	zassert_equal(uid_len, 4, "Length of TAG UID is not 4 as expected");
+	zassert_mem_equal(uid, expected_uid, 4, "Received TAG ID is not the expected 0x192DA29E");
 }
 
 ZTEST_SUITE(cr95hf_test, NULL, NULL, NULL, NULL, NULL);
