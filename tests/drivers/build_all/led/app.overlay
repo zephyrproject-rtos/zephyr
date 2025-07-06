@@ -192,6 +192,11 @@
 					nordic,led2-mode = "host";
 				};
 			};
+
+			pca9533@15 {
+				compatible = "nxp,pca9533";
+				reg = <0x15>;
+			};
 		};
 
 		test_pwm: pwm@12341234 {
